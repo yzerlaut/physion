@@ -231,9 +231,9 @@ def init_main_widget_grid(self,
     self.layout = QtWidgets.QGridLayout()
     self.cwidget.setLayout(self.layout)
 
-    self.graphics_layout = pg.GraphicsLayoutWidget()
-    self.layout.addWidget(self.graphics_layout, 0, self.wdgt_length,
-                          Nrow_wdgt, Ncol_wdgt)
+    # self.graphics_layout = pg.GraphicsLayoutWidget()
+    # self.layout.addWidget(self.graphics_layout, 0, self.wdgt_length,
+                          # Nrow_wdgt, Ncol_wdgt)
     
 
 def add_widget(self, wdgt, spec='None'):

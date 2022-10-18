@@ -27,6 +27,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.settings = {'Npoints':100,
                         }
+
         self.setGeometry(50, 100, 850, 700) 
        
         self.add_keyboard_shortcuts()
@@ -37,9 +38,35 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.WIDGETS = [] # 
 
-        for i in range(20):
-            widget = QtWidgets.QLabel('line %i' % i) 
-            self.add_widget(widget)
+
+        # ========================================
+        # ============   PRESETS   ===============
+        # ========================================
+
+        self.tabs = QtWidgets.QTabWidget()
+        self.tabs.setTabPosition(QtWidgets.QTabWidget.West)
+
+        # Initialize tab screen
+        self.acq_tab = QtWidgets.QWidget()
+        self.dataviz_tab = QtWidgets.QWidget()
+        self.analysis_tab = QtWidgets.QWidget()
+        self.files_tab = QtWidgets.QWidget()
+        
+        # Add tabs
+        self.tabs.addTab(self.acq_tab,10*' '+'Acquisition'+10*' ')
+        self.tabs.addTab(self.dataviz_tab,10*' '+'Visualization'+10*' ')
+        self.tabs.addTab(self.analysis_tab,10*' '+'Analysis'+10*' ')
+        self.tabs.addTab(self.files_tab,10*' '+'Files'+10*' ')
+        
+        # Create first tab
+        # self.tab1.layout = QtWidgets.QVBoxLayout(self)
+        # self.pushButton1 = QtWidgets.QPushButton("PyQt5 button")
+        # self.tab1.layout.addWidget(self.pushButton1)
+        # self.tab1.setLayout(self.tab1.layout)
+        
+        # Add tabs to widget
+        self.layout.addWidget(self.tabs)
+        self.setLayout(self.layout)
 
         # ===================================================
         # ============   MENU BAR   =========================
