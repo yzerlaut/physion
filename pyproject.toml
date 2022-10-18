@@ -1,0 +1,25 @@
+[project]
+name = "physion"
+version = "0.0.1"
+authors = [
+  { name="Yann Zerlaut", email="yann.zerlaut@gmail.com" },
+]
+description = "Vision Physiology Software"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "pynwb",
+    "pyqt5",
+    "pyqtgraph",
+    "pyqtdarktheme",
+]
+[project.urls]
+"Homepage" = "https://github.com/yzerlaut/physion"
+"Bug Tracker" = "https://github.com/yzerlaut/physion/issues"
