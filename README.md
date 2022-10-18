@@ -2,7 +2,7 @@
 
 <div><img src="./docs/physion.png" alt="physion logo" width="35%" align="right" style="margin-left: 10px"></div>
 
-# physion -- Vision Physiology Software
+# Vision Physiology Software
 
 > *Code for experimental setups and analysis pipelines to study cellular and network physiology in visual cortical circuits*
 
