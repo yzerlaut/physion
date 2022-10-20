@@ -224,7 +224,6 @@ def init_main_widget_grid(self,
     
     self.wdgt_length = wdgt_length
     
-    self.cwidget = QtWidgets.QWidget(self)
     self.setCentralWidget(self.cwidget)
     
     # grid layout

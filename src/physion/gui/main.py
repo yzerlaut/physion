@@ -13,6 +13,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, app,
                  args=None,
+                 width=850, height=700,
                  button_height = 20):
 
         self.app, self.args = app, args
@@ -26,38 +27,42 @@ class MainWindow(QtWidgets.QMainWindow):
         # ========================================
 
         self.settings = {'Npoints':100,
-                        }
+                         '_':True}
 
-        self.setGeometry(50, 100, 850, 700) 
+        self.setGeometry(50, 100, width, height) 
        
         self.add_keyboard_shortcuts()
         self.set_status_bar()
         self.minView = True
 
-        self.init_main_widget_grid()
+        # keep/store all widgets to be able to destroy them
+        self.WIDGETS = {'tab1':{}, 'tab2':{},
+                        'tab3':{}, 'tab4':{}}
 
-        self.WIDGETS = [] # 
+        # =================================================
+        # ============  MAIN LAYOUT WITH TABS =============
+        # =================================================
 
+        # central widget
+        self.cwidget = QtWidgets.QWidget(self)
+        self.setCentralWidget(self.cwidget)
 
-        # ========================================
-        # ============   PRESETS   ===============
-        # ========================================
+        # layout 
+        self.layout = QtWidgets.QGridLayout()
+        self.cwidget.setLayout(self.layout)
 
+        # tabs
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.setTabPosition(QtWidgets.QTabWidget.West)
+        self.tabs.setStyleSheet("QTabBar::tab {min-height: %ipx; max-height: %ipx;}" % (height/3, 1000))
+        self.tabs.tabBar().setExpanding(True) # NOT WORKING
 
-        # Initialize tab screen
-        self.acq_tab = QtWidgets.QWidget()
-        self.dataviz_tab = QtWidgets.QWidget()
-        self.analysis_tab = QtWidgets.QWidget()
-        self.files_tab = QtWidgets.QWidget()
-        
-        # Add tabs
-        self.tabs.addTab(self.acq_tab,10*' '+'Acquisition'+10*' ')
-        self.tabs.addTab(self.dataviz_tab,10*' '+'Visualization'+10*' ')
-        self.tabs.addTab(self.analysis_tab,10*' '+'Analysis'+10*' ')
-        self.tabs.addTab(self.files_tab,10*' '+'Files'+10*' ')
-        
+        # Initialize and add tabs
+        self.tab1, self.tab2, self.tab3, self.tab4 = QtWidgets.QWidget(),\
+                QtWidgets.QWidget(), QtWidgets.QWidget(), QtWidgets.QWidget()
+        for i, tab in enumerate([self.tab1, self.tab2, self.tab3, self.tab4]):
+            self.tabs.addTab(tab, (i+1)*'*')
+
         # Create first tab
         # self.tab1.layout = QtWidgets.QVBoxLayout(self)
         # self.pushButton1 = QtWidgets.QPushButton("PyQt5 button")
@@ -66,7 +71,6 @@ class MainWindow(QtWidgets.QMainWindow):
         
         # Add tabs to widget
         self.layout.addWidget(self.tabs)
-        self.setLayout(self.layout)
 
         # ===================================================
         # ============   MENU BAR   =========================
@@ -74,14 +78,14 @@ class MainWindow(QtWidgets.QMainWindow):
         mainMenu = self.menuBar()
 
         ##### ------------- Experiment -----------------------
-        self.fileMenu = mainMenu.addMenu('Open ')
+        self.fileMenu = mainMenu.addMenu('  * Open ')
         self.fileMenu.addAction('File [O]',
                                 self.open_file)
         self.fileMenu.addAction('Calendar',
                                 self.open_calendar)
 
         ##### ------------- Experiment -----------------------
-        self.experimentMenu = mainMenu.addMenu('&Recording/Stim')
+        self.experimentMenu = mainMenu.addMenu('  * &Recording/Stim')
         # --
         self.experimentMenu.addAction('&Multimodal',
                                       self.launch_multimodal_rec)
@@ -95,7 +99,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                       self.launch_WebCam)
 
         # ##### ------------------------------------------------
-        self.preprocessingMenu = mainMenu.addMenu('&Preprocessing')
+        self.preprocessingMenu = mainMenu.addMenu('  ** &Preprocessing')
         # --
         self.preprocessingMenu.addAction('&Pupil',
                                          self.launch_pupil_tracking_PP)
@@ -103,7 +107,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                          self.launch_whisking_tracking_PP)
 
         # ##### ------------------------------------------------
-        self.assemblingMenu = mainMenu.addMenu('Assembling')
+        self.assemblingMenu = mainMenu.addMenu('  * Assembling')
         # --
         self.assemblingMenu.addAction('Build NWB',
                                       self.build_NWB)
@@ -111,11 +115,11 @@ class MainWindow(QtWidgets.QMainWindow):
                                       self.add_imaging)
 
         # ##### ------------------------------------------------
-        self.visualizationMenu = mainMenu.addAction('&Visualization', 
+        self.visualizationMenu = mainMenu.addAction('  ** &Visualization', 
                                                     self.visualization)
 
         # ##### ------------------------------------------------
-        self.analysisMenu = mainMenu.addMenu('&Analysis')
+        self.analysisMenu = mainMenu.addMenu('  *** &Analysis')
         # --
         self.analysisMenu.addAction('&Behavior',
                                     self.behavior)
@@ -127,16 +131,10 @@ class MainWindow(QtWidgets.QMainWindow):
                                     self.functional_maps)
 
         # ##### ------------------------------------------------
-        self.otherMenu = mainMenu.addMenu('Others')
+        self.otherMenu = mainMenu.addMenu('     Others')
         # --
-        self.otherMenu.addMenu('&Transfer Data')
-
-        # ##### ------------------------------------------------
-        mainMenu.addAction('&Quit', self.quit)
-
-        # ===================================================
-        # ============   GRID LAYOUT ========================
-        # ===================================================
+        self.otherMenu.addMenu('Transfer Data')
+        self.otherMenu.addAction('Quit', self.quit)
 
         self.show()
    
