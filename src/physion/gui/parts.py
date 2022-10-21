@@ -4,20 +4,57 @@ import sip
 import pyqtgraph as pg
 import numpy as np
 
-smallfont = QtGui.QFont()
-smallfont.setPointSize(7)
-verysmallfont = QtGui.QFont()
+smallfont, verysmallfont = QtGui.QFont(), QtGui.QFont()
 verysmallfont.setPointSize(5)
+smallfont.setPointSize(7)
 
-def open_file(self):
-    print('open file')
+def open_file(self,
+              folder=False):
 
-def cleanup_widgets(self):
-    for wdgt in self.WIDGETS:
-        self.layout.removeWidget(wdgt)
-        sip.delete(wdgt)
-        wdgt = None
-    self.WIDGETS = []
+    filename, _ = QtWidgets.QFileDialog.getOpenFileName(self,
+                 "Open Multimodal Experimental Recording (NWB file) ",
+                 os.path.join(os.path.expanduser('~'), 'DATA'),
+                 # (FOLDERS[self.fbox.currentText()] if self.fbox.currentText() in FOLDERS else os.path.join(os.path.expanduser('~'), 'DATA')),
+                 filter="*.nwb")
+
+    if filename!='':
+        self.filename = filename
+    else:
+        print('file not loaded ...')
+
+
+def load_folder(self):
+    # self.lastBox.setChecked(False)
+    folder = QtGui.QFileDialog.getExistingDirectory(self,\
+                                   "Choose datafolder",
+                                    FOLDERS[self.folderB.currentText()])
+    if folder!='':
+        self.datafolder = folder
+    else:
+        print('data-folder not set !')
+
+def delete_layout(self, layout):
+
+    while layout.count():
+        item = layout.takeAt(0)
+        widget = item.widget()
+        if widget is not None:
+            widget.deleteLater()
+        else:
+            self.deleteLayout(item.layout())
+
+    sip.delete(layout)
+
+def cleanup_tab(self, tab):
+
+    delete_layout(self, tab.layout) # delete
+    tab.layout = QtWidgets.QGridLayout() # re-create
+
+def refresh_tab(self, tab):
+
+    tab.setLayout(tab.layout)
+    self.tabWidget.setCurrentWidget(tab)
+    self.show()
 
 def add_keyboard_shortcuts(self):
 

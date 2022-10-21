@@ -1,5 +1,7 @@
-import sip
 from PyQt5 import QtGui, QtWidgets, QtCore
+
+import pdb # for DEBUG
+
 
 class MainWindow(QtWidgets.QMainWindow):
     
@@ -7,22 +9,25 @@ class MainWindow(QtWidgets.QMainWindow):
             add_keyboard_shortcuts, set_status_bar,\
             max_view, min_view, change_window_size,\
             init_main_widget_grid, add_widget,\
-            cleanup_widgets
+            cleanup_tab, refresh_tab
 
     from physion.dataviz.gui import visualization, update_frame
+
+    from physion.analysis.gui import trial_averaging
 
     def __init__(self, app,
                  args=None,
                  width=850, height=700,
                  button_height = 20):
 
-        self.app, self.args = app, args
+        # self.app, self.args = app, args
 
         super(MainWindow, self).__init__()
 
         self.setWindowTitle('Physion -- Vision Physiology Software')
 
-        # ========================================
+        self.add_keyboard_shortcuts()
+
         # ============   PRESETS   ===============
         # ========================================
 
@@ -31,13 +36,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.setGeometry(50, 100, width, height) 
        
-        self.add_keyboard_shortcuts()
         self.set_status_bar()
         self.minView = True
-
-        # keep/store all widgets to be able to destroy them
-        self.WIDGETS = {'tab1':{}, 'tab2':{},
-                        'tab3':{}, 'tab4':{}}
 
         # =================================================
         # ============  MAIN LAYOUT WITH TABS =============
@@ -52,16 +52,26 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cwidget.setLayout(self.layout)
 
         # tabs
-        self.tabs = QtWidgets.QTabWidget()
-        self.tabs.setTabPosition(QtWidgets.QTabWidget.West)
-        self.tabs.setStyleSheet("QTabBar::tab {min-height: %ipx; max-height: %ipx;}" % (height/3, 1000))
-        self.tabs.tabBar().setExpanding(True) # NOT WORKING
+        self.tabWidget, self.tabs = QtWidgets.QTabWidget(), []
+        self.tabWidget.setTabPosition(QtWidgets.QTabWidget.West)
+        s = "QTabBar::tab {min-height: %ipx; max-height: %ipx;}" %\
+                (height/3, 1000)
+        self.tabWidget.setStyleSheet(s)
+        self.tabWidget.tabBar().setExpanding(True) # NOT WORKING
 
         # Initialize and add tabs
-        self.tab1, self.tab2, self.tab3, self.tab4 = QtWidgets.QWidget(),\
-                QtWidgets.QWidget(), QtWidgets.QWidget(), QtWidgets.QWidget()
-        for i, tab in enumerate([self.tab1, self.tab2, self.tab3, self.tab4]):
-            self.tabs.addTab(tab, (i+1)*'*')
+        for i in range(4):
+            self.tabs.append(QtWidgets.QWidget())
+            self.tabs[-1].layout = QtWidgets.QGridLayout()
+            self.tabWidget.addTab(self.tabs[-1], (i+1)*'*')
+            self.tabs[-1].setLayout(self.tabs[-1].layout)
+
+        # self.tab1, self.tab2, self.tab3, self.tab4 = QtWidgets.QWidget(),\
+                # QtWidgets.QWidget(), QtWidgets.QWidget(), QtWidgets.QWidget()
+        # for i, tab in enumerate([self.tab1, self.tab2, self.tab3, self.tab4]):
+            # self.tabWidget.addTab(tab, (i+1)*'*')
+            # tab.layout = QtWidgets.QGridLayout()
+            # tab.setLayout(tab.layout)
 
         # Create first tab
         # self.tab1.layout = QtWidgets.QVBoxLayout(self)
@@ -70,22 +80,22 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.tab1.setLayout(self.tab1.layout)
         
         # Add tabs to widget
-        self.layout.addWidget(self.tabs)
+        self.layout.addWidget(self.tabWidget)
 
         # ===================================================
         # ============   MENU BAR   =========================
         # ===================================================
-        mainMenu = self.menuBar()
+        self.mainMenu = self.menuBar()
 
         ##### ------------- Experiment -----------------------
-        self.fileMenu = mainMenu.addMenu('  * Open ')
+        self.fileMenu = self.mainMenu.addMenu('  * Open ')
         self.fileMenu.addAction('File [O]',
                                 self.open_file)
         self.fileMenu.addAction('Calendar',
                                 self.open_calendar)
 
         ##### ------------- Experiment -----------------------
-        self.experimentMenu = mainMenu.addMenu('  * &Recording/Stim')
+        self.experimentMenu = self.mainMenu.addMenu('  * &Recording/Stim')
         # --
         self.experimentMenu.addAction('&Multimodal',
                                       self.launch_multimodal_rec)
@@ -99,7 +109,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                       self.launch_WebCam)
 
         # ##### ------------------------------------------------
-        self.preprocessingMenu = mainMenu.addMenu('  ** &Preprocessing')
+        self.preprocessingMenu = self.mainMenu.addMenu('  ** &Preprocessing')
         # --
         self.preprocessingMenu.addAction('&Pupil',
                                          self.launch_pupil_tracking_PP)
@@ -107,7 +117,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                          self.launch_whisking_tracking_PP)
 
         # ##### ------------------------------------------------
-        self.assemblingMenu = mainMenu.addMenu('  * Assembling')
+        self.assemblingMenu = self.mainMenu.addMenu('  * Assembling')
         # --
         self.assemblingMenu.addAction('Build NWB',
                                       self.build_NWB)
@@ -115,11 +125,11 @@ class MainWindow(QtWidgets.QMainWindow):
                                       self.add_imaging)
 
         # ##### ------------------------------------------------
-        self.visualizationMenu = mainMenu.addAction('  ** &Visualization', 
+        self.visualizationMenu = self.mainMenu.addAction('  ** &Visualization', 
                                                     self.visualization)
 
         # ##### ------------------------------------------------
-        self.analysisMenu = mainMenu.addMenu('  *** &Analysis')
+        self.analysisMenu = self.mainMenu.addMenu('  *** &Analysis')
         # --
         self.analysisMenu.addAction('&Behavior',
                                     self.behavior)
@@ -131,7 +141,7 @@ class MainWindow(QtWidgets.QMainWindow):
                                     self.functional_maps)
 
         # ##### ------------------------------------------------
-        self.otherMenu = mainMenu.addMenu('     Others')
+        self.otherMenu = self.mainMenu.addMenu('     Others')
         # --
         self.otherMenu.addMenu('Transfer Data')
         self.otherMenu.addAction('Quit', self.quit)
@@ -170,9 +180,6 @@ class MainWindow(QtWidgets.QMainWindow):
         print('TO BE DONE')
 
     def behavior(self):
-        pass
-
-    def trial_averaging(self):
         pass
 
     def behavioral_modulation(self):

@@ -5,14 +5,17 @@ def update_frame(self):
     pass
 
 
-def visualization(self):
+def visualization(self, 
+                  tab_id=0):
 
-    self.cleanup_widgets()
+    tab = self.tabs[tab_id]
+
+    self.cleanup_tab(tab)
 
     self.winTrace = pg.GraphicsLayoutWidget()
-    self.layout.addWidget(self.winTrace)
+    tab.layout.addWidget(self.winTrace)
 
-    build_slider(self, self.layout)
+    build_slider(self, tab.layout)
 
     # self.init_panels()
     
@@ -24,6 +27,8 @@ def visualization(self):
     self.xaxis = self.plot.getAxis('bottom')
     self.scatter = pg.ScatterPlotItem()
     self.plot.addItem(self.scatter)
+
+    self.refresh_tab(tab)
 
 
     # Layout122 = QtWidgets.QHBoxLayout()

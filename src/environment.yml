@@ -1,0 +1,31 @@
+name: physion
+channels:
+  - conda-forge
+dependencies:
+  - python=3.7.10
+  - pip=21.1.2
+  - mkl_fft=1.0.10
+  - mkl=2019.3
+  - tbb
+  - numpy=1.18.5
+  - numba=0.48.0
+  - scipy=1.6.3
+  - scikit-learn=0.24.2
+  - scikit-image=0.18.1
+  - ruamel
+  - ruamel.yaml
+  - pathlib
+  - matplotlib=3.4.2
+  - jupyter
+  - jupytext=1.14.0
+  - pynwb=2.0.0
+  - ffmpeg
+  - pip:
+    - pyqt5
+    - pyqt5.sip
+    - pyqtgraph==0.12.1
+    - suite2p==0.10.2
+    - psychopy==2021.1.1
+    - opencv-python-headless==4.5.5.62
+    - svgutils
+    - pygame==2.1.2
