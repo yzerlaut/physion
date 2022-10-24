@@ -1,18 +1,21 @@
 from PyQt5 import QtGui, QtWidgets, QtCore
 
-import pdb # for DEBUG
-
+# import pdb # for DEBUG
 
 class MainWindow(QtWidgets.QMainWindow):
     
+    # "parts" to build the GUI 
     from physion.gui.parts import open_file,\
             add_keyboard_shortcuts, set_status_bar,\
             max_view, min_view, change_window_size,\
             init_main_widget_grid, add_widget,\
             cleanup_tab, refresh_tab
 
-    from physion.dataviz.gui import visualization, update_frame
+    # data visualization tools
+    from physion.dataviz.gui import visualization, update_frame,\
+            select_visualStim, select_imgDisplay
 
+    # analysis tools
     from physion.analysis.gui import trial_averaging
 
     def __init__(self, app,
@@ -28,11 +31,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.add_keyboard_shortcuts()
 
+        # ========================================
         # ============   PRESETS   ===============
         # ========================================
 
-        self.settings = {'Npoints':100,
-                         '_':True}
+        self.nWidgetCol, self.nWidgetRow = 12, 20
 
         self.setGeometry(50, 100, width, height) 
        
@@ -66,19 +69,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.tabWidget.addTab(self.tabs[-1], (i+1)*'*')
             self.tabs[-1].setLayout(self.tabs[-1].layout)
 
-        # self.tab1, self.tab2, self.tab3, self.tab4 = QtWidgets.QWidget(),\
-                # QtWidgets.QWidget(), QtWidgets.QWidget(), QtWidgets.QWidget()
-        # for i, tab in enumerate([self.tab1, self.tab2, self.tab3, self.tab4]):
-            # self.tabWidget.addTab(tab, (i+1)*'*')
-            # tab.layout = QtWidgets.QGridLayout()
-            # tab.setLayout(tab.layout)
-
-        # Create first tab
-        # self.tab1.layout = QtWidgets.QVBoxLayout(self)
-        # self.pushButton1 = QtWidgets.QPushButton("PyQt5 button")
-        # self.tab1.layout.addWidget(self.pushButton1)
-        # self.tab1.setLayout(self.tab1.layout)
-        
         # Add tabs to widget
         self.layout.addWidget(self.tabWidget)
 

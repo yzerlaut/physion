@@ -6,26 +6,26 @@ dependencies:
   - pip=21.1.2
   - mkl_fft=1.0.10
   - mkl=2019.3
-  - tbb
+  - tbb=2021.5.0
   - numpy=1.18.5
   - numba=0.48.0
   - scipy=1.6.3
   - scikit-learn=0.24.2
   - scikit-image=0.18.1
-  - ruamel
-  - ruamel.yaml
-  - pathlib
+  - ruamel=1.0
+  - ruamel.yaml=0.17.21
+  - pathlib=1.0.1
   - matplotlib=3.4.2
-  - jupyter
+  - jupyter=1.0.0
   - jupytext=1.14.0
   - pynwb=2.0.0
   - ffmpeg
   - pip:
-    - pyqt5
-    - pyqt5.sip
+    - pyqt5==5.15.6
+    - pyqt5.sip==12.9.1
     - pyqtgraph==0.12.1
     - suite2p==0.10.2
     - psychopy==2021.1.1
     - opencv-python-headless==4.5.5.62
-    - svgutils
+    - svgutils==0.3.4
     - pygame==2.1.2

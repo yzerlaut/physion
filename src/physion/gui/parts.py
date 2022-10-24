@@ -5,8 +5,8 @@ import pyqtgraph as pg
 import numpy as np
 
 smallfont, verysmallfont = QtGui.QFont(), QtGui.QFont()
-verysmallfont.setPointSize(5)
-smallfont.setPointSize(7)
+verysmallfont.setPointSize(9)
+smallfont.setPointSize(11)
 
 def open_file(self,
               folder=False):
