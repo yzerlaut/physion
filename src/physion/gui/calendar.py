@@ -1,7 +1,11 @@
-import datetime
+import datetime, os, string
+import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 import physion
+
+# from the "utils" module:
+FOLDERS = physion.utils.paths.FOLDERS
 
 def init_calendar(self,
                   tab_id=0,
@@ -22,7 +26,7 @@ def init_calendar(self,
     self.folder_default_key = '  [root datafolder]'
     self.folderBox.addItem(self.folder_default_key)
     self.folderBox.setCurrentIndex(0)
-    for folder in physion.utils.paths.FOLDERS.keys():
+    for folder in FOLDERS.keys():
         self.folderBox.addItem(folder)
     self.add_side_widget(tab.layout, self.folderBox)
 
@@ -60,7 +64,8 @@ def init_calendar(self,
     # setting an highlight format
     self.highlight_format = QtGui.QTextCharFormat()
     self.highlight_format.setBackground(\
-            self.cal.palette().brush(QtGui.QPalette.Link))
+         self.cal.palette().brush(QtGui.QPalette.Highlight))
+         # self.cal.palette().brush(QtGui.QPalette.Link))
     self.highlight_format.setForeground(\
             self.cal.palette().color(QtGui.QPalette.BrightText))
 
@@ -80,6 +85,17 @@ def init_calendar(self,
     # self.folderBox.setCurrentIndex(0)
     tab.layout.addWidget(self.datafileBox,
                          nCalendarRow+1, 0, 1, self.nWidgetCol)
+
+
+    #####################################
+    #######      Adding notes  ##########
+    #####################################
+
+    self.notes = QtWidgets.QLabel('\n[exp info]'+5*'\n', self)
+    tab.layout.addWidget(self.notes,
+                         nCalendarRow+2, 0,
+                self.nWidgetRow-self.side_wdgt_length, self.nWidgetCol)
+
 
 
     self.refresh_tab(tab)
@@ -109,12 +125,16 @@ def reinit_calendar(self, min_date=(2020, 8, 1), max_date=None):
         
     
 def scan_folder(self):
+    """
+    Looping over all files in a root folder recursively 
 
+    """
     print('inspecting the folder "%s" [...]' %\
-            self.FOLDERS[self.folderBox.currentText()])
+            FOLDERS[self.folderBox.currentText()])
 
-    FILES0 = get_files_with_extension(FOLDERS[self.fbox.currentText()],
-                                      extension='.nwb', recursive=True)
+    FILES0 = physion.utils.files.get_files_with_extension(\
+                            FOLDERS[self.folderBox.currentText()],
+                            extension='.nwb', recursive=True)
 
     TIMES, DATES, FILES = [], [], []
     for f in FILES0:
@@ -125,26 +145,43 @@ def scan_folder(self):
             FILES.append(f)
             
     TIMES, DATES, FILES = np.array(TIMES), np.array(DATES), np.array(FILES)
-    NDATES = np.array([datetime.date(*[int(dd) for dd in date.split('_')]).toordinal() for date in DATES])
+    NDATES = np.array([datetime.date(*[int(dd)\
+                            for dd in date.split('_')]).toordinal()\
+                            for date in DATES])
     self.FILES_PER_DAY = {}
     
-    guiparts.reinit_calendar(self,
-                             min_date= tuple(int(dd) for dd in DATES[np.argmin(NDATES)].split('_')),
-                             max_date= tuple(int(dd) for dd in DATES[np.argmax(NDATES)].split('_')))
+    self.reinit_calendar(min_date= tuple(int(dd)\
+                                    for dd in DATES[np.argmin(NDATES)].split('_')),
+                         max_date= tuple(int(dd)\
+                                    for dd in DATES[np.argmax(NDATES)].split('_')))
     for d in np.unique(DATES):
         try:
-            self.cal.setDateTextFormat(QtCore.QDate(datetime.date(*[int(dd) for dd in d.split('_')])),
+            self.cal.setDateTextFormat(\
+                    QtCore.QDate(datetime.date(*[int(dd) for dd in d.split('_')])),
                                        self.highlight_format)
             day_cond = (DATES==d)
             time_sorted = np.argsort(TIMES[day_cond])
-            self.FILES_PER_DAY[d] = [os.path.join(FOLDERS[self.fbox.currentText()], f)\
+            self.FILES_PER_DAY[d] = [os.path.join(FOLDERS[self.folderBox.currentText()], f)\
                                      for f in np.array(FILES)[day_cond][time_sorted]]
         except BaseException as be:
             print(be)
             print('error for date %s' % d)
         
     print(' -> found n=%i datafiles ' % len(FILES))
-    pass
+
+def preload_datafolder(filename):
+    """
+    uses the "metadata_only" option of the read_NWB.Data class
+    to load infos about datafile fast
+    """
+    data = physion.analysis.read_NWB.Data(filename,\
+                            metadata_only=True, with_tlim=False)
+    if data.nwbfile is not None:
+        return {'display_name' : data.df_name,
+                'subject': data.nwbfile.subject.description}
+    else:
+        return {'display_name': '', 'subject':''}
+
 
 def update_datafileBox_list(self):
     self.datafileBox.clear()
@@ -157,7 +194,7 @@ def update_datafileBox_list(self):
         self.datafileBox.addItem(' ...' +70*' '+'(select a data-folder) ')
         for fn in self.list_protocol:
             self.datafileBox.addItem(\
-                        self.preload_datafolder(fn)['display_name'])
+                    preload_datafolder(fn)['display_name'])
 
 def pick_date(self):
     date = self.cal.selectedDate()
@@ -173,7 +210,13 @@ def pick_subject(self):
     pass
 
 def pick_datafile(self):
-    pass
+    
+    self.datafile = self.list_protocol[self.datafileBox.currentIndex()-1]
+
+    self.data = physion.analysis.read_NWB.Data(self.datafile)
+
+    self.notes.setText(self.data.description)
+    # self.visualization()
 
 
 

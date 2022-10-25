@@ -120,7 +120,6 @@ def set_status_bar(self):
     self.statusBar.showMessage('   [...] ')
 
     
-
 def add_buttons(self, Layout):
 
     self.styleUnpressed = ("QPushButton {Text-align: left; "

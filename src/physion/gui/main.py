@@ -25,6 +25,11 @@ class MainWindow(QtWidgets.QMainWindow):
     # data visualization tools
     from physion.dataviz.gui import visualization, update_frame,\
             select_visualStim, select_imgDisplay
+    from physion.dataviz.FOV import init_FOV
+    from physion.dataviz.plots import raw_data_plot
+
+    # data analysis tools
+    from physion.analysis.gui import trial_averaging
 
     # data analysis tools
     from physion.analysis.gui import trial_averaging
@@ -37,6 +42,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.app, self.args = app, args
 
         super(MainWindow, self).__init__()
+        self.data = None
 
         self.setWindowTitle('Physion -- Vision Physiology Software')
 
@@ -99,7 +105,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.init_calendar()
 
     def refresh(self):
-        self.init_calendar()
+        if self.tabWidget.currentWidget()==self.tabs[1]:
+            tzoom = self.plot.getAxis('bottom').range
+            self.raw_data_plot(tzoom)
+        else:
+            print(self.tabWidget.currentWidget())
 
     def process(self):
         self.init_calendar()

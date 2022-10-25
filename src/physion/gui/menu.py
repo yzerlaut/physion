@@ -4,12 +4,13 @@ def build_menu(self):
 
     self.mainMenu = self.menuBar()
 
-    ##### ------------- Experiment -----------------------
+    ##### ------------- File  -----------------------
     self.fileMenu = self.mainMenu.addMenu('  * &Open ')
     self.fileMenu.addAction('&File [O]',
                             self.open_file)
     self.fileMenu.addAction('&Calendar',
                             self.init_calendar)
+    self.fileMenu.addAction('&Quit', self.quit)
 
     ##### ------------- Experiment -----------------------
     self.experimentMenu = self.mainMenu.addMenu('  * &Recording/Stim')
@@ -25,7 +26,7 @@ def build_menu(self):
     self.experimentMenu.addAction('&Webcam',
                                   self.launch_WebCam)
 
-    # ##### ------------------------------------------------
+    ##### --------   Preprocessing -----------------------
     self.preprocessingMenu = self.mainMenu.addMenu('  ** &Preprocessing')
     # --
     self.preprocessingMenu.addAction('&Pupil',
@@ -33,7 +34,7 @@ def build_menu(self):
     self.preprocessingMenu.addAction('&Whisking',
                                      self.launch_whisking_tracking_PP)
 
-    # ##### ------------------------------------------------
+    ##### ---------  Assembling   ------------------------
     self.assemblingMenu = self.mainMenu.addMenu('  * Assembling')
     # --
     self.assemblingMenu.addAction('Build NWB',
@@ -41,11 +42,11 @@ def build_menu(self):
     self.assemblingMenu.addAction('Add Imaging',
                                   self.add_imaging)
 
-    # ##### ------------------------------------------------
+    # ##### --------- Visualization  -----------------------
     self.visualizationMenu = self.mainMenu.addAction('  ** &Visualization', 
                                                 self.visualization)
 
-    # ##### ------------------------------------------------
+    # ##### ------- Analysis -------------------------------
     self.analysisMenu = self.mainMenu.addMenu('  *** &Analysis')
     # --
     self.analysisMenu.addAction('&Behavior',
@@ -57,9 +58,8 @@ def build_menu(self):
     self.analysisMenu.addAction('&Functional Maps',
                                 self.functional_maps)
 
-    # ##### ------------------------------------------------
+    ##### ------   Other   -------------
     self.otherMenu = self.mainMenu.addMenu('     Others')
     # --
     self.otherMenu.addMenu('Transfer Data')
-    self.otherMenu.addAction('Quit', self.quit)
 
