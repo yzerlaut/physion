@@ -2,7 +2,6 @@ import os
 
 python_path = 'python'
 
-
 possible_conda_dir_lists = [os.path.join(os.path.expanduser('~'), 'miniconda3'),
                             os.path.join(os.path.expanduser('~'), 'anaconda3'),
                             os.path.join(os.path.expanduser('~'), '.conda'),

@@ -119,61 +119,6 @@ def set_status_bar(self):
     self.setStatusBar(self.statusBar)
     self.statusBar.showMessage('   [...] ')
 
-def remove_size_props(o, fcol=False, button=False, image=False):
-    o.setMinimumHeight(0)
-    o.setMinimumWidth(0)
-    o.setMaximumHeight(int(1e5))
-    if fcol:
-        o.setMaximumWidth(250) # just a max width for the first column
-    elif button:
-        o.setMaximumWidth(250/5) # just a max width for the first column
-    elif image:
-        # o.setMaximumWidth(500) # just a max width for the first column
-        o.setMaximumHeight(500) # just a max width for the first column
-    else:
-        o.setMaximumWidth(int(1e5))
-
-
-def create_calendar(self, Layout, min_date=(2020, 8, 1)):
-    
-    self.cal = QtWidgets.QCalendarWidget(self)
-    self.cal.setFont(verysmallfont)
-    self.cal.setMinimumHeight(160)
-    self.cal.setMaximumHeight(160)
-    self.cal.setMinimumWidth(265)
-    self.cal.setMaximumWidth(265)
-    self.cal.setMinimumDate(QtCore.QDate(datetime.date(*min_date)))
-    self.cal.setMaximumDate(QtCore.QDate(datetime.date.today()+datetime.timedelta(1)))
-    self.cal.adjustSize()
-    self.cal.clicked.connect(self.pick_date)
-    Layout.addWidget(self.cal)
-
-    # setting an highlight format
-    self.highlight_format = QtGui.QTextCharFormat()
-    self.highlight_format.setBackground(self.cal.palette().brush(QtGui.QPalette.Link))
-    self.highlight_format.setForeground(self.cal.palette().color(QtGui.QPalette.BrightText))
-
-    self.cal.setSelectedDate(datetime.date.today())
-    
-def reinit_calendar(self, min_date=(2020, 8, 1), max_date=None):
-    
-    day, i = datetime.date(*min_date), 0
-    while day!=datetime.date.today():
-        self.cal.setDateTextFormat(QtCore.QDate(day),
-                                   QtGui.QTextCharFormat())
-        day = day+datetime.timedelta(1)
-    day = day+datetime.timedelta(1)
-    self.cal.setDateTextFormat(QtCore.QDate(day),
-                               QtGui.QTextCharFormat())
-    self.cal.setMinimumDate(QtCore.QDate(datetime.date(*min_date)))
-    
-    if max_date is not None:
-        self.cal.setMaximumDate(QtCore.QDate(datetime.date(*max_date)+datetime.timedelta(1)))
-        self.cal.setSelectedDate(datetime.date(*max_date)+datetime.timedelta(1))
-    else:
-        self.cal.setMaximumDate(QtCore.QDate(datetime.date.today()+datetime.timedelta(1)))
-        self.cal.setSelectedDate(datetime.date.today())
-        
     
 
 def add_buttons(self, Layout):
@@ -261,28 +206,32 @@ def add_buttons(self, Layout):
 
 
 def add_side_widget(self, layout, wdgt,
+                    side_wdgt_length=None,
                     spec='None'):
+
+    if side_wdgt_length is None:
+        side_wdgt_length = self.side_wdgt_length
 
     if 'small' in spec:
         wdgt.setFixedWidth(70)
 
     # if spec=='shift-right':
-    #     self.layout.addWidget(wdgt, self.i_wdgt-1, self.side_wdgt_length,
-    #                           1, self.side_wdgt_length+1)
+    #     self.layout.addWidget(wdgt, self.i_wdgt-1, side_wdgt_length,
+    #                           1, side_wdgt_length+1)
     if spec=='small-left':
         layout.addWidget(wdgt, self.i_wdgt, 0, 1, 1)
     elif spec=='small-middle':
         layout.addWidget(wdgt, self.i_wdgt, 1, 1, 1)
     elif spec=='large-left':
-        layout.addWidget(wdgt, self.i_wdgt, 0, 1, self.side_wdgt_length-1)
+        layout.addWidget(wdgt, self.i_wdgt, 0, 1, side_wdgt_length-1)
     elif spec=='small-right':
-        layout.addWidget(wdgt, self.i_wdgt, self.side_wdgt_length-1, 1, 1)
+        layout.addWidget(wdgt, self.i_wdgt, side_wdgt_length-1, 1, 1)
         self.i_wdgt += 1
     elif spec=='large-right':
-        layout.addWidget(wdgt, self.i_wdgt, 1, 1, self.side_wdgt_length-1)
+        layout.addWidget(wdgt, self.i_wdgt, 1, 1, side_wdgt_length-1)
         self.i_wdgt += 1
     else:
-        layout.addWidget(wdgt, self.i_wdgt, 0, 1, self.side_wdgt_length)
+        layout.addWidget(wdgt, self.i_wdgt, 0, 1, side_wdgt_length)
         self.i_wdgt += 1
 
     

@@ -14,12 +14,13 @@ class MainWindow(QtWidgets.QMainWindow):
             add_keyboard_shortcuts, set_status_bar,\
             max_view, min_view, change_window_size,\
             add_side_widget, cleanup_tab, refresh_tab
+
     # GUI menu
     from physion.gui.menu import build_menu
 
     # calendar interface
     from physion.gui.calendar import init_calendar, pick_date,\
-            reinit_calendar
+            reinit_calendar, pick_subject, scan_folder, pick_datafile
 
     # data visualization tools
     from physion.dataviz.gui import visualization, update_frame,\
@@ -45,7 +46,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # GRID specs in terms of Columns and Rows
         self.nWidgetCol, self.nWidgetRow = 12, 20
-        self.side_wdgt_length = 3
+        self.side_wdgt_length = 4
 
         self.setGeometry(50, 100, width, height) 
        
