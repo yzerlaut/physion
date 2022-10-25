@@ -59,42 +59,46 @@ def refresh_tab(self, tab):
     self.tabWidget.setCurrentWidget(tab)
     self.show()
 
-def add_keyboard_shortcuts(self):
+def add_keyboard_shortcuts(self,
+                           pre_key=''):
+    """
+    call this with pre_key='Ctrl+' to add the Ctrl key in the sequence
+    """
 
     ##############################
     ##### keyboard shortcuts #####
     ##############################
 
     # adding a few general keyboard shortcut
-    self.openSc = QtWidgets.QShortcut(QtGui.QKeySequence('O'), self)
+    self.openSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sO'%pre_key), self)
     self.openSc.activated.connect(self.open_file)
     
-    # self.spaceSc = QtWidgets.QShortcut(QtGui.QKeySequence('Space'), self)
-    # self.spaceSc.activated.connect(self.hitting_space)
+    self.spaceSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sSpace'%pre_key), self)
+    self.spaceSc.activated.connect(self.hitting_space)
 
-    # self.saveSc = QtWidgets.QShortcut(QtGui.QKeySequence('S'), self)
+    # self.saveSc = QtWidgets.QShortcut(QtGui.QKeySequence('S%s'%pre_key), self)
     # self.saveSc.activated.connect(self.save)
     
-    # self.add2Bash = QtWidgets.QShortcut(QtGui.QKeySequence('B'), self)
+    # self.add2Bash = QtWidgets.QShortcut(QtGui.QKeySequence('B%s'%pre_key), self)
     # self.add2Bash.activated.connect(self.add_to_bash_script)
     
-    self.quitSc = QtWidgets.QShortcut(QtGui.QKeySequence('Q'), self)
+    self.quitSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sQ'%pre_key), self)
     self.quitSc.activated.connect(self.quit)
     
-    # self.refreshSc = QtWidgets.QShortcut(QtGui.QKeySequence('R'), self)
-    # self.refreshSc.activated.connect(self.refresh)
+    self.refreshSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sR'%pre_key), self)
+    self.refreshSc.activated.connect(self.refresh)
     
-    # self.homeSc = QtWidgets.QShortcut(QtGui.QKeySequence('I'), self)
+    # self.homeSc = QtWidgets.QShortcut(QtGui.QKeySequence('I%s'%pre_key), self)
     # self.homeSc.activated.connect(self.back_to_initial_view)
     
-    self.maxSc = QtWidgets.QShortcut(QtGui.QKeySequence('M'), self)
+    self.maxSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sM'%pre_key), self)
     self.maxSc.activated.connect(self.change_window_size)
     
-    # self.processSc = QtWidgets.QShortcut(QtGui.QKeySequence('P'), self)
-    # self.processSc.activated.connect(self.process)
+    self.processSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sP'%pre_key), self)
+    self.processSc.activated.connect(self.process)
 
-    # self.fitSc = QtWidgets.QShortcut(QtGui.QKeySequence('F'), self)
-    # self.fitSc.activated.connect(self.fit)
+    self.fitSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sF'%pre_key), self)
+    self.fitSc.activated.connect(self.fit)
 
 def change_window_size(self):
     if self.minView:
