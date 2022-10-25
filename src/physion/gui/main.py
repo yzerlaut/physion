@@ -1,21 +1,29 @@
-from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
 # import pdb # for DEBUG
 
 class MainWindow(QtWidgets.QMainWindow):
+    """
+    Window that hosts the main GUI and the shortcuts of the program
+
+    Most of the class attributes are imported from the "gui" parts of the 
+    """
     
     # "parts" to build the GUI 
     from physion.gui.parts import open_file,\
             add_keyboard_shortcuts, set_status_bar,\
             max_view, min_view, change_window_size,\
-            init_main_widget_grid, add_widget,\
-            cleanup_tab, refresh_tab
+            add_side_widget, cleanup_tab, refresh_tab
+
+    # calendar interface
+    from physion.gui.calendar import init_calendar, pick_date,\
+            reinit_calendar
 
     # data visualization tools
     from physion.dataviz.gui import visualization, update_frame,\
             select_visualStim, select_imgDisplay
 
-    # analysis tools
+    # data analysis tools
     from physion.analysis.gui import trial_averaging
 
     def __init__(self, app,
@@ -35,7 +43,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # ============   PRESETS   ===============
         # ========================================
 
+        # GRID specs in terms of Columns and Rows
         self.nWidgetCol, self.nWidgetRow = 12, 20
+        self.side_wdgt_length = 3
 
         self.setGeometry(50, 100, width, height) 
        
@@ -62,7 +72,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabWidget.setStyleSheet(s)
         self.tabWidget.tabBar().setExpanding(True) # NOT WORKING
 
-        # Initialize and add tabs
+        # Initialize and add tabs:
         for i in range(4):
             self.tabs.append(QtWidgets.QWidget())
             self.tabs[-1].layout = QtWidgets.QGridLayout()
@@ -78,11 +88,11 @@ class MainWindow(QtWidgets.QMainWindow):
         self.mainMenu = self.menuBar()
 
         ##### ------------- Experiment -----------------------
-        self.fileMenu = self.mainMenu.addMenu('  * Open ')
-        self.fileMenu.addAction('File [O]',
+        self.fileMenu = self.mainMenu.addMenu('  * &Open ')
+        self.fileMenu.addAction('&File [O]',
                                 self.open_file)
-        self.fileMenu.addAction('Calendar',
-                                self.open_calendar)
+        self.fileMenu.addAction('&Calendar',
+                                self.init_calendar)
 
         ##### ------------- Experiment -----------------------
         self.experimentMenu = self.mainMenu.addMenu('  * &Recording/Stim')
@@ -138,9 +148,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.show()
    
-
-    def open_calendar(self):
-        print('TO BE DONE')
 
     def launch_multimodal_rec(self):
         print('TO BE DONE')

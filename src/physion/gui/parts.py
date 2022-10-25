@@ -50,6 +50,9 @@ def cleanup_tab(self, tab):
     delete_layout(self, tab.layout) # delete
     tab.layout = QtWidgets.QGridLayout() # re-create
 
+    # restart side widget index
+    self.i_wdgt = 0
+
 def refresh_tab(self, tab):
 
     tab.setLayout(tab.layout)
@@ -252,51 +255,32 @@ def add_buttons(self, Layout):
 ################ Widget tools #############
 ###########################################
 
-def init_main_widget_grid(self,
-                           wdgt_length=3,
-                           Ncol_wdgt=20,
-                           Nrow_wdgt=20):
-    
-    self.i_wdgt = 0 # initialize widget counter
-    
-    self.wdgt_length = wdgt_length
-    
-    self.setCentralWidget(self.cwidget)
-    
-    # grid layout
-    self.layout = QtWidgets.QGridLayout()
-    self.cwidget.setLayout(self.layout)
 
-    # self.graphics_layout = pg.GraphicsLayoutWidget()
-    # self.layout.addWidget(self.graphics_layout, 0, self.wdgt_length,
-                          # Nrow_wdgt, Ncol_wdgt)
-    
-
-def add_widget(self, wdgt, spec='None'):
+def add_side_widget(self, layout, wdgt,
+                    spec='None'):
 
     if 'small' in spec:
         wdgt.setFixedWidth(70)
 
     # if spec=='shift-right':
-    #     self.layout.addWidget(wdgt, self.i_wdgt-1, self.wdgt_length,
-    #                           1, self.wdgt_length+1)
+    #     self.layout.addWidget(wdgt, self.i_wdgt-1, self.side_wdgt_length,
+    #                           1, self.side_wdgt_length+1)
     if spec=='small-left':
-        self.layout.addWidget(wdgt, self.i_wdgt, 0, 1, 1)
+        layout.addWidget(wdgt, self.i_wdgt, 0, 1, 1)
     elif spec=='small-middle':
-        self.layout.addWidget(wdgt, self.i_wdgt, 1, 1, 1)
+        layout.addWidget(wdgt, self.i_wdgt, 1, 1, 1)
     elif spec=='large-left':
-        self.layout.addWidget(wdgt, self.i_wdgt, 0, 1, self.wdgt_length-1)
+        layout.addWidget(wdgt, self.i_wdgt, 0, 1, self.side_wdgt_length-1)
     elif spec=='small-right':
-        self.layout.addWidget(wdgt, self.i_wdgt, self.wdgt_length-1, 1, 1)
+        layout.addWidget(wdgt, self.i_wdgt, self.side_wdgt_length-1, 1, 1)
         self.i_wdgt += 1
     elif spec=='large-right':
-        self.layout.addWidget(wdgt, self.i_wdgt, 1, 1, self.wdgt_length-1)
+        layout.addWidget(wdgt, self.i_wdgt, 1, 1, self.side_wdgt_length-1)
         self.i_wdgt += 1
     else:
-        self.layout.addWidget(wdgt, self.i_wdgt, 0, 1, self.wdgt_length)
+        layout.addWidget(wdgt, self.i_wdgt, 0, 1, self.side_wdgt_length)
         self.i_wdgt += 1
 
-    self.WIDGETS.append(wdgt)
     
 ###########################################
 ########## Data-specific tools ############
