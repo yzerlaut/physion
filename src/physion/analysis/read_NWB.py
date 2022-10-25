@@ -15,7 +15,7 @@ class Data:
     
     """
     a basic class to read NWB
-    thought to be the parent for specific applications
+    this class if thought to be the parent for specific applications
     """
     
     def __init__(self, filename,
