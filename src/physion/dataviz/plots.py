@@ -53,7 +53,7 @@ def raw_data_plot(self, tzoom,
     if 'FaceCamera' in self.data.nwbfile.acquisition and self.imgSelect.isChecked():
         
         i0 = convert_time_to_index(self.time, self.data.nwbfile.acquisition['FaceCamera'])
-        self.pFaceimg.setImage(self.data.nwbfile.acquisition['FaceCamera'].data[i0])
+        self.pFaceimg.setImage(self.data.nwbfile.acquisition['FaceCamera'].data[i0].T)
         
         if hasattr(self, 'FaceCameraFrameLevel'):
             self.plot.removeItem(self.FaceCameraFrameLevel)
@@ -64,7 +64,7 @@ def raw_data_plot(self, tzoom,
     if 'FaceMotion' in self.data.nwbfile.acquisition and self.imgSelect.isChecked():
         
         i0 = convert_time_to_index(self.time, self.data.nwbfile.acquisition['FaceMotion'])
-        self.pFacemotionimg.setImage(self.data.nwbfile.acquisition['FaceMotion'].data[i0])
+        self.pFacemotionimg.setImage(self.data.nwbfile.acquisition['FaceMotion'].data[i0].T)
         if hasattr(self, 'FacemotionFrameLevel'):
             self.plot.removeItem(self.FacemotionFrameLevel)
         self.FacemotionFrameLevel = self.plot.plot(self.data.nwbfile.acquisition['FaceMotion'].timestamps[i0]*np.ones(2),
@@ -99,7 +99,7 @@ def raw_data_plot(self, tzoom,
     if 'Pupil' in self.data.nwbfile.acquisition and self.imgSelect.isChecked():
         
         i0 = convert_time_to_index(self.time, self.data.nwbfile.acquisition['Pupil'])
-        img = self.data.nwbfile.acquisition['Pupil'].data[i0]
+        img = self.data.nwbfile.acquisition['Pupil'].data[i0].T
         img = (img-img.min())/(img.max()-img.min())
         self.pPupilimg.setImage(255*(1-np.exp(-img/0.2)))
         if hasattr(self, 'PupilFrameLevel'):
@@ -258,10 +258,12 @@ def raw_data_plot(self, tzoom,
             y = scale_and_position(self, self.data.rawFluo[:,isampling].mean(axis=0), i=iplot) # valid ROIs inside
             self.plot.plot(tt, y, pen=pg.mkPen(color=(0,250,0), linewidth=1))
         else:
+            y = scale_and_position(self, np.arange(2), i=iplot)
+            width = y[1]-y[0]
             for n, ir in enumerate(roiIndices):
-                print(n, ir)
-                y = scale_and_position(self, self.data.rawFluo[ir,isampling], i=iplot)+n/2.
-                self.plot.plot(tt, y, pen=pg.mkPen(color=np.random.randint(255, size=3), linewidth=1))
+                F= self.data.rawFluo[ir,isampling] 
+                loc = y[0]+n*width/len(roiIndices)
+                self.plot.plot(tt, loc+width*(F-F.min())/(F.max()-F.min())/len(roiIndices), pen=pg.mkPen(color=(0, 100, 0)), linewidth=1)
         iplot += 1
 
     # ## -------- Visual Stimulation --------- ##
@@ -270,23 +272,23 @@ def raw_data_plot(self, tzoom,
 
         icond = np.argwhere((self.data.nwbfile.stimulus['time_start_realigned'].data[:]<=self.time) & \
                             (self.data.nwbfile.stimulus['time_stop_realigned'].data[:]>=self.time)).flatten()
-        if len(icond)>1:
-            try:
-                self.pScreenimg.setImage(255*self.data.visual_stim.get_image(icond[0],
-                                                                             self.time-self.data.nwbfile.stimulus['time_start_realigned'].data[icond[0]]))
-            except BaseException as be:
-                print(be)
-                print('pb with image')
-        elif self.time<=self.data.nwbfile.stimulus['time_start_realigned'].data[0]: # PRE-STIM
-            self.pScreenimg.setImage(255*self.data.visual_stim.get_prestim_image())
-        elif self.time>=self.data.nwbfile.stimulus['time_stop_realigned'].data[-1]: # POST-STIM
-            self.pScreenimg.setImage(255*self.data.visual_stim.get_poststim_image())
-        else: # INTER-STIM
-            self.pScreenimg.setImage(255*self.data.visual_stim.get_interstim_image())
+        try:
+            if len(icond)>1:
+                    self.pScreenimg.setImage(255*self.data.visual_stim.get_image(icond[0],
+                                                                                 self.time-self.data.nwbfile.stimulus['time_start_realigned'].data[icond[0]]))
+            elif self.time<=self.data.nwbfile.stimulus['time_start_realigned'].data[0]: # PRE-STIM
+                self.pScreenimg.setImage(255*self.data.visual_stim.get_prestim_image())
+            elif self.time>=self.data.nwbfile.stimulus['time_stop_realigned'].data[-1]: # POST-STIM
+                self.pScreenimg.setImage(255*self.data.visual_stim.get_poststim_image())
+            else: # INTER-STIM
+                self.pScreenimg.setImage(255*self.data.visual_stim.get_interstim_image())
+        except BaseException as be:
+            print(be)
+            print('pb with image')
             
         self.pScreenimg.setLevels([0,255])
 
-    if (self.data.visual_stim is not None) and ('time_start_realigned' in self.data.nwbfile.stimulus) and ('time_stop_realigned' in self.data.nwbfile.stimulus):
+    if self.visualStimSelect.isChecked() and ('time_start_realigned' in self.data.nwbfile.stimulus) and ('time_stop_realigned' in self.data.nwbfile.stimulus):
         # if visual-stim we highlight the stim periods
         icond = np.argwhere((self.data.nwbfile.stimulus['time_start_realigned'].data[:]>tzoom[0]-10) & \
                             (self.data.nwbfile.stimulus['time_stop_realigned'].data[:]<tzoom[1]+10)).flatten()

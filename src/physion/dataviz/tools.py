@@ -3,6 +3,7 @@ import numpy as np
 #########################
 #########################
 
+
 FIGURE_PRESETS = {
     ' ':dict(reshape_axes=False, right=2.),
     'raster-preset': dict(reshape_axes=False,
@@ -16,10 +17,11 @@ FIGURE_PRESETS = {
                                           wspace=0.5, hspace=0.5)
 }
 
+
 settings = {
     'window_size':(1000,600),
     # raw data plot settings
-    'increase-factor':1.5, # so "Calcium" is twice "Eletrophy", that is twice "Pupil",..  "Locomotion"
+    'increase-factor':2, # so "Calcium" is twice "Eletrophy", that is twice "Pupil",..  "Locomotion"
     'blank-space':0.1, # so "Calcium" is twice "Eletrophy", that is twice "Pupil",..  "Locomotion"
     'colors':{'Screen':(100, 100, 100, 255),#'grey',
               'Locomotion':(255,255,255,255),#'white',
@@ -32,6 +34,7 @@ settings = {
               'CaImaging':(0,255,0,255)},#'green'},
     # general settings
     'Npoints':500}
+
 
 def add_bar_annotations(ax,
                         Xbar=0, Xbar_label='',
@@ -58,9 +61,11 @@ def scale_and_position(self, y, value=None, i=0):
     else:
         return shift(self, i)+value
 
+
 def shift(self, i):
     return settings['blank-space']*i+\
         np.sum(np.power(settings['increase-factor'], np.arange(i)))
+
 
 def convert_time_to_index(time, nwb_quantity, axis=0):
     if nwb_quantity.timestamps is not None:
@@ -77,6 +82,7 @@ def convert_time_to_index(time, nwb_quantity, axis=0):
     else:
         return 0
 
+
 def convert_times_to_indices(t1, t2, nwb_quantity, axis=0):
     if nwb_quantity.timestamps is not None:
         cond = (nwb_quantity.timestamps[:]>=t1) & (nwb_quantity.timestamps[:]<=t2)
@@ -91,6 +97,7 @@ def convert_times_to_indices(t1, t2, nwb_quantity, axis=0):
         return (max([1, min([int(T1/dt), imax-1])]), max([1, min([int(T2/dt), imax-1])]))
     else:
         return (0, imax)
+
 
 def extract_from_times(t1, t2, nwb_quantity, axis=0):
     
@@ -120,21 +127,10 @@ def extract_from_times(t1, t2, nwb_quantity, axis=0):
     
     return indices, times
     
+
 def convert_index_to_time(index, nwb_quantity):
     """ index can be an array """
     if nwb_quantity.timestamps is not None:
         return nwb_quantity.timestamps[index]
     else:
         return nwb_quantity.starting_time+index/nwb_quantity.rate
-
-
-
-
-
-
-
-
-
-
-
-

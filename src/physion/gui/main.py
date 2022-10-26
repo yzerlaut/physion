@@ -1,5 +1,7 @@
 from PyQt5 import QtWidgets
 
+import physion
+
 # import pdb # for DEBUG
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -102,7 +104,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.show()
    
     def hitting_space(self):
-        self.init_calendar()
+        self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
+        self.data = physion.analysis.read_NWB.Data(self.datafile)
+        self.visualization()
+        # self.init_calendar()
 
     def refresh(self):
         if self.tabWidget.currentWidget()==self.tabs[1]:
