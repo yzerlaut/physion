@@ -7,7 +7,6 @@ from physion.dataviz.tools import convert_times_to_indices, convert_index_to_tim
         convert_time_to_index, scale_and_position, settings
 from physion.pupil import process
 
-
 def raw_data_plot(self, tzoom,
                   plot_update=True,
                   with_images=False,
@@ -333,3 +332,8 @@ def raw_data_plot(self, tzoom,
     self.frameSlider.setValue(int(self.SliderResolution*(self.time-tzoom[0])/(tzoom[1]-tzoom[0])))
     
     self.plot.show()
+
+if __name__=='__main__':
+
+    print('test here')
+

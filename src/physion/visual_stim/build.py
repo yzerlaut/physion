@@ -6,8 +6,6 @@ except ModuleNotFoundError:
     pass
 
 from physion.visual_stim.screens import SCREENS
-from physion.visual_stim.stimuli import *
-
 
 def build_stim(protocol):
     """
@@ -577,5 +575,247 @@ class movie_replay(visual_stim):
     def run(self, parent):
         pass
 
+#####################################################
+##  ----         MULTI-PROTOCOLS            --- #####
+#####################################################
 
+class multiprotocol(visual_stim):
+
+    def __init__(self, protocol):
+
+        super().__init__(protocol, 
+                         demo=(('demo' in protocol) and protocol['demo']))
+
+        self.STIM, i = [], 1
+
+        if ('load_from_protocol_data' in protocol) and protocol['load_from_protocol_data']:
+            while 'Protocol-%i'%i in protocol:
+                subprotocol = {'Screen':protocol['Screen'],
+                               'Presentation':'',
+                               'demo':(('demo' in protocol) and protocol['demo']),
+                               'no-window':True}
+                for key in protocol:
+                    if ('Protocol-%i-'%i in key):
+                        subprotocol[key.replace('Protocol-%i-'%i, '')] = protocol[key]
+                self.STIM.append(build_stim(subprotocol))
+                i+=1
+        else:
+            while 'Protocol-%i'%i in protocol:
+                path_list = [pathlib.Path(__file__).resolve().parents[1], 'exp', 'protocols']+protocol['Protocol-%i'%i].split('/')
+                Ppath = os.path.join(*path_list)
+                if not os.path.isfile(Ppath):
+                    print(' /!\ "%s" not found in Protocol folder /!\  ' % protocol['Protocol-%i'%i])
+                with open(Ppath, 'r') as fp:
+                    subprotocol = json.load(fp)
+                    subprotocol['Screen'] = protocol['Screen']
+                    subprotocol['no-window'] = True
+                    subprotocol['demo'] = (('demo' in protocol) and protocol['demo'])
+                    self.STIM.append(build_stim(subprotocol))
+                    for key, val in subprotocol.items():
+                        protocol['Protocol-%i-%s'%(i,key)] = val
+                i+=1
+
+        self.experiment = {'protocol_id':[]}
+        # we initialize the keys
+        for stim in self.STIM:
+            for key in stim.experiment:
+                self.experiment[key] = []
+        # then we iterate over values
+        for IS, stim in enumerate(self.STIM):
+            for i in range(len(stim.experiment['index'])):
+                for key in self.experiment:
+                    if (key in stim.experiment):
+                        self.experiment[key].append(stim.experiment[key][i])
+                    elif key in ['interstim-screen']:
+                        self.experiment[key].append(0) # if not in keys, mean 0 interstim (e.g. sparse noise stim.)
+                    elif key not in ['protocol_id', 'time_duration']:
+                        self.experiment[key].append(None)
+                self.experiment['protocol_id'].append(IS)
+
+        # ---------------------------- #
+        # # SHUFFLING IF NECESSARY
+        # ---------------------------- #
+
+        if (protocol['shuffling']=='full'):
+            # print('full shuffling of multi-protocol sequence !')
+            np.random.seed(protocol['shuffling-seed']) # initializing random seed
+            indices = np.arange(len(self.experiment['index']))
+            np.random.shuffle(indices)
+
+            for key in self.experiment:
+                self.experiment[key] = np.array(self.experiment[key])[indices]
+
+        if (protocol['shuffling']=='per-repeat'):
+            # TO BE TESTED
+            indices = np.arange(len(self.experiment['index']))
+            new_indices = []
+            for r in np.unique(self.experiment['repeat']):
+                repeat_cond = np.argwhere(self.experiment['repeat']==r).flatten()
+                r_indices = indices[repeat_cond]
+                np.random.shuffle(r_indices)
+                new_indices = np.concatenate([new_indices, r_indices])
+
+            for key in self.experiment:
+                self.experiment[key] = np.array(self.experiment[key])[new_indices]
+
+        # we rebuild time
+        self.experiment['time_start'][0] = protocol['presentation-prestim-period']
+        self.experiment['time_stop'][0] = protocol['presentation-prestim-period']+self.experiment['time_duration'][0]
+        self.experiment['interstim'] = np.concatenate([self.experiment['interstim'][1:],[self.experiment['interstim'][0]]])
+        for i in range(1, len(self.experiment['index'])):
+            self.experiment['time_start'][i] = self.experiment['time_stop'][i-1]+self.experiment['interstim'][i]
+            self.experiment['time_stop'][i] = self.experiment['time_start'][i]+self.experiment['time_duration'][i]
+
+        for key in ['protocol_id', 'index', 'repeat', 'interstim', 'time_start', 'time_stop', 'time_duration']:
+            self.experiment[key] = np.array(self.experiment[key])
+
+    # functions implemented in child class
+    def get_frame(self, index):
+        return self.STIM[self.experiment['protocol_id'][index]].get_frame(index, parent=self)
+    def get_patterns(self, index):
+        return self.STIM[self.experiment['protocol_id'][index]].get_patterns(index, parent=self)
+    def get_frames_sequence(self, index):
+        return self.STIM[self.experiment['protocol_id'][index]].get_frames_sequence(index, parent=self)
+    def get_image(self, episode, time_from_episode_start=0, parent=None):
+        return self.STIM[self.experiment['protocol_id'][episode]].get_image(episode, time_from_episode_start=time_from_episode_start, parent=self)
+    def plot_stim_picture(self, episode, ax=None, parent=None, label=None, vse=False):
+        return self.STIM[self.experiment['protocol_id'][episode]].plot_stim_picture(episode, ax=ax, parent=self, label=label, vse=vse)
+    def get_vse(self, episode, ax=None, parent=None, label=None, vse=False):
+        return self.STIM[self.experiment['protocol_id'][episode]].get_vse(episode, parent=self)
+
+
+#####################################
+##  ----  BUILDING STIMULI  --- #####
+#####################################
+
+def init_bg_image(cls, index):
+    """ initializing an empty image"""
+    return 2*cls.experiment['bg-color'][index]-1.+0.*cls.x
+
+def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
+    """ we use this function for each protocol initialisation"""
+    interval = cls.experiment['time_stop'][index]-cls.experiment['time_start'][index]
+    itend = int(security_factor*interval*refresh_freq)
+    return np.arange(itend), np.arange(itend)/refresh_freq, []
+
+
+class vis_stim_image_built(visual_stim):
+
+    """
+    in this object we do not use the psychopy pre-built functions
+    to present stimuli
+    we rather build the image manually (with numpy) and we show a sequence of ImageStim
+    """
+
+    def __init__(self, protocol,
+		 keys=['bg-color', 'contrast']):
+
+        super().__init__(protocol)
+
+        if ('buffer' in self.protocol) and (self.protocol['buffer']=="True"):
+            super().init_experiment(protocol, keys,
+                                    run_type='images_sequence_buffered')
+        else:
+            super().init_experiment(protocol, keys,
+                                    run_type='images_sequence')
+
+
+        # dealing with refresh rate
+        if 'movie_refresh_freq' not in protocol:
+            protocol['movie_refresh_freq'] = 10.
+
+        self.refresh_freq = protocol['movie_refresh_freq']
+        # adding a appearance threshold (see blob stim)
+        if 'appearance_threshold' not in protocol:
+            protocol['appearance_threshold'] = 2.5 # 
+
+    def get_image(self):
+        print('should be implemented in child class ! ')
+        return 0.5+0*self.x # grey screen by default
+
+
+    def get_frames_sequence(self, index, parent=None):
+        """
+        """
+        cls = (parent if parent is not None else self)
+        time_indices, times, FRAMES = init_times_frames(cls, index, self.refresh_freq)
+        for iframe, t in enumerate(times):
+            FRAMES.append(self.image_to_frame(self.get_image(index,
+                                                             time_from_episode_start=t,
+                                                             parent=parent)))
+        return time_indices, FRAMES, self.refresh_freq
+
+
+    def compute_frame_order(self, cls, times, index):
+        """
+        """   
+        order = np.arange(len(times))
+        if ('randomize' in self.protocol) and (self.protocol['randomize']=="True"):
+            # we randomize the order of the time sequence here !!
+            if ('randomize-per-trial' in self.protocol) and (self.protocol['randomize-per-trial']=="True"):
+                np.random.seed(int(cls.experiment['seed'][index]+1000*index))
+            else:
+                np.random.seed(int(cls.experiment['seed'][index]))
+            np.random.shuffle(order) # shuffling
+        return order
+
+
+    def add_grating_patch(self, image,
+                          angle=0,
+                          radius=10,
+                          spatial_freq=0.1,
+                          contrast=1.,
+                          time_phase=0.,
+                          xcenter=0,
+                          zcenter=0):
+        """ add a grating patch, drifting when varying the time phase"""
+        xrot = self.compute_rotated_coords(angle,
+                                           xcenter=xcenter,
+                                           zcenter=zcenter)
+
+        cond = ((self.x-xcenter)**2+(self.z-zcenter)**2)<radius**2
+
+        #image[cond] = 2*self.compute_grating(xrot[cond],
+        #                                     spatial_freq=spatial_freq,
+        #                                     contrast=contrast,
+        #                                     time_phase=time_phase)-1
+
+        full_grating = self.compute_grating(xrot,
+                                            spatial_freq=spatial_freq,
+                                            contrast=1,
+                                            time_phase=time_phase)-0.5
+
+        # image[cond] += 2*contrast*full_grating[cond] # /!\ "+=" to see both 
+        image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch 
+
+
+
+    def add_gaussian(self, image,
+                     t=0, t0=0, sT=1.,
+                     radius=10,
+                     contrast=1.,
+                     xcenter=0,
+                     zcenter=0):
+        """ add a gaussian luminosity increase
+        N.B. when contrast=1, you need black background, otherwise it will saturate
+             when contrast=0.5, you can start from the grey background to reach white in the center
+        """
+        image += 2*np.exp(-((self.x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
+                     contrast*np.exp(-(t-t0)**2/2./sT**2)
+
+
+    def add_dot(self, image, pos, size, color, type='square'):
+        """
+        add dot, either square or circle
+        """
+        if type=='square':
+            cond = (self.x>(pos[0]-size/2)) & (self.x<(pos[0]+size/2)) & (self.z>(pos[1]-size/2)) & (self.z<(pos[1]+size/2))
+        else:
+            cond = np.sqrt((self.x-pos[0])**2+(self.z-pos[1])**2)<size
+        image[cond] = color
+
+
+
+    def new(self):
+        pass
 
