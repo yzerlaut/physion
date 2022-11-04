@@ -204,13 +204,13 @@ def raw_data_plot(self, tzoom,
         
     # ## -------- Calcium --------- ##
     
-    if hasattr(self, 'roiIndices'):
-        roiIndices = self.roiIndices
-    else:
-        roiIndices = np.random.choice(np.arange(self.data.nROIs), 10)
-
     # if (self.time==0) and ('ophys' in self.data.nwbfile.processing):
     if ('ophys' in self.data.nwbfile.processing):
+
+        if hasattr(self, 'roiIndices'):
+            roiIndices = self.roiIndices
+        else:
+            roiIndices = np.random.choice(np.arange(self.data.nROIs), 10)
 
         self.pCaimg.setImage(self.data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:]**.25) # plotting the mean image
         

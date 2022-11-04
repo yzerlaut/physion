@@ -13,15 +13,22 @@ def update_frame(self):
 
 def visualization(self, 
                   tab_id=1,
+                  withRawImages=False,
                   nRowImages=5):
 
     tab = self.tabs[tab_id]
 
     self.cleanup_tab(tab)
 
-    create_layout(self, tab, nRowImages)
+    # the layout changes with and without the raw images
 
-    create_modality_button_ticks(self, tab, nRowImages)
+    create_layout(self, tab, 
+                 (nRowImages if withRawImages else 0))
+
+    create_modality_button_ticks(self, tab,
+                                 (nRowImages if withRawImages else 0))
+
+    self.imgSelect.setChecked(withRawImages)
 
     create_slider(self, tab)
 
@@ -33,23 +40,23 @@ def visualization(self,
         self.raw_data_plot(self.data.tlim)
 
 
-def create_layout(self, tab,
-                  nRowImages):
+def create_layout(self, tab, nRowImages):
 
-    # image panels layout:
-    self.winImg = pg.GraphicsLayoutWidget()
-    self.winImg.setMaximumHeight(300)
-    tab.layout.addWidget(self.winImg,
-                         0, 0,
-                         nRowImages, self.nWidgetCol)
-    init_image_panels(self)
-    
-    # a button to shift to the cell selection interface
-    self.roiSelectButton = QtWidgets.QPushButton('FOV')
-    self.roiSelectButton.clicked.connect(self.init_FOV)
-    tab.layout.addWidget(self.roiSelectButton,
-                         0, self.nWidgetCol-1,
-                         1, 1)
+    if nRowImages>0:
+        # image panels layout:
+        self.winImg = pg.GraphicsLayoutWidget()
+        self.winImg.setMaximumHeight(300)
+        tab.layout.addWidget(self.winImg,
+                             0, 0,
+                             nRowImages, self.nWidgetCol)
+        init_image_panels(self)
+        
+        # a button to shift to the cell selection interface
+        self.roiSelectButton = QtWidgets.QPushButton('FOV')
+        self.roiSelectButton.clicked.connect(self.init_FOV)
+        tab.layout.addWidget(self.roiSelectButton,
+                             0, self.nWidgetCol-1,
+                             1, 1)
 
 
     # time traces layout: 
@@ -105,7 +112,6 @@ def create_modality_button_ticks(self, tab,
                              nRowImages+2+i, self.nWidgetCol-1,
                              1, 1)
 
-    self.imgSelect.setChecked(True)
     self.sbsmplSelect.setChecked(True)
 
     self.imgSelect.clicked.connect(self.select_imgDisplay)
@@ -125,11 +131,6 @@ def init_panel_imgs(self):
                 brush=pg.mkBrush(*settings['colors']['Pupil'][:3]))
 
 
-
-def remove_img(self):
-    if not self.imgSelect.isChecked():
-        self.init_panel_imgs()
-       
 
 def init_image_panels(self):
 
@@ -174,7 +175,10 @@ def select_visualStim(self):
     pass
 
 def select_imgDisplay(self):
-    pass
+    if self.imgSelect.isChecked():
+        self.visualization(withRawImages=True)
+    else:
+        self.visualization(withRawImages=False)
 
 
 def analyze_datafile(self):
@@ -228,154 +232,6 @@ def analyze_datafile(self):
                             np.mean(self.data.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:])]
         self.gazeSelect.setChecked(True)
 
-
-
-    # self.roiPick = QtWidgets.QLineEdit()
-    # self.roiPick.setText(' [...] ')
-    # self.roiPick.setMinimumWidth(50)
-    # self.roiPick.setMaximumWidth(250)
-    # self.roiPick.returnPressed.connect(self.select_ROI)
-    # self.roiPick.setFont(guiparts.smallfont)
-
-    # self.ephysPick = QtWidgets.QLineEdit()
-    # self.ephysPick.setText(' ')
-    # # self.ephysPick.returnPressed.connect(self.select_ROI)
-    # self.ephysPick.setFont(guiparts.smallfont)
-
-    # self.guiKeywords = QtWidgets.QLineEdit()
-    # self.guiKeywords.setText('     [GUI keywords] ')
-    # # self.guiKeywords.setFixedWidth(200)
-    # self.guiKeywords.returnPressed.connect(self.keyword_update)
-    # self.guiKeywords.setFont(guiparts.smallfont)
-
-    # Layout122.addWidget(self.guiKeywords)
-    # # Layout122.addWidget(self.ephysPick)
-    # Layout122.addWidget(self.roiPick)
-
-    
-    # self.cwidget.setLayout(mainLayout)
-    # self.show()
-    
-    # self.fbox.addItems(FOLDERS.keys())
-    # self.windowTA, self.windowBM = None, None # sub-windows
-
-    # if args is not None:
-        # self.root_datafolder = args.root_datafolder
-    # else:
-        # self.root_datafolder = os.path.join(os.path.expanduser('~'), 'DATA')
-
-    # self.time, self.data, self.roiIndices, self.tzoom = 0, None, [], [0,50]
-    # self.CaImaging_bg_key, self.planeID = 'meanImg', 0
-    # self.CaImaging_key = 'Fluorescence'
-
-    # self.FILES_PER_DAY, self.FILES_PER_SUBJECT, self.SUBJECTS = {}, {}, {}
-
-    # self.minView = False
-    # self.showwindow()
-
-    # if (args is not None) and hasattr(args, 'datafile') and os.path.isfile(args.datafile):
-        # self.datafile=args.datafile
-        # self.load_file(self.datafile)
-        # plots.raw_data_plot(self, self.tzoom)
-
-    # Layout122 = QtWidgets.QHBoxLayout()
-    # Layout12.addLayout(Layout122)
-
-    # self.stimSelect = QtWidgets.QCheckBox("vis. stim")
-    # self.stimSelect.clicked.connect(self.select_stim)
-    # self.stimSelect.setStyleSheet('color: grey;')
-
-    # self.pupilSelect = QtWidgets.QCheckBox("pupil")
-    # self.pupilSelect.setStyleSheet('color: red;')
-
-    # self.gazeSelect = QtWidgets.QCheckBox("gaze")
-    # self.gazeSelect.setStyleSheet('color: orange;')
-
-    # self.faceMtnSelect = QtWidgets.QCheckBox("whisk.")
-    # self.faceMtnSelect.setStyleSheet('color: magenta;')
-
-    # self.runSelect = QtWidgets.QCheckBox("run")
-    
-    # self.photodiodeSelect = QtWidgets.QCheckBox("photodiode")
-    # self.photodiodeSelect.setStyleSheet('color: grey;')
-
-    # self.ephysSelect = QtWidgets.QCheckBox("ephys")
-    # self.ephysSelect.setStyleSheet('color: blue;')
-    
-    # self.ophysSelect = QtWidgets.QCheckBox("ophys")
-    # self.ophysSelect.setStyleSheet('color: green;')
-
-    # for x in [self.stimSelect, self.pupilSelect,
-              # self.gazeSelect, self.faceMtnSelect,
-              # self.runSelect,self.photodiodeSelect,
-              # self.ephysSelect, self.ophysSelect]:
-        # x.setFont(guiparts.smallfont)
-        # Layout122.addWidget(x)
-    
-    
-    # self.roiPick = QtWidgets.QLineEdit()
-    # self.roiPick.setText(' [...] ')
-    # self.roiPick.setMinimumWidth(50)
-    # self.roiPick.setMaximumWidth(250)
-    # self.roiPick.returnPressed.connect(self.select_ROI)
-    # self.roiPick.setFont(guiparts.smallfont)
-
-    # self.ephysPick = QtWidgets.QLineEdit()
-    # self.ephysPick.setText(' ')
-    # # self.ephysPick.returnPressed.connect(self.select_ROI)
-    # self.ephysPick.setFont(guiparts.smallfont)
-
-    # self.guiKeywords = QtWidgets.QLineEdit()
-    # self.guiKeywords.setText('     [GUI keywords] ')
-    # # self.guiKeywords.setFixedWidth(200)
-    # self.guiKeywords.returnPressed.connect(self.keyword_update)
-    # self.guiKeywords.setFont(guiparts.smallfont)
-
-    # Layout122.addWidget(self.guiKeywords)
-    # # Layout122.addWidget(self.ephysPick)
-    # Layout122.addWidget(self.roiPick)
-
-    # self.subsamplingSelect = QtWidgets.QCheckBox("subsampl.")
-    # self.subsamplingSelect.setStyleSheet('color: grey;')
-    # self.subsamplingSelect.setFont(guiparts.smallfont)
-    # Layout122.addWidget(self.subsamplingSelect)
-
-    # self.annotSelect = QtWidgets.QCheckBox("annot.")
-    # self.annotSelect.setStyleSheet('color: grey;')
-    # self.annotSelect.setFont(guiparts.smallfont)
-    # Layout122.addWidget(self.annotSelect)
-    
-    # self.imgSelect = QtWidgets.QCheckBox("img")
-    # self.imgSelect.setStyleSheet('color: grey;')
-    # self.imgSelect.setFont(guiparts.smallfont)
-    # self.imgSelect.setChecked(True)
-    # self.imgSelect.clicked.connect(self.remove_img)
-    # Layout122.addWidget(self.imgSelect)
-    
-    # self.cwidget.setLayout(mainLayout)
-    # self.show()
-    
-    # self.fbox.addItems(FOLDERS.keys())
-    # self.windowTA, self.windowBM = None, None # sub-windows
-
-    # if args is not None:
-        # self.root_datafolder = args.root_datafolder
-    # else:
-        # self.root_datafolder = os.path.join(os.path.expanduser('~'), 'DATA')
-
-    # self.time, self.data, self.roiIndices, self.tzoom = 0, None, [], [0,50]
-    # self.CaImaging_bg_key, self.planeID = 'meanImg', 0
-    # self.CaImaging_key = 'Fluorescence'
-
-    # self.FILES_PER_DAY, self.FILES_PER_SUBJECT, self.SUBJECTS = {}, {}, {}
-
-    # self.minView = False
-    # self.showwindow()
-
-    # if (args is not None) and hasattr(args, 'datafile') and os.path.isfile(args.datafile):
-        # self.datafile=args.datafile
-        # self.load_file(self.datafile)
-        # plots.raw_data_plot(self, self.tzoom)
 
 
 def create_slider(self, tab, SliderResolution=200):

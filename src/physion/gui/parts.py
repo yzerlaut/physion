@@ -4,6 +4,9 @@ import sip
 import pyqtgraph as pg
 import numpy as np
 
+import physion
+
+# FONTSIZES:
 smallfont, verysmallfont = QtGui.QFont(), QtGui.QFont()
 verysmallfont.setPointSize(9)
 smallfont.setPointSize(11)
@@ -19,6 +22,8 @@ def open_file(self,
 
     if filename!='':
         self.filename = filename
+        self.data = physion.analysis.read_NWB.Data(self.filename)
+        self.visualization()
     else:
         print('file not loaded ...')
 

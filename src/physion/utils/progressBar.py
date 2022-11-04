@@ -1,4 +1,7 @@
+"""
 # Print iterations progress
+"""
+
 def printProgressBar (iteration, total, prefix = 'Progress:', suffix = 'Complete', length = 50,
                       decimals = 1, fill = '█', printEnd = "\r"):
     """

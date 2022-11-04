@@ -3,7 +3,6 @@ import numpy as np
 #########################
 #########################
 
-
 FIGURE_PRESETS = {
     ' ':dict(reshape_axes=False, right=2.),
     'raster-preset': dict(reshape_axes=False,

@@ -1,6 +1,6 @@
 import sys
 
-from physion.visual_stim.stimuli.scattered_moving_dots import scattered_moving_dots
+import physion
 
 def build_stim(protocol):
     """
