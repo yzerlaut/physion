@@ -1,3 +1,4 @@
+import time
 from PyQt5 import QtWidgets
 
 import physion
@@ -33,13 +34,12 @@ class MainWindow(QtWidgets.QMainWindow):
     # data analysis tools
     from physion.analysis.gui import trial_averaging
 
-    # data analysis tools
-    from physion.analysis.gui import trial_averaging
-
     def __init__(self, app,
                  args=None,
                  width=850, height=700,
                  button_height = 20):
+
+        tic = time.time() # for optimisation tests
 
         # self.app, self.args = app, args
 
@@ -99,9 +99,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # Add tabs to widget
         self.layout.addWidget(self.tabWidget)
 
-
-
         self.show()
+
+        print(' init took %.0fms' % (1e3*(time.time()-tic)))
    
     def hitting_space(self):
         self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
