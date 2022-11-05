@@ -12,8 +12,8 @@ parser.add_argument("-p", "--plot", help="plot stim", action="store_true")
 
 args = parser.parse_args()
 
+# get default params for protocol
 protocol = physion.visual_stim.build.get_default_params(args.protocol)
-physion.visual_stim.build.add_params_for_demo(protocol)
 
 protocol['buffer'] = args.buffered
 
@@ -21,21 +21,22 @@ if args.plot:
 
     import matplotlib.pylab as plt
 
-    params['no-window'] = True
+    protocol['no-window'] = True
+
     stim = physion.visual_stim.build.build_stim(protocol)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(4,3))
     
     stim.plot_stim_picture(args.index, ax)
     
     plt.show()
+
 else:
 
     stim = physion.visual_stim.build.build_stim(protocol)
 
     parent = physion.utils.misc.dummy_parent()
+
     stim.run(parent)
 
     stim.close()
-
-
