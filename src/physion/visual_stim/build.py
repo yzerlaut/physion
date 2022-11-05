@@ -5,20 +5,25 @@ import physion
 def build_stim(protocol):
     """
     """
-
     if (protocol['Presentation']=='multiprotocol'):
         return multiprotocol(protocol)
     else:
         protocol_name = protocol['Stimulus'].replace('-image','').replace('-', '_').replace('+', '_')
-        print(dir(sys.modules[__name__]))
-        if hasattr(sys.modules[__name__], protocol_name):
-            return getattr(sys.modules[__name__],
-                           protocol_name)(protocol) # e.g. returns "center_grating_image_stim(protocol)"
-        else:
-            print(protocol_name)
-            print(protocol)
+        try:
+            return getattr(getattr(physion.visual_stim.stimuli, protocol_name), 'stim')(protocol)
+        except ModuleNotFoundError:
             print('\n /!\ Protocol not recognized ! /!\ \n ')
             return None
+
+def get_default_params(protocol_name):
+    """
+    """
+    protocol_name = protocol_name.replace('-image','').replace('-', '_').replace('+', '_')
+    try:
+        return getattr(getattr(physion.visual_stim.stimuli, protocol_name), 'params')
+    except ModuleNotFoundError:
+        print('\n /!\ Protocol not recognized ! /!\ \n ')
+        return None
 
 def add_params_for_demo(params):
 

@@ -88,3 +88,6 @@ SCREENS = {
                             'gamma':1.77},
     },
 }
+
+if __name__=='__main__':
+    print('test')
