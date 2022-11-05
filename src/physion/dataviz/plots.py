@@ -210,9 +210,10 @@ def raw_data_plot(self, tzoom,
         if hasattr(self, 'roiIndices'):
             roiIndices = self.roiIndices
         else:
-            roiIndices = np.random.choice(np.arange(self.data.nROIs), 10)
+            roiIndices = np.random.choice(np.arange(self.data.nROIs), 7)
 
-        self.pCaimg.setImage(self.data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:]**.25) # plotting the mean image
+        if self.imgSelect.isChecked():
+            self.pCaimg.setImage(self.data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:]**.25) # plotting the mean image
         
     if 'CaImaging-TimeSeries' in self.data.nwbfile.acquisition and self.ophysSelect.isChecked():
         i0 = convert_time_to_index(self.time, self.data.nwbfile.acquisition['CaImaging-TimeSeries'])
@@ -271,21 +272,23 @@ def raw_data_plot(self, tzoom,
 
         icond = np.argwhere((self.data.nwbfile.stimulus['time_start_realigned'].data[:]<=self.time) & \
                             (self.data.nwbfile.stimulus['time_stop_realigned'].data[:]>=self.time)).flatten()
-        try:
-            if len(icond)>1:
-                    self.pScreenimg.setImage(255*self.data.visual_stim.get_image(icond[0],
-                                                                                 self.time-self.data.nwbfile.stimulus['time_start_realigned'].data[icond[0]]))
-            elif self.time<=self.data.nwbfile.stimulus['time_start_realigned'].data[0]: # PRE-STIM
-                self.pScreenimg.setImage(255*self.data.visual_stim.get_prestim_image())
-            elif self.time>=self.data.nwbfile.stimulus['time_stop_realigned'].data[-1]: # POST-STIM
-                self.pScreenimg.setImage(255*self.data.visual_stim.get_poststim_image())
-            else: # INTER-STIM
-                self.pScreenimg.setImage(255*self.data.visual_stim.get_interstim_image())
-        except BaseException as be:
-            print(be)
-            print('pb with image')
+
+        if self.imgSelect.isChecked():
+            try:
+                if len(icond)>1:
+                        self.pScreenimg.setImage(255*self.data.visual_stim.get_image(icond[0],
+                              self.time-self.data.nwbfile.stimulus['time_start_realigned'].data[icond[0]]))
+                elif self.time<=self.data.nwbfile.stimulus['time_start_realigned'].data[0]: # PRE-STIM
+                    self.pScreenimg.setImage(255*self.data.visual_stim.get_prestim_image())
+                elif self.time>=self.data.nwbfile.stimulus['time_stop_realigned'].data[-1]: # POST-STIM
+                    self.pScreenimg.setImage(255*self.data.visual_stim.get_poststim_image())
+                else: # INTER-STIM
+                    self.pScreenimg.setImage(255*self.data.visual_stim.get_interstim_image())
+            except BaseException as be:
+                print(be)
+                print('pb with image')
             
-        self.pScreenimg.setLevels([0,255])
+            self.pScreenimg.setLevels([0,255])
 
     if self.visualStimSelect.isChecked() and ('time_start_realigned' in self.data.nwbfile.stimulus) and ('time_stop_realigned' in self.data.nwbfile.stimulus):
         # if visual-stim we highlight the stim periods
@@ -324,6 +327,8 @@ def raw_data_plot(self, tzoom,
                                'time_stop', 'time_stop_realigned', 'protocol-name']) and \
                                        (self.data.nwbfile.stimulus[key].data[i]!=666):
                             text+='%s : %s\n' % (key, str(self.data.nwbfile.stimulus[key].data[i]))
+                    if 'protocol_id' in self.data.nwbfile.stimulus:
+                        text += '\n* %s *\n' % self.data.protocols[self.data.nwbfile.stimulus['protocol_id'].data[i]][:20]
                     self.StimAnnots[-1].setPlainText(text)                    
                     self.StimAnnots[-1].setPos(t0, 0.95*y.max())
                     self.plot.addItem(self.StimAnnots[-1])
