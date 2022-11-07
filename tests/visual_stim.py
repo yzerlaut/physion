@@ -5,10 +5,10 @@ sys.path.append('./src')
 import physion
 
 parser=argparse.ArgumentParser()
-parser.add_argument("protocol", help="protocol", default='scattered-moving-dots')
-parser.add_argument("-b", "--buffered", help="buffer stim", action="store_true")
-parser.add_argument("-i", "--index", help="stim index", type=int, default=0) 
-parser.add_argument("-p", "--plot", help="plot stim", action="store_true")
+parser.add_argument('-p', "--protocol", help="protocol", default='scattered-moving-dots')
+parser.add_argument('-b', "--buffered", help="buffer stim", action="store_true")
+parser.add_argument('-i', "--index", help="stim index", type=int, default=0) 
+parser.add_argument("--plot", help="plot stim", action="store_true")
 
 args = parser.parse_args()
 
