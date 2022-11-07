@@ -5,8 +5,6 @@ import simple_pyspin, time, sys, os
 from skimage.io import imsave
 import numpy as np
 from pathlib import Path
-sys.path.append(str(Path(__file__).resolve().parents[2]))
-from assembling.saving import last_datafolder_in_dayfolder, day_folder
 
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 desktop_png = os.path.join(os.path.expanduser("~/Desktop"), 'FaceCamera.png')

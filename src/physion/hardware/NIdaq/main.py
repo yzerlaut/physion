@@ -8,9 +8,9 @@ from nidaqmx.stream_readers import (
 from nidaqmx.stream_writers import (
     AnalogSingleChannelWriter, AnalogMultiChannelWriter)
 
-import sys, os, pathlib
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
-from hardware_control.NIdaq.config import find_x_series_devices, find_m_series_devices, get_analog_input_channels, get_digital_input_channels, get_analog_output_channels
+from physion.hardware.NIdaq.config import find_x_series_devices,\
+       find_m_series_devices, get_analog_input_channels,\
+       get_digital_input_channels, get_analog_output_channels
 
 class Acquisition:
 
