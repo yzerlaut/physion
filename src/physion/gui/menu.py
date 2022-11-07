@@ -13,10 +13,10 @@ def build_menu(self):
     self.fileMenu.addAction('&Quit', self.quit)
 
     ##### ------------- Experiment -----------------------
-    self.experimentMenu = self.mainMenu.addMenu('  * &Recording/Stim')
+    self.experimentMenu = self.mainMenu.addMenu('  * &Acquisition')
     # --
     self.experimentMenu.addAction('&Multimodal',
-                                  self.launch_multimodal_rec)
+                                  self.multimodal)
     self.experimentMenu.addAction('&Visual Stimulation',
                                   self.launch_visual_stim)
     self.experimentMenu.addAction('&Intrinsic Imaging',

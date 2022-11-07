@@ -31,6 +31,9 @@ class MainWindow(QtWidgets.QMainWindow):
     from physion.dataviz.FOV import init_FOV
     from physion.dataviz.plots import raw_data_plot
 
+    # data acquisition 
+    from physion.acquisition.gui import multimodal 
+
     # data analysis tools
     from physion.analysis.gui import trial_averaging
 
@@ -104,10 +107,13 @@ class MainWindow(QtWidgets.QMainWindow):
         print(' init took %.0fms' % (1e3*(time.time()-tic)))
    
     def hitting_space(self):
-        self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
-        self.data = physion.analysis.read_NWB.Data(self.datafile)
-        self.visualization()
-        # self.init_calendar()
+
+        # self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
+        # self.data = physion.analysis.read_NWB.Data(self.datafile)
+        # self.visualization()
+        # # self.init_calendar()
+
+        self.multimodal()
 
     def refresh(self):
         if self.tabWidget.currentWidget()==self.tabs[1]:
@@ -121,9 +127,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def fit(self):
         self.init_calendar()
-
-    def launch_multimodal_rec(self):
-        print('TO BE DONE')
 
     def launch_visual_stim(self):
         print('TO BE DONE')
