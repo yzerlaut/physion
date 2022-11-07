@@ -137,6 +137,7 @@ def init_image_panels(self):
     self.pScreen = self.winImg.addViewBox(lockAspect=True,
                                 invertY=False, border=[1, 1, 1], colspan=2)
     self.pScreenimg = pg.ImageItem(np.ones((10,12))*50)
+
     # FaceCamera panel
     self.pFace = self.winImg.addViewBox(lockAspect=True,
                                 invertY=True, border=[1, 1, 1], colspan=2)
