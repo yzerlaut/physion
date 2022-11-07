@@ -39,6 +39,7 @@ class stim(vis_stim_image_built):
     all functions should accept a "parent" argument that can be the 
     multiprotocol holding this protocol
     """
+
     def __init__(self, protocol):
 
         super().__init__(protocol,
@@ -77,25 +78,23 @@ class stim(vis_stim_image_built):
 
     ### HERE YOU CAN OVERWRITE THE DEFAULT plot_stim_picture FUNCTION
 
-    """
-    def plot_stim_picture(self, episode, ax,
-                          parent=None, 
-                          label={'degree':20,
-                                 'shift_factor':0.02,
-                                 'lw':1, 'fontsize':10},
-                          vse=False,
-                          arrow={'length':20,
-                                 'width_factor':0.05,
-                                 'color':'red'}):
+    # def plot_stim_picture(self, episode, ax,
+                          # parent=None, 
+                          # label={'degree':20,
+                                 # 'shift_factor':0.02,
+                                 # 'lw':1, 'fontsize':10},
+                          # vse=False,
+                          # arrow={'length':20,
+                                 # 'width_factor':0.05,
+                                 # 'color':'red'}):
 
-        """
-        """
-        cls = (parent if parent is not None else self)
+        # """
+        # """
+        # cls = (parent if parent is not None else self)
 
-        tcenter = .5*(cls.experiment['time_stop'][episode]-\
-                      cls.experiment['time_start'][episode])
+        # tcenter = .5*(cls.experiment['time_stop'][episode]-\
+                      # cls.experiment['time_start'][episode])
         
-        ax = self.show_frame(episode, tcenter, ax=ax,
-                             parent=parent,
-                             label=label)
-    """
+        # ax = self.show_frame(episode, tcenter, ax=ax,
+                             # parent=parent,
+                             # label=label)
