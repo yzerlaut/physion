@@ -94,16 +94,51 @@ def multimodal(self,
     self.webcamButton = QtWidgets.QPushButton('Webcam', self)
     self.webcamButton.setCheckable(True)
     self.add_side_widget(tab.layout, self.webcamButton)
+    # -------------------------------------------------------
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.demoW = QtWidgets.QCheckBox('demo', self)
+    self.add_side_widget(tab.layout, self.demoW)
     # ========================================================
 
     # ========================================================
     #------------------- THEN MAIN PANEL   -------------------
+    ip = 0
+    # tab.layout.addWidget(\
+        # QtWidgets.QLabel(' ', self),
+                         # ip, self.side_wdgt_length, 
+                         # 1, self.nWidgetCol-self.side_wdgt_length)
+    # ip+=1
+    # -
     tab.layout.addWidget(\
-        QtWidgets.QLabel("Recording modalities", self),
-        # QtWidgets.QLabel(10*' '+10*'_'+15*'-'+' * * Recording modalities * * '+15*'-'+10*'_', self),
-                         0, self.side_wdgt_length, 
-                         # 0, self.side_wdgt_length+self.nWidgetCol/2,
+        QtWidgets.QLabel(40*' '+'** Screen **', self),
+                         ip, self.side_wdgt_length, 
                          1, self.nWidgetCol-self.side_wdgt_length)
+    ip+=1
+    self.cbsc = QtWidgets.QComboBox(self)
+    self.cbsc.addItems(physion.visual_stim.screens.SCREENS.keys())
+    tab.layout.addWidget(self.cbsc,\
+                         ip, self.side_wdgt_length+1, 
+                         1, self.nWidgetCol-self.side_wdgt_length-2)
+    ip+=1
+    # -
+    tab.layout.addWidget(\
+        QtWidgets.QLabel(40*' '+'** Config **', self),
+                         ip, self.side_wdgt_length, 
+                         1, self.nWidgetCol-self.side_wdgt_length)
+    ip+=1
+    self.cbc = QtWidgets.QComboBox(self)
+    # self.cbc.activated.connect(self.update_config)
+    tab.layout.addWidget(self.cbc,\
+                         ip, self.side_wdgt_length+1, 
+                         1, self.nWidgetCol-self.side_wdgt_length-2)
+    ip+=1
+    # -
+    tab.layout.addWidget(\
+        QtWidgets.QLabel(' ', self),
+                         ip, self.side_wdgt_length, 
+                         1, self.nWidgetCol-self.side_wdgt_length)
+    ip+=1
 
 
 
@@ -111,7 +146,8 @@ def multimodal(self,
     self.winImg = pg.GraphicsLayoutWidget()
     tab.layout.addWidget(self.winImg,
                          self.nWidgetRow/2, self.side_wdgt_length,
-                         self.nWidgetRow/2, self.nWidgetCol)
+                         self.nWidgetRow/2, 
+                         self.nWidgetCol-self.side_wdgt_length)
 
     # FaceCamera panel
     self.pFace = self.winImg.addViewBox(lockAspect=True,
@@ -122,4 +158,5 @@ def multimodal(self,
 
 
     self.refresh_tab(tab)
+
 

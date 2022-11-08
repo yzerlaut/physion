@@ -33,6 +33,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # data acquisition 
     from physion.acquisition.gui import multimodal 
+    from physion.acquisition.run import initialize, buffer_stim,\
+           run, stop, check_metadata, send_CaImaging_Stop_signal 
+    from physion.acquisition.tools import save_experiment,\
+            pass
+    from physion.acquisition.settings import get_config_list,\
+            update_config, get_protocol_list, update_subject,\
+            save_settings, load_settings
 
     # data analysis tools
     from physion.analysis.gui import trial_averaging
@@ -47,7 +54,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.app, self.args = app, args
 
         super(MainWindow, self).__init__()
-        self.data = None
+        self.data, self.acq, self.stim = None, None, None
+        self.quit_event = None
 
         self.setWindowTitle('Physion -- Vision Physiology Software')
 
@@ -162,5 +170,13 @@ class MainWindow(QtWidgets.QMainWindow):
         pass
 
     def quit(self):
+        if self.quit_event is not None:
+            self.quit_event.set()
+        if self.FaceCamera_process is not None:
+            self.closeFaceCamera_event.set()
+        if self.acq is not None:
+            self.acq.close()
+        if self.stim is not None:
+            self.stim.quit()
         QtWidgets.QApplication.quit()
         
