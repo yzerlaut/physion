@@ -3,9 +3,8 @@ import sys, time, os, pathlib, string, itertools
 import numpy as np
 from scipy.interpolate import interp1d
 
-# from physion.imaging. import tools as Ca_imaging_tools
-# from analysis import stat_tools
-# from visual_stim.stimuli import build_stim
+from physion.analysis import stat_tools
+from physion.visual_stim.build import build_stim
 
 class EpisodeData:
     """
@@ -26,7 +25,7 @@ class EpisodeData:
                  prestim_duration=None, # to force the prestim window otherwise, half the value in between episodes
                  dt_sampling=1, # ms
                  interpolation='linear',
-                 with_visual_stim=True,
+                 with_visual_stim=False,
                  tfull=None,
                  verbose=True):
 
@@ -36,7 +35,7 @@ class EpisodeData:
         self.select_protocol_from(full_data, 
                                   protocol_id=protocol_id,
                                   protocol_name=protocol_name)
-        
+
         ################################################
         #          Episode Calculations 
         ################################################
@@ -51,6 +50,8 @@ class EpisodeData:
         ################################################i
         #           some clean up
         ################################################i
+        # because "protocol_id" and "protocol_name" 
+        #     are over-written by self.set_quantities
         
         if (protocol_id is not None):
             # we overwrite those to single values
@@ -64,10 +65,6 @@ class EpisodeData:
 
         else:
             print(' /!\ need to pass either a protocol_id or a protocol_name /!\ \n')
-
-            # # REMOVE THIS IN THE FUTURE (> 09/2022)
-            # setattr(self, 'protocol_name', np.array([full_data.protocols[i] for i in self.protocol_id], dtype=str))
-            # pass # --> self.protocol_id is an array with the different protocol ids per episode
         
         # VISUAL STIM
         if with_visual_stim:
@@ -86,19 +83,23 @@ class EpisodeData:
     def select_protocol_from(self, full_data, 
                              protocol_id=None,
                              protocol_name=None):
+        """
+        N.B. "protocol_id" and "protocol_name" will be over-written by self.set_quantities
 
-        # choosing protocol (if multiprotocol)
-        if (protocol_id is not None):
-            self.protocol_cond_in_full_data = full_data.get_protocol_cond(protocol_id)
-
+        iso need to reset them at the end !
+        """
+        # choose protocol
+        if (protocol_id is None) and (protocol_name is None):
+            protocol_id = 0
+            print('protocols:', full_data.protocols)
+            print(' /!\ need to explicit the "protocol_id" or "protocol_name" /!\ ')
+            print('         ---->   set to protocol_id=0 by default \n ')
         elif (protocol_name is not None):
-            self.protocol_id = full_data.get_protocol_id(protocol_name)
-            self.protocol_cond_in_full_data = full_data.get_protocol_cond(self.protocol_id)
+            protocol_id = full_data.get_protocol_id(protocol_name)
+            
+        self.protocol_cond_in_full_data = full_data.get_protocol_cond(protocol_id)
 
-        else:
-            self.protocol_cond_in_full_data = np.ones(full_data.nwbfile.stimulus['time_start_realigned'].data.shape[0],
-                                                      dtype=bool)
-            # self.protocol_name set at the end !
+
            
     def set_quantities(self, full_data, quantities,
                        quantities_args=None,
@@ -501,69 +502,3 @@ class EpisodeData:
         for key in self.visual_stim.experiment:
             if hasattr(self, key):
                 self.visual_stim.experiment[key] = getattr(self, key)
-        
-    
-
-if __name__=='__main__':
-
-    from analysis.read_NWB import Data
-    from dataviz.datavyz.datavyz import graph_env
-    ge = graph_env('screen')
-    
-    filename = sys.argv[-1]
-    
-    if '.nwb' in sys.argv[-1]:
-
-        data = Data(filename)
-        data.build_dFoF()
-
-        episode = EpisodeResponse(data,
-                                  protocol_id=1,
-                                  quantities=['Running-Speed', 'Pupil'],
-                                  # quantities=['dFoF', 'Pupil'],
-                                  # quantities=['Photodiode-Signal'],
-                                  prestim_duration=1.,
-                                  with_visual_stim=True,
-                                  dt_sampling=10)
-
-       
-        print(getattr(episode, 'center-time')[:50])
-        print(episode.visual_stim.experiment['center-time'][:50])
-        
-        
-        """
-        fig0, ax = ge.figure()
-        fig, AX = ge.figure(axes=(3,10), figsize=(.8,.9))
-
-        print(episode.protocol_name)
-        print(getattr(episode, 'patch-delay'))
-        for i, delay in enumerate([0., 1., 2.]):
-            cond = episode.find_episode_cond(['protocol_name', 'speed','patch-delay'], 
-                             value=['mixed-moving-dots-static-patch', 90., delay])
-            ax.plot(episode.t,
-                    episode.dFoF[cond,:,:].mean(axis=(0,1)),
-                    color=ge.tab10(i))
-            for k in range(episode.dFoF[cond,:,:].shape[0]):
-                AX[k%10][i].plot(episode.t, episode.dFoF[cond,:,:].mean(axis=1)[k,:])
-            ge.annotate(ax, i*'\n'+'delay=%.1s'%delay, (0,1), 
-                        va='top', color=ge.tab10(i))
-    
-        fig1, ax1 = ge.figure()
-        cond = episode.find_episode_cond(['protocol_name'], 
-                                         value=['static-patch'])
-        ax1.plot(episode.t,
-                episode.dFoF[cond,:,:].mean(axis=(0,1)),
-                color=ge.tab10(i))
-        ge.show()
-        """
-
-    else:
-        print('/!\ Need to provide a NWB datafile as argument ')
-            
-
-
-
-
-
-
-

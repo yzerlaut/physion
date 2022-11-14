@@ -6,7 +6,7 @@ def build_stim(protocol):
     """
     """
     if (protocol['Presentation']=='multiprotocol'):
-        return multiprotocol(protocol)
+        return physion.visual_stim.main.multiprotocol(protocol)
     else:
         protocol_name = protocol['Stimulus'].replace('-image','').replace('-', '_').replace('+', '_')
         try:
