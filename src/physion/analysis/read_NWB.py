@@ -3,8 +3,7 @@ import pynwb # NWB python API
 import numpy as np
 from scipy.interpolate import interp1d
 
-# sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-# from assembling.saving import get_files_with_extension
+from physion.utils.files import get_files_with_extension
 from physion.visual_stim.build import build_stim as build_visual_stim
 from physion.imaging.Calcium import compute_dFoF, METHOD,\
         T_SLIDING_MIN, PERCENTILE_SLIDING_MIN, NEUROPIL_CORRECTION_FACTOR
@@ -466,55 +465,54 @@ class Data:
         
             
         
-# def scan_folder_for_NWBfiles(folder, 
-                             # Nmax=1000000,
-                             # exclude_intrinsic_imaging_files=True,
-                             # verbose=True):
-    # """
-    # scan folders for protocols and returns a A
+def scan_folder_for_NWBfiles(folder, 
+                             Nmax=1000000,
+                             exclude_intrinsic_imaging_files=True,
+                             verbose=True):
+    """
+    scan folders for protocols and returns a A
 
-    # by default: exccludes the intrinsic imaging files
-    # """
-    # if verbose:
-        # print('inspecting the folder "%s" [...]' % folder)
-        # t0 = time.time()
+    by default: exccludes the intrinsic imaging files
+    """
+    if verbose:
+        print('inspecting the folder "%s" [...]' % folder)
+        t0 = time.time()
 
-    # FILES = get_files_with_extension(folder,
-                    # extension='.nwb', recursive=True)
+    FILES = get_files_with_extension(folder,
+                    extension='.nwb', recursive=True)
     
-    # if exclude_intrinsic_imaging_files:
-        # FILES = [f for f in FILES if (('left-' not in f) and\
-                                      # ('down-' not in f) and\
-                                      # ('right-' not in f) and\
-                                      # ('up-' not in f))]
+    if exclude_intrinsic_imaging_files:
+        FILES = [f for f in FILES if (('left-' not in f) and\
+                                      ('down-' not in f) and\
+                                      ('right-' not in f) and\
+                                      ('up-' not in f))]
 
-    # DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES])
-    # SUBJECTS, PROTOCOLS = [], []
+    DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES])
+    SUBJECTS, PROTOCOLS = [], []
 
-    # for f in FILES[:Nmax]:
-        # try:
-            # data = Data(f, metadata_only=True, verbose=False)
-            # PROTOCOLS.append(data.protocols)
-            # SUBJECTS.append(data.metadata['subject_ID'])
-        # except BaseException as be:
-            # SUBJECTS.append('N/A')
-            # if verbose:
-                # print(be)
-                # print('\n /!\ Pb with "%s" \n' % f)
+    for f in FILES[:Nmax]:
+        try:
+            data = Data(f, metadata_only=True, verbose=False)
+            PROTOCOLS.append(data.protocols)
+            SUBJECTS.append(data.metadata['subject_ID'])
+        except BaseException as be:
+            SUBJECTS.append('N/A')
+            if verbose:
+                print(be)
+                print('\n /!\ Pb with "%s" \n' % f)
         
-    # if verbose:
-        # print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES), (time.time()-t0)))
+    if verbose:
+        print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES), (time.time()-t0)))
 
-    # return {'files':np.array(FILES), 
-            # 'dates':np.array(DATES),
-            # 'subjects':np.array(SUBJECTS),
-            # 'protocols':PROTOCOLS}
+    return {'files':np.array(FILES), 
+            'dates':np.array(DATES),
+            'subjects':np.array(SUBJECTS),
+            'protocols':PROTOCOLS}
 
 
 if __name__=='__main__':
 
-    pass
-    # folder = scan_folder_for_NWBfiles(sys.argv[-1], Nmax=500)
+    folder = scan_folder_for_NWBfiles(sys.argv[-1], Nmax=500)
     # print(folder)
     # for f, d, s in zip(FILES, DATES, SUBJECTS):
     #     print(f, d, s)
