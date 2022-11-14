@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pylab as plt
 plt.style.use(os.path.join(pathlib.Path(__file__).resolve().parent, 'utils', 'matplotlib_style.py'))
 
-from physion.analysis import read_NWB, process_NWB, stat_tools, tools
+from physion.analysis import read_NWB#, tools, stat_tools
 from physion.visual_stim.build import build_stim
 
 

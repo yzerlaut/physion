@@ -1,11 +1,13 @@
 ### FIGURE
 figure.facecolor: white
 figure.dpi: 100
-figure.titlesize: 14
-figure.titleweight: bold
+figure.figsize: 4.0,2.5
+figure.titlesize: 10
+# figure.titleweight: bold
+figure.autolayout: True # When True, automatically adjust subplot
 
-### LINES
-lines.linewidth: 1.5
+### LINE
+lines.linewidth: 1
 
 ### PATCHES
 patch.facecolor: 0072B2
@@ -18,21 +20,21 @@ xtick.direction: out
 ytick.direction: out
 
 ### FONTS
-font.family: sans-serif
-font.sans-serif: Avenir, 'Avenir Next LT Pro', Arial, Helvetica, sans-serif
-font.weight: bold
-font.size: 12
+# font.family: sans-serif
+# font.sans-serif: Avenir, 'Avenir Next LT Pro', Arial, Helvetica, sans-serif
+# font.weight: bold
+font.size: 9
 
 ### AXES
 axes.grid: False
 axes.facecolor: white
 axes.linewidth: 1.0
-axes.titlesize: 12
-axes.titleweight: bold
-axes.labelsize: 12
-axes.labelweight: bold
-axes.spines.top: True
-axes.spines.right: True
+axes.titlesize: 10
+# axes.titleweight: bold
+axes.labelsize: 9 
+# axes.labelweight: bold
+axes.spines.top: False
+axes.spines.right: False
 axes.prop_cycle: cycler('color', ['0072B2', '009E73', 'D55E00', 'CC79A7', 'F0E442', '56B4E9'])
 
 #### MATPLOTLIBRC FORMAT
