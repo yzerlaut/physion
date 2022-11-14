@@ -36,7 +36,7 @@ class MainWindow(QtWidgets.QMainWindow):
     from physion.acquisition.run import initialize, buffer_stim,\
            run, stop, check_metadata, send_CaImaging_Stop_signal 
     from physion.acquisition.tools import save_experiment,\
-            pass
+            set_filename_and_folder
     from physion.acquisition.settings import get_config_list,\
             update_config, get_protocol_list, update_subject,\
             save_settings, load_settings
@@ -170,9 +170,9 @@ class MainWindow(QtWidgets.QMainWindow):
         pass
 
     def quit(self):
-        if self.quit_event is not None:
+        if hasattr(self, 'quit_event') and (self.quit_event is not None):
             self.quit_event.set()
-        if self.FaceCamera_process is not None:
+        if hasattr(self, 'FaceCamera_process') and (self.FaceCamera_process is not None):
             self.closeFaceCamera_event.set()
         if self.acq is not None:
             self.acq.close()

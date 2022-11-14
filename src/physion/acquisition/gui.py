@@ -120,8 +120,8 @@ def multimodal(self,
     tab.layout.addWidget(self.cbsc,\
                          ip, self.side_wdgt_length+1, 
                          1, self.nWidgetCol-self.side_wdgt_length-2)
-    ip+=1
     # -
+    ip+=1
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Config **', self),
                          ip, self.side_wdgt_length, 
@@ -132,14 +132,46 @@ def multimodal(self,
     tab.layout.addWidget(self.cbc,\
                          ip, self.side_wdgt_length+1, 
                          1, self.nWidgetCol-self.side_wdgt_length-2)
-    ip+=1
     # -
+    ip+=1
     tab.layout.addWidget(\
-        QtWidgets.QLabel(' ', self),
+        QtWidgets.QLabel(40*' '+'** Subject **', self),
                          ip, self.side_wdgt_length, 
                          1, self.nWidgetCol-self.side_wdgt_length)
     ip+=1
-
+    self.cbs = QtWidgets.QComboBox(self)
+    # self.cbs.activated.connect(self.update_subject)
+    tab.layout.addWidget(self.cbs,\
+                         ip, self.side_wdgt_length+1, 
+                         1, self.nWidgetCol-self.side_wdgt_length-2)
+    # -
+    ip+=1
+    tab.layout.addWidget(\
+        QtWidgets.QLabel(40*' '+'** Visual Protocol **', self),
+                         ip, self.side_wdgt_length, 
+                         1, self.nWidgetCol-self.side_wdgt_length)
+    ip+=1
+    self.cbp = QtWidgets.QComboBox(self)
+    tab.layout.addWidget(self.cbp,\
+                         ip, self.side_wdgt_length+1, 
+                         1, self.nWidgetCol-self.side_wdgt_length-2)
+    # -
+    ip+=1
+    tab.layout.addWidget(\
+        QtWidgets.QLabel(40*' '+'** Intervention **', self),
+                         ip, self.side_wdgt_length, 
+                         1, self.nWidgetCol-self.side_wdgt_length)
+    ip+=1
+    self.cbi = QtWidgets.QComboBox(self)
+    tab.layout.addWidget(self.cbi,\
+                         ip, self.side_wdgt_length+1, 
+                         1, self.nWidgetCol-self.side_wdgt_length-2)
+    # -
+    # ip+=1
+    # tab.layout.addWidget(\
+        # QtWidgets.QLabel(150*'-', self),
+                         # ip, self.side_wdgt_length, 
+                         # 1, self.nWidgetCol-self.side_wdgt_length)
 
 
     # image panels layout:
