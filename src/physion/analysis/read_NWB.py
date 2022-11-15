@@ -508,29 +508,3 @@ def scan_folder_for_NWBfiles(folder,
             'dates':np.array(DATES),
             'subjects':np.array(SUBJECTS),
             'protocols':PROTOCOLS}
-
-
-if __name__=='__main__':
-
-    folder = scan_folder_for_NWBfiles(sys.argv[-1], Nmax=500)
-    # print(folder)
-    # for f, d, s in zip(FILES, DATES, SUBJECTS):
-    #     print(f, d, s)
-    # print(np.unique(SUBJECTS))
-
-    # data = Data(sys.argv[-1], metadata_only=True)
-    # print(data.nwbfile.processing['ophys'])
-    # data.build_dFoF()
-    # print(data.get_protocol_id('static-patch'))
-    # print(data.get_protocol_id('bleble'))
-    # print(data.metadata['intervention'])
-    
-    
-
-
-
-
-
-
-
-
