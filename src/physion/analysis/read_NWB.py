@@ -4,7 +4,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from physion.utils.files import get_files_with_extension
-from physion.visual_stim.build import build_stim as build_visual_stim
+from physion.visual_stim.build import build_stim
 from physion.imaging.Calcium import compute_dFoF, METHOD,\
         T_SLIDING_MIN, PERCENTILE_SLIDING_MIN, NEUROPIL_CORRECTION_FACTOR
 

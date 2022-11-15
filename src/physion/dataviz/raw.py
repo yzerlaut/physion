@@ -2,474 +2,507 @@
 import pynwb, os, sys, pathlib, itertools
 import numpy as np
 import matplotlib.pylab as plt
-plt.style.use(os.path.join(pathlib.Path(__file__).resolve().parent, 'utils', 'matplotlib_style.py'))
+plt.style.use(os.path.join(pathlib.Path(__file__).resolve().parents[1], 'utils', 'matplotlib_style.py'))
+
+from physion.dataviz import tools as dv_tools
 
 from physion.analysis import read_NWB#, tools, stat_tools
 from physion.visual_stim.build import build_stim
 
 
-class MultimodalData(read_NWB.Data):
+def shifted_start(tlim, frac_shift=0.01):
+    return tlim[0]-frac_shift*(tlim[1]-tlim[0])
+
+
+def plot_scaled_signal(data, 
+                       ax, t, signal,
+                       tlim, scale_bar,
+                       ax_fraction_extent, ax_fraction_start,
+                       color='#1f77b4', scale_unit_string='%.1f'):
     """
-    # we define a data object fitting this analysis purpose
+    # generic function to add scaled signal
     """
+
+    try:
+        scale_range = np.max([signal.max()-signal.min(), scale_bar])
+        min_signal = signal.min()
+    except ValueError:
+        scale_range = scale_bar
+        min_signal = 0
+
+    ax.plot(t, ax_fraction_start+(signal-min_signal)*ax_fraction_extent/scale_range, color=color, lw=1)
+
+    if scale_unit_string!='':
+        ax.plot(shifted_start(tlim)*np.ones(2), ax_fraction_start+scale_bar*np.arange(2)*ax_fraction_extent/scale_range, color=color, lw=1)
+    if '%' in scale_unit_string:
+        ax.annotate(str(scale_unit_string+' ') % scale_bar,
+                (shifted_start(tlim), ax_fraction_start),
+                ha='right', color=color, va='center', xycoords='data')
+    elif scale_unit_string!='':
+        ax.annotate(scale_unit_string,
+                (shifted_start(tlim), ax_fraction_start),
+                ha='right', color=color, va='center', xycoords='data')
+
+
+def add_name_annotation(data,
+                        ax,
+                        name,
+                        tlim, ax_fraction_extent, ax_fraction_start,
+                        color='k', rotation=0, side='right'):
+    if side=='right':
+        ax.annotate(' '+name,
+                (tlim[1], ax_fraction_extent/2.+ax_fraction_start),
+                xycoords='data', color=color, va='center', rotation=rotation)
+    else:
+        ax.annotate(name+' ',
+                (tlim[0], ax_fraction_extent/2.+ax_fraction_start),
+                xycoords='data', color=color, va='center', ha='right', rotation=rotation)
+
+
+def add_Photodiode(data, tlim, ax,
+                   fig_fraction_start=0., fig_fraction=1., 
+                   subsampling=10, 
+                   color='#808080', 
+                   name='photodiode'):
+    i1, i2 = dv_tools.convert_times_to_indices(*tlim, data.nwbfile.acquisition['Photodiode-Signal'])
+    t = dv_tools.convert_index_to_time(range(i1,i2),
+            data.nwbfile.acquisition['Photodiode-Signal'])[::subsampling]
+    y = data.nwbfile.acquisition['Photodiode-Signal'].data[i1:i2][::subsampling]
     
-    def __init__(self, filename, verbose=False, with_visual_stim=False):
-        """ opens data file """
-        super().__init__(filename, verbose=verbose)
-        if with_visual_stim:
-            self.init_visual_stim()
-        else:
-            self.visual_stim = None
-            
-    def init_visual_stim(self):
-        self.metadata['load_from_protocol_data'], self.metadata['no-window'] = True, True
-        self.visual_stim = build_stim(self.metadata)
-
-    ###-------------------------------------
-    ### ----- RAW DATA PLOT components -----
-    ###-------------------------------------
+    plot_scaled_signal(data,ax, t, y, tlim, 1e-5,
+            fig_fraction, fig_fraction_start, color=color, scale_unit_string='')        
+    add_name_annotation(data, ax, name, tlim,
+            fig_fraction, fig_fraction_start, color=color)
 
 
-    def shifted_start(self, tlim, frac_shift=0.01):
-        return tlim[0]-0.01*(tlim[1]-tlim[0])
-    
+def add_Electrophy(data, tlim, ax,
+                   fig_fraction_start=0., fig_fraction=1., subsampling=2, color='k',
+                   name='LFP'):
+    i1, i2 = dv_tools.convert_times_to_indices(*tlim,
+            data.nwbfile.acquisition['Electrophysiological-Signal'])
+    t = dv_tools.convert_index_to_time(range(i1,i2),
+            data.nwbfile.acquisition['Electrophysiological-Signal'])[::subsampling]
+    y = data.nwbfile.acquisition['Electrophysiological-Signal'].data[i1:i2][::subsampling]
 
-    def plot_scaled_signal(self, ax, t, signal, tlim, scale_bar, ax_fraction_extent, ax_fraction_start,
-                           color='#1f77b4', scale_unit_string='%.1f'):
-        # generic function to add scaled signal
+    plot_scaled_signal(data,ax, t, y, tlim, 0.2,
+            fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fmV')        
+    add_name_annotation(data, ax, name, tlim,
+            fig_fraction, fig_fraction_start, color=color)
 
-        try:
-            scale_range = np.max([signal.max()-signal.min(), scale_bar])
-            min_signal = signal.min()
-        except ValueError:
-            scale_range = scale_bar
-            min_signal = 0
 
-        ax.plot(t, ax_fraction_start+(signal-min_signal)*ax_fraction_extent/scale_range, color=color, lw=1)
-        if scale_unit_string!='':
-            ax.plot(self.shifted_start(tlim)*np.ones(2), ax_fraction_start+scale_bar*np.arange(2)*ax_fraction_extent/scale_range, color=color, lw=1)
-        if '%' in scale_unit_string:
-            ge.annotate(ax, str(scale_unit_string+' ') % scale_bar, (self.shifted_start(tlim), ax_fraction_start), ha='right', color=color, va='center', xycoords='data')
-        elif scale_unit_string!='':
-            ge.annotate(ax, scale_unit_string, (self.shifted_start(tlim), ax_fraction_start), ha='right', color=color, va='center', xycoords='data')
+def add_Locomotion(data, tlim, ax,
+                   fig_fraction_start=0., fig_fraction=1., subsampling=2,
+                   speed_scale_bar=1, # cm/s
+                   color='#1f77b4', name='run. speed'):
 
-    def add_name_annotation(self, ax, name, tlim, ax_fraction_extent, ax_fraction_start,
-                            color='k', rotation=0, side='right'):
-        if side=='right':
-            ge.annotate(ax, ' '+name, (tlim[1], ax_fraction_extent/2.+ax_fraction_start), xycoords='data', color=color, va='center', rotation=rotation)
-        else:
-            ge.annotate(ax, name+' ', (tlim[0], ax_fraction_extent/2.+ax_fraction_start), xycoords='data', color=color, va='center', ha='right', rotation=rotation)
-        
-    def add_Photodiode(self, tlim, ax,
-                       fig_fraction_start=0., fig_fraction=1., 
-                       subsampling=10, 
-                       color='#808080', 
-                       name='photodiode'):
-        i1, i2 = dv_tools.convert_times_to_indices(*tlim, self.nwbfile.acquisition['Photodiode-Signal'])
-        t = dv_tools.convert_index_to_time(range(i1,i2), self.nwbfile.acquisition['Photodiode-Signal'])[::subsampling]
-        y = self.nwbfile.acquisition['Photodiode-Signal'].data[i1:i2][::subsampling]
-        
-        self.plot_scaled_signal(ax, t, y, tlim, 1e-5, fig_fraction, fig_fraction_start, color=color, scale_unit_string='')        
-        self.add_name_annotation(ax, name, tlim, fig_fraction, fig_fraction_start, color=color)
+    if not hasattr(data, 'running_speed'):
+        data.build_running_speed()
 
-    def add_Electrophy(self, tlim, ax,
-                       fig_fraction_start=0., fig_fraction=1., subsampling=2, color='k',
-                       name='LFP'):
-        i1, i2 = dv_tools.convert_times_to_indices(*tlim, self.nwbfile.acquisition['Electrophysiological-Signal'])
-        t = dv_tools.convert_index_to_time(range(i1,i2), self.nwbfile.acquisition['Electrophysiological-Signal'])[::subsampling]
-        y = self.nwbfile.acquisition['Electrophysiological-Signal'].data[i1:i2][::subsampling]
+    i1, i2 = dv_tools.convert_times_to_indices(*tlim,
+            data.nwbfile.acquisition['Running-Speed'])
+    x, y = data.t_running_speed[i1:i2][::subsampling], data.running_speed[i1:i2][::subsampling]
 
-        self.plot_scaled_signal(ax, t, y, tlim, 0.2, fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fmV')        
-        self.add_name_annotation(ax, name, tlim, fig_fraction, fig_fraction_start, color=color)
-
-    def add_Locomotion(self, tlim, ax,
-                       fig_fraction_start=0., fig_fraction=1., subsampling=2,
-                       speed_scale_bar=1, # cm/s
-                       color='#1f77b4', name='run. speed'):
-        if not hasattr(self, 'running_speed'):
-            self.build_running_speed()
-        i1, i2 = dv_tools.convert_times_to_indices(*tlim, self.nwbfile.acquisition['Running-Speed'])
-        x, y = self.t_running_speed[i1:i2][::subsampling], self.running_speed[i1:i2][::subsampling]
-
-        self.plot_scaled_signal(ax, x, y, tlim, speed_scale_bar, fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fcm/s')        
-        self.add_name_annotation(ax, name, tlim, fig_fraction, fig_fraction_start, color=color)
-        
-    def add_Pupil(self, tlim, ax,
-                  fig_fraction_start=0., fig_fraction=1., subsampling=2,
-                  pupil_scale_bar = 0.5, # scale bar in mm
-                  color='red', name='pupil diam.'):
-        i1, i2 = dv_tools.convert_times_to_indices(*tlim, self.nwbfile.processing['Pupil'].data_interfaces['cx'])
-        if not hasattr(self, 'pupil_diameter'):
-            self.build_pupil_diameter()
-        x, y = self.t_pupil[i1:i2][::subsampling], self.pupil_diameter[i1:i2][::subsampling]
-
-        self.plot_scaled_signal(ax, x, y, tlim, pupil_scale_bar, fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fmm')        
-        self.add_name_annotation(ax, name, tlim, fig_fraction, fig_fraction_start, color=color)
-
-    def add_GazeMovement(self, tlim, ax,
-                         fig_fraction_start=0., fig_fraction=1., subsampling=2,
-                         gaze_scale_bar = 0.2, # scale bar in mm
-                         color='#ff7f0e', name='gaze mov.'):
-        i1, i2 = dv_tools.convert_times_to_indices(*tlim, self.nwbfile.processing['Pupil'].data_interfaces['cx'])
-        if not hasattr(self, 'gaze_movement'):
-            self.build_gaze_movement()
-        
-        x, y = self.t_pupil[i1:i2][::subsampling], self.gaze_movement[i1:i2][::subsampling]
-
-        self.plot_scaled_signal(ax, x, y, tlim, gaze_scale_bar, fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fmm')
-        self.add_name_annotation(ax, name, tlim, fig_fraction, fig_fraction_start, color=color)
-
-    def add_FaceMotion(self, tlim, ax,
-                       fig_fraction_start=0., fig_fraction=1., subsampling=2, color='#9467bd', name='facemotion'):
-        if not hasattr(self, 'facemotion'):
-            self.build_facemotion()
-        i1, i2 = dv_tools.convert_times_to_indices(*tlim, self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'])
-        x, y = self.t_facemotion[i1:i2][::subsampling], self.facemotion[i1:i2][::subsampling]
-
-        self.plot_scaled_signal(ax, x, y, tlim, 1., fig_fraction, fig_fraction_start, color=color, scale_unit_string='') # no scale bar here
-        self.add_name_annotation(ax, name, tlim, fig_fraction, fig_fraction_start, color=color)
-
-        
-    def add_CaImagingRaster(self, tlim, ax, raster=None,
-                            fig_fraction_start=0., fig_fraction=1., color='green',
-                            subquantity='Fluorescence', roiIndices='all', subquantity_args={},
-                            cmap=plt.cm.binary,
-                            normalization='None', subsampling=1,
-                            name='\nROIs'):
-
-        if subquantity=='Fluorescence' and (raster is None):
-            if (roiIndices=='all'):
-                raster = self.Fluorescence.data[:,:]
-            else:
-                raster = self.Fluorescence.data[roiIndices,:]
-                
-        elif (subquantity in ['dFoF', 'dF/F']) and (raster is None):
-            if not hasattr(self, 'dFoF'):
-                self.build_dFoF(**subquantity_args)
-            if (roiIndices=='all'):
-                raster = self.dFoF[:,:]
-            else:
-                raster = self.dFoF[roiIndices,:]
-                
-            roiIndices = np.arange(self.iscell.sum())
-
-        elif (roiIndices=='all') and (subquantity in ['dFoF', 'dF/F']):
-            roiIndices = np.arange(self.nROIs)
-            
-        if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
-            raster = np.array([(raster[i,:]-np.min(raster[i,:]))/(np.max(raster[i,:])-np.min(raster[i,:])) for i in range(raster.shape[0])])
-            
-        indices=np.arange(*dv_tools.convert_times_to_indices(*tlim, self.Neuropil, axis=1))[::subsampling]
-        
-        ax.imshow(raster[:,indices], origin='lower', cmap=cmap,
-                  aspect='auto', interpolation='none', vmin=0, vmax=1,
-                  extent=(dv_tools.convert_index_to_time(indices[0], self.Neuropil),
-                          dv_tools.convert_index_to_time(indices[-1], self.Neuropil),
-                          fig_fraction_start, fig_fraction_start+fig_fraction))
-
-        if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
-            _, axb = ge.bar_legend(ax,
-                          # X=[0,1], bounds=[0,1],
-                          continuous=False, colormap=cmap,
-                          colorbar_inset=dict(rect=[-.06,
-                                           fig_fraction_start+.2*fig_fraction,
-                                           .01,
-                                           .6*fig_fraction], facecolor=None),
-                          color_discretization=100, no_ticks=True, labelpad=4.,
-                          label=('$\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.'),
-                          fontsize='small')
-            ge.annotate(axb, ' max', (1,1), size='x-small')
-            ge.annotate(axb, ' min', (1,0), size='x-small', va='top')
-            
-        self.add_name_annotation(ax, name, tlim, fig_fraction, fig_fraction_start, rotation=90)
-
-        ge.annotate(ax, '1', (tlim[1], fig_fraction_start), xycoords='data')
-        ge.annotate(ax, '%i' % raster.shape[0],
-                    (tlim[1], fig_fraction_start+fig_fraction), va='top', xycoords='data')
-        
-        
-    def add_CaImaging(self, tlim, ax,
-                      fig_fraction_start=0., fig_fraction=1., color='green',
-                      subquantity='Fluorescence', roiIndices='all', dFoF_args={},
-                      vicinity_factor=1, subsampling=1, name='[Ca] imaging',
-                      annotation_side='right'):
-
-        if (subquantity in ['dF/F', 'dFoF']) and (not hasattr(self, 'dFoF')):
-            self.build_dFoF(**dFoF_args)
-            
-        if (type(roiIndices)==str) and roiIndices=='all':
-            roiIndices = self.valid_roiIndices
-            
-        if color=='tab':
-            COLORS = [plt.cm.tab10(n%10) for n in range(len(roiIndices))]
-        else:
-            COLORS = [str(color) for n in range(len(roiIndices))]
-
-        i1, i2 = dv_tools.convert_times_to_indices(*tlim, self.Neuropil, axis=1)
-        t = np.array(self.Neuropil.timestamps[:])[np.arange(i1,i2)][::subsampling]
-
-        for n, ir in zip(range(len(roiIndices))[::-1], roiIndices[::-1]):
-
-            ypos = n*fig_fraction/len(roiIndices)/vicinity_factor+fig_fraction_start # bottom position
-
-            if (subquantity in ['dF/F', 'dFoF']):
-                y = self.dFoF[ir, np.arange(i1,i2)][::subsampling]
-                self.plot_scaled_signal(ax, t, y, tlim, 1., fig_fraction/len(roiIndices), ypos, color=color,
-                                        scale_unit_string=('%.0f$\Delta$F/F' if (n==0) else ' '))
-            else:
-                y = self.Fluorescence.data[ir, np.arange(i1,i2)][::subsampling]
-                self.plot_scaled_signal(ax, t, y, tlim, 1., fig_fraction/len(roiIndices), ypos, color=color,
-                                        scale_unit_string=('fluo (a.u.)' if (n==0) else ''))
-
-            self.add_name_annotation(ax, 'ROI#%i'%(ir+1), tlim, fig_fraction/len(roiIndices), ypos,
-                    color=color, side=annotation_side)
-            
-        # ge.annotate(ax, name, (self.shifted_start(tlim), fig_fraction/2.+fig_fraction_start), color=color,
-        #             xycoords='data', ha='right', va='center', rotation=90)
-            
-
-    def add_CaImagingSum(self, tlim, ax,
-                         fig_fraction_start=0., fig_fraction=1., color='green',
-                         subquantity='Fluorescence', subsampling=1,
-                         name='Sum [Ca]'):
-        
-        if (subquantity in ['dF/F', 'dFoF']) and (not hasattr(self, 'dFoF')):
-            self.build_dFoF()
-            
-        i1, i2 = dv_tools.convert_times_to_indices(*tlim, self.Neuropil, axis=1)
-        t = np.array(self.Neuropil.timestamps[:])[np.arange(i1,i2)][::subsampling]
-        
-        if (subquantity in ['dF/F', 'dFoF']):
-            y = self.dFoF.sum(axis=0)[np.arange(i1,i2)][::subsampling]
-        else:
-            y = self.Fluorescence.data[:,:].sum(axis=0)[np.arange(i1,i2)][::subsampling]
-
-        self.plot_scaled_signal(ax, t, y, tlim, 1., fig_fraction, fig_fraction_start, color=color,
-                                scale_unit_string=('%.0fdF/F' if subquantity in ['dF/F', 'dFoF'] else ''))
-        self.add_name_annotation(ax, name, tlim, fig_fraction, fig_fraction_start, color=color)
-
-        
-    def add_VisualStim(self, tlim, ax,
-                       fig_fraction_start=0., fig_fraction=0.05, size=0.1,
-                       with_screen_inset=True,
-                       color='k', name='visual stim.'):
-        if self.visual_stim is None:
-            self.init_visual_stim()
-        # cond = (self.nwbfile.stimulus['time_start_realigned'].data[:]>tlim[0]) &\
-            # (self.nwbfile.stimulus['time_stop_realigned'].data[:]<tlim[1])
-        cond = (self.nwbfile.stimulus['time_start_realigned'].data[:]<tlim[1]) &\
-            (self.nwbfile.stimulus['time_stop_realigned'].data[:]>tlim[0])
-        ylevel = fig_fraction_start+fig_fraction/2.
-        sx, sy = self.visual_stim.screen['resolution']
-        ax_pos = ax.get_position()
-        for i in np.arange(self.nwbfile.stimulus['time_start_realigned'].num_samples)[cond]:
-            tstart = self.nwbfile.stimulus['time_start_realigned'].data[i]
-            tstop = self.nwbfile.stimulus['time_stop_realigned'].data[i]
-            # ax.plot([tstart, tstop], [ylevel, ylevel], color=color)
-            ax.fill_between([tstart, tstop], [0,0], np.zeros(2)+ylevel,
-                            lw=0, alpha=0.05, color=color)
-            if with_screen_inset:
-                axi = ax.inset_axes([tstart, 1.01, (tstop-tstart), size], transform=ax.transData)
-                axi.axis('equal')
-                self.visual_stim.plot_stim_picture(i, ax=axi)
-        ge.annotate(ax, ' '+name, (tlim[1], fig_fraction+fig_fraction_start), color=color, xycoords='data')
-
-        
-    def show_VisualStim(self, tlim,
-                        Npanels=8):
-        
-        if self.visual_stim is None:
-            self.init_visual_stim()
-
-        fig, AX = ge.figure(axes=(Npanels,1),
-                            figsize=(1.6/2., 0.9/2.), top=3, bottom=2, wspace=.2)
-
-        label={'degree':20,
-               'shift_factor':0.03,
-               'lw':0.5, 'fontsize':7}
-        
-        for i, ti in enumerate(np.linspace(*tlim, Npanels)):
-            iEp = self.find_episode_from_time(ti)
-            tEp = self.nwbfile.stimulus['time_start_realigned'].data[iEp]
-            if iEp>=0:
-                self.visual_stim.show_frame(iEp, ax=AX[i],
-                                            time_from_episode_start=ti-tEp,
-                                            label=label)
-            AX[i].set_title('%.1fs' % ti, fontsize=6)
-            AX[i].axis('off')
-            label=None
-            
-        return fig, AX
-
+    plot_scaled_signal(data,ax, x, y, tlim, speed_scale_bar,
+            fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fcm/s')        
+    add_name_annotation(data, ax, name, tlim,
+            fig_fraction, fig_fraction_start, color=color)
    
-    def find_default_plot_settings(self, Nmax=7):
-        settings = {}
 
-        if self.metadata['VisualStim']:
-            settings['Photodiode'] = dict(fig_fraction=.5, subsampling=1, color='grey')
+def add_Pupil(data, tlim, ax,
+              fig_fraction_start=0., fig_fraction=1., subsampling=2,
+              pupil_scale_bar = 0.5, # scale bar in mm
+              color='red', name='pupil diam.'):
 
-        if self.metadata['Locomotion']:
-            settings['Locomotion'] = dict(fig_fraction=1, subsampling=1, color='#1f77b4')
+    i1, i2 = dv_tools.convert_times_to_indices(*tlim,
+            data.nwbfile.processing['Pupil'].data_interfaces['cx'])
 
-        if 'FaceMotion' in self.nwbfile.processing:
-            settings['FaceMotion'] = dict(fig_fraction=1, subsampling=10, color='purple')
+    if not hasattr(data, 'pupil_diameter'):
+        data.build_pupil_diameter()
 
-        if 'Pupil' in self.nwbfile.processing:
-            settings['GazeMovement'] = dict(fig_fraction=0.5, subsampling=1, color='#ff7f0e')
+    x, y = data.t_pupil[i1:i2][::subsampling], data.pupil_diameter[i1:i2][::subsampling]
 
-        if 'Pupil' in self.nwbfile.processing:
-            settings['Pupil']= dict(fig_fraction=2, subsampling=1, color='#d62728')
+    plot_scaled_signal(data,ax, x, y, tlim, pupil_scale_bar,
+            fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fmm')        
+    add_name_annotation(data, ax, name, tlim,
+            fig_fraction, fig_fraction_start, color=color)
 
-        if 'ophys' in self.nwbfile.processing:
-            settings['CaImaging'] = dict(fig_fraction=4, subsampling=1, 
-                                         subquantity='dF/F', color='#2ca02c',
-                                         roiIndices=np.sort(np.random.choice(np.arange(np.sum(self.iscell)),
-                                             np.min([Nmax, self.iscell.sum()]), replace=False)))
 
-        if 'ophys' in self.nwbfile.processing:
-            settings['CaImagingRaster'] = dict(fig_fraction=3, subsampling=1,
-                                               roiIndices='all',
-                                               normalization='per-line',
-                                               subquantity='dF/F')
+def add_GazeMovement(data, tlim, ax,
+                     fig_fraction_start=0., fig_fraction=1., subsampling=2,
+                     gaze_scale_bar = 0.2, # scale bar in mm
+                     color='#ff7f0e', name='gaze mov.'):
 
-        if self.metadata['VisualStim']:
-            settings['VisualStim'] = dict(fig_fraction=.5, color='black')
+    if not hasattr(data, 'gaze_movement'):
+        data.build_gaze_movement()
+    
+    i1, i2 = dv_tools.convert_times_to_indices(*tlim,
+            data.nwbfile.processing['Pupil'].data_interfaces['cx'])
 
-        return settings 
+    x, y = data.t_pupil[i1:i2][::subsampling], data.gaze_movement[i1:i2][::subsampling]
 
-    def plot_raw_data(self, 
-                      tlim=[0,100],
-                      settings = None,
-                      figsize=(3,5), Tbar=0., zoom_area=None,
-                      ax=None):
+    plot_scaled_signal(data,ax, x, y, tlim, gaze_scale_bar,
+            fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fmm')
+    add_name_annotation(data, ax, name, tlim,
+            fig_fraction, fig_fraction_start, color=color)
 
-        if settings is None:
-            settings = self.find_default_plot_settings()
 
-        if ax is None:
-            fig, ax = ge.figure(figsize=figsize, bottom=.3, left=.5, right=2)
-        else:
-            fig = None
-            
-        fig_fraction_full, fstart = np.sum([settings[key]['fig_fraction'] for key in settings]), 0
-        
-        for key in settings:
-            settings[key]['fig_fraction_start'] = fstart
-            settings[key]['fig_fraction'] = settings[key]['fig_fraction']/fig_fraction_full
-            fstart += settings[key]['fig_fraction']
-            
-        for key in settings:
-            getattr(self, 'add_%s' % key)(tlim, ax, **settings[key])
+def add_FaceMotion(data, tlim, ax,
+                   fig_fraction_start=0., fig_fraction=1., subsampling=2, color='#9467bd', name='facemotion'):
 
-        # time scale bar
-        if Tbar==0.:
-            Tbar = np.max([int((tlim[1]-tlim[0])/30.), 1])
+    if not hasattr(data, 'facemotion'):
+        data.build_facemotion()
 
-        ax.plot([self.shifted_start(tlim), self.shifted_start(tlim)+Tbar], [1.,1.], lw=1, color='k')
-        ax.annotate((' %is' % Tbar if Tbar>=1 else  '%.1fs' % Tbar) ,
-                    [self.shifted_start(tlim), 1.02], color='k', fontsize=9)
-        
-        ax.axis('off')
-        ax.set_xlim([self.shifted_start(tlim)-0.01*(tlim[1]-tlim[0]),tlim[1]+0.01*(tlim[1]-tlim[0])])
-        ax.set_ylim([-0.05,1.05])
+    i1, i2 = dv_tools.convert_times_to_indices(*tlim,
+            data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'])
 
-        if zoom_area is not None:
-            ax.fill_between(zoom_area, [0,0], [1,1],  color='k', alpha=.2, lw=0)
-        
-        return fig, ax
+    x, y = data.t_facemotion[i1:i2][::subsampling], data.facemotion[i1:i2][::subsampling]
+
+    plot_scaled_signal(data, ax, x, y, tlim, 1.,
+            fig_fraction, fig_fraction_start, color=color, scale_unit_string='') # no scale bar here
+    
+    add_name_annotation(data, ax, name, tlim,
+            fig_fraction, fig_fraction_start, color=color)
 
     
-    ###-------------------------------------
-    ### ----- IMAGING PLOT components -----
-    ###-------------------------------------
+def add_CaImagingRaster(data, tlim, ax, raster=None,
+                        fig_fraction_start=0., fig_fraction=1., color='green',
+                        subquantity='Fluorescence', roiIndices='all', subquantity_args={},
+                        cmap=plt.cm.binary,
+                        normalization='None', subsampling=1,
+                        name='\nROIs'):
 
-    def find_full_roi_coords(self, roiIndex):
-
-        indices = np.arange((self.pixel_masks_index[roiIndex-1] if roiIndex>0 else 0),
-                            (self.pixel_masks_index[roiIndex] if roiIndex<len(self.valid_roiIndices) else len(self.pixel_masks_index)))
-        return [self.pixel_masks[ii][1] for ii in indices],  [self.pixel_masks[ii][0] for ii in indices]
-
-    def find_roi_coords(self, roiIndex):
-        x, y = self.find_full_roi_coords(roiIndex)
-        return np.mean(y), np.mean(x), np.std(y), np.std(x)
-
-    def find_roi_extent(self, roiIndex, roi_zoom_factor=10.):
-
-        mx, my, sx, sy = self.find_roi_coords(roiIndex)
-
-        return np.array((mx-roi_zoom_factor*sx, mx+roi_zoom_factor*sx,
-                         my-roi_zoom_factor*sy, my+roi_zoom_factor*sy), dtype=int)
-
-
-    def find_roi_cond(self, roiIndex, roi_zoom_factor=10.):
-
-        mx, my, sx, sy = self.find_roi_coords(roiIndex)
-
-        img_shape = self.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:].shape
-
-        x, y = np.meshgrid(np.arange(img_shape[0]), np.arange(img_shape[1]), indexing='ij')
-        cond = (x>=(mx-roi_zoom_factor*sx)) &\
-                (x<=(mx+roi_zoom_factor*sx)) &\
-               (y>=(my-roi_zoom_factor*sy)) &\
-                (y<=(my+roi_zoom_factor*sy)) 
-        roi_zoom_shape = (len(np.unique(x[cond])), len(np.unique(y[cond])))
-
-        return cond, roi_zoom_shape
-
-    def add_roi_ellipse(self, roiIndex, ax,
-                        size_factor=1.5,
-                        roi_lw=3):
-
-        mx, my, sx, sy = self.find_roi_coords(roiIndex)
-        ellipse = plt.Circle((mx, my), size_factor*(sy+sx), edgecolor='lightgray', facecolor='none', lw=roi_lw)
-        ax.add_patch(ellipse)
-
-    def show_CaImaging_FOV(self, key='meanImg', NL=1, cmap='viridis', ax=None,
-                           roiIndex=None, roiIndices=[],
-                           roi_zoom_factor=10,
-                           roi_lw=3,
-                           with_roi_zoom=False,):
-        
-        if ax is None:
-            fig, ax = ge.figure()
+    if subquantity=='Fluorescence' and (raster is None):
+        if (roiIndices=='all'):
+            raster = data.Fluorescence.data[:,:]
         else:
-            fig = None
-        ax.axis('equal')
+            raster = data.Fluorescence.data[roiIndices,:]
+            
+    elif (subquantity in ['dFoF', 'dF/F']) and (raster is None):
+        if not hasattr(data, 'dFoF'):
+            data.build_dFoF(**subquantity_args)
+        if (roiIndices=='all'):
+            raster = data.dFoF[:,:]
+        else:
+            raster = data.dFoF[roiIndices,:]
+            
+        roiIndices = np.arange(data.iscell.sum())
 
-        img = self.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images[key][:]
-        extent=(0,img.shape[1], 0, img.shape[0])
-
-        if with_roi_zoom and roiIndex is not None:
-            zoom_cond, zoom_cond_shape = self.find_roi_cond(roiIndex, roi_zoom_factor=roi_zoom_factor)
-            img = img[zoom_cond].reshape(*zoom_cond_shape)
-            extent=self.find_roi_extent(roiIndex, roi_zoom_factor=roi_zoom_factor)
+    elif (roiIndices=='all') and (subquantity in ['dFoF', 'dF/F']):
+        roiIndices = np.arange(data.nROIs)
         
-        img = (img-img.min())/(img.max()-img.min())
-        img = np.power(img, 1/NL)
-        img = ax.imshow(img, vmin=0, vmax=1, cmap=cmap, aspect='equal', interpolation='none', 
-                origin='lower',
-                extent=extent)
-        ax.axis('off')
-
-        if roiIndex is not None:
-            self.add_roi_ellipse(roiIndex, ax, roi_lw=roi_lw)
-
-        if roiIndices=='all':
-            roiIndices = self.valid_roiIndices
-
-        for roiIndex in roiIndices:
-            x, y = self.find_full_roi_coords(roiIndex)
-            ax.plot(x, y, '.', 
-                    # color=ge.tab10(roiIndex%10), 
-                    # color=plt.cm.hsv(np.random.uniform(0,1)),
-                    color=plt.cm.autumn(np.random.uniform(0,1)),
-                    alpha=0.5,
-                    ms=0.1)
-        ax.annotate('%i ROIs' % np.sum(self.iscell), (0, 0), xycoords='axes fraction', rotation=90, ha='right')
+    if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
+        raster = np.array([(raster[i,:]-np.min(raster[i,:]))/(np.max(raster[i,:])-\
+                                np.min(raster[i,:])) for i in range(raster.shape[0])])
         
-        ge.title(ax, key)
+    indices=np.arange(*dv_tools.convert_times_to_indices(*tlim,
+                                data.Neuropil, axis=1))[::subsampling]
+    
+    ax.imshow(raster[:,indices], origin='lower', cmap=cmap,
+              aspect='auto', interpolation='none', vmin=0, vmax=1,
+              extent=(dv_tools.convert_index_to_time(indices[0], data.Neuropil),
+                      dv_tools.convert_index_to_time(indices[-1], data.Neuropil),
+                      fig_fraction_start, fig_fraction_start+fig_fraction))
+
+    # if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
+        # _, axb = ge.bar_legend(ax,
+                      # # X=[0,1], bounds=[0,1],
+                      # continuous=False, colormap=cmap,
+                      # colorbar_inset=dict(rect=[-.06,
+                                       # fig_fraction_start+.2*fig_fraction,
+                                       # .01,
+                                       # .6*fig_fraction], facecolor=None),
+                      # color_discretization=100, no_ticks=True, labelpad=4.,
+                      # label=('$\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.'),
+                      # fontsize='small')
+        # ge.annotate(axb, ' max', (1,1), size='x-small')
+        # ge.annotate(axb, ' min', (1,0), size='x-small', va='top')
         
-        return fig, ax, img
+    add_name_annotation(data, ax, name, tlim,
+            fig_fraction, fig_fraction_start, rotation=90)
+
+    ax.annotate('1', (tlim[1], fig_fraction_start), xycoords='data')
+    ax.annotate('%i' % raster.shape[0],
+                (tlim[1], fig_fraction_start+fig_fraction), va='top', xycoords='data')
+    
+    
+def add_CaImaging(data, tlim, ax,
+                  fig_fraction_start=0., fig_fraction=1., color='green',
+                  subquantity='Fluorescence', roiIndices='all', dFoF_args={},
+                  vicinity_factor=1, subsampling=1, name='[Ca] imaging',
+                  annotation_side='right'):
+
+    if (subquantity in ['dF/F', 'dFoF']) and (not hasattr(data, 'dFoF')):
+        data.build_dFoF(**dFoF_args)
+        
+    if (type(roiIndices)==str) and roiIndices=='all':
+        roiIndices = data.valid_roiIndices
+        
+    if color=='tab':
+        COLORS = [plt.cm.tab10(n%10) for n in range(len(roiIndices))]
+    else:
+        COLORS = [str(color) for n in range(len(roiIndices))]
+
+    i1, i2 = dv_tools.convert_times_to_indices(*tlim, data.Neuropil, axis=1)
+    t = np.array(data.Neuropil.timestamps[:])[np.arange(i1,i2)][::subsampling]
+
+    for n, ir in zip(range(len(roiIndices))[::-1], roiIndices[::-1]):
+
+        ypos = n*fig_fraction/len(roiIndices)/vicinity_factor+fig_fraction_start # bottom position
+
+        if (subquantity in ['dF/F', 'dFoF']):
+            y = data.dFoF[ir, np.arange(i1,i2)][::subsampling]
+            plot_scaled_signal(data,ax, t, y, tlim, 1., fig_fraction/len(roiIndices), ypos, color=color,
+                                    scale_unit_string=('%.0f$\Delta$F/F' if (n==0) else ' '))
+        else:
+            y = data.Fluorescence.data[ir, np.arange(i1,i2)][::subsampling]
+            plot_scaled_signal(data, ax, t, y, tlim, 1., fig_fraction/len(roiIndices), ypos, color=color,
+                                    scale_unit_string=('fluo (a.u.)' if (n==0) else ''))
+
+        add_name_annotation(data, ax, 'ROI#%i'%(ir+1), tlim, fig_fraction/len(roiIndices), ypos,
+                color=color, side=annotation_side)
+        
+    # ax.annotate(name, (shifted_start(tlim), fig_fraction/2.+fig_fraction_start), color=color,
+    #             xycoords='data', ha='right', va='center', rotation=90)
+        
+
+def add_CaImagingSum(data, tlim, ax,
+                     fig_fraction_start=0., fig_fraction=1., color='green',
+                     subquantity='Fluorescence', subsampling=1,
+                     name='Sum [Ca]'):
+    
+    if (subquantity in ['dF/F', 'dFoF']) and (not hasattr(data, 'dFoF')):
+        data.build_dFoF()
+        
+    i1, i2 = dv_tools.convert_times_to_indices(*tlim, data.Neuropil, axis=1)
+    t = np.array(data.Neuropil.timestamps[:])[np.arange(i1,i2)][::subsampling]
+    
+    if (subquantity in ['dF/F', 'dFoF']):
+        y = data.dFoF.sum(axis=0)[np.arange(i1,i2)][::subsampling]
+    else:
+        y = data.Fluorescence.data[:,:].sum(axis=0)[np.arange(i1,i2)][::subsampling]
+
+    plot_scaled_signal(data, ax, t, y, tlim, 1., fig_fraction, fig_fraction_start, color=color,
+                            scale_unit_string=('%.0fdF/F' if subquantity in ['dF/F', 'dFoF'] else ''))
+    add_name_annotation(data, ax, name, tlim, fig_fraction, fig_fraction_start, color=color)
+
+    
+def add_VisualStim(data, tlim, ax,
+                   fig_fraction_start=0., fig_fraction=0.05, size=0.1,
+                   with_screen_inset=True,
+                   color='k', name='visual stim.'):
+    if data.visual_stim is None:
+        data.init_visual_stim()
+    # cond = (data.nwbfile.stimulus['time_start_realigned'].data[:]>tlim[0]) &\
+        # (data.nwbfile.stimulus['time_stop_realigned'].data[:]<tlim[1])
+    cond = (data.nwbfile.stimulus['time_start_realigned'].data[:]<tlim[1]) &\
+        (data.nwbfile.stimulus['time_stop_realigned'].data[:]>tlim[0])
+    ylevel = fig_fraction_start+fig_fraction/2.
+    sx, sy = data.visual_stim.screen['resolution']
+    ax_pos = ax.get_position()
+    for i in np.arange(data.nwbfile.stimulus['time_start_realigned'].num_samples)[cond]:
+        tstart = data.nwbfile.stimulus['time_start_realigned'].data[i]
+        tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i]
+        # ax.plot([tstart, tstop], [ylevel, ylevel], color=color)
+        ax.fill_between([tstart, tstop], [0,0], np.zeros(2)+ylevel,
+                        lw=0, alpha=0.05, color=color)
+        if with_screen_inset:
+            axi = ax.inset_axes([tstart, 1.01, (tstop-tstart), size], transform=ax.transData)
+            axi.axis('equal')
+            data.visual_stim.plot_stim_picture(i, ax=axi)
+    ax.annotate(' '+name, (tlim[1], fig_fraction+fig_fraction_start), color=color, xycoords='data')
+
+    
+def show_VisualStim(data, tlim,
+                    Npanels=8):
+    
+    if data.visual_stim is None:
+        data.init_visual_stim()
+
+    fig, AX = plt.subplots(Npanels,1)
+
+    label={'degree':20,
+           'shift_factor':0.03,
+           'lw':0.5, 'fontsize':7}
+    
+    for i, ti in enumerate(np.linspace(*tlim, Npanels)):
+        iEp = data.find_episode_from_time(ti)
+        tEp = data.nwbfile.stimulus['time_start_realigned'].data[iEp]
+        if iEp>=0:
+            data.visual_stim.show_frame(iEp, ax=AX[i],
+                                        time_from_episode_start=ti-tEp,
+                                        label=label)
+        AX[i].set_title('%.1fs' % ti, fontsize=6)
+        AX[i].axis('off')
+        label=None
+        
+    return fig, AX
+
+
+def find_default_plot_settings(data, Nmax=7):
+    settings = {}
+
+    if data.metadata['VisualStim']:
+        settings['Photodiode'] = dict(fig_fraction=.5, subsampling=1, color='grey')
+
+    if data.metadata['Locomotion']:
+        settings['Locomotion'] = dict(fig_fraction=1, subsampling=1, color='#1f77b4')
+
+    if 'FaceMotion' in data.nwbfile.processing:
+        settings['FaceMotion'] = dict(fig_fraction=1, subsampling=10, color='purple')
+
+    if 'Pupil' in data.nwbfile.processing:
+        settings['GazeMovement'] = dict(fig_fraction=0.5, subsampling=1, color='#ff7f0e')
+
+    if 'Pupil' in data.nwbfile.processing:
+        settings['Pupil']= dict(fig_fraction=2, subsampling=1, color='#d62728')
+
+    if 'ophys' in data.nwbfile.processing:
+        settings['CaImaging'] = dict(fig_fraction=4, subsampling=1, 
+                                     subquantity='dF/F', color='#2ca02c',
+                                     roiIndices=np.sort(np.random.choice(np.arange(np.sum(data.iscell)),
+                                         np.min([Nmax, data.iscell.sum()]), replace=False)))
+
+    if 'ophys' in data.nwbfile.processing:
+        settings['CaImagingRaster'] = dict(fig_fraction=3, subsampling=1,
+                                           roiIndices='all',
+                                           normalization='per-line',
+                                           subquantity='dF/F')
+
+    if data.metadata['VisualStim']:
+        settings['VisualStim'] = dict(fig_fraction=.5, color='black')
+
+    return settings 
+
+def plot(data, 
+         tlim=[0,100],
+         settings = {},
+         figsize=(3,5), Tbar=0., zoom_area=None,
+         ax=None):
+
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10,4))
+    else:
+        fig = None
+        
+    fig_fraction_full, fstart = np.sum([settings[key]['fig_fraction'] for key in settings]), 0
+    
+    for key in settings:
+        settings[key]['fig_fraction_start'] = fstart
+        settings[key]['fig_fraction'] = settings[key]['fig_fraction']/fig_fraction_full
+        fstart += settings[key]['fig_fraction']
+        
+    for key in settings:
+        exec('add_%s(data, tlim, ax, **settings[key])' % key)
+
+    # time scale bar
+    if Tbar==0.:
+        Tbar = np.max([int((tlim[1]-tlim[0])/30.), 1])
+
+    ax.plot([shifted_start(tlim), shifted_start(tlim)+Tbar], [1.,1.], lw=1, color='k')
+    ax.annotate((' %is' % Tbar if Tbar>=1 else  '%.1fs' % Tbar) ,
+                [shifted_start(tlim), 1.02], color='k', fontsize=9)
+    
+    ax.axis('off')
+    ax.set_xlim([shifted_start(tlim)-0.01*(tlim[1]-tlim[0]),tlim[1]+0.01*(tlim[1]-tlim[0])])
+    ax.set_ylim([-0.05,1.05])
+
+    if zoom_area is not None:
+        ax.fill_between(zoom_area, [0,0], [1,1],  color='k', alpha=.2, lw=0)
+    
+    return fig, ax
+
+
+###-------------------------------------
+### ----- IMAGING PLOT components -----
+###-------------------------------------
+
+def find_full_roi_coords(data, roiIndex):
+
+    indices = np.arange((data.pixel_masks_index[roiIndex-1] if roiIndex>0 else 0),
+                        (data.pixel_masks_index[roiIndex] if roiIndex<len(data.valid_roiIndices) else len(data.pixel_masks_index)))
+    return [data.pixel_masks[ii][1] for ii in indices],  [data.pixel_masks[ii][0] for ii in indices]
+
+def find_roi_coords(data, roiIndex):
+    x, y = data.find_full_roi_coords(roiIndex)
+    return np.mean(y), np.mean(x), np.std(y), np.std(x)
+
+def find_roi_extent(data, roiIndex, roi_zoom_factor=10.):
+
+    mx, my, sx, sy = data.find_roi_coords(roiIndex)
+
+    return np.array((mx-roi_zoom_factor*sx, mx+roi_zoom_factor*sx,
+                     my-roi_zoom_factor*sy, my+roi_zoom_factor*sy), dtype=int)
+
+
+def find_roi_cond(data, roiIndex, roi_zoom_factor=10.):
+
+    mx, my, sx, sy = data.find_roi_coords(roiIndex)
+
+    img_shape = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:].shape
+
+    x, y = np.meshgrid(np.arange(img_shape[0]), np.arange(img_shape[1]), indexing='ij')
+    cond = (x>=(mx-roi_zoom_factor*sx)) &\
+            (x<=(mx+roi_zoom_factor*sx)) &\
+           (y>=(my-roi_zoom_factor*sy)) &\
+            (y<=(my+roi_zoom_factor*sy)) 
+    roi_zoom_shape = (len(np.unique(x[cond])), len(np.unique(y[cond])))
+
+    return cond, roi_zoom_shape
+
+def add_roi_ellipse(data, roiIndex, ax,
+                    size_factor=1.5,
+                    roi_lw=3):
+
+    mx, my, sx, sy = data.find_roi_coords(roiIndex)
+    ellipse = plt.Circle((mx, my), size_factor*(sy+sx), edgecolor='lightgray', facecolor='none', lw=roi_lw)
+    ax.add_patch(ellipse)
+
+def show_CaImaging_FOV(data, key='meanImg', NL=1, cmap='viridis', ax=None,
+                       roiIndex=None, roiIndices=[],
+                       roi_zoom_factor=10,
+                       roi_lw=3,
+                       with_roi_zoom=False,):
+    
+    if ax is None:
+        fig, ax = plt.subplots()
+    else:
+        fig = None
+    ax.axis('equal')
+
+    img = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images[key][:]
+    extent=(0,img.shape[1], 0, img.shape[0])
+
+    if with_roi_zoom and roiIndex is not None:
+        zoom_cond, zoom_cond_shape = data.find_roi_cond(roiIndex, roi_zoom_factor=roi_zoom_factor)
+        img = img[zoom_cond].reshape(*zoom_cond_shape)
+        extent=data.find_roi_extent(roiIndex, roi_zoom_factor=roi_zoom_factor)
+    
+    img = (img-img.min())/(img.max()-img.min())
+    img = np.power(img, 1/NL)
+    img = ax.imshow(img, vmin=0, vmax=1, cmap=cmap, aspect='equal', interpolation='none', 
+            origin='lower',
+            extent=extent)
+    ax.axis('off')
+
+    if roiIndex is not None:
+        data.add_roi_ellipse(roiIndex, ax, roi_lw=roi_lw)
+
+    if roiIndices=='all':
+        roiIndices = data.valid_roiIndices
+
+    for roiIndex in roiIndices:
+        x, y = data.find_full_roi_coords(roiIndex)
+        ax.plot(x, y, '.', 
+                # color=plt.cm.tab10(roiIndex%10), 
+                # color=plt.cm.hsv(np.random.uniform(0,1)),
+                color=plt.cm.autumn(np.random.uniform(0,1)),
+                alpha=0.5,
+                ms=0.1)
+    ax.annotate('%i ROIs' % np.sum(data.iscell), (0, 0), xycoords='axes fraction', rotation=90, ha='right')
+    
+    ax.set_title(key)
+    
+    return fig, ax, img
 
 
     
