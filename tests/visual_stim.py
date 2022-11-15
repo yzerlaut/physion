@@ -1,6 +1,6 @@
-import json, argparse, tempfile, sys 
+import json, argparse, tempfile, sys, os, pathlib
 
-sys.path.append('./src')
+sys.path.append(os.path.join(pathlib.Path(__file__).resolve().parents[1], 'src'))
 
 import physion
 
