@@ -11,3 +11,20 @@ def figure(axes=1,
                                      figsize[1]*axes[1]))
     else:
         return plt.subplots(axes, figsize=figsize)
+
+
+def pie(data,
+        ax=None):
+    if ax is None:
+        fig, ax = figure()
+    else:
+        fig = None
+
+    ax.pie(data)
+
+    return fig, ax
+
+
+
+
+
