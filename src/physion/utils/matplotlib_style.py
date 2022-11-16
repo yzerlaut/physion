@@ -1,9 +1,8 @@
 ### FIGURE
 figure.facecolor: white
 figure.dpi: 300
-figure.figsize: 4.0, 2.5
+figure.figsize: 1.7, 1.3
 figure.titlesize: 8
-figure.labelsize: 8
 # figure.titleweight: bold
 figure.autolayout: True # When True, automatically adjust subplot
 
