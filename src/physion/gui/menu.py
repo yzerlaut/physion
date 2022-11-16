@@ -33,6 +33,8 @@ def build_menu(self):
                                      self.launch_pupil_tracking_PP)
     self.preprocessingMenu.addAction('&Whisking',
                                      self.launch_whisking_tracking_PP)
+    self.preprocessingMenu.addAction('&Red Channel Labelling',
+                                     self.red_channel_labelling)
 
     ##### ---------  Assembling   ------------------------
     self.assemblingMenu = self.mainMenu.addMenu('  * Assembling')

@@ -44,6 +44,10 @@ class MainWindow(QtWidgets.QMainWindow):
     # data analysis tools
     from physion.analysis.gui import trial_averaging
 
+    # data analysis tools
+    from physion.imaging.red import red_channel_labelling
+
+
     def __init__(self, app,
                  args=None,
                  width=850, height=700,
