@@ -11,14 +11,35 @@ smallfont, verysmallfont = QtGui.QFont(), QtGui.QFont()
 verysmallfont.setPointSize(9)
 smallfont.setPointSize(11)
 
-def open_file(self,
-              folder=False):
+def choose_root_folder(self):
+
+    if hasattr(self, 'fbox'):
+        return (FOLDERS[self.fbox.currentText()] if self.fbox.currentText() in physion.utils.paths.FOLDERS else os.path.join(os.path.expanduser('~'), 'DATA'))
+    else:
+        return os.path.join(os.path.expanduser('~'), 'DATA')
+
+
+def open_NWB(self):
+
 
     filename, _ = QtWidgets.QFileDialog.getOpenFileName(self,
                  "Open Multimodal Experimental Recording (NWB file) ",
-                 os.path.join(os.path.expanduser('~'), 'DATA'),
-                 # (FOLDERS[self.fbox.currentText()] if self.fbox.currentText() in FOLDERS else os.path.join(os.path.expanduser('~'), 'DATA')),
+                 self.choose_root_folder(),
                  filter="*.nwb")
+
+    return filename
+
+def open_folder(self):
+    # self.lastBox.setChecked(False)
+    folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
+                                    "Choose datafolder",
+                                    self.choose_root_folder())
+    return folder
+
+def open_file(self,
+              folder=False):
+
+    filename = self.open_NWB()
 
     if filename!='':
         self.filename = filename
@@ -28,15 +49,6 @@ def open_file(self,
         print('file not loaded ...')
 
 
-def load_folder(self):
-    # self.lastBox.setChecked(False)
-    folder = QtGui.QFileDialog.getExistingDirectory(self,\
-                                   "Choose datafolder",
-                                    FOLDERS[self.folderB.currentText()])
-    if folder!='':
-        self.datafolder = folder
-    else:
-        print('data-folder not set !')
 
 def delete_layout(self, layout):
 

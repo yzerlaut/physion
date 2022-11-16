@@ -13,7 +13,8 @@ class MainWindow(QtWidgets.QMainWindow):
     """
     
     # "parts" to build the GUI 
-    from physion.gui.parts import open_file,\
+    from physion.gui.parts import open_NWB,\
+            open_file, open_folder, choose_root_folder,\
             add_keyboard_shortcuts, set_status_bar,\
             max_view, min_view, change_window_size,\
             add_side_widget, cleanup_tab, refresh_tab
@@ -45,7 +46,9 @@ class MainWindow(QtWidgets.QMainWindow):
     from physion.analysis.gui import trial_averaging
 
     # data analysis tools
-    from physion.imaging.red import red_channel_labelling
+    from physion.imaging.red import red_channel_labelling,\
+            load_RCL, next_roi, prev_roi, save_RCL,\
+            switch_roi
 
 
     def __init__(self, app,
@@ -125,7 +128,8 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.visualization()
         # # self.init_calendar()
 
-        self.multimodal()
+        self.red_channel_labelling()
+        self.load_RCL()
 
     def refresh(self):
         if self.tabWidget.currentWidget()==self.tabs[1]:
