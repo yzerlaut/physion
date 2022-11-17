@@ -46,9 +46,10 @@ class MainWindow(QtWidgets.QMainWindow):
     from physion.analysis.gui import trial_averaging
 
     # data analysis tools
-    from physion.imaging.red import red_channel_labelling,\
-            load_RCL, next_roi, prev_roi, save_RCL,\
-            switch_roi
+    from physion.imaging.red_label import red_channel_labelling,\
+            load_RCL, next_roi_RCL, prev_roi_RCL, save_RCL,\
+            preprocess_RCL, switch_roi_RCL, reset_all_to_green,\
+            switch_roi_display, draw_image_RCL
 
 
     def __init__(self, app,
@@ -62,6 +63,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         super(MainWindow, self).__init__()
         self.data, self.acq, self.stim = None, None, None
+        self.window = ''
         self.quit_event = None
 
         self.setWindowTitle('Physion -- Vision Physiology Software')
@@ -85,7 +87,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.build_menu()
 
-        self.add_keyboard_shortcuts()#pre_key='Ctrl+') # to require Ctrl in the shortcuts
+        self.add_keyboard_shortcuts()
+        #, pre_key='Ctrl+') # to require Ctrl in the shortcuts
 
         # =================================================
         # ============  MAIN LAYOUT WITH TABS =============
@@ -121,15 +124,30 @@ class MainWindow(QtWidgets.QMainWindow):
 
         print(' init took %.0fms' % (1e3*(time.time()-tic)))
    
+    def open(self):
+        if self.window =='red_channel_labelling':
+            self.open_RCL()
+        else:
+            self.open_file()
+            
+    def save(self):
+        if self.window =='red_channel_labelling':
+            self.save_RCL()
+        else:
+            print('no shortcut')
+
     def hitting_space(self):
 
-        # self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
-        # self.data = physion.analysis.read_NWB.Data(self.datafile)
-        # self.visualization()
-        # # self.init_calendar()
-
-        self.red_channel_labelling()
-        self.load_RCL()
+        if self.window =='red_channel_labelling':
+            self.switch_roi_RCL()
+        else:
+            # DEBUG
+            # self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
+            # self.data = physion.analysis.read_NWB.Data(self.datafile)
+            # self.visualization()
+            # # self.init_calendar()
+            self.red_channel_labelling()
+            self.load_RCL()
 
     def refresh(self):
         if self.tabWidget.currentWidget()==self.tabs[1]:
@@ -139,10 +157,28 @@ class MainWindow(QtWidgets.QMainWindow):
             print(self.tabWidget.currentWidget())
 
     def process(self):
-        self.init_calendar()
+        if self.window =='red_channel_labelling':
+            self.prev_roi_RCL()
+        else:
+            print('no shortcut')
+
+    def toggle(self):
+        if self.window =='red_channel_labelling':
+            self.switch_roi_display()
+        else:
+            print('no shortcut')
+
+    def next(self):
+        if self.window =='red_channel_labelling':
+            self.next_roi_RCL()
+        else:
+            pass
 
     def fit(self):
-        self.init_calendar()
+        print('TO BE DONE')
+
+    def home(self):
+        print('TO BE DONE')
 
     def launch_visual_stim(self):
         print('TO BE DONE')

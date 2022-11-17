@@ -88,13 +88,13 @@ def add_keyboard_shortcuts(self,
 
     # adding a few general keyboard shortcut
     self.openSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sO'%pre_key), self)
-    self.openSc.activated.connect(self.open_file)
+    self.openSc.activated.connect(self.open)
     
     self.spaceSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sSpace'%pre_key), self)
     self.spaceSc.activated.connect(self.hitting_space)
 
-    # self.saveSc = QtWidgets.QShortcut(QtGui.QKeySequence('S%s'%pre_key), self)
-    # self.saveSc.activated.connect(self.save)
+    self.saveSc = QtWidgets.QShortcut(QtGui.QKeySequence('S%s'%pre_key), self)
+    self.saveSc.activated.connect(self.save)
     
     # self.add2Bash = QtWidgets.QShortcut(QtGui.QKeySequence('B%s'%pre_key), self)
     # self.add2Bash.activated.connect(self.add_to_bash_script)
@@ -105,14 +105,20 @@ def add_keyboard_shortcuts(self,
     self.refreshSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sR'%pre_key), self)
     self.refreshSc.activated.connect(self.refresh)
     
-    # self.homeSc = QtWidgets.QShortcut(QtGui.QKeySequence('I%s'%pre_key), self)
-    # self.homeSc.activated.connect(self.back_to_initial_view)
+    self.toggleSc = QtWidgets.QShortcut(QtGui.QKeySequence('T%s'%pre_key), self)
+    self.toggleSc.activated.connect(self.toggle)
+
+    self.homeSc = QtWidgets.QShortcut(QtGui.QKeySequence('H%s'%pre_key), self)
+    self.homeSc.activated.connect(self.home)
     
     self.maxSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sM'%pre_key), self)
     self.maxSc.activated.connect(self.change_window_size)
     
     self.processSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sP'%pre_key), self)
     self.processSc.activated.connect(self.process)
+
+    self.nextSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sN'%pre_key), self)
+    self.nextSc.activated.connect(self.next)
 
     self.fitSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sF'%pre_key), self)
     self.fitSc.activated.connect(self.fit)

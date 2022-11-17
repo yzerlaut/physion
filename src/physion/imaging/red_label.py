@@ -4,6 +4,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
 
 from physion.utils.paths import FOLDERS
+from physion.utils.plot_tools import plt, figure
 
 KEYS = ['meanImg_chan2', 'meanImg', 'max_proj', 'meanImgE',
         'meanImg_chan2-X*meanImg', 'meanImg_chan2/(X*meanImg)']
@@ -11,6 +12,7 @@ KEYS = ['meanImg_chan2', 'meanImg', 'max_proj', 'meanImgE',
 def red_channel_labelling(self,
                           tab_id=2):
 
+    self.window = 'red_channel_labelling'
     self.folder, self.rois_on = '', True
     self.roi_index = 0
 
@@ -21,19 +23,6 @@ def red_channel_labelling(self,
     ##########################################################
     ####### GUI settings
     ##########################################################
-
-    #------------------- SHORTCUTS  -------------------
-    self.openSc = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+O'), self)
-    self.openSc.activated.connect(self.load_RCL)
-
-    self.nextSc = QtWidgets.QShortcut(QtGui.QKeySequence('N'), self)
-    self.nextSc.activated.connect(self.next_roi)
-
-    self.prevSc = QtWidgets.QShortcut(QtGui.QKeySequence('P'), self)
-    self.prevSc.activated.connect(self.prev_roi)
-
-    self.saveSc = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+S'), self)
-    self.saveSc.activated.connect(self.save_RCL)
 
     # self.Sc1= QtWidgets.QShortcut(QtGui.QKeySequence('1'), self)
     # self.Sc1.activated.connect(self.switch_to_1)
@@ -48,9 +37,6 @@ def red_channel_labelling(self,
     # self.Sc6= QtWidgets.QShortcut(QtGui.QKeySequence('6'), self)
     # self.Sc6.activated.connect(self.switch_to_6)
     
-    self.roiSc = QtWidgets.QShortcut(QtGui.QKeySequence('Space'), self)
-    self.roiSc.activated.connect(self.switch_roi)
-
     # ========================================================
     #------------------- SIDE PANELS FIRST -------------------
 
@@ -73,31 +59,35 @@ def red_channel_labelling(self,
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
+    self.preprocessB = QtWidgets.QPushButton('process Images')
+    self.preprocessB.clicked.connect(self.preprocess_RCL)
+    self.add_side_widget(tab.layout, self.preprocessB)
+
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel('Image:'))
     self.imgB = QtWidgets.QComboBox(self)
     self.imgB.addItems(KEYS)
-    # self.imgB.activated.connect(self.draw_image)
+    self.imgB.activated.connect(self.draw_image_RCL)
     self.add_side_widget(tab.layout, self.imgB)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.nextB = QtWidgets.QPushButton('next roi [N]')
-    # self.nextB.clicked.connect(self.next_roi)
+    self.nextB.clicked.connect(self.next_roi_RCL)
     self.add_side_widget(tab.layout, self.nextB)
 
     self.prevB = QtWidgets.QPushButton('prev. roi [P]')
-    # self.prevB.clicked.connect(self.process)
+    self.prevB.clicked.connect(self.prev_roi_RCL)
     self.add_side_widget(tab.layout, self.prevB)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.switchB = QtWidgets.QPushButton('SWITCH [Space]')
-    self.switchB.clicked.connect(self.switch_roi)
+    self.switchB.clicked.connect(self.switch_roi_RCL)
     self.add_side_widget(tab.layout, self.switchB)
 
     self.rstRoiB = QtWidgets.QPushButton('reset ALL rois to green')
-    # self.rstRoiB.clicked.connect(self.reset_all_to_green)
+    self.rstRoiB.clicked.connect(self.reset_all_to_green)
     self.add_side_widget(tab.layout, self.rstRoiB)
     
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
@@ -122,8 +112,8 @@ def red_channel_labelling(self,
     self.p0 = self.winImg.addViewBox(lockAspect=False,
                                      row=0,col=0,invertY=True,
                                      border=[100,100,100])
-    self.p0.setMouseEnabled(x=False,y=False)
-    self.p0.setMenuEnabled(False)
+    # self.p0.setMouseEnabled(x=False,y=False)
+    # self.p0.setMenuEnabled(False)
     self.img = pg.ImageItem()
     self.p0.setAspectLocked()
     self.p0.addItem(self.img)
@@ -138,14 +128,14 @@ def red_channel_labelling(self,
 def reset_all_to_green(self):
     for i in range(len(self.stat)):
         self.redcell[i,0] = 0.
-    self.refresh()
+    refresh(self)
     
 def refresh(self):
 
     self.p0.removeItem(self.rois_green)
     self.p0.removeItem(self.rois_red)
     if self.rois_on:
-        self.draw_rois()
+        draw_rois(self)
 
 def switch_to(self, i):
     self.imgB.setCurrentText(KEYS[i-1])
@@ -166,9 +156,9 @@ def switch_to(self, i):
 
 def switch_roi_display(self):
     self.rois_on = (not self.rois_on)
-    self.refresh()
+    refresh(self)
 
-def build_linear_interpolation(self):
+def preprocess_RCL(self):
 
     x, y = np.array(self.ops['meanImg']).flatten(), np.array(self.ops['meanImg_chan2']).flatten()
     p = np.polyfit(x, y, 1)
@@ -176,12 +166,11 @@ def build_linear_interpolation(self):
     self.ops['meanImg_chan2-X*meanImg'] = np.clip(np.array(self.ops['meanImg_chan2'])-np.polyval(p, np.array(self.ops['meanImg'])), 0, np.inf)
     self.ops['meanImg_chan2/(X*meanImg)'] = np.array(self.ops['meanImg_chan2'])/np.clip(np.polyval(p, np.array(self.ops['meanImg'])), 1, np.inf)
 
-    if self.debug:
-        import matplotlib.pylab as plt
-        plt.scatter(x, y)
-        plt.plot(x, np.polyval(p, x), color='r')
-        plt.xlabel('Ch1');plt.ylabel('Ch2')
-        plt.show()
+    fig, ax = figure()
+    ax.scatter(x, y)
+    ax.plot(x, np.polyval(p, x), color='r')
+    plt.xlabel('Ch1');plt.ylabel('Ch2')
+    plt.show()
 
 def load_RCL(self):
 
@@ -260,7 +249,7 @@ def highlight_roi(self, size=6, t=np.arange(20)):
     self.rois_hl.setData(x, y, size=3, brush=pg.mkBrush(0,0,255))
     self.p0.addItem(self.rois_hl)
     
-def next_roi(self):
+def next_roi_RCL(self):
 
     self.roi_index +=1
     print(self.iscell[self.roi_index,0])
@@ -268,7 +257,7 @@ def next_roi(self):
         self.roi_index +=1
     highlight_roi(self)
 
-def prev_roi(self):
+def prev_roi_RCL(self):
 
     self.roi_index -=1
     while (not self.iscell[self.roi_index,0]) and (self.roi_index>0):
@@ -276,7 +265,7 @@ def prev_roi(self):
     highlight_roi(self)
         
 
-def switch_roi(self):
+def switch_roi_RCL(self):
     if self.redcell[self.roi_index,0]:
         self.redcell[self.roi_index,0] = 0.
     else:
