@@ -1,31 +1,237 @@
-import os, sys, pathlib, shutil, time, datetime, tempfile
+import os, sys, pathlib, shutil, time, datetime, tempfile, subprocess
+from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
 import pynwb, time, ast
 from hdmf.data_utils import DataChunkIterator
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from assembling.IO.binary import BinaryFile
-from assembling.IO.bruker_xml_parser import bruker_xml_parser
-from assembling.saving import get_files_with_extension, get_TSeries_folders
-from assembling.tools import build_subsampling_from_freq
-from assembling.IO.suite2p_to_nwb import add_ophys_processing_from_suite2p
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
+
+from physion.assembling.IO.binary import BinaryFile
+from physion.assembling.IO.bruker_xml_parser import bruker_xml_parser
+from physion.utils.files import get_files_with_extension, get_TSeries_folders
+from physion.assembling.tools import build_subsampling_from_freq
+from physion.assembling.IO.suite2p_to_nwb import add_ophys_processing_from_suite2p
+from physion.utils.paths import FOLDERS, python_path
+from physion.analysis.read_NWB import Data
+
+def add_imaging(self,
+                tab_id=1):
+
+    tab = self.tabs[tab_id]
+    self.NWBs, self.IMAGINGs = [], []
+    self.cleanup_tab(tab)
+
+    ##########################################################
+    ####### GUI settings
+    ##########################################################
+
+    # ========================================================
+    #------------------- SIDE PANELS FIRST -------------------
+    self.add_side_widget(tab.layout, 
+            QtWidgets.QLabel(' _-* ADD OPHYS *-_ '))
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.add_side_widget(tab.layout,
+            QtWidgets.QLabel('- NWB data: '))
+    self.loadNWBfileBtn = QtWidgets.QPushButton(' select file \u2b07')
+    self.loadNWBfileBtn.clicked.connect(self.loadNWBfile)
+    self.add_side_widget(tab.layout, self.loadNWBfileBtn)
+    self.loadNWBfolderBtn = QtWidgets.QPushButton(' from folder \u2b07')
+    self.loadNWBfolderBtn.clicked.connect(self.loadNWBfolder)
+    self.add_side_widget(tab.layout, self.loadNWBfolderBtn)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.add_side_widget(tab.layout,
+            QtWidgets.QLabel('- Imaging data: '))
+    self.loadCaBtn = QtWidgets.QPushButton(' TSeries folder(s) \u2b07')
+    self.loadCaBtn.clicked.connect(self.loadCafolder)
+    self.add_side_widget(tab.layout, self.loadCaBtn)
+    
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
+    self.runBtn.clicked.connect(self.runAddOphys)
+    self.add_side_widget(tab.layout, self.runBtn)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    while self.i_wdgt<(self.nWidgetRow-1):
+        self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    # ========================================================
+
+    # ========================================================
+    #------------------- THEN MAIN PANEL   -------------------
+
+    width = int((self.nWidgetCol-self.side_wdgt_length)/2)
+    tab.layout.addWidget(QtWidgets.QLabel('     *  NWB file  *'),
+                         0, self.side_wdgt_length, 
+                         1, width)
+    tab.layout.addWidget(QtWidgets.QLabel('     *  TSeries folder *'),
+                         0, self.side_wdgt_length+width, 
+                         1, width)
+    for ip in range(1, 10): #self.nWidgetRow):
+        setattr(self, 'nwb%i' % ip,
+                QtWidgets.QLabel('', self))
+        tab.layout.addWidget(getattr(self, 'nwb%i' % ip),
+                             ip+2, self.side_wdgt_length, 
+                             1, width)
+        setattr(self, 'imaging%i' % ip,
+                QtWidgets.QLabel('', self))
+        tab.layout.addWidget(getattr(self, 'imaging%i' % ip),
+                             ip+2, self.side_wdgt_length+width, 
+                             1, width)
+    # ========================================================
+
+    self.refresh_tab(tab)
+
+
+def clear(self, nwb=True, imaging=True):
+    i=1
+    while hasattr(self, 'nwb%i'%i):
+        if nwb:
+            getattr(self, 'nwb%i' % i).setText('')
+        if imaging:
+            getattr(self, 'imaging%i' % i).setText('')
+        i+=1
+
+def loadNWBfile(self):
+    clear(self)
+    nwbfile = self.open_NWB() 
+    self.nwb1.setText(nwbfile.split(os.path.sep)[-1])
+    self.NWBs = [nwbfile]
+
+def loadNWBfolder(self):
+    clear(self)
+    folder = self.open_folder()
+    if os.path.isdir(folder):
+        self.NWBs = get_files_with_extension(folder, 'nwb',
+                                             recursive=False)
+        for i in range(len(self.NWBs)):
+            getattr(self, 'nwb%i' % (i+1)).setText(\
+                    self.NWBs[i].split(os.path.sep)[-1])
+    else:
+        print(folder, ' not a valid folder')
+
+
+def loadCafolder(self):
+    clear(self, nwb=False)
+    folder = self.open_folder()
+    if 'TSeries' in folder:
+        self.IMAGINGs = [folder]
+        self.imaging1.setText(folder.split(os.path.sep)[-1])
+    elif os.path.isdir(folder):
+        self.IMAGINGs = np.sort(get_TSeries_folders(folder))
+        for i in range(len(self.IMAGINGs)):
+            getattr(self, 'imaging%i' % (i+1)).setText(\
+                    self.IMAGINGs[i].split(os.path.sep)[-1])
+    else:
+        print(folder, ' not a valid folder')
+
+# ------------------------------------------------ # 
+# ----        launch as a subproces      --------- # 
+# ------------------------------------------------ # 
+
+def build_cmd(nwb, imaging):
+    process_script = str(pathlib.Path(__file__).resolve())
+    return '%s %s --nwb %s --imaging %s' % (python_path,
+                                            process_script,
+                                            nwb,
+                                            imaging)
+
+def runAddOphys(self):
+    # 
+    if len(self.NWBs)>0 and (len(self.NWBs)==len(self.IMAGINGs)):
+        for nwb, imaging in zip(self.NWBs, self.IMAGINGs):
+            overlap = estimate_time_overlap(nwb, imaging)
+            if overlap>70:
+                print(' overlap ok  (%.1f%%) ' % overlap)
+                cmd = build_cmd(nwb, imaging)
+                p = subprocess.Popen(cmd, shell=True)
+                print('"%s" launched as a subprocess' % cmd)
+            else:
+                print(' overlap level too low: %.1f %% ' % overlap)
+    else:
+        print(' need same size:', self.NWBs, self.IMAGINGs)
+
+
+# ------------------------------------------------ # 
+# ---- check that the timestamps match ! --------- # 
+# ------------------------------------------------ # 
+
+def stringdatetime_to_date(s):
+
+    Month, Day, Year = s.split('/')[0], s.split('/')[1], s.split('/')[2][:4]
+
+    if len(Month)==1:
+        Month = '0'+Month
+    if len(Day)==1:
+        Day = '0'+Day
+
+    return '%s_%s_%s' % (Year, Month, Day)
+
+
+def StartTime_to_day_seconds(StartTime):
+
+    Hour = int(StartTime[0:2])
+    Min = int(StartTime[3:5])
+    Seconds = float(StartTime[6:])
+    return 60*60*Hour+60*Min+Seconds
+
+def estimate_time_overlap(nwb, imaging):
+    """
+    """
+    # open xml file from imaging
+    fn = get_files_with_extension(imaging, extension='.xml')[0]
+    xml = bruker_xml_parser(fn) # metadata
+    start = StartTime_to_day_seconds(xml['StartTime'])
+    start_time = start+xml['Ch1']['absoluteTime'][0]
+    end_time = start+xml['Ch1']['absoluteTime'][-1]
+
+    dateCa = stringdatetime_to_date(xml['date'])
+    timesCa = np.arange(int(start_time), int(end_time))
+
+    # --  open nwbfile
+    data = Data(nwb, metadata_only=True, with_tlim=True)
+    Tstart = data.metadata['NIdaq_Tstart']
+    st = datetime.datetime.fromtimestamp(Tstart).strftime('%H:%M:%S.%f')
+    true_tstart = StartTime_to_day_seconds(st)
+    true_duration = data.tlim[1]-data.tlim[0]
+    true_tstop = true_tstart+true_duration
+
+    dateNWB = datetime.datetime.fromtimestamp(Tstart).strftime('%Y_%m_%d')
+    timesNWB = np.arange(int(true_tstart), int(true_tstop))
+
+    if dateCa!=dateNWB:
+        return 0
+    else:
+        return 100.*len(np.intersect1d(timesCa, timesNWB))/len(timesNWB)
+
+
+# ------------------------------------------------ # 
+# ----      append to NWB                --------- # 
+# ------------------------------------------------ # 
 
 def append_to_NWB(args):
 
-    io = pynwb.NWBHDF5IO(args.nwb_file, mode='a')
+    io = pynwb.NWBHDF5IO(args.nwb, mode='a')
     nwbfile = io.read()
 
     if (not hasattr(args, 'datafolder')) or (args.datafolder==''):
-        args.datafolder=os.path.dirname(args.nwb_file)
+        args.datafolder=os.path.dirname(args.nwb)
         
     add_ophys(nwbfile, args, with_raw_CaImaging=args.with_raw_CaImaging)
 
-    if args.verbose:
-        print('=> writing "%s" [...]' % args.nwb_file)
+    if not args.silent:
+        print('=> writing "%s" [...]' % args.nwb)
+
     io.write(nwbfile)
     io.close()
+
 
 def add_ophys(nwbfile, args,
               metadata=None,
@@ -40,14 +246,13 @@ def add_ophys(nwbfile, args,
     if metadata is None:
         metadata = ast.literal_eval(nwbfile.session_description)
     try:
-        CaFn = get_files_with_extension(args.CaImaging_folder, extension='.xml')[0]# get Tseries metadata
+        CaFn = get_files_with_extension(args.imaging, extension='.xml')[0]# get Tseries metadata
     except BaseException as be:
         print(be)
         print('\n /!\  Problem with the CA-IMAGING data in %s  /!\ ' % args.datafolder)
         raise Exception
         
     xml = bruker_xml_parser(CaFn) # metadata
-    print(xml)
 
     ##################################################
     ##########  setup-specific quantities ############
@@ -165,40 +370,37 @@ def add_ophys(nwbfile, args,
     image_series = pynwb.ophys.TwoPhotonSeries(name='CaImaging-TimeSeries',
                                                dimension=[2], data=np.ones((2,2,2)),
                                                imaging_plane=imaging_plane, unit='s', timestamps=1.*np.arange(2),
-                                               comments='raw-data-folder=%s' % args.CaImaging_folder.replace('/', '**')) # TEMPORARY
+                                               comments='raw-data-folder=%s' % args.imaging.replace('/', '**')) # TEMPORARY
     
     nwbfile.add_acquisition(image_series)
 
-    if with_processed_CaImaging and os.path.isdir(os.path.join(args.CaImaging_folder, 'suite2p')):
+    if with_processed_CaImaging and os.path.isdir(os.path.join(args.imaging, 'suite2p')):
         print('=> Adding the suite2p processing [...]')
-        add_ophys_processing_from_suite2p(os.path.join(args.CaImaging_folder, 'suite2p'),
+        add_ophys_processing_from_suite2p(os.path.join(args.imaging, 'suite2p'),
                                           nwbfile, xml,
                                           device=device,
                                           optical_channel=optical_channel,
                                           imaging_plane=imaging_plane,
                                           image_series=image_series) # ADD UPDATE OF starting_time
     elif with_processed_CaImaging:
-        print('\n /!\  no "suite2p" folder found in "%s"  /!\ ' % args.CaImaging_folder)
+        print('\n /!\  no "suite2p" folder found in "%s"  /!\ ' % args.imaging)
 
     return Ca_data
 
     
 if __name__=='__main__':
 
-    import argparse, os
+
+    import argparse
+
     parser=argparse.ArgumentParser(description="""
     Building NWB file from mutlimodal experimental recordings
     """,formatter_class=argparse.RawTextHelpFormatter)
     # main
-    parser.add_argument('-f', "--nwb_file", type=str, default='')
-    parser.add_argument('-cf', "--CaImaging_folder", type=str, default='')
+    parser.add_argument('-n', "--nwb", type=str, default='')
+    parser.add_argument('-i', "--imaging", type=str, default='')
     # other
     parser.add_argument('-c', "--compression", type=int, default=0, help='compression level, from 0 (no compression) to 9 (large compression, SLOW)')
-    parser.add_argument('-rf', "--root_datafolder", type=str, default=os.path.join(os.path.expanduser('~'), 'DATA'))
-    parser.add_argument('-d', "--day", type=str, default=datetime.datetime.today().strftime('%Y_%m_%d'))
-    parser.add_argument('-t', "--time", type=str, default='')
-    parser.add_argument('-r', "--recursive", action="store_true")
-    parser.add_argument('-v', "--verbose", action="store_true")
     parser.add_argument("--with_raw_CaImaging", action="store_true")
     parser.add_argument('-cafs', "--CaImaging_frame_sampling", default=0., type=float)
     parser.add_argument("--silent", action="store_true")
@@ -207,8 +409,5 @@ if __name__=='__main__':
     if not args.silent:
         args.verbose = True
 
-    if args.time!='':
-        args.datafolder = os.path.join(args.root_datafolder, args.day, args.time)
-        
     append_to_NWB(args)
     print('--> done')

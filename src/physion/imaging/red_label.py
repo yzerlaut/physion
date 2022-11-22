@@ -6,8 +6,7 @@ import pyqtgraph as pg
 from physion.utils.paths import FOLDERS
 from physion.utils.plot_tools import plt, figure
 
-KEYS = ['meanImg_chan2', 'meanImg', 'max_proj', 'meanImgE',
-        'meanImg_chan2-X*meanImg', 'meanImg_chan2/(X*meanImg)']
+KEYS = ['meanImg_chan2', 'meanImg', 'max_proj', 'meanImgE']
 
 def red_channel_labelling(self,
                           tab_id=2):
@@ -24,22 +23,8 @@ def red_channel_labelling(self,
     ####### GUI settings
     ##########################################################
 
-    # self.Sc1= QtWidgets.QShortcut(QtGui.QKeySequence('1'), self)
-    # self.Sc1.activated.connect(self.switch_to_1)
-    # self.Sc2= QtWidgets.QShortcut(QtGui.QKeySequence('2'), self)
-    # self.Sc2.activated.connect(self.switch_to_2)
-    # self.Sc3= QtWidgets.QShortcut(QtGui.QKeySequence('3'), self)
-    # self.Sc3.activated.connect(self.switch_to_3)
-    # self.Sc4= QtWidgets.QShortcut(QtGui.QKeySequence('4'), self)
-    # self.Sc4.activated.connect(self.switch_to_4)
-    # self.Sc5= QtWidgets.QShortcut(QtGui.QKeySequence('5'), self)
-    # self.Sc5.activated.connect(self.switch_to_5)
-    # self.Sc6= QtWidgets.QShortcut(QtGui.QKeySequence('6'), self)
-    # self.Sc6.activated.connect(self.switch_to_6)
-    
     # ========================================================
     #------------------- SIDE PANELS FIRST -------------------
-
     # folder box
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel('data folder:'))
@@ -53,8 +38,8 @@ def red_channel_labelling(self,
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
-    self.load = QtWidgets.QPushButton('  load data [Ctrl+O]  \u2b07')
-    self.load.clicked.connect(self.load_RCL)
+    self.load = QtWidgets.QPushButton('  load data [O]  \u2b07')
+    self.load.clicked.connect(self.open)
     self.add_side_widget(tab.layout, self.load)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
@@ -70,6 +55,12 @@ def red_channel_labelling(self,
     self.imgB.activated.connect(self.draw_image_RCL)
     self.add_side_widget(tab.layout, self.imgB)
 
+    self.add_side_widget(tab.layout,
+            QtWidgets.QLabel('Display Exponent:'), 'large-left')
+    self.expT= QtWidgets.QLineEdit(self)
+    self.expT.setText('0.25')
+    self.add_side_widget(tab.layout, self.expT, 'small-right')
+
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.nextB = QtWidgets.QPushButton('next roi [N]')
@@ -82,6 +73,10 @@ def red_channel_labelling(self,
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
+    self.toggleB = QtWidgets.QPushButton('Toggle ROIs [T]')
+    self.toggleB.clicked.connect(self.toggle_RCL)
+    self.add_side_widget(tab.layout, self.toggleB)
+
     self.switchB = QtWidgets.QPushButton('SWITCH [Space]')
     self.switchB.clicked.connect(self.switch_roi_RCL)
     self.add_side_widget(tab.layout, self.switchB)
@@ -92,8 +87,8 @@ def red_channel_labelling(self,
     
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
-    self.saveB = QtWidgets.QPushButton('save data [Ctrl+S]')
-    # self.saveB.clicked.connect(self.save)
+    self.saveB = QtWidgets.QPushButton('save data [S]')
+    self.saveB.clicked.connect(self.save_RCL)
     self.add_side_widget(tab.layout, self.saveB)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
@@ -112,8 +107,6 @@ def red_channel_labelling(self,
     self.p0 = self.winImg.addViewBox(lockAspect=False,
                                      row=0,col=0,invertY=True,
                                      border=[100,100,100])
-    # self.p0.setMouseEnabled(x=False,y=False)
-    # self.p0.setMenuEnabled(False)
     self.img = pg.ImageItem()
     self.p0.setAspectLocked()
     self.p0.addItem(self.img)
@@ -126,10 +119,12 @@ def red_channel_labelling(self,
 
 
 def reset_all_to_green(self):
+
     for i in range(len(self.stat)):
         self.redcell[i,0] = 0.
     refresh(self)
-    
+
+
 def refresh(self):
 
     self.p0.removeItem(self.rois_green)
@@ -137,50 +132,63 @@ def refresh(self):
     if self.rois_on:
         draw_rois(self)
 
+
 def switch_to(self, i):
+
     self.imgB.setCurrentText(KEYS[i-1])
-    self.draw_image()
+    self.draw_image_RCL()
 
-# def switch_to_1(self):
-    # self.switch_to(1)
-# def switch_to_2(self):
-    # self.switch_to(2)
-# def switch_to_3(self):
-    # self.switch_to(3)
-# def switch_to_4(self):
-    # self.switch_to(4)
-# def switch_to_5(self):
-    # self.switch_to(5)
-# def switch_to_6(self):
-    # self.switch_to(6)
 
-def switch_roi_display(self):
+def toggle_RCL(self):
+
     self.rois_on = (not self.rois_on)
     refresh(self)
 
-def preprocess_RCL(self):
 
-    x, y = np.array(self.ops['meanImg']).flatten(), np.array(self.ops['meanImg_chan2']).flatten()
-    p = np.polyfit(x, y, 1)
+def preprocess_RCL(self, percentile=5):
 
-    self.ops['meanImg_chan2-X*meanImg'] = np.clip(np.array(self.ops['meanImg_chan2'])-np.polyval(p, np.array(self.ops['meanImg'])), 0, np.inf)
-    self.ops['meanImg_chan2/(X*meanImg)'] = np.array(self.ops['meanImg_chan2'])/np.clip(np.polyval(p, np.array(self.ops['meanImg'])), 1, np.inf)
+    x = np.array(self.ops['meanImg']).flatten()
+    y = np.array(self.ops['meanImg_chan2']).flatten()
 
-    fig, ax = figure()
-    ax.scatter(x, y)
+    X, Y = [], []
+    bins = np.linspace(x.min(), x.max(), 10)
+    D = np.digitize(x, bins=bins)
+    for d in np.unique(D)[:-1]:
+        imin = np.argmin(y[d==D])
+        X.append(x[d==D][imin])
+        Y.append(y[d==D][imin])
+
+    p = np.polyfit(X, Y, 1)
+
+    # we build the images with the contamination substracted
+    self.ops['meanImg_chan2-X*meanImg'] =\
+            np.clip(np.array(self.ops['meanImg_chan2'])-\
+            np.polyval(p, np.array(self.ops['meanImg'])), 0, np.inf)
+    self.ops['meanImg_chan2/(X*meanImg)'] =\
+            np.array(self.ops['meanImg_chan2'])/\
+            np.clip(np.polyval(p, np.array(self.ops['meanImg'])), 1, np.inf)
+
+    self.imgB.addItems(['meanImg_chan2-X*meanImg',
+                        'meanImg_chan2/(X*meanImg)'])
+
+    fig, ax = figure(figsize=(3,2))
+    ax.scatter(X, Y, s=2, color='r')
+    ax.scatter(x, y, s=1)
     ax.plot(x, np.polyval(p, x), color='r')
     plt.xlabel('Ch1');plt.ylabel('Ch2')
     plt.show()
 
 def load_RCL(self):
 
-    self.folder = '/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-1Chan/TSeries-11142022-nomark-000'
-    # self.folder = self.open_folder()
-
     if self.folder!='':
 
         self.stat = np.load(os.path.join(self.folder, 'suite2p', 'plane0', 'stat.npy'), allow_pickle=True)
-        self.redcell = np.load(os.path.join(self.folder, 'suite2p', 'plane0', 'redcell.npy'), allow_pickle=True)
+
+        if os.path.isfile(os.path.join(self.folder, 'suite2p', 'plane0', 'redcell_manual.npy')):
+            self.redcell = np.load(os.path.join(self.folder, 'suite2p', 'plane0', 'redcell_manual.npy'), allow_pickle=True)
+        else:
+            self.redcell = np.load(os.path.join(self.folder, 'suite2p', 'plane0', 'redcell.npy'), allow_pickle=True)
+
         self.iscell = np.load(os.path.join(self.folder, 'suite2p', 'plane0', 'iscell.npy'), allow_pickle=True)
         self.ops = np.load(os.path.join(self.folder, 'suite2p', 'plane0', 'ops.npy'), allow_pickle=True).item()
 
@@ -193,8 +201,16 @@ def load_RCL(self):
         print('empty folder ...')
     
 def draw_image_RCL(self):
-    
-    self.img.setImage(self.ops[self.imgB.currentText()]**.25)
+   
+    try:
+        exponent = float(self.expT.text())
+    except BaseException as be:
+        print(be)
+        self.expT.setText(0.25)
+        exponent = 0.25
+    img = self.ops[self.imgB.currentText()].T 
+    img = (img-img.min())/(img.max()-img.min())
+    self.img.setImage(img**exponent)
 
 
 def add_single_roi_pix(self, i, size=4, t=np.arange(20)):
@@ -252,7 +268,6 @@ def highlight_roi(self, size=6, t=np.arange(20)):
 def next_roi_RCL(self):
 
     self.roi_index +=1
-    print(self.iscell[self.roi_index,0])
     while (not self.iscell[self.roi_index,0]) and (self.roi_index<len(self.stat)):
         self.roi_index +=1
     highlight_roi(self)

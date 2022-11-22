@@ -42,14 +42,18 @@ class MainWindow(QtWidgets.QMainWindow):
             update_config, get_protocol_list, update_subject,\
             save_settings, load_settings
 
+    # assembling tooks
+    from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
+            loadNWBfolder, loadCafolder, runAddOphys
+
     # data analysis tools
     from physion.analysis.gui import trial_averaging
 
-    # data analysis tools
+    # Imaging - Red Label GUI 
     from physion.imaging.red_label import red_channel_labelling,\
             load_RCL, next_roi_RCL, prev_roi_RCL, save_RCL,\
             preprocess_RCL, switch_roi_RCL, reset_all_to_green,\
-            switch_roi_display, draw_image_RCL
+            toggle_RCL, draw_image_RCL
 
 
     def __init__(self, app,
@@ -126,12 +130,14 @@ class MainWindow(QtWidgets.QMainWindow):
    
     def open(self):
         if self.window =='red_channel_labelling':
-            self.open_RCL()
+            self.folder = self.open_folder()
+            self.load_RCL()
         else:
             self.open_file()
             
     def save(self):
         if self.window =='red_channel_labelling':
+            print('save')
             self.save_RCL()
         else:
             print('no shortcut')
@@ -141,13 +147,14 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.window =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
+            self.add_imaging()
+            self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
+            self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
+            self.runAddOphys()
             # DEBUG
             # self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
             # self.data = physion.analysis.read_NWB.Data(self.datafile)
             # self.visualization()
-            # # self.init_calendar()
-            self.red_channel_labelling()
-            self.load_RCL()
 
     def refresh(self):
         if self.tabWidget.currentWidget()==self.tabs[1]:
@@ -164,7 +171,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggle(self):
         if self.window =='red_channel_labelling':
-            self.switch_roi_display()
+            self.toggle_RCL()
         else:
             print('no shortcut')
 
@@ -199,9 +206,6 @@ class MainWindow(QtWidgets.QMainWindow):
         print('TO BE DONE')
 
     def build_NWB(self):
-        print('TO BE DONE')
-
-    def add_imaging(self):
         print('TO BE DONE')
 
     def behavior(self):

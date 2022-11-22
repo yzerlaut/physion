@@ -228,8 +228,8 @@ def add_buttons(self, Layout):
 
 
 def add_side_widget(self, layout, wdgt,
-                    side_wdgt_length=None,
-                    spec='None'):
+                    spec='None',
+                    side_wdgt_length=None):
 
     if side_wdgt_length is None:
         side_wdgt_length = self.side_wdgt_length
