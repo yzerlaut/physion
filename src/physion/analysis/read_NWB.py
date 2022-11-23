@@ -21,6 +21,7 @@ class Data:
                  with_visual_stim=False,
                  verbose=True):
 
+        self.filename = filename.split(os.path.sep)[-1]
         self.tlim, self.visual_stim, self.nwbfile = None, None, None
         self.metadata, self.df_name = None, ''
         

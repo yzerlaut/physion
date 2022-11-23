@@ -428,7 +428,7 @@ def find_roi_coords(data, roiIndex):
 
 def find_roi_extent(data, roiIndex, roi_zoom_factor=10.):
 
-    mx, my, sx, sy = data.find_roi_coords(roiIndex)
+    mx, my, sx, sy = find_roi_coords(data, roiIndex)
 
     return np.array((mx-roi_zoom_factor*sx, mx+roi_zoom_factor*sx,
                      my-roi_zoom_factor*sy, my+roi_zoom_factor*sy), dtype=int)
@@ -436,7 +436,7 @@ def find_roi_extent(data, roiIndex, roi_zoom_factor=10.):
 
 def find_roi_cond(data, roiIndex, roi_zoom_factor=10.):
 
-    mx, my, sx, sy = data.find_roi_coords(roiIndex)
+    mx, my, sx, sy = find_roi_coords(data, roiIndex)
 
     img_shape = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:].shape
 
@@ -453,7 +453,7 @@ def add_roi_ellipse(data, roiIndex, ax,
                     size_factor=1.5,
                     roi_lw=3):
 
-    mx, my, sx, sy = data.find_roi_coords(roiIndex)
+    mx, my, sx, sy = find_roi_coords(data, roiIndex)
     ellipse = plt.Circle((mx, my), size_factor*(sy+sx), edgecolor='lightgray', facecolor='none', lw=roi_lw)
     ax.add_patch(ellipse)
 
@@ -473,9 +473,11 @@ def show_CaImaging_FOV(data, key='meanImg', NL=1, cmap='viridis', ax=None,
     extent=(0,img.shape[1], 0, img.shape[0])
 
     if with_roi_zoom and roiIndex is not None:
-        zoom_cond, zoom_cond_shape = data.find_roi_cond(roiIndex, roi_zoom_factor=roi_zoom_factor)
+        zoom_cond, zoom_cond_shape = find_roi_cond(data, roiIndex,
+                                            roi_zoom_factor=roi_zoom_factor)
         img = img[zoom_cond].reshape(*zoom_cond_shape)
-        extent=data.find_roi_extent(roiIndex, roi_zoom_factor=roi_zoom_factor)
+        extent=find_roi_extent(data, roiIndex,
+                               roi_zoom_factor=roi_zoom_factor)
     
     img = (img-img.min())/(img.max()-img.min())
     img = np.power(img, 1/NL)
@@ -485,7 +487,7 @@ def show_CaImaging_FOV(data, key='meanImg', NL=1, cmap='viridis', ax=None,
     ax.axis('off')
 
     if roiIndex is not None:
-        data.add_roi_ellipse(roiIndex, ax, roi_lw=roi_lw)
+        add_roi_ellipse(data, roiIndex, ax, roi_lw=roi_lw)
 
     if roiIndices=='all':
         roiIndices = data.valid_roiIndices
