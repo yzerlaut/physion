@@ -7,16 +7,16 @@ from hdmf.data_utils import DataChunkIterator
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 from dateutil.tz import tzlocal
 
-import physion
+# import physion
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from assembling.saving import get_files_with_extension, list_dayfolder, check_datafolder, get_TSeries_folders
-from assembling.move_CaImaging_folders import StartTime_to_day_seconds
-from assembling.realign_from_photodiode import realign_from_photodiode
-from behavioral_monitoring.locomotion import compute_locomotion_speed
-from assembling.tools import build_subsampling_from_freq, load_FaceCamera_data
-from assembling.add_ophys import add_ophys
-from analysis.tools import resample_signal
+from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders#, check_datafolder
+# from assembling.move_CaImaging_folders import StartTime_to_day_seconds
+# from assembling.realign_from_photodiode import realign_from_photodiode
+# from behavioral_monitoring.locomotion import compute_locomotion_speed
+# from physion.assembling.tools import build_subsampling_from_freq, load_FaceCamera_data
+# from assembling.add_ophys import add_ophys
+# from analysis.tools import resample_signal
 
 
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',  'raw_FaceCamera',
