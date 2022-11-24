@@ -2,8 +2,8 @@ import os, sys, pathlib, time, datetime
 import numpy as np
 
 from physion.analysis.read_NWB import Data
-# from assembling.IO.bruker_xml_parser import bruker_xml_parser
-from physion.utils.files import get_files_with_extension, get_TSeries_folders
+
+from physion.utils.files import get_files_with_extension
 
 def build_subsampling_from_freq(subsampled_freq=1.,
                                 original_freq=1.,

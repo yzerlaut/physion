@@ -39,6 +39,8 @@ def visualization(self,
         analyze_datafile(self)
         self.raw_data_plot(self.data.tlim)
 
+    self.statusBar.showMessage(' [R]efresh, [M]aximize/minimize, [O]pen file, add keywords: "dFoF", "neuropil", "rawFluo", "wNeuropil"')
+
 
 def create_layout(self, tab, nRowImages):
 
@@ -83,12 +85,14 @@ def create_modality_button_ticks(self, tab,
     KEYS = ['visualStim', 'pupil', 'gaze',
             'facemotion', 'run',
             'photodiode',
-            'ephys', 'ophys']
+            'ephys', 
+            'ophys', 'ophysRaster']
 
     COLORS = ['grey', 'red', 'orange',
               'magenta', 'white',
               'grey',
-              'blue', 'green']
+              'blue',
+              'green', 'grey']
 
     for i, key, color in zip(range(len(KEYS)),
                              KEYS, COLORS):
@@ -99,6 +103,16 @@ def create_modality_button_ticks(self, tab,
         tab.layout.addWidget(getattr(self, '%sSelect'%key),
                              nRowImages, self.nWidgetCol-1-i,
                              1, 1)
+        if key in ['ophys']:
+            setattr(self, '%sSettings'%key, QtWidgets.QLineEdit())
+            getattr(self, '%sSettings'%key).setStyleSheet('color: %s;' % color)
+            getattr(self, '%sSettings'%key).setMaximumWidth(130)
+            getattr(self, '%sSettings'%key).setFont(physion.gui.parts.smallfont)
+            getattr(self, '%sSettings'%key).setText('{h:3,n:10}')
+            tab.layout.addWidget(getattr(self, '%sSettings'%key),
+                                 nRowImages+1, self.nWidgetCol-1-i,
+                                 1, 1)
+
 
     self.visualStimSelect.clicked.connect(self.select_visualStim)
     
@@ -221,8 +235,8 @@ def analyze_datafile(self):
             ('LFP' in self.data.nwbfile.acquisition):
         self.ephysSelect.setChecked(True)
         
-    if 'Photodiode-Signal' in self.data.nwbfile.acquisition:
-        self.photodiodeSelect.setChecked(True)
+    # if 'Photodiode-Signal' in self.data.nwbfile.acquisition:
+        # self.photodiodeSelect.setChecked(True)
 
     if 'Running-Speed' in self.data.nwbfile.acquisition:
         self.runSelect.setChecked(True)
@@ -237,8 +251,7 @@ def analyze_datafile(self):
     if 'Pupil' in self.data.nwbfile.processing:
         self.gaze_center = [np.mean(self.data.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:]),
                             np.mean(self.data.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:])]
-        self.gazeSelect.setChecked(True)
-
+        # self.gazeSelect.setChecked(True)
 
 
 def create_slider(self, tab, SliderResolution=200):

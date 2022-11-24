@@ -7,16 +7,11 @@ from hdmf.data_utils import DataChunkIterator
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 from dateutil.tz import tzlocal
 
-# import physion
-
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders#, check_datafolder
-# from assembling.move_CaImaging_folders import StartTime_to_day_seconds
-# from assembling.realign_from_photodiode import realign_from_photodiode
-# from behavioral_monitoring.locomotion import compute_locomotion_speed
-# from physion.assembling.tools import build_subsampling_from_freq, load_FaceCamera_data
-# from assembling.add_ophys import add_ophys
-# from analysis.tools import resample_signal
+from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders
+from physion.assembling.realign_from_photodiode import realign_from_photodiode
+from physion.behavior.locomotion import compute_locomotion_speed
+from physion.assembling.tools import build_subsampling_from_freq, load_FaceCamera_data
+from physion.analysis.tools import resample_signal
 
 
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',  'raw_FaceCamera',
@@ -453,24 +448,7 @@ def build_NWB(args,
     ####         Calcium Imaging              #######
     #################################################
     # see: add_ophys.py script
-
     Ca_data = None
-    if metadata['CaImaging']:
-        if args.verbose:
-            print('=> Storing Calcium Imaging signal for "%s" [...]' % args.datafolder)
-        if not hasattr(args, 'CaImaging_folder') or (args.CaImaging_folder==''):
-            try:
-                args.CaImaging_folder = physion.utils.folders.get_TSeries_folders(args.datafolder)
-                Ca_data = add_ophys(nwbfile, args,
-                                    metadata=metadata,
-                                    with_raw_CaImaging=('raw_CaImaging' in args.modalities),
-                                    with_processed_CaImaging=('processed_CaImaging' in args.modalities),
-                                    Ca_Imaging_options=Ca_Imaging_options)
-            except BaseException as be:
-                print(be)
-                print(' /!\ No Ca-Imaging data found, /!\ ')
-                print('             -> add them later with "add_ophys.py" \n')
-
 
     #################################################
     ####         Writing NWB file             #######

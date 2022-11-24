@@ -147,14 +147,14 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.window =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
-            self.add_imaging()
-            self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
-            self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
-            self.runAddOphys()
+            # self.add_imaging()
+            # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
+            # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
+            # self.runAddOphys()
             # DEBUG
-            # self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
-            # self.data = physion.analysis.read_NWB.Data(self.datafile)
-            # self.visualization()
+            self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
+            self.data = physion.analysis.read_NWB.Data(self.datafile)
+            self.visualization()
 
     def refresh(self):
         if self.tabWidget.currentWidget()==self.tabs[1]:

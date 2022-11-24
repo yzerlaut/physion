@@ -81,16 +81,35 @@ def add_bar_annotations(ax,
 ##           Pyqt Display      ########
 #######################################
 
-def scale_and_position(self, y, value=None, i=0):
+def scale_and_position(self, y,
+                       value=None, 
+                       iHeight=1):
+    
+
     if value is None:
-        value=y
+        value = y
+
     ymin, ymax = y.min(), y.max()
+
     if ymin<ymax:
-        return shift(self, i)+\
-            settings['increase-factor']**i*\
-            (value-ymin)/(ymax-ymin)
+        y = self.iplot+iHeight*(value-ymin)/(ymax-ymin)
     else:
-        return shift(self, i)+value
+        y = self.iplot+iHeight*value
+
+    self.iplot += iHeight
+
+    return y
+
+# def scale_and_position(self, y, value=None, i=0):
+    # if value is None:
+        # value=y
+    # ymin, ymax = y.min(), y.max()
+    # if ymin<ymax:
+        # return shift(self, i)+\
+            # settings['increase-factor']**i*\
+            # (value-ymin)/(ymax-ymin)
+    # else:
+        # return shift(self, i)+value
 
 
 def shift(self, i):

@@ -13,23 +13,25 @@ def raw_data_plot(self, tzoom,
                   with_roi=False,
                   with_scatter=False):
 
-    iplot = 0
+    self.iplot = 0
     scatter = []
     self.plot.clear()
     
     y = np.zeros(2)
+
     ## -------- Screen --------- ##
 
     if 'Photodiode-Signal' in self.data.nwbfile.acquisition and self.photodiodeSelect.isChecked():
         
         i1, i2 = convert_times_to_indices(*tzoom, self.data.nwbfile.acquisition['Photodiode-Signal'])
+
         if not self.sbsmplSelect.isChecked():
             isampling = np.arange(i1,i2)
         else:
             isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
-        y = scale_and_position(self,self.data.nwbfile.acquisition['Photodiode-Signal'].data[list(isampling)], i=iplot)
-        iplot+=1
-        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Photodiode-Signal']), y,
+
+        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Photodiode-Signal']),
+                       scale_and_position(self,self.data.nwbfile.acquisition['Photodiode-Signal'].data[list(isampling)]),
                        pen=pg.mkPen(color=settings['colors']['Screen']))
 
     ## -------- Locomotion --------- ##
@@ -37,13 +39,14 @@ def raw_data_plot(self, tzoom,
     if 'Running-Speed' in self.data.nwbfile.acquisition and self.runSelect.isChecked():
         
         i1, i2 = convert_times_to_indices(*tzoom, self.data.nwbfile.acquisition['Running-Speed'])
+
         if not self.sbsmplSelect.isChecked():
             isampling = np.arange(i1+1, i2-1)
         else:
             isampling = np.unique(np.linspace(i1+1, i2-1, settings['Npoints'], dtype=int))
-        y = scale_and_position(self,self.data.nwbfile.acquisition['Running-Speed'].data[list(isampling)], i=iplot)
-        iplot+=1
-        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Running-Speed']), y,
+
+        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Running-Speed']),
+                       scale_and_position(self,self.data.nwbfile.acquisition['Running-Speed'].data[list(isampling)]),
                        pen=pg.mkPen(color=settings['colors']['Locomotion']))
             
 
@@ -78,8 +81,7 @@ def raw_data_plot(self, tzoom,
 
         i1, i2 = convert_times_to_indices(*tzoom, self.data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'])
         t = self.data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps[i1:i2]
-        y = scale_and_position(self, self.data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[i1:i2],
-                               i=iplot)
+        y = scale_and_position(self, self.data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[i1:i2])
         self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['FaceMotion']))
 
         # adding grooming flag (dots at the bottom)
@@ -90,8 +92,6 @@ def raw_data_plot(self, tzoom,
                                symbolPen=pg.mkPen(color=settings['colors']['FaceMotion'], width=0),                                      
                                symbolBrush=pg.mkBrush(0, 255, 0, 255), symbolSize=7)
                 
-        iplot+=1
-        
         # self.facemotionROI        
 
 
@@ -120,18 +120,14 @@ def raw_data_plot(self, tzoom,
 
             y = scale_and_position(self,
                                    np.sqrt((self.data.nwbfile.processing['Pupil'].data_interfaces['cx'].data[i1:i2]-self.gaze_center[0])**2+\
-                                           (self.data.nwbfile.processing['Pupil'].data_interfaces['cy'].data[i1:i2]-self.gaze_center[1])**2),
-                                   i=iplot)
+                                           (self.data.nwbfile.processing['Pupil'].data_interfaces['cy'].data[i1:i2]-self.gaze_center[1])**2))
             self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['Gaze']))
-            
-            iplot+=1
             
         if self.pupilSelect.isChecked():
             
             y = scale_and_position(self,
                                    np.max([self.data.nwbfile.processing['Pupil'].data_interfaces['sx'].data[i1:i2],
-                                           self.data.nwbfile.processing['Pupil'].data_interfaces['sy'].data[i1:i2]], axis=0),
-                                   i=iplot)
+                                           self.data.nwbfile.processing['Pupil'].data_interfaces['sy'].data[i1:i2]], axis=0))
             self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['Pupil']))
 
             # adding blinking flag (dots at the bottom)
@@ -141,8 +137,6 @@ def raw_data_plot(self, tzoom,
                     self.plot.plot(t[cond],y[cond].min()+0*t[cond], pen=None, symbol='o',
                                    symbolPen=pg.mkPen(color=settings['colors']['Pupil'], width=0),                                      
                                    symbolBrush=pg.mkBrush(0, 0, 255, 255), symbolSize=7)
-
-            iplot+=1
 
         # plotting a circle for the pupil fit
         coords = []
@@ -169,9 +163,9 @@ def raw_data_plot(self, tzoom,
             isampling = np.arange(i1,i2)
         else:
             isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
-        y = scale_and_position(self,self.data.nwbfile.acquisition['Electrophysiological-Signal'].data[list(isampling)], i=iplot)
-        iplot+=1
-        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Electrophysiological-Signal']), y,
+
+        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Electrophysiological-Signal']), 
+                       scale_and_position(self,self.data.nwbfile.acquisition['Electrophysiological-Signal'].data[list(isampling)]),
                        pen=pg.mkPen(color=settings['colors']['Electrophy']))
 
     if ('LFP' in self.data.nwbfile.acquisition) and self.ephysSelect.isChecked():
@@ -182,9 +176,9 @@ def raw_data_plot(self, tzoom,
             isampling = np.arange(i1,i2)
         else:
             isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
-        y = scale_and_position(self,self.data.nwbfile.acquisition['LFP'].data[list(isampling)], i=iplot)
-        iplot+=1
-        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['LFP']), y,
+
+        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['LFP']),
+                       scale_and_position(self,self.data.nwbfile.acquisition['LFP'].data[list(isampling)]),
                        pen=pg.mkPen(color=settings['colors']['LFP']))
 
 
@@ -196,9 +190,9 @@ def raw_data_plot(self, tzoom,
             isampling = np.arange(i1,i2)
         else:
             isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
-        y = scale_and_position(self,self.data.nwbfile.acquisition['Vm'].data[list(isampling)], i=iplot)
-        iplot+=1
-        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Vm']), y,
+
+        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Vm']),
+                       scale_and_position(self,self.data.nwbfile.acquisition['Vm'].data[list(isampling)]),
                        pen=pg.mkPen(color=settings['colors']['Vm']))
 
         
@@ -207,10 +201,18 @@ def raw_data_plot(self, tzoom,
     # if (self.time==0) and ('ophys' in self.data.nwbfile.processing):
     if ('ophys' in self.data.nwbfile.processing):
 
+        try:
+            iHeight = int(str(self.ophysSettings.text()).split('h:')[1].split(',')[0].split('}')[0])
+            nROIs = int(str(self.ophysSettings.text()).split('n:')[1].split(',')[0].split('}')[0])
+        except BaseException as be:
+            print(be)
+            print(' ophys options not recognized ! setting defaults ')
+            iHeight, nROIs = 3, 10 
+
         if hasattr(self, 'roiIndices'):
             roiIndices = self.roiIndices
         else:
-            roiIndices = np.random.choice(np.arange(self.data.nROIs), 7)
+            roiIndices = np.random.choice(np.arange(self.data.nROIs), np.min([nROIs, self.data.nROIs]), replace=False)
 
         if self.imgSelect.isChecked():
             self.pCaimg.setImage(self.data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:]**.25) # plotting the mean image
@@ -241,8 +243,10 @@ def raw_data_plot(self, tzoom,
         self.pCa.addItem(self.ROIscatter)
 
     if ('ophys' in self.data.nwbfile.processing) and (roiIndices is not None) and self.ophysSelect.isChecked():
+
         if not hasattr(self.data, 'rawFluo'):
             self.data.build_rawFluo()
+
         i1 = convert_time_to_index(tzoom[0], self.data.Neuropil, axis=1)
         i2 = convert_time_to_index(tzoom[1], self.data.Neuropil, axis=1)
 
@@ -253,18 +257,44 @@ def raw_data_plot(self, tzoom,
 
         tt = np.array(self.data.Neuropil.timestamps[:])[isampling]
 
-        # if self.roiPick.text()=='sum':
-        if False:
-            y = scale_and_position(self, self.data.rawFluo[:,isampling].mean(axis=0), i=iplot) # valid ROIs inside
+        color, Fneu = (0, 150, 0), None
+        if 'dFoF' in str(self.ophysSettings.text()):
+            if not hasattr(self.data, 'dFoF'):
+                self.data.build_dFoF()
+            F = self.data.dFoF[:,isampling]
+        elif ('Neuropil' in str(self.ophysSettings.text())) or ('neuropil' in str(self.ophysSettings.text())):
+            if not hasattr(self.data, 'neuropil'):
+                self.data.build_neuropil()
+            print('using the neuropil')
+            if ('wNeuropil' in str(self.ophysSettings.text())):
+                F = self.data.rawFluo[:,isampling]
+                Fneu = self.data.neuropil[:,isampling]
+            else:
+                color = (150, 10, 10)
+                F = self.data.neuropil[:,isampling]
+        else:
+            F = self.data.rawFluo[:,isampling]
+
+        if 'sum' in str(self.ophysSettings.text()):
+            y = scale_and_position(self, F[:,isampling].mean(axis=0))
             self.plot.plot(tt, y, pen=pg.mkPen(color=(0,250,0), linewidth=1))
         else:
-            y = scale_and_position(self, np.arange(2), i=iplot)
-            width = y[1]-y[0]
+            y = scale_and_position(self, np.arange(2), iHeight=iHeight)
+            width = (y[1]-y[0])
             for n, ir in enumerate(roiIndices):
-                F= self.data.rawFluo[ir,isampling] 
                 loc = y[0]+n*width/len(roiIndices)
-                self.plot.plot(tt, loc+width*(F-F.min())/(F.max()-F.min())/len(roiIndices), pen=pg.mkPen(color=(0, 100, 0)), linewidth=1)
-        iplot += 1
+                if Fneu is not None:
+                    self.plot.plot(tt,
+                            loc+1.3*width*(Fneu[ir,:]-Fneu[ir,:].min())/(Fneu[ir,:].max()-Fneu[ir,:].min())/len(roiIndices),
+                            pen=pg.mkPen((150,10,10)), linewidth=1)
+                self.plot.plot(tt,
+                        loc+1.3*width*(F[ir,:]-F[ir,:].min())/(F[ir,:].max()-F[ir,:].min())/len(roiIndices),
+                        pen=pg.mkPen(color), linewidth=1)
+                if self.annotSelect.isChecked():
+                    roiAnnot = pg.TextItem(str(ir+1), color=(0, 200, 0))
+                    roiAnnot.setPos(tt[0], loc+width/len(roiIndices)/2.)
+                    self.plot.addItem(roiAnnot)
+
 
     # ## -------- Visual Stimulation --------- ##
 
