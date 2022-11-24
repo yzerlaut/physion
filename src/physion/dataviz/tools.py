@@ -3,20 +3,6 @@ import numpy as np
 #########################
 #########################
 
-FIGURE_PRESETS = {
-    ' ':dict(reshape_axes=False, right=2.),
-    'raster-preset': dict(reshape_axes=False,
-                          top=2.5, bottom=0.4, left=2., right=1.,
-                          wspace=0.3, hspace=0.3),
-    'raw-traces-preset': dict(reshape_axes=False,
-                              top=0.4, bottom=0.4, left=0.7, right=3.,
-                              wspace=0.5, hspace=0.5),
-    'raw-traces-preset+right-space': dict(reshape_axes=False,figsize=(1.1,1.1),
-                                          top=0.4, bottom=0.4, left=0.7, right=10.,
-                                          wspace=0.5, hspace=0.5)
-}
-
-
 settings = {
     'window_size':(1000,600),
     # raw data plot settings
