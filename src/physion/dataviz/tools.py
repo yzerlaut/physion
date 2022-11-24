@@ -1,24 +1,65 @@
+import os, sys, pathlib
 import numpy as np
+import matplotlib.pylab as plt
+plt.style.use(os.path.join(pathlib.Path(__file__).resolve().parents[1],\
+                'utils', 'matplotlib_style.py'))
 
-#########################
-#########################
+#############################################
+##           Matplotlib Display      ########
+#############################################
 
-settings = {
-    'window_size':(1000,600),
-    # raw data plot settings
-    'increase-factor':2, # so "Calcium" is twice "Eletrophy", that is twice "Pupil",..  "Locomotion"
-    'blank-space':0.1, # so "Calcium" is twice "Eletrophy", that is twice "Pupil",..  "Locomotion"
-    'colors':{'Screen':(100, 100, 100, 255),#'grey',
-              'Locomotion':(255,255,255,255),#'white',
-              'FaceMotion':(255,0,255,255),#'purple',
-              'Pupil':(255,0,0,255),#'red',
-              'Gaze':(200,100,0,255),#'orange',
-              'Electrophy':(100,100,255,255),#'blue',
-              'LFP':(100,100,255,255),#'blue',
-              'Vm':(100,100,100,255),#'blue',
-              'CaImaging':(0,255,0,255)},#'green'},
-    # general settings
-    'Npoints':500}
+def add_name_annotation(data,
+                        ax,
+                        name,
+                        tlim, ax_fraction_extent, ax_fraction_start,
+                        color='k', rotation=0, side='right'):
+    if side=='right':
+        ax.annotate(' '+name,
+                (tlim[1], ax_fraction_extent/2.+ax_fraction_start),
+                xycoords='data', color=color, va='center', rotation=rotation)
+    else:
+        ax.annotate(name+' ',
+                (tlim[0], ax_fraction_extent/2.+ax_fraction_start),
+                xycoords='data', color=color, va='center', ha='right', rotation=rotation)
+
+def shifted_start(tlim, frac_shift=0.01):
+    return tlim[0]-frac_shift*(tlim[1]-tlim[0])
+
+def plot_scaled_signal(data, 
+                       ax, t, signal,
+                       tlim, scale_bar,
+                       ax_fraction_extent=1, ax_fraction_start=0,
+                       color='#1f77b4', scale_unit_string='%.1f'):
+    """
+    # generic function to add scaled signal
+    """
+
+    try:
+        scale_range = np.max([signal.max()-signal.min(), scale_bar])
+        min_signal = signal.min()
+    except ValueError:
+        scale_range = scale_bar
+        min_signal = 0
+
+    ax.plot(t,
+            ax_fraction_start+(signal-min_signal)*ax_fraction_extent/scale_range,
+            color=color, lw=1)
+
+    # add scale bar
+    if scale_unit_string!='':
+        ax.plot(shifted_start(tlim)*np.ones(2),
+                ax_fraction_start+scale_bar*np.arange(2)*ax_fraction_extent/scale_range,
+                color=color, lw=1)
+
+    # add annotation
+    if '%' in scale_unit_string:
+        ax.annotate(str(scale_unit_string+' ') % scale_bar,
+                (shifted_start(tlim), ax_fraction_start),
+                ha='right', color=color, va='center', xycoords='data')
+    elif scale_unit_string!='':
+        ax.annotate(scale_unit_string,
+                (shifted_start(tlim), ax_fraction_start),
+                ha='right', color=color, va='center', xycoords='data')
 
 
 def add_bar_annotations(ax,
@@ -30,11 +71,16 @@ def add_bar_annotations(ax,
     ax.plot(xlim[0]+Xbar*np.arange(2), ylim[1]*np.ones(2), 'k-', lw=lw)
     ax.annotate(Xbar_label, (xlim[0], ylim[1]), fontsize=fontsize)
     ax.plot(xlim[0]*np.ones(2), ylim[1]-Ybar*np.arange(2), 'k-', lw=lw)
-    ax.annotate(Ybar_label, (xlim[0], ylim[1]), fontsize=fontsize, ha='right', va='top', rotation=90)
+    ax.annotate(Ybar_label, (xlim[0], ylim[1]), 
+            fontsize=fontsize, ha='right', va='top', rotation=90)
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
 
     
+#######################################
+##           Pyqt Display      ########
+#######################################
+
 def scale_and_position(self, y, value=None, i=0):
     if value is None:
         value=y
@@ -119,3 +165,83 @@ def convert_index_to_time(index, nwb_quantity):
         return nwb_quantity.timestamps[index]
     else:
         return nwb_quantity.starting_time+index/nwb_quantity.rate
+
+
+
+#############################################
+##             Others                ########
+#############################################
+
+def format_key_value(key, value):
+    if key in ['angle','direction']:
+        return '$\\theta$=%.0f$^{o}$' % value
+    elif key=='x-center':
+        return '$x$=%.0f$^{o}$' % value
+    elif key=='y-center':
+        return '$y$=%.0f$^{o}$' % value
+    elif key=='radius':
+        return '$r$=%.0f$^{o}$' % value
+    elif key=='size':
+        return '$s$=%.0f$^{o}$' % value
+    elif key=='contrast':
+        return '$c$=%.2f' % value 
+    elif key=='repeat':
+        return 'trial #%i' % (value+1)
+    elif key=='center-time':
+        return '$t_0$:%.1fs' % value
+    elif key=='Image-ID':
+        return 'im#%i' % value
+    elif key=='VSE-seed':
+        return 'vse#%i' % value
+    elif key=='light-level':
+        if value==0:
+            return 'grey'
+        elif value==1:
+            return 'white'
+        else:
+            return 'lum.=%.1f' % value
+    elif key=='dotcolor':
+        if value==-1:
+            return 'black dot'
+        elif value==0:
+            return 'grey dot'
+        elif value==1:
+            return 'white dot'
+        else:
+            return 'dot=%.1f' % value
+    elif key=='color':
+        if value==-1:
+            return 'black'
+        elif value==0:
+            return 'grey'
+        elif value==1:
+            return 'white'
+        else:
+            return 'color=%.1f' % value
+    elif key=='speed':
+        return 'v=%.0f$^{o}$/s' % value
+    elif key=='protocol_id':
+        return 'p.#%i' % (value+1)
+    else:
+        return '%s=%.2f' % (key, value)
+
+
+settings = {
+    'window_size':(1000,600),
+    # raw data plot settings
+    # so "Calcium" is twice "Electrophy", that is twice "Pupil",..  "Locomotion"
+    'increase-factor':2, 
+    'blank-space':0.1, 
+    'colors':{'Screen':(100, 100, 100, 255),#'grey',
+              'Locomotion':(255,255,255,255),#'white',
+              'FaceMotion':(255,0,255,255),#'purple',
+              'Pupil':(255,0,0,255),#'red',
+              'Gaze':(200,100,0,255),#'orange',
+              'Electrophy':(100,100,255,255),#'blue',
+              'LFP':(100,100,255,255),#'blue',
+              'Vm':(100,100,100,255),#'blue',
+              'CaImaging':(0,255,0,255)},#'green'},
+    # general settings
+    'Npoints':500}
+
+
