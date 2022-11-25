@@ -47,7 +47,9 @@ class MainWindow(QtWidgets.QMainWindow):
             loadNWBfolder, loadCafolder, runAddOphys
 
     # data analysis tools
-    from physion.analysis.gui import trial_averaging
+    from physion.analysis.gui import trial_averaging,\
+        update_protocol_TA, update_quantity_TA, select_ROI_TA,\
+        compute_episodes, refresh_TA
 
     # Imaging - Red Label GUI 
     from physion.imaging.red_label import red_channel_labelling,\

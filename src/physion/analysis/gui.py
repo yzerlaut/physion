@@ -4,7 +4,6 @@ import pyqtgraph as pg
 
 from physion.analysis.process_NWB import EpisodeData
 
-
 def trial_averaging(self,
                     NMAX_PARAMS=8, # max number of parameters varied
                     box_width=250,
@@ -29,7 +28,7 @@ def trial_averaging(self,
     self.pbox = QtWidgets.QComboBox(self)
     self.pbox.addItem('')
     self.pbox.addItems(self.data.protocols)
-    # self.pbox.activated.connect(self.update_protocol)
+    self.pbox.activated.connect(self.update_protocol)
     self.add_side_widget(tab.layout, self.pbox)
 
     # # -- quantity
@@ -48,7 +47,7 @@ def trial_averaging(self,
     for key in self.data.nwbfile.acquisition:
         if len(self.data.nwbfile.acquisition[key].data.shape)==1:
             self.qbox.addItem(key) # only for scalar variables
-    # self.qbox.activated.connect(self.update_quantity)
+    self.qbox.activated.connect(self.update_quantity_TA)
     self.add_side_widget(tab.layout, self.qbox)
 
     # # -- subquantity
@@ -65,7 +64,7 @@ def trial_averaging(self,
 
     self.roiPick = QtWidgets.QLineEdit()
     self.roiPick.setText('  [select ROI]  ')
-    # self.roiPick.returnPressed.connect(self.select_ROI)
+    self.roiPick.returnPressed.connect(self.select_ROI_TA)
     self.add_side_widget(tab.layout, self.roiPick)
 
     self.prevBtn = QtWidgets.QPushButton('[P]rev', self)
@@ -75,7 +74,7 @@ def trial_averaging(self,
     
     self.computeBtn = QtWidgets.QPushButton('[C]ompute episodes', self)
     self.computeBtn.setMaximumWidth(box_width)
-    # self.computeBtn.clicked.connect(self.compute_episodes_wsl)
+    self.computeBtn.clicked.connect(self.compute_episodes)
     self.add_side_widget(tab.layout, self.computeBtn)
 
     # # then parameters
@@ -90,7 +89,7 @@ def trial_averaging(self,
 
     self.refreshBtn = QtWidgets.QPushButton('[Ctrl+R]efresh plots', self)
     self.refreshBtn.setMaximumWidth(box_width)
-    # self.refreshBtn.clicked.connect(self.refresh)
+    self.refreshBtn.clicked.connect(self.refresh_TA)
     self.add_side_widget(tab.layout, self.refreshBtn)
     
     self.samplingBox = QtWidgets.QDoubleSpinBox(self)
@@ -110,3 +109,21 @@ def trial_averaging(self,
     self.refresh_tab(tab)
 
     self.show()
+
+def update_protocol_TA(self):
+    pass
+
+def update_quantity_TA(self):
+    pass
+
+def select_ROI_TA(self):
+    pass
+
+def compute_episodes(self):
+    pass
+
+def refresh_TA(self):
+    pass
+
+
+
