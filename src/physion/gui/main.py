@@ -47,7 +47,7 @@ class MainWindow(QtWidgets.QMainWindow):
             loadNWBfolder, loadCafolder, runAddOphys
 
     # data analysis tools
-    from physion.analysis.gui import trial_averaging,\
+    from physion.analysis.trial_averaging_gui import trial_averaging,\
         update_protocol_TA, update_quantity_TA, select_ROI_TA,\
         compute_episodes, refresh_TA
 
@@ -61,6 +61,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, app,
                  args=None,
                  width=850, height=700,
+                 Ntabs=4,
                  button_height = 20):
 
         tic = time.time() # for optimisation tests
@@ -69,7 +70,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         super(MainWindow, self).__init__()
         self.data, self.acq, self.stim = None, None, None
-        self.windows = ['' for i in range(4)]
+        self.windows = ['' for i in range(Ntabs)] # one window name per tab_id
         self.quit_event = None
 
         self.setWindowTitle('Physion -- Vision Physiology Software')
@@ -117,7 +118,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.tabWidget.tabBar().setExpanding(True) # NOT WORKING
 
         # Initialize and add tabs:
-        for i in range(4):
+        for i in range(Ntabs):
             self.tabs.append(QtWidgets.QWidget())
             self.tabs[-1].layout = QtWidgets.QGridLayout()
             self.tabWidget.addTab(self.tabs[-1], (i+1)*'*')

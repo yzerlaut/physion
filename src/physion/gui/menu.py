@@ -13,17 +13,17 @@ def build_menu(self):
     self.fileMenu.addAction('&Quit', self.quit)
 
     ##### ------------- Experiment -----------------------
-    self.experimentMenu = self.mainMenu.addMenu('  * &Acquisition')
+    self.experimentMenu = self.mainMenu.addMenu('  * Acquisition')
     # --
-    self.experimentMenu.addAction('&Multimodal',
+    self.experimentMenu.addAction('Multimodal',
                                   self.multimodal)
-    self.experimentMenu.addAction('&Visual Stimulation',
+    self.experimentMenu.addAction('Visual Stimulation',
                                   self.launch_visual_stim)
-    self.experimentMenu.addAction('&Intrinsic Imaging',
+    self.experimentMenu.addAction('Intrinsic Imaging',
                                   self.launch_intrinsic)
-    self.experimentMenu.addAction('&Face Camera',
+    self.experimentMenu.addAction('Face Camera',
                                   self.launch_FaceCamera)
-    self.experimentMenu.addAction('&Webcam',
+    self.experimentMenu.addAction('Webcam',
                                   self.launch_WebCam)
 
     ##### --------   Preprocessing -----------------------
