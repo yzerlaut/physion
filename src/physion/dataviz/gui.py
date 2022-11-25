@@ -57,7 +57,7 @@ def create_layout(self, tab, nRowImages):
         
         # a button to shift to the cell selection interface
         self.roiSelectButton = QtWidgets.QPushButton('FOV')
-        self.roiSelectButton.clicked.connect(self.FOV_gui)
+        self.roiSelectButton.clicked.connect(self.FOV)
         tab.layout.addWidget(self.roiSelectButton,
                              0, self.nWidgetCol-1,
                              1, 1)

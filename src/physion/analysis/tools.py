@@ -24,8 +24,6 @@ def normalize(response, norm_type, verbose=False):
         return response
 
 
-
-
 def summary_pdf_folder(filename):
     if not os.path.isdir(filename.replace('.nwb', '')):
         os.mkdir(filename.replace('.nwb', ''))

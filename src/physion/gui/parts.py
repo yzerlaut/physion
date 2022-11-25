@@ -76,6 +76,15 @@ def refresh_tab(self, tab):
     self.tabWidget.setCurrentWidget(tab)
     self.show()
 
+def switch_to_tab1(self):
+    self.tabWidget.setCurrentWidget(self.tabs[0])
+def switch_to_tab2(self):
+    self.tabWidget.setCurrentWidget(self.tabs[1])
+def switch_to_tab3(self):
+    self.tabWidget.setCurrentWidget(self.tabs[2])
+def switch_to_tab4(self):
+    self.tabWidget.setCurrentWidget(self.tabs[3])
+
 def add_keyboard_shortcuts(self,
                            pre_key=''):
     """
@@ -85,6 +94,16 @@ def add_keyboard_shortcuts(self,
     ##############################
     ##### keyboard shortcuts #####
     ##############################
+
+    # adding a few general keyboard shortcut
+    self.tab1Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+1'), self)
+    self.tab1Sc.activated.connect(self.switch_to_tab1)
+    self.tab2Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+2'), self)
+    self.tab2Sc.activated.connect(self.switch_to_tab2)
+    self.tab3Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+3'), self)
+    self.tab3Sc.activated.connect(self.switch_to_tab3)
+    self.tab4Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+4'), self)
+    self.tab4Sc.activated.connect(self.switch_to_tab4)
 
     # adding a few general keyboard shortcut
     self.openSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sO'%pre_key), self)
@@ -265,6 +284,21 @@ def add_side_widget(self, layout, wdgt,
 ###########################################
 ########## Data-specific tools ############
 ###########################################
+
+def next_ROI(self):
+    if len(self.roiIndices)==1:
+        self.roiIndices = [np.min([np.sum(self.data.iscell)-1,
+                           self.roiIndices[0]+1])]
+    else:
+        self.roiIndices = [0]
+        self.statusBar.showMessage('ROIs forced to %s' % self.roiIndices)
+
+def prev_ROI(self):
+    if len(self.roiIndices)==1:
+        self.roiIndices = [np.max([0, self.roiIndices[0]-1])]
+    else:
+        self.roiIndices = [0]
+        self.statusBar.showMessage('ROIs set to %s' % self.roiIndices)
 
 def select_ROI_from_pick(self, data):
 

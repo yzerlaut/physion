@@ -17,7 +17,8 @@ class MainWindow(QtWidgets.QMainWindow):
             open_file, open_folder, choose_root_folder,\
             add_keyboard_shortcuts, set_status_bar,\
             max_view, min_view, change_window_size,\
-            add_side_widget, cleanup_tab, refresh_tab
+            add_side_widget, cleanup_tab, refresh_tab,\
+            switch_to_tab1, switch_to_tab2, switch_to_tab3, switch_to_tab4
 
     # GUI menu
     from physion.gui.menu import build_menu
@@ -30,7 +31,8 @@ class MainWindow(QtWidgets.QMainWindow):
     from physion.dataviz.gui import visualization, update_frame,\
             select_visualStim, select_imgDisplay
     from physion.dataviz.plots import raw_data_plot
-    from physion.dataviz.FOV import FOV
+    from physion.dataviz.FOV import FOV, select_ROI_FOV,\
+        next_ROI_FOV, prev_ROI_FOV, toggle_FOV, draw_image_FOV
 
     # data acquisition 
     from physion.acquisition.gui import multimodal 
@@ -47,9 +49,9 @@ class MainWindow(QtWidgets.QMainWindow):
             loadNWBfolder, loadCafolder, runAddOphys
 
     # data analysis tools
-    from physion.analysis.trial_averaging_gui import trial_averaging,\
+    from physion.analysis.trial_averaging import trial_averaging,\
         update_protocol_TA, update_quantity_TA, select_ROI_TA,\
-        compute_episodes, refresh_TA
+        compute_episodes, refresh_TA, next_ROI_TA, prev_ROI_TA
 
     # Imaging - Red Label GUI 
     from physion.imaging.red_label import red_channel_labelling,\
@@ -163,9 +165,12 @@ class MainWindow(QtWidgets.QMainWindow):
             self.FOV()
 
     def refresh(self):
-        if self.tabWidget.currentWidget()==self.tabs[1]:
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='visualization':
             tzoom = self.plot.getAxis('bottom').range
             self.raw_data_plot(tzoom)
+        elif self.windows[tab_id] =='FOV':
+            self.draw_image_FOV()
         else:
             print(self.tabWidget.currentWidget())
 
@@ -173,6 +178,8 @@ class MainWindow(QtWidgets.QMainWindow):
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.prev_roi_RCL()
+        elif self.windows[tab_id] =='FOV':
+            self.prev_ROI_FOV()
         else:
             print('no shortcut')
 
@@ -187,8 +194,30 @@ class MainWindow(QtWidgets.QMainWindow):
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.next_roi_RCL()
+        elif self.windows[tab_id] =='FOV':
+            self.next_ROI_FOV()
         else:
             pass
+
+    def next_ROI(self):
+        if not hasattr(self, 'roiIndices'):
+            self.roiIndices = [0]
+        if len(self.roiIndices)==1:
+            self.roiIndices = [min([self.data.iscell.sum()-1,
+                               self.roiIndices[0]+1])]
+        else:
+            self.roiIndices = [0]
+            self.statusBar.showMessage('ROIs forced to %s' % self.roiIndices)
+
+    def prev_ROI(self):
+        if not hasattr(self, 'roiIndices'):
+            self.roiIndices = [0]
+        if len(self.roiIndices)==1:
+            self.roiIndices = [max([0, self.roiIndices[0]-1])]
+        else:
+            self.roiIndices = [0]
+            self.statusBar.showMessage('ROIs set to %s' % self.roiIndices)
+
 
     def fit(self):
         print('TO BE DONE')

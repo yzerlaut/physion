@@ -22,8 +22,10 @@ def add_name_annotation(data,
                 (tlim[0], ax_fraction_extent/2.+ax_fraction_start),
                 xycoords='data', color=color, va='center', ha='right', rotation=rotation)
 
+
 def shifted_start(tlim, frac_shift=0.01):
     return tlim[0]-frac_shift*(tlim[1]-tlim[0])
+
 
 def plot_scaled_signal(data, 
                        ax, t, signal,
@@ -99,17 +101,6 @@ def scale_and_position(self, y,
     self.iplot += iHeight
 
     return y
-
-# def scale_and_position(self, y, value=None, i=0):
-    # if value is None:
-        # value=y
-    # ymin, ymax = y.min(), y.max()
-    # if ymin<ymax:
-        # return shift(self, i)+\
-            # settings['increase-factor']**i*\
-            # (value-ymin)/(ymax-ymin)
-    # else:
-        # return shift(self, i)+value
 
 
 def shift(self, i):

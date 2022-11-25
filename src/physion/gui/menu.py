@@ -48,7 +48,7 @@ def build_menu(self):
     self.visualizationMenu = self.mainMenu.addMenu('  &Visualization')
     self.visualizationMenu.addAction('  ** &Raw Data', 
                                       self.visualization)
-    self.visualizationMenu.addAction('  **** &Field of View / ROI selection', 
+    self.visualizationMenu.addAction('  **** &FOV / ROIs', 
                                       self.FOV)
 
     # ##### ------- Analysis -------------------------------

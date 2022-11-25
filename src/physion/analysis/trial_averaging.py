@@ -1,7 +1,7 @@
 import numpy as np
 from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
-from matplotlib.cm import hsv
+from matplotlib import cm
 
 from physion.analysis.process_NWB import EpisodeData
 
@@ -9,17 +9,19 @@ NMAX_PARAMS=8 # max number of parameters varied
 
 
 def build_colors_from_array(array,
-                            discretization=10,
-                            cmap='hsv'):
+                            # discretization=10,
+                            cmap='gray'):
 
-    if discretization<len(array):
-        discretization = len(array)
-    Niter = int(len(array)/discretization)
+    # if discretization<len(array):
+        # discretization = len(array)
+    # Niter = int(len(array)/discretization)
+    # colors = (array%discretization)/discretization +\
+        # (array/discretization).astype(int)/discretization**2
 
-    colors = (array%discretization)/discretization +\
-        (array/discretization).astype(int)/discretization**2
+    colors = np.linspace(0.2, 1, len(array))
 
-    return np.array(255*hsv(colors)).astype(int)
+    return np.array(255*getattr(cm , cmap)(colors)).astype(int)
+
 
 def trial_averaging(self,
                     box_width=250,
@@ -80,14 +82,16 @@ def trial_averaging(self,
     # self.guiKeywords.returnPressed.connect(self.keyword_update2)
     self.add_side_widget(tab.layout, self.guiKeywords)
 
-    self.roiPick = QtWidgets.QLineEdit()
-    self.roiPick.setText('  [select ROI]  ')
-    self.roiPick.returnPressed.connect(self.select_ROI_TA)
-    self.add_side_widget(tab.layout, self.roiPick)
+    self.roiPickTA = QtWidgets.QLineEdit()
+    self.roiPickTA.setText('  [select ROI]  ')
+    self.roiPickTA.returnPressed.connect(self.select_ROI_TA)
+    self.add_side_widget(tab.layout, self.roiPickTA)
 
     self.prevBtn = QtWidgets.QPushButton('[P]rev', self)
     self.add_side_widget(tab.layout, self.prevBtn, 'small-left')
+    self.prevBtn.clicked.connect(self.prev_ROI_TA)
     self.nextBtn = QtWidgets.QPushButton('[N]ext roi', self)
+    self.nextBtn.clicked.connect(self.next_ROI_TA)
     self.add_side_widget(tab.layout, self.nextBtn, 'large-right')
     
     self.computeBtn = QtWidgets.QPushButton('[C]ompute episodes', self)
@@ -147,19 +151,25 @@ def update_quantity_TA(self):
     self.sqbox.addItems(self.data.list_subquantities(self.qbox.currentText()))
     self.sqbox.setCurrentIndex(0)
 
+def prev_ROI_TA(self):
+    self.prev_ROI()
+    self.roiPickTA.setText('%i' % self.roiIndices[0])
+
+def next_ROI_TA(self):
+    self.next_ROI()
+    self.roiPickTA.setText('%i' % self.roiIndices[0])
+
 def select_ROI_TA(self):
-    if self.roiPick.text() in ['sum', 'all']:
+    if self.roiPickTA.text() in ['sum', 'all']:
         self.roiIndices = np.arange(self.data.iscell.sum())
     else:
         try:
-            self.roiIndices = [int(self.roiPick.text())]
+            self.roiIndices = [int(self.roiPickTA.text())]
             self.statusBar.showMessage('ROIs set to %s' % self.roiIndices)
         except BaseException:
             self.roiIndices = [0]
-            self.roiPick.setText('0')
+            self.roiPickTA.setText('0')
             self.statusBar.showMessage('/!\ ROI string not recognized /!\ --> ROI set to [0]')
-
-    pass
 
 def compute_episodes(self):
     self.select_ROI_TA()
@@ -192,7 +202,8 @@ def plot_row_column_of_quantity(self):
     COLOR_CONDS = build_color_conditions(self)
 
     if len(COLOR_CONDS)>1:
-        COLORS = build_colors_from_array(np.arange(len(COLOR_CONDS)))
+        COLORS = build_colors_from_array(np.arange(len(COLOR_CONDS)),
+            cmap=('hsv' if self.color_condition=='repeat' else 'autumn'))
     else:
         COLORS = [(255,255,255,255)]
 
@@ -271,6 +282,7 @@ def build_color_conditions(self):
         if len(getattr(self, 'box%i'%i).currentText().split('color-code'))>1:
             X.append(np.sort(np.unique(self.data.nwbfile.stimulus[key].data[self.Pcond])))
             K.append(key)
+            self.color_condition = key
     return self.data.get_stimulus_conditions(X, K, self.pbox.currentIndex()-1)
 
 
