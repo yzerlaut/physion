@@ -229,13 +229,18 @@ def add_buttons(self, Layout):
 
 def add_side_widget(self, layout, wdgt,
                     spec='None',
+                    full_length=250,
                     side_wdgt_length=None):
 
     if side_wdgt_length is None:
         side_wdgt_length = self.side_wdgt_length
 
     if 'small' in spec:
-        wdgt.setFixedWidth(70)
+        wdgt.setMaximumWidth(full_length/side_wdgt_length)
+    elif 'large' in spec:
+        wdgt.setMaximumWidth(full_length*(side_wdgt_length-1)/side_wdgt_length)
+    else:
+        wdgt.setMaximumWidth(full_length)
 
     # if spec=='shift-right':
     #     self.layout.addWidget(wdgt, self.i_wdgt-1, side_wdgt_length,

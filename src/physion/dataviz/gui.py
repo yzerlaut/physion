@@ -16,6 +16,8 @@ def visualization(self,
                   withRawImages=False,
                   nRowImages=5):
 
+    self.windows[tab_id] = 'visualization'
+
     tab = self.tabs[tab_id]
 
     self.cleanup_tab(tab)

@@ -67,7 +67,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         super(MainWindow, self).__init__()
         self.data, self.acq, self.stim = None, None, None
-        self.window = ''
+        self.windows = ['' for i in range(4)]
         self.quit_event = None
 
         self.setWindowTitle('Physion -- Vision Physiology Software')
@@ -129,22 +129,24 @@ class MainWindow(QtWidgets.QMainWindow):
         print(' init took %.0fms' % (1e3*(time.time()-tic)))
    
     def open(self):
-        if self.window =='red_channel_labelling':
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='red_channel_labelling':
             self.folder = self.open_folder()
             self.load_RCL()
         else:
             self.open_file()
             
     def save(self):
-        if self.window =='red_channel_labelling':
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='red_channel_labelling':
             print('save')
             self.save_RCL()
         else:
             print('no shortcut')
 
     def hitting_space(self):
-
-        if self.window =='red_channel_labelling':
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
             # self.add_imaging()
@@ -164,19 +166,22 @@ class MainWindow(QtWidgets.QMainWindow):
             print(self.tabWidget.currentWidget())
 
     def process(self):
-        if self.window =='red_channel_labelling':
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='red_channel_labelling':
             self.prev_roi_RCL()
         else:
             print('no shortcut')
 
     def toggle(self):
-        if self.window =='red_channel_labelling':
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='red_channel_labelling':
             self.toggle_RCL()
         else:
             print('no shortcut')
 
     def next(self):
-        if self.window =='red_channel_labelling':
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='red_channel_labelling':
             self.next_roi_RCL()
         else:
             pass

@@ -11,7 +11,7 @@ KEYS = ['meanImg_chan2', 'meanImg', 'max_proj', 'meanImgE']
 def red_channel_labelling(self,
                           tab_id=2):
 
-    self.window = 'red_channel_labelling'
+    self.windows[tab_id] = 'red_channel_labelling'
     self.folder, self.rois_on = '', True
     self.roi_index = 0
 
