@@ -29,8 +29,8 @@ class MainWindow(QtWidgets.QMainWindow):
     # data visualization tools
     from physion.dataviz.gui import visualization, update_frame,\
             select_visualStim, select_imgDisplay
-    from physion.dataviz.FOV import init_FOV
     from physion.dataviz.plots import raw_data_plot
+    from physion.dataviz.FOV import FOV
 
     # data acquisition 
     from physion.acquisition.gui import multimodal 
@@ -42,7 +42,7 @@ class MainWindow(QtWidgets.QMainWindow):
             update_config, get_protocol_list, update_subject,\
             save_settings, load_settings
 
-    # assembling tooks
+    # assembling tools
     from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
             loadNWBfolder, loadCafolder, runAddOphys
 
@@ -159,7 +159,8 @@ class MainWindow(QtWidgets.QMainWindow):
             # DEBUG
             self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
             self.data = physion.analysis.read_NWB.Data(self.datafile)
-            self.visualization()
+            # self.visualization()
+            self.FOV()
 
     def refresh(self):
         if self.tabWidget.currentWidget()==self.tabs[1]:
