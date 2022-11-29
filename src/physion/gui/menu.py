@@ -9,7 +9,7 @@ def build_menu(self):
     self.fileMenu.addAction('&File [O]',
                             self.open_file)
     self.fileMenu.addAction('&Calendar',
-                            self.init_calendar)
+                            self.calendar)
     self.fileMenu.addAction('&Quit', self.quit)
 
     ##### ------------- Experiment -----------------------

@@ -24,7 +24,7 @@ class MainWindow(QtWidgets.QMainWindow):
     from physion.gui.menu import build_menu
 
     # calendar interface
-    from physion.gui.calendar import init_calendar, pick_date,\
+    from physion.gui.calendar import calendar, pick_date,\
             reinit_calendar, pick_subject, scan_folder, pick_datafile
 
     # data visualization tools
@@ -129,6 +129,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # Add tabs to widget
         self.layout.addWidget(self.tabWidget)
 
+        self.calendar()
         self.show()
 
         print(' init took %.0fms' % (1e3*(time.time()-tic)))

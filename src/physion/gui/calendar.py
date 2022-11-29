@@ -2,12 +2,11 @@ import datetime, os, string
 import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 
-import physion
+from physion.utils.paths import FOLDERS
+from physion.utils.files import get_files_with_extension
+from physion.analysis.read_NWB import Data
 
-# from the "utils" module:
-FOLDERS = physion.utils.paths.FOLDERS
-
-def init_calendar(self,
+def calendar(self,
                   tab_id=0,
                   nCalendarRow=10,
                   min_date=(2020, 8, 1)):
@@ -19,6 +18,13 @@ def init_calendar(self,
     #######################################################
     #######      widgets around the calendar     ##########
     #######################################################
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' ')) # space
+
+    self.add_side_widget(tab.layout,
+            QtWidgets.QLabel('  *  Select: ')) # space
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' ')) # space
 
     # folder box
     self.folderBox = QtWidgets.QComboBox(self)
@@ -132,7 +138,8 @@ def scan_folder(self):
     print('inspecting the folder "%s" [...]' %\
             FOLDERS[self.folderBox.currentText()])
 
-    FILES0 = physion.utils.files.get_files_with_extension(\
+    # FILES0 = physion.utils.files.get_files_with_extension(\
+    FILES0 = get_files_with_extension(\
                             FOLDERS[self.folderBox.currentText()],
                             extension='.nwb', recursive=True)
 
@@ -174,8 +181,9 @@ def preload_datafolder(filename):
     uses the "metadata_only" option of the read_NWB.Data class
     to load infos about datafile fast
     """
-    data = physion.analysis.read_NWB.Data(filename,\
-                            metadata_only=True, with_tlim=False)
+    # data = physion.analysis.read_NWB.Data(filename,\
+    data = Data(filename, metadata_only=True, with_tlim=False)
+
     if data.nwbfile is not None:
         return {'display_name' : data.df_name,
                 'subject': data.nwbfile.subject.description}
@@ -213,7 +221,8 @@ def pick_datafile(self):
     
     self.datafile = self.list_protocol[self.datafileBox.currentIndex()-1]
 
-    self.data = physion.analysis.read_NWB.Data(self.datafile)
+    # self.data = physion.analysis.read_NWB.Data(self.datafile)
+    self.data = Data(self.datafile)
 
     self.notes.setText(self.data.description)
     # self.visualization()
