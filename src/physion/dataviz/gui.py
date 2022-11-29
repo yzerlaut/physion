@@ -12,8 +12,8 @@ def update_frame(self):
 
 
 def visualization(self, 
-                  tab_id=1,
                   withRawImages=False,
+                  tab_id=1,
                   nRowImages=5):
 
     self.windows[tab_id] = 'visualization'

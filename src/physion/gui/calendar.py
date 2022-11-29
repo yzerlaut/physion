@@ -40,7 +40,7 @@ def calendar(self,
 
     # subject box
     self.subjectBox = QtWidgets.QComboBox(self)
-    self.subjectBox.activated.connect(self.pick_subject) # To be written !!
+    self.subjectBox.activated.connect(self.pick_subject) 
     self.subject_default_key = '  [subject] '
     self.subjectBox.addItem(self.subject_default_key)
     self.subjectBox.setCurrentIndex(0)
@@ -90,7 +90,12 @@ def calendar(self,
     # self.folderBox.addItem(self.folder_default_key)
     # self.folderBox.setCurrentIndex(0)
     tab.layout.addWidget(self.datafileBox,
-                         nCalendarRow+1, 0, 1, self.nWidgetCol)
+                         nCalendarRow+1, 0, 1, self.nWidgetCol-2)
+
+    self.plotButton = QtWidgets.QPushButton(' visualize', self)
+    self.plotButton.clicked.connect(self.visualization)
+    tab.layout.addWidget(self.plotButton,
+                         nCalendarRow+1, self.nWidgetCol-2, 1, 2)
 
 
     #####################################
@@ -106,6 +111,13 @@ def calendar(self,
 
     self.refresh_tab(tab)
 
+def preload_datafolder(self, fn):
+    data = Data(fn, metadata_only=True, with_tlim=False)
+    if data.nwbfile is not None:
+        return {'display_name' : data.df_name,
+                 'subject': data.nwbfile.subject.description}
+    else:
+        return {'display_name': '', 'subject':''}
 
 def reinit_calendar(self, min_date=(2020, 8, 1), max_date=None):
     
@@ -193,11 +205,6 @@ def preload_datafolder(filename):
 
 def update_datafileBox_list(self):
     self.datafileBox.clear()
-    # self.plot.clear()
-    # self.pScreenimg.setImage(np.ones((10,12))*50)
-    # self.pFaceimg.setImage(np.ones((10,12))*50)
-    # self.pPupilimg.setImage(np.ones((10,12))*50)
-    # self.pCaimg.setImage(np.ones((50,50))*100)
     if len(self.list_protocol)>0:
         self.datafileBox.addItem(' ...' +70*' '+'(select a data-folder) ')
         for fn in self.list_protocol:
@@ -214,7 +221,60 @@ def pick_date(self):
         self.list_protocol = self.FILES_PER_DAY[self.day]
         update_datafileBox_list(self)
 
+def compute_subjects(self):
+
+    print(' computing subjects [...]')
+    FILES = get_files_with_extension(FOLDERS[self.folderBox.currentText()],
+                                     extension='.nwb', recursive=True)
+
+    print(' looping over n=%i datafiles to fetch "subjects" metadata [...]' % len(FILES))
+    DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES])
+
+    SUBJECTS, DISPLAY_NAMES, SDATES, NDATES = [], [], [], []
+    for fn, date in zip(FILES, DATES):
+        infos = preload_datafolder(fn)
+        SDATES.append(date)
+        SUBJECTS.append(infos['subject'])
+        DISPLAY_NAMES.append(infos['display_name'])
+        NDATES.append(datetime.date(*[int(dd) for dd in date.split('_')]).toordinal())
+
+    self.SUBJECTS = {}
+    for s in np.unique(SUBJECTS):
+        cond = (np.array(SUBJECTS)==s)
+        self.SUBJECTS[s] = {'display_names':np.array(DISPLAY_NAMES)[cond],
+                            'datafiles':np.array(FILES)[cond],
+                            'dates':np.array(SDATES)[cond],
+                            'dates_num':np.array(NDATES)[cond]}
+
+    print(' -> found n=%i subjects ' % len(self.SUBJECTS.keys()))
+    self.subjectBox.clear()
+    self.subjectBox.addItems([self.subject_default_key]+\
+                       list(self.SUBJECTS.keys()))
+    self.subjectBox.setCurrentIndex(0)
+
 def pick_subject(self):
+
+    if self.subjectBox.currentText()==self.subject_default_key:
+        compute_subjects(self)
+
+    elif self.subjectBox.currentText() in self.SUBJECTS:
+
+        self.FILES_PER_DAY = {} # re-init
+        date_min = self.SUBJECTS[self.subjectBox.currentText()]['dates'][\
+              np.argmin(self.SUBJECTS[self.subjectBox.currentText()]['dates_num'])]
+        date_max = self.SUBJECTS[self.subjectBox.currentText()]['dates'][\
+              np.argmax(self.SUBJECTS[self.subjectBox.currentText()]['dates_num'])]
+        
+        self.reinit_calendar(\
+                min_date=tuple(int(dd) for dd in date_min.split('_')),
+                max_date=tuple(int(dd) for dd in date_max.split('_')))
+
+        for d in np.unique(self.SUBJECTS[self.subjectBox.currentText()]['dates']):
+            self.cal.setDateTextFormat(QtCore.QDate(datetime.date(*[int(dd) for dd in d.split('_')])),
+                                       self.highlight_format)
+            self.FILES_PER_DAY[d] = [f for f in np.array(self.SUBJECTS[self.subjectBox.currentText()]['datafiles'])[self.SUBJECTS[self.subjectBox.currentText()]['dates']==d]]
+    else:
+        print(' /!\ subject not recognized /!\  ')
     pass
 
 def pick_datafile(self):
