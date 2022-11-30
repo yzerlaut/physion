@@ -65,10 +65,13 @@ class Data:
         
         self.metadata = ast.literal_eval(self.nwbfile.session_description)
 
+        space = '        '
+        self.description = '\n - Subject: %s %s \n' % (space, self.metadata['subject_ID'])
+
         if self.metadata['protocol']=='None':
-            self.description = 'Spont. Act.\n'
+            self.description += '\n - Spont. Act. (no visual stim.)\n'
         else:
-            self.description = 'Visual-Stim:\n'
+            self.description += '\n - Visual-Stim: \n %s' % space
 
         # deal with multi-protocols
         if ('Presentation' in self.metadata) and (self.metadata['Presentation']=='multiprotocol'):
@@ -78,23 +81,23 @@ class Data:
                 # self.description += '- %s \n' % self.protocols[ii-1]
                 self.description += '%s / ' % self.protocols[ii-1]
                 ii+=1
-                if ii%2==1:
-                    self.description += '\n'
+                if ii%3==1:
+                    self.description += '\n %s' % space
         else:
             self.protocols = [self.metadata['protocol']]
-            self.description += '- %s \n' % self.metadata['protocol']
+            if self.metadata['protocol']!='None':
+                self.description += '- %s \n' % self.metadata['protocol']
             
         self.protocols = np.array(self.protocols, dtype=str)
 
         if 'time_start_realigned' in self.nwbfile.stimulus.keys():
-            self.description += ' =>  completed N=%i/%i episodes  \n' %(self.nwbfile.stimulus['time_start_realigned'].data.shape[0],
+            self.description += '\n        =>  completed N=%i/%i episodes  \n' %(self.nwbfile.stimulus['time_start_realigned'].data.shape[0],
                                                                self.nwbfile.stimulus['time_start'].data.shape[0])
                 
-        self.description += self.metadata['notes']
-        if 'intervention' in self.metadata:
-            self.description += '  --   '+self.metadata['intervention']
-        self.description += '\n' 
-        
+        self.description += '\n - Notes: %s %s\n' % (space, self.metadata['notes'])
+
+        self.description += '\n - Intervention: %s %s\n' % (space, self.metadata['intervention'] if 'intervention' in self.metadata else '')
+
         # FIND A BETTER WAY TO DESCRIBE
         # if self.metadata['protocol']!='multiprotocols':
         #     self.keys = []
