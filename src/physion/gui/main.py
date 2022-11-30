@@ -51,7 +51,8 @@ class MainWindow(QtWidgets.QMainWindow):
     # data analysis tools
     from physion.analysis.trial_averaging import trial_averaging,\
         update_protocol_TA, update_quantity_TA, select_ROI_TA,\
-        compute_episodes, refresh_TA, next_ROI_TA, prev_ROI_TA
+        compute_episodes, refresh_TA, next_ROI_TA, prev_ROI_TA,\
+        next_and_plot_TA
 
     # Imaging - Red Label GUI 
     from physion.imaging.red_label import red_channel_labelling,\
@@ -151,6 +152,9 @@ class MainWindow(QtWidgets.QMainWindow):
             print('no shortcut')
 
     def hitting_space(self):
+        """
+        for now used as a debuggin tool for the UI
+        """
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
@@ -170,15 +174,20 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='visualization':
             tzoom = self.plot.getAxis('bottom').range
             self.raw_data_plot(tzoom)
+        elif self.windows[tab_id] =='trial_averaging':
+            self.refresh_TA()
         elif self.windows[tab_id] =='FOV':
             self.draw_image_FOV()
         else:
-            print(self.tabWidget.currentWidget())
+            # print(self.tabWidget.currentWidget())
+            print('no shortcut')
 
     def process(self):
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.prev_roi_RCL()
+        elif self.windows[tab_id] =='trial_averaging':
+            self.prev_ROI_TA()
         elif self.windows[tab_id] =='FOV':
             self.prev_ROI_FOV()
         else:
@@ -195,10 +204,12 @@ class MainWindow(QtWidgets.QMainWindow):
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.next_roi_RCL()
+        elif self.windows[tab_id] =='trial_averaging':
+            self.next_ROI_TA()
         elif self.windows[tab_id] =='FOV':
             self.next_ROI_FOV()
         else:
-            pass
+            print('no shortcut')
 
     def next_ROI(self):
         if not hasattr(self, 'roiIndices'):
@@ -221,41 +232,20 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def fit(self):
-        print('TO BE DONE')
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='trial_averaging':
+            self.next_and_plot_TA()
+        else:
+            print('no shortcut')
 
     def home(self):
         print('TO BE DONE')
 
-    def launch_visual_stim(self):
-        print('TO BE DONE')
-
-    def launch_intrinsic(self):
-        print('TO BE DONE')
-
-    def launch_FaceCamera(self):
-        print('TO BE DONE')
-
-    def launch_WebCam(self):
-        print('TO BE DONE')
-
-    def launch_pupil_tracking_PP(self):
-        print('TO BE DONE')
-
-    def launch_whisking_tracking_PP(self):
-        print('TO BE DONE')
-
-    def build_NWB(self):
-        print('TO BE DONE')
-
-    def behavior(self):
-        pass
-
-    def behavioral_modulation(self):
-        pass
-    
-    def functional_maps(self):
-        pass
-
+    def in_progress(self):
+        print('\n feature not available yet, integration in the new UI still in progress')
+        print('      to benefit form this feature --> install the oold UI from source:')
+        print('                       see https://github.com/yzerlaut/physion ')
+        
     def quit(self):
         if hasattr(self, 'quit_event') and (self.quit_event is not None):
             self.quit_event.set()

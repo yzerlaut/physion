@@ -5,7 +5,7 @@ from matplotlib import cm
 
 from physion.analysis.process_NWB import EpisodeData
 
-NMAX_PARAMS=8 # max number of parameters varied
+NMAX_PARAMS=7 # max number of parameters varied
 
 
 def build_colors_from_array(array,
@@ -109,11 +109,16 @@ def trial_averaging(self,
 
         self.add_side_widget(tab.layout, getattr(self, "box%i"%i))
 
-    self.refreshBtn = QtWidgets.QPushButton('[Ctrl+R]efresh plots', self)
+    self.refreshBtn = QtWidgets.QPushButton('[R]efresh plots', self)
     self.refreshBtn.setMaximumWidth(box_width)
     self.refreshBtn.clicked.connect(self.refresh_TA)
     self.add_side_widget(tab.layout, self.refreshBtn)
     
+    self.allBtn = QtWidgets.QPushButton('[F]=[N]+[C]+[R]', self)
+    self.allBtn.setMaximumWidth(box_width)
+    self.allBtn.clicked.connect(self.next_and_plot_TA)
+    self.add_side_widget(tab.layout, self.allBtn)
+
     self.samplingBox = QtWidgets.QDoubleSpinBox(self)
     self.samplingBox.setMaximumWidth(box_width)
     self.samplingBox.setValue(10)
@@ -128,6 +133,8 @@ def trial_averaging(self,
                          0, self.side_wdgt_length,
                          self.nWidgetRow, 
                          self.nWidgetCol-self.side_wdgt_length)
+
+    self.statusBar.showMessage('[F]=[N]+[C]+[R]')
 
     self.refresh_tab(tab)
 
@@ -193,6 +200,11 @@ def refresh_TA(self):
         self.l.setParent(None) # this is how you remove a layout
     plot_row_column_of_quantity(self)
 
+
+def next_and_plot_TA(self):
+    self.next_ROI_TA()
+    self.compute_episodes()
+    self.refresh_TA()
 
 def plot_row_column_of_quantity(self):
 
