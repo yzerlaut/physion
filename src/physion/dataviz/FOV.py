@@ -97,6 +97,11 @@ def FOV(self,
     self.expT.setSuffix(' (display exponent)')
     self.add_side_widget(tab.layout, self.expT)#, 'small-right')
 
+    self.sizeT= QtWidgets.QDoubleSpinBox(self)
+    self.sizeT.setValue(2)
+    self.sizeT.setSuffix(' (ROI size)')
+    self.add_side_widget(tab.layout, self.sizeT)#, 'small-right')
+
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.roiPickFOV = QtWidgets.QLineEdit()
@@ -104,17 +109,18 @@ def FOV(self,
     self.roiPickFOV.returnPressed.connect(self.select_ROI_FOV)
     self.add_side_widget(tab.layout, self.roiPickFOV)
 
-    self.nextFOV = QtWidgets.QPushButton('[P]rev')
-    self.nextFOV.clicked.connect(self.next_ROI_FOV)
-    self.add_side_widget(tab.layout, self.nextFOV, 'small-left')
-
     self.prevFOV = QtWidgets.QPushButton('[N]ext ROI')
     self.prevFOV.clicked.connect(self.prev_ROI_FOV)
-    self.add_side_widget(tab.layout, self.prevFOV, 'large-right')
+    self.add_side_widget(tab.layout, self.prevFOV, 'small-left')
+
+    self.nextFOV = QtWidgets.QPushButton('[P]rev')
+    self.nextFOV.clicked.connect(self.next_ROI_FOV)
+    self.add_side_widget(tab.layout, self.nextFOV, 'large-right')
+
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
-    self.toggleB = QtWidgets.QPushButton('Toggle ROIs [T]')
+    self.toggleB = QtWidgets.QPushButton('[T]oggle ROIs')
     self.toggleB.clicked.connect(self.toggle_FOV)
     self.add_side_widget(tab.layout, self.toggleB)
 
@@ -233,9 +239,14 @@ def draw_rois(self,
                 self.x_green += list(x)
                 self.y_green += list(y)
     
-    self.rois_red.setData(self.x_red, self.y_red, size=3, brush=pg.mkBrush(255,0,0))
-    self.rois_green.setData(self.x_green, self.y_green, size=1, brush=pg.mkBrush(0,255,0))
-    self.rois_hl.setData(self.x_hl, self.y_hl, size=4, brush=pg.mkBrush(0,0,100))
+    size = float(self.sizeT.value())
+    self.rois_red.setData(self.x_red, self.y_red, size=3*size,
+                          brush=pg.mkBrush(255,0,0))
+    self.rois_green.setData(self.x_green, self.y_green, size=1*size,
+                            brush=pg.mkBrush(0,255,0))
+    self.rois_hl.setData(self.x_hl, self.y_hl,
+                         size=4*size,
+                         brush=pg.mkBrush(0,0,100))
     self.p0.addItem(self.rois_red)
     self.p0.addItem(self.rois_green)
     self.p0.addItem(self.rois_hl)

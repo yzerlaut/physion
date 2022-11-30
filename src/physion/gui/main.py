@@ -25,7 +25,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # calendar interface
     from physion.gui.calendar import calendar, pick_date,\
-            reinit_calendar, pick_subject, scan_folder, pick_datafile
+            reinit_calendar, pick_subject, scan_folder,\
+            pick_datafile, show_metadata 
 
     # data visualization tools
     from physion.dataviz.gui import visualization, update_frame,\
@@ -243,7 +244,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def in_progress(self):
         print('\n feature not available yet, integration in the new UI still in progress')
-        print('      to benefit form this feature --> install the oold UI from source:')
+        print('      to benefit form this feature --> install the old UI from source:')
         print('                       see https://github.com/yzerlaut/physion ')
         
     def quit(self):
