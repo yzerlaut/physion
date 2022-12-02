@@ -9,7 +9,7 @@ def build_menu(self):
     self.fileMenu.addAction('&File [O]',
                             self.open_file)
     self.fileMenu.addAction('&Calendar',
-                            self.init_calendar)
+                            self.calendar)
     self.fileMenu.addAction('&Quit', self.quit)
 
     ##### ------------- Experiment -----------------------
@@ -18,21 +18,21 @@ def build_menu(self):
     self.experimentMenu.addAction('Multimodal',
                                   self.multimodal)
     self.experimentMenu.addAction('Visual Stimulation',
-                                  self.launch_visual_stim)
+                                  self.in_progress)
     self.experimentMenu.addAction('Intrinsic Imaging',
-                                  self.launch_intrinsic)
+                                  self.in_progress)
     self.experimentMenu.addAction('Face Camera',
-                                  self.launch_FaceCamera)
+                                  self.in_progress)
     self.experimentMenu.addAction('Webcam',
-                                  self.launch_WebCam)
+                                  self.in_progress)
 
     ##### --------   Preprocessing -----------------------
     self.preprocessingMenu = self.mainMenu.addMenu('  ** &Preprocessing')
     # --
     self.preprocessingMenu.addAction('&Pupil',
-                                     self.launch_pupil_tracking_PP)
+                                     self.in_progress)
     self.preprocessingMenu.addAction('&Whisking',
-                                     self.launch_whisking_tracking_PP)
+                                     self.in_progress)
     self.preprocessingMenu.addAction('&Red Channel Labelling',
                                      self.red_channel_labelling)
 
@@ -40,7 +40,7 @@ def build_menu(self):
     self.assemblingMenu = self.mainMenu.addMenu('  * Assembling')
     # --
     self.assemblingMenu.addAction('Build NWB',
-                                  self.build_NWB)
+                                  self.in_progress)
     self.assemblingMenu.addAction('Add Imaging',
                                   self.add_imaging)
 
@@ -55,13 +55,13 @@ def build_menu(self):
     self.analysisMenu = self.mainMenu.addMenu('  *** &Analysis')
     # --
     self.analysisMenu.addAction('&Behavior',
-                                self.behavior)
+                                self.in_progress)
     self.analysisMenu.addAction('&Trial Averaging',
                                 self.trial_averaging)
     self.analysisMenu.addAction('&Behavioral Mod.',
-                                self.behavioral_modulation)
+                                self.in_progress)
     self.analysisMenu.addAction('&Functional Maps',
-                                self.functional_maps)
+                                self.in_progress)
 
     ##### ------   Other   -------------
     self.otherMenu = self.mainMenu.addMenu('     Others')

@@ -32,9 +32,19 @@ python_path_suite2p_env = check_path('suite2p')
 
 
 FOLDERS = {}
-for key, val in zip(['~/DATA', '~/UNPROCESSED', '~/CURATED'],
+for key, val in zip(['~/DATA',
+                     '~/UNPROCESSED',
+                     '~/DATA/TADDY',
+                     '~/DATA/JOANA',
+                     '~/UNPROCESSED/TADDY',
+                     '~/UNPROCESSED/JOANA',
+                     '~/CURATED'],
                     [os.path.join(os.path.expanduser('~'), 'DATA'),
                      os.path.join(os.path.expanduser('~'), 'UNPROCESSED'),
+                     os.path.join(os.path.expanduser('~'), 'DATA', 'TADDY'),
+                     os.path.join(os.path.expanduser('~'), 'DATA', 'JOANA'),
+                     os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'TADDY'),
+                     os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'JOANA'),
                      os.path.join(os.path.expanduser('~'), 'CURATED')]):
     if os.path.isdir(val):
         FOLDERS[key] = val
