@@ -12,20 +12,19 @@ dependencies:
   - scipy=1.6.3
   - scikit-learn=0.24.2
   - scikit-image=0.18.1
-  - ruamel=1.0
   - ruamel.yaml=0.17.21
+  - ruamel=1.0
   - pathlib=1.0.1
   - matplotlib=3.4.2
   - jupyter=1.0.0
   - jupytext=1.14.0
   - pynwb=2.0.0
-  - ffmpeg
+  - ffmpeg=5.0.1
   - pip:
-    - pyqt5==5.15.6
-    - pyqt5.sip==12.9.1
+    - pyqtdarktheme==1.2.1
     - pyqtgraph==0.12.1
-    - suite2p==0.10.2
     - psychopy==2021.1.1
     - opencv-python-headless==4.5.5.62
-    - svgutils==0.3.4
     - pygame==2.1.2
+  - qt=5.9.6
+
