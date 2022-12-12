@@ -12,7 +12,7 @@
 				   "duration":0.3,
 				   "value":5.0},
     "rotating-disk":{"radius-position-on-disk-cm":5.5,
-		     "roto-encoder-value-per-rotation": -12563.0},
+         		     "roto-encoder-value-per-rotation": -12563.0},
     "root_datafolder":"DATA",
     "subjects_file":"mice_yann.json",
     "experimenter":"Yann Zerlaut",
