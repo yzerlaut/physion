@@ -105,8 +105,8 @@ def multimodal(self,
     # -------------------------------------------------------
     # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-    # self.demoW = QtWidgets.QCheckBox('demo', self)
-    # self.add_side_widget(tab.layout, self.demoW)
+    self.demoW = QtWidgets.QCheckBox('demo', self)
+    self.add_side_widget(tab.layout, self.demoW)
 
 
     # ========================================================

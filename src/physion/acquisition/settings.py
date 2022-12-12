@@ -5,7 +5,6 @@ from physion.acquisition.tools import base_path,\
         get_subject_props
 
 
-
 def get_config_list(self):
     # configs
     files = os.listdir(os.path.join(base_path, 'configs'))

@@ -69,7 +69,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         tic = time.time() # for optimisation tests
 
-        # self.app, self.args = app, args
+        self.app, self.args = app, args
 
         super(MainWindow, self).__init__()
         self.data, self.acq, self.stim = None, None, None

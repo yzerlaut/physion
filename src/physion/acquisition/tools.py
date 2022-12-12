@@ -56,7 +56,7 @@ def check_gui_to_init_metadata(self):
         with open(fn) as f:
             self.protocol = json.load(f)
     else:
-        self.protocol = None
+        self.protocol = {}
 
     for d in [self.config, self.protocol]:
         if d is not None:
@@ -67,3 +67,20 @@ def check_gui_to_init_metadata(self):
         metadata[k] = bool(getattr(self, k+'Button').isChecked())
 
     return metadata
+
+def NIdaq_metadata_init(self):
+    # --------------- #
+    ### NI daq init ###   ## we override parameters based on the chosen modalities if needed
+    # --------------- #
+    if self.metadata['VisualStim'] and (self.metadata['NIdaq-analog-input-channels']<1):
+        self.metadata['NIdaq-analog-input-channels'] = 1 # at least one (AI0), -> the photodiode
+    if self.metadata['Locomotion'] and (self.metadata['NIdaq-digital-input-channels']<2):
+        self.metadata['NIdaq-digital-input-channels'] = 2
+    if self.metadata['EphysLFP'] and self.metadata['EphysVm']:
+        self.metadata['NIdaq-analog-input-channels'] = 3 # both channels, -> channel AI1 for Vm, AI2 for LFP 
+    elif self.metadata['EphysLFP']:
+        self.metadata['NIdaq-analog-input-channels'] = 2 # AI1 for LFP 
+    elif self.metadata['EphysVm']:
+        self.metadata['NIdaq-analog-input-channels'] = 2 # AI1 for Vm
+
+

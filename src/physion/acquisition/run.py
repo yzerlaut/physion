@@ -1,8 +1,27 @@
-import os
+import os, json
 import numpy as np
 
 from physion.utils.files import generate_filename_path
-from physion.acquisition.tools import check_gui_to_init_metadata
+from physion.acquisition.tools import base_path,\
+        check_gui_to_init_metadata, NIdaq_metadata_init
+from physion.visual_stim.build import build_stim
+ 
+def init_visual_stim(self):
+
+    with open(os.path.join(base_path,
+              'protocols', self.metadata['protocol']+'.json'), 'r') as fp:
+        self.protocol = json.load(fp)
+
+    self.protocol['screen'] = self.metadata['Screen']
+
+    if self.demoW.isChecked():
+        self.protocol['demo'] = True
+    else:
+        self.protocol['demo'] = False
+
+    self.stim = build_stim(self.protocol)
+    self.stim.experiment['protocol-name'] = self.metadata['protocol'] # storing in stim for later, to check the need to re-buffer
+
 
 def initialize(self):
 
@@ -25,7 +44,7 @@ def initialize(self):
         if (self.stim is None) or (self.stim.experiment['protocol-name']!=self.metadata['protocol']):
             if self.stim is not None:
                 self.stim.close() # need to remove the last stim
-            self.init_visual_stim()
+            init_visual_stim(self)
         else:
             print('no need to reinit, same visual stim than before')
         np.save(os.path.join(str(self.datafolder.get()), 'visual-stim.npy'), self.stim.experiment)
@@ -45,7 +64,7 @@ def initialize(self):
     if self.metadata['intervention']=='Photostimulation':
         output_steps += self.config['STEPS_FOR_PHOTOSTIMULATION']
 
-    self.NIdaq_metadata_init()
+    NIdaq_metadata_init(self)
 
     if not self.demoW.isChecked():
         try:
