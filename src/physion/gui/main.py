@@ -41,8 +41,7 @@ class MainWindow(QtWidgets.QMainWindow):
            run, stop, check_metadata, send_CaImaging_Stop_signal 
     from physion.acquisition.tools import save_experiment,\
             set_filename_and_folder
-    from physion.acquisition.settings import get_config_list,\
-            update_config, get_protocol_list, update_subject,\
+    from physion.acquisition.settings import update_config,\
             save_settings, load_settings
 
     # assembling tools
@@ -165,10 +164,11 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()
             # DEBUG
-            self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
-            self.data = physion.analysis.read_NWB.Data(self.datafile)
-            # self.visualization()
-            self.FOV()
+            # self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
+            # self.data = physion.analysis.read_NWB.Data(self.datafile)
+            # # self.visualization()
+            # self.FOV()
+            self.multimodal()
 
     def refresh(self):
         tab_id = self.tabWidget.currentIndex()

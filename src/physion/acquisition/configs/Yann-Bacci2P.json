@@ -14,7 +14,7 @@
     "rotating-disk":{"radius-position-on-disk-cm":5.5,
          		     "roto-encoder-value-per-rotation": -12563.0},
     "root_datafolder":"DATA",
-    "subjects_file":"mice_yann.json",
+    "subjects_file":"mice_yann.csv",
     "experimenter":"Yann Zerlaut",
     "lab":"Rebola and Bacci labs",
     "institution":"Institut du Cerveau et de la Moelle, Paris",

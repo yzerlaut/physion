@@ -1,5 +1,7 @@
-import json, os
+import json, os, pathlib
+import pandas
 
+base_path = str(pathlib.Path(__file__).resolve().parents[0])
 
 def set_filename_and_folder(self):
     self.filename = generate_filename_path(self.root_datafolder,
@@ -10,30 +12,40 @@ def set_filename_and_folder(self):
 
 
 def get_config_list(self):
+    # configs
     files = os.listdir(os.path.join(base_path, 'configs'))
     self.config_list = [f.replace('.json', '') for f in files[::-1] if f.endswith('.json')]
-    self.cbc.addItems(self.config_list)
-    self.update_config()
+    self.cbc.addItems(['']+self.config_list)
    
+    files = os.listdir(os.path.join(base_path, 'interventions'))
+    self.intervention_list = [f.replace('.json', '') for f in files[::-1] if f.endswith('.json')]
+    self.cbi.addItems(['']+self.intervention_list)
 
 def update_config(self):
-    fn = os.path.join(base_path, 'configs', self.cbc.currentText()+'.json')
-    with open(fn) as f:
-        self.config = json.load(f)
-    self.get_protocol_list()
-    self.get_subject_list()
-    self.root_datafolder = os.path.join(os.path.expanduser('~'), self.config['root_datafolder'])
-    self.Screen = self.config['Screen']
 
+    if self.cbc.currentText()!='':
 
-def get_protocol_list(self):
-    if self.config['protocols']=='all':
-        files = os.listdir(os.path.join(base_path, 'protocols'))
-        self.protocol_list = [f.replace('.json', '') for f in files if f.endswith('.json')]
-    else:
-        self.protocol_list = self.config['protocols']
-    self.cbp.clear()
-    self.cbp.addItems(['None']+self.protocol_list)
+        # first read the new config
+        fn = os.path.join(base_path, 'configs',
+                          self.cbc.currentText()+'.json')
+        with open(fn) as f:
+            self.config = json.load(f)
+
+        # now update protocols
+        if self.config['protocols']=='all':
+            files = os.listdir(os.path.join(base_path, 'protocols'))
+            self.protocol_list = [f.replace('.json', '') for f in files if f.endswith('.json')]
+        else:
+            self.protocol_list = self.config['protocols']
+        self.cbp.clear()
+        self.cbp.addItems(['None']+self.protocol_list)
+
+        # now update subjects
+        subjects = pandas.read_csv(os.path.join(base_path,
+                                'subjects',self.config['subjects_file']))
+        self.cbs.clear()
+        self.cbs.addItems(list(subjects['Subject-ID']))
+
 
 def save_settings(self):
     settings = {'config':self.cbc.currentText(),
@@ -63,6 +75,4 @@ def load_settings(self):
     if (self.config is None) or (self.protocol=={}) or (self.subject is None):
         self.statusBar.showMessage(' /!\ Problem in loading settings /!\  ')
 
-def update_subject(self):
-    self.subject = self.subjects[self.cbs.currentText()]
     
