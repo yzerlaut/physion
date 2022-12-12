@@ -1,13 +1,23 @@
+import os
 import numpy as np
 
+from physion.utils.files import generate_filename_path
+from physion.acquisition.tools import check_gui_to_init_metadata
 
 def initialize(self):
 
     self.bufferButton.setEnabled(False) # should be already blocked, but for security 
     self.runButton.setEnabled(False) # acq blocked during init
 
-    self.metadata = self.check_gui_to_init_metadata()
-    self.set_filename_and_folder()
+    self.metadata = check_gui_to_init_metadata(self)
+
+    
+    # SET FILENAME AND FOLDER
+    self.filename = generate_filename_path(self.metadata['root-data-folder'],
+                                           filename='metadata',
+                                           extension='.npy',
+                with_FaceCamera_frames_folder=self.metadata['FaceCamera'])
+    self.datafolder.set(os.path.dirname(self.filename))
 
     max_time = 2*60*60 # 2 hours by default, so should be stopped manually
     if self.metadata['VisualStim']:
@@ -83,7 +93,7 @@ def buffer_stim(self):
 
 
 def check_metadata(self):
-    new_metadata = self.check_gui_to_init_metadata()
+    new_metadata = check_gui_to_init_metadata(self)
     same, same_protocol = True, new_metadata['protocol']==self.metadata['protocol'] 
     for k in new_metadata:
         if self.metadata[k]!=new_metadata[k]:

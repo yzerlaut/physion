@@ -1,14 +1,9 @@
 import json, os, pathlib
 import pandas
 
-base_path = str(pathlib.Path(__file__).resolve().parents[0])
+from physion.acquisition.tools import base_path,\
+        get_subject_props
 
-def set_filename_and_folder(self):
-    self.filename = generate_filename_path(self.root_datafolder,
-                                filename='metadata',
-                        extension='.npy',
-                with_FaceCamera_frames_folder=self.metadata['FaceCamera'])
-    self.datafolder.set(os.path.dirname(self.filename))
 
 
 def get_config_list(self):
@@ -45,6 +40,18 @@ def update_config(self):
                                 'subjects',self.config['subjects_file']))
         self.cbs.clear()
         self.cbs.addItems(list(subjects['Subject-ID']))
+
+def update_subject(self):
+
+    subject = get_subject_props(self)
+    # dealing with FOV option
+    self.fovPick.clear()
+    fovs = ['']
+    for i in range(1, 10):
+        key = 'FOV%i'%i
+        if (key in subject) and (subject[key]!='nan'):
+            fovs.append(key)
+    self.fovPick.addItems(fovs)
 
 
 def save_settings(self):
