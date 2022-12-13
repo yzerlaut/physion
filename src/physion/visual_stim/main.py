@@ -721,7 +721,7 @@ def init_bg_image(cls, index):
 def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
     """ we use this function for each protocol initialisation"""
     interval = cls.experiment['time_stop'][index]-cls.experiment['time_start'][index]
-    itend = int(security_factor*interval*refresh_freq)
+    itend = np.max([1, int(security_factor*interval*refresh_freq)])
     return np.arange(itend), np.arange(itend)/refresh_freq, []
 
 
