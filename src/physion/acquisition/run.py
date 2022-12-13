@@ -26,7 +26,14 @@ def init_visual_stim(self):
     self.stim.experiment['protocol-name'] = self.metadata['protocol'] # storing in stim for later, to check the need to re-buffer
 
 
+def check_FaceCamera(self):
+    if os.path.isfile(os.path.join(self.datafolder.get(), '..', 'current-FaceCamera.npy')):
+        image = np.load(os.path.join(self.datafolder.get(), '..', 'current-FaceCamera.npy'))
+        self.pFaceimg.setImage(image.T)
+
 def initialize(self):
+
+    check_FaceCamera(self)
 
     self.bufferButton.setEnabled(False) # should be already blocked, but for security 
     self.runButton.setEnabled(False) # acq blocked during init
@@ -124,8 +131,7 @@ def toggle_FaceCamera_process(self):
         self.closeFaceCamera_event.clear()
         self.FaceCamera_process = multiprocessing.Process(target=launch_FaceCamera,
                         args=(self.run_event , self.closeFaceCamera_event, self.datafolder,
-                                   {'frame_rate':self.config['FaceCamera-frame-rate']},
-                                   self.pFaceimg))
+                                   {'frame_rate':self.config['FaceCamera-frame-rate']}))
         self.FaceCamera_process.start()
         self.statusBar.showMessage('[ok] FaceCamera initialized (in 5-6s) ! ')
         
@@ -149,6 +155,8 @@ def check_metadata(self):
 
 
 def run(self):
+
+    check_FaceCamera(self)
 
     if self.check_metadata(): # invalid if not the same protocol !
         self.initButton.setEnabled(False)
