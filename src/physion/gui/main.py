@@ -43,7 +43,7 @@ class MainWindow(QtWidgets.QMainWindow):
     from physion.acquisition.tools import save_experiment,\
             set_filename_and_folder
     from physion.acquisition.settings import update_config,\
-            update_subject, save_settings, load_settings
+            update_subject, save_settings
 
     # assembling tools
     from physion.assembling.add_ophys import add_imaging, loadNWBfile,\

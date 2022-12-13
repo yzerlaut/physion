@@ -7,32 +7,18 @@ import pyqtgraph as pg
 
 from physion.acquisition.settings import get_config_list
 from physion.utils.paths import FOLDERS
-
+from physion.visual_stim.screens import SCREENS
+from physion.acquisition.settings import load_settings
 
 def multimodal(self,
                tab_id=0):
-
-    try:
-        from physion.visual_stim.screens import SCREENS
-        from physion.visual_stim.build import build_stim
-    except ModuleNotFoundError:
-        print(' /!\ Problem with the Visual-Stimulation module /!\ ')
-        SCREENS = {}
-
-    try:
-        from physion.hardware.NIdaq.main import Acquisition
-    except ModuleNotFoundError:
-        print(' /!\ Problem with the NIdaq module /!\ ')
-
-    try:
-        from physion.hardware.FLIRcamera.recording import launch_FaceCamera
-    except ModuleNotFoundError:
-        print(' /!\ Problem with the FLIR camera module /!\ ')
 
     tab = self.tabs[tab_id]
 
     self.cleanup_tab(tab)
 
+    self.config = None
+    self.subject, self.protocol = None, {}
     self.MODALITIES = ['Locomotion',
                        'FaceCamera',
                        'EphysLFP',
@@ -72,11 +58,7 @@ def multimodal(self,
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel('data folder:'))
     self.folderBox = QtWidgets.QComboBox(self)
-    self.folder_default_key = '  [root datafolder]'
-    self.folderBox.addItem(self.folder_default_key)
-    for folder in FOLDERS.keys():
-        self.folderBox.addItem(folder)
-    self.folderBox.setCurrentIndex(1)
+    self.folderBox.addItems(FOLDERS.keys())
     self.add_side_widget(tab.layout, self.folderBox)
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
@@ -110,8 +92,11 @@ def multimodal(self,
     # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.demoW = QtWidgets.QCheckBox('demo', self)
-    self.add_side_widget(tab.layout, self.demoW)
+    self.add_side_widget(tab.layout, self.demoW, 'large-left')
 
+    self.saveSetB = QtWidgets.QPushButton('save', self)
+    self.saveSetB.clicked.connect(self.save_settings)
+    self.add_side_widget(tab.layout, self.saveSetB, 'small-right')
 
     # ========================================================
 
@@ -119,59 +104,62 @@ def multimodal(self,
     #------------------- THEN MAIN PANEL   -------------------
     ip, width = 0, 3
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Screen **', self),
-                         ip, self.side_wdgt_length, 
-                         1, width)
-    # -
-
-    ip+=1
-    self.cbsc = QtWidgets.QComboBox(self)
-    self.cbsc.addItems(['']+list(SCREENS.keys()))
-    tab.layout.addWidget(self.cbsc,\
-                         ip, self.side_wdgt_length+1, 
-                         1, width)
-    # -
-    ip+=1
-    tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Config **', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
+    # -
     self.cbc = QtWidgets.QComboBox(self)
     self.cbc.activated.connect(self.update_config)
     tab.layout.addWidget(self.cbc,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
-    # -
     ip+=1
+    # -
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Subject **', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
+    # -
     self.cbs = QtWidgets.QComboBox(self)
     self.cbs.activated.connect(self.update_subject)
     tab.layout.addWidget(self.cbs,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
-    # -
     ip+=1
+    # -
+    tab.layout.addWidget(\
+        QtWidgets.QLabel(40*' '+'** Screen **', self),
+                         ip, self.side_wdgt_length, 
+                         1, width)
+    ip+=1
+    # -
+    self.cbsc = QtWidgets.QComboBox(self)
+    self.cbsc.addItems(['']+list(SCREENS.keys()))
+    tab.layout.addWidget(self.cbsc,\
+                         ip, self.side_wdgt_length+1, 
+                         1, width)
+    ip+=1
+    # -
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Visual Protocol **', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
+    # -
     self.cbp = QtWidgets.QComboBox(self)
     tab.layout.addWidget(self.cbp,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
-    # -
     ip+=1
+    # -
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Intervention **', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
+    # -
     self.cbi = QtWidgets.QComboBox(self)
     tab.layout.addWidget(self.cbi,\
                          ip, self.side_wdgt_length+1, 
@@ -228,6 +216,7 @@ def multimodal(self,
     self.refresh_tab(tab)
 
     # READ CONFIGS
-    get_config_list(self)
+    get_config_list(self) # first
+    load_settings(self)
 
 
