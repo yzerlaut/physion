@@ -1,11 +1,14 @@
 import os, json
 import numpy as np
+import multiprocessing
 
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path,\
         check_gui_to_init_metadata, NIdaq_metadata_init
 from physion.visual_stim.build import build_stim
- 
+from physion.hardware.NIdaq.main import Acquisition
+from physion.hardware.FLIRcamera.recording import launch_FaceCamera
+
 def init_visual_stim(self):
 
     with open(os.path.join(base_path,
@@ -101,15 +104,36 @@ def buffer_stim(self):
     # ----------------------------------
     # buffers the visual stimulus
     if self.stim.buffer is None:
-        self.stim.buffer_stim(self, gui_refresh_func=self.app.processEvents)
+       self.statusBar.showMessage('buffering visual stimulation [...]')
+       self.stim.buffer_stim(self, gui_refresh_func=self.app.processEvents)
+       self.statusBar.showMessage('buffering done !')
     else:
-        print('\n --> visual stim already buffered, keeping this')
-    # ----------------------------------
+       self.statusBar.showMessage('visual stim already buffered, keeping this !')
+       print('\n --> visual stim already buffered, keeping this')
+    # --------------------------------
     self.initButton.setEnabled(True)
     self.stopButton.setEnabled(True)
     self.runButton.setEnabled(True)
     self.update()
 
+def toggle_FaceCamera_process(self):
+    if self.FaceCameraButton.isChecked() and (self.FaceCamera_process is None):
+        # need to launch it
+        self.statusBar.showMessage('  starting FaceCamera stream [...] ')
+        self.show()
+        self.closeFaceCamera_event.clear()
+        self.FaceCamera_process = multiprocessing.Process(target=launch_FaceCamera,
+                        args=(self.run_event , self.closeFaceCamera_event, self.datafolder,
+                                   {'frame_rate':self.config['FaceCamera-frame-rate']},
+                                   self.pFaceimg))
+        self.FaceCamera_process.start()
+        self.statusBar.showMessage('[ok] FaceCamera initialized (in 5-6s) ! ')
+        
+    elif (not self.FaceCameraButton.isChecked()) and (self.FaceCamera_process is not None):
+        # need to shut it down
+        self.closeFaceCamera_event.set()
+        self.statusBar.showMessage(' FaceCamera stream interupted !')
+        self.FaceCamera_process = None
 
 def check_metadata(self):
     new_metadata = check_gui_to_init_metadata(self)

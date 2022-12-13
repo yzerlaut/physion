@@ -17,7 +17,7 @@ def multimodal(self,
         from physion.visual_stim.build import build_stim
     except ModuleNotFoundError:
         print(' /!\ Problem with the Visual-Stimulation module /!\ ')
-        SCREENS = []
+        SCREENS = {}
 
     try:
         from physion.hardware.NIdaq.main import Acquisition
@@ -35,7 +35,8 @@ def multimodal(self,
 
     self.MODALITIES = ['Locomotion',
                        'FaceCamera',
-                       'EphysLFP', 'EphysVm',
+                       'EphysLFP',
+                       'EphysVm',
                        'CaImaging']
 
     ##########################################
@@ -88,6 +89,9 @@ def multimodal(self,
         self.add_side_widget(tab.layout, getattr(self, k+'Button'))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.FaceCameraButton.clicked.connect(self.toggle_FaceCamera_process)
+
     # -------------------------------------------------------
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel(' * Monitoring * '))
@@ -122,7 +126,7 @@ def multimodal(self,
 
     ip+=1
     self.cbsc = QtWidgets.QComboBox(self)
-    self.cbsc.addItems(SCREENS.keys())
+    self.cbsc.addItems(['']+list(SCREENS.keys()))
     tab.layout.addWidget(self.cbsc,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
@@ -186,7 +190,6 @@ def multimodal(self,
                         invertY=True, border=[1, 1, 1])
     self.pFaceimg = pg.ImageItem(np.ones((10,12))*50)
     self.pFace.addItem(self.pFaceimg)
-    # self.pFaceimg.setImage(np.ones((10,12))*50) # to update
 
     # NOW MENU INTERACTION BUTTONS
     ip, width = 1, 5

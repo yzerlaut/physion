@@ -20,7 +20,8 @@ class stop_func: # dummy version of the multiprocessing.Event class
 class CameraAcquisition:
 
     def __init__(self,
-                 settings={'frame_rate':20.}):
+                 settings={'frame_rate':20.},
+                 gui_img=None):
         
         self.times, self.running = [], False
         self.init_camera(settings)
@@ -29,6 +30,9 @@ class CameraAcquisition:
         
         self.cam = simple_pyspin.Camera()
         self.cam.init()
+
+        if gui_img is not None:
+            self.show(gui_img)
 
         ########################################################################
         # -------------------------------------------------------------------- #
@@ -61,16 +65,20 @@ class CameraAcquisition:
         # self.cam.ExposureAuto = 'Off'
         # self.cam.ExposureTime =settings['exposure_time'] # microseconds, ~20% of interframe interval
 
+    def show(self, img):
+        img.setImage(self.cam.get_array())
 
     def save_sample_on_desktop(self):
         ### SAVING A SAMPLE ON THE DESKTOP
         print('saving a sample image as:', desktop_png)
         imsave(desktop_png, np.array(self.cam.get_array()))
 
-    def rec_and_check(self, run_flag, quit_flag, folder):
+    def rec_and_check(self, run_flag, quit_flag, folder,
+                      gui_img=None):
         
         self.cam.start()
-        self.save_sample_on_desktop()
+        if gui_img is not None:
+              self.show(gui_img)
         
         while not quit_flag.is_set():
             
@@ -95,15 +103,18 @@ class CameraAcquisition:
 
         if len(self.times)>0:
             print('FaceCamera -- effective sampling frequency: %.1f Hz ' % (1./np.mean(np.diff(self.times))))
-            self.save_sample_on_desktop()
+            if gui_img is not None:
+                self.show(gui_img)
         
         self.running=False
         self.cam.stop()
 
 def launch_FaceCamera(run_flag, quit_flag, datafolder,
-                      settings={'frame_rate':20.}):
-    camera = CameraAcquisition(settings=settings)
-    camera.rec_and_check(run_flag, quit_flag, datafolder)
+                      settings={'frame_rate':20.},
+                      gui_img=None):
+    camera = CameraAcquisition(settings=settings, gui_img=gui_img)
+    camera.rec_and_check(run_flag, quit_flag, datafolder,
+                         gui_img=gui_img)
 
     
 if __name__=='__main__':

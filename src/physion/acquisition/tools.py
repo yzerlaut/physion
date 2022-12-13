@@ -4,6 +4,7 @@ import numpy as np
 base_path = str(pathlib.Path(__file__).resolve().parents[0])
 
 from physion.utils.files import generate_filename_path
+from physion.utils.paths import FOLDERS
 
 def set_filename_and_folder(self):
     self.filename = generate_filename_path(self.root_datafolder,
@@ -41,7 +42,7 @@ def check_gui_to_init_metadata(self):
     
     ### set up all metadata based on GUI infos
     metadata = {'config':self.cbc.currentText(),
-                'root-data-folder':self.folderBox.currentText(),
+                'root-data-folder':FOLDERS[self.folderBox.currentText()],
                 'Screen':self.cbs.currentText(),
                 'protocol':self.cbp.currentText(),
                 'VisualStim':self.cbp.currentText()!='None',
