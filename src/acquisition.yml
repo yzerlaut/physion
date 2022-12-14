@@ -1,0 +1,24 @@
+name: acq2
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - numpy
+  - scipy
+  - scikit-learn
+  - scikit-image
+  - pathlib
+  - pip:
+    - pyqt5
+    - pyqt5.sip
+    - h5py
+    - pyqtgraph
+    - pyqtdarktheme
+    - pynwb
+    - nidaqmx
+    - pyWinhook
+    - psychopy
+    - git+https://github.com/yzerlaut/simple_pyspin
+    - pycromanager
+    - pygame
