@@ -6,6 +6,7 @@ except ModuleNotFoundError:
     pass
 
 from physion.visual_stim.screens import SCREENS
+from physion.visual_stim.build import build_stim
 
 def stop_signal(parent):
     if (len(event.getKeys())>0) or (parent.stop_flag):
@@ -623,7 +624,7 @@ class multiprotocol(visual_stim):
                 i+=1
         else:
             while 'Protocol-%i'%i in protocol:
-                path_list = [pathlib.Path(__file__).resolve().parents[1], 'exp', 'protocols']+protocol['Protocol-%i'%i].split('/')
+                path_list = [pathlib.Path(__file__).resolve().parents[1], 'acquisition', 'protocols']+protocol['Protocol-%i'%i].split('/')
                 Ppath = os.path.join(*path_list)
                 if not os.path.isfile(Ppath):
                     print(' /!\ "%s" not found in Protocol folder /!\  ' % protocol['Protocol-%i'%i])
@@ -721,7 +722,7 @@ def init_bg_image(cls, index):
 def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
     """ we use this function for each protocol initialisation"""
     interval = cls.experiment['time_stop'][index]-cls.experiment['time_start'][index]
-    itend = int(security_factor*interval*refresh_freq)
+    itend = np.max([1, int(security_factor*interval*refresh_freq)])
     return np.arange(itend), np.arange(itend)/refresh_freq, []
 
 

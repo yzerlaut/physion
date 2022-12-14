@@ -1,12 +1,12 @@
 [project]
 name = "physion"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
   { name="Yann Zerlaut", email="yann.zerlaut@gmail.com" },
 ]
 description = "Vision Physiology Software"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.1"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -16,6 +16,7 @@ dependencies = [
     "numpy",
     "scipy",
     "matplotlib",
+    "pandas",
     "natsort",
     "pynwb",
     "pyqt5",
@@ -23,6 +24,17 @@ dependencies = [
     "pyqtgraph",
     "pyqtdarktheme",
 ]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+[tool.setuptools.package-data]
+"physion.acquisition.protocols" = ["*.json"]
+"physion.acquisition.configs" = ["*.json"]
+"physion.acquisition.interventions" = ["*.json"]
+"physion.acquisition.subjects" = ["*.csv"]
+
 [project.urls]
 "Homepage" = "https://github.com/yzerlaut/physion"
+"Documentation" = "https://github.com/yzerlaut/physion/README.md"
 "Bug Tracker" = "https://github.com/yzerlaut/physion/issues"
+

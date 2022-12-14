@@ -94,9 +94,9 @@ class Data:
             self.description += '\n        =>  completed N=%i/%i episodes  \n' %(self.nwbfile.stimulus['time_start_realigned'].data.shape[0],
                                                                self.nwbfile.stimulus['time_start'].data.shape[0])
                 
-        self.description += '\n - Notes: %s %s\n' % (space, self.metadata['notes'])
+        self.description += '\n - Intervention: %s %s\n' % (space, self.metadata['intervention'] if 'intervention' in self.metadata else 'None')
 
-        self.description += '\n - Intervention: %s %s\n' % (space, self.metadata['intervention'] if 'intervention' in self.metadata else '')
+        self.description += '\n - Notes: %s %s\n' % (space, self.metadata['notes'])
 
         # FIND A BETTER WAY TO DESCRIBE
         # if self.metadata['protocol']!='multiprotocols':

@@ -60,6 +60,8 @@ def open_file(self,
         self.statusBar.showMessage(' /!\ QFileDialog broken in python >3.7 /!\     ---> use the calendar interface to load data ! ')
         print(' /!\ QFileDialog broken in python >3.7 ')
 
+def inactivated(self):
+    print('\n feature inactivated in this version')
 
 
 def delete_layout(self, layout):
@@ -344,38 +346,38 @@ def select_ROI_from_pick(self, data):
             
     return roiIndices
 
-def keyword_update(self, string=None, parent=None):
+# def keyword_update(self, string=None, parent=None):
 
-    if string is None:
-        string = self.guiKeywords.text()
+    # if string is None:
+        # string = self.guiKeywords.text()
 
-    cls = (parent if parent is not None else self)
+    # cls = (parent if parent is not None else self)
     
-    if string in ['Stim', 'stim', 'VisualStim', 'Stimulation', 'stimulation']:
-        cls.load_VisualStim()
-    elif string in ['no_stim', 'no_VisualStim']:
-        cls.visual_stim = None
-    elif string in ['scan_folder', 'scanF', 'scan']:
-        cls.scan_folder()
-    elif string in ['meanImg', 'meanImg_chan2', 'meanImgE', 'Vcorr', 'max_proj']:
-        cls.CaImaging_bg_key = string
-    elif 'plane' in string:
-        cls.planeID = int(string.split('plane')[1])
-    elif string=='no_subsampling':
-        cls.no_subsampling = True
-    elif string in ['F', 'Fluorescence', 'Neuropil', 'Deconvolved', 'Fneu', 'dF/F', 'dFoF'] or ('F-' in string):
-        if string=='F':
-            cls.CaImaging_key = 'Fluorescence'
-        elif string=='Fneu':
-            cls.CaImaging_key = 'Neuropil'
-        else:
-            cls.CaImaging_key = string
-    elif string=='subsampling':
-        cls.no_subsampling = False
-    elif string=='subjects':
-        cls.compute_subjects()
-    else:
-        self.statusBar.showMessage('  /!\ keyword "%s" not recognized /!\ ' % string)
+    # if string in ['Stim', 'stim', 'VisualStim', 'Stimulation', 'stimulation']:
+        # cls.load_VisualStim()
+    # elif string in ['no_stim', 'no_VisualStim']:
+        # cls.visual_stim = None
+    # elif string in ['scan_folder', 'scanF', 'scan']:
+        # cls.scan_folder()
+    # elif string in ['meanImg', 'meanImg_chan2', 'meanImgE', 'Vcorr', 'max_proj']:
+        # cls.CaImaging_bg_key = string
+    # elif 'plane' in string:
+        # cls.planeID = int(string.split('plane')[1])
+    # elif string=='no_subsampling':
+        # cls.no_subsampling = True
+    # elif string in ['F', 'Fluorescence', 'Neuropil', 'Deconvolved', 'Fneu', 'dF/F', 'dFoF'] or ('F-' in string):
+        # if string=='F':
+            # cls.CaImaging_key = 'Fluorescence'
+        # elif string=='Fneu':
+            # cls.CaImaging_key = 'Neuropil'
+        # else:
+            # cls.CaImaging_key = string
+    # elif string=='subsampling':
+        # cls.no_subsampling = False
+    # elif string=='subjects':
+        # cls.compute_subjects()
+    # else:
+        # self.statusBar.showMessage('  /!\ keyword "%s" not recognized /!\ ' % string)
 
             
     # Layout11 = QtWidgets.QVBoxLayout()

@@ -2,12 +2,10 @@
 
 """
 import simple_pyspin, time, sys, os
-from skimage.io import imsave
 import numpy as np
 from pathlib import Path
 
 os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
-desktop_png = os.path.join(os.path.expanduser("~/Desktop"), 'FaceCamera.png')
 
 class stop_func: # dummy version of the multiprocessing.Event class
     def __init__(self):
@@ -36,46 +34,16 @@ class CameraAcquisition:
         # -------------------------------------------------------------------- #
         ########################################################################
 
-        
-        # # Set the area of interest (AOI) to the middle half
-        # self.cam.Width = self.cam.SensorWidth // 2
-        # self.cam.Height = self.cam.SensorHeight // 2
-        # self.cam.OffsetX = self.cam.SensorWidth // 4
-        # self.cam.OffsetY = self.cam.SensorHeight // 4
-
-        # # To change the frame rate, we need to enable manual control
-        # self.cam.AcquisitionFrameRateAuto = 'Off'
-        # # self.cam.AcquisitionFrameRateEnabled = True # seemingly not available here
-        # self.cam.AcquisitionFrameRate = settings['frame_rate']
-
-        # # To control the exposure settings, we need to turn off auto
-        # self.cam.GainAuto = 'Off'
-        # # Set the gain to 20 dB or the maximum of the camera.
-        # max_gain = self.cam.get_info('Gain')['max']
-        # if (settings['gain']==0) or (settings['gain']>max_gain):
-        #     self.cam.Gain = max_gain
-        #     print("Setting FaceCamera gain to %.1f dB" % max_gain)
-        # else:
-        #     self.cam.Gain = settings['gain']
-
-        # self.cam.ExposureAuto = 'Off'
-        # self.cam.ExposureTime =settings['exposure_time'] # microseconds, ~20% of interframe interval
-
-
-    def save_sample_on_desktop(self):
-        ### SAVING A SAMPLE ON THE DESKTOP
-        print('saving a sample image as:', desktop_png)
-        imsave(desktop_png, np.array(self.cam.get_array()))
 
     def rec_and_check(self, run_flag, quit_flag, folder):
         
         self.cam.start()
-        self.save_sample_on_desktop()
-        
+        np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
+
         while not quit_flag.is_set():
             
             if not self.running and run_flag.is_set() : # not running and need to start  !
-                self.save_sample_on_desktop()
+                np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
                 self.running, self.times = True, []
                 # reinitialize recording
                 self.imgs_folder = os.path.join(folder.get(), 'FaceCamera-imgs')
@@ -83,7 +51,7 @@ class CameraAcquisition:
             elif self.running and not run_flag.is_set(): # running and we need to stop
                 self.running=False
                 print('FaceCamera -- effective sampling frequency: %.1f Hz ' % (1./np.mean(np.diff(self.times))))
-                self.save_sample_on_desktop()
+                np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
                 
 
             # after the update
@@ -95,7 +63,7 @@ class CameraAcquisition:
 
         if len(self.times)>0:
             print('FaceCamera -- effective sampling frequency: %.1f Hz ' % (1./np.mean(np.diff(self.times))))
-            self.save_sample_on_desktop()
+            np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
         
         self.running=False
         self.cam.stop()

@@ -1,7 +1,5 @@
-import time
+import time, sys
 from PyQt5 import QtWidgets
-
-import physion
 
 # import pdb # for DEBUG
 
@@ -25,7 +23,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # calendar interface
     from physion.gui.calendar import calendar, pick_date,\
-            reinit_calendar, pick_subject, scan_folder, pick_datafile
+            reinit_calendar, pick_subject, scan_folder,\
+            pick_datafile, show_metadata 
 
     # data visualization tools
     from physion.dataviz.gui import visualization, update_frame,\
@@ -35,14 +34,17 @@ class MainWindow(QtWidgets.QMainWindow):
         next_ROI_FOV, prev_ROI_FOV, toggle_FOV, draw_image_FOV
 
     # data acquisition 
-    from physion.acquisition.gui import multimodal 
-    from physion.acquisition.run import initialize, buffer_stim,\
-           run, stop, check_metadata, send_CaImaging_Stop_signal 
-    from physion.acquisition.tools import save_experiment,\
+    if 'acquisition' in sys.argv:
+        from physion.acquisition.gui import multimodal 
+        from physion.acquisition.run import initialize, buffer_stim,\
+           run, stop, check_metadata, send_CaImaging_Stop_signal,\
+           toggle_FaceCamera_process
+        from physion.acquisition.tools import save_experiment,\
             set_filename_and_folder
-    from physion.acquisition.settings import get_config_list,\
-            update_config, get_protocol_list, update_subject,\
-            save_settings, load_settings
+        from physion.acquisition.settings import update_config,\
+            update_subject, save_settings
+    else:
+        from physion.gui.parts import inactivated as multimodal
 
     # assembling tools
     from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
@@ -69,7 +71,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         tic = time.time() # for optimisation tests
 
-        # self.app, self.args = app, args
+        self.app, self.args = app, args
 
         super(MainWindow, self).__init__()
         self.data, self.acq, self.stim = None, None, None
@@ -164,10 +166,11 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()
             # DEBUG
-            self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
-            self.data = physion.analysis.read_NWB.Data(self.datafile)
-            # self.visualization()
-            self.FOV()
+            # self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
+            # self.data = physion.analysis.read_NWB.Data(self.datafile)
+            # # self.visualization()
+            # self.FOV()
+            self.multimodal()
 
     def refresh(self):
         tab_id = self.tabWidget.currentIndex()
@@ -243,7 +246,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def in_progress(self):
         print('\n feature not available yet, integration in the new UI still in progress')
-        print('      to benefit form this feature --> install the oold UI from source:')
+        print('      to benefit form this feature --> install the old UI from source:')
         print('                       see https://github.com/yzerlaut/physion ')
         
     def quit(self):

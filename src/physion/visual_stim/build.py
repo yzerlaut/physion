@@ -21,10 +21,11 @@ def get_default_params(protocol_name):
     protocol_name = protocol_name.replace('-image','').replace('-', '_').replace('+', '_')
 
     try:
-        params = getattr(getattr(physion.visual_stim.stimuli, protocol_name), 'params')
-
+        Dparams = getattr(getattr(physion.visual_stim.stimuli, protocol_name), 'params')
+        params = {}
         # set all params to default values
-        for key in params:
+        for key in Dparams:
+            params[key] = Dparams[key]
             if ' (' in key:
                 new_key = key.split(' (')[0]
                 params['%s-1'%new_key] = params[key]

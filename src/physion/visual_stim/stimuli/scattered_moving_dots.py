@@ -8,23 +8,15 @@ from physion.visual_stim.main import vis_stim_image_built, init_times_frames, in
 ####################################################
 
 params = {"movie_refresh_freq":5,
-          # default param values:
           "presentation-duration":3,
+          # default param values:
           "speed (deg/s)":60.,
           "size (deg)":4.,
           "spacing (deg)":10.,
           "direction (deg)":270.,
           "ndots (#)":7,
           "dotcolor (lum.)":-1,
-          "bg-color (lum.)":0.5,
-          # now we set the range of possible values:
-          "speed-1": 0.01, "speed-2": 200.0, "N-speed": 0,
-          "size-1": 0.01, "size-2": 100, "N-size": 0,
-          "spacing-1": 0.001, "spacing-2": 100, "N-spacing": 0,
-          "direction-1": 0, "direction-2": 270, "N-direction": 0,
-          "ndots-1": 1, "ndots-2": 1000, "N-ndots": 0,
-          "bg-color-1": 0., "bg-color-2": 1., "N-bg-color": 0,
-          "dotcolor-1": -1, "dotcolor-2": 1, "N-dotcolor": 0}
+          "bg-color (lum.)":0.5}
     
 
 def get_starting_point_and_direction_mv_dots(line,
@@ -58,7 +50,8 @@ def get_starting_point_and_direction_mv_dots(line,
 
         # top -> bottom
         dx_per_time, dy_per_time = 0, speed
-        Y0 = np.zeros(ndots)-interval*dy_per_time/2.
+        # Y0 = np.zeros(ndots)-interval*dy_per_time/2.
+        Y0 = interval*dy_per_time/2.*(.5*np.abs(np.random.randn(ndots))-1)
         X0 = line-line.mean()
 
     else:
@@ -85,6 +78,26 @@ class stim(vis_stim_image_built):
         # when the parent multiprotocol will have ~10Hz refresh rate, this can  remain 2-3Hz
         self.refresh_freq = protocol['movie_refresh_freq']
 
+        # we initialize the trajectories
+
+        self.X0, self.Y0 = {}, {}
+        self.dx_per_time, self.dy_per_time = {}, {}
+
+        for i, index in enumerate(self.experiment['index']):
+
+            line = np.arange(int(self.experiment['ndots'][i]))*\
+                                 self.experiment['spacing'][i]
+
+            self.X0[str(index)], self.Y0[str(index)],\
+                self.dx_per_time[str(index)], self.dy_per_time[str(index)] =\
+                    get_starting_point_and_direction_mv_dots(line,
+                            self.experiment['time_stop'][i]-\
+                            self.experiment['time_start'][i],
+                            self.experiment['direction'][i],
+                            self.experiment['speed'][i],
+                            int(self.experiment['ndots'][i]))
+
+
 
     def get_image(self, index,
                   time_from_episode_start=0,
@@ -96,21 +109,11 @@ class stim(vis_stim_image_built):
 
         img = init_bg_image(cls, index)
 
-        line = np.arange(int(cls.experiment['ndots'][index]))*\
-                cls.experiment['spacing'][index]
+        Index = str(cls.experiment['index'][index])
+        for x0, y0 in zip(self.X0[Index], self.Y0[Index]):
 
-        X0, Y0, dx_per_time, dy_per_time =\
-            get_starting_point_and_direction_mv_dots(line,
-            cls.experiment['time_stop'][index]-\
-                    cls.experiment['time_start'][index],
-                    cls.experiment['direction'][index],
-                    cls.experiment['speed'][index],
-                    int(cls.experiment['ndots'][index]))
-
-        for x0, y0 in zip(X0, Y0):
-
-            new_position = (x0+dx_per_time*time_from_episode_start,
-                            y0+dy_per_time*time_from_episode_start)
+            new_position = (x0+self.dx_per_time[Index]*time_from_episode_start,
+                            y0+self.dy_per_time[Index]*time_from_episode_start)
 
             self.add_dot(img, new_position,
                          cls.experiment['size'][index],

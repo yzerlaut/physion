@@ -97,6 +97,11 @@ def calendar(self,
     tab.layout.addWidget(self.plotButton,
                          nCalendarRow+1, self.nWidgetCol-2, 1, 2)
 
+    self.metadataButton = QtWidgets.QPushButton('show metadata', self)
+    self.metadataButton.clicked.connect(self.show_metadata)
+    tab.layout.addWidget(self.metadataButton,
+                         nCalendarRow+2, self.nWidgetCol-2, 1, 2)
+
 
     #####################################
     #######      Adding notes  ##########
@@ -105,7 +110,7 @@ def calendar(self,
     self.notes = QtWidgets.QLabel('\n[exp info]'+5*'\n', self)
     tab.layout.addWidget(self.notes,
                          nCalendarRow+2, 0,
-                self.nWidgetRow-self.side_wdgt_length, self.nWidgetCol)
+                self.nWidgetRow-self.side_wdgt_length, self.nWidgetCol-2)
 
 
 
@@ -286,6 +291,17 @@ def pick_datafile(self):
 
     self.notes.setText(self.data.description)
     # self.visualization()
+
+def show_metadata(self):
+
+    import pprint
+
+    if self.data is not None:
+        for key in self.data.metadata:
+            if type(key)==dict:
+                pprint.pprint(self.data.metadata[key])
+            else:
+                print(' - %s : "%s" ' % (key, self.data.metadata[key]))
 
 
 

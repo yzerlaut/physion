@@ -5,25 +5,10 @@ import multiprocessing # for the camera streams !!
 from ctypes import c_char_p
 import pyqtgraph as pg
 
-import physion
-
-# if not sys.argv[-1]=='no-stim':
-try:
-    from physion.visual_stim.build import build_stim
-    from physion.visual_stim.screens import SCREENS
-except ModuleNotFoundError:
-    print(' /!\ Problem with the Visual-Stimulation module /!\ ')
-    SCREENS = []
-
-try:
-    from physion.hardware.NIdaq.main import Acquisition
-except ModuleNotFoundError:
-    print(' /!\ Problem with the NIdaq module /!\ ')
-
-try:
-    from physion.hardware.FLIRcamera.recording import launch_FaceCamera
-except ModuleNotFoundError:
-    print(' /!\ Problem with the FLIR camera module /!\ ')
+from physion.acquisition.settings import get_config_list
+from physion.utils.paths import FOLDERS
+from physion.visual_stim.screens import SCREENS
+from physion.acquisition.settings import load_settings
 
 def multimodal(self,
                tab_id=0):
@@ -32,11 +17,13 @@ def multimodal(self,
 
     self.cleanup_tab(tab)
 
+    self.config = None
+    self.subject, self.protocol = None, {}
     self.MODALITIES = ['Locomotion',
                        'FaceCamera',
-                       'EphysLFP', 'EphysVm',
+                       'EphysLFP',
+                       'EphysVm',
                        'CaImaging']
-
 
     ##########################################
     ######## Multiprocessing quantities  #####
@@ -71,11 +58,7 @@ def multimodal(self,
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel('data folder:'))
     self.folderBox = QtWidgets.QComboBox(self)
-    self.folder_default_key = '  [root datafolder]'
-    self.folderBox.addItem(self.folder_default_key)
-    for folder in physion.utils.paths.FOLDERS.keys():
-        self.folderBox.addItem(folder)
-    self.folderBox.setCurrentIndex(1)
+    self.folderBox.addItems(FOLDERS.keys())
     self.add_side_widget(tab.layout, self.folderBox)
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
@@ -88,97 +71,106 @@ def multimodal(self,
         self.add_side_widget(tab.layout, getattr(self, k+'Button'))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.FaceCameraButton.clicked.connect(self.toggle_FaceCamera_process)
+
     # -------------------------------------------------------
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel(' * Monitoring * '))
     self.webcamButton = QtWidgets.QPushButton('Webcam', self)
     self.webcamButton.setCheckable(True)
     self.add_side_widget(tab.layout, self.webcamButton)
+
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout,
+            QtWidgets.QLabel(' * Notes * '))
+    self.qmNotes = QtWidgets.QTextEdit(self)
+    self.add_side_widget(tab.layout, self.qmNotes)
+
     # -------------------------------------------------------
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.demoW = QtWidgets.QCheckBox('demo', self)
-    self.add_side_widget(tab.layout, self.demoW)
+    self.add_side_widget(tab.layout, self.demoW, 'large-left')
+
+    self.saveSetB = QtWidgets.QPushButton('save', self)
+    self.saveSetB.clicked.connect(self.save_settings)
+    self.add_side_widget(tab.layout, self.saveSetB, 'small-right')
+
     # ========================================================
 
     # ========================================================
     #------------------- THEN MAIN PANEL   -------------------
-    ip = 0
-    # tab.layout.addWidget(\
-        # QtWidgets.QLabel(' ', self),
-                         # ip, self.side_wdgt_length, 
-                         # 1, self.nWidgetCol-self.side_wdgt_length)
-    # ip+=1
+    ip, width = 0, 3
+    tab.layout.addWidget(\
+        QtWidgets.QLabel(40*' '+'** Config **', self),
+                         ip, self.side_wdgt_length, 
+                         1, width)
+    ip+=1
+    # -
+    self.cbc = QtWidgets.QComboBox(self)
+    self.cbc.activated.connect(self.update_config)
+    tab.layout.addWidget(self.cbc,\
+                         ip, self.side_wdgt_length+1, 
+                         1, width)
+    ip+=1
+    # -
+    tab.layout.addWidget(\
+        QtWidgets.QLabel(40*' '+'** Subject **', self),
+                         ip, self.side_wdgt_length, 
+                         1, width)
+    ip+=1
+    # -
+    self.cbs = QtWidgets.QComboBox(self)
+    self.cbs.activated.connect(self.update_subject)
+    tab.layout.addWidget(self.cbs,\
+                         ip, self.side_wdgt_length+1, 
+                         1, width)
+    ip+=1
     # -
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Screen **', self),
                          ip, self.side_wdgt_length, 
-                         1, self.nWidgetCol-self.side_wdgt_length)
+                         1, width)
     ip+=1
+    # -
     self.cbsc = QtWidgets.QComboBox(self)
-    self.cbsc.addItems(physion.visual_stim.screens.SCREENS.keys())
+    self.cbsc.addItems(['']+list(SCREENS.keys()))
     tab.layout.addWidget(self.cbsc,\
                          ip, self.side_wdgt_length+1, 
-                         1, self.nWidgetCol-self.side_wdgt_length-2)
+                         1, width)
+    ip+=1
     # -
-    ip+=1
-    tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Config **', self),
-                         ip, self.side_wdgt_length, 
-                         1, self.nWidgetCol-self.side_wdgt_length)
-    ip+=1
-    self.cbc = QtWidgets.QComboBox(self)
-    # self.cbc.activated.connect(self.update_config)
-    tab.layout.addWidget(self.cbc,\
-                         ip, self.side_wdgt_length+1, 
-                         1, self.nWidgetCol-self.side_wdgt_length-2)
-    # -
-    ip+=1
-    tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Subject **', self),
-                         ip, self.side_wdgt_length, 
-                         1, self.nWidgetCol-self.side_wdgt_length)
-    ip+=1
-    self.cbs = QtWidgets.QComboBox(self)
-    # self.cbs.activated.connect(self.update_subject)
-    tab.layout.addWidget(self.cbs,\
-                         ip, self.side_wdgt_length+1, 
-                         1, self.nWidgetCol-self.side_wdgt_length-2)
-    # -
-    ip+=1
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Visual Protocol **', self),
                          ip, self.side_wdgt_length, 
-                         1, self.nWidgetCol-self.side_wdgt_length)
+                         1, width)
     ip+=1
+    # -
     self.cbp = QtWidgets.QComboBox(self)
     tab.layout.addWidget(self.cbp,\
                          ip, self.side_wdgt_length+1, 
-                         1, self.nWidgetCol-self.side_wdgt_length-2)
-    # -
+                         1, width)
     ip+=1
+    # -
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Intervention **', self),
                          ip, self.side_wdgt_length, 
-                         1, self.nWidgetCol-self.side_wdgt_length)
+                         1, width)
     ip+=1
+    # -
     self.cbi = QtWidgets.QComboBox(self)
     tab.layout.addWidget(self.cbi,\
                          ip, self.side_wdgt_length+1, 
-                         1, self.nWidgetCol-self.side_wdgt_length-2)
-    # -
-    # ip+=1
-    # tab.layout.addWidget(\
-        # QtWidgets.QLabel(150*'-', self),
-                         # ip, self.side_wdgt_length, 
-                         # 1, self.nWidgetCol-self.side_wdgt_length)
-
+                         1, width)
+    ip+=1
 
     # image panels layout:
     self.winImg = pg.GraphicsLayoutWidget()
     tab.layout.addWidget(self.winImg,
-                         self.nWidgetRow/2, self.side_wdgt_length,
-                         self.nWidgetRow/2, 
+                         ip, self.side_wdgt_length,
+                         self.nWidgetRow-ip, 
                          self.nWidgetCol-self.side_wdgt_length)
 
     # FaceCamera panel
@@ -186,9 +178,45 @@ def multimodal(self,
                         invertY=True, border=[1, 1, 1])
     self.pFaceimg = pg.ImageItem(np.ones((10,12))*50)
     self.pFace.addItem(self.pFaceimg)
-    # self.pFaceimg.setImage(np.ones((10,12))*50) # to update
 
+    # NOW MENU INTERACTION BUTTONS
+    ip, width = 1, 5
+    self.initButton = QtWidgets.QPushButton(' * Initialize * ')
+    self.initButton.clicked.connect(self.initialize)
+    tab.layout.addWidget(self.initButton,
+                         ip, 10, 1, width)
+    ip+=1
+    self.bufferButton = QtWidgets.QPushButton(' * Buffer * ')
+    self.bufferButton.clicked.connect(self.buffer_stim)
+    tab.layout.addWidget(self.bufferButton,
+                         ip, 10, 1, width)
+    ip+=2
+    self.runButton = QtWidgets.QPushButton(' * RUN *')
+    self.runButton.clicked.connect(self.run)
+    tab.layout.addWidget(self.runButton,
+                         ip, 10, 1, width)
+    ip+=1
+    self.stopButton = QtWidgets.QPushButton(' * Stop *')
+    self.stopButton.clicked.connect(self.stop)
+    tab.layout.addWidget(self.stopButton,
+                         ip, 10, 1, width)
+
+    for button in [self.initButton, self.bufferButton,
+            self.runButton, self.stopButton]:
+        button.setStyleSheet("font-weight: bold")
+
+    ip+=2
+    tab.layout.addWidget(QtWidgets.QLabel(' other settings: '),
+                         ip, 10, 1, 4)
+    ip+=1
+    self.fovPick= QtWidgets.QComboBox()
+    tab.layout.addWidget(self.fovPick,
+                         ip, 10, 1, 4)
 
     self.refresh_tab(tab)
+
+    # READ CONFIGS
+    get_config_list(self) # first
+    load_settings(self)
 
 
