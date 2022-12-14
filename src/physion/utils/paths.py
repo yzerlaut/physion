@@ -34,6 +34,7 @@ python_path_suite2p_env = check_path('suite2p')
 FOLDERS = {}
 for key, val in zip(['~/DATA',
                      '~/UNPROCESSED',
+                     '~/ASSEMBLE',
                      '~/DATA/TADDY',
                      '~/DATA/JOANA',
                      '~/UNPROCESSED/TADDY',
@@ -41,6 +42,7 @@ for key, val in zip(['~/DATA',
                      '~/CURATED'],
                     [os.path.join(os.path.expanduser('~'), 'DATA'),
                      os.path.join(os.path.expanduser('~'), 'UNPROCESSED'),
+                     os.path.join(os.path.expanduser('~'), 'ASSEMBLE'),
                      os.path.join(os.path.expanduser('~'), 'DATA', 'TADDY'),
                      os.path.join(os.path.expanduser('~'), 'DATA', 'JOANA'),
                      os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'TADDY'),
@@ -68,11 +70,11 @@ for user in ['yann', 'yann.zerlaut']:
         if os.path.isdir(val):
             FOLDERS[key] = val
         
-FOLDERS['10.0.0.1:curated'] = 'yann@10.0.0.1:/media/yann/DATADRIVE1/CURATED'
+# FOLDERS['10.0.0.1:curated'] = 'yann@10.0.0.1:/media/yann/DATADRIVE1/CURATED'
 # FOLDERS['MsWin-data'] = '/media/yann/Windows/home/yann/DATA/'
 # FOLDERS['MsWin-cygwin'] = '/media/yann/Windows/Users/yann.zerlaut/DATA/'
-FOLDERS['10.0.0.1:~/DATA'] = 'yann@10.0.0.1:/home/yann/DATA/'
-FOLDERS['10.0.0.2:~/DATA'] = 'yann@10.0.0.2:/home/yann/DATA/'
+# FOLDERS['10.0.0.1:~/DATA'] = 'yann@10.0.0.1:/home/yann/DATA/'
+# FOLDERS['10.0.0.2:~/DATA'] = 'yann@10.0.0.2:/home/yann/DATA/'
 
 
     

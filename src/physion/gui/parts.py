@@ -32,14 +32,18 @@ def open_NWB(self):
 def open_folder(self):
     # self.lastBox.setChecked(False)
 
-    if float(sys.version[:3])<=3.7:
-        folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
-                                        "Choose datafolder",
-                                        self.choose_root_folder())
-        return folder
-    else:
-        self.statusBar.showMessage(' /!\ QFileDialog broken in python >3.7 /!\     ---> use the calendar interface to load data ! ')
-        print(' /!\ QFileDialog broken in python >3.7 ')
+    folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
+                                    "Choose datafolder",
+                                    self.choose_root_folder())
+    return folder
+    # if float(sys.version[:3])<=3.7:
+        # folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
+                                        # "Choose datafolder",
+                                        # self.choose_root_folder())
+        # return folder
+    # else:
+        # self.statusBar.showMessage(' /!\ QFileDialog broken in python >3.7 /!\     ---> use the calendar interface to load data ! ')
+        # print(' /!\ QFileDialog broken in python >3.7 ')
 
 def open_file(self,
               folder=False):

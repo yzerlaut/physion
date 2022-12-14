@@ -60,6 +60,9 @@ def add_imaging(self,
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
+    self.forceBtn = QtWidgets.QCheckBox(' force ')
+    self.add_side_widget(tab.layout, self.forceBtn)
+
     while self.i_wdgt<(self.nWidgetRow-1):
         self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     # ========================================================
@@ -109,8 +112,8 @@ def loadNWBfolder(self):
     clear(self)
     folder = self.open_folder()
     if os.path.isdir(folder):
-        self.NWBs = get_files_with_extension(folder, 'nwb',
-                                             recursive=False)
+        self.NWBs = np.sort(get_files_with_extension(folder, 'nwb',
+                                                     recursive=False))
         for i in range(len(self.NWBs)):
             getattr(self, 'nwb%i' % (i+1)).setText(\
                     self.NWBs[i].split(os.path.sep)[-1])
@@ -148,7 +151,7 @@ def runAddOphys(self):
     if len(self.NWBs)>0 and (len(self.NWBs)==len(self.IMAGINGs)):
         for nwb, imaging in zip(self.NWBs, self.IMAGINGs):
             overlap = estimate_time_overlap(nwb, imaging)
-            if overlap>70:
+            if overlap>70 or self.forceBtn.isChecked():
                 print(' overlap ok  (%.1f%%) ' % overlap)
                 cmd = build_cmd(nwb, imaging)
                 p = subprocess.Popen(cmd, shell=True)
