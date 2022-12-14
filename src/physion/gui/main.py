@@ -1,7 +1,5 @@
-import time
+import time, sys
 from PyQt5 import QtWidgets
-
-import physion
 
 # import pdb # for DEBUG
 
@@ -36,14 +34,17 @@ class MainWindow(QtWidgets.QMainWindow):
         next_ROI_FOV, prev_ROI_FOV, toggle_FOV, draw_image_FOV
 
     # data acquisition 
-    from physion.acquisition.gui import multimodal 
-    from physion.acquisition.run import initialize, buffer_stim,\
+    if 'acquisition' in sys.argv:
+        from physion.acquisition.gui import multimodal 
+        from physion.acquisition.run import initialize, buffer_stim,\
            run, stop, check_metadata, send_CaImaging_Stop_signal,\
            toggle_FaceCamera_process
-    from physion.acquisition.tools import save_experiment,\
+        from physion.acquisition.tools import save_experiment,\
             set_filename_and_folder
-    from physion.acquisition.settings import update_config,\
+        from physion.acquisition.settings import update_config,\
             update_subject, save_settings
+    else:
+        from physion.gui.parts import inactivated as multimodal
 
     # assembling tools
     from physion.assembling.add_ophys import add_imaging, loadNWBfile,\

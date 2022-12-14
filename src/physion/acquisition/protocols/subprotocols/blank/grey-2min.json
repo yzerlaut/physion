@@ -2,7 +2,7 @@
   "Presentation": "Stimuli-Sequence",
   "Stimulus": "uniform-bg",
   "Screen": "Dell-2020",
-  "movie_refresh_freq":0.1,
+  "movie_refresh_freq":0.01,
   "presentation-duration": 120,
   "presentation-prestim-period": 3.0,
   "presentation-poststim-period": 3.0,

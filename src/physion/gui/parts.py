@@ -56,6 +56,8 @@ def open_file(self,
         self.statusBar.showMessage(' /!\ QFileDialog broken in python >3.7 /!\     ---> use the calendar interface to load data ! ')
         print(' /!\ QFileDialog broken in python >3.7 ')
 
+def inactivated(self):
+    print('\n feature inactivated in this version')
 
 
 def delete_layout(self, layout):

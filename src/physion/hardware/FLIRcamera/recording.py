@@ -43,7 +43,7 @@ class CameraAcquisition:
         while not quit_flag.is_set():
             
             if not self.running and run_flag.is_set() : # not running and need to start  !
-                self.save_sample_on_desktop()
+                np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
                 self.running, self.times = True, []
                 # reinitialize recording
                 self.imgs_folder = os.path.join(folder.get(), 'FaceCamera-imgs')
@@ -51,7 +51,7 @@ class CameraAcquisition:
             elif self.running and not run_flag.is_set(): # running and we need to stop
                 self.running=False
                 print('FaceCamera -- effective sampling frequency: %.1f Hz ' % (1./np.mean(np.diff(self.times))))
-                self.save_sample_on_desktop()
+                np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
                 
 
             # after the update

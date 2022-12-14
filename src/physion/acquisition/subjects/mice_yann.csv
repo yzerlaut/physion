@@ -1,2 +1,6 @@
-"Subject-ID","Anibio-Number","Date-of-Birth","Tatoo","Sex","Strain","Genotype","Surgery","Surgery-Date","Virus","headplate-angle-from-rig-axis","FOV1","FOV2","FOV3","FOV4","FOV5"
-"Mouse_E1-NDNF","-","29/11/2022","-","F",,,,,,10,"(0,0)",,,,
+Subject-ID,Anibio-Number,Date-of-Birth,Tatoo,Sex,Strain,Genotype,Surgery,Surgery-Date,Virus,headplate-angle-from-rig-axis,FOV1,FOV2,FOV3,FOV4,FOV5
+Mouse_E1-NDNF,,29/11/2022,,F,,,,,,10,"(0,0)",,,,
+Mouse_E2-NDNF,,,,,,,,,,,,,,,
+Mouse_F1-NDNF,,,,,,,,,,,,,,,
+Mouse_F2-NDNF,,,,,,,,,,,,,,,
+Mouse_F3-NDNF,,,,,,,,,,,,,,,

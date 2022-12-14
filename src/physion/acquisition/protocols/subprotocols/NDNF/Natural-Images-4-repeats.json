@@ -9,10 +9,10 @@
   "presentation-poststim-screen": 0,
   "presentation-interstim-period": 3.0,
   "presentation-interstim-screen": 0,
-  "N-repeat": 20,
   "starting-index": 0,
   "shuffling-seed": 1,
   "Image-ID-1": 1.0,
   "Image-ID-2": 5.0,
-  "N-Image-ID": 5
+  "N-Image-ID": 5,
+  "N-repeat": 20
 }

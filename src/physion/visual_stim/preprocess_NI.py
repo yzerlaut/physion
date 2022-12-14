@@ -15,7 +15,7 @@ def load(image_path):
 
     img = color.rgb2gray(io.imread(image_path))
     
-    return np.rot90(np.array(img), k=3) # needs rotation
+    return np.rot90(np.array(img).T, k=1) # needs transpose + rotation
     
 def img_after_hist_normalization(img, verbose=False):
     """
