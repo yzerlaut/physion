@@ -34,7 +34,7 @@ class MainWindow(QtWidgets.QMainWindow):
         next_ROI_FOV, prev_ROI_FOV, toggle_FOV, draw_image_FOV
 
     # data acquisition 
-    if 'acquisition' in sys.argv:
+    if ('acquisition' in sys.argv) or ('all' in sys.argv):
         from physion.acquisition.gui import multimodal 
         from physion.acquisition.run import initialize, buffer_stim,\
            run, stop, check_metadata, send_CaImaging_Stop_signal,\
@@ -166,11 +166,15 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()
             # DEBUG
-            # self.datafile = '/home/yann.zerlaut/DATA/taddy_GluN3KO/session1/2022_07_07-17-45-47.nwb'
-            # self.data = physion.analysis.read_NWB.Data(self.datafile)
+            import physion
+            self.datafile = '/home/yann.zerlaut/ASSEMBLE/2022_12_02-11-39-37.nwb'
+            self.data = physion.analysis.read_NWB.Data(self.datafile)
+            self.data.build_rawFluo()
+            print(self.data.t_rawFluo.shape, self.data.rawFluo.shape)
+            self.trial_averaging()
             # # self.visualization()
             # self.FOV()
-            self.multimodal()
+            # self.multimodal()
 
     def refresh(self):
         tab_id = self.tabWidget.currentIndex()
