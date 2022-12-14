@@ -227,7 +227,7 @@ def plot_row_column_of_quantity(self):
 
     # re-adding stuff
     self.AX, ylim = [], [np.inf, -np.inf]
-    for irow, row_cond in enumerate(ROW_CONDS):
+    for irow, row_cond in enumerate(ROW_CONDS[::-1]): # we reverse it, to have start at bottom !
         self.AX.append([])
         for icol, col_cond in enumerate(COL_CONDS):
             self.AX[irow].append(self.l.addPlot())

@@ -114,7 +114,6 @@ def raw_data_plot(self, tzoom,
 
         i1, i2 = convert_times_to_indices(*tzoom, self.data.nwbfile.processing['Pupil'].data_interfaces['cx'])
         t = self.data.nwbfile.processing['Pupil'].data_interfaces['sx'].timestamps[i1:i2]
-
         
         if self.gazeSelect.isChecked():
 
@@ -126,8 +125,9 @@ def raw_data_plot(self, tzoom,
         if self.pupilSelect.isChecked():
             
             y = scale_and_position(self,
-                                   np.max([self.data.nwbfile.processing['Pupil'].data_interfaces['sx'].data[i1:i2],
-                                           self.data.nwbfile.processing['Pupil'].data_interfaces['sy'].data[i1:i2]], axis=0))
+                  self.data.nwbfile.processing['Pupil'].data_interfaces['sx'].data[i1:i2]*\
+                   self.data.nwbfile.processing['Pupil'].data_interfaces['sy'].data[i1:i2])
+
             self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['Pupil']))
 
             # adding blinking flag (dots at the bottom)
@@ -209,10 +209,12 @@ def raw_data_plot(self, tzoom,
             print(' ophys options not recognized ! setting defaults ')
             iHeight, nROIs = 3, 10 
 
-        if hasattr(self, 'roiIndices'):
-            roiIndices = self.roiIndices
-        else:
-            roiIndices = np.random.choice(np.arange(self.data.nROIs), np.min([nROIs, self.data.nROIs]), replace=False)
+        # FIND A GOOD WAY TO CHANGE ROIs
+        # if hasattr(self, 'roiIndices'):
+            # roiIndices = self.roiIndices
+        # else:
+            # roiIndices = np.random.choice(np.arange(self.data.nROIs), np.min([nROIs, self.data.nROIs]), replace=False)
+        roiIndices = np.random.choice(np.arange(self.data.nROIs), np.min([nROIs, self.data.nROIs]), replace=False)
 
         if self.imgSelect.isChecked():
             self.pCaimg.setImage(self.data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:]**.25) # plotting the mean image

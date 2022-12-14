@@ -221,8 +221,9 @@ def build_NWB(args,
                                                                    t0=NIdaq_Tstart,
                                                                    verbose=True)
             else:
-                FCS_data = np.load(os.path.join(args.datafolder, 'FaceCamera-summary.npy'), allow_pickle=True).item()
-                FC_times = FCS_data['times']
+                FCS_data = np.load(os.path.join(args.datafolder, 'FaceCamera-summary.npy'),
+                                   allow_pickle=True).item()
+                FC_times = FCS_data['times']-NIdaq_Tstart
 
             if ('raw_FaceCamera' in args.modalities) and (FC_FILES is not None):
                 

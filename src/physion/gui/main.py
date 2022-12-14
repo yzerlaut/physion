@@ -22,9 +22,12 @@ class MainWindow(QtWidgets.QMainWindow):
     from physion.gui.menu import build_menu
 
     # calendar interface
-    from physion.gui.calendar import calendar, pick_date,\
-            reinit_calendar, pick_subject, scan_folder,\
-            pick_datafile, show_metadata 
+    if ('acquisition' not in sys.argv) or ('all' in sys.argv):
+        from physion.gui.calendar import calendar, pick_date,\
+                reinit_calendar, pick_subject, scan_folder,\
+                pick_datafile, show_metadata 
+    else:
+        from physion.gui.parts import inactivated as calendar 
 
     # data visualization tools
     from physion.dataviz.gui import visualization, update_frame,\
@@ -65,7 +68,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, app,
                  args=None,
-                 width=850, height=700,
+                 width=750, height=600,
                  Ntabs=4,
                  button_height = 20):
 
@@ -132,7 +135,10 @@ class MainWindow(QtWidgets.QMainWindow):
         # Add tabs to widget
         self.layout.addWidget(self.tabWidget)
 
-        self.calendar()
+        if ('acquisition' in sys.argv):
+            self.multimodal()
+        else:
+            self.calendar()
         self.show()
 
         print(' init took %.0fms' % (1e3*(time.time()-tic)))
