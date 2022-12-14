@@ -6,6 +6,7 @@ except ModuleNotFoundError:
     pass
 
 from physion.visual_stim.screens import SCREENS
+from physion.visual_stim.build import build_stim
 
 def stop_signal(parent):
     if (len(event.getKeys())>0) or (parent.stop_flag):
@@ -623,7 +624,7 @@ class multiprotocol(visual_stim):
                 i+=1
         else:
             while 'Protocol-%i'%i in protocol:
-                path_list = [pathlib.Path(__file__).resolve().parents[1], 'exp', 'protocols']+protocol['Protocol-%i'%i].split('/')
+                path_list = [pathlib.Path(__file__).resolve().parents[1], 'acquisition', 'protocols']+protocol['Protocol-%i'%i].split('/')
                 Ppath = os.path.join(*path_list)
                 if not os.path.isfile(Ppath):
                     print(' /!\ "%s" not found in Protocol folder /!\  ' % protocol['Protocol-%i'%i])

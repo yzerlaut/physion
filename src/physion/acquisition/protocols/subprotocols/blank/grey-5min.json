@@ -1,0 +1,18 @@
+{
+  "Presentation": "Stimuli-Sequence",
+  "Stimulus": "uniform-bg",
+  "Screen": "Dell-2020",
+  "movie_refresh_freq":0.05,
+  "presentation-duration": 300,
+  "presentation-prestim-period": 3.0,
+  "presentation-poststim-period": 3.0,
+  "presentation-prestim-screen": 0,
+  "presentation-poststim-screen": 0,
+  "presentation-interstim-period": 3.0,
+  "presentation-interstim-screen": 0,
+  "N-repeat": 1,
+  "starting-index": 0,
+  "bg-color-1": 0.5,
+  "bg-color-2": 0.5,
+  "N-bg-color": 0
+}
