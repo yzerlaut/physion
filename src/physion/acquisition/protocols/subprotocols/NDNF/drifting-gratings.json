@@ -1,6 +1,6 @@
 {
   "Presentation": "Stimuli-Sequence",
-  "Stimulus": "drifting-center-grating",
+  "Stimulus": "center-drifting-grating",
   "Screen": "Dell-2020",
   "movie_refresh_freq":10,
   "presentation-duration": 3.0,
