@@ -19,6 +19,6 @@ dependencies:
     - nidaqmx
     - pyWinhook
     - psychopy
-    - git+https://github.com/yzerlaut/simple_pyspin
+    - simple_pyspin
     - pycromanager
     - pygame
