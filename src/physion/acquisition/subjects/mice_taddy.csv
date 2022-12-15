@@ -1,2 +1,3 @@
 Subject-ID,Anibio-Number,Date-of-Birth,Tatoo,Sex,Strain,Genotype,Surgery,Surgery-Date,Virus,headplate-angle-from-rig-axis,FOV1,FOV2,FOV3
-MY1_GluN3KO-SSTtdTomato,,17/10/2022,,F,,,,,,,,,
+MY1_SSTtdTomato,,13/09/2022,,Male,C57B6/J,SSTtdTomato,headplate+injection,17/10/2022,VR21,10,"(0,0)",,
+MX1_SSTtdTomato,,26/09/2022,,Male,C57B6/J,SSTtdTomato,headplate+injection,03/11/2022,VR21,10,"(0,0)",,

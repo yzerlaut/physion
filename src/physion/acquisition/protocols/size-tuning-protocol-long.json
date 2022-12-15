@@ -1,0 +1,14 @@
+{
+  "Presentation": "multiprotocol",
+  "shuffling" :"full",
+  "shuffling-seed" :34,
+  "Protocol-1": "subprotocols/size-tuning/size-tuning-protocol-loc-long.json",
+  "Protocol-2": "subprotocols/size-tuning/size-tuning-protocol-dep-long.json",
+  "presentation-prestim-period": 3,
+  "presentation-poststim-period": 3,
+  "presentation-prestim-screen": 0,
+  "presentation-poststim-screen": 0,
+  "presentation-interstim-period": 3.0,
+  "presentation-interstim-screen": 0,
+  "Screen": "Dell-2020"
+}
