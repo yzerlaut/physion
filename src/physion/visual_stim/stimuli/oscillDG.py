@@ -49,7 +49,7 @@ class stim(vis_stim_image_built):
                        angle=cls.experiment['angle'][episode],
                        radius=200,
                        spatial_freq=cls.experiment['spatial-freq'][episode],
-                       contrast=cls.experiment['contrast'][episode]*(1+np.sin(2*np.pi*time_from_episode_start*cls.experiment['frequency'][episode]))/2,
+                       contrast=cls.experiment['contrast'][episode]*(1-np.cos(2*np.pi*time_from_episode_start*cls.experiment['frequency'][episode]))/2,
                        xcenter=0, zcenter=0,
                        time_phase=cls.experiment['speed'][episode]*time_from_episode_start)
         return img
