@@ -2,7 +2,7 @@
     "Presentation": "Stimuli-Sequence",
     "Stimulus": "looming-stim",
     "Screen": "Dell-2020",
-    "movie_refresh_freq":20,
+    "movie_refresh_freq":10,
     "presentation-duration": 5.0,
     "presentation-prestim-period": 0.0,
     "presentation-poststim-period": 1.0,

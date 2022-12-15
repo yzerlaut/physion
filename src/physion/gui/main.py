@@ -64,7 +64,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
             loadNWBfolder, loadCafolder, runAddOphys
     else:
-        from physion.gui.parts import inactivated as add_ophys
+        from physion.gui.parts import inactivated as add_imaging
    
 
     # data analysis tools
@@ -74,7 +74,7 @@ class MainWindow(QtWidgets.QMainWindow):
             compute_episodes, refresh_TA, next_ROI_TA, prev_ROI_TA,\
             next_and_plot_TA
     else:
-        from physion.gui.parts import inactivated as add_ophys
+        from physion.gui.parts import inactivated as trial_averaging
 
     # Imaging - Red Label GUI 
     if not Acquisition:
@@ -83,7 +83,7 @@ class MainWindow(QtWidgets.QMainWindow):
             preprocess_RCL, switch_roi_RCL, reset_all_to_green,\
             toggle_RCL, draw_image_RCL
     else:
-        from physion.gui.parts import inactivated as add_ophys
+        from physion.gui.parts import inactivated as red_channel_labelling
 
 
     def __init__(self, app,
