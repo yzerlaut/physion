@@ -1,24 +1,20 @@
-name: acq2
+name: acquisition
 channels:
   - conda-forge
 dependencies:
   - python=3.10
   - pip
   - numpy
+  - psychopy
+  - pynwb
   - scipy
   - scikit-learn
   - scikit-image
   - pathlib
+  - pyqt
+  - pyqtgraph
+  - pycromanager
   - pip:
-    - pyqt5
-    - pyqt5.sip
-    - h5py
-    - pyqtgraph
-    - pyqtdarktheme
-    - pynwb
     - nidaqmx
-    - pyWinhook
-    - psychopy
+    - pyqtdarktheme
     - simple_pyspin
-    - pycromanager
-    - pygame
