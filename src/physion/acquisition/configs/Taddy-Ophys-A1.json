@@ -1,0 +1,22 @@
+{
+    "NIdaq-acquisition-frequency":10000,
+    "NIdaq-analog-input-channels":1,
+    "NIdaq-digital-input-channels":2,
+    "Screen":"Dell-2020",
+    "Rig":"ICM-A1-2P-setup",
+    "Z-sign-correction-for-rig":-1,
+    "FaceCamera-frame-rate":30,
+    "FaceCamera-1cm-in-pix":480,
+    "STEP_FOR_CA_IMAGING_TRIGGER":{"channel":0,
+				   "onset": 0.1,
+				   "duration":0.3,
+				   "value":5.0},
+    "rotating-disk":{"radius-position-on-disk-cm":9.0,
+		     "roto-encoder-value-per-rotation": -25300.0},
+    "root_datafolder":"DATA",
+    "subjects_file":"mice_taddy.json",
+    "experimenter":"Dhanasak Dhanasobhon",
+    "lab":"Rebola and Bacci labs",
+    "institution":"Institut du Cerveau et de la Moelle, Paris",
+    "protocols":"all"
+}
