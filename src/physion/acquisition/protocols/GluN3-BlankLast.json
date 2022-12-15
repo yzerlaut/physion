@@ -1,0 +1,14 @@
+{
+  "Presentation": "multiprotocol",
+  "shuffling" :"none",
+  "Protocol-1": "subprotocols/GluN3/ff-gratings-8orientation-2contrasts-10repeats.json",
+  "Protocol-2": "subprotocols/GluN3/luminosity.json",
+  "Protocol-3": "subprotocols/GluN3/blank.json",
+  "presentation-prestim-period": 4,
+  "presentation-poststim-period": 4,
+  "presentation-prestim-screen": 0,
+  "presentation-poststim-screen": 0,
+  "presentation-interstim-period": 4,
+  "presentation-interstim-screen": 0,
+  "Screen": "Dell-2020"
+}
