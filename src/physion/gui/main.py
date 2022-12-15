@@ -3,6 +3,10 @@ from PyQt5 import QtWidgets
 
 # import pdb # for DEBUG
 
+Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv)
+for path in sys.path:
+    Acquisition = Acquisition or ('acquisition' in path)
+
 class MainWindow(QtWidgets.QMainWindow):
     """
     Window that hosts the main GUI and the shortcuts of the program
@@ -22,7 +26,7 @@ class MainWindow(QtWidgets.QMainWindow):
     from physion.gui.menu import build_menu
 
     # calendar interface
-    if ('acquisition' not in sys.argv) or ('all' in sys.argv):
+    if not Acquisition:
         from physion.gui.calendar import calendar, pick_date,\
                 reinit_calendar, pick_subject, scan_folder,\
                 pick_datafile, show_metadata 
@@ -30,14 +34,20 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as calendar 
 
     # data visualization tools
-    from physion.dataviz.gui import visualization, update_frame,\
+    if not Acquisition:
+        from physion.dataviz.gui import visualization, update_frame,\
             select_visualStim, select_imgDisplay
-    from physion.dataviz.plots import raw_data_plot
-    from physion.dataviz.FOV import FOV, select_ROI_FOV,\
-        next_ROI_FOV, prev_ROI_FOV, toggle_FOV, draw_image_FOV
+        from physion.dataviz.plots import raw_data_plot
+        from physion.dataviz.FOV import FOV, select_ROI_FOV,\
+            next_ROI_FOV, prev_ROI_FOV, toggle_FOV, draw_image_FOV
+    else:
+        from physion.gui.parts import inactivated as visualization
+        from physion.gui.parts import inactivated as raw_data_plot
+        from physion.gui.parts import inactivated as FOV
+
 
     # data acquisition 
-    if ('acquisition' in sys.argv) or ('all' in sys.argv):
+    if Acquisition:
         from physion.acquisition.gui import multimodal 
         from physion.acquisition.run import initialize, buffer_stim,\
            run, stop, check_metadata, send_CaImaging_Stop_signal,\
@@ -50,20 +60,30 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as multimodal
 
     # assembling tools
-    from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
+    if not Acquisition:
+        from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
             loadNWBfolder, loadCafolder, runAddOphys
+    else:
+        from physion.gui.parts import inactivated as add_ophys
+   
 
     # data analysis tools
-    from physion.analysis.trial_averaging import trial_averaging,\
-        update_protocol_TA, update_quantity_TA, select_ROI_TA,\
-        compute_episodes, refresh_TA, next_ROI_TA, prev_ROI_TA,\
-        next_and_plot_TA
+    if not Acquisition:
+        from physion.analysis.trial_averaging import trial_averaging,\
+            update_protocol_TA, update_quantity_TA, select_ROI_TA,\
+            compute_episodes, refresh_TA, next_ROI_TA, prev_ROI_TA,\
+            next_and_plot_TA
+    else:
+        from physion.gui.parts import inactivated as add_ophys
 
     # Imaging - Red Label GUI 
-    from physion.imaging.red_label import red_channel_labelling,\
+    if not Acquisition:
+        from physion.imaging.red_label import red_channel_labelling,\
             load_RCL, next_roi_RCL, prev_roi_RCL, save_RCL,\
             preprocess_RCL, switch_roi_RCL, reset_all_to_green,\
             toggle_RCL, draw_image_RCL
+    else:
+        from physion.gui.parts import inactivated as add_ophys
 
 
     def __init__(self, app,

@@ -269,11 +269,11 @@ def add_side_widget(self, layout, wdgt,
         side_wdgt_length = self.side_wdgt_length
 
     if 'small' in spec:
-        wdgt.setMaximumWidth(full_length/side_wdgt_length)
+        wdgt.setMaximumWidth(int(full_length/side_wdgt_length))
     elif 'large' in spec:
-        wdgt.setMaximumWidth(full_length*(side_wdgt_length-1)/side_wdgt_length)
+        wdgt.setMaximumWidth(int(full_length*(side_wdgt_length-1)/side_wdgt_length))
     else:
-        wdgt.setMaximumWidth(full_length)
+        wdgt.setMaximumWidth(int(full_length))
 
     # if spec=='shift-right':
     #     self.layout.addWidget(wdgt, self.i_wdgt-1, side_wdgt_length,
@@ -390,7 +390,7 @@ def select_ROI_from_pick(self, data):
 
     # self.pbox = QtWidgets.QComboBox(self)
     # self.pbox.activated.connect(self.display_quantities)
-    # self.pbox.setMaximumHeight(selector_height)
+    # self.pbox.setMaximumHeight(int(selector_height))
     # if self.raw_data_visualization:
     #     self.pbox.addItem('')
     #     self.pbox.addItem('-> Show Raw Data')
