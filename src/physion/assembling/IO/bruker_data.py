@@ -1,8 +1,8 @@
 import os, sys, pathlib, shutil, time, datetime
 import numpy as np
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from assembling.IO.bruker_xml_parser import bruker_xml_parser
-from assembling.saving import get_files_with_extension, list_dayfolder, check_datafolder, get_TSeries_folders
+
+from physion.assembling.IO.bruker_xml_parser import bruker_xml_parser
+from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders
 
 def stringdatetime_to_date(s):
 

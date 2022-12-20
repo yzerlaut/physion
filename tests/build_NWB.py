@@ -17,7 +17,7 @@ if __name__=='__main__':
     parser.add_argument('-m', "--modalities", nargs='*', type=str, default=ALL_MODALITIES)
     parser.add_argument('-d', "--day", type=str, default=datetime.datetime.today().strftime('%Y_%m_%d'))
     parser.add_argument('-t', "--time", type=str, default='')
-    parser.add_argument('-e', "--export", type=str, default='FROM_VISUALSTIM_SETUP',
+    parser.add_argument('-e', "--export", type=str, default='LIGHTWEIGHT',
                         help='export option [FULL / LIGHTWEIGHT / FROM_VISUALSTIM_SETUP]')
     parser.add_argument('-r', "--recursive", action="store_true")
     parser.add_argument('-v', "--verbose", action="store_true")

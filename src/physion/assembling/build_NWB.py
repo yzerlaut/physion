@@ -112,9 +112,7 @@ def build_NWB(args,
     # subject info
     if 'subject_props' in metadata and (metadata['subject_props'] is not None):
         subject_props = metadata['subject_props']
-        print(metadata['subject_props'])
         dob = subject_props['Date-of-Birth'].split('/')[::-1]
-        print(dob)
     else:
         subject_props = {}
         print('subject properties not in metadata ...')
