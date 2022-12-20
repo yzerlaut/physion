@@ -100,7 +100,8 @@ def switch_to_tab4(self):
     self.tabWidget.setCurrentWidget(self.tabs[3])
 
 def add_keyboard_shortcuts(self,
-                           pre_key=''):
+                           pre_key='',
+                           Acquisition=False):
     """
     call this with pre_key='Ctrl+' to add the Ctrl key in the sequence
     """
@@ -132,8 +133,10 @@ def add_keyboard_shortcuts(self,
     # self.add2Bash = QtWidgets.QShortcut(QtGui.QKeySequence('B%s'%pre_key), self)
     # self.add2Bash.activated.connect(self.add_to_bash_script)
     
-    self.quitSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sQ'%pre_key), self)
-    self.quitSc.activated.connect(self.quit)
+    if not Acquisition:
+        # disabled during recording
+        self.quitSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sQ'%pre_key), self)
+        self.quitSc.activated.connect(self.quit)
     
     self.refreshSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sR'%pre_key), self)
     self.refreshSc.activated.connect(self.refresh)

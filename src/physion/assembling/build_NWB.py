@@ -1,4 +1,5 @@
 import os, sys, pathlib, shutil, time, datetime, tempfile
+from PyQt5 import QtWidgets, QtCore
 from PIL import Image
 import numpy as np
 
@@ -12,10 +13,75 @@ from physion.assembling.realign_from_photodiode import realign_from_photodiode
 from physion.behavior.locomotion import compute_locomotion_speed
 from physion.assembling.tools import build_subsampling_from_freq, load_FaceCamera_data
 from physion.analysis.tools import resample_signal
+from physion.assembling.IO.bruker_data import StartTime_to_day_seconds
+
+ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
+                  'raw_FaceCamera', 'VisualStim',
+                  'Locomotion', 'Pupil', 'FaceMotion',
+                  'EphysLFP', 'EphysVm']
 
 
-ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',  'raw_FaceCamera',
-                  'VisualStim', 'Locomotion', 'Pupil', 'FaceMotion', 'EphysLFP', 'EphysVm']
+def build_NWB_UI(self, tab_id=1):
+
+    tab = self.tabs[tab_id]
+    self.NWBs = []
+    self.cleanup_tab(tab)
+
+    ##########################################################
+    ####### GUI settings
+    ##########################################################
+
+    # ========================================================
+    #------------------- SIDE PANELS FIRST -------------------
+    self.add_side_widget(tab.layout, 
+            QtWidgets.QLabel(' _-* BUILD NWB FILES *-_ '))
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.add_side_widget(tab.layout,
+            QtWidgets.QLabel('- data folder(s): '))
+    OADself.lNWBfolderBtn = QtWidgets.QPushButton(' select folder \u2b07')
+    self.add_side_widget(tab.layout, self.loadNWBfolderBtn)
+
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
+    self.runBtn.clicked.connect(self.runBuildNWB)
+    self.add_side_widget(tab.layout, self.runBtn)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    # self.forceBtn = QtWidgets.QCheckBox(' force ')
+    # self.add_side_widget(tab.layout, self.forceBtn)
+
+    while self.i_wdgt<(self.nWidgetRow-1):
+        self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    # ========================================================
+
+    # ========================================================
+    #------------------- THEN MAIN PANEL   -------------------
+
+    width = int((self.nWidgetCol-self.side_wdgt_length)/2)
+    tab.layout.addWidget(QtWidgets.QLabel('     *  NWB file  *'),
+                         0, self.side_wdgt_length, 
+                         1, width)
+
+    for ip in range(1, 10): #self.nWidgetRow):
+        setattr(self, 'nwb%i' % ip,
+                QtWidgets.QLabel('', self))
+        tab.layout.addWidget(getattr(self, 'nwb%i' % ip),
+                             ip+2, self.side_wdgt_length, 
+                             1, width)
+    # ========================================================
+
+    self.refresh_tab(tab)
+
+
+def runBuildNWB(self):
+    pass
 
 
 def build_NWB(args,
@@ -46,7 +112,9 @@ def build_NWB(args,
     # subject info
     if 'subject_props' in metadata and (metadata['subject_props'] is not None):
         subject_props = metadata['subject_props']
-        dob = subject_props['date_of_birth'].split('_')
+        print(metadata['subject_props'])
+        dob = subject_props['Date-of-Birth'].split('/')[::-1]
+        print(dob)
     else:
         subject_props = {}
         print('subject properties not in metadata ...')
@@ -476,75 +544,3 @@ def build_NWB(args,
         Ca_data.close() # can be closed only after having written
 
     return filename
-    
-if __name__=='__main__':
-
-    import argparse, os
-    parser=argparse.ArgumentParser(description="""
-    Building NWB file from mutlimodal experimental recordings
-    """,formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('-c', "--compression", type=int, default=0,
-                        help='compression level, from 0 (no compression) to 9 (large compression, SLOW)')
-    parser.add_argument('-df', "--datafolder", type=str, default='')
-    parser.add_argument('-rf', "--root_datafolder", type=str, default=os.path.join(os.path.expanduser('~'), 'DATA'))
-    parser.add_argument('-m', "--modalities", nargs='*', type=str, default=ALL_MODALITIES)
-    parser.add_argument('-d', "--day", type=str, default=datetime.datetime.today().strftime('%Y_%m_%d'))
-    parser.add_argument('-t', "--time", type=str, default='')
-    parser.add_argument('-e', "--export", type=str, default='FROM_VISUALSTIM_SETUP',
-                        help='export option [FULL / LIGHTWEIGHT / FROM_VISUALSTIM_SETUP]')
-    parser.add_argument('-r', "--recursive", action="store_true")
-    parser.add_argument('-v', "--verbose", action="store_true")
-    parser.add_argument('-rs', "--running_sampling", default=50., type=float)
-    parser.add_argument('-ps', "--photodiode_sampling", default=1000., type=float)
-    parser.add_argument('-cafs', "--CaImaging_frame_sampling", default=0., type=float)
-    parser.add_argument('-fcfs', "--FaceCamera_frame_sampling", default=0.001, type=float)
-    parser.add_argument('-pfs', "--Pupil_frame_sampling", default=0.01, type=float)
-    parser.add_argument('-sfs', "--FaceMotion_frame_sampling", default=0.005, type=float)
-    parser.add_argument("--silent", action="store_true")
-    parser.add_argument('-lw', "--lightweight", action="store_true")
-    parser.add_argument('-fvs', "--from_visualstim_setup", action="store_true")
-    parser.add_argument('-ndo', "--nidaq_only", action="store_true")
-    parser.add_argument("--full", action="store_true")
-    parser.add_argument("--standard", action="store_true")
-    args = parser.parse_args()
-
-    if not args.silent:
-        args.verbose = True
-
-    # some pre-defined settings here
-    if args.export=='LIGHTWEIGHT' or args.lightweight:
-        args.export='LIGHTWEIGHT'
-        # 0 values for all (means 3 frame, start-middle-end)
-        args.Pupil_frame_sampling = 0
-        args.FaceMotion_frame_sampling = 0
-        args.FaceCamera_frame_sampling = 0
-        args.CaImaging_frame_sampling = 0
-    if args.export=='FULL' or args.full:
-        args.export='FULL'
-        # push all to very high values
-        args.CaImaging_frame_sampling = 1e5
-        args.Pupil_frame_sampling = 1e5
-        args.FaceMotion_frame_sampling = 1e5
-        args.FaceCamera_frame_sampling = 0.5 # no need to have it too high
-    if args.nidaq_only:
-        args.export='NIDAQ'
-        args.modalities = ['VisualStim', 'Electrophy']        
-
-    if args.time!='':
-        args.datafolder = os.path.join(args.root_datafolder, args.day, args.time)
-
-    if args.datafolder!='':
-        if os.path.isdir(args.datafolder):
-            if (args.datafolder[-1]==os.path.sep) or (args.datafolder[-1]=='/'):
-                args.datafolder = args.datafolder[:-1]
-            build_NWB(args)
-        else:
-            print('"%s" not a valid datafolder' % args.datafolder)
-    elif args.root_datafolder!='':
-        FOLDERS = [l for l in os.listdir(args.root_datafolder) if len(l)==8]
-        for f in FOLDERS:
-            args.datafolder = os.path.join(args.root_datafolder, f)
-            try:
-                build_NWB(args)
-            except BaseException as e:
-                print(e)

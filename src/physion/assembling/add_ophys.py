@@ -93,12 +93,12 @@ def add_imaging(self,
     self.refresh_tab(tab)
 
 
-def clear(self, nwb=True, imaging=True):
+def clear(self):
     i=1
     while hasattr(self, 'nwb%i'%i):
-        if nwb:
+        if hasattr(self, 'nwb%i'%i):
             getattr(self, 'nwb%i' % i).setText('')
-        if imaging:
+        if hasattr(self, 'imaging%i'%i):
             getattr(self, 'imaging%i' % i).setText('')
         i+=1
 

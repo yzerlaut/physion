@@ -61,10 +61,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # assembling tools
     if not Acquisition:
+        from physion.assembling.build_NWB import build_NWB_UI, runBuildNWB
         from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
             loadNWBfolder, loadCafolder, runAddOphys
     else:
         from physion.gui.parts import inactivated as add_imaging
+        from physion.gui.parts import inactivated as build_NWB_UI 
+
    
 
     # data analysis tools
@@ -187,18 +190,19 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
+            self.build_NWB_UI()
             # self.add_imaging()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()
             # DEBUG
-            import physion
-            self.datafile = '/home/yann.zerlaut/ASSEMBLE/2022_12_02-11-39-37.nwb'
-            self.data = physion.analysis.read_NWB.Data(self.datafile)
-            self.data.build_rawFluo()
-            print(self.data.t_rawFluo.shape, self.data.rawFluo.shape)
-            self.trial_averaging()
-            # # self.visualization()
+            # import physion
+            # self.datafile = '/home/yann.zerlaut/ASSEMBLE/2022_12_02-11-39-37.nwb'
+            # self.data = physion.analysis.read_NWB.Data(self.datafile)
+            # self.data.build_rawFluo()
+            # print(self.data.t_rawFluo.shape, self.data.rawFluo.shape)
+            # self.trial_averaging()
+            # # # self.visualization()
             # self.FOV()
             # self.multimodal()
 

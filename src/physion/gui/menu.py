@@ -40,7 +40,7 @@ def build_menu(self):
     self.assemblingMenu = self.mainMenu.addMenu('  * Assembling')
     # --
     self.assemblingMenu.addAction('Build NWB',
-                                  self.in_progress)
+                                  self.build_NWB_UI)
     self.assemblingMenu.addAction('Add Imaging',
                                   self.add_imaging)
 
