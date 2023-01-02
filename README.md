@@ -4,11 +4,11 @@
 
 # Vision Physiology Software
 
-> *Code for experimental setups and analysis pipelines to study cellular and network physiology in visual cortical circuits*
+> *An integrated software for cellular and network physiology in visual cortical circuits*
 
 --------------------
 
-The software is organized into several modules to perform the acquisition, the preprocessing, the visualization and the analysis of multimodal recordings (see [Documentation below](README.md#modules-and-documentation)).
+The software is organized into several modules to perform the acquisition, the preprocessing, the standardization, the visualization and the analysis of multimodal neurophysiological recordings (see [Documentation below](README.md#modules-and-documentation)).
 
 ### Software screenshot
 
@@ -25,7 +25,9 @@ Simply:
 pip install physion
 ```
 
-For an installation on an acquisition setup
+N.B. the `PyQt` package can be broken after those steps, re-start from a fresh install with `pip uninstall PyQt5` and `pip install PyQt5`.
+
+-> For an installation on an acquisition setup
 ```
 conda env create -n acquisition -f acquisition_environment.yml
 ```
