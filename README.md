@@ -37,12 +37,13 @@ conda env create -n acquisition -f acquisition_environment.yml
 The different modules of the software are documented in the following links:
 
 - [Visual stimulation](src/physion/visual_stim/README.md)
-- [Performing multimodal recordings](src/physion/acquisition/README.md)
+- [Multimodal Acquisition](src/physion/acquisition/README.md)
 - [Intrinsic Imaging](src/physion/intrinsic/README.md)
 - [Electrophysiology](src/physion/electrophy/README.md)
 - [Calcium imaging](src/physion/imaging/README.md)
 - [Pupil tracking](src/physion/pupil/README.md)
-- [Behavioral monitoring](src/physion/behavioral_monitoring/README.md) 
+- [Face Motion tracking](src/physion/facemotion/README.md)
+- [Behavior](src/physion/behavior/README.md) 
 - [Assembling pipeline](src/physion/assembling/README.md)
 - [Hardware control](src/physion/hardware_control/README.md)
 - [Visualization](src/physion/dataviz/README.md)
