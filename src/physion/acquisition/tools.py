@@ -29,7 +29,7 @@ def get_subject_props(self):
     subjects = pandas.read_csv(os.path.join(base_path,
                          'subjects',self.config['subjects_file']))
     iS = np.flatnonzero(\
-            np.array(subjects['Subject-ID'])==self.cbs.currentText())
+            np.array(subjects['Subject-ID'])==self.subjectBox.currentText())
 
     subject_props = {}
     for key in subjects.keys():
@@ -41,19 +41,19 @@ def get_subject_props(self):
 def check_gui_to_init_metadata(self):
     
     ### set up all metadata based on GUI infos
-    metadata = {'config':self.cbc.currentText(),
+    metadata = {'config':self.configBox.currentText(),
                 'root-data-folder':FOLDERS[self.folderBox.currentText()],
-                'Screen':self.cbs.currentText(),
-                'protocol':self.cbp.currentText(),
-                'VisualStim':self.cbp.currentText()!='None',
-                'intervention':self.cbi.currentText(),
+                'Screen':self.screenBox.currentText(),
+                'protocol':self.protocolBox.currentText(),
+                'VisualStim':self.protocolBox.currentText()!='None',
+                'intervention':self.interventionBox.currentText(),
                 'notes':self.qmNotes.toPlainText(),
-                'subject_ID':self.cbs.currentText(),
+                'subject_ID':self.subjectBox.currentText(),
                 'subject_props':get_subject_props(self)}
 
-    if self.cbp.currentText()!='None':
+    if self.protocolBox.currentText()!='None':
         fn = os.path.join(base_path, 'protocols',
-                          self.cbp.currentText()+'.json')
+                          self.protocolBox.currentText()+'.json')
         with open(fn) as f:
             self.protocol = json.load(f)
     else:

@@ -109,9 +109,9 @@ def multimodal(self,
                          1, width)
     ip+=1
     # -
-    self.cbc = QtWidgets.QComboBox(self)
-    self.cbc.activated.connect(self.update_config)
-    tab.layout.addWidget(self.cbc,\
+    self.configBox = QtWidgets.QComboBox(self)
+    self.configBox.activated.connect(self.update_config)
+    tab.layout.addWidget(self.configBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
@@ -122,9 +122,9 @@ def multimodal(self,
                          1, width)
     ip+=1
     # -
-    self.cbs = QtWidgets.QComboBox(self)
-    self.cbs.activated.connect(self.update_subject)
-    tab.layout.addWidget(self.cbs,\
+    self.subjectBox = QtWidgets.QComboBox(self)
+    self.subjectBox.activated.connect(self.update_subject)
+    tab.layout.addWidget(self.subjectBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
@@ -135,9 +135,9 @@ def multimodal(self,
                          1, width)
     ip+=1
     # -
-    self.cbsc = QtWidgets.QComboBox(self)
-    self.cbsc.addItems(['']+list(SCREENS.keys()))
-    tab.layout.addWidget(self.cbsc,\
+    self.screenBox = QtWidgets.QComboBox(self)
+    self.screenBox.addItems(['']+list(SCREENS.keys()))
+    tab.layout.addWidget(self.screenBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
@@ -148,8 +148,8 @@ def multimodal(self,
                          1, width)
     ip+=1
     # -
-    self.cbp = QtWidgets.QComboBox(self)
-    tab.layout.addWidget(self.cbp,\
+    self.protocolBox= QtWidgets.QComboBox(self)
+    tab.layout.addWidget(self.protocolBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
@@ -160,8 +160,8 @@ def multimodal(self,
                          1, width)
     ip+=1
     # -
-    self.cbi = QtWidgets.QComboBox(self)
-    tab.layout.addWidget(self.cbi,\
+    self.interventionBox = QtWidgets.QComboBox(self)
+    tab.layout.addWidget(self.interventionBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1

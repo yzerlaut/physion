@@ -59,6 +59,12 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
         from physion.gui.parts import inactivated as multimodal
 
+    # Intrinsic Imaging
+    if Acquisition:
+        from physion.intrinsic.acquisition import gui as intrinsic_acq
+    else:
+        from physion.gui.parts import inactivated as intrinsic_acq
+
     # assembling tools
     if not Acquisition:
         from physion.assembling.build_NWB import build_NWB_UI, runBuildNWB
@@ -101,6 +107,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         super(MainWindow, self).__init__()
         self.data, self.acq, self.stim = None, None, None
+        self.bridge = None # bridge to camera
         self.windows = ['' for i in range(Ntabs)] # one window name per tab_id
         self.quit_event = None
 
@@ -190,7 +197,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
-            self.build_NWB_UI()
+            # self.build_NWB_UI()
+            self.intrinsic_acq()
             # self.add_imaging()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
@@ -292,5 +300,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.acq.close()
         if self.stim is not None:
             self.stim.quit()
+        if self.bridge is not None:
+            self.bridge.close()
         QtWidgets.QApplication.quit()
         

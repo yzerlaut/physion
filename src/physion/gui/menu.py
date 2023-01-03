@@ -20,7 +20,7 @@ def build_menu(self):
     self.experimentMenu.addAction('Visual Stimulation',
                                   self.in_progress)
     self.experimentMenu.addAction('Intrinsic Imaging',
-                                  self.in_progress)
+                                  self.intrinsic_acq)
     self.experimentMenu.addAction('Face Camera',
                                   self.in_progress)
     self.experimentMenu.addAction('Webcam',
