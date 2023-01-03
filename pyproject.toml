@@ -16,6 +16,7 @@ dependencies = [
     "numpy",
     "scipy",
     "matplotlib",
+    "scikit-image",
     "pandas",
     "natsort",
     "pynwb",
