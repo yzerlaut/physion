@@ -36,16 +36,16 @@ conda env create -n acquisition -f acquisition_environment.yml
 
 The different modules of the software are documented in the following links:
 
-- [Visual stimulation](src/physion/visual_stim/README.md) -- relying on [PsychoPy](https://psychopy.org)
+- [Visual stimulation](src/physion/visual_stim/README.md)
 - [Performing multimodal recordings](src/physion/acquisition/README.md)
 - [Intrinsic Imaging](src/physion/intrinsic/README.md)
 - [Electrophysiology](src/physion/electrophy/README.md)
-- [Calcium imaging](src/physion/imaging/README.md) -- pipeline based on [Suite2P](https://github.com/MouseLand/suite2p)
+- [Calcium imaging](src/physion/imaging/README.md)
 - [Pupil tracking](src/physion/pupil/README.md)
 - [Behavioral monitoring](src/physion/behavioral_monitoring/README.md) 
 - [Assembling pipeline](src/physion/assembling/README.md)
 - [Hardware control](src/physion/hardware_control/README.md)
-- [Visualization](src/physion/dataviz/README.md) -- relying on [PyQtGraph](http://pyqtgraph.org/)
+- [Visualization](src/physion/dataviz/README.md)
 - [Analysis](src/physion/analysis/README.md)
 - [Sharing](src/physion/sharing/README.md)
 
