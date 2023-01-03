@@ -8,13 +8,13 @@
 
 --------------------
 
-The software is organized into several modules to perform the acquisition, the preprocessing, the standardization, the visualization and the analysis of multimodal neurophysiological recordings.
+The software is organized into several modules to perform the acquisition, the preprocessing, the standardization, the visualization, the analysis and the sharing of multimodal neurophysiological recordings.
 
+The different modules are detailed in the [documentation below](README.md#modules-and-documentation) and their integration is summarized on the drawing below:
 <p align="center">
   <img src="docs/integrated-solution.svg"/>
 </p>
 
-The different parts are detailed in the [Documentation below](README.md#modules-and-documentation).
 
 --------------------
 
@@ -47,6 +47,7 @@ The different modules of the software are documented in the following links:
 - [Hardware control](src/physion/hardware_control/README.md)
 - [Visualization](src/physion/dataviz/README.md) -- relying on [PyQtGraph](http://pyqtgraph.org/)
 - [Analysis](src/physion/analysis/README.md)
+- [Sharing](src/physion/sharing/README.md)
 
 ## Troubleshooting / Issues
 
