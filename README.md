@@ -12,7 +12,7 @@ The software is organized into several modules to perform the acquisition, the p
 
 The different modules are detailed in the [documentation below](README.md#modules-and-documentation) and their integration is summarized on the drawing below:
 <p align="center">
-  <img src="docs/integrated-solution.svg"/>
+  <img src="docs/integrated-solution.svg" width="100%" />
 </p>
 
 
@@ -31,6 +31,17 @@ N.B. the `PyQt` package can be broken after those steps, re-start from a fresh i
 ```
 conda env create -n acquisition -f acquisition_environment.yml
 ```
+
+## Usage
+
+Run:
+```
+python -m physion
+```
+
+You will find some pre-defined shortcuts in the [utils/](./src/utils/) folder for different operating systems.
+
+N.B. The program is launched in either "analysis" (by default) or "acquisition" mode. This insures that you can launch several analysis instances while you record with one acquisition instance of the program. To launch the acquisition mode, run: `python -m physion acquisition`.
 
 ## Modules and documentation
 
