@@ -10,6 +10,7 @@
 
 The software is organized into several modules to perform the acquisition, the preprocessing, the standardization, the visualization and the analysis of multimodal neurophysiological recordings (see [Documentation below](README.md#modules-and-documentation)).
 
+
 ### Software screenshot
 
 <p align="center">
