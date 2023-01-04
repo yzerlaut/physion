@@ -22,7 +22,7 @@ class MainWindow(QtWidgets.QMainWindow):
             add_side_widget, cleanup_tab, refresh_tab,\
             switch_to_tab1, switch_to_tab2, switch_to_tab3, switch_to_tab4
 
-    # GUI menu
+    # main GUI menu
     from physion.gui.menu import build_menu
 
     # calendar interface
@@ -33,7 +33,7 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
         from physion.gui.parts import inactivated as calendar 
 
-    # data visualization tools
+    # -- Data Visualization
     if not Acquisition:
         from physion.dataviz.gui import visualization, update_frame,\
             select_visualStim, select_imgDisplay
@@ -46,7 +46,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as FOV
 
 
-    # data acquisition 
+    # -- Multimodal Acquisition 
     if Acquisition:
         from physion.acquisition.gui import multimodal 
         from physion.acquisition.run import initialize, buffer_stim,\
@@ -59,13 +59,27 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
         from physion.gui.parts import inactivated as multimodal
 
-    # Intrinsic Imaging
+    # -- Intrinsic Imaging -- acquisition
     if Acquisition:
         from physion.intrinsic.acquisition import gui as intrinsic_acq
+        from physion.intrinsic.acquisition import launch_intrinsic,\
+                stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
+                take_vasculature_picture, take_fluorescence_picture
+
     else:
         from physion.gui.parts import inactivated as intrinsic_acq
 
-    # assembling tools
+    # -- Intrinsic Imaging -- analysis
+    if not Acquisition:
+        from physion.intrinsic.analysis import gui as intrinsic
+        # from physion.intrinsic.acquisition import launch_intrinsic,\
+                # stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
+                # take_vasculature_picture, take_fluorescence_picture
+
+    else:
+        from physion.gui.parts import inactivated as intrinsic
+
+    # -- Asssembling
     if not Acquisition:
         from physion.assembling.build_NWB import build_NWB_UI, runBuildNWB
         from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
@@ -74,9 +88,8 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as add_imaging
         from physion.gui.parts import inactivated as build_NWB_UI 
 
-   
 
-    # data analysis tools
+    # -- Data Analysis 
     if not Acquisition:
         from physion.analysis.trial_averaging import trial_averaging,\
             update_protocol_TA, update_quantity_TA, select_ROI_TA,\
@@ -85,7 +98,7 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
         from physion.gui.parts import inactivated as trial_averaging
 
-    # Imaging - Red Label GUI 
+    # -- Imaging - Red Label GUI 
     if not Acquisition:
         from physion.imaging.red_label import red_channel_labelling,\
             load_RCL, next_roi_RCL, prev_roi_RCL, save_RCL,\

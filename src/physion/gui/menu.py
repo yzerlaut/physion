@@ -33,6 +33,8 @@ def build_menu(self):
                                      self.in_progress)
     self.preprocessingMenu.addAction('&Whisking',
                                      self.in_progress)
+    self.preprocessingMenu.addAction('&ISI Maps',
+                                     self.intrinsic)
     self.preprocessingMenu.addAction('&Red Channel Labelling',
                                      self.red_channel_labelling)
 
@@ -60,8 +62,8 @@ def build_menu(self):
                                 self.trial_averaging)
     self.analysisMenu.addAction('&Behavioral Mod.',
                                 self.in_progress)
-    self.analysisMenu.addAction('&Functional Maps',
-                                self.in_progress)
+    self.analysisMenu.addAction('&ISI Maps',
+                                self.intrinsic)
 
     ##### ------   Other   -------------
     self.otherMenu = self.mainMenu.addMenu('     Others')

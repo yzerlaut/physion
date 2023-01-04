@@ -13,6 +13,8 @@ from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import get_config_list
 from physion.visual_stim.main import visual_stim, visual
+from physion.intrinsic.tools import resample_img 
+from physion.utils.files import generate_filename_path
 
 
 def gui(self,
@@ -83,19 +85,9 @@ def gui(self,
     
     get_config_list(self)
 
-    # # layout (from NewWindow class)
-    # self.init_basic_widget_grid(wdgt_length=3,
-                                # Ncol_wdgt=20, Nrow_wdgt=20)
-    
-    # # -- A plot area (ViewBox + axes) for displaying the image ---
-    # self.view = self.graphics_layout.addViewBox(lockAspect=True, invertY=True)
-    # self.view.setMenuEnabled(False)
-    # self.view.setAspectLocked()
-    # self.pimg = pg.ImageItem()
-    
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
 
-    self.vascButton = QtWidgets.QPushButton(" - = save Vasc. Pic. = - ", self)
+    self.vascButton = QtWidgets.QPushButton(" - = save Vasculature Picture = - ", self)
     # self.vascButton.clicked.connect(self.take_vasculature_picture)
     self.add_side_widget(tab.layout, self.vascButton)
     self.fluoButton = QtWidgets.QPushButton(" - = save Fluorescence Picture = - ", self)
@@ -106,9 +98,9 @@ def gui(self,
     
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - protocol:'),
                          spec='large-left')
-    self.protocolBox = QtWidgets.QComboBox(self)
-    self.protocolBox.addItems(['ALL', 'up', 'down', 'left', 'right'])
-    self.add_side_widget(tab.layout, self.protocolBox,
+    self.ISIprotocolBox = QtWidgets.QComboBox(self)
+    self.ISIprotocolBox.addItems(['ALL', 'up', 'down', 'left', 'right'])
+    self.add_side_widget(tab.layout, self.ISIprotocolBox,
                          spec='small-right')
     self.add_side_widget(tab.layout,\
         QtWidgets.QLabel('  - exposure: %.0f ms (from Micro-Manager)' % self.exposure))
@@ -157,16 +149,19 @@ def gui(self,
 
     # ---  launching acquisition ---
     self.liveButton = QtWidgets.QPushButton("--   live view    -- ", self)
-    # self.liveButton.clicked.connect(self.live_view)
+    self.liveButton.clicked.connect(self.live_intrinsic)
     self.add_side_widget(tab.layout, self.liveButton)
     
     # ---  launching acquisition ---
     self.acqButton = QtWidgets.QPushButton("-- RUN PROTOCOL -- ", self)
-    # self.acqButton.clicked.connect(self.launch_protocol)
+    self.acqButton.clicked.connect(self.launch_intrinsic)
     self.add_side_widget(tab.layout, self.acqButton, spec='large-left')
     self.stopButton = QtWidgets.QPushButton(" STOP ", self)
-    # self.stopButton.clicked.connect(self.stop_protocol)
+    self.stopButton.clicked.connect(self.stop_intrinsic)
     self.add_side_widget(tab.layout, self.stopButton, spec='small-right')
+
+    # ========================================================
+    #------------------- THEN MAIN PANEL   -------------------
 
     self.winImg = pg.GraphicsLayoutWidget()
     tab.layout.addWidget(self.winImg,
@@ -174,12 +169,12 @@ def gui(self,
                          self.nWidgetRow, 
                          self.nWidgetCol-self.side_wdgt_length)
 
-    self.p0 = self.winImg.addViewBox(lockAspect=False,
-                                     row=0,col=0,invertY=True,
-                                     border=[100,100,100])
-    self.img = pg.ImageItem()
-    self.p0.setAspectLocked()
-    self.p0.addItem(self.img)
+    self.view1 = self.winImg.addViewBox(lockAspect=False,
+                                        row=0,col=0,invertY=True,
+                                        border=[100,100,100])
+    self.view1.setAspectLocked()
+    self.pimg = pg.ImageItem()
+    self.view1.addItem(self.pimg)
 
     self.refresh_tab(tab)
     self.show()
@@ -187,41 +182,52 @@ def gui(self,
 
 def take_fluorescence_picture(self):
 
-    filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                        filename='fluorescence-%s' % self.subjectBox.currentText(),
-                        extension='.tif')
-    
-    # save HQ image as tiff
-    img = self.get_frame(force_HQ=True)
-    np.save(filename.replace('.tif', '.npy'), img)
-    img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
-    im = PIL.Image.fromarray(img)
-    im.save(filename)
-    print('fluorescence image, saved as: %s ' % filename)
+    if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
 
-    # then keep a version to store with imaging:
-    self.fluorescence_img = self.get_frame()
-    self.pimg.setImage(img) # show on displayn
+        filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
+                            filename='fluorescence-%s' % self.subjectBox.currentText(),
+                            extension='.tif')
+        
+        # save HQ image as tiff
+        img = get_frame(self, force_HQ=True)
+        np.save(filename.replace('.tif', '.npy'), img)
+        img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
+        im = PIL.Image.fromarray(img)
+        im.save(filename)
+        print('fluorescence image, saved as: %s ' % filename)
+
+        # then keep a version to store with imaging:
+        self.fluorescence_img = get_frame(self)
+        self.pimg.setImage(self.fluorescence_img) # show on display
+    else:
+        self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
+
 
 def take_vasculature_picture(self):
 
-    filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                        filename='vasculature-%s' % self.subjectBox.currentText(),
-                        extension='.tif')
-    
-    # save HQ image as tiff
-    img = self.get_frame(force_HQ=True)
-    np.save(filename.replace('.tif', '.npy'), img)
-    img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
-    im = PIL.Image.fromarray(img)
-    im.save(filename)
-    print('vasculature image, saved as: %s' % filename)
+    if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
 
-    # then keep a version to store with imaging:
-    self.vasculature_img = self.get_frame()
-    self.pimg.setImage(img) # show on displayn
+        filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
+                            filename='vasculature-%s' % self.subjectBox.currentText(),
+                            extension='.tif')
+        
+        # save HQ image as tiff
+        img = get_frame(self, force_HQ=True)
+        np.save(filename.replace('.tif', '.npy'), img)
+        img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
+        im = PIL.Image.fromarray(img)
+        im.save(filename)
+        print('vasculature image, saved as: %s' % filename)
+
+        # then keep a version to store with imaging:
+        self.vasculature_img = get_frame(self)
+        self.pimg.setImage(vasculature_img) # show on displayn
+
+    else:
+        self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
 
     
+
 def get_patterns(self, protocol, angle, size,
                  Npatch=30):
 
@@ -247,6 +253,7 @@ def get_patterns(self, protocol, angle, size,
 
     return patterns
 
+
 def run(self):
 
     self.flip = False
@@ -268,102 +275,101 @@ def run(self):
     self.angle_start, self.angle_max, self.protocol, self.label = 0, 0, '', ''
     self.Npoints = int(self.period/self.dt)
 
-    if self.protocolBox.currentText()=='ALL':
+    if self.ISIprotocolBox.currentText()=='ALL':
         self.STIM = {'angle_start':[zmin, xmax, zmax, xmin],
                      'angle_stop':[zmax, xmin, zmin, xmax],
                      'label': ['up', 'left', 'down', 'right'],
                      'xmin':xmin, 'xmax':xmax, 'zmin':zmin, 'zmax':zmax}
         self.label = 'up' # starting point
     else:
-        self.STIM = {'label': [self.protocolBox.currentText()],
+        self.STIM = {'label': [self.ISIprotocolBox.currentText()],
                      'xmin':xmin, 'xmax':xmax, 'zmin':zmin, 'zmax':zmax}
-        if self.protocolBox.currentText()=='up':
+        if self.ISIprotocolBox.currentText()=='up':
             self.STIM['angle_start'] = [zmin]
             self.STIM['angle_stop'] = [zmax]
-        if self.protocolBox.currentText()=='down':
+        if self.ISIprotocolBox.currentText()=='down':
             self.STIM['angle_start'] = [zmax]
             self.STIM['angle_stop'] = [zmin]
-        if self.protocolBox.currentText()=='left':
+        if self.ISIprotocolBox.currentText()=='left':
             self.STIM['angle_start'] = [xmax]
             self.STIM['angle_stop'] = [xmin]
-        if self.protocolBox.currentText()=='right':
+        if self.ISIprotocolBox.currentText()=='right':
             self.STIM['angle_start'] = [xmin]
             self.STIM['angle_stop'] = [xmax]
-        self.label = self.protocolBox.currentText()
+        self.label = self.ISIprotocolBox.currentText()
         
     for il, label in enumerate(self.STIM['label']):
         self.STIM[label+'-times'] = np.arange(self.Npoints*self.Nrepeat)*self.dt
         self.STIM[label+'-angle'] = np.concatenate([np.linspace(self.STIM['angle_start'][il],
-                                                                self.STIM['angle_stop'][il], self.Npoints) for n in range(self.Nrepeat)])
+                                                                self.STIM['angle_stop'][il],
+                                                                self.Npoints)\
+                                                                for n in range(self.Nrepeat)])
 
     # initialize one episode:
     self.iEp, self.t0_episode = 0, time.time()
-    self.img, self.nSave = new_img(self), 0
+    self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
 
-    save_metadata(self)
+    save_intrinsic_metadata(self)
     
     print('acquisition running [...]')
     
-    self.update_dt(self) # while loop
+    self.update_dt_intrinsic() # while loop
 
-def new_img(self):
-    return np.zeros(self.imgsize, dtype=np.float64)
 
-def save_img(self):
-    
-    if self.nSave>0:
-        self.img /= self.nSave
-
-    # live display
-    # self.pimg.setImage(self.img)
-
-    # NEED TO STORE DATA HERE
-    self.TIMES.append(time.time()-self.t0_episode)
-    self.FRAMES.append(self.img)
-
-    # re-init time step of acquisition
-    self.img, self.nSave = self.new_img(), 0
-    
-def update_dt(self):
+def update_dt_intrinsic(self):
 
     self.t = time.time()
 
     # fetch camera frame
     if self.camBox.isChecked():
+
         self.TIMES.append(time.time()-self.t0_episode)
-        self.FRAMES.append(self.get_frame())
+        self.FRAMES.append(get_frame(self))
 
 
-    # update presented stim every X frame
-    self.flip_index += 1
-    if self.flip_index==3:
+    if self.live_only:
 
-        self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt) # find image time, here %period
-        angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'][self.iTime]
-        patterns = self.get_patterns(self.STIM['label'][self.iEp%len(self.STIM['label'])],
-                                     angle, self.bar_size)
-        for pattern in patterns:
-            pattern.draw()
-        try:
-            self.stim.win.flip()
-        except BaseException:
-            pass
-        self.flip_index=0
+        self.pimg.setImage(self.FRAMES[-1])
 
-    self.flip = (False if self.flip else True) # flip the flag at each frame
+    else:
 
-    # checking if not episode over
-    if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
-        if self.camBox.isChecked():
-            self.write_data() # writing data when over
-        self.t0_episode = time.time()
-        self.flip_index=0
-        self.FRAMES, self.TIMES = [], [] # re init data
-        self.iEp += 1
-        
+        # update presented stim every X frame
+        self.flip_index += 1
+        if self.flip_index==3:
+
+            # find image time, here %period
+            self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
+
+            angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'][self.iTime]
+            patterns = get_patterns(self, self.STIM['label'][self.iEp%len(self.STIM['label'])],
+                                          angle, self.bar_size)
+            for pattern in patterns:
+                pattern.draw()
+            try:
+                self.stim.win.flip()
+            except BaseException:
+                pass
+            self.flip_index=0
+
+        self.flip = (False if self.flip else True) # flip the flag at each frame
+
+        # in demo mode, we show the image
+        if self.demoBox.isChecked():
+            self.pimg.setImage(self.FRAMES[-1])
+
+        # checking if not episode over
+        if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
+            if self.camBox.isChecked():
+                write_data(self) # writing data when over
+            self.t0_episode = time.time()
+            self.flip_index=0
+            self.FRAMES, self.TIMES = [], [] # re init data
+            self.iEp += 1
+            
+
     # continuing ?
     if self.running:
-        QtCore.QTimer.singleShot(1, self.update_dt)
+        QtCore.QTimer.singleShot(1, self.update_dt_intrinsic)
 
 
 def write_data(self):
@@ -397,13 +403,12 @@ def write_data(self):
     print(filename, ' saved !')
     
 
-def save_metadata(self):
+def save_intrinsic_metadata(self):
     
-    filename = generate_filename_path(FOLDERS[self.folderB.currentText()],
+    filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
                                       filename='metadata', extension='.npy')
 
     metadata = {'subject':str(self.subjectBox.currentText()),
-                'subject_props':self.subjects[self.subjectBox.currentText()],
                 'exposure':self.exposure,
                 'bar-size':float(self.barBox.text()),
                 'acq-freq':float(self.freqBox.text()),
@@ -423,7 +428,9 @@ def save_metadata(self):
     self.datafolder = os.path.dirname(filename)
 
     
-def launch_protocol(self):
+def launch_intrinsic(self, live_only=False):
+
+    self.live_only = live_only
 
     if not self.running:
 
@@ -431,23 +438,29 @@ def launch_protocol(self):
 
         # initialization of data
         self.FRAMES, self.TIMES, self.flip_index = [], [], 0
-        self.img = self.get_frame()
+        self.img = get_frame(self)
         self.imgsize = self.img.shape
         self.pimg.setImage(self.img)
-        self.view.autoRange(padding=0.001)
+        self.view1.autoRange(padding=0.001)
         
-        self.run()
+        if not self.live_only:
+            run(self)
+        else:
+            self.iEp, self.t0_episode = 0, time.time()
+            self.update_dt_intrinsic() # while loop
+
         
     else:
 
         print(' /!\  --> pb in launching acquisition (either already running or missing camera)')
 
-def live_view(self):
-    self.running, self.t0 = True, time.time()
-    self.TIMES = []
-    self.update_Image()
-    
-def stop_protocol(self):
+
+def live_intrinsic(self):
+
+    self.launch_intrinsic(live_only=True)
+
+
+def stop_intrinsic(self):
     if self.running:
         self.running = False
         if self.stim is not None:
@@ -496,7 +509,7 @@ def get_frame(self, force_HQ=False):
         img = np.random.randn(450, 800)
 
     if (int(self.spatialBox.text())>1) and not force_HQ:
-        return 1.0*intrinsic_analysis.resample_img(img, int(self.spatialBox.text()))
+        return 1.0*resample_img(img, int(self.spatialBox.text()))
     else:
         return 1.0*img
 
@@ -504,7 +517,7 @@ def get_frame(self, force_HQ=False):
     
 def update_Image(self):
     # plot it
-    self.pimg.setImage(self.get_frame())
+    self.pimg.setImage(get_frame(self))
     #self.get_frame() # to test only the frame grabbing code
     self.TIMES.append(time.time())
     if self.running:
