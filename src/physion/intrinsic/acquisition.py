@@ -16,12 +16,13 @@ from physion.visual_stim.main import visual_stim, visual
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
 
+camera_depth = 12 
 
 def gui(self,
         box_width=250,
-        tab_id=2):
+        tab_id=0):
 
-    self.windows[tab_id] = 'intrinsic_imaging'
+    self.windows[tab_id] = 'ISI_acquisition'
 
     tab = self.tabs[tab_id]
 
@@ -163,18 +164,30 @@ def gui(self,
     # ========================================================
     #------------------- THEN MAIN PANEL   -------------------
 
-    self.winImg = pg.GraphicsLayoutWidget()
-    tab.layout.addWidget(self.winImg,
+    self.graphics_layout= pg.GraphicsLayoutWidget()
+
+    tab.layout.addWidget(self.graphics_layout,
                          0, self.side_wdgt_length,
                          self.nWidgetRow, 
                          self.nWidgetCol-self.side_wdgt_length)
 
-    self.view1 = self.winImg.addViewBox(lockAspect=False,
-                                        row=0,col=0,invertY=True,
-                                        border=[100,100,100])
-    self.view1.setAspectLocked()
-    self.pimg = pg.ImageItem()
-    self.view1.addItem(self.pimg)
+    self.view1 = self.graphics_layout.addViewBox(lockAspect=True,
+                                                 row=0, col=0,
+                                                 rowspan=5, colspan=1,
+                                                 invertY=True,
+                                                 border=[100,100,100])
+    self.imgPlot = pg.ImageItem()
+    self.view1.addItem(self.imgPlot)
+
+    self.view2 = self.graphics_layout.addPlot(row=7, col=0,
+                                              rowspan=1, colspan=1,
+                                              border=[100,100,100])
+    self.xbins = np.linspace(0, 2**camera_depth, 30)
+    self.barPlot = pg.BarGraphItem(x = self.xbins[1:], 
+                                height = np.ones(len(self.xbins)-1),
+                                width= 0.8*(self.xbins[1]-self.xbins[0]),
+                                brush ='y')
+    self.view2.addItem(self.barPlot)
 
     self.refresh_tab(tab)
     self.show()
@@ -198,7 +211,7 @@ def take_fluorescence_picture(self):
 
         # then keep a version to store with imaging:
         self.fluorescence_img = get_frame(self)
-        self.pimg.setImage(self.fluorescence_img) # show on display
+        self.imgPlot.setImage(self.fluorescence_img) # show on display
     else:
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
 
@@ -221,7 +234,7 @@ def take_vasculature_picture(self):
 
         # then keep a version to store with imaging:
         self.vasculature_img = get_frame(self)
-        self.pimg.setImage(vasculature_img) # show on displayn
+        self.imgPlot.setImage(vasculature_img) # show on displayn
 
     else:
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
@@ -329,7 +342,8 @@ def update_dt_intrinsic(self):
 
     if self.live_only:
 
-        self.pimg.setImage(self.FRAMES[-1])
+        self.imgPlot.setImage(self.FRAMES[-1])
+        self.barPlot.setOpts(height=np.log(1+np.histogram(self.FRAMES[-1], bins=self.xbins)[0]))
 
     else:
 
@@ -355,7 +369,7 @@ def update_dt_intrinsic(self):
 
         # in demo mode, we show the image
         if self.demoBox.isChecked():
-            self.pimg.setImage(self.FRAMES[-1])
+            self.imgPlot.setImage(self.FRAMES[-1])
 
         # checking if not episode over
         if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
@@ -440,7 +454,7 @@ def launch_intrinsic(self, live_only=False):
         self.FRAMES, self.TIMES, self.flip_index = [], [], 0
         self.img = get_frame(self)
         self.imgsize = self.img.shape
-        self.pimg.setImage(self.img)
+        self.imgPlot.setImage(self.img)
         self.view1.autoRange(padding=0.001)
         
         if not self.live_only:
@@ -506,7 +520,7 @@ def get_frame(self, force_HQ=False):
             
     else:
         time.sleep(0.03) # grabbing frames takes minimum 30ms
-        img = np.random.randn(450, 800)
+        img = np.random.uniform(0, 2**camera_depth, size=(100, 70))
 
     if (int(self.spatialBox.text())>1) and not force_HQ:
         return 1.0*resample_img(img, int(self.spatialBox.text()))
@@ -517,7 +531,7 @@ def get_frame(self, force_HQ=False):
     
 def update_Image(self):
     # plot it
-    self.pimg.setImage(get_frame(self))
+    self.imgPlot.setImage(get_frame(self))
     #self.get_frame() # to test only the frame grabbing code
     self.TIMES.append(time.time())
     if self.running:
