@@ -59,6 +59,9 @@ def gui(self,
 
     # ========================================================
     #------------------- SIDE PANELS FIRST -------------------
+    self.add_side_widget(tab.layout, 
+            QtWidgets.QLabel(' _-* INTRINSIC SIGNAL IMAGING *-_ '))
+
     # folder box
     self.add_side_widget(tab.layout, QtWidgets.QLabel('folder:'),
                          spec='small-left')

@@ -314,39 +314,47 @@ def plot_retinotopic_maps(maps, map_type='altitude',
     else:
         plus, minus = 'left', 'right'
         
-    fig, AX = ge.figure(axes=(2,3), figsize=(1.2,1.3),
-                        left=0.3, top=2, wspace=0.1, hspace=0.5, right=5)
-    
-    ge.annotate(fig, '\n\n"%s" maps' % map_type, (0.5,.99), ha='center', va='top', 
-                xycoords='figure fraction', size='small')
-    
-    AX[0][0].imshow(maps['%s-phase' % plus], cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
-    AX[0][1].imshow(maps['%s-phase' % minus], cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
-    
-    ge.annotate(AX[0][0], '$\phi$+', (1,1), ha='right', va='top', color='w')
-    ge.annotate(AX[0][1], '$\phi$-', (1,1), ha='right', va='top', color='w')
-    ge.title(AX[0][0], 'phase map: "%s"' % plus, size='small')
-    ge.title(AX[0][1], 'phase map: "%s"' % minus, size='small')
-    ge.bar_legend(AX[0][1], X=[0, np.pi, 2*np.pi], label='phase (Rd)', 
-                  colormap=plt.cm.twilight, continuous=True,
-                  ticks=[0, np.pi, 2*np.pi],
-                  ticks_labels=['0', '$\pi$', '2$\pi$'],
-                  bounds=[0, 2*np.pi],
-                  colorbar_inset=dict(rect=[1.2,.1,.05,.8], facecolor=None))
-    
-    bounds = [np.min([maps['%s-power' % x].min() for x in [plus, minus]]),
-              np.max([maps['%s-power' % x].max() for x in [plus, minus]])]
+    fig, AX = plt.subplots(2, 3, figsize=(4,2.3))
 
-    AX[1][0].imshow(maps['%s-power' % plus], cmap=plt.cm.binary, vmin=bounds[0], vmax=bounds[1])
-    AX[1][1].imshow(maps['%s-power' % minus], cmap=plt.cm.binary, vmin=bounds[0], vmax=bounds[1])
     
-    ge.title(AX[1][0], 'power map: "%s"' % plus, size='small')
-    ge.title(AX[1][1], 'power map: "%s"' % minus, size='small')
+    plt.annotate('"%s" maps' % map_type, (0.5,.99), ha='center', va='top', 
+                 xycoords='figure fraction', size='small')
     
-    ge.bar_legend(AX[1][1],
-                  label=' rel. power \n ($10^{-4}$a.u./a.u.)', colormap=plt.cm.binary,
-                  bounds=bounds, ticks=bounds, ticks_labels=['%.1f'%(1e4*b) for b in bounds],
-                  colorbar_inset=dict(rect=[1.2,.1,.05,.8], facecolor=None))
+    AX[0][0].imshow(maps['%s-phase' % plus],
+                    cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
+    AX[0][1].imshow(maps['%s-phase' % minus],
+                    cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
+    
+    AX[0][0].annotate('$\phi$+', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
+    AX[0][1].annotate('$\phi$-', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
+    AX[0][0].set_title('phase map: "%s"' % plus)
+    AX[0][1].set_title('phase map: "%s"' % minus)
+
+    cbar = fig.colorbar(im, ax=AX[0][1],
+                  ticks=[0, np.pi, 2*np.pi], 
+                  label='phase (Rd)')
+    cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
+
+    bounds = [1e4*np.min([maps['%s-power' % x].min() for x in [plus, minus]]),
+              1e4*np.max([maps['%s-power' % x].max() for x in [plus, minus]])]
+
+    AX[1][0].imshow(1e4*maps['%s-power' % plus], 
+            cmap=plt.cm.binary, vmin=bounds[0], vmax=bounds[1])
+    im = AX[1][1].imshow(1e4*maps['%s-power' % minus], 
+            cmap=plt.cm.binary, vmin=bounds[0], vmax=bounds[1])
+    
+    AX[1][0].set_title('power map: "%s"' % plus)
+    AX[1][1].set_title('power map: "%s"' % minus)
+    
+    fig.colorbar(im, ax=AX[1][1],
+                 label=' rel. power \n ($10^{-4}$ a.u.)')
+
+    # ge.bar_legend(AX[1][1],
+                  # label=' rel. power \n ($10^{-4}$a.u./a.u.)',
+                  # colormap=plt.cm.binary,
+                  # bounds=bounds, ticks=bounds,
+                  # ticks_labels=['%.1f'%(1e4*b) for b in bounds],
+                  # colorbar_inset=dict(rect=[1.2,.1,.05,.8], facecolor=None))
     
     # bounds = [np.min(maps['%s-retinotopy' % map_type]),
               # np.max(maps['%s-retinotopy' % map_type])]
@@ -354,21 +362,22 @@ def plot_retinotopic_maps(maps, map_type='altitude',
     
     AX[2][0].imshow(maps['%s-delay' % map_type], cmap=plt.cm.twilight,\
                     vmin=-np.pi/2, vmax=3*np.pi/2)
-    AX[2][1].imshow(maps['%s-retinotopy' % map_type], cmap=plt.cm.PRGn,\
+    im = AX[2][1].imshow(maps['%s-retinotopy' % map_type], cmap=plt.cm.PRGn,\
                     vmin=bounds[0], vmax=bounds[1])
 
-    ge.annotate(AX[2][0], '$\phi^{+}$+$\phi^{-}$', (1,1), ha='right', va='top', color='w', size='small')
-    ge.annotate(AX[2][1], 'F[$\phi^{+}$-$\phi^{-}$]', (1,0), ha='right', va='bottom', color='k', size='xx-small')
-    ge.title(AX[2][0], '(hemodyn.-)delay map', size='small')
-    ge.title(AX[2][1], 'retinotopy map', size='small')
+    AX[2][0].annotate('$\phi^{+}$+$\phi^{-}$', (1,1),
+            ha='right', va='top', color='w', size='small')
+    AX[2][1].annotate('F[$\phi^{+}$-$\phi^{-}$]', (1,0),
+            ha='right', va='bottom', color='k', size='xx-small')
+    AX[2][0].set_title('(hemodyn.-)delay map')
+    AX[2][1].set_title('retinotopy map')
 
-    ge.bar_legend(AX[2][1],
-                  label='angle (deg.)\n visual field', colormap=plt.cm.PRGn,
-                  bounds=bounds, ticks=bounds, ticks_labels=['%i'%b for b in bounds],
-                  colorbar_inset=dict(rect=[1.2,.1,.05,.8], facecolor=None))
-    
-    for ax in ge.flat(AX):
-        ax.axis('off')
+    fig.colorbar(im, ax=AX[2][1],
+                 label='angle (deg.)\n visual field')
+
+    for Ax in AX:
+        for ax in Ax:
+            ax.axis('off')
         
     return fig
 

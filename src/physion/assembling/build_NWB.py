@@ -40,7 +40,7 @@ def build_NWB_UI(self, tab_id=1):
 
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel('- data folder(s): '))
-    OADself.lNWBfolderBtn = QtWidgets.QPushButton(' select folder \u2b07')
+    self.loadNWBfolderBtn = QtWidgets.QPushButton(' select folder \u2b07')
     self.add_side_widget(tab.layout, self.loadNWBfolderBtn)
 
 

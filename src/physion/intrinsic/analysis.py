@@ -42,6 +42,8 @@ def gui(self,
 
     # ========================================================
     #------------------- SIDE PANELS FIRST -------------------
+    self.add_side_widget(tab.layout, 
+            QtWidgets.QLabel(20*' '+' _-* ISI MAPS *-_ '))
     # folder box
     self.add_side_widget(tab.layout,QtWidgets.QLabel('folder:'),
                          spec='small-left')
@@ -68,8 +70,9 @@ def gui(self,
     self.add_side_widget(tab.layout,self.numBox,
                     spec='small-right')
 
-    self.add_side_widget(tab.layout,QtWidgets.QLabel('  - spatial-subsampling (pix):'),
-                    spec='large-left')
+    self.add_side_widget(\
+            tab.layout,QtWidgets.QLabel('  - spatial-subsampling (pix):'),
+            spec='large-left')
     self.ssBox = QtWidgets.QLineEdit()
     self.ssBox.setText('0')
     self.add_side_widget(tab.layout,self.ssBox, spec='small-right')
@@ -81,7 +84,8 @@ def gui(self,
     # -------------------------------------------------------
     self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
 
-    self.pmButton = QtWidgets.QPushButton(" == compute phase/power maps == ", self)
+    self.pmButton = QtWidgets.QPushButton(\
+            " == compute phase/power maps == ", self)
     self.pmButton.clicked.connect(self.compute_phase_maps)
     self.add_side_widget(tab.layout,self.pmButton)
     
@@ -191,13 +195,15 @@ def gui(self,
     self.spectrum_phase.addItem(self.sphDot)
 
     # images
-    self.img1B = self.graphics_layout.addViewBox(row=3, col=0, rowspan=10, colspan=10,
-                                                lockAspect=True, invertY=True)
+    self.img1B = self.graphics_layout.addViewBox(row=3, col=0,
+                                                 rowspan=10, colspan=10,
+                                                 lockAspect=True, invertY=True)
     self.img1 = pg.ImageItem()
     self.img1B.addItem(self.img1)
 
-    self.img2B = self.graphics_layout.addViewBox(row=3, col=10, rowspan=10, colspan=9,
-                                                lockAspect=True, invertY=True)
+    self.img2B = self.graphics_layout.addViewBox(row=3, col=10,
+                                                 rowspan=10, colspan=9,
+                                                 lockAspect=True, invertY=True)
     self.img2 = pg.ImageItem()
     self.img2B.addItem(self.img2)
 
@@ -209,7 +215,6 @@ def gui(self,
     self.graphics_layout.ci.layout.setRowStretchFactor(1, 4)
     self.graphics_layout.ci.layout.setRowStretchFactor(3, 5)
         
-
     # -------------------------------------------------------
     self.pixROI = pg.ROI((0, 0), size=(10,10),
                          pen=pg.mkPen((255,0,0,255)),
@@ -233,24 +238,32 @@ def open_intrinsic_folder(self):
 def set_pixROI(self):
 
     if self.data is not None:
+
         img = self.data[0,:,:]
         self.pixROI.setSize((img.shape[0]/10., img.shape[1]/10))
         xpix, ypix = get_pixel_value(self)
         self.pixROI.setPos((int(img.shape[0]/2), int(img.shape[1]/2)))
 
 def get_pixel_value(self):
+
     y, x = int(self.pixROI.pos()[0]), int(self.pixROI.pos()[1])
+
     return x, y
     
 def moved_pixels(self):
+
     for plot in [self.raw_trace, self.spectrum_power, self.spectrum_phase]:
         plot.clear()
+
     if self.data is not None:
         show_raw_data(self)         
 
 def update_img(self, img, imgButton):
+
     if imgButton.currentText() in self.IMAGES:
+
         img.setImage(self.IMAGES[imgButton.currentText()])
+
         if 'phase' in imgButton.currentText():
             img.setLookupTable(phase_color_map)
         elif 'power' in imgButton.currentText():
@@ -274,13 +287,16 @@ def show_vasc_pic(self):
         
         
 def update_imgButtons(self):
+
     self.img1Button.clear()
     self.img2Button.clear()
+
     self.img1Button.addItems([f for f in self.IMAGES.keys() if 'func' not in f])
     self.img2Button.addItems([f for f in self.IMAGES.keys() if 'func' not in f])
 
    
 def reset(self):
+
     self.IMAGES = {}
 
 def load_intrinsic_data(self):
@@ -436,11 +452,13 @@ def compute_retinotopic_maps(self):
 
 
 def add_gui_shift_to_images(self):
+
     try:
         azi_shift = float(self.phaseMapShiftBox.text().split(',')[0].replace('(',''))
         alt_shift = float(self.phaseMapShiftBox.text().split(',')[1].replace(')',''))
         self.IMAGES['azimuth-retinotopy'] += azi_shift
         self.IMAGES['altitude-retinotopy'] += alt_shift
+
     except BaseException as be:
         print(be)
         print('Pb with altitude, azimuth shift:', self.phaseMapShiftBox.text())
@@ -459,6 +477,7 @@ def perform_area_segmentation(self):
                 'splitLocalMinCutStep',
                 'mergeOverlapThr',
                 'splitOverlapThr']:
+
         data['params'][key] = float(getattr(self, key+'Box').text())
 
     trial = RetinotopicMapping.RetinotopicMappingTrial(**data)
@@ -485,18 +504,3 @@ def get_datafolder(self):
 
     return self.datafolder
     
-def launch_analysis(self):
-    print('launching analysis [...]')
-    if self.datafolder=='' and self.lastBox.isChecked():
-        self.datafolder = last_datafolder_in_dayfolder(day_folder(os.path.join(FOLDERS[self.folderB.currentText()])),
-                                                       with_NIdaq=False)
-    # intrinsic_analysis.run(self.datafolder, show=True)
-    print('-> analysis done !')
-
-def pick_display(self):
-
-    if self.displayBox.currentText()=='horizontal-map':
-        print('show horizontal map')
-    elif self.displayBox.currentText()=='vertical-map':
-        print('show vertical map')
-        
