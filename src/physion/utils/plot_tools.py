@@ -1,6 +1,7 @@
 import os, pathlib
 import matplotlib.pylab as plt
-plt.style.use(os.path.join(pathlib.Path(__file__).resolve().parents[1], 'utils', 'matplotlib_style.py'))
+plt.style.use(os.path.join(pathlib.Path(__file__).resolve().parents[1],
+                    'utils', 'matplotlib_style.py'))
 
 def figure(axes=1,
            figsize=(1.7,1.3)):
@@ -25,8 +26,4 @@ def pie(data,
     ax.pie(data)
 
     return fig, ax
-
-
-
-
 

@@ -1,6 +1,6 @@
 ### FIGURE
 figure.facecolor: white
-figure.dpi: 300
+figure.dpi: 150
 figure.figsize: 1.7, 1.3
 figure.titlesize: 8
 # figure.titleweight: bold

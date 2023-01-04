@@ -72,7 +72,9 @@ class MainWindow(QtWidgets.QMainWindow):
     # -- Intrinsic Imaging -- analysis
     if not Acquisition:
         from physion.intrinsic.analysis import gui as intrinsic
-        # from physion.intrinsic.acquisition import launch_intrinsic,\
+        from physion.intrinsic.analysis import open_intrinsic_folder, moved_pixels,\
+                load_intrinsic_data, compute_phase_maps, compute_retinotopic_maps,\
+                perform_area_segmentation, update_img1, update_img2
                 # stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
                 # take_vasculature_picture, take_fluorescence_picture
 
@@ -211,7 +213,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.switch_roi_RCL()
         else:
             # self.build_NWB_UI()
-            self.intrinsic_acq()
+            self.intrinsic()
             # self.add_imaging()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']

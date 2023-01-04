@@ -13,8 +13,8 @@ smallfont.setPointSize(11)
 
 def choose_root_folder(self):
 
-    if hasattr(self, 'fbox'):
-        return (FOLDERS[self.fbox.currentText()] if self.fbox.currentText() in physion.utils.paths.FOLDERS else os.path.join(os.path.expanduser('~'), 'DATA'))
+    if hasattr(self, 'folderBox'):
+        return (physion.utils.paths.FOLDERS[self.folderBox.currentText()] if self.folderBox.currentText() in physion.utils.paths.FOLDERS else os.path.join(os.path.expanduser('~'), 'DATA'))
     else:
         return os.path.join(os.path.expanduser('~'), 'DATA')
 
@@ -48,17 +48,25 @@ def open_folder(self):
 def open_file(self,
               folder=False):
 
-    if float(sys.version[:3])<=3.7:
-        filename = self.open_NWB()
-        if filename!='':
-            self.filename = filename
-            self.data = physion.analysis.read_NWB.Data(self.filename)
-            self.visualization()
-        else:
-            print('file not loaded ...')
+    # if float(sys.version[:3])<=3.7:
+        # filename = self.open_NWB()
+        # if filename!='':
+            # self.filename = filename
+            # self.data = physion.analysis.read_NWB.Data(self.filename)
+            # self.visualization()
+        # else:
+            # print('file not loaded ...')
+    # else:
+        # self.statusBar.showMessage(' /!\ QFileDialog broken in python >3.7 /!\     ---> use the calendar interface to load data ! ')
+        # print(' /!\ QFileDialog broken in python >3.7 ')
+    filename = self.open_NWB()
+    if filename!='':
+        self.filename = filename
+        self.data = physion.analysis.read_NWB.Data(self.filename)
+        self.visualization()
     else:
-        self.statusBar.showMessage(' /!\ QFileDialog broken in python >3.7 /!\     ---> use the calendar interface to load data ! ')
-        print(' /!\ QFileDialog broken in python >3.7 ')
+        print('file not loaded ...')
+
 
 def inactivated(self):
     print('\n feature inactivated in this version')
