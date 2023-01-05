@@ -59,6 +59,7 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
         from physion.gui.parts import inactivated as multimodal
 
+
     # -- Intrinsic Imaging -- acquisition
     if Acquisition:
         from physion.intrinsic.acquisition import gui as intrinsic_acq
@@ -72,14 +73,26 @@ class MainWindow(QtWidgets.QMainWindow):
     # -- Intrinsic Imaging -- analysis
     if not Acquisition:
         from physion.intrinsic.analysis import gui as intrinsic
-        from physion.intrinsic.analysis import open_intrinsic_folder, moved_pixels,\
-                load_intrinsic_data, compute_phase_maps, compute_retinotopic_maps,\
-                perform_area_segmentation, update_img1, update_img2
-                # stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
-                # take_vasculature_picture, take_fluorescence_picture
-
+        from physion.intrinsic.analysis import open_intrinsic_folder,\
+                moved_pixels, load_intrinsic_data, compute_phase_maps,\
+                compute_retinotopic_maps, perform_area_segmentation,\
+                update_img1, update_img2
     else:
         from physion.gui.parts import inactivated as intrinsic
+
+
+    # -- Pupil tracking
+    if not Acquisition:
+        from physion.pupil.gui import gui as pupil
+        from physion.pupil.gui import open_pupil_data,\
+                jump_to_frame, add_blankROI, add_reflectROI,\
+                save_pupil_data, fit_pupil, process_pupil,\
+                reset_pupil, set_cursor_1_P, set_cursor_2_P,\
+                process_outliers_P, interpolate_P, find_outliers_P,\
+                set_precise_time_P, go_to_frame_P
+    else:
+        from physion.gui.parts import inactivated as pupil 
+
 
     # -- Asssembling
     if not Acquisition:
@@ -213,7 +226,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.switch_roi_RCL()
         else:
             # self.build_NWB_UI()
-            self.intrinsic()
+            self.pupil()
             # self.add_imaging()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
@@ -295,6 +308,8 @@ class MainWindow(QtWidgets.QMainWindow):
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='trial_averaging':
             self.next_and_plot_TA()
+        elif self.windows[tab_id] =='pupil':
+            self.fit_pupil()
         else:
             print('no shortcut')
 
