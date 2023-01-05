@@ -162,9 +162,9 @@ def gui(self,
     iplay = istretch+15
     iconSize = QtCore.QSize(20, 20)
 
-    self.folderB = QtWidgets.QComboBox(self)
-    self.folderB.setMinimumWidth(150)
-    self.folderB.addItems(FOLDERS.keys())
+    self.folderBox = QtWidgets.QComboBox(self)
+    self.folderBox.setMinimumWidth(150)
+    self.folderBox.addItems(FOLDERS.keys())
 
     self.process = QtWidgets.QPushButton('process data [Ctrl+P]')
     self.process.clicked.connect(self.process_pupil)
@@ -250,7 +250,7 @@ def gui(self,
     btns.addButton(self.playButton,0)
     btns.addButton(self.pauseButton,1)
 
-    tab.layout.addWidget(self.folderB,1,0,1,3)
+    tab.layout.addWidget(self.folderBox,1,0,1,3)
     tab.layout.addWidget(self.load,2,0,1,3)
     tab.layout.addWidget(self.loadLastGUIsettings, 7, 0, 1, 3)
     tab.layout.addWidget(sampLabel, 8, 0, 1, 3)
@@ -302,7 +302,7 @@ def load_data(self):
     
     folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
                                 "Choose datafolder",
-                                FOLDERS[self.folderB.currentText()])
+                                FOLDERS[self.folderBox.currentText()])
     # folder = '/home/yann/UNPROCESSED/2021_09_10/13-52-49/'
 
     if folder!='':
