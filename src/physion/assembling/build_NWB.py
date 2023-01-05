@@ -7,10 +7,14 @@ from hdmf.data_utils import DataChunkIterator
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 from dateutil.tz import tzlocal
 
-print(pathlib.Path(__file__).resolve().parents[2])
-sys.path.append(os.path.join(pathlib.Path(__file__).resolve().parents[2], 'src'))
+from physion.assembling.IO.bruker_data import StartTime_to_day_seconds
+from physion.assembling.realign_from_photodiode import realign_from_photodiode
+from physion.behavior.locomotion import compute_speed
+from physion.analysis.tools import resample_signal
+from physion.assembling.tools import load_FaceCamera_data
+from physion.assembling.tools import build_subsampling_from_freq
+from physion.utils.paths import python_path
 
-import physion
 
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   'raw_FaceCamera', 'VisualStim',
@@ -98,7 +102,7 @@ def build_NWB_func(args):
     
     true_tstart0 = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
     st = datetime.datetime.fromtimestamp(true_tstart0).strftime('%H:%M:%S.%f')
-    true_tstart = physion.assembling.IO.bruker_data.StartTime_to_day_seconds(st)
+    true_tstart = StartTime_to_day_seconds(st)
     
     # #################################################
     # ####         Locomotion                   #######
@@ -109,11 +113,11 @@ def build_NWB_func(args):
         if args.verbose:
             print('- Computing and storing running-speed for "%s" [...]' % args.datafolder)
 
-        speed = physion.behavior.locomotion.compute_speed(NIdaq_data['digital'][0],
+        speed = compute_speed(NIdaq_data['digital'][0],
                                          acq_freq=float(metadata['NIdaq-acquisition-frequency']),
                                          radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
                                          rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']))
-        _, speed = physion.analysis.tools.resample_signal(speed,
+        _, speed = resample_signal(speed,
                                    original_freq=float(metadata['NIdaq-acquisition-frequency']),
                                    new_freq=args.running_sampling,
                                    pre_smoothing=2./args.running_sampling)
@@ -131,7 +135,7 @@ def build_NWB_func(args):
     if (metadata['VisualStim'] and ('VisualStim' in args.modalities)) and os.path.isfile(os.path.join(args.datafolder, 'visual-stim.npy')):
 
         # preprocessing photodiode signal
-        _, Psignal = physion.analysis.tools.resample_signal(NIdaq_data['analog'][0],
+        _, Psignal = resample_signal(NIdaq_data['analog'][0],
                                      original_freq=float(metadata['NIdaq-acquisition-frequency']),
                                      pre_smoothing=2./float(metadata['NIdaq-acquisition-frequency']),
                                      new_freq=args.photodiode_sampling)
@@ -146,7 +150,7 @@ def build_NWB_func(args):
         for key in ['time_start', 'time_stop', 'time_duration']:
             metadata[key] = VisualStim[key]
             
-        success, metadata = physion.assembling.realign_from_photodiode(Psignal, metadata,
+        success, metadata = realign_from_photodiode(Psignal, metadata,
                                                     sampling_rate=(args.photodiode_sampling if args.photodiode_sampling>0 else None),
                                                     indices_forced=(metadata['realignement_indices_forced'] if ('realignement_indices_forced' in metadata) else []),
                                                     times_forced=(metadata['realignement_times_forced'] if ('realignement_times_forced' in metadata) else []),
@@ -209,7 +213,8 @@ def build_NWB_func(args):
 
             FC_FILES, FC_times, FCS_data = None, None, None
             if os.path.isdir(os.path.join(args.datafolder, 'FaceCamera-imgs')):
-                FC_times, FC_FILES, _, _, _ = physion.assembling.tools.load_FaceCamera_data(os.path.join(args.datafolder, 'FaceCamera-imgs'),
+                FC_times, FC_FILES, _, _, _ = load_FaceCamera_data(os.path.join(args.datafolder,
+                                                                                'FaceCamera-imgs'),
                                                                    t0=NIdaq_Tstart,
                                                                    verbose=True)
             else:
@@ -220,8 +225,8 @@ def build_NWB_func(args):
             if ('raw_FaceCamera' in args.modalities) and (FC_FILES is not None):
                 
                     imgR = np.load(os.path.join(args.datafolder, 'FaceCamera-imgs', FC_FILES[0]))
-                    FC_SUBSAMPLING = physion.assembling.tools.build_subsampling_from_freq(args.FaceCamera_frame_sampling,
-                                                                 1./np.mean(np.diff(FC_times)), len(FC_FILES), Nmin=3)
+                    FC_SUBSAMPLING = build_subsampling_from_freq(args.FaceCamera_frame_sampling,
+                                                 1./np.mean(np.diff(FC_times)), len(FC_FILES), Nmin=3)
                     def FaceCamera_frame_generator():
                         for i in FC_SUBSAMPLING:
                             try:
@@ -309,8 +314,8 @@ def build_NWB_func(args):
                     x, y = np.meshgrid(np.arange(0,imgP.shape[0]), np.arange(0,imgP.shape[1]), indexing='ij')
                     cond = (x>=dataP['xmin']) & (x<=dataP['xmax']) & (y>=dataP['ymin']) & (y<=dataP['ymax'])
 
-                    PUPIL_SUBSAMPLING = physion.assembling.tools.build_subsampling_from_freq(args.Pupil_frame_sampling,
-                                                                    1./np.mean(np.diff(FC_times)), len(FC_FILES), Nmin=3)
+                    PUPIL_SUBSAMPLING = build_subsampling_from_freq(args.Pupil_frame_sampling,
+                                                 1./np.mean(np.diff(FC_times)), len(FC_FILES), Nmin=3)
 
                     new_shapeP = dataP['xmax']-dataP['xmin']+1, dataP['ymax']-dataP['ymin']+1
                     def Pupil_frame_generator():
@@ -370,8 +375,8 @@ def build_NWB_func(args):
                 # then add the motion frames subsampled
                 if FC_FILES is not None:
                     
-                    FACEMOTION_SUBSAMPLING = physion.assembling.tools.build_subsampling_from_freq(args.FaceMotion_frame_sampling,
-                                                                         1./np.mean(np.diff(FC_times)), len(FC_FILES), Nmin=3)
+                    FACEMOTION_SUBSAMPLING=build_subsampling_from_freq(args.FaceMotion_frame_sampling,
+                                                1./np.mean(np.diff(FC_times)), len(FC_FILES), Nmin=3)
                     
                     imgFM = np.load(os.path.join(args.datafolder, 'FaceCamera-imgs', FC_FILES[0]))
                     x, y = np.meshgrid(np.arange(0,imgFM.shape[0]), np.arange(0,imgFM.shape[1]), indexing='ij')
@@ -479,13 +484,12 @@ def build_NWB_func(args):
 
 def build_cmd(datafolder,
               modalities=['Locomotion', 'VisualStim']):
-    script = str(pathlib.Path(__file__).resolve())
-    cmd = '%s %s -df %s -m ' % (physion.utils.paths.python_path,
-                            script,
-                            datafolder)
+    cmd = '%s -m physion.assembling.build_NWB -df %s -M ' % (python_path,
+                                                             datafolder)
+    cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src')
     for m in modalities:
         cmd += '%s '%m
-    return cmd
+    return cmd, cwd
 
 
 if __name__=='__main__':
@@ -498,7 +502,7 @@ if __name__=='__main__':
 
     parser.add_argument('-df', "--datafolder", type=str, default='')
 
-    parser.add_argument('-m', "--modalities", nargs='*', type=str, default=ALL_MODALITIES)
+    parser.add_argument('-M', "--modalities", nargs='*', type=str, default=ALL_MODALITIES)
 
     parser.add_argument('-rs', "--running_sampling", default=50., type=float)
     parser.add_argument('-ps', "--photodiode_sampling", default=1000., type=float)
@@ -522,6 +526,6 @@ if __name__=='__main__':
     if os.path.isdir(args.datafolder):
         if (args.datafolder[-1]==os.path.sep) or (args.datafolder[-1]=='/'):
             args.datafolder = args.datafolder[:-1]
-        physion.assembling.build_NWB.build_NWB_func(args)
+        build_NWB_func(args)
     else:
         print('"%s" not a valid datafolder' % args.datafolder)
