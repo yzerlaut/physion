@@ -96,7 +96,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # -- Asssembling
     if not Acquisition:
-        from physion.assembling.build_NWB import build_NWB_UI, runBuildNWB
+        from physion.assembling.gui import build_NWB_UI, runBuildNWB,\
+                load_NWB_folder
         from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
             loadNWBfolder, loadCafolder, runAddOphys
     else:
@@ -225,9 +226,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
-            # self.build_NWB_UI()
-            self.intrinsic()
+            self.build_NWB_UI()
             # self.add_imaging()
+            # self.intrinsic()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()

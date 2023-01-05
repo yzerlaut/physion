@@ -52,7 +52,7 @@ def compute_position_from_binary_signals(A, B):
 
     return np.cumsum(np.concatenate([[0], Delta_position]))
 
-def compute_locomotion_speed(binary_signal, 
+def compute_speed(binary_signal, 
 			     acq_freq=1e4, 
                        	     position_smoothing=10e-3, # s
 			     radius_position_on_disk=1,	# cm
@@ -112,7 +112,7 @@ if __name__=='__main__':
         t_array = np.arange(len(digital_inputs[0]))*args.acq_time_step
         print('computing position [...]')
         plt.figure()
-        speed = compute_locomotion_speed(digital_inputs[0],
+        speed = compute_speed(digital_inputs[0],
                                          acq_freq=metadata['NIdaq-acquisition-frequency'],
                                          radius_position_on_disk=metadata['rotating-disk']['radius-position-on-disk-cm'],
                                          rotoencoder_value_per_rotation=metadata['rotating-disk']['roto-encoder-value-per-rotation'])
@@ -152,7 +152,7 @@ if __name__=='__main__':
         plt.plot(t_array, 4+digital_inputs[0,:])
         plt.show()
         
-        speed, position = compute_locomotion_speed(digital_inputs[0],
+        speed, position = compute_speed(digital_inputs[0],
                                                    acq_freq=1./args.acq_time_step,
                                                    position_smoothing=100e-3,
                                                    with_raw_position=True)
