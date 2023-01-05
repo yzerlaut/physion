@@ -227,7 +227,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.switch_roi_RCL()
         else:
             # self.build_NWB_UI()
-            self.pupil()
+            self.intrinsic()
             # self.add_imaging()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']

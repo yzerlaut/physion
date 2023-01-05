@@ -7,7 +7,7 @@ from skimage import measure
 from scipy.interpolate import interp1d
 from scipy.ndimage.filters import gaussian_filter1d, gaussian_filter
 
-from physion.utils.plot_tools import *
+from physion.utils import plot_tools as pt
 
 # from datavyz import graph_env
 ge_screen = None
@@ -29,8 +29,9 @@ default_segmentation_params={'phaseMapFilterSigma': 1.,
 
 def load_maps(datafolder):
 
-    if os.path.isfile(os.path.join(datafolder, 'draft-maps.npy')):
-        maps = np.load(os.path.join(datafolder, 'draft-maps.npy'),
+    if os.path.isfile(os.path.join(datafolder, 'raw-maps.npy')):
+        print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
+        maps = np.load(os.path.join(datafolder, 'raw-maps.npy'),
                        allow_pickle=True).item()
     else:
         maps = {}
@@ -41,10 +42,6 @@ def load_maps(datafolder):
     for key in ['vasculature', 'fluorescence']:
         if os.path.isfile(os.path.join(datafolder, '%s.npy' % key )):
             maps[key] = np.load(os.path.join(datafolder, '%s.npy' % key))
-
-    if os.path.isfile(os.path.join(datafolder, 'final-patches-params.npy')):
-        maps['params'] = np.load(os.path.join(datafolder, 'final-patches-params.npy'),
-                                 allow_pickle=True).item()
 
     return maps
 
@@ -240,14 +237,18 @@ def compute_retinotopic_maps(datafolder, map_type,
     return maps
 
 
-def build_trial_data(maps, with_params=False):
+def build_trial_data(maps,
+                     subject='N/A',
+                     comments='',
+                     dateRecorded='2022-01-01',
+                     with_params=False):
     """
     prepare the data to be saved
     """
 
-    output = {'mouseID':'N/A',
-              'comments':'',
-              'dateRecorded':'2022-01-01'}
+    output = {'mouseID':subject,
+              'comments':comments,
+              'dateRecorded':dateRecorded}
 
     for key1, key2 in zip(\
             ['vasculature', 'altitude-retinotopy', 'azimuth-retinotopy',\
@@ -270,6 +271,27 @@ def build_trial_data(maps, with_params=False):
 # ----------- PLOT FUNCTIONS ----------------------------------- #
 # -------------------------------------------------------------- #
 
+def plot_phase_map(ax, fig, Map):
+    im = ax.imshow(Map,
+                   cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
+    cbar = fig.colorbar(im, ax=ax,
+                  ticks=[0, np.pi, 2*np.pi], 
+                  label='phase (Rd)')
+    cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
+
+def plot_power_map(ax, fig, Map,
+                   bounds=None):
+
+    if bounds is None:
+        bounds = [np.min(1e4*Map), np.max(1e4*Map)]
+
+    im = ax.imshow(1e4*Map, cmap=plt.cm.binary,
+                    vmin=bounds[0], vmax=bounds[1])
+    ax.set_title('power map')
+    fig.colorbar(im, ax=ax,
+                 label='relative power \n ($10^{-4}$ a.u.)')
+
+
 def plot_phase_power_maps(maps, direction,
                           ge=ge_screen):
 
@@ -281,29 +303,15 @@ def plot_phase_power_maps(maps, direction,
                  xycoords='figure fraction')
 
     # # power first
-    bounds = [np.min(1e4*maps['%s-power' % direction]),
-              np.max(1e4*maps['%s-power' % direction])]
-
-    im = AX[0].imshow(1e4*maps['%s-power' % direction], cmap=plt.cm.binary,
-                    vmin=bounds[0], vmax=bounds[1])
-    AX[0].set_title('power map')
-    fig.colorbar(im, ax=AX[0],
-                 label=' rel. power \n ($10^{-4}$ a.u.)')
+    plot_power_map(AX[0], fig, maps['%s-power' % direction])
     
     # # then phase of the stimulus
-    im = AX[1].imshow(maps['%s-phase' % direction], cmap=plt.cm.twilight,
-                    vmin=0, vmax=2*np.pi)
-    AX[1].set_title('phase map')
-    cbar = fig.colorbar(im, ax=AX[1],
-                  ticks=[0, np.pi, 2*np.pi], 
-                  label='stimulus\n phase (Rd)')
-    cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
+    plot_phase_map(AX[1], fig, maps['%s-phase' % direction])
 
     for ax in AX:
         ax.axis('off')
 
     return fig
-
 
 def plot_retinotopic_maps(maps, map_type='altitude',
                           max_retinotopic_angle=80,
@@ -314,66 +322,47 @@ def plot_retinotopic_maps(maps, map_type='altitude',
     else:
         plus, minus = 'left', 'right'
         
-    fig, AX = plt.subplots(2, 3, figsize=(4,2.3))
+    fig, AX = plt.subplots(3, 2, figsize=(3.9,3.9))
+    plt.subplots_adjust(bottom=0.05, left=0.05, hspace=.5, wspace=0.5, right=0.8)
 
-    
     plt.annotate('"%s" maps' % map_type, (0.5,.99), ha='center', va='top', 
                  xycoords='figure fraction', size='small')
     
-    AX[0][0].imshow(maps['%s-phase' % plus],
-                    cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
-    AX[0][1].imshow(maps['%s-phase' % minus],
-                    cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
-    
+    plot_phase_map(AX[0][0], fig, maps['%s-phase' % plus])
+    plot_phase_map(AX[0][1], fig, maps['%s-phase' % minus])
+
     AX[0][0].annotate('$\phi$+', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
     AX[0][1].annotate('$\phi$-', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
     AX[0][0].set_title('phase map: "%s"' % plus)
     AX[0][1].set_title('phase map: "%s"' % minus)
 
-    cbar = fig.colorbar(im, ax=AX[0][1],
-                  ticks=[0, np.pi, 2*np.pi], 
-                  label='phase (Rd)')
-    cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
-
     bounds = [1e4*np.min([maps['%s-power' % x].min() for x in [plus, minus]]),
               1e4*np.max([maps['%s-power' % x].max() for x in [plus, minus]])]
 
-    AX[1][0].imshow(1e4*maps['%s-power' % plus], 
-            cmap=plt.cm.binary, vmin=bounds[0], vmax=bounds[1])
-    im = AX[1][1].imshow(1e4*maps['%s-power' % minus], 
-            cmap=plt.cm.binary, vmin=bounds[0], vmax=bounds[1])
-    
+    plot_power_map(AX[1][0], fig, maps['%s-power' % plus], bounds=bounds)
     AX[1][0].set_title('power map: "%s"' % plus)
-    AX[1][1].set_title('power map: "%s"' % minus)
-    
-    fig.colorbar(im, ax=AX[1][1],
-                 label=' rel. power \n ($10^{-4}$ a.u.)')
 
-    # ge.bar_legend(AX[1][1],
-                  # label=' rel. power \n ($10^{-4}$a.u./a.u.)',
-                  # colormap=plt.cm.binary,
-                  # bounds=bounds, ticks=bounds,
-                  # ticks_labels=['%.1f'%(1e4*b) for b in bounds],
-                  # colorbar_inset=dict(rect=[1.2,.1,.05,.8], facecolor=None))
+    plot_power_map(AX[1][1], fig, maps['%s-power' % minus], bounds=bounds)
+    AX[1][1].set_title('power map: "%s"' % minus)
     
     # bounds = [np.min(maps['%s-retinotopy' % map_type]),
               # np.max(maps['%s-retinotopy' % map_type])]
     bounds = [-max_retinotopic_angle, max_retinotopic_angle]
     
-    AX[2][0].imshow(maps['%s-delay' % map_type], cmap=plt.cm.twilight,\
+    im = AX[2][0].imshow(maps['%s-delay' % map_type], cmap=plt.cm.twilight,\
                     vmin=-np.pi/2, vmax=3*np.pi/2)
+    fig.colorbar(im, ax=AX[2][0])
+    AX[2][0].annotate('$\phi^{+}$+$\phi^{-}$', (0,1),
+            ha='right', va='top', rotation=90, xycoords='axes fraction')
+    AX[2][0].set_title('(hemodynamic)\ndelay map')
+
     im = AX[2][1].imshow(maps['%s-retinotopy' % map_type], cmap=plt.cm.PRGn,\
                     vmin=bounds[0], vmax=bounds[1])
-
-    AX[2][0].annotate('$\phi^{+}$+$\phi^{-}$', (1,1),
-            ha='right', va='top', color='w', size='small')
-    AX[2][1].annotate('F[$\phi^{+}$-$\phi^{-}$]', (1,0),
-            ha='right', va='bottom', color='k', size='xx-small')
-    AX[2][0].set_title('(hemodyn.-)delay map')
-    AX[2][1].set_title('retinotopy map')
-
     fig.colorbar(im, ax=AX[2][1],
                  label='angle (deg.)\n visual field')
+    AX[2][1].annotate('F[$\phi^{+}$-$\phi^{-}$]', (0,1),
+            ha='right', va='top', rotation=90, xycoords='axes fraction')
+    AX[2][1].set_title('retinotopy map')
 
     for Ax in AX:
         for ax in Ax:

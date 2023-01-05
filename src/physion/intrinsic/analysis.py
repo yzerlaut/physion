@@ -8,6 +8,7 @@ from physion.utils.paths import FOLDERS
 from physion.utils.files import last_datafolder_in_dayfolder, day_folder
 from physion.intrinsic.tools import default_segmentation_params
 from physion.intrinsic import tools as intrinsic_analysis
+from physion.intrinsic import RetinotopicMapping
 
 phase_color_map = pg.ColorMap(pos=np.linspace(0.0, 1.0, 3),
                               color=[(255, 0, 0),
@@ -35,7 +36,9 @@ def gui(self,
     self.cleanup_tab(tab)
     
     self.datafolder, self.IMAGES = '', {} 
-        
+    self.subject, self.timestamps = '', ''
+
+
     ##########################################################
     ####### GUI settings
     ##########################################################
@@ -232,6 +235,8 @@ def open_intrinsic_folder(self):
 
     self.datafolder = self.open_folder()
 
+    self.IMAGES = intrinsic_analysis.load_maps(self.datafolder)
+
     if self.datafolder!='':
         self.lastBox.setChecked(False)
     
@@ -309,6 +314,13 @@ def load_intrinsic_data(self):
 
         print('- loading and preprocessing data [...]')
 
+        if os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
+            metadata = np.load(os.path.join(datafolder, 'metadata.npy'),
+                               allow_pickle=True).item()
+            # set subject and timestamip
+            self.subject = metadata['subject']
+            self.timestamps = str(datafolder.split(os.path.sep)[-2:])
+
         # clear previous plots
         for plot in [self.raw_trace, self.spectrum_power, self.spectrum_phase]:
             plot.clear()
@@ -325,6 +337,7 @@ def load_intrinsic_data(self):
             self.data = intrinsic_analysis.resample_img(self.data,
                                                         int(self.ssBox.text()))
             
+
         vasc_img = os.path.join(get_datafolder(self), 'vasculature.npy')
         if os.path.isfile(vasc_img):
             if float(self.ssBox.text())>0:
@@ -395,14 +408,13 @@ def compute_phase_maps(self):
     intrinsic_analysis.plot_phase_power_maps(self.IMAGES,
                                              self.protocolBox.currentText())
 
-    intrinsic_analysis.ge_screen.show()
+    intrinsic_analysis.plt.show()
 
     update_imgButtons(self)
     print(' -> phase maps calculus done !')
     
 
 def compute_retinotopic_maps(self):
-
 
     if ('up-phase' in self.IMAGES) and ('down-phase' in self.IMAGES):
         print('- computing altitude map [...]')
@@ -439,16 +451,19 @@ def compute_retinotopic_maps(self):
         print(' /!\ need both "right" and "left" maps to compute the altitude map !! /!\   ')
 
     if (fig1 is not None) or (fig2 is not None):
-        intrinsic_analysis.ge_screen.show()
+        intrinsic_analysis.plt.show()
 
     update_imgButtons(self)
 
     print(' -> retinotopic maps calculus done !')
 
+    self.IMAGES['subject'] = self.subject
+    self.IMAGES['dateRecorded'] = self.timestamps
+
     intrinsic_analysis.save_maps(self.IMAGES,
-            os.path.join(self.datafolder, 'draft-maps.npy'))
+            os.path.join(self.datafolder, 'raw-maps.npy'))
     print('         current maps saved as: ', \
-            os.path.join(self.datafolder, 'draft-maps.npy'))
+            os.path.join(self.datafolder, 'raw-maps.npy'))
 
 
 def add_gui_shift_to_images(self):
@@ -468,7 +483,11 @@ def perform_area_segmentation(self):
     print('- performing area segmentation [...]')
 
     # format images and load default params
-    data = intrinsic_analysis.build_trial_data(self.IMAGES, with_params=True)
+    data = intrinsic_analysis.build_trial_data(self.IMAGES, 
+                                               subject=self.subject,
+                                               comments='',
+                                               dateRecorded=self.timestamps,
+                                               with_params=True)
 
     # overwrite with GUI values
     for key in ['phaseMapFilterSigma',
@@ -484,10 +503,15 @@ def perform_area_segmentation(self):
     trial.processTrial(isPlot=True)
     print(' -> area segmentation done ! ')
     
-    np.save(os.path.join(self.datafolder, 'analysis.npy'),
+    np.save(os.path.join(self.datafolder, 'RetinotopicMappingData.npy'),
             data)
     print('         current maps saved as: ', \
-            os.path.join(self.datafolder, 'analysis.npy'))
+            os.path.join(self.datafolder, 'RetinotopicMappingData.npy'))
+
+    np.save(os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject),
+            data)
+    print('\n         current maps saved as: ', \
+       os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject))
 
 
 def get_datafolder(self):
