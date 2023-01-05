@@ -12,7 +12,7 @@ from physion.utils import plot_tools as pt
 # from datavyz import graph_env
 ge_screen = None
 
-default_segmentation_params={'phaseMapFilterSigma': 1.,
+default_segmentation_params={'phaseMapFilterSigma': 2.,
                              'signMapFilterSigma': 9.,
                              'signMapThr': 0.35,
                              'eccMapFilterSigma': 10.,
@@ -238,7 +238,7 @@ def compute_retinotopic_maps(datafolder, map_type,
 
 
 def build_trial_data(maps,
-                     subject='N/A',
+                     subject='',
                      comments='',
                      dateRecorded='2022-01-01',
                      with_params=False):

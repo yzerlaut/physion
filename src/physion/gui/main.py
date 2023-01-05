@@ -66,7 +66,6 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.intrinsic.acquisition import launch_intrinsic,\
                 stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
                 take_vasculature_picture, take_fluorescence_picture
-
     else:
         from physion.gui.parts import inactivated as intrinsic_acq
 
@@ -76,7 +75,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.intrinsic.analysis import open_intrinsic_folder,\
                 moved_pixels, load_intrinsic_data, compute_phase_maps,\
                 compute_retinotopic_maps, perform_area_segmentation,\
-                update_img1, update_img2
+                update_img1, update_img2, save_intrinsic
     else:
         from physion.gui.parts import inactivated as intrinsic
 

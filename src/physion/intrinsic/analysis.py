@@ -36,7 +36,7 @@ def gui(self,
     self.cleanup_tab(tab)
     
     self.datafolder, self.IMAGES = '', {} 
-    self.subject, self.timestamps = '', ''
+    self.subject, self.timestamps, self.data = '', '', None
 
 
     ##########################################################
@@ -160,9 +160,13 @@ def gui(self,
     self.mergeOverlapThrBox.setToolTip('Considering a patch pair (A and B) with same sign, A has visual coverage a deg2 and B has visual coverage b deg2 and the overlaping visual coverage between this pair is c deg2.\n Then if (c/a < "mergeOverlapThr") and (c/b < "mergeOverlapThr"), these two patches will be merged.\n FLOAT, default = 0.1, recommend range: [0.0, 0.2], should be smaller than 1.0.\n Small "mergeOverlapThr" will merge less patches.\n Large "mergeOverlapThr" will merge more patches.')
     self.add_side_widget(tab.layout,self.mergeOverlapThrBox, spec='small-right')
     
-    self.pasButton = QtWidgets.QPushButton(" == perform area segmentation == ", self)
+    self.pasButton = QtWidgets.QPushButton(" = Area Segmentation = ", self)
     self.pasButton.clicked.connect(self.perform_area_segmentation)
-    self.add_side_widget(tab.layout,self.pasButton)
+    self.add_side_widget(tab.layout,self.pasButton, 'large-left')
+
+    self.saveButton = QtWidgets.QPushButton("SAVE", self)
+    self.saveButton.clicked.connect(self.save_intrinsic)
+    self.add_side_widget(tab.layout,self.saveButton, 'small-right')
 
     # -------------------------------------------------------
     self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
@@ -234,6 +238,15 @@ def gui(self,
 def open_intrinsic_folder(self):
 
     self.datafolder = self.open_folder()
+
+    if os.path.isfile(os.path.join(self.datafolder, 'metadata.npy')):
+        metadata = np.load(os.path.join(self.datafolder, 'metadata.npy'),
+                           allow_pickle=True).item()
+        # set subject and timestamip
+        self.subject = metadata['subject']
+        self.timestamps = str(self.datafolder.split(os.path.sep)[-2:])
+    else:
+        print(' metadata information missing !! ')
 
     self.IMAGES = intrinsic_analysis.load_maps(self.datafolder)
 
@@ -313,13 +326,6 @@ def load_intrinsic_data(self):
     if os.path.isdir(datafolder):
 
         print('- loading and preprocessing data [...]')
-
-        if os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
-            metadata = np.load(os.path.join(datafolder, 'metadata.npy'),
-                               allow_pickle=True).item()
-            # set subject and timestamip
-            self.subject = metadata['subject']
-            self.timestamps = str(datafolder.split(os.path.sep)[-2:])
 
         # clear previous plots
         for plot in [self.raw_trace, self.spectrum_power, self.spectrum_phase]:
@@ -483,7 +489,7 @@ def perform_area_segmentation(self):
     print('- performing area segmentation [...]')
 
     # format images and load default params
-    data = intrinsic_analysis.build_trial_data(self.IMAGES, 
+    self.data = intrinsic_analysis.build_trial_data(self.IMAGES, 
                                                subject=self.subject,
                                                comments='',
                                                dateRecorded=self.timestamps,
@@ -497,21 +503,28 @@ def perform_area_segmentation(self):
                 'mergeOverlapThr',
                 'splitOverlapThr']:
 
-        data['params'][key] = float(getattr(self, key+'Box').text())
+        self.data['params'][key] = float(getattr(self, key+'Box').text())
 
-    trial = RetinotopicMapping.RetinotopicMappingTrial(**data)
+    trial = RetinotopicMapping.RetinotopicMappingTrial(**self.data)
     trial.processTrial(isPlot=True)
     print(' -> area segmentation done ! ')
     
     np.save(os.path.join(self.datafolder, 'RetinotopicMappingData.npy'),
-            data)
+            self.data)
     print('         current maps saved as: ', \
             os.path.join(self.datafolder, 'RetinotopicMappingData.npy'))
 
-    np.save(os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject),
-            data)
-    print('\n         current maps saved as: ', \
-       os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject))
+def save_intrinsic(self):
+
+    if self.data is not None:
+
+        np.save(os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject),
+                self.data)
+        print('\n         current maps saved as: ', \
+           os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject))
+
+    else:
+        print(' need to perform Area Segmentation first ')
 
 
 def get_datafolder(self):
