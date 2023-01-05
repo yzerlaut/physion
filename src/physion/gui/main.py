@@ -87,9 +87,10 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.pupil.gui import open_pupil_data,\
                 jump_to_frame, add_blankROI, add_reflectROI,\
                 save_pupil_data, fit_pupil, process_pupil,\
-                reset_pupil, set_cursor_1_P, set_cursor_2_P,\
-                process_outliers_P, interpolate_P, find_outliers_P,\
-                set_precise_time_P, go_to_frame_P
+                reset_pupil, set_cursor_1_pupil, set_cursor_2_pupil,\
+                process_outliers_pupil, interpolate_pupil, find_outliers_pupil,\
+                set_precise_time_pupil, go_to_frame_pupil, add_ROI_pupil,\
+                load_last_gui_settings_pupil, save_pupil_data
     else:
         from physion.gui.parts import inactivated as pupil 
 
@@ -247,6 +248,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='visualization':
             tzoom = self.plot.getAxis('bottom').range
             self.raw_data_plot(tzoom)
+        elif self.windows[tab_id] =='pupil':
+            self.refresh_pupil()
         elif self.windows[tab_id] =='trial_averaging':
             self.refresh_TA()
         elif self.windows[tab_id] =='FOV':
@@ -259,6 +262,8 @@ class MainWindow(QtWidgets.QMainWindow):
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.prev_roi_RCL()
+        elif self.windows[tab_id] =='pupil':
+            self.process_pupil()
         elif self.windows[tab_id] =='trial_averaging':
             self.prev_ROI_TA()
         elif self.windows[tab_id] =='FOV':
@@ -303,6 +308,41 @@ class MainWindow(QtWidgets.QMainWindow):
             self.roiIndices = [0]
             self.statusBar.showMessage('ROIs set to %s' % self.roiIndices)
 
+
+    def press1(self):
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='pupil':
+            self.set_cursor_1_pupil()
+        else:
+            print('no shortcut')
+
+    def press2(self):
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='pupil':
+            self.set_cursor_1_pupil()
+        else:
+            print('no shortcut')
+
+    def press3(self):
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='pupil':
+            self.process_outliers_pupil()
+        else:
+            print('no shortcut')
+
+    def press4(self):
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='pupil':
+            self.interpolate_pupil()
+        else:
+            print('no shortcut')
+
+    def press5(self):
+        tab_id = self.tabWidget.currentIndex()
+        if self.windows[tab_id] =='pupil':
+            self.exclude_outliers_pupil()
+        else:
+            print('no shortcut')
 
     def fit(self):
         tab_id = self.tabWidget.currentIndex()

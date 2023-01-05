@@ -18,28 +18,12 @@ def gui(self,
         box_width=250,
         tab_id=2):
 
-    self.windows[tab_id] = 'ISI_analysis'
+    self.windows[tab_id] = 'pupil'
 
     tab = self.tabs[tab_id]
 
     self.cleanup_tab(tab)
 
-
-    ##############################
-    ##### keyboard shortcuts #####
-    ##############################
-
-    # self.refc1 = QtWidgets.QShortcut(QtGui.QKeySequence('1'), self)
-    # self.refc1.activated.connect(self.set_cursor_1)
-    # self.refc2 = QtWidgets.QShortcut(QtGui.QKeySequence('2'), self)
-    # self.refc2.activated.connect(self.set_cursor_2)
-    # self.refc3 = QtWidgets.QShortcut(QtGui.QKeySequence('3'), self)
-    # self.refc3.activated.connect(self.process_outliers)
-    # self.refc4 = QtWidgets.QShortcut(QtGui.QKeySequence('4'), self)
-    # self.refc4.activated.connect(self.interpolate)
-    # self.refc5 = QtWidgets.QShortcut(QtGui.QKeySequence('E'), self)
-    # self.refc5.activated.connect(self.find_outliers)
-        
     #############################
     ##### module quantities #####
     #############################
@@ -61,14 +45,15 @@ def gui(self,
     # self.add_side_widget(tab.layout, 
             # QtWidgets.QLabel(20*' '+' _-* PUPIL TRACKING *-_ '))
 
-    self.cwidget = QtWidgets.QWidget(self)
-    self.setCentralWidget(self.cwidget)
-    self.l0 = QtWidgets.QGridLayout()
-    self.cwidget.setLayout(self.l0)
+    # self.cwidget = QtWidgets.QWidget(self)
+    # self.setCentralWidget(self.cwidget)
+    # self.l0 = QtWidgets.QGridLayout()
+    # self.cwidget.setLayout(self.l0)
     self.win = pg.GraphicsLayoutWidget()
     self.win.move(600,0)
     self.win.resize(600,400)
-    self.l0.addWidget(self.win,1,3,37,15)
+    # self.l0.addWidget(self.win,1,3,37,15)
+    tab.layout.addWidget(self.win,1,3,37,15)
     layout = self.win.ci.layout
 
     # A plot area (ViewBox + axes) for displaying the image
@@ -98,45 +83,45 @@ def gui(self,
     # saturation sliders
     self.sl = Slider(0, self)
     self.sl.setValue(100)
-    self.l0.addWidget(self.sl,1,6,1,7)
+    tab.layout.addWidget(self.sl,1,6,1,7)
     qlabel= QtWidgets.QLabel('saturation')
     qlabel.setStyleSheet('color: white;')
-    self.l0.addWidget(qlabel, 0,8,1,3)
+    tab.layout.addWidget(qlabel, 0,8,1,3)
 
     # adding blanks (eye borders, ...)
     self.blankBtn = QtWidgets.QPushButton('add blanks')
-    self.l0.addWidget(self.blankBtn, 1, 8+6, 1, 1)
+    tab.layout.addWidget(self.blankBtn, 1, 8+6, 1, 1)
     self.blankBtn.setEnabled(True)
     self.blankBtn.clicked.connect(self.add_blankROI)
     
     # adding reflections ("corneal reflections, ...")
     self.reflectorBtn = QtWidgets.QPushButton('add reflect.')
-    self.l0.addWidget(self.reflectorBtn, 2, 8+6, 1, 1)
+    tab.layout.addWidget(self.reflectorBtn, 2, 8+6, 1, 1)
     self.reflectorBtn.setEnabled(True)
     self.reflectorBtn.clicked.connect(self.add_reflectROI)
 
     self.keepCheckBox = QtWidgets.QCheckBox("keep ROIs")
     self.keepCheckBox.setStyleSheet("color: gray;")
     self.keepCheckBox.setChecked(True)
-    self.l0.addWidget(self.keepCheckBox, 2, 8+7, 1, 1)
+    tab.layout.addWidget(self.keepCheckBox, 2, 8+7, 1, 1)
     
     # fit pupil
     self.pupilFit = QtWidgets.QPushButton('fit Pupil [Ctrl+F]')
-    self.l0.addWidget(self.pupilFit, 1, 9+6, 1, 1)
+    tab.layout.addWidget(self.pupilFit, 1, 9+6, 1, 1)
     self.pupilFit.clicked.connect(self.fit_pupil)
     # choose pupil shape
     self.pupil_shape = QtWidgets.QComboBox(self)
     self.pupil_shape.addItem("Ellipse fit")
     self.pupil_shape.addItem("Circle fit")
-    self.l0.addWidget(self.pupil_shape, 1, 10+6, 1, 1)
+    tab.layout.addWidget(self.pupil_shape, 1, 10+6, 1, 1)
     # reset
     self.reset_btn = QtWidgets.QPushButton('reset')
-    self.l0.addWidget(self.reset_btn, 1, 11+6, 1, 1)
+    tab.layout.addWidget(self.reset_btn, 1, 11+6, 1, 1)
     self.reset_btn.clicked.connect(self.reset_pupil)
     # self.reset_btn.setEnabled(True)
     # draw pupil
     self.refresh_pupil = QtWidgets.QPushButton('Refresh [Ctrl+R]')
-    self.l0.addWidget(self.refresh_pupil, 2, 11+6, 1, 1)
+    tab.layout.addWidget(self.refresh_pupil, 2, 11+6, 1, 1)
     self.refresh_pupil.setEnabled(True)
     self.refresh_pupil.clicked.connect(self.jump_to_frame)
 
@@ -154,7 +139,7 @@ def gui(self,
     self.win.ci.layout.setRowStretchFactor(0,5)
     self.movieLabel = QtWidgets.QLabel("No datafile chosen")
     self.movieLabel.setStyleSheet("color: white;")
-    self.l0.addWidget(self.movieLabel,0,1,1,5)
+    tab.layout.addWidget(self.movieLabel,0,1,1,5)
 
 
     # create frame slider
@@ -164,14 +149,14 @@ def gui(self,
     self.currentTime.setText('0')
     self.currentTime.setValidator(QtGui.QDoubleValidator(0, 100000, 2))
     self.currentTime.setFixedWidth(50)
-    self.currentTime.returnPressed.connect(self.set_precise_time_P)
+    self.currentTime.returnPressed.connect(self.set_precise_time_pupil)
     
     self.frameSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
     self.frameSlider.setMinimum(0)
     self.frameSlider.setMaximum(200)
     self.frameSlider.setTickInterval(1)
     self.frameSlider.setTracking(False)
-    self.frameSlider.valueChanged.connect(self.go_to_frame_P)
+    self.frameSlider.valueChanged.connect(self.go_to_frame_pupil)
 
     istretch = 23
     iplay = istretch+15
@@ -185,10 +170,10 @@ def gui(self,
     self.process.clicked.connect(self.process_pupil)
 
     self.cursor1 = QtWidgets.QPushButton('Set Cursor 1 [Ctrl+1]')
-    self.cursor1.clicked.connect(self.set_cursor_1_P)
+    self.cursor1.clicked.connect(self.set_cursor_1_pupil)
 
     self.cursor2 = QtWidgets.QPushButton('Set Cursor 2 [Ctrl+2]')
-    self.cursor2.clicked.connect(self.set_cursor_2_P)
+    self.cursor2.clicked.connect(self.set_cursor_2_pupil)
     
     # self.runAsSubprocess = QtWidgets.QPushButton('run as subprocess')
     # self.runAsSubprocess.clicked.connect(self.run_as_subprocess)
@@ -197,7 +182,7 @@ def gui(self,
     self.load.clicked.connect(self.open_pupil_data)
 
     self.loadLastGUIsettings = QtWidgets.QPushButton("last GUI settings")
-    self.loadLastGUIsettings.clicked.connect(self.load_last_gui_settings)
+    self.loadLastGUIsettings.clicked.connect(self.load_last_gui_settings_pupil)
     
     sampLabel = QtWidgets.QLabel("Subsampling (frame)")
     sampLabel.setStyleSheet("color: gray;")
@@ -213,10 +198,10 @@ def gui(self,
 
     self.addROI = QtWidgets.QPushButton("add Pupil-ROI")
     
-    self.addROI.clicked.connect(self.add_ROI)
+    self.addROI.clicked.connect(self.add_ROI_pupil)
 
-    self.saverois = QtWidgets.QPushButton('save data [Ctrl+S]')
-    self.saverois.clicked.connect(self.save)
+    self.saverois = QtWidgets.QPushButton('save data')
+    self.saverois.clicked.connect(self.save_pupil_data)
 
     stdLabel = QtWidgets.QLabel("std excl. factor: ")
     stdLabel.setStyleSheet("color: gray;")
@@ -230,28 +215,24 @@ def gui(self,
     self.wdthBox.setText('0.1')
     self.wdthBox.setFixedWidth(50)
     
-    self.excludeOutliers = QtWidgets.QPushButton('exclude outlier [Ctrl+E]')
-    self.excludeOutliers.clicked.connect(self.find_outliers)
+    self.excludeOutliers = QtWidgets.QPushButton('exclude outlier [5]')
+    self.excludeOutliers.clicked.connect(self.find_outliers_pupil)
 
-    cursorLabel = QtWidgets.QLabel("set cursor 1 [Ctrl+1], cursor 2 [Ctrl+2]")
+    cursorLabel = QtWidgets.QLabel("set cursor 1 [1], cursor 2 [2]")
     cursorLabel.setStyleSheet("color: gray;")
     
-    self.interpBtn = QtWidgets.QPushButton('interpolate only [Ctrl+4]')
-    self.interpBtn.clicked.connect(self.interpolate)
+    self.interpBtn = QtWidgets.QPushButton('interpolate only [4]')
+    self.interpBtn.clicked.connect(self.interpolate_pupil)
 
-    self.processOutliers = QtWidgets.QPushButton('Set blinking interval [Ctrl+3]')
-    self.processOutliers.clicked.connect(self.process_outliers_P)
+    self.processOutliers = QtWidgets.QPushButton('Set blinking interval [3]')
+    self.processOutliers.clicked.connect(self.process_outliers_pupil)
     
-    self.printSize = QtWidgets.QPushButton('print ROI size')
-    self.printSize.clicked.connect(self.print_size)
-
-    for x in [self.process, self.cursor1, self.cursor2, self.runAsSubprocess, self.load,
+    for x in [self.process, self.cursor1, self.cursor2, self.load,
               self.saverois, self.addROI, self.interpBtn, self.processOutliers,
-              self.stdBox, self.wdthBox, self.excludeOutliers, self.printSize, cursorLabel,
+              self.stdBox, self.wdthBox, self.excludeOutliers, cursorLabel,
               self.loadLastGUIsettings,
               sampLabel, smoothLabel, stdLabel, wdthLabel, self.smoothBox, self.samplingBox]:
         x.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
-    
     
     iconSize = QtCore.QSize(30, 30)
     self.playButton = QtWidgets.QToolButton()
@@ -269,38 +250,38 @@ def gui(self,
     btns.addButton(self.playButton,0)
     btns.addButton(self.pauseButton,1)
 
-    self.l0.addWidget(self.folderB,1,0,1,3)
-    self.l0.addWidget(self.load,2,0,1,3)
-    self.l0.addWidget(self.loadLastGUIsettings, 7, 0, 1, 3)
-    self.l0.addWidget(sampLabel, 8, 0, 1, 3)
-    self.l0.addWidget(self.samplingBox, 8, 2, 1, 3)
-    self.l0.addWidget(smoothLabel, 9, 0, 1, 3)
-    self.l0.addWidget(self.smoothBox, 9, 2, 1, 3)
-    self.l0.addWidget(self.addROI,14,0,1,3)
-    self.l0.addWidget(self.process, 16, 0, 1, 3)
-    self.l0.addWidget(self.runAsSubprocess, 17, 0, 1, 3)
-    self.l0.addWidget(self.saverois, 19, 0, 1, 3)
+    tab.layout.addWidget(self.folderB,1,0,1,3)
+    tab.layout.addWidget(self.load,2,0,1,3)
+    tab.layout.addWidget(self.loadLastGUIsettings, 7, 0, 1, 3)
+    tab.layout.addWidget(sampLabel, 8, 0, 1, 3)
+    tab.layout.addWidget(self.samplingBox, 8, 2, 1, 3)
+    tab.layout.addWidget(smoothLabel, 9, 0, 1, 3)
+    tab.layout.addWidget(self.smoothBox, 9, 2, 1, 3)
+    tab.layout.addWidget(self.addROI,14,0,1,3)
+    tab.layout.addWidget(self.process, 16, 0, 1, 3)
+    # tab.layout.addWidget(self.runAsSubprocess, 17, 0, 1, 3)
+    tab.layout.addWidget(self.saverois, 19, 0, 1, 3)
 
-    self.l0.addWidget(stdLabel, 21, 0, 1, 3)
-    self.l0.addWidget(self.stdBox, 21, 2, 1, 3)
-    self.l0.addWidget(wdthLabel, 22, 0, 1, 3)
-    self.l0.addWidget(self.wdthBox, 22, 2, 1, 3)
-    self.l0.addWidget(self.excludeOutliers, 23, 0, 1, 3)
-    self.l0.addWidget(cursorLabel, 25, 0, 1, 3)
-    self.l0.addWidget(self.processOutliers, 26, 0, 1, 3)
-    self.l0.addWidget(self.interpBtn, 27, 0, 1, 3)
-    self.l0.addWidget(self.printSize, 29, 0, 1, 3)
+    tab.layout.addWidget(stdLabel, 21, 0, 1, 3)
+    tab.layout.addWidget(self.stdBox, 21, 2, 1, 3)
+    tab.layout.addWidget(wdthLabel, 22, 0, 1, 3)
+    tab.layout.addWidget(self.wdthBox, 22, 2, 1, 3)
+    tab.layout.addWidget(self.excludeOutliers, 23, 0, 1, 3)
+    tab.layout.addWidget(cursorLabel, 25, 0, 1, 3)
+    tab.layout.addWidget(self.processOutliers, 26, 0, 1, 3)
+    tab.layout.addWidget(self.interpBtn, 27, 0, 1, 3)
+    # tab.layout.addWidget(self.printSize, 29, 0, 1, 3)
 
-    self.l0.addWidget(QtWidgets.QLabel(''),istretch,0,1,3)
-    self.l0.setRowStretch(istretch,1)
-    self.l0.addWidget(self.timeLabel, istretch+13,0,1,3)
-    self.l0.addWidget(self.currentTime, istretch+14,0,1,3)
-    self.l0.addWidget(self.frameSlider, istretch+15,3,1,15)
+    tab.layout.addWidget(QtWidgets.QLabel(''),istretch,0,1,3)
+    tab.layout.setRowStretch(istretch,1)
+    tab.layout.addWidget(self.timeLabel, istretch+13,0,1,3)
+    tab.layout.addWidget(self.currentTime, istretch+14,0,1,3)
+    tab.layout.addWidget(self.frameSlider, istretch+15,3,1,15)
 
-    self.l0.addWidget(QtWidgets.QLabel(''),17,2,1,1)
-    self.l0.setRowStretch(16,2)
-    # self.l0.addWidget(ll, istretch+3+k+1,0,1,4)
-    self.updateFrameSlider()
+    tab.layout.addWidget(QtWidgets.QLabel(''),17,2,1,1)
+    tab.layout.setRowStretch(16,2)
+    # tab.layout.addWidget(ll, istretch+3+k+1,0,1,4)
+    updateFrameSlider(self)
     
     self.nframes = 0
     self.cframe, self.cframe1, self.cframe2, = 0, 0, 0
@@ -313,7 +294,7 @@ def gui(self,
     self.show()
 
 def open_pupil_data(self):
-    self.load_data()
+    load_data(self)
     
 def load_data(self):
 
@@ -364,7 +345,7 @@ def load_data(self):
             self.jump_to_frame()
             self.timeLabel.setEnabled(True)
             self.frameSlider.setEnabled(True)
-            self.updateFrameSlider()
+            updateFrameSlider(self)
             self.currentTime.setValidator(QtGui.QDoubleValidator(0, self.nframes, 2))
             self.movieLabel.setText(folder)
 
@@ -384,7 +365,7 @@ def save_gui_settings(self):
     
     np.save(os.path.join(pathlib.Path(__file__).resolve().parent, '_gui_settings.npy'), settings)
 
-def load_last_gui_settings(self):
+def load_last_gui_settings_pupil(self):
 
     try:
         settings = np.load(os.path.join(pathlib.Path(__file__).resolve().parent, '_gui_settings.npy'),
@@ -437,7 +418,7 @@ def draw_pupil(self):
 def print_size(self):
     print('x, y, sx, sy, angle = ', self.ROI.extract_props())
 
-def add_ROI(self):
+def add_ROI_pupil(self):
 
     if self.ROI is not None:
         self.ROI.remove(self)
@@ -448,7 +429,7 @@ def add_ROI(self):
     self.reflectors = []
 
 
-def interpolate_P(self, with_blinking_flag=False):
+def interpolate_pupil(self, with_blinking_flag=False):
     
     if self.data is not None and (self.cframe1!=0) and (self.cframe2!=0):
         
@@ -493,10 +474,10 @@ def interpolate_P(self, with_blinking_flag=False):
         print('cursors at: ', self.cframe1, self.cframe2)
         print('blinking/outlier labelling failed')
 
-def process_outliers_P(self):
-    self.interpolate(with_blinking_flag=True)
+def process_outliers_pupil(self):
+    self.interpolate_pupil(with_blinking_flag=True)
 
-def find_outliers_P(self):
+def find_outliers_pupil(self):
     if not hasattr(self, 'data_before_outliers') or (self.data_before_outliers==None):
 
         self.data['std_exclusion_factor'] = float(self.stdBox.text())
@@ -519,22 +500,22 @@ def find_outliers_P(self):
 def debug(self):
     print('No debug function')
 
-def set_cursor_1_P(self):
+def set_cursor_1_pupil(self):
     self.cframe1 = self.cframe
     print('cursor 1 set to: %i' % self.cframe1)
     
-def set_cursor_2_P(self):
+def set_cursor_2_pupil(self):
     self.cframe2 = self.cframe
     print('cursor 2 set to: %i' % self.cframe2)
 
-def set_precise_time_P(self):
+def set_precise_time_pupil(self):
     self.time = float(self.currentTime.text())
     t1, t2 = self.xaxis.range
     frac_value = (self.time-t1)/(t2-t1)
     self.frameSlider.setValue(int(self.slider_nframes*frac_value))
     self.jump_to_frame()
     
-def go_to_frame_P(self):
+def go_to_frame_pupil(self):
     i1, i2 = self.xaxis.range
     self.cframe = max([0, int(i1+(i2-i1)*float(self.frameSlider.value()/200.))])
     self.jump_to_frame()
@@ -543,9 +524,6 @@ def updateFrameSlider(self):
     self.timeLabel.setEnabled(True)
     self.frameSlider.setEnabled(True)
 
-def refresh(self):
-    self.jump_to_frame()
-    
 def jump_to_frame(self):
 
     if self.FILES is not None:
@@ -623,11 +601,6 @@ def extract_ROI(self, data):
         data[key]=boundaries[key]
     
     
-def save(self):
-    """ """
-    self.extract_ROI(self.data)
-    self.save_pupil_data()
-    
 def build_cmd(self):
     return '%s %s -df %s' % (python_path, self.process_script, self.datafolder)
     
@@ -646,6 +619,9 @@ def add_to_bash_script(self):
 
 def save_pupil_data(self):
     """ """
+
+    extract_ROI(self, self.data)
+
     if self.data is not None:
         self.data['gaussian_smoothing'] = int(self.smoothBox.text())
         # self.data = process.clip_to_finite_values(self.data, ['cx', 'cy', 'sx', 'sy', 'residual', 'angle'])
@@ -660,7 +636,7 @@ def process_pupil(self):
 
     if (self.data is None) or ('frame' in self.data):
         self.data = {}
-        self.extract_ROI(self.data)
+        extract_ROI(self, self.data)
 
         
     self.subsampling = int(self.samplingBox.text())

@@ -129,6 +129,18 @@ def add_keyboard_shortcuts(self,
     self.tab4Sc.activated.connect(self.switch_to_tab4)
 
     # adding a few general keyboard shortcut
+    self.press1Sc = QtWidgets.QShortcut(QtGui.QKeySequence('1'), self)
+    self.press1Sc.activated.connect(self.press1)
+    self.press2Sc = QtWidgets.QShortcut(QtGui.QKeySequence('2'), self)
+    self.press2Sc.activated.connect(self.press2)
+    self.press3Sc = QtWidgets.QShortcut(QtGui.QKeySequence('3'), self)
+    self.press3Sc.activated.connect(self.press3)
+    self.press4Sc = QtWidgets.QShortcut(QtGui.QKeySequence('4'), self)
+    self.press4Sc.activated.connect(self.press4)
+    self.press5Sc = QtWidgets.QShortcut(QtGui.QKeySequence('5'), self)
+    self.press5Sc.activated.connect(self.press5)
+
+    # adding a few general keyboard shortcut
     self.openSc = QtWidgets.QShortcut(QtGui.QKeySequence('%sO'%pre_key), self)
     self.openSc.activated.connect(self.open)
     
