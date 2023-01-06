@@ -6,18 +6,19 @@ from physion.assembling.IO.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.presets import ops0
 
 defaults={'do_registration':1,
-         'roidetect':True,
-         'cell_diameter':20, # in um
-         'tau':1.3,
-         'nchannels':1,
-         'functional_chan':1,
-         'align_by_chan':1,
-         'sparse_mode':False,
-         'connected':True,
-         'nonrigid':0,
-         'threshold_scaling':0.5,
-         'mask_threshold':0.3,
-         'neucoeff': 0.7}
+          'roidetect':True,
+          'cell_diameter':20, # in um
+          'tau':1.3,
+          'nchannels':1,
+          'functional_chan':1,
+          'align_by_chan':1,
+          'sparse_mode':False,
+          'connected':True,
+          'nonrigid':0,
+          'threshold_scaling':0.5,
+          'mask_threshold':0.3,
+          'neucoeff': 0.7}
+
 
 def build_db(folder):
     print(folder)
@@ -28,8 +29,10 @@ def build_db(folder):
           'input_format': 'bruker'}
     return db
 
+
 def build_ops(folder):
     return ops
+
 
 def build_suite2p_options(folder,
                           settings_dict):
