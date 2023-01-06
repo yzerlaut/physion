@@ -132,6 +132,16 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as red_channel_labelling
 
 
+    # -- File Transfer
+    if not Acquisition:
+        from physion.transfer.gui import transfer_gui,\
+                set_source_folder, set_destination_folder,\
+                run_transfer
+                
+    else:
+        from physion.gui.parts import inactivated as transfer_gui 
+
+
     def __init__(self, app,
                  args=None,
                  width=750, height=600,
@@ -234,7 +244,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
-            self.suite2p_preprocessing_UI()
+            self.transfer_gui()
+            # self.suite2p_preprocessing_UI()
             # self.build_NWB_UI()
             # self.add_imaging()
             # self.intrinsic()

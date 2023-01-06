@@ -70,5 +70,6 @@ def build_menu(self):
     ##### ------   Other   -------------
     self.otherMenu = self.mainMenu.addMenu('     Others')
     # --
-    self.otherMenu.addMenu('Transfer Data')
+    self.otherMenu.addAction('&Transfer Data',
+                              self.transfer_gui)
 
