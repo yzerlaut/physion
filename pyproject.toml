@@ -13,17 +13,19 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+    "python>=3.9.5",
     "numpy",
     "scipy",
     "matplotlib",
     "scikit-image",
-    "pandas",
     "natsort",
     "pynwb",
-    "pyqt5",
+    "pandas>=1.4.4",
     "pyqt5.sip",
     "pyqtgraph",
     "pyqtdarktheme",
+    "opencv-python-headless",
+    "pyqt5",
 ]
 
 [tool.setuptools.packages.find]
