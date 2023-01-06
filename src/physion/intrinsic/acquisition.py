@@ -72,6 +72,7 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel('config:'),
                          spec='small-left')
     self.configBox = QtWidgets.QComboBox(self)
+    self.protocolBox = QtWidgets.QComboBox(self) # needed even if not shown
     self.configBox.activated.connect(self.update_config)
     self.add_side_widget(tab.layout, self.configBox, spec='large-right')
     # subject box
@@ -92,10 +93,10 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
 
     self.vascButton = QtWidgets.QPushButton(" - = save Vasculature Picture = - ", self)
-    # self.vascButton.clicked.connect(self.take_vasculature_picture)
+    self.vascButton.clicked.connect(self.take_vasculature_picture)
     self.add_side_widget(tab.layout, self.vascButton)
     self.fluoButton = QtWidgets.QPushButton(" - = save Fluorescence Picture = - ", self)
-    # self.fluoButton.clicked.connect(self.take_fluorescence_picture)
+    self.fluoButton.clicked.connect(self.take_fluorescence_picture)
     self.add_side_widget(tab.layout, self.fluoButton)
     
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
@@ -215,7 +216,9 @@ def take_fluorescence_picture(self):
         # then keep a version to store with imaging:
         self.fluorescence_img = get_frame(self)
         self.imgPlot.setImage(self.fluorescence_img) # show on display
+
     else:
+
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
 
 
@@ -526,9 +529,9 @@ def get_frame(self, force_HQ=False):
         img = np.random.uniform(0, 2**camera_depth, size=(100, 70))
 
     if (int(self.spatialBox.text())>1) and not force_HQ:
-        return 1.0*resample_img(img, int(self.spatialBox.text()))
+        return 1.0*resample_img(img, int(self.spatialBox.text())).T
     else:
-        return 1.0*img
+        return 1.0*img.T
 
     
     
