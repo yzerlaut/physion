@@ -94,7 +94,15 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as pupil 
 
 
-    # -- Asssembling
+    # -- Suite2P Preprocesssing
+    if not Acquisition:
+        from physion.imaging.gui import suite2p_preprocessing_UI,\
+                load_TSeries_folder, run_TSeries_analysis 
+    else:
+        from physion.gui.parts import inactivated as suite2p_preprocessing_UI
+
+
+    # -- Assembling
     if not Acquisition:
         from physion.assembling.gui import build_NWB_UI, runBuildNWB,\
                 load_NWB_folder
@@ -226,7 +234,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
-            self.build_NWB_UI()
+            self.suite2p_preprocessing_UI()
+            # self.build_NWB_UI()
             # self.add_imaging()
             # self.intrinsic()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']

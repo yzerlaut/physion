@@ -35,6 +35,8 @@ def build_menu(self):
                                      self.in_progress)
     self.preprocessingMenu.addAction('&ISI Maps',
                                      self.intrinsic)
+    self.preprocessingMenu.addAction('&Suite2P Preprocessing',
+                                     self.suite2p_preprocessing_UI)
     self.preprocessingMenu.addAction('&Red Channel Labelling',
                                      self.red_channel_labelling)
 
