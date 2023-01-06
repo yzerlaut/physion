@@ -73,6 +73,7 @@ def gui(self,
                          spec='small-left')
     self.configBox = QtWidgets.QComboBox(self)
     self.protocolBox = QtWidgets.QComboBox(self) # needed even if not shown
+    self.fovPick = QtWidgets.QComboBox(self) # need even f not shown
     self.configBox.activated.connect(self.update_config)
     self.add_side_widget(tab.layout, self.configBox, spec='large-right')
     # subject box
@@ -215,7 +216,7 @@ def take_fluorescence_picture(self):
 
         # then keep a version to store with imaging:
         self.fluorescence_img = get_frame(self)
-        self.imgPlot.setImage(self.fluorescence_img) # show on display
+        self.imgPlot.setImage(self.fluorescence_img.T) # show on display
 
     else:
 
@@ -240,7 +241,7 @@ def take_vasculature_picture(self):
 
         # then keep a version to store with imaging:
         self.vasculature_img = get_frame(self)
-        self.imgPlot.setImage(vasculature_img) # show on displayn
+        self.imgPlot.setImage(self.vasculature_img.T) # show on displayn
 
     else:
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
@@ -348,7 +349,7 @@ def update_dt_intrinsic(self):
 
     if self.live_only:
 
-        self.imgPlot.setImage(self.FRAMES[-1])
+        self.imgPlot.setImage(self.FRAMES[-1].T)
         self.barPlot.setOpts(height=np.log(1+np.histogram(self.FRAMES[-1], bins=self.xbins)[0]))
 
     else:
@@ -375,7 +376,7 @@ def update_dt_intrinsic(self):
 
         # in demo mode, we show the image
         if self.demoBox.isChecked():
-            self.imgPlot.setImage(self.FRAMES[-1])
+            self.imgPlot.setImage(self.FRAMES[-1].T)
 
         # checking if not episode over
         if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
@@ -460,7 +461,7 @@ def launch_intrinsic(self, live_only=False):
         self.FRAMES, self.TIMES, self.flip_index = [], [], 0
         self.img = get_frame(self)
         self.imgsize = self.img.shape
-        self.imgPlot.setImage(self.img)
+        self.imgPlot.setImage(self.img.T)
         self.view1.autoRange(padding=0.001)
         
         if not self.live_only:
@@ -529,15 +530,15 @@ def get_frame(self, force_HQ=False):
         img = np.random.uniform(0, 2**camera_depth, size=(100, 70))
 
     if (int(self.spatialBox.text())>1) and not force_HQ:
-        return 1.0*resample_img(img, int(self.spatialBox.text())).T
+        return 1.0*resample_img(img, int(self.spatialBox.text()))
     else:
-        return 1.0*img.T
+        return 1.0*img
 
     
     
 def update_Image(self):
     # plot it
-    self.imgPlot.setImage(get_frame(self))
+    self.imgPlot.setImage(get_frame(self).T)
     #self.get_frame() # to test only the frame grabbing code
     self.TIMES.append(time.time())
     if self.running:

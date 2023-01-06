@@ -1,9 +1,68 @@
 import sys, os, pathlib, shutil, glob, time, subprocess
 import numpy as np
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-from Ca_imaging.process_xml import build_suite2p_options
-from misc.folders import python_path_suite2p_env
+from physion.utils.paths import python_path_suite2p_env
+from physion.assembling.IO.bruker.xml_parser import bruker_xml_parser
+from physion.imaging.suite2p.presets import ops0
+
+defaults={'do_registration':1,
+         'roidetect':True,
+         'cell_diameter':20, # in um
+         'tau':1.3,
+         'nchannels':1,
+         'functional_chan':1,
+         'align_by_chan':1,
+         'sparse_mode':False,
+         'connected':True,
+         'nonrigid':0,
+         'threshold_scaling':0.5,
+         'mask_threshold':0.3,
+         'neucoeff': 0.7}
+
+def build_db(folder):
+    print(folder)
+    db = {'data_path':[folder],
+          'subfolders': [],
+          'save_path0': folder,
+          'fast_disk': folder,
+          'input_format': 'bruker'}
+    return db
+
+def build_ops(folder):
+    return ops
+
+def build_suite2p_options(folder,
+                          settings_dict):
+    
+    if os.name=='nt':
+        xml_file = os.path.join(folder, folder.split('/')[-1]+'.xml')
+    else:
+        xml_file = os.path.join(folder, folder.split(os.path.sep)[-1]+'.xml')
+
+    bruker_data = bruker_xml_parser(xml_file)
+    ops = ops0.copy()
+
+    # acquisition frequency per plane - (bruker framePeriod i already per plane)
+    nplanes = settings_dict['nplanes'] if 'nplanes' in settings_dict else 1 
+    ops['fs'] = 1./float(bruker_data['settings']['framePeriod'])/nplanes
+
+    # hints for the size of the ROI
+    um_per_pixel = float(bruker_data['settings']['micronsPerPixel']['XAxis'])
+    ops['diameter'] = int(settings_dict['cell_diameter']/um_per_pixel) # in pixels (int 20um)
+    ops['spatial_scale'] = int(settings_dict['cell_diameter']/6/um_per_pixel)
+
+    # all other keys here
+    for key in settings_dict:
+        if key in ops:
+            ops[key] = settings_dict[key]
+    
+    db = build_db(folder)
+    for key in ['data_path', 'subfolders', 'save_path0',
+                'fast_disk', 'input_format']:
+        ops[key] = db[key]
+
+    np.save(os.path.join(folder,'db.npy'), db)
+    np.save(os.path.join(folder,'ops.npy'), ops)
 
 
 def run_preprocessing(args):
@@ -13,15 +72,14 @@ def run_preprocessing(args):
     cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
                                      os.path.join(args.CaImaging_folder,'db.npy'),
                                      os.path.join(args.CaImaging_folder,'ops.npy'))
-    print(cmd)
+    print('running "%s" \n ' % cmd)
     subprocess.run(cmd, shell=True)
     
 
 if __name__=='__main__':
 
     import argparse, os
-    parser=argparse.ArgumentParser(description="""
-    Launch preprocessing of Ca-Imaging data with Suite2P
+    parser=argparse.ArgumentParser(description=""" Launch preprocessing of Ca-Imaging data with Suite2P
     """,formatter_class=argparse.RawTextHelpFormatter)
     # main
     parser.add_argument('-cf', "--CaImaging_folder", type=str, default='./')
