@@ -93,14 +93,22 @@ def calendar(self,
                          nCalendarRow+1, 0, 1, self.nWidgetCol-2)
 
     self.plotButton = QtWidgets.QPushButton(' visualize', self)
+    self.plotButton.setEnabled(False)
     self.plotButton.clicked.connect(self.visualization)
     tab.layout.addWidget(self.plotButton,
                          nCalendarRow+1, self.nWidgetCol-2, 1, 2)
 
+    self.fovButton = QtWidgets.QPushButton(' FOV/window', self)
+    self.fovButton.setEnabled(False)
+    # self.fovButton.clicked.connect(self.visualization)
+    tab.layout.addWidget(self.fovButton,
+                         nCalendarRow+2, self.nWidgetCol-2, 1, 2)
+
     self.metadataButton = QtWidgets.QPushButton('show metadata', self)
+    self.metadataButton.setEnabled(False)
     self.metadataButton.clicked.connect(self.show_metadata)
     tab.layout.addWidget(self.metadataButton,
-                         nCalendarRow+2, self.nWidgetCol-2, 1, 2)
+                         nCalendarRow+3, self.nWidgetCol-2, 1, 2)
 
 
     #####################################

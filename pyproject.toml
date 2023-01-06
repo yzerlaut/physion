@@ -6,7 +6,7 @@ authors = [
 ]
 description = "Vision Physiology Software"
 readme = "README.md"
-requires-python = ">=3.1"
+requires-python = ">=3.9.5"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -17,13 +17,14 @@ dependencies = [
     "scipy",
     "matplotlib",
     "scikit-image",
-    "pandas",
     "natsort",
     "pynwb",
-    "pyqt5",
+    "pandas>=1.4.4",
     "pyqt5.sip",
     "pyqtgraph",
     "pyqtdarktheme",
+    "opencv-python-headless",
+    "pyqt5",
 ]
 
 [tool.setuptools.packages.find]

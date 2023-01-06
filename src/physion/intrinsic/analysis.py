@@ -46,7 +46,7 @@ def gui(self,
     # ========================================================
     #------------------- SIDE PANELS FIRST -------------------
     self.add_side_widget(tab.layout, 
-            QtWidgets.QLabel(20*' '+' _-* ISI MAPS *-_ '))
+            QtWidgets.QLabel('     _-* INTRINSIC IMAGING MAPS *-_ '))
     # folder box
     self.add_side_widget(tab.layout,QtWidgets.QLabel('folder:'),
                          spec='small-left')
@@ -108,8 +108,6 @@ def gui(self,
     self.add_side_widget(tab.layout,self.twoPiBox, spec='small-right')
     # -------------------------------------------------------
 
-    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
-
     # === -- parameters for area segmentation -- ===
     
     # phaseMapFilterSigma
@@ -168,9 +166,11 @@ def gui(self,
     self.saveButton.clicked.connect(self.save_intrinsic)
     self.add_side_widget(tab.layout,self.saveButton, 'small-right')
 
-    # -------------------------------------------------------
-    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+    self.pdfButton = QtWidgets.QPushButton("PDF", self)
+    self.pdfButton.clicked.connect(self.pdf_intrinsic)
+    self.add_side_widget(tab.layout,self.pdfButton, 'small-right')
 
+    # -------------------------------------------------------
     self.add_side_widget(tab.layout,QtWidgets.QLabel('Image 1: '), 'small-left')
     self.img1Button = QtWidgets.QComboBox(self)
     self.add_side_widget(tab.layout,self.img1Button, 'large-right')
@@ -541,3 +541,6 @@ def get_datafolder(self):
 
     return self.datafolder
     
+
+def pdf_intrinsic(self):
+    pass
