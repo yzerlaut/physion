@@ -33,7 +33,7 @@ def build_menu(self):
                                      self.in_progress)
     self.preprocessingMenu.addAction('&Whisking',
                                      self.in_progress)
-    self.preprocessingMenu.addAction('&ISI Maps',
+    self.preprocessingMenu.addAction('&Intrinsic Imaging Maps',
                                      self.intrinsic)
     self.preprocessingMenu.addAction('&Suite2P Preprocessing',
                                      self.suite2p_preprocessing_UI)
@@ -64,7 +64,7 @@ def build_menu(self):
                                 self.trial_averaging)
     self.analysisMenu.addAction('&Behavioral Mod.',
                                 self.in_progress)
-    self.analysisMenu.addAction('&ISI Maps',
+    self.analysisMenu.addAction('&Retinotopic Maps',
                                 self.intrinsic)
 
     ##### ------   Other   -------------

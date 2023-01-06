@@ -75,7 +75,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.intrinsic.analysis import open_intrinsic_folder,\
                 moved_pixels, load_intrinsic_data, compute_phase_maps,\
                 compute_retinotopic_maps, perform_area_segmentation,\
-                update_img1, update_img2, save_intrinsic
+                update_img1, update_img2, save_intrinsic, pdf_intrinsic
     else:
         from physion.gui.parts import inactivated as intrinsic
 

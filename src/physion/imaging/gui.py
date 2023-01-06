@@ -83,6 +83,7 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.add_side_widget(tab.layout,\
             QtWidgets.QLabel('- reference image'), 'large-left')
     self.refImageBox = QtWidgets.QLineEdit('3', self)
+    self.refImageBox.setToolTip('NEED TO WRITE HERE WHT IS WHAT')
     self.add_side_widget(tab.layout, self.refImageBox, 'small-right')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))

@@ -2,7 +2,7 @@ import sys, os, pathlib, shutil, glob, time, subprocess
 import numpy as np
 
 from physion.utils.paths import python_path_suite2p_env
-from physion.assembling.IO.bruker.xml_parser import bruker_xml_parser
+from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.presets import ops0
 
 defaults={'do_registration':1,
