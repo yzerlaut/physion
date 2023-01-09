@@ -1,23 +1,26 @@
 import os, sys, pathlib
 import numpy as np
 from PIL import Image
-from matplotlib.cm import cool
+import matplotlib.pylab as plt
 
-from physion.intrinsic.tools import *
+# from physion.utils.plot_tools import *
+import physion
 
-def metadata_fig(datafolder):
+def metadata_fig(datafolder, angle_from_axis=None):
 
     metadata = dict(np.load(os.path.join(datafolder, 'metadata.npy'),
                     allow_pickle=True).item())
 
     metadata['recording-time'] = datafolder.split(os.path.sep)[-2:]
 
-    if 'subject_props' in metadata:
+    if angle_from_axis is not None:
+        metadata['angle'] = angle_from_axis
+    elif 'subject_props' in metadata:
         metadata['angle'] = metadata['subject_props']['headplate_angle_from_rig_axis_for_recording'] 
     else:
-        metadata['angle'] = '...' 
+        metadata['angle'] = '' 
     
-    fig, ax = plt.figure(figsize=(13,4))
+    fig, ax = plt.subplots(1, figsize=(7,1))
 
     string = """
     Mouse ID: "%(subject)s"
@@ -85,7 +88,10 @@ def show_raw_data(t, data, params, maps,
     return fig
 
 
-def build_pdf(args):
+def build_pdf(args, angle=10):
+
+    print('Executing [...]')
+    print(build_cmd(args.datafolder))
 
     width, height = int(8.27 * 300), int(11.7 * 300) # A4 at 300dpi
     page = Image.new('RGB', (width, height), 'white')
@@ -96,99 +102,122 @@ def build_pdf(args):
     page.paste(fig, box=(200, 160))
     fig.close()
 
-    maps = Analysis.load_maps(args.datafolder)
-    maps['vasculature'] = (maps['vasculature']-np.min(maps['vasculature']))/(np.max(maps['vasculature'])-np.min(maps['vasculature']))
-    maps['vasculature'] = maps['vasculature']**args.vasc_exponent
+    maps = physion.intrinsic.tools.load_maps(args.datafolder)
 
-    # vasculature image
-    fig, [ax,ax2] = ge.figure(axes=(2,1), figsize=(1.5,2.5), 
-                              left=0, right=0, top=0.5, bottom=0, wspace=0.1)
-    ax.imshow(maps['vasculature'], cmap='gray', vmin=0, vmax=1)
-    ax.axis('off')
-    ge.title(ax, 'green light', size='small')
+    # # vasculature and fluorescence image
+    fig, AX = plt.subplots(1, 2, figsize=(3.8,2.1))
 
-    params, (t, data) = Analysis.load_raw_data(args.datafolder, 'up')
+    if 'vasculature' in maps:
+        maps['vasculature'] = (maps['vasculature']-\
+                np.min(maps['vasculature']))/(np.max(maps['vasculature'])-np.min(maps['vasculature']))
+        maps['vasculature'] = maps['vasculature']**args.vasc_exponent
+        AX[0].imshow(maps['vasculature'], cmap='gray', vmin=0, vmax=1)
+        AX[0].set_title('vasculature')
 
-    # intrinsic imaging
-    ax2.imshow(data[0,:,:], cmap='gray')
-    ax2.axis('off')
-    ge.title(ax2, 'red light, -500$\mu$m focus', size='small')
+
+    if 'fluorescence' in maps:
+        maps['fluorescence'] = (maps['fluorescence']-\
+           np.min(maps['fluorescence']))/(np.max(maps['fluorescence'])-np.min(maps['fluorescence']))
+        maps['fluorescence'] = maps['fluorescence']**args.fluo_exponent
+        AX[1].imshow(maps['fluorescence'], cmap='gray', vmin=0, vmax=1)
+        AX[1].set_title('fluorescence')
+
+    physion.intrinsic.tools.add_arrow(AX[0], angle=angle)
+    physion.intrinsic.tools.add_arrow(AX[1], angle=angle)
+
+    AX[0].axis('off')
+    AX[1].axis('off')
+
+    # params, (t, data) = physion.intrinsic.tools.load_raw_data(args.datafolder, 'up')
+
+    # # intrinsic imaging
+    # ax2.imshow(data[0,:,:], cmap='gray')
+    # ax2.axis('off')
+    # ge.title(ax2, 'red light, -500$\mu$m focus', size='small')
 
     fig.savefig('/tmp/fig.png', dpi=300)
     fig = Image.open('/tmp/fig.png')
     page.paste(fig, box=(int(3.5*300), int(150)))
     fig.close()
 
-    fig_alt = Analysis.plot_retinotopic_maps(maps, 'altitude', ge=ge)
-    fig_alt.savefig('/tmp/fig_alt.png', dpi=300)
+    # fig_alt = Analysis.plot_retinotopic_maps(maps, 'altitude', ge=ge)
+    # fig_alt.savefig('/tmp/fig_alt.png', dpi=300)
 
-    fig_azi = Analysis.plot_retinotopic_maps(maps, 'azimuth', ge=ge)
-    fig_azi.savefig('/tmp/fig_azi.png', dpi=300)
+    # fig_azi = Analysis.plot_retinotopic_maps(maps, 'azimuth', ge=ge)
+    # fig_azi.savefig('/tmp/fig_azi.png', dpi=300)
 
-    start, space = int(0.6*300), int(5.1*300)
-    for name in ['alt', 'azi']:
-        fig = Image.open('/tmp/fig_%s.png'%name)
-        page.paste(fig, box=(start, space))
-        # start+= fig.getbbox()[3]-fig.getbbox()[1] + 10
-        start+= fig.getbbox()[2]-fig.getbbox()[0]
-        fig.close()
+    # start, space = int(0.6*300), int(5.1*300)
+    # for name in ['alt', 'azi']:
+        # fig = Image.open('/tmp/fig_%s.png'%name)
+        # page.paste(fig, box=(start, space))
+        # # start+= fig.getbbox()[3]-fig.getbbox()[1] + 10
+        # start+= fig.getbbox()[2]-fig.getbbox()[0]
+        # fig.close()
 
-    fig = show_raw_data(t, data, params, maps, pixel=args.pixel)
-    fig.suptitle('example protocol: "up" ', fontsize=8)
-    fig.savefig('/tmp/fig.png', dpi=300)
-    fig = Image.open('/tmp/fig.png')
-    page.paste(fig, box=(250, int(2.8*300)))
-    fig.close()
+    # fig = show_raw_data(t, data, params, maps, pixel=args.pixel)
+    # fig.suptitle('example protocol: "up" ', fontsize=8)
+    # fig.savefig('/tmp/fig.png', dpi=300)
+    # fig = Image.open('/tmp/fig.png')
+    # page.paste(fig, box=(250, int(2.8*300)))
+    # fig.close()
 
-    fig, AX = ge.figure(axes=(3,1), figsize=(1.5,2.5), 
-                        left=0, right=0, top=1, bottom=0, wspace=0.2)
-    AX[0].imshow(maps['vasculature'], cmap='gray', vmin=0, vmax=1)
-    mean_power = maps['up-power']+maps['down-power']+maps['right-power']+maps['left-power']
-    AX[0].imshow(mean_power, cmap=cool, alpha=0.3)
-    AX[0].axis('off')
-    ge.bar_legend(AX[0], 
-            colorbar_inset={'rect':[0.1,1.05,0.8,0.07]},
-            colormap=cool,
-            label='mean power @ stim. freq.',
-            orientation='horizontal')
+    # fig, AX = ge.figure(axes=(3,1), figsize=(1.5,2.5), 
+                        # left=0, right=0, top=1, bottom=0, wspace=0.2)
+    # AX[0].imshow(maps['vasculature'], cmap='gray', vmin=0, vmax=1)
+    # mean_power = maps['up-power']+maps['down-power']+maps['right-power']+maps['left-power']
+    # AX[0].imshow(mean_power, cmap=plt.cm.cool, alpha=0.3)
+    # AX[0].axis('off')
+    # ge.bar_legend(AX[0], 
+            # colorbar_inset={'rect':[0.1,1.05,0.8,0.07]},
+            # colormap=cool,
+            # label='mean power @ stim. freq.',
+            # orientation='horizontal')
 
-    ge.bar_legend(AX[1], 
-            colorbar_inset={'rect':[0.1,1.05,0.8,0.07]},
-            colormap=ge.jet,
-            label='sign of retinotopic gradient',
-            orientation='horizontal')
+    # ge.bar_legend(AX[1], 
+            # colorbar_inset={'rect':[0.1,1.05,0.8,0.07]},
+            # colormap=ge.jet,
+            # label='sign of retinotopic gradient',
+            # orientation='horizontal')
     
-    AX[1].imshow(maps['vasculature'], cmap='gray', vmin=0, vmax=1)
-    AX[1].axis('off')
+    # AX[1].imshow(maps['vasculature'], cmap='gray', vmin=0, vmax=1)
+    # AX[1].axis('off')
 
-    trial_data = np.load(os.path.join(args.datafolder, 'analysis.npy'), allow_pickle=True).item()
-    # trial_data = Analysis.build_trial_data(maps)
-    trial = RetinotopicMapping.RetinotopicMappingTrial(**trial_data)
-    trial.processTrial(isPlot=False)
-    AX[1].imshow(trial.signMapf, cmap=ge.jet, alpha=0.7)
+    # trial_data = np.load(os.path.join(args.datafolder, 'analysis.npy'), allow_pickle=True).item()
+    # # trial_data = Analysis.build_trial_data(maps)
+    # trial = RetinotopicMapping.RetinotopicMappingTrial(**trial_data)
+    # trial.processTrial(isPlot=False)
+    # AX[1].imshow(trial.signMapf, cmap=ge.jet, alpha=0.7)
 
 
-    AX[2].imshow(maps['vasculature'], cmap='gray', vmin=0, vmax=1)
-    AX[2].axis('off')
-    ge.title(AX[2], 'area segmentation')
+    # AX[2].imshow(maps['vasculature'], cmap='gray', vmin=0, vmax=1)
+    # AX[2].axis('off')
+    # ge.title(AX[2], 'area segmentation')
 
-    fig.savefig('/tmp/fig.png', dpi=300)
-    fig = Image.open('/tmp/fig.png')
-    page.paste(fig, box=(int(1*300), int(8.8*300)))
-    fig.close()
+    # fig.savefig('/tmp/fig.png', dpi=300)
+    # fig = Image.open('/tmp/fig.png')
+    # page.paste(fig, box=(int(1*300), int(8.8*300)))
+    # fig.close()
 
     page.save('fig.pdf')
 
+def build_cmd(datafolder):
+
+    cmd = '\n\n python -m physion.intrinsic.pdf %s' % datafolder
+    cmd +=' --vasc_exponent 0.25 --fluo_exponent 1'
+
+    cmd +='\n\n'
+
+    return cmd
 
 if __name__=='__main__':
 
     import argparse
-
     parser=argparse.ArgumentParser(description="Experiment interface",
                        formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument("datafolder", type=str,default='')
     parser.add_argument("--vasc_exponent", type=float,default=0.25)
+    parser.add_argument("--fluo_exponent", type=float,default=1.00)
     parser.add_argument("--pixel", type=int, nargs=2, default=(150,150))
     parser.add_argument('-v', "--verbose", action="store_true")
     

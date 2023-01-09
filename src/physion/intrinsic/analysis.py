@@ -162,9 +162,15 @@ def gui(self,
     self.pasButton.clicked.connect(self.perform_area_segmentation)
     self.add_side_widget(tab.layout,self.pasButton, 'large-left')
 
+
     self.saveButton = QtWidgets.QPushButton("SAVE", self)
     self.saveButton.clicked.connect(self.save_intrinsic)
     self.add_side_widget(tab.layout,self.saveButton, 'small-right')
+
+    self.angleButton = QtWidgets.QSpinBox(self)
+    self.angleButton.setRange(-360, 360)
+    self.angleButton.setSuffix(' (°)')
+    self.add_side_widget(tab.layout,self.angleButton, 'small-left')
 
     self.pdfButton = QtWidgets.QPushButton("PDF", self)
     self.pdfButton.clicked.connect(self.pdf_intrinsic)

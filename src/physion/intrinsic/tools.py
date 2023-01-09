@@ -29,6 +29,13 @@ default_segmentation_params={'phaseMapFilterSigma': 2.,
 
 def load_maps(datafolder):
 
+    if os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
+        print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
+        metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
+                       allow_pickle=True).item()
+    else:
+        metadata = None
+        
     if os.path.isfile(os.path.join(datafolder, 'raw-maps.npy')):
         print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
         maps = np.load(os.path.join(datafolder, 'raw-maps.npy'),
@@ -36,12 +43,19 @@ def load_maps(datafolder):
     else:
         maps = {}
 
-    if os.path.isfile(os.path.join(datafolder, 'vasculature.npy')):
+    if os.path.isfile(os.path.join(datafolder, 'vasculature-%s.npy' %metadata['subject'])):
+        maps['vasculature'] = np.load(os.path.join(datafolder,\
+                'vasculature-%s.npy' %metadata['subject']))
+        print(maps['vasculature'].shape)
+    elif os.path.isfile(os.path.join(datafolder, 'vasculature.npy')):
         maps['vasculature'] = np.load(os.path.join(datafolder, 'vasculature.npy'))
 
-    for key in ['vasculature', 'fluorescence']:
-        if os.path.isfile(os.path.join(datafolder, '%s.npy' % key )):
-            maps[key] = np.load(os.path.join(datafolder, '%s.npy' % key))
+    if os.path.isfile(os.path.join(datafolder, 'fluorescence-%s.npy' %metadata['subject'])):
+        maps['fluorescence'] = np.load(os.path.join(datafolder,\
+                'fluorescence-%s.npy' %metadata['subject']))
+    elif os.path.isfile(os.path.join(datafolder, 'fluorescence.npy')):
+        maps['fluorescence'] = np.load(os.path.join(datafolder, 'fluorescence.npy'))
+
 
     return maps
 
@@ -270,6 +284,27 @@ def build_trial_data(maps,
 # -------------------------------------------------------------- #
 # ----------- PLOT FUNCTIONS ----------------------------------- #
 # -------------------------------------------------------------- #
+
+def add_arrow(ax, angle):
+
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
+    dx, dy = xlim[1]-xlim[0], ylim[1]-ylim[0]
+
+    start = (xlim[0]+dx/2, ylim[1])
+    delta = (np.sin(angle/180.*np.pi)*dx, -np.cos(angle/180.*np.pi)*dy)
+
+    ax.annotate('Posterior', start,
+                ha='center', color='r', fontsize=6)
+    ax.annotate('Anterior', (start[0]+delta[0], start[1]+delta[1]),
+                ha='center', va='top', color='r', fontsize=6)
+    ax.arrow(*start, *delta, color='r', lw=0.5)
+
+    ax.annotate('Medial',(xlim[1], ylim[0]+dy/2),
+                va='center', color='r', fontsize=6)
+    ax.arrow(xlim[1], ylim[0]+dy/2,
+             np.cos(angle/180.*np.pi)*dy, -np.sin(angle/180.*np.pi)*dy, 
+             color='r', lw=0.5)
+
 
 def plot_phase_map(ax, fig, Map):
     im = ax.imshow(Map,
