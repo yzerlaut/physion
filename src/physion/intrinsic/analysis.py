@@ -1,6 +1,6 @@
 import sys, os, shutil, glob, time, subprocess, pathlib, json, tempfile, datetime
 import numpy as np
-import pynwb, PIL
+import pynwb, PIL, pandas
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
@@ -256,8 +256,10 @@ def open_intrinsic_folder(self):
     self.datafolder = self.open_folder()
 
     if os.path.isfile(os.path.join(self.datafolder, 'metadata.npy')):
+
         metadata = np.load(os.path.join(self.datafolder, 'metadata.npy'),
                            allow_pickle=True).item()
+
         # set subject and timestamip
         self.subject = metadata['subject']
         self.timestamps = str(self.datafolder.split(os.path.sep)[-2:])
@@ -266,7 +268,7 @@ def open_intrinsic_folder(self):
             self.angleButton.setValue(metadata['headplate-angle-from-rig-axis'])
 
         if 'Height-of-Microscope-Camera-Image-in-mm' in metadata:
-            self.scaleButton.setValue(self.config['Height-of-Microscope-Camera-Image-in-mm'])
+            self.scaleButton.setValue(metadata['Height-of-Microscope-Camera-Image-in-mm'])
 
     else:
         print(' metadata information missing !! ')
@@ -303,7 +305,7 @@ def update_img(self, img, imgButton):
 
     if imgButton.currentText() in self.IMAGES:
 
-        img.setImage(self.IMAGES[imgButton.currentText()])
+        img.setImage(self.IMAGES[imgButton.currentText()].T)
 
         if 'phase' in imgButton.currentText():
             img.setLookupTable(phase_color_map)
@@ -320,13 +322,6 @@ def update_img2(self):
     update_img(self, self.img2, self.img2Button)
 
 
-def show_vasc_pic(self):
-    pic = os.path.join(get_datafolder(self), 'vasculature.npy')
-    if os.path.isfile(pic):
-        self.img1.setImage(np.load(pic))
-        self.img2.setImage(np.zeros((10,10)))
-        
-        
 def update_imgButtons(self):
 
     self.img1Button.clear()

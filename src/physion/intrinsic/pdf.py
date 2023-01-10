@@ -92,9 +92,6 @@ def build_pdf(args,
               angle=10,
               image_height=2.7):
 
-    print('Executing [...]')
-    print(build_cmd(args.datafolder))
-
     width, height = int(8.27 * 300), int(11.7 * 300) # A4 at 300dpi
     page = Image.new('RGB', (width, height), 'white')
 
@@ -161,7 +158,9 @@ def build_pdf(args,
     # fig.close()
 
 
-    trial_data = physion.intrinsic.tools.build_trial_data(maps)
+    # trial_data = physion.intrinsic.tools.build_trial_data(maps)
+    trial_data = np.load(os.path.join(args.datafolder, 'RetinotopicMappingData.npy'),
+                         allow_pickle=True).item()
     trial = physion.intrinsic.RetinotopicMapping.RetinotopicMappingTrial(**trial_data)
     trial.processTrial(isPlot=False)
 
@@ -210,14 +209,6 @@ def build_pdf(args,
 
     page.save(args.output)
 
-def build_cmd(datafolder):
-
-    cmd = '\n\n python -m physion.intrinsic.pdf %s' % datafolder
-    cmd +=' --vasc_exponent 0.25 --fluo_exponent 1'
-
-    cmd +='\n\n'
-
-    return cmd
 
 if __name__=='__main__':
 

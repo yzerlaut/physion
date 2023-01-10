@@ -11,10 +11,11 @@ except ModuleNotFoundError:
 
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
-from physion.acquisition.settings import get_config_list
+from physion.acquisition.settings import get_config_list, get_subject_props
 from physion.visual_stim.main import visual_stim, visual
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
+from physion.acquisition.tools import base_path
 
 camera_depth = 12 
 
@@ -429,6 +430,10 @@ def save_intrinsic_metadata(self):
     filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
                                       filename='metadata', extension='.npy')
 
+    subjects = pandas.read_csv(os.path.join(physion.acquisition.tools.base_path,
+                               'subjects',self.config['subjects_file']))
+    subject = get_subject_props(self)
+        
     metadata = {'subject':str(self.subjectBox.currentText()),
                 'exposure':self.exposure,
                 'bar-size':float(self.barBox.text()),
@@ -437,14 +442,17 @@ def save_intrinsic_metadata(self):
                 'Nsubsampling':int(self.spatialBox.text()),
                 'Nrepeat':int(self.repeatBox.text()),
                 'imgsize':self.imgsize,
+                'headplate-angle-from-rig-axis':subject['headplate-angle-from-rig-axis'],
                 'Height-of-Microscope-Camera-Image-in-mm':\
                         self.config['Height-of-Microscope-Camera-Image-in-mm'],
                 'STIM':self.STIM}
     
     np.save(filename, metadata)
+
     if self.vasculature_img is not None:
         np.save(filename.replace('metadata', 'vasculature'),
                 self.vasculature_img)
+
     if self.fluorescence_img is not None:
         np.save(filename.replace('metadata', 'fluorescence'),
                 self.fluorescence_img)

@@ -296,32 +296,39 @@ def add_scale_bar(ax, height=2.7, color='r'):
     x0 = xlim[0]+0.02*dx
     y1 = ylim[1]-0.02*dy
 
-    ax.annotate('1mm', (xlim[0], ylim[1]),
-                ha='right', va='top', rotation=90, color=color, fontsize=6)
-    ax.plot([x0,x0], [y1, y1-dy/height], color=color, lw=2)
+    ax.plot([x0,x0], [y1, y1-dy/height], color=color, lw=1)
+    ax.annotate('1mm', (x0+0.01*dx, y1),
+                ha='left', va='top', rotation=90, color=color, fontsize=6)
 
+    ax.set_ylim(ylim)
+    ax.set_xlim(xlim)
 
 def add_arrow(ax, angle,
               lw=0.3,
               fontsize=6):
 
     xlim, ylim = ax.get_xlim(), ax.get_ylim()
-    dx, dy = xlim[1]-xlim[0], ylim[1]-ylim[0]
+    dx, dy = np.abs(xlim[1]-xlim[0]), np.abs(ylim[1]-ylim[0])
 
     start = (xlim[0]+dx/2, ylim[1])
-    delta = (np.sin(angle/180.*np.pi)*dx, -np.cos(angle/180.*np.pi)*dy)
+    delta = (np.sin(angle/180.*np.pi)*dy, dy)
 
-    ax.annotate('Anterior', start,
-                ha='center', color='r', fontsize=6)
-    ax.annotate('Posterior', (start[0]+1.01*delta[0], start[1]+1.01*delta[1]),
-                ha='center', va='top', color='r', fontsize=fontsize)
+    ax.annotate('Anterior ', start,
+                ha='right', va='top', color='r', fontsize=6)
+    ax.annotate('Posterior  ', (start[0]+0.99*delta[0], start[1]+0.99*delta[1]),
+                ha='right', va='bottom', color='r', fontsize=fontsize)
     ax.arrow(*start, *delta, color='r', lw=lw)
 
-    start = (xlim[1], ylim[0]+dy/2)
-    delta = (np.cos(angle/180.*np.pi)*dy, -np.sin(angle/180.*np.pi)*dy)
-    ax.annotate('Lateral', start,
-                va='center', color='r', fontsize=fontsize)
+    start = (xlim[1], ylim[1]+dy/2)
+    delta = (-dx, np.sin(angle/180.*np.pi)*dx)
+    ax.annotate('Lateral ', start,
+                ha='right', color='r', fontsize=fontsize)
     ax.arrow(*start, *delta, color='r', lw=lw)
+    ax.annotate(' Medial', (start[0]+0.99*delta[0], start[1]+0.99*delta[1]),
+                ha='left', va='top', color='r', fontsize=fontsize)
+
+    ax.set_ylim(ylim)
+    ax.set_xlim(xlim)
 
 
 def plot_phase_map(ax, fig, Map):
