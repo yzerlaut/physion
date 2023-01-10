@@ -34,6 +34,17 @@ def add_imaging(self,
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('from:'),
+                         spec='small-left')
+    self.folderBox = QtWidgets.QComboBox(self)
+    self.folderBox.addItems(FOLDERS.keys())
+    self.add_side_widget(tab.layout, self.folderBox, spec='large-right')
+    self.checkBtn= QtWidgets.QPushButton(' * check for ordered files *')
+    self.checkBtn.clicked.connect(self.check_ordered)
+    self.add_side_widget(tab.layout, self.checkBtn)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel('- NWB data: '))
     self.loadNWBfileBtn = QtWidgets.QPushButton(' select file \u2b07')
@@ -77,28 +88,28 @@ def add_imaging(self,
     tab.layout.addWidget(QtWidgets.QLabel('     *  TSeries folder *'),
                          0, self.side_wdgt_length+width, 
                          1, width)
-    for ip in range(1, 10): #self.nWidgetRow):
+    for ip in range(1, self.nWidgetRow):
         setattr(self, 'nwb%i' % ip,
-                QtWidgets.QLabel('', self))
+                QtWidgets.QLabel('- ', self))
         tab.layout.addWidget(getattr(self, 'nwb%i' % ip),
-                             ip+2, self.side_wdgt_length, 
+                             ip, self.side_wdgt_length, 
                              1, width)
         setattr(self, 'imaging%i' % ip,
-                QtWidgets.QLabel('', self))
+                QtWidgets.QLabel('- ', self))
         tab.layout.addWidget(getattr(self, 'imaging%i' % ip),
-                             ip+2, self.side_wdgt_length+width, 
+                             ip, self.side_wdgt_length+width, 
                              1, width)
     # ========================================================
 
     self.refresh_tab(tab)
 
 
-def clear(self):
+def clear(self, nwb=True):
     i=1
     while hasattr(self, 'nwb%i'%i):
-        if hasattr(self, 'nwb%i'%i):
+        if nwb and hasattr(self, 'nwb%i'%i):
             getattr(self, 'nwb%i' % i).setText('')
-        if hasattr(self, 'imaging%i'%i):
+        if not nwb and hasattr(self, 'imaging%i'%i):
             getattr(self, 'imaging%i' % i).setText('')
         i+=1
 
@@ -108,9 +119,12 @@ def loadNWBfile(self):
     self.nwb1.setText(nwbfile.split(os.path.sep)[-1])
     self.NWBs = [nwbfile]
 
-def loadNWBfolder(self):
+def loadNWBfolder(self, folder=None):
     clear(self)
-    folder = self.open_folder()
+
+    if folder is None:
+        folder = self.open_folder()
+
     if os.path.isdir(folder):
         self.NWBs = np.sort(get_files_with_extension(folder, 'nwb',
                                                      recursive=False))
@@ -121,9 +135,13 @@ def loadNWBfolder(self):
         print(folder, ' not a valid folder')
 
 
-def loadCafolder(self):
+def loadCafolder(self, folder=None):
+
     clear(self, nwb=False)
-    folder = self.open_folder()
+
+    if folder is None:
+        folder = self.open_folder()
+
     if 'TSeries' in folder:
         self.IMAGINGs = [folder]
         self.imaging1.setText(folder.split(os.path.sep)[-1])
@@ -134,6 +152,10 @@ def loadCafolder(self):
                     self.IMAGINGs[i].split(os.path.sep)[-1])
     else:
         print(folder, ' not a valid folder')
+
+def check_ordered(self):
+    loadNWBfolder(self, folder=FOLDERS[self.folderBox.currentText()])
+    loadCafolder(self, folder=FOLDERS[self.folderBox.currentText()])
 
 # ------------------------------------------------ # 
 # ----        launch as a subproces      --------- # 
