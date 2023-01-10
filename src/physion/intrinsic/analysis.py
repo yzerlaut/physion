@@ -93,11 +93,11 @@ def gui(self,
     self.add_side_widget(tab.layout,self.pmButton)
     
     # Map shift
-    self.add_side_widget(tab.layout,QtWidgets.QLabel('  - (Azimuth, Altitude) shift:'),
-                    spec='large-left')
+    # self.add_side_widget(tab.layout,QtWidgets.QLabel('  - (Azimuth, Altitude) shift:'),
+                    # spec='large-left')
     self.phaseMapShiftBox = QtWidgets.QLineEdit()
     self.phaseMapShiftBox.setText('(0, 0)')
-    self.add_side_widget(tab.layout,self.phaseMapShiftBox, spec='small-right')
+    # self.add_side_widget(tab.layout,self.phaseMapShiftBox, spec='small-right')
 
     self.rmButton = QtWidgets.QPushButton(" = retinotopic maps = ", self)
     self.rmButton.clicked.connect(self.compute_retinotopic_maps)
@@ -167,11 +167,21 @@ def gui(self,
     self.saveButton.clicked.connect(self.save_intrinsic)
     self.add_side_widget(tab.layout,self.saveButton, 'small-right')
 
+
+    self.add_side_widget(tab.layout,QtWidgets.QLabel('scale: '), 'small-left')
+    self.scaleButton = QtWidgets.QDoubleSpinBox(self)
+    self.scaleButton.setRange(0, 10)
+    self.scaleButton.setSuffix(' (mm, image height)')
+    self.scaleButton.setValue(2.7)
+    self.add_side_widget(tab.layout,self.scaleButton, 'large-right')
+
+    self.add_side_widget(tab.layout,QtWidgets.QLabel('angle: '), 'small-left')
     self.angleButton = QtWidgets.QSpinBox(self)
     self.angleButton.setRange(-360, 360)
     self.angleButton.setSuffix(' (°)')
-    self.add_side_widget(tab.layout,self.angleButton, 'small-left')
+    self.angleButton.setValue(15)
 
+    self.add_side_widget(tab.layout,self.angleButton, 'small-middle')
     self.pdfButton = QtWidgets.QPushButton("PDF", self)
     self.pdfButton.clicked.connect(self.pdf_intrinsic)
     self.add_side_widget(tab.layout,self.pdfButton, 'small-right')
@@ -251,6 +261,13 @@ def open_intrinsic_folder(self):
         # set subject and timestamip
         self.subject = metadata['subject']
         self.timestamps = str(self.datafolder.split(os.path.sep)[-2:])
+
+        if 'headplate-angle-from-rig-axis' in metadata:
+            self.angleButton.setValue(metadata['headplate-angle-from-rig-axis'])
+
+        if 'Height-of-Microscope-Camera-Image-in-mm' in metadata:
+            self.scaleButton.setValue(self.config['Height-of-Microscope-Camera-Image-in-mm'])
+
     else:
         print(' metadata information missing !! ')
 
@@ -549,4 +566,15 @@ def get_datafolder(self):
     
 
 def pdf_intrinsic(self):
-    pass
+
+    cmd = 'python -m physion.intrinsic.pdf %s' % self.datafolder
+    cmd += ' --output %s' % os.path.join(FOLDERS[self.folderBox.currentText()], self.subject+'.pdf')
+    cmd += ' --image_height %.1f ' % self.scaleButton.value()
+    cmd += ' --angle_from_rig %.1f ' % self.angleButton.value()
+
+    cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src')
+    print('\n launching the command \n :  %s \n ' % cmd)
+    p = subprocess.Popen(cmd,
+                         cwd=cwd,
+                         shell=True)
+

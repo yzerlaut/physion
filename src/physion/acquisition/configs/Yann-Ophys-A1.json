@@ -6,6 +6,7 @@
     "Z-sign-correction-for-rig":-1,
     "FaceCamera-frame-rate":30,
     "FaceCamera-1cm-in-pix":480,
+    "Height-of-Microscope-Camera-Image-in-mm":2.7,
     "STEP_FOR_CA_IMAGING_TRIGGER":{"channel":0,
 				   "onset": 0.1,
 				   "duration":0.3,

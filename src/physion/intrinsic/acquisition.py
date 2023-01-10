@@ -434,8 +434,11 @@ def save_intrinsic_metadata(self):
                 'bar-size':float(self.barBox.text()),
                 'acq-freq':float(self.freqBox.text()),
                 'period':float(self.periodBox.text()),
+                'Nsubsampling':int(self.spatialBox.text()),
                 'Nrepeat':int(self.repeatBox.text()),
                 'imgsize':self.imgsize,
+                'Height-of-Microscope-Camera-Image-in-mm':\
+                        self.config['Height-of-Microscope-Camera-Image-in-mm'],
                 'STIM':self.STIM}
     
     np.save(filename, metadata)
