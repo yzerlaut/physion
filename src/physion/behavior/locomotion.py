@@ -86,9 +86,7 @@ if __name__=='__main__':
 
     import matplotlib.pylab as plt
     import sys, os, pathlib
-    sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-    from analysis.tools import resample_signal
-    
+
     import argparse
     # First a nice documentation 
     parser=argparse.ArgumentParser(description="""
@@ -116,7 +114,7 @@ if __name__=='__main__':
                                          acq_freq=metadata['NIdaq-acquisition-frequency'],
                                          radius_position_on_disk=metadata['rotating-disk']['radius-position-on-disk-cm'],
                                          rotoencoder_value_per_rotation=metadata['rotating-disk']['roto-encoder-value-per-rotation'])
-        t_array, speed = resample_signal(speed,
+        t_array, speed = physion.analysis.tools.resample_signal(speed,
                                          original_freq=metadata['NIdaq-acquisition-frequency'],
                                          new_freq=50.,
                                          post_smoothing=2./50.,
@@ -129,7 +127,7 @@ if __name__=='__main__':
         
     else:
         import time
-        from hardware_control.NIdaq.main import Acquisition
+        from physion.hardware.NIdaq.main import Acquisition
         
         acq = Acquisition(dt=args.acq_time_step,
                           Nchannel_analog_in=0,
