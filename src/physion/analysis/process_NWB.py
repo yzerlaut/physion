@@ -15,6 +15,7 @@ class EpisodeData:
     - Using the photodiode-signal-derived timestamps 
             to build "episode response" by interpolating
             the raw signal on a fixed time interval (surrounding the stim)
+
     - Using metadata to store stimulus informations per episode
     """
 
@@ -31,6 +32,7 @@ class EpisodeData:
 
         self.dt_sampling = dt_sampling
         self.verbose = verbose
+        self.data = full_data
       
         self.select_protocol_from(full_data, 
                                   protocol_id=protocol_id,

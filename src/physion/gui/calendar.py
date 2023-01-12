@@ -111,6 +111,12 @@ def calendar(self,
                          nCalendarRow+3, self.nWidgetCol-2, 1, 2)
 
 
+    self.pdfButton = QtWidgets.QPushButton('analysis PDF', self)
+    self.pdfButton.clicked.connect(self.generate_pdf)
+    tab.layout.addWidget(self.pdfButton,
+                         nCalendarRow+4, self.nWidgetCol-2, 1, 2)
+
+
     #####################################
     #######      Adding notes  ##########
     #####################################

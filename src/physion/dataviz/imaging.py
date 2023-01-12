@@ -173,6 +173,7 @@ def show_CaImaging_FOV(data, key='meanImg', NL=1, cmap='viridis', ax=None,
                        roiIndex=None, roiIndices=[],
                        roi_zoom_factor=10,
                        roi_lw=3,
+                       with_annotation=True,
                        with_roi_zoom=False,):
     
     if ax is None:
@@ -212,7 +213,9 @@ def show_CaImaging_FOV(data, key='meanImg', NL=1, cmap='viridis', ax=None,
                 color=plt.cm.autumn(np.random.uniform(0,1)),
                 alpha=0.5,
                 ms=0.1)
-    ax.annotate('%i ROIs' % np.sum(data.iscell), (0, 0), xycoords='axes fraction', rotation=90, ha='right')
+
+    if with_annotation:
+        ax.annotate('%i ROIs' % np.sum(data.iscell), (0, 0), xycoords='axes fraction', rotation=90, ha='right')
     
     ax.set_title(key)
     

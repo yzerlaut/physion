@@ -119,26 +119,37 @@ def add_VisualStim(data, tlim, ax,
                    fig_fraction_start=0., fig_fraction=0.05, size=0.1,
                    with_screen_inset=True,
                    color='k', name='visual stim.'):
-    if data.visual_stim is None:
+
+    if with_screen_inset and (data.visual_stim is None):
         data.init_visual_stim()
+
+        sx, sy = data.visual_stim.screen['resolution']
+        ax_pos = ax.get_position()
+
     # cond = (data.nwbfile.stimulus['time_start_realigned'].data[:]>tlim[0]) &\
         # (data.nwbfile.stimulus['time_stop_realigned'].data[:]<tlim[1])
+
     cond = (data.nwbfile.stimulus['time_start_realigned'].data[:]<tlim[1]) &\
         (data.nwbfile.stimulus['time_stop_realigned'].data[:]>tlim[0])
+
     ylevel = fig_fraction_start+fig_fraction/2.
-    sx, sy = data.visual_stim.screen['resolution']
-    ax_pos = ax.get_position()
+
     for i in np.arange(data.nwbfile.stimulus['time_start_realigned'].num_samples)[cond]:
+
         tstart = data.nwbfile.stimulus['time_start_realigned'].data[i]
         tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i]
         # ax.plot([tstart, tstop], [ylevel, ylevel], color=color)
         ax.fill_between([tstart, tstop], [0,0], np.zeros(2)+ylevel,
                         lw=0, alpha=0.05, color=color)
+
         if with_screen_inset:
-            axi = ax.inset_axes([tstart, 1.01, (tstop-tstart), size], transform=ax.transData)
+            axi = ax.inset_axes([tstart, 1.01, (tstop-tstart), size],\
+                                transform=ax.transData)
             axi.axis('equal')
             data.visual_stim.plot_stim_picture(i, ax=axi)
-    ax.annotate(' '+name, (tlim[1], fig_fraction+fig_fraction_start), color=color, xycoords='data')
+
+    ax.annotate(' '+name, (tlim[1], fig_fraction+fig_fraction_start),\
+                color=color, xycoords='data')
 
     
 def show_VisualStim(data, tlim,
@@ -229,7 +240,7 @@ def plot(data,
 
     ax.plot([dv_tools.shifted_start(tlim), dv_tools.shifted_start(tlim)+Tbar], [1.,1.], lw=1, color='k')
     ax.annotate((' %is' % Tbar if Tbar>=1 else  '%.1fs' % Tbar) ,
-                [dv_tools.shifted_start(tlim), 1.02], color='k', fontsize=9)
+                [dv_tools.shifted_start(tlim), 1.02], color='k')#, fontsize=9)
     
     ax.axis('off')
     ax.set_xlim([dv_tools.shifted_start(tlim)-0.01*(tlim[1]-tlim[0]),tlim[1]+0.01*(tlim[1]-tlim[0])])
