@@ -38,14 +38,18 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.loadFolderBtn.clicked.connect(self.load_TSeries_folder)
     self.add_side_widget(tab.layout, self.loadFolderBtn)
 
+    # self.lastBox= QtWidgets.QCheckBox('last', self)
+    # self.lastBox.setChecked(True)
+    # self.add_side_widget(tab.layout, self.lastBox, 'small-right')
+
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.registrOnly = QtWidgets.QCheckBox('registration only', self)
+    self.add_side_widget(tab.layout, self.registrOnly)
 
     self.rigidBox = QtWidgets.QCheckBox('rigid registration', self)
     self.rigidBox.setChecked(True)
     self.add_side_widget(tab.layout, self.rigidBox)
-
-    self.registrOnly = QtWidgets.QCheckBox('registration only', self)
-    self.add_side_widget(tab.layout, self.registrOnly)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
@@ -83,20 +87,17 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.add_side_widget(tab.layout,\
             QtWidgets.QLabel('- reference image'), 'large-left')
     self.refImageBox = QtWidgets.QLineEdit('3', self)
-    self.refImageBox.setToolTip('NEED TO WRITE HERE WHT IS WHAT')
+    self.refImageBox.setToolTip('1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj')
     self.add_side_widget(tab.layout, self.refImageBox, 'small-right')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.delBox= QtWidgets.QCheckBox('delete previous', self)
+    self.add_side_widget(tab.layout, self.delBox)
 
     self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
     self.runBtn.clicked.connect(self.run_TSeries_analysis)
     self.add_side_widget(tab.layout, self.runBtn)
-
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-
-    # self.forceBtn = QtWidgets.QCheckBox(' force ')
-    # self.add_side_widget(tab.layout, self.forceBtn)
 
     while self.i_wdgt<(self.nWidgetRow-1):
         self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
@@ -146,15 +147,12 @@ def load_TSeries_folder(self):
             print(' /!\ Data-folder missing either "metadata" or "NIdaq" datafiles /!\ ')
             print('  --> nothing to assemble !')
 
-    # now loop over folders and look for the ISI maps
 
-    self.ISImaps = []
-    for i, folder in enumerate(self.folders):
-        # self.ISImaps.append(look_for_ISI_maps(self, folder))     
-        getattr(self, 'tseries%i' % (i+1)).setText('- %s           (%s)' %\
-                (str(folder.split(os.path.sep)[-2:]),
-                 self.ISImaps[i]))
-
+def open_suite2p(self):
+    p = subprocess.Popen('%s -m suite2p' % python_path_suite2p_env,
+                         shell=True,
+                         stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
 
 
 def run_TSeries_analysis(self):
@@ -177,8 +175,16 @@ def run_TSeries_analysis(self):
     settings['connected'] = self.connectedBox.isChecked()
 
     if self.cellposeBox.isChecked():
+
         settings['high_pass'] = 1
         settings['anatomical_only'] = int(self.refImageBox.text())
+
+
+    for folder in self.folders:
+
+        if self.delBox.isChecked():
+            print('  deleting suite2p folder in "%s" [...]' % folder)
+            shutil.rmtree(os.path.join(folder, 'suite2p'))
 
     print(settings)
 

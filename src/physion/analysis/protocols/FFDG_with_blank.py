@@ -1,6 +1,7 @@
-import os, tempfile
+import os, tempfile, subprocess
 import numpy as np
 from scipy.stats import skew
+from PIL import Image
 
 import physion.utils.plot_tools as pt
 
@@ -13,79 +14,180 @@ from physion.dataviz.episodes.trial_average import plot_trial_average
 from physion.analysis.process_NWB import EpisodeData
 from physion.utils.plot_tools import pie
 
+tempfile.gettempdir()
+
 def generate_pdf(nwbfile,
-                 Nexample=3):
+                 subject='Mouse'):
+
+    pdf_file= os.path.join(summary_pdf_folder(nwbfile), 'Summary.pdf')
+    # pdf_file= os.path.join(os.path.expanduser('~'), 'Desktop', 'Summary.pdf'),
+
+    rois = generate_figs(nwbfile)
+
+    width, height = int(8.27 * 300), int(11.7 * 300) # A4 at 300dpi : (2481, 3510)
+
+    ### Page 1 - Raw Data
+
+    # let's create the A4 page
+    page = Image.new('RGB', (width, height), 'white')
+
+    KEYS = ['metadata',
+            'raw0', 'raw1', 'raw2', 'raw3',
+            'FOV']
+
+    LOCS = [(200, 70),
+            (100, 550), (100, 1300), (100, 2000), (100, 2700),
+            (800, 90)]
+
+    for key, loc in zip(KEYS, LOCS):
+        
+        fig = Image.open(os.path.join(tempfile.tempdir, '%s.png' % key))
+        page.paste(fig, box=loc)
+        fig.close()
+
+    # page.save(os.path.join(os.path.expanduser('~'), 'Desktop',
+    page.save(os.path.join(tempfile.tempdir, 'session-summary-1.pdf'))
+
+    ### Page 2 - Analysis
+
+    page = Image.new('RGB', (width, height), 'white')
+
+    KEYS = ['light-cond', 'resp-fraction', 'TA-all']
+
+    LOCS = [(250, 200), (1500, 200), (100, 700)]
+
+    for i in rois:
+
+        KEYS.append('TA-%i'%i)
+        LOCS.append((100, 1900+500*i))
+
+    for key, loc in zip(KEYS, LOCS):
+        
+        if os.path.isfile(os.path.join(tempfile.tempdir, '%s.png' % key)):
+
+            fig = Image.open(os.path.join(tempfile.tempdir, '%s.png' % key))
+            page.paste(fig, box=loc)
+            fig.close()
+
+    page.save(os.path.join(tempfile.tempdir, 'session-summary-2.pdf'))
+    # page.save(os.path.join(os.path.expanduser('~'), 'Desktop', 'session-summary-2.pdf'))
+
+    cmd = '/usr/bin/pdftk %s %s cat output %s' % (os.path.join(tempfile.tempdir, 'session-summary-1.pdf'),
+                                                  os.path.join(tempfile.tempdir, 'session-summary-2.pdf'),
+                                                  pdf_file)
+
+    subprocess.Popen(cmd,
+                     shell=True,
+                     stdout=subprocess.PIPE,
+                     stderr=subprocess.STDOUT)
+
+
+
+def generate_figs(nwbfile,
+                  Nexample=3):
 
     pdf_folder = summary_pdf_folder(args.datafile)
-    tempfile.gettempdir()
 
     data = Data(args.datafile)
     data.build_dFoF()
 
     # ## --- METADATA  ---
-    # fig = metadata_fig(data, short=True)
-    # fig.savefig(os.path.join(tempfile.tempdir, 'FOV.png'), dpi=300)
+    fig = metadata_fig(data, short=True)
+    fig.savefig(os.path.join(tempfile.tempdir, 'metadata.png'), dpi=300)
 
     # ##  --- FOVs ---
-    # fig, AX = pt.plt.subplots(1, 3, figsize=(5,1.3))
-    # show_CaImaging_FOV(data,key='meanImg',ax=AX[0],NL=4,with_annotation=False)
-    # show_CaImaging_FOV(data, key='max_proj', ax=AX[1], NL=3, with_annotation=False)
-    # show_CaImaging_FOV(data, key='meanImg', ax=AX[2], NL=4, with_annotation=False,
-                       # roiIndices=np.arange(data.nROIs))
-    # for ax, title in zip(AX, ['meanImg', 'max_proj', 'n=%iROIs' % data.nROIs]):
-        # ax.set_title(title, fontsize=6)
-    # fig.savefig(os.path.join(tempfile.tempdir, 'FOV.png'), dpi=300)
+    fig, AX = pt.plt.subplots(1, 3, figsize=(5,1.5))
+    pt.plt.subplots_adjust(wspace=0.3, bottom=0, right=0.99, left=0.05)
+    show_CaImaging_FOV(data,key='meanImg',ax=AX[0],NL=4,with_annotation=False)
+    show_CaImaging_FOV(data, key='max_proj', ax=AX[1], NL=3, with_annotation=False)
+    show_CaImaging_FOV(data, key='meanImg', ax=AX[2], NL=4, with_annotation=False,
+                       roiIndices=np.arange(data.nROIs))
+    for ax, title in zip(AX, ['meanImg', 'max_proj', 'n=%iROIs' % data.nROIs]):
+        ax.set_title(title, fontsize=6)
+    fig.savefig(os.path.join(tempfile.tempdir, 'FOV.png'), dpi=300)
 
     # ## --- FULL RECORDING VIEW --- 
 
-    # fig, ax = pt.plt.subplots(1, figsize=(6, 2.5))
-    # pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.9)
-    # plot_raw(data, data.tlim, 
-              # settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue'),
-                        # 'FaceMotion':dict(fig_fraction=1, subsampling=2, color='purple'),
-                        # 'Pupil':dict(fig_fraction=1, subsampling=2, color='red'),
-                        # 'CaImaging':dict(fig_fraction=4, subsampling=2, 
-                                         # subquantity='dF/F', color='green',
-                                         # roiIndices=np.random.choice(data.nROIs,5)),
-                        # 'CaImagingRaster':dict(fig_fraction=2, subsampling=4,
-                                               # roiIndices='all',
-                                               # normalization='per-line',
-                                               # subquantity='dF/F')},
-                        # Tbar=120, ax=ax)
-    # ax.annotate('full recording: %.1fmin  ' % ((data.tlim[1]-data.tlim[0])/60), (1,1), 
-                 # ha='right', xycoords='axes fraction', size=8)
-    # fig.savefig(os.path.join(tempfile.tempdir, 'raw0.png'), dpi=300)
+    fig, ax = pt.plt.subplots(1, figsize=(8, 2.5))
+    pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.95)
+    plot_raw(data, data.tlim, 
+              settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue'),
+                        'FaceMotion':dict(fig_fraction=1, subsampling=2, color='purple'),
+                        'Pupil':dict(fig_fraction=1, subsampling=2, color='red'),
+                        'CaImaging':dict(fig_fraction=4, subsampling=2, 
+                                         subquantity='dF/F', color='green',
+                                         roiIndices=np.random.choice(data.nROIs,5)),
+                        'CaImagingRaster':dict(fig_fraction=2, subsampling=4,
+                                               roiIndices='all',
+                                               normalization='per-line',
+                                               subquantity='dF/F')},
+                        Tbar=120, ax=ax)
+    ax.annotate('full recording: %.1fmin  ' % ((data.tlim[1]-data.tlim[0])/60), (1,1), 
+                 ha='right', xycoords='axes fraction', size=8)
+    fig.savefig(os.path.join(tempfile.tempdir, 'raw0.png'), dpi=300)
+    pt.plt.close(fig)
 
     # ## --- ZOOM WITH LIGHT CONDITIONS --- 
 
-    # fig = zoom_light_conditions(data)
-    # fig.savefig(os.path.join(tempfile.tempdir, 'raw1.png'), dpi=300)
+    fig = zoom_light_conditions(data)
+    fig.savefig(os.path.join(tempfile.tempdir, 'raw1.png'), dpi=300)
+    pt.plt.close(fig)
 
     # ## --- ZOOM WITH STIM 1 --- 
 
-    # tlim = [15, 35]
-    # fig, ax = ge.figure(figsize=(2.6,3.2), bottom=0, top=0.2, left=0.3, right=1.7)
-    # _, ax = data.plot_raw_data(tlim, 
-                      # settings={'Photodiode':dict(fig_fraction=1, subsampling=1, color=ge.gray),
-                                # 'Locomotion':dict(fig_fraction=1, subsampling=1, color=ge.blue),
-                                # 'FaceMotion':dict(fig_fraction=1, subsampling=1, color=ge.purple),
-                                # 'Pupil':dict(fig_fraction=1, subsampling=1, color=ge.red),
-                                # 'CaImaging':dict(fig_fraction=4, subsampling=1, 
-                                                 # subquantity='dF/F', color=ge.green,
-                                                 # roiIndices=np.random.choice(data.nROIs,5)),
-                                # 'CaImagingRaster':dict(fig_fraction=2, subsampling=1,
-                                                       # roiIndices='all',
-                                                       # normalization='per-line',
-                                                       # subquantity='dF/F'),
-                                # 'VisualStim':dict(fig_fraction=0, color='black',
-                                                  # with_screen_inset=True)},
-                                # Tbar=1, ax=ax)
-    # fig.savefig(os.path.join(tempfile.tempdir, 'raw2.png'), dpi=300)
+    tlim = [15, 35]
+    fig, ax = pt.plt.subplots(1, figsize=(8, 2.5))
+    pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.95)
+    ax.annotate('t=%.1fmin  ' % (tlim[1]/60), (1,1), 
+                 ha='right', xycoords='axes fraction', size=8)
+    plot_raw(data, tlim, 
+              settings={'Photodiode':dict(fig_fraction=0.5, subsampling=1, color='grey'),
+                        'Locomotion':dict(fig_fraction=1, subsampling=1, color='blue'),
+                        'FaceMotion':dict(fig_fraction=1, subsampling=1, color='purple'),
+                        'Pupil':dict(fig_fraction=1, subsampling=1, color='red'),
+                        'CaImaging':dict(fig_fraction=4, subsampling=1, 
+                                         subquantity='dF/F', color='green',
+                                         roiIndices=np.random.choice(data.nROIs,5)),
+                        'CaImagingRaster':dict(fig_fraction=2, subsampling=1,
+                                               roiIndices='all',
+                                               normalization='per-line',
+                                               subquantity='dF/F'),
+                        'VisualStim':dict(fig_fraction=0, color='black',
+                                          with_screen_inset=False)},
+                                Tbar=1, ax=ax)
+    fig.savefig(os.path.join(tempfile.tempdir, 'raw2.png'), dpi=300)
+    pt.plt.close(fig)
 
-    # ## --- Activity under different light conditions ---
+    # ## --- ZOOM WITH STIM 2 --- 
 
-    # fig = compute_activity_modulation_by_light(data)
-    # fig.savefig(os.path.join(tempfile.tempdir, 'light-cond.png'), dpi=300)
+    tlim = [1530, 1595]
+    fig, ax = pt.plt.subplots(1, figsize=(8, 2.5))
+    pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.95)
+    ax.annotate('t=%.1fmin  ' % (tlim[1]/60), (1,1), 
+                 ha='right', xycoords='axes fraction', size=8)
+    plot_raw(data, tlim, 
+              settings={'Photodiode':dict(fig_fraction=0.5, subsampling=1, color='grey'),
+                        'Locomotion':dict(fig_fraction=1, subsampling=1, color='blue'),
+                        'FaceMotion':dict(fig_fraction=1, subsampling=1, color='purple'),
+                        'Pupil':dict(fig_fraction=1, subsampling=1, color='red'),
+                        'CaImaging':dict(fig_fraction=4, subsampling=1, 
+                                         subquantity='dF/F', color='green',
+                                         roiIndices=np.random.choice(data.nROIs,5)),
+                        'CaImagingRaster':dict(fig_fraction=2, subsampling=1,
+                                               roiIndices='all',
+                                               normalization='per-line',
+                                               subquantity='dF/F'),
+                        'VisualStim':dict(fig_fraction=0, color='black',
+                                          with_screen_inset=False)},
+                                Tbar=1, ax=ax)
+    fig.savefig(os.path.join(tempfile.tempdir, 'raw3.png'), dpi=300)
+    pt.plt.close(fig)
+
+    ## --- Activity under different light conditions ---
+
+    fig = compute_activity_modulation_by_light(data)
+    fig.savefig(os.path.join(tempfile.tempdir, 'light-cond.png'), dpi=300)
+    pt.plt.close(fig)
 
 
     # ## --- EPISODES AVERAGE -- 
@@ -94,29 +196,35 @@ def generate_pdf(nwbfile,
                                quantities=['dFoF'],
                                prestim_duration=3,
                                verbose=True)
-    # fig, AX = plot_trial_average(episodes,
-                                # column_key='contrast', 
-                                         # xbar=1, xbarlabel='1s', 
-                                         # ybar=0.4, ybarlabel='0.4$\Delta$F/F',
-                                         # row_key='angle', 
-                                         # # with_screen_inset=True,
-                                         # with_std_over_rois=True, 
-                                         # with_annotation=True)
+
+    # fig, AX = pt.figure((5, 4), figsize=(7,4), keep_shape=True)
+    fig, AX = pt.plt.subplots(4, 5, figsize=(7,4))
+    _ = plot_trial_average(episodes,
+                                column_key='contrast', 
+                                         xbar=1, xbarlabel='1s', 
+                                         ybar=0.4, ybarlabel='0.4$\Delta$F/F',
+                                         row_key='angle', 
+                                         # with_screen_inset=True,
+                                         with_std_over_rois=True, 
+                                         with_annotation=True, AX=AX)
+    fig.suptitle('response average (s.d. over all ROIs)')
     # AX[0][0].annotate('response average (s.d. over all ROIs)\n', (0.5, 0),
                       # ha='center', xycoords='figure fraction')
-    # fig.savefig(os.path.join(tempfile.tempdir, 'TA-all.png'), dpi=300)
+    fig.savefig(os.path.join(tempfile.tempdir, 'TA-all.png'), dpi=300)
+    pt.plt.close(fig)
 
     # ## --- FRACTION RESPONSIVE ---
     fig, SIGNIFICANT_ROIS = responsiveness(episodes, data)
     fig.savefig(os.path.join(tempfile.tempdir, 'resp-fraction.png'), dpi=300)
+    pt.plt.close(fig)
 
 
     picks = np.random.choice(SIGNIFICANT_ROIS,
                              min([Nexample, len(SIGNIFICANT_ROIS)]),
                              replace=False)
-
     for i, roi in enumerate(picks):
-        fig, AX = pt.figure(5, figsize=(6,1.3), keep_shape=True)
+        fig, AX = pt.plt.subplots(1, 5, figsize=(7,1.4))
+        AX = [AX]
         _, AX = plot_trial_average(episodes, AX=AX,
                                              column_key='contrast', roiIndex=roi,
                                              color_key='angle', 
@@ -126,9 +234,21 @@ def generate_pdf(nwbfile,
         
         AX[0][0].annotate('example %i: responsive ROI' % (i+1), (0.5, 0.),
                           ha='center', size='small', xycoords='figure fraction')
-        fig.savefig(os.path.join(tempfile.tempdir, 'TA-%i.png' % roi), dpi=300)
+        fig.savefig(os.path.join(tempfile.tempdir, 'TA-%i.png' % i), dpi=300)
+        pt.plt.close(fig)
+    # pt.plt.show()
 
-    pt.plt.show()
+    # roi_choice = input('\n\n - roi to display (by example number, default 1,2,3): ')
+    roi_values = range(len(picks))
+    # if len(roi_choice.split(',')):
+        # try:
+            # roi_values = [int(i) for i in roi_choice.split(',')]
+        # except BaseException as be:
+            # print(roi_choice)
+            # pass
+
+    return roi_values
+
 
 
 def responsiveness(episodes, data):
@@ -156,6 +276,8 @@ def responsiveness(episodes, data):
     ax.set_title('drifting grating stim.')
 
     return fig, SIGNIFICANT_ROIS
+
+
 
 def zoom_light_conditions(data):
     """
@@ -188,8 +310,8 @@ def zoom_light_conditions(data):
     tStim_start = tblank_stop+10
     tStim_stop = tStim_start + data.nwbfile.stimulus['time_duration'].data[iblank][0] # same length
 
-    fig, ax = pt.plt.subplots(1, figsize=(6, 2.5))
-    pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.9)
+    fig, ax = pt.plt.subplots(1, figsize=(8, 2.5))
+    pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.95)
 
     tlim = [50, 900]
     _, ax = plot_raw(data, tlim, 
@@ -278,6 +400,8 @@ def compute_activity_modulation_by_light(data):
     for label, ax in zip(['mean $\Delta$F/F', 'mean $\Delta$F/F    \n norm. to "black"    ', '$\Delta$F/F skewness    '],
                           [ax1, ax2, ax3]):
 
+        ylim = [np.max([0, ax.get_ylim()[0]]), np.min([4, ax.get_ylim()[1]])]
+        ax.set_ylim(ylim)
         ax.set_ylabel(label)
         ax.set_xticks(range(3))
         ax.set_xticklabels(['black', 'grey', 'wStim'], rotation=50)
