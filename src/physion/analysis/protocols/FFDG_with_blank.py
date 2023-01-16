@@ -202,14 +202,12 @@ def generate_figs(nwbfile,
     _ = plot_trial_average(episodes,
                                 column_key='contrast', 
                                          xbar=1, xbarlabel='1s', 
-                                         ybar=0.4, ybarlabel='0.4$\Delta$F/F',
+                                         ybar=0.1, ybarlabel='0.1$\Delta$F/F',
                                          row_key='angle', 
                                          # with_screen_inset=True,
                                          with_std_over_rois=True, 
-                                         with_annotation=True, AX=AX)
-    fig.suptitle('response average (s.d. over all ROIs)')
-    # AX[0][0].annotate('response average (s.d. over all ROIs)\n', (0.5, 0),
-                      # ha='center', xycoords='figure fraction')
+                                         with_annotation=True, no_set=False, AX=AX)
+    fig.suptitle('response average (n=%i ROIs, s.d. over all ROIs)' % data.nROIs)
     fig.savefig(os.path.join(tempfile.tempdir, 'TA-all.png'), dpi=300)
     pt.plt.close(fig)
 
@@ -219,6 +217,7 @@ def generate_figs(nwbfile,
     pt.plt.close(fig)
 
 
+    # starting with responsive ROIs
     picks = np.random.choice(SIGNIFICANT_ROIS,
                              min([Nexample, len(SIGNIFICANT_ROIS)]),
                              replace=False)
@@ -229,13 +228,17 @@ def generate_figs(nwbfile,
                                              column_key='contrast', roiIndex=roi,
                                              color_key='angle', 
                                              xbar=1, xbarlabel='1s', 
-                                             ybar=1, ybarlabel='1$\Delta$F/F',
-                                             with_std=True, with_annotation=True)
+                                             ybar=0.5, ybarlabel='0.5$\Delta$F/F',
+                                             with_std=True, no_set=False, with_annotation=True)
         
         AX[0][0].annotate('example %i: responsive ROI' % (i+1), (0.5, 0.),
                           ha='center', size='small', xycoords='figure fraction')
         fig.savefig(os.path.join(tempfile.tempdir, 'TA-%i.png' % i), dpi=300)
         pt.plt.close(fig)
+
+    # filling up with non-responsive ROIs
+    # [...] to be done
+
     # pt.plt.show()
 
     # roi_choice = input('\n\n - roi to display (by example number, default 1,2,3): ')

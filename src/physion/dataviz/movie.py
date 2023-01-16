@@ -48,9 +48,15 @@ def draw_figure(args, data,
             bottom=0.02, right=0.5)
 
     width = (1.-4*top_row_space)/4.
-    AX['setup_ax'] = ge.inset(fig, (top_row_space/2.+0*(width+top_row_space), top_row_bottom, width, top_row_height))
-    AX['screen_ax'] = ge.inset(fig, (top_row_space/2.+1*(width+.5*top_row_space), top_row_bottom, 1.3*width, top_row_height))
-    AX['camera_ax'] = ge.inset(fig, (top_row_space/2.+2*(width+top_row_space), top_row_bottom, width, top_row_height))
+    AX['setup_ax'] = ge.inset(fig,
+            (top_row_space/2.+0*(width+top_row_space),
+            top_row_bottom, width, top_row_height))
+    AX['screen_ax'] = ge.inset(fig,
+            (top_row_space/2.+1*(width+.5*top_row_space),
+            top_row_bottom, 1.3*width, top_row_height))
+    AX['camera_ax'] = ge.inset(fig,
+            (top_row_space/2.+2*(width+top_row_space),
+            top_row_bottom, width, top_row_height))
 
     if 'ophys' in data.nwbfile.processing:
 
@@ -93,7 +99,8 @@ def draw_figure(args, data,
         data.add_roi_ellipse(args.ROIs[1], AX['ROI2_ax'], size_factor=1.5, roi_lw=1)
 
     AX['whisking_ax'] = ge.inset(fig, [0.04,0.15,0.11,0.11]) 
-    ge.annotate(AX['whisking_ax'], '$F_{(t+dt)}$-$F_{(t)}$', (0,0.5), ha='right', va='center', rotation=90, size='xxx-small')
+    ge.annotate(AX['whisking_ax'], '$F_{(t+dt)}$-$F_{(t)}$',
+            (0,0.5), ha='right', va='center', rotation=90, size='xxx-small')
     ge.annotate(AX['whisking_ax'], 'motion frames', (0.5,0), ha='center', va='top', size='xxx-small')
     AX['pupil_ax'] = ge.inset(fig, [0.04,0.28,0.11,0.13]) 
     AX['time_ax'] = ge.inset(fig, [0.02,0.05,0.08,0.05]) 
@@ -156,8 +163,7 @@ def draw_figure(args, data,
         img1 = np.load(metadata['raw_vis_FILES'][1])
         AX['whisking_img'] = AX['whisking_ax'].imshow((img1-img)[whisking_cond].reshape(*whisking_shape), cmap='gray')
 
-    ge.set_plot(AX['setup_ax'], [])
-
+    AX['setup_ax'].axis('off')
     
     # time cursor
     cursor, = AX['time_plot_ax'].plot(np.ones(2)*times[0], np.arange(2), 'k-')#color=ge.grey, lw=3, alpha=.3) 
@@ -345,7 +351,7 @@ if __name__=='__main__':
     parser.add_argument("-rvf", '--raw_vis_folder', type=str, default='')
     parser.add_argument("-rif", '--raw_imaging_folder', type=str, default='')
     
-    parser.add_argument("--tlim", type=float, nargs='*', default=[10, 100], help='')
+    parser.add_argument("--tlim", type=float, nargs='*', default=[1, 10], help='')
     parser.add_argument("--Tbar", type=int, default=0)
     parser.add_argument("--Tbar_loc", type=float, default=0.1, help='y-loc of Tbar in [0,1]')
 

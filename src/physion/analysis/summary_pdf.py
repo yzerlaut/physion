@@ -14,6 +14,27 @@ def summary_pdf_folder(filename):
     pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
     return folder
 
+def open_pdf(self,
+             Nmax=1000000,
+             include=['exp', 'raw', 'behavior', 'rois', 'protocols'],
+             verbose=True):
+    """
+    works only on linux
+    """
+    if self.datafile!='':
+
+        pdf_folder = summary_pdf_folder(self.datafile)
+        if os.path.isdir(pdf_folder):
+            PDFS = os.listdir(pdf_folder)
+            for pdf in PDFS:
+                print(' - opening: "%s"' % pdf)
+                os.system('$(basename $(xdg-mime query default application/pdf) .desktop) %s & ' % os.path.join(pdf_folder, pdf))
+        else:
+            print('no PDF summary files found !')
+
+    else:
+        print('\n \n Need to pick a datafile')
+
 def generate_pdf(self,
                  Nmax=1000000,
                  include=['exp', 'raw', 'behavior', 'rois', 'protocols'],

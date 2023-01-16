@@ -30,7 +30,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.calendar import calendar, pick_date,\
                 reinit_calendar, pick_subject, scan_folder,\
                 pick_datafile, show_metadata 
-        from physion.analysis.summary_pdf import generate_pdf
+        from physion.analysis.summary_pdf import generate_pdf,open_pdf
     else:
         from physion.gui.parts import inactivated as calendar 
 
