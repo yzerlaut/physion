@@ -4,7 +4,7 @@ figure.dpi: 150
 figure.figsize: 1.7, 1.3
 figure.titlesize: 8
 # figure.titleweight: bold
-figure.autolayout: True # When True, automatically adjust subplot
+figure.autolayout: False # When True, automatically adjust subplot
 
 ### LINE
 lines.linewidth: 1

@@ -1,5 +1,6 @@
 import os, pathlib
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pylab as plt
 from matplotlib.pylab import Circle, setp
 
@@ -273,4 +274,9 @@ def draw_bar_scales(ax,
         
     if remove_axis:
         ax.axis('off')
+
+
+def get_linear_colormap(color1='blue', color2='red'):
+    return mpl.colors.LinearSegmentedColormap.from_list('mycolors',[color1, color2])
+
 
