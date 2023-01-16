@@ -15,6 +15,8 @@ from physion.assembling.IO.binary import BinaryFile
 from physion.dataviz.raw import *
 from physion.dataviz.imaging import *
 
+plt.rcParams['figure.autolayout'] = False
+
 def draw_figure(args, data,
                 top_row_bottom=0.75,
                 top_row_space=0.08,
@@ -38,8 +40,8 @@ def draw_figure(args, data,
                  'raster':0.2, 'raster_start':0.8}
 
     AX = {'time_plot_ax':None}
-    fig, AX['time_plot_ax'] = plt.subplots(1, figsize=(7,5))
-    plt.subplots_adjust(bottom=0.01, right=0.97, left=0.4, top=0.7)
+    fig, AX['time_plot_ax'] = plt.subplots(1, figsize=(8,5.5))
+    plt.subplots_adjust(bottom=0.01, right=0.97, left=0.28, top=0.7)
 
     width = (1.-4*top_row_space)/4.
     AX['setup_ax'] = pt.inset(fig,
@@ -109,7 +111,7 @@ def draw_figure(args, data,
     img = Image.open('../docs/exp-rig.png')
     AX['setup_ax'].imshow(img)
     AX['setup_ax'].axis('off')
-    time = AX['time_ax'].annotate('t=%.1fs' % times[0], (0,0), xycoords='axes fraction', size=12)
+    time = AX['time_ax'].annotate('t=%.1fs' % times[0], (0,0), xycoords='axes fraction', size=10)
 
     # screen inset
     AX['screen_img'] = data.visual_stim.show_frame(0, ax=AX['screen_ax'],
@@ -122,7 +124,7 @@ def draw_figure(args, data,
         Ly, Lx = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'].shape
         Ca_data = BinaryFile(Ly=Ly, Lx=Lx,
                              read_filename=os.path.join(metadata['raw_imaging_folder'],
-                                        'suite2p', 'plane0','data.bin'))
+                                                       'suite2p', 'plane0','data.bin'))
         i1, i2 = convert_times_to_indices(times[0], times[1],
                                           data.Fluorescence)
 
@@ -135,16 +137,20 @@ def draw_figure(args, data,
                Ca_data.data[i1:i2, extent2[0]:extent2[1], extent2[2]:extent2[3]].max() 
 
     else:
+
         Ca_data = None
 
 
     # Face Camera
     if metadata['raw_vis_folder']!='':
+
         load_NIdaq(metadata)
+
         load_faceCamera(metadata)
 
         img = np.load(metadata['raw_vis_FILES'][0])
         AX['camera_img'] = AX['camera_ax'].imshow(img, cmap='gray')
+
         # pupil
         x, y = np.meshgrid(np.arange(0,img.shape[0]), np.arange(0,img.shape[1]), indexing='ij')
         pupil_cond = (x>=metadata['pupil_xmin']) & (x<=metadata['pupil_xmax']) & (y>=metadata['pupil_ymin']) & (y<=metadata['pupil_ymax'])
@@ -185,7 +191,7 @@ def draw_figure(args, data,
                         fig_fraction_start=fractions['running_start'], 
                         fig_fraction=fractions['running'], 
                         name='')
-    AX['time_plot_ax'].annotate('running-speed', (-0.1, fractions['running_start']), ha='center', va='bottom', color='blue', fontsize=6, xycoords='axes fraction')
+    AX['time_plot_ax'].annotate('running-speed', (-0.1, fractions['running_start']), ha='center', va='bottom', color='#1f77b4', fontsize=7, xycoords='axes fraction')
 
     # whisking 
     add_FaceMotion(data, args.tlim, AX['time_plot_ax'], 
@@ -211,18 +217,18 @@ def draw_figure(args, data,
     # rois 
     add_CaImaging(data, args.tlim, AX['time_plot_ax'], 
                   subquantity='dFoF',
-                       roiIndices=args.ROIs, 
-                       fig_fraction_start=fractions['rois_start'], 
-                       fig_fraction=fractions['rois'], 
-                       name='', annotation_side='left')
-    AX['time_plot_ax'].annotate('fluorescence', (-0.1, fractions['raster_start']), ha='right', va='center', color='green', rotation=90, xycoords='axes fraction')
+                  roiIndices=args.ROIs, 
+                  fig_fraction_start=fractions['rois_start'], 
+                  fig_fraction=fractions['rois'], 
+                  name='', annotation_side='left')
+    AX['time_plot_ax'].annotate('fluorescence', (-0.1, fractions['raster_start']), ha='right', va='top', color='green', rotation=90, xycoords='axes fraction')
 
     # raster 
     add_CaImagingRaster(data, args.tlim, AX['time_plot_ax'], 
-                             subquantity='dFoF', normalization='per-line',
-                             fig_fraction_start=fractions['raster_start'], 
-                             fig_fraction=fractions['raster'], 
-                             name='')
+                        subquantity='dFoF', normalization='per-line',
+                        fig_fraction_start=fractions['raster_start'], 
+                        fig_fraction=fractions['raster'], 
+                        name='')
     
 
     if args.Tbar>0:
@@ -239,19 +245,21 @@ def draw_figure(args, data,
         AX['%s_ax'%label].axis('off')
 
     def update(i=0):
-        # camera
-        camera_index = np.argmin((metadata['raw_vis_times']-times[i])**2)
-        img = np.load(metadata['raw_vis_FILES'][camera_index])
-        AX['camera_img'].set_array(img)
-        # pupil
-        AX['pupil_img'].set_array(img[pupil_cond].reshape(*pupil_shape))
-        pupil_fit = get_pupil_fit(camera_index, data, metadata)
-        AX['pupil_fit'].set_data(pupil_fit[1], pupil_fit[0])
-        pupil_center = get_pupil_center(camera_index, data, metadata)
-        AX['pupil_center'].set_data([pupil_center[1]], [pupil_center[0]])
-        # whisking
-        img1 = np.load(metadata['raw_vis_FILES'][camera_index+1])
-        AX['whisking_img'].set_array((img1-img)[whisking_cond].reshape(*whisking_shape))
+
+        if 'raw_vis_times' in metadata:
+            # camera
+            camera_index = np.argmin((metadata['raw_vis_times']-times[i])**2)
+            img = np.load(metadata['raw_vis_FILES'][camera_index])
+            AX['camera_img'].set_array(img)
+            # pupil
+            AX['pupil_img'].set_array(img[pupil_cond].reshape(*pupil_shape))
+            pupil_fit = get_pupil_fit(camera_index, data, metadata)
+            AX['pupil_fit'].set_data(pupil_fit[1], pupil_fit[0])
+            pupil_center = get_pupil_center(camera_index, data, metadata)
+            AX['pupil_center'].set_data([pupil_center[1]], [pupil_center[0]])
+            # whisking
+            img1 = np.load(metadata['raw_vis_FILES'][camera_index+1])
+            AX['whisking_img'].set_array((img1-img)[whisking_cond].reshape(*whisking_shape))
 
         # imaging
         if (i in [0,len(times)-1]) or (Ca_data is None):

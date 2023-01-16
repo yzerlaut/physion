@@ -3,7 +3,6 @@ import numpy as np
 from PIL import Image
 import matplotlib.pylab as plt
 
-# from physion.utils.plot_tools import *
 import physion
 
 def metadata_fig(datafolder, angle_from_axis=None):
