@@ -39,6 +39,32 @@ def figure(axes=1,
 
     return fig, AX
 
+def inset(stuff,
+          rect=[.5,.5,.5,.4],
+          facecolor='w'):
+    """
+    creates an inset inside "stuff" (either a figure or an axis)
+    """
+
+
+    if type(stuff)==mpl.figure.Figure: # if figure, no choice
+        subax = stuff.add_axes(rect,
+                               facecolor=facecolor)
+    else:
+        fig = mpl.pyplot.gcf()
+        box = stuff.get_position()
+        width = box.width
+        height = box.height
+        inax_position  = stuff.transAxes.transform([rect[0], rect[1]])
+        transFigure = fig.transFigure.inverted()
+        infig_position = transFigure.transform(inax_position)
+        x = infig_position[0]
+        y = infig_position[1]
+        width *= rect[2]
+        height *= rect[3]
+        subax = fig.add_axes([x,y,width,height],facecolor=facecolor)
+
+    return subax
 
 def pie(data,
         ax=None):

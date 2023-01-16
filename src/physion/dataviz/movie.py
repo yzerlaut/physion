@@ -5,21 +5,11 @@ import matplotlib.pylab as plt
 import matplotlib.animation as animation
 from PIL import Image
 
-# custom modules
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-
-from assembling.saving import get_files_with_extension, list_dayfolder, check_datafolder, get_TSeries_folders
-from assembling.move_CaImaging_folders import StartTime_to_day_seconds
-from assembling.tools import load_FaceCamera_data
-from assembling.IO.binary import BinaryFile
-
-from pupil import roi, process
-
-from dataviz.show_data import * # this includes dv_tools
-
-from datavyz import graph_env
-ge = graph_env('screen')
-
+from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders
+from physion.assembling.tools import StartTime_to_day_seconds, load_FaceCamera_data
+from physion.assembling.IO.binary import BinaryFile
+import  physion.utils.plot_tools as pt
+from physion.pupil import roi, process
 
 def draw_figure(args, data,
                 top_row_bottom=0.75,
@@ -36,25 +26,25 @@ def draw_figure(args, data,
 
 
     fractions = {'photodiode':0.09, 'photodiode_start':0,
-            'running':0.13, 'running_start':0.1,
-            'whisking':0.15, 'whisking_start':0.25,
-            'gaze':0.1, 'gaze_start':0.35,
-            'pupil':0.13, 'pupil_start':0.45,
-            'rois':0.2, 'rois_start':0.6,
-            'raster':0.2, 'raster_start':0.8}
+                 'running':0.13, 'running_start':0.1,
+                 'whisking':0.15, 'whisking_start':0.25,
+                 'gaze':0.1, 'gaze_start':0.35,
+                 'pupil':0.13, 'pupil_start':0.45,
+                 'rois':0.2, 'rois_start':0.6,
+                 'raster':0.2, 'raster_start':0.8}
 
     AX = {'time_plot_ax':None}
-    fig, AX['time_plot_ax'] = ge.figure(figsize=(2,3.5),
-            bottom=0.02, right=0.5)
+    fig, AX['time_plot_ax'] = plt.subplots(1, figsize=(7,4))
+    plt.subplots_adjust(bottom=0.01, right=0.97, left=0.3, top=0.7)
 
     width = (1.-4*top_row_space)/4.
-    AX['setup_ax'] = ge.inset(fig,
+    AX['setup_ax'] = pt.inset(fig,
             (top_row_space/2.+0*(width+top_row_space),
             top_row_bottom, width, top_row_height))
-    AX['screen_ax'] = ge.inset(fig,
+    AX['screen_ax'] = pt.inset(fig,
             (top_row_space/2.+1*(width+.5*top_row_space),
             top_row_bottom, 1.3*width, top_row_height))
-    AX['camera_ax'] = ge.inset(fig,
+    AX['camera_ax'] = pt.inset(fig,
             (top_row_space/2.+2*(width+top_row_space),
             top_row_bottom, width, top_row_height))
 
@@ -98,19 +88,19 @@ def draw_figure(args, data,
         ge.annotate(AX['ROI2_ax'], ' roi #%i' % (args.ROIs[1]+1), (0,0), color='w', size='xxx-small')
         data.add_roi_ellipse(args.ROIs[1], AX['ROI2_ax'], size_factor=1.5, roi_lw=1)
 
-    AX['whisking_ax'] = ge.inset(fig, [0.04,0.15,0.11,0.11]) 
-    ge.annotate(AX['whisking_ax'], '$F_{(t+dt)}$-$F_{(t)}$',
-            (0,0.5), ha='right', va='center', rotation=90, size='xxx-small')
-    ge.annotate(AX['whisking_ax'], 'motion frames', (0.5,0), ha='center', va='top', size='xxx-small')
-    AX['pupil_ax'] = ge.inset(fig, [0.04,0.28,0.11,0.13]) 
-    AX['time_ax'] = ge.inset(fig, [0.02,0.05,0.08,0.05]) 
+    AX['whisking_ax'] = pt.inset(fig, [0.04,0.15,0.11,0.11]) 
+    # ge.annotate(AX['whisking_ax'], '$F_{(t+dt)}$-$F_{(t)}$',
+            # (0,0.5), ha='right', va='center', rotation=90, size='xxx-small')
+    # ge.annotate(AX['whisking_ax'], 'motion frames', (0.5,0), ha='center', va='top', size='xxx-small')
+    AX['pupil_ax'] = pt.inset(fig, [0.04,0.28,0.11,0.13]) 
+    AX['time_ax'] = pt.inset(fig, [0.02,0.05,0.08,0.05]) 
 
     t0 = times[0]
 
     # setup drawing
-    img = Image.open('doc/exp-rig.png')
+    img = Image.open('../doc/exp-rig.png')
     AX['setup_ax'].imshow(img)
-    ge.set_plot(AX['setup_ax'], [])
+    AX['setup_ax'].axis('off')
     time = AX['time_ax'].annotate('t=%.1fs' % times[0], (0,0), xycoords='axes fraction', size=12)
 
     # screen inset
@@ -118,6 +108,7 @@ def draw_figure(args, data,
                                                    return_img=True,
                                                    label=None)
 
+    """
     # Calcium Imaging
     if metadata['raw_imaging_folder']!='':
         
@@ -298,6 +289,8 @@ def draw_figure(args, data,
                                   blit=True)
 
     return fig, AX, ani
+    """
+    pt.plt.show()
 
 def get_pupil_center(index, data, metadata):
     coords = []
@@ -343,7 +336,7 @@ def load_Imaging(metadata):
 
 if __name__=='__main__':
 
-    import argparse
+    import argparse, physion
 
     parser=argparse.ArgumentParser()
     parser.add_argument("datafile", type=str)
@@ -373,7 +366,7 @@ if __name__=='__main__':
     if args.duration>0:
         args.Ndiscret = int(args.duration*args.fps)
 
-    data = MultimodalData(args.datafile, with_visual_stim=True)
+    data = physion.analysis.read_NWB.Data(args.datafile, with_visual_stim=True)
     print('\n', data.nwbfile.processing['ophys'].description, '\n')
 
     fig, AX, ani = draw_figure(args, data)    
