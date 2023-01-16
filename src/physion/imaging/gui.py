@@ -2,16 +2,16 @@ import os, sys, pathlib, shutil, time, datetime, tempfile, subprocess
 from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
-from physion.utils.paths import FOLDERS
-from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders
+from physion.utils.paths import FOLDERS, python_path_suite2p_env
+from physion.utils.files import get_files_with_extension,\
+        list_dayfolder, get_TSeries_folders
 from physion.imaging.suite2p.preprocessing import defaults
 from physion.assembling.build_NWB import build_cmd
-
+from physion.imaging.bruker.xml_parser import bruker_xml_parser
 
 def suite2p_preprocessing_UI(self, tab_id=1):
 
     tab = self.tabs[tab_id]
-    self.NWBs = []
     self.cleanup_tab(tab)
 
     ##########################################################
@@ -107,7 +107,7 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     #------------------- THEN MAIN PANEL   -------------------
 
     width = self.nWidgetCol-self.side_wdgt_length
-    tab.layout.addWidget(QtWidgets.QLabel('     *  NWB file  *'),
+    tab.layout.addWidget(QtWidgets.QLabel('     *  TSeries folders  *'),
                          0, self.side_wdgt_length, 
                          1, width)
 
@@ -116,14 +116,14 @@ def suite2p_preprocessing_UI(self, tab_id=1):
                 QtWidgets.QLabel('- ', self))
         tab.layout.addWidget(getattr(self, 'tseries%i' % ip),
                              ip, self.side_wdgt_length, 
-                             1, width-2)
-        setattr(self, 'tseriesBtn%i' % ip,
-                QtWidgets.QPushButton(' CHECK ', self))
-        tab.layout.addWidget(getattr(self, 'tseries%i' % ip),
-                             ip, self.side_wdgt_length+width-2, 
-                             1, 2)
-        getattr(self, 'tseries%i' % ip).setEnabled(False)
+                             1, width-1)
 
+        setattr(self, 'tseriesBtn%i' % ip,
+                QtWidgets.QCheckBox('run', self))
+        tab.layout.addWidget(getattr(self, 'tseriesBtn%i' % ip),
+                             ip, self.side_wdgt_length+width-1, 
+                             1, 1)
+        getattr(self, 'tseriesBtn%i' % ip).setChecked(False)
     # ========================================================
 
     self.refresh_tab(tab)
@@ -133,22 +133,34 @@ def load_TSeries_folder(self):
 
     folder = self.open_folder()
 
-    self.folders = []
+    self.folders, self.Nplanes, self.Nchans = [], [], []
     
     if folder!='':
 
-        if (len(folder.split(os.path.sep)[-1].split('-'))<2) and (len(folder.split(os.path.sep)[-1].split('_'))>2):
-            print('"%s" is recognized as a day folder' % folder)
-            self.folders = [os.path.join(folder, f) for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f, 'metadata.npy'))]
-        elif os.path.isfile(os.path.join(folder, 'metadata.npy')) and os.path.isfile(os.path.join(folder, 'NIdaq.npy')):
-            print('"%s" is a valid recording folder' % folder)
-            self.folders = [folder]
+        if 'TSeries-' in folder:
+            print('"%s" is a recognize as a single TSeries folder' % folder)
+            folders = [folder]
         else:
-            print(' /!\ Data-folder missing either "metadata" or "NIdaq" datafiles /!\ ')
-            print('  --> nothing to assemble !')
+            print('"%s" is recognized as a folder containing sets of TSeries' % folder)
+            folders = get_TSeries_folders(folder)
 
+        for i, folder in enumerate(folders):
+           
+            print(' analyzing folder "%s" [...]' % folder)
+            xml_file = get_files_with_extension(folder, extension='.xml')[0]
+            xml = bruker_xml_parser(xml_file)
+            
+            getattr(self, 'tseries%i' % (i+1)).setText(' - %s (%i planes, %i channels)' % (folder, xml['Nplanes'], xml['Nchannels']))
+
+            if (xml['Nchannels']*xml['Nplanes'])>0:
+                self.folders.append(folder)
+                self.Nplanes.append(xml['Nplanes'])
+                self.Nchans.append(xml['Nchannels'])
+                getattr(self, 'tseriesBtn%i' % (i+1)).setChecked(True)
+    
 
 def open_suite2p(self):
+    """   """
     p = subprocess.Popen('%s -m suite2p' % python_path_suite2p_env,
                          shell=True,
                          stdout=subprocess.PIPE,
@@ -182,11 +194,12 @@ def run_TSeries_analysis(self):
 
     for folder in self.folders:
 
+        print(' processing folder: "%s" ' % folder)
+
         if self.delBox.isChecked():
             print('  deleting suite2p folder in "%s" [...]' % folder)
             shutil.rmtree(os.path.join(folder, 'suite2p'))
 
-    print(settings)
 
     # modalities = [modality for modality in ALL_MODALITIES\
             # if getattr(self, '%sCheckBox'%modality).isChecked()]
