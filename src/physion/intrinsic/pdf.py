@@ -171,7 +171,8 @@ def build_pdf(args,
 
         fig.supylabel(key)
 
-        AX[0].imshow(maps[key], cmap='gray', vmin=0, vmax=1)
+        if key in maps:
+            AX[0].imshow(maps[key], cmap='gray', vmin=0, vmax=1)
         mean_power = maps['up-power']+maps['down-power']+maps['right-power']+maps['left-power']
         im = AX[0].imshow(mean_power, cmap=plt.cm.cool, alpha=alpha)
         AX[0].axis('off')
@@ -179,14 +180,16 @@ def build_pdf(args,
         fig.colorbar(im, ax=AX[0], location='top',
                      label='mean power @ stim. freq.')
         
-        AX[1].imshow(maps[key], cmap='gray', vmin=0, vmax=1)
+        if key in maps:
+            AX[1].imshow(maps[key], cmap='gray', vmin=0, vmax=1)
         AX[1].axis('off')
 
         im = AX[1].imshow(trial.signMapf, cmap=plt.cm.jet, alpha=2*alpha)
         fig.colorbar(im, ax=AX[1], location='top',
                      label='sign of retinotopic gradient')
 
-        AX[2].imshow(maps[key], cmap='gray', vmin=0, vmax=1)
+        if key in maps:
+            AX[2].imshow(maps[key], cmap='gray', vmin=0, vmax=1)
         AX[2].axis('off')
 
         alpha=0.1
