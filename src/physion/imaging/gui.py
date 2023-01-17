@@ -51,8 +51,6 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.rigidBox.setChecked(True)
     self.add_side_widget(tab.layout, self.rigidBox)
 
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-
     self.add_side_widget(tab.layout,\
             QtWidgets.QLabel('- functional Chan.'), 'large-left')
     self.functionalChanBox = QtWidgets.QLineEdit('2', self)
@@ -80,8 +78,6 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.cellSizeBox = QtWidgets.QLineEdit('20', self)
     self.add_side_widget(tab.layout, self.cellSizeBox, 'small-right')
     
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-
     self.cellposeBox= QtWidgets.QCheckBox('use CELLPOSE', self)
     self.add_side_widget(tab.layout, self.cellposeBox)
     self.add_side_widget(tab.layout,\
@@ -94,6 +90,13 @@ def suite2p_preprocessing_UI(self, tab_id=1):
 
     self.delBox= QtWidgets.QCheckBox('delete previous', self)
     self.add_side_widget(tab.layout, self.delBox)
+
+    self.add_side_widget(tab.layout,\
+            QtWidgets.QLabel('Delay (min)'), 'small-left')
+    self.delayBox = QtWidgets.QLineEdit('0', self)
+    self.add_side_widget(tab.layout, self.delayBox, 'small-middle')
+    self.firstBox = QtWidgets.QCheckBox('1st ?', self)
+    self.add_side_widget(tab.layout, self.firstBox, 'small-right')
 
     self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
     self.runBtn.clicked.connect(self.run_TSeries_analysis)
@@ -191,6 +194,16 @@ def run_TSeries_analysis(self):
         settings['high_pass'] = 1
         settings['anatomical_only'] = int(self.refImageBox.text())
 
+    # we precede the python call by a "sleep Xm" command
+    delay = float(self.delayBox.text())
+    if delay>0:
+        delays = np.cumsum(delay*np.ones(len(self.folders)))
+        if not self.firstBox.isChecked():
+            delays -= delay
+        delays = ['sleep %.1fm; ' % d for d in delays]
+    else:
+        delays = ['' for f in self.folders] # empty string
+
     for i, folder in enumerate(self.folders):
 
         if getattr(self, 'tseriesBtn%i' % (i+1)).isChecked():
@@ -201,17 +214,18 @@ def run_TSeries_analysis(self):
                 print('  deleting suite2p folder in "%s" [...]' % folder)
                 shutil.rmtree(os.path.join(folder, 'suite2p'))
 
+            settings['nplanes'] = self.Nplanes[i]
+            settings['nchannels'] = self.Nchans[i]
             build_suite2p_options(folder, settings)
-            cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
+            cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (delays[i]+python_path_suite2p_env,
                                                             os.path.join(folder,'db.npy'),
                                                             os.path.join(folder,'ops.npy'))
             print('running "%s" \n ' % cmd)
             # subprocess.run(cmd, shell=True)
             p = subprocess.Popen(cmd,
-                                 cwd=cwd,
+                                 cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src'),
                                  shell=True)
 
 
-cwd = 
 
 
