@@ -206,7 +206,7 @@ def multimodal(self,
         button.setStyleSheet("font-weight: bold")
 
     ip+=2
-    tab.layout.addWidget(QtWidgets.QLabel(' other settings: '),
+    tab.layout.addWidget(QtWidgets.QLabel(' FOV: '),
                          ip, 10, 1, 4)
     ip+=1
     self.fovPick= QtWidgets.QComboBox()
