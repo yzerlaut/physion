@@ -5,7 +5,7 @@ import numpy as np
 from physion.utils.paths import FOLDERS, python_path_suite2p_env
 from physion.utils.files import get_files_with_extension,\
         list_dayfolder, get_TSeries_folders
-from physion.imaging.suite2p.preprocessing import defaults
+from physion.imaging.suite2p.preprocessing import defaults, build_suite2p_options
 from physion.assembling.build_NWB import build_cmd
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 
@@ -191,27 +191,27 @@ def run_TSeries_analysis(self):
         settings['high_pass'] = 1
         settings['anatomical_only'] = int(self.refImageBox.text())
 
+    for i, folder in enumerate(self.folders):
 
-    for folder in self.folders:
+        if getattr(self, 'tseriesBtn%i' % (i+1)).isChecked():
 
-        print(' processing folder: "%s" ' % folder)
+            print(' processing folder: "%s" [...]' % folder)
 
-        if self.delBox.isChecked():
-            print('  deleting suite2p folder in "%s" [...]' % folder)
-            shutil.rmtree(os.path.join(folder, 'suite2p'))
+            if self.delBox.isChecked() and os.path.isdir(os.path.join(folder, 'suite2p')):
+                print('  deleting suite2p folder in "%s" [...]' % folder)
+                shutil.rmtree(os.path.join(folder, 'suite2p'))
 
-
-    # modalities = [modality for modality in ALL_MODALITIES\
-            # if getattr(self, '%sCheckBox'%modality).isChecked()]
-    # for folder in self.folders:
-        # cmd, cwd = build_cmd(folder,
-                             # modalities=modalities)
-        # print('\n launching the command \n :  %s \n ' % cmd)
-        # p = subprocess.Popen(cmd,
-                             # cwd=cwd,
-                             # shell=True)
-
+            build_suite2p_options(folder, settings)
+            cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
+                                                            os.path.join(folder,'db.npy'),
+                                                            os.path.join(folder,'ops.npy'))
+            print('running "%s" \n ' % cmd)
+            # subprocess.run(cmd, shell=True)
+            p = subprocess.Popen(cmd,
+                                 cwd=cwd,
+                                 shell=True)
 
 
+cwd = 
 
 

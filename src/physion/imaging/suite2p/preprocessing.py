@@ -2,6 +2,7 @@ import sys, os, pathlib, shutil, glob, time, subprocess
 import numpy as np
 
 from physion.utils.paths import python_path_suite2p_env
+from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.presets import ops0
 
@@ -21,7 +22,6 @@ defaults={'do_registration':1,
 
 
 def build_db(folder):
-    print(folder)
     db = {'data_path':[folder],
           'subfolders': [],
           'save_path0': folder,
@@ -30,17 +30,10 @@ def build_db(folder):
     return db
 
 
-def build_ops(folder):
-    return ops
-
-
 def build_suite2p_options(folder,
                           settings_dict):
     
-    if os.name=='nt':
-        xml_file = os.path.join(folder, folder.split('/')[-1]+'.xml')
-    else:
-        xml_file = os.path.join(folder, folder.split(os.path.sep)[-1]+'.xml')
+    xml_file = get_files_with_extension(folder, extension='.xml')[0]
 
     bruker_data = bruker_xml_parser(xml_file)
     ops = ops0.copy()
