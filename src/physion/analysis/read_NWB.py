@@ -89,6 +89,7 @@ class Data:
                 self.description += '- %s \n' % self.metadata['protocol']
             
         self.protocols = np.array(self.protocols, dtype=str)
+        self.metadata['protocols'] = self.protocols
 
         if 'time_start_realigned' in self.nwbfile.stimulus.keys():
             self.description += '\n        =>  completed N=%i/%i episodes  \n' %(self.nwbfile.stimulus['time_start_realigned'].data.shape[0],
@@ -374,7 +375,7 @@ class Data:
     ################################################
     
     def init_visual_stim(self, verbose=True):
-        self.metadata['load_from_protocol_data'], self.metadata['no-window'] = True, True
+        self.metadata['load_from_protocol_data'], self.metadata['no-window'] = False, True
         self.metadata['verbose'] = verbose
         self.visual_stim = build_stim(self.metadata)
 

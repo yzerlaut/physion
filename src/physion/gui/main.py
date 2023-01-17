@@ -30,6 +30,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.calendar import calendar, pick_date,\
                 reinit_calendar, pick_subject, scan_folder,\
                 pick_datafile, show_metadata 
+        from physion.analysis.summary_pdf import generate_pdf,open_pdf
     else:
         from physion.gui.parts import inactivated as calendar 
 
@@ -245,9 +246,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.switch_roi_RCL()
         else:
             # self.transfer_gui()
-            # self.suite2p_preprocessing_UI()
+            self.suite2p_preprocessing_UI()
             # self.build_NWB_UI()
-            self.add_imaging()
+            # self.add_imaging()
             # self.intrinsic()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']

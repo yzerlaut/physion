@@ -110,11 +110,16 @@ def bruker_xml_parser(filename):
     # ---------------------------- #
     #  translation to numpy arrays
     # ---------------------------- #
+    data['Nchannels']=0
     for channel in ['Ch1', 'Ch2']:
+        if len(data[channel]['relativeTime'])>1:
+            data['Nchannels'] += 1
         for key in ['relativeTime', 'absoluteTime']:
             data[channel][key] = np.array(data[channel][key], dtype=np.float64)
         for key in ['tifFile']:
             data[channel][key] = np.array(data[channel][key], dtype=str)
+
+    data['Nplanes'] = len(data['depth_shift'])
                         
     return data
 

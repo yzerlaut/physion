@@ -2,18 +2,20 @@
 import pynwb, os, sys, pathlib, itertools
 import numpy as np
 import matplotlib.pylab as plt
-plt.style.use(os.path.join(pathlib.Path(__file__).resolve().parent,\
-              'utils', 'matplotlib_style.py'))
 
 # custom modules
+import physion.utils.plot_tools as pt
+
 from physion.analysis import tools
+from physion.analysis import tools
+from physion.dataviz.raw import format_key_value
 from physion.visual_stim.build import build_stim
 
 ### ---------------------------------
 ###  -- Trial Average response  --
 ### ---------------------------------
 
-def plot_trial_average(self,
+def plot_trial_average(episodes,
                        # episodes props
                        quantity='dFoF', roiIndex=None, roiIndices='all',
                        norm='',
@@ -50,48 +52,48 @@ def plot_trial_average(self,
 
     response_args = dict(roiIndex=roiIndex, roiIndices=roiIndices, average_over_rois=False)
 
-    if with_screen_inset and (self.visual_stim is None):
+    if with_screen_inset and (episodes.visual_stim is None):
         print('\n /!\ visual stim of episodes was not initialized  /!\  ')
         print('    --> screen_inset display desactivated ' )
         with_screen_inset = False
     
     if condition is None:
-        condition = np.ones(np.sum(self.protocol_cond_in_full_data), dtype=bool)
+        condition = np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)
 
-    elif len(condition)==len(self.protocol_cond_in_full_data):
-        condition = condition[self.protocol_cond_in_full_data]
+    elif len(condition)==len(episodes.protocol_cond_in_full_data):
+        condition = condition[episodes.protocol_cond_in_full_data]
         
     # ----- building conditions ------
 
     # columns
     if column_key!='':
-        COL_CONDS = [self.find_episode_cond(column_key, index) for index in range(len(self.varied_parameters[column_key]))]
+        COL_CONDS = [episodes.find_episode_cond(column_key, index) for index in range(len(episodes.varied_parameters[column_key]))]
     elif len(column_keys)>0:
-        COL_CONDS = [self.find_episode_cond(column_keys, indices) for indices in itertools.product(*[range(len(self.varied_parameters[key])) for key in column_keys])]
+        COL_CONDS = [episodes.find_episode_cond(column_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in column_keys])]
     elif (COL_CONDS is None):
-        COL_CONDS = [np.ones(np.sum(self.protocol_cond_in_full_data), dtype=bool)]
+        COL_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
 
     # rows
     if row_key!='':
-        ROW_CONDS = [self.find_episode_cond(row_key, index) for index in range(len(self.varied_parameters[row_key]))]
+        ROW_CONDS = [episodes.find_episode_cond(row_key, index) for index in range(len(episodes.varied_parameters[row_key]))]
     elif len(row_keys)>0:
-        ROW_CONDS = [self.find_episode_cond(row_keys, indices) for indices in itertools.product(*[range(len(self.varied_parameters[key])) for key in row_keys])]
+        ROW_CONDS = [episodes.find_episode_cond(row_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in row_keys])]
     elif (ROW_CONDS is None):
-        ROW_CONDS = [np.ones(np.sum(self.protocol_cond_in_full_data), dtype=bool)]
+        ROW_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
         
     # colors
     if color_key!='':
-        COLOR_CONDS = [self.find_episode_cond(color_key, index) for index in range(len(self.varied_parameters[color_key]))]
+        COLOR_CONDS = [episodes.find_episode_cond(color_key, index) for index in range(len(episodes.varied_parameters[color_key]))]
     elif len(color_keys)>0:
-        COLOR_CONDS = [self.find_episode_cond(color_keys, indices) for indices in itertools.product(*[range(len(self.varied_parameters[key])) for key in color_keys])]
+        COLOR_CONDS = [episodes.find_episode_cond(color_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in color_keys])]
     elif (COLOR_CONDS is None):
-        COLOR_CONDS = [np.ones(np.sum(self.protocol_cond_in_full_data), dtype=bool)]
+        COLOR_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
         
     if (len(COLOR_CONDS)>1):
         try:
             COLORS= [color[c] for c in np.arange(len(COLOR_CONDS))]
         except BaseException:
-            COLORS = [ge.tab10((c%10)/10.) for c in np.arange(len(COLOR_CONDS))]
+            COLORS = [plt.cm.tab10((c%10)/10.) for c in np.arange(len(COLOR_CONDS))]
     else:
         COLORS = [color for ic in range(len(COLOR_CONDS))]
         
@@ -99,21 +101,22 @@ def plot_trial_average(self,
     # condition = [...]
             
     if (fig is None) and (AX is None):
-        fig, AX = ge.figure(axes=(len(COL_CONDS), len(ROW_CONDS)),
-                            **dv_tools.FIGURE_PRESETS[fig_preset])
+        print((len(COL_CONDS), len(ROW_CONDS)))
+        fig, AX = pt.figure(axes=(len(COL_CONDS), len(ROW_CONDS)),
+                            keep_shape=True)
         no_set=False
     else:
         no_set=no_set
 
     # get response reshape in 
-    response = tools.normalize(self.get_response(**dict(quantity=quantity,
+    response = tools.normalize(episodes.get_response(**dict(quantity=quantity,
                                                         roiIndex=roiIndex,
                                                         roiIndices=roiIndices,
                                                         average_over_rois=False)), 
                                 norm, 
                                 verbose=verbose)
 
-    self.ylim = [np.inf, -np.inf]
+    episodes.ylim = [np.inf, -np.inf]
     for irow, row_cond in enumerate(ROW_CONDS):
         for icol, col_cond in enumerate(COL_CONDS):
             for icolor, color_cond in enumerate(COLOR_CONDS):
@@ -128,53 +131,64 @@ def plot_trial_average(self,
                     else:
                         sy = response[cond,:,:].std(axis=(0,1))
 
-                    ge.plot(self.t, my, sy=sy,
+                    pt.plot(episodes.t, my, sy=sy,
                             ax=AX[irow][icol], color=COLORS[icolor], lw=1)
-                    self.ylim = [min([self.ylim[0], np.min(my-sy)]),
-                                 max([self.ylim[1], np.max(my+sy)])]
+                    episodes.ylim = [min([episodes.ylim[0], np.min(my-sy)]),
+                                 max([episodes.ylim[1], np.max(my+sy)])]
                 else:
-                    AX[irow][icol].plot(self.t, my,
+                    AX[irow][icol].plot(episodes.t, my,
                                         color=COLORS[icolor], lw=1)
-                    self.ylim = [min([self.ylim[0], np.min(my)]),
-                                 max([self.ylim[1], np.max(my)])]
+                    episodes.ylim = [min([episodes.ylim[0], np.min(my)]),
+                                 max([episodes.ylim[1], np.max(my)])]
 
+                if not with_axis:
+                    AX[irow][icol].axis('off')
                         
                 if with_screen_inset:
-                    inset = ge.inset(AX[irow][icol], [.83, .9, .3, .25])
-                    istim = np.flatnonzero(cond)[0]
-                    self.visual_stim.plot_stim_picture(istim, ax=inset)
+                    pass
+                    # inset = ge.inset(AX[irow][icol], [.83, .9, .3, .25])
+                    # istim = np.flatnonzero(cond)[0]
+                    # episodes.visual_stim.plot_stim_picture(istim, ax=inset)
                     
                 if with_annotation:
                     
                     # column label
                     if (len(COL_CONDS)>1) and (irow==0) and (icolor==0):
                         s = ''
-                        for i, key in enumerate(self.varied_parameters.keys()):
+                        for i, key in enumerate(episodes.varied_parameters.keys()):
                             if (key==column_key) or (key in column_keys):
-                                s+=format_key_value(key, getattr(self, key)[cond][0])+',' # should have a unique value
+                                s+=format_key_value(key, getattr(episodes, key)[cond][0])+',' # should have a unique value
                         # ge.annotate(AX[irow][icol], s, (1, 1), ha='right', va='bottom', size='small')
-                        ge.annotate(AX[irow][icol], s[:-1], (0.5, 1), ha='center', va='bottom', size='small')
+                        AX[irow][icol].annotate(s[:-1], (0.5, 1),
+                                ha='center', va='bottom', size='small', xycoords='axes fraction')
                     # row label
                     if (len(ROW_CONDS)>1) and (icol==0) and (icolor==0):
                         s = ''
-                        for i, key in enumerate(self.varied_parameters.keys()):
+                        for i, key in enumerate(episodes.varied_parameters.keys()):
                             if (key==row_key) or (key in row_keys):
                                 try:
-                                    s+=format_key_value(key, getattr(self, key)[cond][0])+', ' # should have a unique value
+                                    s+=format_key_value(key, getattr(episodes, key)[cond][0])+', ' # should have a unique value
                                 except IndexError:
                                     pass
-                        ge.annotate(AX[irow][icol], s[:-2], (0, 0), ha='right', va='bottom', rotation=90, size='small')
+
+                        AX[irow][icol].annotate(s[:-2], (0, 0),
+                            ha='right', va='bottom', 
+                            rotation=90, size='small',
+                            xycoords='axes fraction')
+
                     # n per cond
-                    ge.annotate(AX[irow][icol], ' n=%i\n trials'%np.sum(cond)+2*'\n'*icolor,
+                    AX[irow][icol].annotate(' n=%i\n trials'%np.sum(cond)+2*'\n'*icolor,
                                 (.99,0), color=COLORS[icolor], size='xx-small',
-                                ha='left', va='bottom')
+                                ha='left', va='bottom', xycoords='axes fraction')
+
                     # color label
                     if (len(COLOR_CONDS)>1) and (irow==0) and (icol==0):
                         s = ''
-                        for i, key in enumerate(self.varied_parameters.keys()):
+                        for i, key in enumerate(episodes.varied_parameters.keys()):
                             if (key==color_key) or (key in color_keys):
-                                s+=20*' '+icolor*18*' '+format_key_value(key, getattr(self, key)[cond][0])
-                                ge.annotate(fig, s+'  '+icolor*'\n', (1,0), color=COLORS[icolor], ha='right', va='bottom', size='small')
+                                s+=20*' '+icolor*18*' '+format_key_value(key, getattr(episodes, key)[cond][0])
+                                AX[0][0].annotate(s+'  '+icolor*'\n', (1,0), color=COLORS[icolor],
+                                        ha='right', va='bottom', size='small', xycoords='figure fraction')
                 
     if with_stat_test:
         for irow, row_cond in enumerate(ROW_CONDS):
@@ -182,41 +196,38 @@ def plot_trial_average(self,
                 for icolor, color_cond in enumerate(COLOR_CONDS):
                     
                     cond = np.array(condition & col_cond & row_cond & color_cond)[:response.shape[0]]
-                    results = self.stat_test_for_evoked_responses(episode_cond=cond,
+                    results = episodes.stat_test_for_evoked_responses(episode_cond=cond,
                                                                   response_args=dict(roiIndex=roiIndex, roiIndices=roiIndices),
                                                                   **stat_test_props)
 
                     ps, size = results.pval_annot()
                     AX[irow][icol].annotate(icolor*'\n'+ps, ((stat_test_props['interval_post'][0]+stat_test_props['interval_pre'][1])/2.,
-                                                             self.ylim[0]), va='top', ha='center', size=size-1, xycoords='data', color=COLORS[icolor])
-                    AX[irow][icol].plot(stat_test_props['interval_pre'], self.ylim[0]*np.ones(2), 'k-', lw=1)
-                    AX[irow][icol].plot(stat_test_props['interval_post'], self.ylim[0]*np.ones(2), 'k-', lw=1)
+                                                             episodes.ylim[0]), va='top', ha='center', size=size-1, xycoords='data', color=COLORS[icolor])
+                    AX[irow][icol].plot(stat_test_props['interval_pre'], episodes.ylim[0]*np.ones(2), 'k-', lw=1)
+                    AX[irow][icol].plot(stat_test_props['interval_post'], episodes.ylim[0]*np.ones(2), 'k-', lw=1)
                         
     if xlim is None:
-        self.xlim = [self.t[0], self.t[-1]]
+        episodes.xlim = [episodes.t[0], episodes.t[-1]]
     else:
-        self.xlim = xlim
+        episodes.xlim = xlim
         
     if ylim is not None:
-        self.ylim = ylim
+        episodes.ylim = ylim
 
         
     for irow, row_cond in enumerate(ROW_CONDS):
         for icol, col_cond in enumerate(COL_CONDS):
             if not no_set:
-                ge.set_plot(AX[irow][icol],
-                            spines=(['left', 'bottom'] if with_axis else []),
-                            # xlabel=(self.xbarlabel.text() if with_axis else ''),
-                            # ylabel=(self.ybarlabel.text() if with_axis else ''),
-                            ylim=self.ylim, xlim=self.xlim)
+                AX[irow][icol].set_ylim(ylim)
+                AX[irow][icol].set_xlim(xlim)
 
             if with_stim:
-                AX[irow][icol].fill_between([0, np.mean(self.time_duration)],
-                                    self.ylim[0]*np.ones(2), self.ylim[1]*np.ones(2),
+                AX[irow][icol].fill_between([0, np.mean(episodes.time_duration)],
+                                    episodes.ylim[0]*np.ones(2), episodes.ylim[1]*np.ones(2),
                                     color='grey', alpha=.2, lw=0)
 
     if not with_axis and not no_set:
-        ge.draw_bar_scales(AX[0][0],
+        pt.draw_bar_scales(AX[0][0],
                            Xbar=xbar, Xbar_label=xbarlabel,
                            Ybar=ybar,  Ybar_label=ybarlabel,
                            Xbar_fraction=0.1, Xbar_label_format='%.1f',
@@ -224,21 +235,48 @@ def plot_trial_average(self,
                            loc='top-left')
 
     if label!='':
-        ge.annotate(fig, label, (0,0), color=color, ha='left', va='bottom')
+        AX[0][0].annotate(label, (0,0), color=color,
+                ha='left', va='bottom', xycoords='figure fraction')
 
     if with_annotation:
         S = ''
-        if hasattr(self, 'rawFluo') or hasattr(self, 'dFoF') or hasattr(self, 'neuropil'):
+        if hasattr(episodes, 'rawFluo') or hasattr(episodes, 'dFoF') or hasattr(episodes, 'neuropil'):
             if roiIndex is not None:
                 S+='roi #%i' % roiIndex
             elif roiIndices in ['sum', 'mean', 'all']:
-                S+='n=%i rois' % len(self.data.valid_roiIndices)
+                S+='n=%i rois' % len(episodes.data.valid_roiIndices)
             else:
                 S+='n=%i rois' % len(roiIndices)
-        # for i, key in enumerate(self.varied_parameters.keys()):
-        #     if 'single-value' in getattr(self, '%s_plot' % key).currentText():
-        #         S += ', %s=%.2f' % (key, getattr(self, '%s_values' % key).currentText())
-        ge.annotate(fig, S, (0,0), color='k', ha='left', va='bottom', size='small')
+        # for i, key in enumerate(episodes.varied_parameters.keys()):
+        #     if 'single-value' in getattr(episodes, '%s_plot' % key).currentText():
+        #         S += ', %s=%.2f' % (key, getattr(episodes, '%s_values' % key).currentText())
+        AX[0][0].annotate(S, (0,0), color='k', ha='left', va='bottom', size='small',
+                xycoords='figure fraction')
         
     return fig, AX
+
+
+if __name__=='__main__':
+
+    import argparse
+
+    parser=argparse.ArgumentParser()
+    parser.add_argument("datafile", type=str)
+    parser.add_argument('-pid', "--protocol_id", type=int, default=0)
+
+    args = parser.parse_args()
+
+    import physion
+    if os.path.isfile(args.datafile):
+        data = physion.analysis.read_NWB.Data(args.datafile)
+        episodes = physion.analysis.process_NWB.EpisodeData(data,
+                quantities=['dFoF'],
+                protocol_id=args.protocol_id)
+
+        plot_trial_average(episodes)
+        pt.plt.show()
+
+    else:
+        print(' Need to provide a valid NWB file')
+    
 

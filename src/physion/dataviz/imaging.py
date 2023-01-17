@@ -95,7 +95,7 @@ def add_CaImaging(data, tlim, ax,
             dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 1., fig_fraction/len(roiIndices), ypos, color=color,
                                     scale_unit_string=('%.0f$\Delta$F/F' if (n==0) else ' '))
         else:
-            y = data.Fluorescence.data[ir, np.arange(i1,i2)][::subsampling]
+            y = data.Fluorescence.data[:,ir][np.arange(i1,i2)][::subsampling]
             dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1., fig_fraction/len(roiIndices), ypos, color=color,
                                     scale_unit_string=('fluo (a.u.)' if (n==0) else ''))
 
@@ -135,7 +135,7 @@ def find_full_roi_coords(data, roiIndex):
     return [data.pixel_masks[ii][1] for ii in indices],  [data.pixel_masks[ii][0] for ii in indices]
 
 def find_roi_coords(data, roiIndex):
-    x, y = data.find_full_roi_coords(roiIndex)
+    x, y = find_full_roi_coords(data, roiIndex)
     return np.mean(y), np.mean(x), np.std(y), np.std(x)
 
 def find_roi_extent(data, roiIndex, roi_zoom_factor=10.):
@@ -173,6 +173,7 @@ def show_CaImaging_FOV(data, key='meanImg', NL=1, cmap='viridis', ax=None,
                        roiIndex=None, roiIndices=[],
                        roi_zoom_factor=10,
                        roi_lw=3,
+                       with_annotation=True,
                        with_roi_zoom=False,):
     
     if ax is None:
@@ -212,7 +213,9 @@ def show_CaImaging_FOV(data, key='meanImg', NL=1, cmap='viridis', ax=None,
                 color=plt.cm.autumn(np.random.uniform(0,1)),
                 alpha=0.5,
                 ms=0.1)
-    ax.annotate('%i ROIs' % np.sum(data.iscell), (0, 0), xycoords='axes fraction', rotation=90, ha='right')
+
+    if with_annotation:
+        ax.annotate('%i ROIs' % np.sum(data.iscell), (0, 0), xycoords='axes fraction', rotation=90, ha='right')
     
     ax.set_title(key)
     

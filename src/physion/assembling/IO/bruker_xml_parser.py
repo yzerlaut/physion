@@ -75,6 +75,7 @@ def bruker_xml_parser(filename):
         # dealing with depth  --- MANUAL for piezo plane-scanning mode because the bruker xml files don't hold this info...
         if np.sum(['Piezo' in key for key in depths.keys()]):
             Ndepth = len(np.unique(data['Ch2']['depth_index'])) # SHOULD ALWAYS BE ODD
+            data['Nplanes'] = Ndepth
             try:
                 for key in depths.keys():
                     if 'Piezo' in key:
@@ -86,6 +87,7 @@ def bruker_xml_parser(filename):
                 print(' /!\ plane info was not found /!\ ')
                 data['depth_shift'] = np.arange(1, Ndepth+1)
         else:
+            data['Nplanes'] = 1
             data['depth_shift'] = np.zeros(1)
 
 
@@ -104,18 +106,22 @@ def bruker_xml_parser(filename):
                         else:
                             data[channel]['depth_index'].append(0)
 
+        data['Nplanes'] = 1
         data['depth_shift'] = np.zeros(1)
         data['depth_index'] = np.zeros(len(data['Ch1']['relativeTime']))
 
     # ---------------------------- #
     #  translation to numpy arrays
     # ---------------------------- #
+    data['Nchannels'] = 0
     for channel in ['Ch1', 'Ch2']:
+        if len(data[channel]['relativeTime'])>0:
+            data['Nchannels'] +=1  # count channels
         for key in ['relativeTime', 'absoluteTime']:
             data[channel][key] = np.array(data[channel][key], dtype=np.float64)
         for key in ['tifFile']:
             data[channel][key] = np.array(data[channel][key], dtype=str)
-                        
+    
     return data
 
 

@@ -5,21 +5,17 @@ import matplotlib.pylab as plt
 import matplotlib.animation as animation
 from PIL import Image
 
-# custom modules
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+import physion.utils.plot_tools as pt
 
-from assembling.saving import get_files_with_extension, list_dayfolder, check_datafolder, get_TSeries_folders
-from assembling.move_CaImaging_folders import StartTime_to_day_seconds
-from assembling.tools import load_FaceCamera_data
-from assembling.IO.binary import BinaryFile
+from physion.pupil import roi, process
+from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders
+from physion.assembling.tools import StartTime_to_day_seconds, load_FaceCamera_data
+from physion.dataviz.tools import convert_times_to_indices
+from physion.assembling.IO.binary import BinaryFile
+from physion.dataviz.raw import *
+from physion.dataviz.imaging import *
 
-from pupil import roi, process
-
-from dataviz.show_data import * # this includes dv_tools
-
-from datavyz import graph_env
-ge = graph_env('screen')
-
+plt.rcParams['figure.autolayout'] = False
 
 def draw_figure(args, data,
                 top_row_bottom=0.75,
@@ -36,21 +32,27 @@ def draw_figure(args, data,
 
 
     fractions = {'photodiode':0.09, 'photodiode_start':0,
-            'running':0.13, 'running_start':0.1,
-            'whisking':0.15, 'whisking_start':0.25,
-            'gaze':0.1, 'gaze_start':0.35,
-            'pupil':0.13, 'pupil_start':0.45,
-            'rois':0.2, 'rois_start':0.6,
-            'raster':0.2, 'raster_start':0.8}
+                 'running':0.13, 'running_start':0.1,
+                 'whisking':0.15, 'whisking_start':0.25,
+                 'gaze':0.1, 'gaze_start':0.35,
+                 'pupil':0.13, 'pupil_start':0.45,
+                 'rois':0.2, 'rois_start':0.6,
+                 'raster':0.2, 'raster_start':0.8}
 
     AX = {'time_plot_ax':None}
-    fig, AX['time_plot_ax'] = ge.figure(figsize=(2,3.5),
-            bottom=0.02, right=0.5)
+    fig, AX['time_plot_ax'] = plt.subplots(1, figsize=(8,5.5))
+    plt.subplots_adjust(bottom=0.01, right=0.97, left=0.28, top=0.7)
 
     width = (1.-4*top_row_space)/4.
-    AX['setup_ax'] = ge.inset(fig, (top_row_space/2.+0*(width+top_row_space), top_row_bottom, width, top_row_height))
-    AX['screen_ax'] = ge.inset(fig, (top_row_space/2.+1*(width+.5*top_row_space), top_row_bottom, 1.3*width, top_row_height))
-    AX['camera_ax'] = ge.inset(fig, (top_row_space/2.+2*(width+top_row_space), top_row_bottom, width, top_row_height))
+    AX['setup_ax'] = pt.inset(fig,
+            (top_row_space/2.+0*(width+top_row_space),
+            top_row_bottom, width, top_row_height))
+    AX['screen_ax'] = pt.inset(fig,
+            (top_row_space/2.+1*(width+.5*top_row_space),
+            top_row_bottom, 1.3*width, top_row_height))
+    AX['camera_ax'] = pt.inset(fig,
+            (top_row_space/2.+2*(width+top_row_space),
+            top_row_bottom, width, top_row_height))
 
     if 'ophys' in data.nwbfile.processing:
 
@@ -59,52 +61,57 @@ def draw_figure(args, data,
         max_proj_scaled = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
         max_proj_scaled = np.power(max_proj_scaled, 1/args.imaging_NL)
 
-        AX['imaging_ax'] = ge.inset(fig, (top_row_space/2.+3*(width+top_row_space), top_row_bottom-.04, width, top_row_height+0.08))
-        ge.annotate(AX['imaging_ax'], 'imaging', (-0.05,0.5), ha='right', va='center', rotation=90)
+        AX['imaging_ax'] = pt.inset(fig, (top_row_space/2.+3*(width+top_row_space), top_row_bottom-.04, width, top_row_height+0.08))
+        AX['imaging_ax'].annotate('imaging', (-0.05,0.5), ha='right', va='center', rotation=90, xycoords='axes fraction')
         AX['imaging_img'] = AX['imaging_ax'].imshow(max_proj_scaled, vmin=0, vmax=1, 
-                cmap=ge.get_linear_colormap('k','lightgreen'), 
+                cmap=pt.get_linear_colormap('k','lightgreen'), 
                 aspect='equal', interpolation='none', origin='lower')
-        ge.annotate(AX['imaging_ax'], ' n=%i rois' % data.iscell.sum(), (0,0), color='w', size='xxx-small')
+        AX['imaging_ax'].annotate(' n=%i rois' % data.iscell.sum(), (0,0), color='w', fontsize=6, xycoords='axes fraction')
 
         # ROI 1 
-        AX['ROI1_ax'] = ge.inset(fig, [0.04,0.6,0.11,0.13]) 
-        extent1 = data.find_roi_extent(args.ROIs[0], roi_zoom_factor=4)
+        AX['ROI1_ax'] = pt.inset(fig, [0.04,0.6,0.11,0.13]) 
+        extent1 = find_roi_extent(data, args.ROIs[0], roi_zoom_factor=4)
         max_proj = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:][extent1[0]:extent1[1], extent1[2]:extent1[3]]
         max_proj_scaled1 = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
         max_proj_scaled1 = np.power(max_proj_scaled1, 1/args.imaging_NL)
 
         AX['ROI1_img'] = AX['ROI1_ax'].imshow(max_proj_scaled1, vmin=0, vmax=1, 
-                cmap=ge.get_linear_colormap('k','lightgreen'), extent=extent1,
+                cmap=pt.get_linear_colormap('k','lightgreen'), extent=extent1,
                 aspect='equal', interpolation='none', origin='lower')
-        ge.annotate(AX['ROI1_ax'], ' roi #%i' % (args.ROIs[0]+1), (0,0), color='w', size='xxx-small')
-        data.add_roi_ellipse(args.ROIs[0], AX['ROI1_ax'], size_factor=1.5, roi_lw=1)
+        AX['ROI1_ax'].annotate(' roi #%i' % (args.ROIs[0]+1), (0,0), color='w', fontsize=6, xycoords='axes fraction')
+        add_roi_ellipse(data, args.ROIs[0], AX['ROI1_ax'],
+                        size_factor=1.5, roi_lw=1)
 
         # ROI 2 
-        AX['ROI2_ax'] = ge.inset(fig, [0.04,0.45,0.11,0.13]) 
-        extent2 = data.find_roi_extent(args.ROIs[1], roi_zoom_factor=4)
+        AX['ROI2_ax'] = pt.inset(fig, [0.04,0.45,0.11,0.13]) 
+        extent2 = find_roi_extent(data, args.ROIs[1], roi_zoom_factor=4)
         max_proj = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:][extent2[0]:extent2[1], extent2[2]:extent2[3]]
         max_proj_scaled2 = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
         max_proj_scaled2 = np.power(max_proj_scaled2, 1/args.imaging_NL)
 
         AX['ROI2_img'] = AX['ROI2_ax'].imshow(max_proj_scaled2, vmin=0, vmax=1, 
-                cmap=ge.get_linear_colormap('k','lightgreen'), extent=extent2, 
+                cmap=pt.get_linear_colormap('k','lightgreen'), extent=extent2, 
                 aspect='equal', interpolation='none', origin='lower')
-        ge.annotate(AX['ROI2_ax'], ' roi #%i' % (args.ROIs[1]+1), (0,0), color='w', size='xxx-small')
-        data.add_roi_ellipse(args.ROIs[1], AX['ROI2_ax'], size_factor=1.5, roi_lw=1)
+        AX['ROI2_ax'].annotate(' roi #%i' % (args.ROIs[1]+1), (0,0), color='w', fontsize=6, xycoords='axes fraction')
+        add_roi_ellipse(data, args.ROIs[1], AX['ROI2_ax'],
+                        size_factor=1.5, roi_lw=1)
 
-    AX['whisking_ax'] = ge.inset(fig, [0.04,0.15,0.11,0.11]) 
-    ge.annotate(AX['whisking_ax'], '$F_{(t+dt)}$-$F_{(t)}$', (0,0.5), ha='right', va='center', rotation=90, size='xxx-small')
-    ge.annotate(AX['whisking_ax'], 'motion frames', (0.5,0), ha='center', va='top', size='xxx-small')
-    AX['pupil_ax'] = ge.inset(fig, [0.04,0.28,0.11,0.13]) 
-    AX['time_ax'] = ge.inset(fig, [0.02,0.05,0.08,0.05]) 
+    AX['whisking_ax'] = pt.inset(fig, [0.04,0.15,0.11,0.11]) 
+    AX['whisking_ax'].annotate('$F_{(t+dt)}$-$F_{(t)}$', (0,0.5),
+            ha='right', va='center',
+            xycoords='axes fraction', rotation=90, fontsize=6)
+    AX['whisking_ax'].annotate('motion frames', (0.5,0), ha='center',
+        va='top', fontsize=6, xycoords='axes fraction')
+    AX['pupil_ax'] = pt.inset(fig, [0.04,0.28,0.11,0.13]) 
+    AX['time_ax'] = pt.inset(fig, [0.02,0.05,0.08,0.05]) 
 
     t0 = times[0]
 
     # setup drawing
-    img = Image.open('doc/exp-rig.png')
+    img = Image.open('../docs/exp-rig.png')
     AX['setup_ax'].imshow(img)
-    ge.set_plot(AX['setup_ax'], [])
-    time = AX['time_ax'].annotate('t=%.1fs' % times[0], (0,0), xycoords='axes fraction', size=12)
+    AX['setup_ax'].axis('off')
+    time = AX['time_ax'].annotate('t=%.1fs' % times[0], (0,0), xycoords='axes fraction', size=10)
 
     # screen inset
     AX['screen_img'] = data.visual_stim.show_frame(0, ax=AX['screen_ax'],
@@ -117,8 +124,9 @@ def draw_figure(args, data,
         Ly, Lx = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'].shape
         Ca_data = BinaryFile(Ly=Ly, Lx=Lx,
                              read_filename=os.path.join(metadata['raw_imaging_folder'],
-                                        'suite2p', 'plane0','data.bin'))
-        i1, i2 = dv_tools.convert_times_to_indices(times[0], times[1], data.Fluorescence)
+                                                       'suite2p', 'plane0','data.bin'))
+        i1, i2 = convert_times_to_indices(times[0], times[1],
+                                          data.Fluorescence)
 
         imaging_scale = Ca_data.data[i1:i2,:,:].min(), Ca_data.data[i1:i2,:,:].max()
 
@@ -129,16 +137,20 @@ def draw_figure(args, data,
                Ca_data.data[i1:i2, extent2[0]:extent2[1], extent2[2]:extent2[3]].max() 
 
     else:
+
         Ca_data = None
 
 
     # Face Camera
     if metadata['raw_vis_folder']!='':
+
         load_NIdaq(metadata)
+
         load_faceCamera(metadata)
 
         img = np.load(metadata['raw_vis_FILES'][0])
         AX['camera_img'] = AX['camera_ax'].imshow(img, cmap='gray')
+
         # pupil
         x, y = np.meshgrid(np.arange(0,img.shape[0]), np.arange(0,img.shape[1]), indexing='ij')
         pupil_cond = (x>=metadata['pupil_xmin']) & (x<=metadata['pupil_xmax']) & (y>=metadata['pupil_ymin']) & (y<=metadata['pupil_ymax'])
@@ -156,94 +168,98 @@ def draw_figure(args, data,
         img1 = np.load(metadata['raw_vis_FILES'][1])
         AX['whisking_img'] = AX['whisking_ax'].imshow((img1-img)[whisking_cond].reshape(*whisking_shape), cmap='gray')
 
-    ge.set_plot(AX['setup_ax'], [])
-
+    AX['setup_ax'].axis('off')
     
     # time cursor
-    cursor, = AX['time_plot_ax'].plot(np.ones(2)*times[0], np.arange(2), 'k-')#color=ge.grey, lw=3, alpha=.3) 
+    cursor, = AX['time_plot_ax'].plot(np.ones(2)*times[0], np.arange(2), 'k-')#color='grey', lw=3, alpha=.3) 
 
     #   ----  filling time plot
 
     # photodiode and visual stim
-    data.add_VisualStim(args.tlim, AX['time_plot_ax'], 
-                        fig_fraction=2.,
-                        with_screen_inset=False,
-                        name='')
-    data.add_Photodiode(args.tlim, AX['time_plot_ax'], 
-                        fig_fraction_start=fractions['photodiode_start'], 
-                        fig_fraction=fractions['photodiode'], 
-                        name='')
-    ge.annotate(AX['time_plot_ax'], 'photodiode', (-0.1, fractions['photodiode_start']), ha='center', va='bottom', color=ge.grey, size='small')
+    add_VisualStim(data, args.tlim, AX['time_plot_ax'], 
+                   fig_fraction=2., with_screen_inset=False,
+                   name='')
+    add_Photodiode(data, args.tlim, AX['time_plot_ax'], 
+                   fig_fraction_start=fractions['photodiode_start'], 
+                   fig_fraction=fractions['photodiode'], name='')
+    AX['time_plot_ax'].annotate('photodiode', (-0.1, fractions['photodiode_start']),
+            ha='center', va='bottom', color='grey', fontsize=7, xycoords='axes fraction')
 
 
     # locomotion
-    data.add_Locomotion(args.tlim, AX['time_plot_ax'], 
+    add_Locomotion(data, args.tlim, AX['time_plot_ax'], 
                         fig_fraction_start=fractions['running_start'], 
                         fig_fraction=fractions['running'], 
                         name='')
-    ge.annotate(AX['time_plot_ax'], 'running-speed', (-0.1, fractions['running_start']), ha='center', va='bottom', color=ge.blue, size='small')
+    AX['time_plot_ax'].annotate('running-speed', (-0.1, fractions['running_start']), ha='center', va='bottom', color='#1f77b4', fontsize=7, xycoords='axes fraction')
 
     # whisking 
-    data.add_FaceMotion(args.tlim, AX['time_plot_ax'], 
-                        fig_fraction_start=fractions['whisking_start'], 
-                        fig_fraction=fractions['whisking'], 
-                        name='')
-    ge.annotate(AX['time_plot_ax'], 'whisking  ', (-0.01, fractions['whisking_start']), ha='right', va='bottom', color=ge.purple, size='small')
+    add_FaceMotion(data, args.tlim, AX['time_plot_ax'], 
+                   fig_fraction_start=fractions['whisking_start'], 
+                   fig_fraction=fractions['whisking'], 
+                   name='')
+    AX['time_plot_ax'].annotate('whisking  ', (-0.01, fractions['whisking_start']), ha='right', va='bottom', color='purple', fontsize=7, xycoords='axes fraction')
 
     # gaze 
-    data.add_GazeMovement(args.tlim, AX['time_plot_ax'], 
+    add_GazeMovement(data, args.tlim, AX['time_plot_ax'], 
                         fig_fraction_start=fractions['gaze_start'], 
                         fig_fraction=fractions['gaze'], 
                         name='')
-    ge.annotate(AX['time_plot_ax'], 'gaze \nmov. ', (-0.01, fractions['gaze_start']), ha='right', va='bottom', color=ge.orange, size='small')
+    AX['time_plot_ax'].annotate('gaze \nmov. ', (-0.01, fractions['gaze_start']), ha='right', va='bottom', color='orange', fontsize=7, xycoords='axes fraction')
 
     # pupil 
-    data.add_Pupil(args.tlim, AX['time_plot_ax'], 
+    add_Pupil(data, args.tlim, AX['time_plot_ax'], 
                         fig_fraction_start=fractions['pupil_start'], 
                         fig_fraction=fractions['pupil'], 
                         name='')
-    ge.annotate(AX['time_plot_ax'], 'pupil \ndiam. ', (-0.01, fractions['pupil_start']), ha='right', va='bottom', color=ge.red, size='small')
+    AX['time_plot_ax'].annotate('pupil \ndiam. ', (-0.01, fractions['pupil_start']), ha='right', va='bottom', color='red', fontsize=7, xycoords='axes fraction')
 
     # rois 
-    data.add_CaImaging(args.tlim, AX['time_plot_ax'], 
-                       roiIndices=args.ROIs, 
-                       fig_fraction_start=fractions['rois_start'], 
-                       fig_fraction=fractions['rois'], 
-                       name='', annotation_side='left')
-    ge.annotate(AX['time_plot_ax'], 'fluorescence', (-0.1, fractions['raster_start']), ha='right', va='center', color=ge.green, rotation=90)
+    add_CaImaging(data, args.tlim, AX['time_plot_ax'], 
+                  subquantity='dFoF',
+                  roiIndices=args.ROIs, 
+                  fig_fraction_start=fractions['rois_start'], 
+                  fig_fraction=fractions['rois'], 
+                  name='', annotation_side='left')
+    AX['time_plot_ax'].annotate('fluorescence', (-0.1, fractions['raster_start']), ha='right', va='top', color='green', rotation=90, xycoords='axes fraction')
 
     # raster 
-    data.add_CaImagingRaster(args.tlim, AX['time_plot_ax'], 
-                             subquantity='dFoF', normalization='per-line',
-                             fig_fraction_start=fractions['raster_start'], 
-                             fig_fraction=fractions['raster'], 
-                             name='')
+    add_CaImagingRaster(data, args.tlim, AX['time_plot_ax'], 
+                        subquantity='dFoF', normalization='per-line',
+                        fig_fraction_start=fractions['raster_start'], 
+                        fig_fraction=fractions['raster'], 
+                        name='')
     
 
     if args.Tbar>0:
         AX['time_plot_ax'].plot(args.Tbar*np.arange(2)+times[0], args.Tbar_loc*np.ones(2), 'k-')
-        ge.annotate(AX['time_plot_ax'], '%is' % args.Tbar, (0,args.Tbar_loc+0.01))
-    ge.set_plot(AX['time_plot_ax'], [], xlim=[times[0], times[-1]], ylim=[-0.01, 1.01])
+        AX['time_plot_ax'].annotate('%is' % args.Tbar, (0,args.Tbar_loc+0.01), xycoords='axes fraction')
+    AX['time_plot_ax'].axis('off')
+    AX['time_plot_ax'].set_xlim([times[0], times[-1]])
+    AX['time_plot_ax'].set_ylim([-0.01, 1.01])
 
     for i, label in enumerate(['screen', 'camera']):
-        ge.set_plot(AX['%s_ax'%label], [], title=label)
+        AX['%s_ax'%label].axis('off')
+        AX['%s_ax'%label].set_title(label)
     for i, label in enumerate(['imaging', 'pupil', 'whisking', 'ROI1', 'ROI2', 'time']):
-        ge.set_plot(AX['%s_ax'%label], [], title=' ')
+        AX['%s_ax'%label].axis('off')
 
     def update(i=0):
-        # camera
-        camera_index = np.argmin((metadata['raw_vis_times']-times[i])**2)
-        img = np.load(metadata['raw_vis_FILES'][camera_index])
-        AX['camera_img'].set_array(img)
-        # pupil
-        AX['pupil_img'].set_array(img[pupil_cond].reshape(*pupil_shape))
-        pupil_fit = get_pupil_fit(camera_index, data, metadata)
-        AX['pupil_fit'].set_data(pupil_fit[1], pupil_fit[0])
-        pupil_center = get_pupil_center(camera_index, data, metadata)
-        AX['pupil_center'].set_data([pupil_center[1]], [pupil_center[0]])
-        # whisking
-        img1 = np.load(metadata['raw_vis_FILES'][camera_index+1])
-        AX['whisking_img'].set_array((img1-img)[whisking_cond].reshape(*whisking_shape))
+
+        if 'raw_vis_times' in metadata:
+            # camera
+            camera_index = np.argmin((metadata['raw_vis_times']-times[i])**2)
+            img = np.load(metadata['raw_vis_FILES'][camera_index])
+            AX['camera_img'].set_array(img)
+            # pupil
+            AX['pupil_img'].set_array(img[pupil_cond].reshape(*pupil_shape))
+            pupil_fit = get_pupil_fit(camera_index, data, metadata)
+            AX['pupil_fit'].set_data(pupil_fit[1], pupil_fit[0])
+            pupil_center = get_pupil_center(camera_index, data, metadata)
+            AX['pupil_center'].set_data([pupil_center[1]], [pupil_center[0]])
+            # whisking
+            img1 = np.load(metadata['raw_vis_FILES'][camera_index+1])
+            AX['whisking_img'].set_array((img1-img)[whisking_cond].reshape(*whisking_shape))
 
         # imaging
         if (i in [0,len(times)-1]) or (Ca_data is None):
@@ -291,6 +307,7 @@ def draw_figure(args, data,
                                   interval=100,
                                   blit=True)
 
+    pt.plt.show()
     return fig, AX, ani
 
 def get_pupil_center(index, data, metadata):
@@ -337,7 +354,7 @@ def load_Imaging(metadata):
 
 if __name__=='__main__':
 
-    import argparse
+    import argparse, physion
 
     parser=argparse.ArgumentParser()
     parser.add_argument("datafile", type=str)
@@ -367,7 +384,7 @@ if __name__=='__main__':
     if args.duration>0:
         args.Ndiscret = int(args.duration*args.fps)
 
-    data = MultimodalData(args.datafile, with_visual_stim=True)
+    data = physion.analysis.read_NWB.Data(args.datafile, with_visual_stim=True)
     print('\n', data.nwbfile.processing['ophys'].description, '\n')
 
     fig, AX, ani = draw_figure(args, data)    
@@ -376,7 +393,7 @@ if __name__=='__main__':
         writer = animation.writers['ffmpeg'](fps=args.fps)
         ani.save('demo.mp4',writer=writer,dpi=args.dpi)# fig, ax = ge.twoD_plot(np.arange(50), np.arange(30), np.random.randn(50, 30))
     else:
-        ge.show()
+        pt.plt.show()
 
 
 
