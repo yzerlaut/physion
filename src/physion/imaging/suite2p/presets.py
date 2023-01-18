@@ -28,17 +28,17 @@ ops0 = {
     'multiplane_parallel': 0.0,
     'preclassify': 0.0,
     'save_mat': False,
-    'save_NWB': 1, # save as NWB output
+    'save_NWB': 0, # save as NWB output
     'combined': 1.0, # (bool, default: True) combine results across planes in separate folder 'combined' at end of processing. This folder will allow all planes to be loaded into the GUI simultaneously.
     'aspect': 1.0, # (float, default: 1.0) (**new*) ratio of um/pixels in X to um/pixels in Y (ONLY for correct aspect ratio in GUI, not used for other processing)
     # -------------
     # Frame Registration
     # -------------
     'do_registration': 1,
-    'nonrigid': False, #  (bool, default: True) whether or not to perform non-rigid registration, which splits the field of view into blocks and computes registration offsets in each block separately. MOSTLY USEFUL FOR SLOW MULTIPLACE RECORDINGS !!
+    'nonrigid': True, #  (bool, default: True) whether or not to perform non-rigid registration, which splits the field of view into blocks and computes registration offsets in each block separately. MOSTLY USEFUL FOR SLOW MULTIPLACE RECORDINGS !!
     'align_by_chan': 1, # (int, default: 1) which channel to use for alignment (1-based, so 1 means 1st channel and 2 means 2nd channel). If you have a non-functional channel with something like td-Tomato expression, you may want to use this channel for alignment rather than the functional channel.
     'nimg_init': 1000, # (int, default: 200) how many frames to use to compute reference image for registration
-    'batch_size': 2000, # (int, default: 200) how many frames to register simultaneously in each batch. This depends on memory constraints - it will be faster to run if the batch is larger, but it will require more RAM.
+    'batch_size': 500, # (int, default: 200) how many frames to register simultaneously in each batch. This depends on memory constraints - it will be faster to run if the batch is larger, but it will require more RAM.
     'two_step_registration': False, # (bool, default: False) whether or not to run registration twice (for low SNR data). keep_movie_raw must be True for this to work.
     'keep_movie_raw': False,
     'maxregshift': 0.1, # (float, default: 0.1) the maximum shift as a fraction of the frame size. If the frame is Ly pixels x Lx pixels, then the maximum pixel shift in pixels will be max(Ly,Lx) * ops['maxregshift'].

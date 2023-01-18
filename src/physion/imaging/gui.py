@@ -48,7 +48,7 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.add_side_widget(tab.layout, self.registrOnly)
 
     self.rigidBox = QtWidgets.QCheckBox('rigid registration', self)
-    self.rigidBox.setChecked(True)
+    self.rigidBox.setChecked(False)
     self.add_side_widget(tab.layout, self.rigidBox)
 
     self.add_side_widget(tab.layout,\
@@ -197,12 +197,11 @@ def run_TSeries_analysis(self):
     # we precede the python call by a "sleep Xm" command
     delay = float(self.delayBox.text())
     if delay>0:
-        delays = np.cumsum(delay*np.ones(len(self.folders)))
+        delays = delay*np.ones(len(self.folders))
         if not self.firstBox.isChecked():
-            delays -= delay
-        delays = ['sleep %.1fm; ' % d for d in delays]
+            delays[0] = 0
     else:
-        delays = ['' for f in self.folders] # empty string
+        delays = np.zeros(len(self.folders))
 
     for i, folder in enumerate(self.folders):
 
@@ -217,9 +216,11 @@ def run_TSeries_analysis(self):
             settings['nplanes'] = self.Nplanes[i]
             settings['nchannels'] = self.Nchans[i]
             build_suite2p_options(folder, settings)
-            cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (delays[i]+python_path_suite2p_env,
+            cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
                                                             os.path.join(folder,'db.npy'),
                                                             os.path.join(folder,'ops.npy'))
+            print('sleeping for %.1f min [...]' % % delays[i])
+            time.sleep(delays[i]*60)
             print('running "%s" \n ' % cmd)
             # subprocess.run(cmd, shell=True)
             p = subprocess.Popen(cmd,

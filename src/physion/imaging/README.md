@@ -1,6 +1,5 @@
 # Calcium imaging
 
-
 ## Raw data transfer and conversion to tiff files
 
 - use `ssh` to transfer the raw data
@@ -34,6 +33,13 @@ PREPROCESSING_SETTINGS = {
 Each entry will be a default settings appearing in the GUI.
 
 N.B. we extract the available information form the `xml` Bruker file, see here [an example file](./Bruker_xml/TSeries-190620-250-00-002.xml).
+
+## Notes on `suite2p`
+
+- pay attention to `batch_size` for the registration process, it can easily saturate the memory of our computers
+- doing simultaneous registration saturates the memory, delay them by some time...
+- [15/01/2023] rigid-registration as a bug, only non-rigid works
+- [15/01/2023] the nwb-export as a bug
 
 ## Preprocessing and analysis
 
