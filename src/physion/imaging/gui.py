@@ -219,7 +219,7 @@ def run_TSeries_analysis(self):
             cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
                                                             os.path.join(folder,'db.npy'),
                                                             os.path.join(folder,'ops.npy'))
-            print('sleeping for %.1f min [...]' % % delays[i])
+            print('sleeping for %.1f min [...]' % delays[i])
             time.sleep(delays[i]*60)
             print('running "%s" \n ' % cmd)
             # subprocess.run(cmd, shell=True)
