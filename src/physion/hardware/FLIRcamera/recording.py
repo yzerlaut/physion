@@ -35,35 +35,49 @@ class CameraAcquisition:
         ########################################################################
 
 
-    def rec_and_check(self, run_flag, quit_flag, folder):
+    def rec_and_check(self, run_flag, quit_flag, folder,
+                      debug=True):
         
         self.cam.start()
         np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
 
+        if debug:
+            tic = time.time()
+
         while not quit_flag.is_set():
-            
+           
+            image, Time = self.cam.get_array().astype(np.uint8), time.time()
+
+            if debug:
+                toc = time.time()
+                if (toc-tic)>10:
+                    print(' FaceCamera seemingly working fine, current image:', image[:5,:5])
+                    tic = time.time()
+
             if not self.running and run_flag.is_set() : # not running and need to start  !
-                np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
+
+                np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), image)
                 self.running, self.times = True, []
                 # reinitialize recording
                 self.imgs_folder = os.path.join(folder.get(), 'FaceCamera-imgs')
                 Path(self.imgs_folder).mkdir(parents=True, exist_ok=True)
+
             elif self.running and not run_flag.is_set(): # running and we need to stop
+
                 self.running=False
                 print('FaceCamera -- effective sampling frequency: %.1f Hz ' % (1./np.mean(np.diff(self.times))))
-                np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
+                np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), image)
                 
 
             # after the update
             if self.running:
-                image, Time = self.cam.get_array().astype(np.uint8), time.time()
+
                 np.save(os.path.join(self.imgs_folder, '%s.npy' % Time), image)
-                # imsave(os.path.join(self.imgs_folder, '%s.png' % Time), np.array(image).astype(np.uint8)) # TOO SLOW
                 self.times.append(Time)
 
         if len(self.times)>0:
             print('FaceCamera -- effective sampling frequency: %.1f Hz ' % (1./np.mean(np.diff(self.times))))
-            np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
+            np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), image)
         
         self.running=False
         self.cam.stop()
