@@ -31,28 +31,45 @@ def draw_figure(args, data,
     times = np.linspace(args.tlim[0], args.tlim[1], args.Ndiscret)
 
 
-    fractions = {'photodiode':0.09, 'photodiode_start':0,
-                 'running':0.13, 'running_start':0.1,
-                 'whisking':0.15, 'whisking_start':0.25,
-                 'gaze':0.1, 'gaze_start':0.35,
-                 'pupil':0.13, 'pupil_start':0.45,
-                 'rois':0.2, 'rois_start':0.6,
-                 'raster':0.2, 'raster_start':0.8}
+    if args.no_visual:
+        fractions = {'running':0.15, 'running_start':0.,
+                     'whisking':0.15, 'whisking_start':0.15,
+                     'gaze':0.1, 'gaze_start':0.3,
+                     'pupil':0.15, 'pupil_start':0.4,
+                     'rois':0.25, 'rois_start':0.55,
+                     'raster':0.2, 'raster_start':0.8}
+    else:
+        fractions = {'photodiode':0.09, 'photodiode_start':0,
+                     'running':0.13, 'running_start':0.1,
+                     'whisking':0.15, 'whisking_start':0.25,
+                     'gaze':0.1, 'gaze_start':0.35,
+                     'pupil':0.13, 'pupil_start':0.45,
+                     'rois':0.2, 'rois_start':0.6,
+                     'raster':0.2, 'raster_start':0.8}
 
     AX = {'time_plot_ax':None}
     fig, AX['time_plot_ax'] = plt.subplots(1, figsize=(8,5.5))
     plt.subplots_adjust(bottom=0.01, right=0.97, left=0.28, top=0.7)
 
     width = (1.-4*top_row_space)/4.
+
     AX['setup_ax'] = pt.inset(fig,
             (top_row_space/2.+0*(width+top_row_space),
             top_row_bottom, width, top_row_height))
-    AX['screen_ax'] = pt.inset(fig,
-            (top_row_space/2.+1*(width+.5*top_row_space),
-            top_row_bottom, 1.3*width, top_row_height))
-    AX['camera_ax'] = pt.inset(fig,
-            (top_row_space/2.+2*(width+top_row_space),
-            top_row_bottom, width, top_row_height))
+
+    if not args.no_visual:
+        AX['screen_ax'] = pt.inset(fig,
+                (top_row_space/2.+1*(width+.5*top_row_space),
+                top_row_bottom, 1.3*width, top_row_height))
+        AX['camera_ax'] = pt.inset(fig,
+                (top_row_space/2.+2*(width+top_row_space),
+                top_row_bottom, width, top_row_height))
+    else:
+        AX['screen_ax'] = None
+        AX['camera_ax'] = pt.inset(fig,
+                (top_row_space/2.+1.5*(width+top_row_space),
+                top_row_bottom, width, top_row_height))
+        
 
     if 'ophys' in data.nwbfile.processing:
 
@@ -61,12 +78,16 @@ def draw_figure(args, data,
         max_proj_scaled = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
         max_proj_scaled = np.power(max_proj_scaled, 1/args.imaging_NL)
 
-        AX['imaging_ax'] = pt.inset(fig, (top_row_space/2.+3*(width+top_row_space), top_row_bottom-.04, width, top_row_height+0.08))
+        if not args.no_visual:
+            AX['imaging_ax'] = pt.inset(fig, (top_row_space/2.+3*(width+top_row_space), top_row_bottom-.04, width, top_row_height+0.08))
+        else:
+            AX['imaging_ax'] = pt.inset(fig, (top_row_space/2.+2.5*(width+top_row_space), top_row_bottom-.04, width, top_row_height+0.08))
+
         AX['imaging_ax'].annotate('imaging', (-0.05,0.5), ha='right', va='center', rotation=90, xycoords='axes fraction')
         AX['imaging_img'] = AX['imaging_ax'].imshow(max_proj_scaled, vmin=0, vmax=1, 
                 cmap=pt.get_linear_colormap('k','lightgreen'), 
                 aspect='equal', interpolation='none', origin='lower')
-        AX['imaging_ax'].annotate(' n=%i rois' % data.iscell.sum(), (0,0), color='w', fontsize=6, xycoords='axes fraction')
+        AX['imaging_ax'].annotate(' n=%i rois' % data.iscell.sum(), (0,0), color='w', fontsize=8, xycoords='axes fraction')
 
         # ROI 1 
         AX['ROI1_ax'] = pt.inset(fig, [0.04,0.6,0.11,0.13]) 
@@ -101,8 +122,10 @@ def draw_figure(args, data,
             ha='right', va='center',
             xycoords='axes fraction', rotation=90, fontsize=6)
     AX['whisking_ax'].annotate('motion frames', (0.5,0), ha='center',
-        va='top', fontsize=6, xycoords='axes fraction')
+        va='top', fontsize=8, xycoords='axes fraction')
+
     AX['pupil_ax'] = pt.inset(fig, [0.04,0.28,0.11,0.13]) 
+
     AX['time_ax'] = pt.inset(fig, [0.02,0.05,0.08,0.05]) 
 
     t0 = times[0]
@@ -114,9 +137,13 @@ def draw_figure(args, data,
     time = AX['time_ax'].annotate('t=%.1fs' % times[0], (0,0), xycoords='axes fraction', size=10)
 
     # screen inset
-    AX['screen_img'] = data.visual_stim.show_frame(0, ax=AX['screen_ax'],
-                                                   return_img=True,
-                                                   label=None)
+    if not args.no_visual:
+        AX['screen_img'] = data.visual_stim.show_frame(0, ax=AX['screen_ax'],
+                                                       return_img=True,
+                                                       label=None)
+    else:
+        AX['screen_img'] = None
+        
 
     # Calcium Imaging
     if metadata['raw_imaging_folder']!='':
@@ -167,6 +194,16 @@ def draw_figure(args, data,
         whisking_shape = len(np.unique(x[whisking_cond])), len(np.unique(y[whisking_cond]))
         img1 = np.load(metadata['raw_vis_FILES'][1])
         AX['whisking_img'] = AX['whisking_ax'].imshow((img1-img)[whisking_cond].reshape(*whisking_shape), cmap='gray')
+    else:
+        AX['camera_img'] = AX['camera_ax'].imshow(np.random.randn(10,10),
+                                                  cmap='gray')
+        AX['whisking_img'] = AX['whisking_ax'].imshow(np.random.randn(10,10),
+                                                  cmap='gray')
+        AX['pupil_img'] = AX['pupil_ax'].imshow(np.random.randn(10,10),
+                                                  cmap='gray')
+        AX['pupil_fit'], = AX['pupil_ax'].plot([0], [0], 'o', markersize=3, color='red')
+        AX['pupil_center'], = AX['pupil_ax'].plot([0], [0], 'o', markersize=6, color='orange')
+        metadata['pix_to_mm'] = 1.
 
     AX['setup_ax'].axis('off')
     
@@ -176,14 +213,15 @@ def draw_figure(args, data,
     #   ----  filling time plot
 
     # photodiode and visual stim
-    add_VisualStim(data, args.tlim, AX['time_plot_ax'], 
-                   fig_fraction=2., with_screen_inset=False,
-                   name='')
-    add_Photodiode(data, args.tlim, AX['time_plot_ax'], 
-                   fig_fraction_start=fractions['photodiode_start'], 
-                   fig_fraction=fractions['photodiode'], name='')
-    AX['time_plot_ax'].annotate('photodiode', (-0.1, fractions['photodiode_start']),
-            ha='center', va='bottom', color='grey', fontsize=7, xycoords='axes fraction')
+    if not args.no_visual:
+        add_VisualStim(data, args.tlim, AX['time_plot_ax'], 
+                       fig_fraction=2., with_screen_inset=False,
+                       name='')
+        add_Photodiode(data, args.tlim, AX['time_plot_ax'], 
+                       fig_fraction_start=fractions['photodiode_start'], 
+                       fig_fraction=fractions['photodiode'], name='')
+        AX['time_plot_ax'].annotate('photodiode', (-0.1, fractions['photodiode_start']),
+                ha='center', va='bottom', color='grey', fontsize=8, xycoords='axes fraction')
 
 
     # locomotion
@@ -191,28 +229,28 @@ def draw_figure(args, data,
                         fig_fraction_start=fractions['running_start'], 
                         fig_fraction=fractions['running'], 
                         name='')
-    AX['time_plot_ax'].annotate('running-speed', (-0.1, fractions['running_start']), ha='center', va='bottom', color='#1f77b4', fontsize=7, xycoords='axes fraction')
+    AX['time_plot_ax'].annotate('running\nspeed', (-0.01, fractions['running_start']), ha='right', va='bottom', color='#1f77b4', fontsize=8, xycoords='axes fraction')
 
     # whisking 
     add_FaceMotion(data, args.tlim, AX['time_plot_ax'], 
                    fig_fraction_start=fractions['whisking_start'], 
                    fig_fraction=fractions['whisking'], 
                    name='')
-    AX['time_plot_ax'].annotate('whisking  ', (-0.01, fractions['whisking_start']), ha='right', va='bottom', color='purple', fontsize=7, xycoords='axes fraction')
+    AX['time_plot_ax'].annotate('whisking  ', (-0.01, fractions['whisking_start']), ha='right', va='bottom', color='purple', fontsize=8, xycoords='axes fraction')
 
     # gaze 
     add_GazeMovement(data, args.tlim, AX['time_plot_ax'], 
                         fig_fraction_start=fractions['gaze_start'], 
                         fig_fraction=fractions['gaze'], 
                         name='')
-    AX['time_plot_ax'].annotate('gaze \nmov. ', (-0.01, fractions['gaze_start']), ha='right', va='bottom', color='orange', fontsize=7, xycoords='axes fraction')
+    AX['time_plot_ax'].annotate('gaze \nmov. ', (-0.01, fractions['gaze_start']), ha='right', va='bottom', color='orange', fontsize=8, xycoords='axes fraction')
 
     # pupil 
     add_Pupil(data, args.tlim, AX['time_plot_ax'], 
                         fig_fraction_start=fractions['pupil_start'], 
                         fig_fraction=fractions['pupil'], 
                         name='')
-    AX['time_plot_ax'].annotate('pupil \ndiam. ', (-0.01, fractions['pupil_start']), ha='right', va='bottom', color='red', fontsize=7, xycoords='axes fraction')
+    AX['time_plot_ax'].annotate('pupil \ndiam. ', (-0.01, fractions['pupil_start']), ha='right', va='bottom', color='red', fontsize=8, xycoords='axes fraction')
 
     # rois 
     add_CaImaging(data, args.tlim, AX['time_plot_ax'], 
@@ -238,11 +276,12 @@ def draw_figure(args, data,
     AX['time_plot_ax'].set_xlim([times[0], times[-1]])
     AX['time_plot_ax'].set_ylim([-0.01, 1.01])
 
-    for i, label in enumerate(['screen', 'camera']):
+    for i, label in enumerate(['imaging', 'pupil', 'whisking', 'ROI1', 'ROI2', 'time', 'camera']):
         AX['%s_ax'%label].axis('off')
-        AX['%s_ax'%label].set_title(label)
-    for i, label in enumerate(['imaging', 'pupil', 'whisking', 'ROI1', 'ROI2', 'time']):
-        AX['%s_ax'%label].axis('off')
+    AX['camera_ax'].set_title('camera')
+    if not args.no_visual:
+        AX['screen_ax'].axis('off')
+        AX['screen_ax'].set_title('screen')
 
     def update(i=0):
 
@@ -285,13 +324,14 @@ def draw_figure(args, data,
             
 
         # visual stim
-        iEp = data.find_episode_from_time(times[i])
-        if iEp==-1:
-            AX['screen_img'].set_array(data.visual_stim.x*0+0.5)
-        else:
-            tEp = data.nwbfile.stimulus['time_start_realigned'].data[iEp]
-            data.visual_stim.update_frame(iEp, AX['screen_img'],
-                                          time_from_episode_start=times[i]-tEp)
+        if not args.no_visual:
+            iEp = data.find_episode_from_time(times[i])
+            if iEp==-1:
+                AX['screen_img'].set_array(data.visual_stim.x*0+0.5)
+            else:
+                tEp = data.nwbfile.stimulus['time_start_realigned'].data[iEp]
+                data.visual_stim.update_frame(iEp, AX['screen_img'],
+                                              time_from_episode_start=times[i]-tEp)
         cursor.set_data(np.ones(2)*times[i], np.arange(2))
         # time
         time.set_text('t=%.1fs' % times[i])
@@ -366,6 +406,9 @@ if __name__=='__main__':
     parser.add_argument("--Tbar", type=int, default=0)
     parser.add_argument("--Tbar_loc", type=float, default=0.1, help='y-loc of Tbar in [0,1]')
 
+    parser.add_argument("--no_visual", 
+                        help="remove visual stimulation", action="store_true")
+
     parser.add_argument('-rois', "--ROIs", type=int, default=[0,1], nargs='*')
     parser.add_argument('-n', "--Ndiscret", type=int, default=10)
     parser.add_argument('-q', "--quantity", type=str, default='dFoF')
@@ -385,7 +428,7 @@ if __name__=='__main__':
         args.Ndiscret = int(args.duration*args.fps)
 
     data = physion.analysis.read_NWB.Data(args.datafile, with_visual_stim=True)
-    print('\n', data.nwbfile.processing['ophys'].description, '\n')
+    # print('\n', data.nwbfile.processing['ophys'].description, '\n')
 
     fig, AX, ani = draw_figure(args, data)    
     if args.export:

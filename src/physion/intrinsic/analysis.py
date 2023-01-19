@@ -257,6 +257,8 @@ def open_intrinsic_folder(self):
 
     if os.path.isfile(os.path.join(self.datafolder, 'metadata.npy')):
 
+        self.IMAGES = {}
+
         metadata = np.load(os.path.join(self.datafolder, 'metadata.npy'),
                            allow_pickle=True).item()
 
