@@ -39,17 +39,17 @@ def draw_figure(args, data,
                      'rois':0.25, 'rois_start':0.55,
                      'raster':0.2, 'raster_start':0.8}
     else:
-        fractions = {'photodiode':0.09, 'photodiode_start':0,
-                     'running':0.13, 'running_start':0.1,
-                     'whisking':0.15, 'whisking_start':0.25,
-                     'gaze':0.1, 'gaze_start':0.35,
-                     'pupil':0.13, 'pupil_start':0.45,
-                     'rois':0.2, 'rois_start':0.6,
+        fractions = {'photodiode':0.06, 'photodiode_start':0,
+                     'running':0.13, 'running_start':0.07,
+                     'whisking':0.12, 'whisking_start':0.2,
+                     'gaze':0.1, 'gaze_start':0.32,
+                     'pupil':0.13, 'pupil_start':0.4,
+                     'rois':0.27, 'rois_start':0.53,
                      'raster':0.2, 'raster_start':0.8}
 
-    AX = {'time_plot_ax':None}
+    AX = {}
     fig, AX['time_plot_ax'] = plt.subplots(1, figsize=(8,5.5))
-    plt.subplots_adjust(bottom=0.01, right=0.97, left=0.28, top=0.7)
+    plt.subplots_adjust(bottom=0.01, right=0.95, left=0.25, top=0.71)
 
     width = (1.-4*top_row_space)/4.
 
@@ -65,9 +65,10 @@ def draw_figure(args, data,
                 (top_row_space/2.+2*(width+top_row_space),
                 top_row_bottom, width, top_row_height))
     else:
-        AX['screen_ax'] = None
+        
+        fig2, AX['screen_ax'] = plt.subplots(1, figsize=(0.5,0.5))
         AX['camera_ax'] = pt.inset(fig,
-                (top_row_space/2.+1.5*(width+top_row_space),
+                (top_row_space/2.+1.3*(width+top_row_space),
                 top_row_bottom, width, top_row_height))
         
 
@@ -99,7 +100,7 @@ def draw_figure(args, data,
         AX['ROI1_img'] = AX['ROI1_ax'].imshow(max_proj_scaled1, vmin=0, vmax=1, 
                 cmap=pt.get_linear_colormap('k','lightgreen'), extent=extent1,
                 aspect='equal', interpolation='none', origin='lower')
-        AX['ROI1_ax'].annotate(' roi #%i' % (args.ROIs[0]+1), (0,0), color='w', fontsize=6, xycoords='axes fraction')
+        AX['ROI1_ax'].annotate(' roi #%i' % (args.ROIs[0]+1), (0,0), color='w', fontsize=7, xycoords='axes fraction')
         add_roi_ellipse(data, args.ROIs[0], AX['ROI1_ax'],
                         size_factor=1.5, roi_lw=1)
 
@@ -113,18 +114,21 @@ def draw_figure(args, data,
         AX['ROI2_img'] = AX['ROI2_ax'].imshow(max_proj_scaled2, vmin=0, vmax=1, 
                 cmap=pt.get_linear_colormap('k','lightgreen'), extent=extent2, 
                 aspect='equal', interpolation='none', origin='lower')
-        AX['ROI2_ax'].annotate(' roi #%i' % (args.ROIs[1]+1), (0,0), color='w', fontsize=6, xycoords='axes fraction')
+        AX['ROI2_ax'].annotate(' roi #%i' % (args.ROIs[1]+1), (0,0), color='w', fontsize=7, xycoords='axes fraction')
         add_roi_ellipse(data, args.ROIs[1], AX['ROI2_ax'],
                         size_factor=1.5, roi_lw=1)
 
-    AX['whisking_ax'] = pt.inset(fig, [0.04,0.15,0.11,0.11]) 
+    AX['whisking_ax'] = pt.inset(fig, [0.04,0.13,0.11,0.11]) 
     AX['whisking_ax'].annotate('$F_{(t+dt)}$-$F_{(t)}$', (0,0.5),
             ha='right', va='center',
             xycoords='axes fraction', rotation=90, fontsize=6)
-    AX['whisking_ax'].annotate('motion frames', (0.5,0), ha='center',
+    AX['whisking_ax'].annotate('whisker-pad\nmotion frames', (0.5,0), ha='center',
         va='top', fontsize=8, xycoords='axes fraction')
 
-    AX['pupil_ax'] = pt.inset(fig, [0.04,0.28,0.11,0.13]) 
+    AX['pupil_ax'] = pt.inset(fig, [0.04,0.26,0.11,0.13]) 
+    AX['pupil_ax'].annotate('pupil', (0.5, 1),
+            va='bottom', ha='center',
+            xycoords='axes fraction', rotation=0, fontsize=8)
 
     AX['time_ax'] = pt.inset(fig, [0.02,0.05,0.08,0.05]) 
 
@@ -134,7 +138,7 @@ def draw_figure(args, data,
     img = Image.open('../docs/exp-rig.png')
     AX['setup_ax'].imshow(img)
     AX['setup_ax'].axis('off')
-    time = AX['time_ax'].annotate('t=%.1fs' % times[0], (0,0), xycoords='axes fraction', size=10)
+    time = AX['time_ax'].annotate('     t=%.1fs\n' % times[0], (0,0), xycoords='figure fraction', size=9)
 
     # screen inset
     if not args.no_visual:
@@ -142,7 +146,7 @@ def draw_figure(args, data,
                                                        return_img=True,
                                                        label=None)
     else:
-        AX['screen_img'] = None
+        AX['screen_img'] = AX['screen_ax'].imshow(np.random.randn(10,10))
         
 
     # Calcium Imaging
@@ -194,15 +198,14 @@ def draw_figure(args, data,
         whisking_shape = len(np.unique(x[whisking_cond])), len(np.unique(y[whisking_cond]))
         img1 = np.load(metadata['raw_vis_FILES'][1])
         AX['whisking_img'] = AX['whisking_ax'].imshow((img1-img)[whisking_cond].reshape(*whisking_shape), cmap='gray')
+
     else:
-        AX['camera_img'] = AX['camera_ax'].imshow(np.random.randn(10,10),
-                                                  cmap='gray')
-        AX['whisking_img'] = AX['whisking_ax'].imshow(np.random.randn(10,10),
-                                                  cmap='gray')
-        AX['pupil_img'] = AX['pupil_ax'].imshow(np.random.randn(10,10),
-                                                  cmap='gray')
-        AX['pupil_fit'], = AX['pupil_ax'].plot([0], [0], 'o', markersize=3, color='red')
-        AX['pupil_center'], = AX['pupil_ax'].plot([0], [0], 'o', markersize=6, color='orange')
+
+        AX['camera_img'] = AX['camera_ax'].imshow(np.ones((10,10)), cmap='gray', vmin=-1, vmax=1)
+        AX['whisking_img'] = AX['whisking_ax'].imshow(np.ones((10,10)), cmap='gray', vmin=-1, vmax=1)
+        AX['pupil_img'] = AX['pupil_ax'].imshow(np.ones((10,10)), cmap='gray', vmin=-1, vmax=1)
+        AX['pupil_fit'], = AX['pupil_ax'].plot([0], [0], 'o', markersize=3, color='w')
+        AX['pupil_center'], = AX['pupil_ax'].plot([0], [0], 'o', markersize=6, color='w')
         metadata['pix_to_mm'] = 1.
 
     AX['setup_ax'].axis('off')
@@ -220,37 +223,45 @@ def draw_figure(args, data,
         add_Photodiode(data, args.tlim, AX['time_plot_ax'], 
                        fig_fraction_start=fractions['photodiode_start'], 
                        fig_fraction=fractions['photodiode'], name='')
-        AX['time_plot_ax'].annotate('photodiode', (-0.1, fractions['photodiode_start']),
-                ha='center', va='bottom', color='grey', fontsize=8, xycoords='axes fraction')
+        AX['time_plot_ax'].annotate('photodiode', (-0.01, fractions['photodiode_start']),
+                ha='right', va='bottom', color='grey', fontsize=8, xycoords='axes fraction')
 
 
     # locomotion
     add_Locomotion(data, args.tlim, AX['time_plot_ax'], 
                         fig_fraction_start=fractions['running_start'], 
                         fig_fraction=fractions['running'], 
+                        scale_side='right',
                         name='')
-    AX['time_plot_ax'].annotate('running\nspeed', (-0.01, fractions['running_start']), ha='right', va='bottom', color='#1f77b4', fontsize=8, xycoords='axes fraction')
+    AX['time_plot_ax'].annotate('locomotion \nspeed \n ', (-0.01, fractions['running_start']),
+            ha='right', va='bottom', color='#1f77b4', fontsize=8, xycoords='axes fraction')
 
     # whisking 
     add_FaceMotion(data, args.tlim, AX['time_plot_ax'], 
                    fig_fraction_start=fractions['whisking_start'], 
                    fig_fraction=fractions['whisking'], 
+                   scale_side='right',
                    name='')
-    AX['time_plot_ax'].annotate('whisking  ', (-0.01, fractions['whisking_start']), ha='right', va='bottom', color='purple', fontsize=8, xycoords='axes fraction')
+    AX['time_plot_ax'].annotate('whisking \n', (-0.01, fractions['whisking_start']),
+            ha='right', va='bottom', color='purple', fontsize=8, xycoords='axes fraction')
 
     # gaze 
     add_GazeMovement(data, args.tlim, AX['time_plot_ax'], 
                         fig_fraction_start=fractions['gaze_start'], 
                         fig_fraction=fractions['gaze'], 
+                  scale_side='right',
                         name='')
-    AX['time_plot_ax'].annotate('gaze \nmov. ', (-0.01, fractions['gaze_start']), ha='right', va='bottom', color='orange', fontsize=8, xycoords='axes fraction')
+    AX['time_plot_ax'].annotate('gaze \nmov. ', (-0.01, fractions['gaze_start']),
+            ha='right', va='bottom', color='orange', fontsize=8, xycoords='axes fraction')
 
     # pupil 
     add_Pupil(data, args.tlim, AX['time_plot_ax'], 
                         fig_fraction_start=fractions['pupil_start'], 
                         fig_fraction=fractions['pupil'], 
+                        scale_side='right',
                         name='')
-    AX['time_plot_ax'].annotate('pupil \ndiam. ', (-0.01, fractions['pupil_start']), ha='right', va='bottom', color='red', fontsize=8, xycoords='axes fraction')
+    AX['time_plot_ax'].annotate('pupil \ndiam. ', (-0.01, fractions['pupil_start']),
+            ha='right', va='bottom', color='red', fontsize=8, xycoords='axes fraction')
 
     # rois 
     add_CaImaging(data, args.tlim, AX['time_plot_ax'], 
@@ -258,8 +269,10 @@ def draw_figure(args, data,
                   roiIndices=args.ROIs, 
                   fig_fraction_start=fractions['rois_start'], 
                   fig_fraction=fractions['rois'], 
+                  scale_side='right',
                   name='', annotation_side='left')
-    AX['time_plot_ax'].annotate('fluorescence', (-0.1, fractions['raster_start']), ha='right', va='top', color='green', rotation=90, xycoords='axes fraction')
+    AX['time_plot_ax'].annotate('fluorescence', (-0.1, fractions['raster_start']),
+            ha='right', va='top', color='green', rotation=90, xycoords='axes fraction')
 
     # raster 
     add_CaImagingRaster(data, args.tlim, AX['time_plot_ax'], 
@@ -270,10 +283,12 @@ def draw_figure(args, data,
     
 
     if args.Tbar>0:
-        AX['time_plot_ax'].plot(args.Tbar*np.arange(2)+times[0], args.Tbar_loc*np.ones(2), 'k-')
-        AX['time_plot_ax'].annotate('%is' % args.Tbar, (0,args.Tbar_loc+0.01), xycoords='axes fraction')
+        AX['time_plot_ax'].plot(args.Tbar*np.arange(2)+times[0],
+                                args.Tbar_loc*np.ones(2), 'k-', lw=1)
+        AX['time_plot_ax'].annotate('%is' % args.Tbar,
+                                    (times[0],args.Tbar_loc), ha='left')
     AX['time_plot_ax'].axis('off')
-    AX['time_plot_ax'].set_xlim([times[0], times[-1]])
+    AX['time_plot_ax'].set_xlim([times[0], dv_tools.shifted_stop(args.tlim)])
     AX['time_plot_ax'].set_ylim([-0.01, 1.01])
 
     for i, label in enumerate(['imaging', 'pupil', 'whisking', 'ROI1', 'ROI2', 'time', 'camera']):
@@ -334,12 +349,13 @@ def draw_figure(args, data,
                                               time_from_episode_start=times[i]-tEp)
         cursor.set_data(np.ones(2)*times[i], np.arange(2))
         # time
-        time.set_text('t=%.1fs' % times[i])
+        time.set_text('     t=%.1fs\n' % times[i])
         
         return [cursor, time, AX['screen_img'], AX['camera_img'], AX['pupil_img'],
                 AX['whisking_img'], AX['pupil_fit'], AX['pupil_center'],
                 AX['imaging_img'], AX['ROI1_img'], AX['ROI2_img']]
         
+    pt.plt.show()
     ani = animation.FuncAnimation(fig, 
                                   update,
                                   np.arange(len(times)),
@@ -347,7 +363,6 @@ def draw_figure(args, data,
                                   interval=100,
                                   blit=True)
 
-    pt.plt.show()
     return fig, AX, ani
 
 def get_pupil_center(index, data, metadata):
@@ -404,7 +419,7 @@ if __name__=='__main__':
     
     parser.add_argument("--tlim", type=float, nargs='*', default=[10, 100], help='')
     parser.add_argument("--Tbar", type=int, default=0)
-    parser.add_argument("--Tbar_loc", type=float, default=0.1, help='y-loc of Tbar in [0,1]')
+    parser.add_argument("--Tbar_loc", type=float, default=1.005, help='y-loc of Tbar in [0,1]')
 
     parser.add_argument("--no_visual", 
                         help="remove visual stimulation", action="store_true")

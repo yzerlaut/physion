@@ -26,10 +26,14 @@ def add_name_annotation(data,
 def shifted_start(tlim, frac_shift=0.01):
     return tlim[0]-frac_shift*(tlim[1]-tlim[0])
 
+def shifted_stop(tlim, frac_shift=0.01):
+    return tlim[1]+frac_shift*(tlim[1]-tlim[0])
+
 
 def plot_scaled_signal(data, 
                        ax, t, signal,
                        tlim, scale_bar,
+                       scale_side='left',
                        ax_fraction_extent=1, ax_fraction_start=0,
                        color='#1f77b4', scale_unit_string='%.1f'):
     """
@@ -37,7 +41,7 @@ def plot_scaled_signal(data,
     """
 
     try:
-        scale_range = np.max([signal.max()-signal.min(), scale_bar])
+        scale_range = np.max([signal.max()-signal.min(), 1.1*scale_bar])
         min_signal = signal.min()
     except ValueError:
         scale_range = scale_bar
@@ -47,21 +51,26 @@ def plot_scaled_signal(data,
             ax_fraction_start+(signal-min_signal)*ax_fraction_extent/scale_range,
             color=color, lw=1)
 
+    if scale_side=='left':
+        tscale, side = shifted_start(tlim), 'right'
+    else:
+        tscale, side = shifted_stop(tlim), 'left'
+
     # add scale bar
     if scale_unit_string!='':
-        ax.plot(shifted_start(tlim)*np.ones(2),
+        ax.plot(tscale*np.ones(2),
                 ax_fraction_start+scale_bar*np.arange(2)*ax_fraction_extent/scale_range,
                 color=color, lw=1)
 
     # add annotation
     if '%' in scale_unit_string:
-        ax.annotate(str(scale_unit_string+' ') % scale_bar,
-                (shifted_start(tlim), ax_fraction_start),
-                ha='right', color=color, va='center', xycoords='data')
+        ax.annotate(str(' '+scale_unit_string+' ') % scale_bar,
+                (tscale, ax_fraction_start),
+                ha=side, color=color, xycoords='data', fontsize=7)
     elif scale_unit_string!='':
         ax.annotate(scale_unit_string,
-                (shifted_start(tlim), ax_fraction_start),
-                ha='right', color=color, va='center', xycoords='data')
+                (tscale, ax_fraction_start),
+                ha=side, color=color, xycoords='data', fontsize=7)
 
 
 def add_bar_annotations(ax,

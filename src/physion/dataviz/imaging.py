@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pylab as plt
 
 from physion.dataviz import tools as dv_tools
+import physion.utils.plot_tools as pt
 
 def add_CaImagingRaster(data, tlim, ax, raster=None,
                         fig_fraction_start=0., fig_fraction=1., color='green',
@@ -38,25 +39,21 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     indices=np.arange(*dv_tools.convert_times_to_indices(*tlim,
                                 data.Neuropil, axis=1))[::subsampling]
     
-    ax.imshow(raster[:,indices], origin='lower', cmap=cmap,
+    ims = ax.imshow(raster[:,indices], origin='lower', cmap=cmap,
               aspect='auto', interpolation='none', vmin=0, vmax=1,
               extent=(dv_tools.convert_index_to_time(indices[0], data.Neuropil),
                       dv_tools.convert_index_to_time(indices[-1], data.Neuropil),
                       fig_fraction_start, fig_fraction_start+fig_fraction))
 
-    # if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
-        # _, axb = ge.bar_legend(ax,
-                      # # X=[0,1], bounds=[0,1],
-                      # continuous=False, colormap=cmap,
-                      # colorbar_inset=dict(rect=[-.06,
-                                       # fig_fraction_start+.2*fig_fraction,
-                                       # .01,
-                                       # .6*fig_fraction], facecolor=None),
-                      # color_discretization=100, no_ticks=True, labelpad=4.,
-                      # label=('$\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.'),
-                      # fontsize='small')
-        # ge.annotate(axb, ' max', (1,1), size='x-small')
-        # ge.annotate(axb, ' min', (1,0), size='x-small', va='top')
+    if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
+
+        axb = pt.inset(ax, [-.08, fig_fraction_start+.2*fig_fraction,
+                           .01, .6*fig_fraction], facecolor=None)
+        cb = plt.colorbar(ims, cax=axb)
+        cb.set_ticks([])
+        axb.set_ylabel('$\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.', fontsize=9)
+        axb.annotate(' max', (1,1), fontsize=6, xycoords='axes fraction')
+        axb.annotate(' min', (1,0), fontsize=6, va='top', xycoords='axes fraction')
         
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, rotation=90)
@@ -64,11 +61,16 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     ax.annotate('1', (tlim[1], fig_fraction_start), xycoords='data')
     ax.annotate('%i' % raster.shape[0],
                 (tlim[1], fig_fraction_start+fig_fraction), va='top', xycoords='data')
+    ax.annotate('rois', 
+                (tlim[1], fig_fraction_start+fig_fraction/2.),
+                va='center', rotation=-90, xycoords='data',
+                fontsize=8)
     
     
 def add_CaImaging(data, tlim, ax,
                   fig_fraction_start=0., fig_fraction=1., color='green',
                   subquantity='Fluorescence', roiIndices='all', dFoF_args={},
+                  scale_side='left',
                   vicinity_factor=1, subsampling=1, name='[Ca] imaging',
                   annotation_side='right'):
 
@@ -88,18 +90,24 @@ def add_CaImaging(data, tlim, ax,
 
     for n, ir in zip(range(len(roiIndices))[::-1], roiIndices[::-1]):
 
-        ypos = n*fig_fraction/len(roiIndices)/vicinity_factor+fig_fraction_start # bottom position
+        ypos = n*fig_fraction/len(roiIndices)/vicinity_factor+\
+                fig_fraction_start # bottom position
 
         if (subquantity in ['dF/F', 'dFoF']):
             y = data.dFoF[ir, np.arange(i1,i2)][::subsampling]
-            dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 1., fig_fraction/len(roiIndices), ypos, color=color,
-                                    scale_unit_string=('%.0f$\Delta$F/F' if (n==0) else ' '))
+            dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 1.,
+                              ax_fraction_extent=fig_fraction/len(roiIndices),
+                              ax_fraction_start=ypos,
+                              color=color, scale_side=scale_side,
+                             scale_unit_string=('%.0f$\Delta$F/F' if (n==0) else ' '))
         else:
             y = data.Fluorescence.data[:,ir][np.arange(i1,i2)][::subsampling]
-            dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1., fig_fraction/len(roiIndices), ypos, color=color,
-                                    scale_unit_string=('fluo (a.u.)' if (n==0) else ''))
+            dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1.,
+                   ax_fraction_extent=fig_fraction/len(roiIndices),
+                   ax_fraction_start=ypos, color=color,
+                   scale_unit_string=('fluo (a.u.)' if (n==0) else ''))
 
-        dv_tools.add_name_annotation(data, ax, 'ROI#%i'%(ir+1), tlim, fig_fraction/len(roiIndices), ypos,
+        dv_tools.add_name_annotation(data, ax, 'roi #%i'%(ir+1), tlim, fig_fraction/len(roiIndices), ypos,
                 color=color, side=annotation_side)
         
         

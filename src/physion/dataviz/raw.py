@@ -21,13 +21,16 @@ def add_Photodiode(data, tlim, ax,
     y = data.nwbfile.acquisition['Photodiode-Signal'].data[i1:i2][::subsampling]
     
     dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 1e-5,
-            fig_fraction, fig_fraction_start, color=color, scale_unit_string='')        
+                                ax_fraction_extent=fig_fraction,
+                                ax_fraction_start=fig_fraction_start,
+                                color=color, scale_unit_string='a.u.')
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
 
 
 def add_Electrophy(data, tlim, ax,
                    fig_fraction_start=0., fig_fraction=1., subsampling=2, color='k',
+                   scale_side='left',
                    name='LFP'):
     i1, i2 = dv_tools.convert_times_to_indices(*tlim,
             data.nwbfile.acquisition['Electrophysiological-Signal'])
@@ -36,7 +39,10 @@ def add_Electrophy(data, tlim, ax,
     y = data.nwbfile.acquisition['Electrophysiological-Signal'].data[i1:i2][::subsampling]
 
     dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 0.2,
-            fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fmV')        
+                                ax_fraction_extent=fig_fraction,
+                                ax_fraction_start=fig_fraction_start,
+                                scale_side=scale_side,
+            color=color, scale_unit_string='%.1fmV')        
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
 
@@ -44,6 +50,7 @@ def add_Electrophy(data, tlim, ax,
 def add_Locomotion(data, tlim, ax,
                    fig_fraction_start=0., fig_fraction=1., subsampling=2,
                    speed_scale_bar=1, # cm/s
+                   scale_side='left',
                    color='#1f77b4', name='run. speed'):
 
     if not hasattr(data, 'running_speed'):
@@ -53,15 +60,20 @@ def add_Locomotion(data, tlim, ax,
             data.nwbfile.acquisition['Running-Speed'])
     x, y = data.t_running_speed[i1:i2][::subsampling], data.running_speed[i1:i2][::subsampling]
 
-    dv_tools.plot_scaled_signal(data,ax, x, y, tlim, speed_scale_bar,
-            fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fcm/s')        
+    dv_tools.plot_scaled_signal(data, ax, x, y,
+                                tlim, speed_scale_bar,
+                                ax_fraction_extent=fig_fraction,
+                                ax_fraction_start=fig_fraction_start,
+                                scale_side=scale_side,
+                                color=color, scale_unit_string='%icm/s')        
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
    
 
 def add_Pupil(data, tlim, ax,
               fig_fraction_start=0., fig_fraction=1., subsampling=2,
-              pupil_scale_bar = 0.5, # scale bar in mm
+              pupil_scale_bar = 0.2, # scale bar in mm
+              scale_side='left',
               color='red', name='pupil diam.'):
 
     i1, i2 = dv_tools.convert_times_to_indices(*tlim,
@@ -73,14 +85,18 @@ def add_Pupil(data, tlim, ax,
     x, y = data.t_pupil[i1:i2][::subsampling], data.pupil_diameter[i1:i2][::subsampling]
 
     dv_tools.plot_scaled_signal(data,ax, x, y, tlim, pupil_scale_bar,
-            fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fmm')        
+                                ax_fraction_extent=fig_fraction,
+                                ax_fraction_start=fig_fraction_start,
+                                scale_side=scale_side,
+                                color=color, scale_unit_string='%.1fmm')
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
 
 
 def add_GazeMovement(data, tlim, ax,
                      fig_fraction_start=0., fig_fraction=1., subsampling=2,
-                     gaze_scale_bar = 0.2, # scale bar in mm
+                     gaze_scale_bar = 0.1, # scale bar in mm
+                     scale_side='left',
                      color='#ff7f0e', name='gaze mov.'):
 
     if not hasattr(data, 'gaze_movement'):
@@ -92,12 +108,16 @@ def add_GazeMovement(data, tlim, ax,
     x, y = data.t_pupil[i1:i2][::subsampling], data.gaze_movement[i1:i2][::subsampling]
 
     dv_tools.plot_scaled_signal(data,ax, x, y, tlim, gaze_scale_bar,
-            fig_fraction, fig_fraction_start, color=color, scale_unit_string='%.1fmm')
+                                ax_fraction_extent=fig_fraction,
+                                ax_fraction_start=fig_fraction_start,
+                                scale_side=scale_side,
+                                color=color, scale_unit_string='%.1fmm')
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
 
 
 def add_FaceMotion(data, tlim, ax,
+                   scale_side='left',
                    fig_fraction_start=0., fig_fraction=1., subsampling=2, color='#9467bd', name='facemotion'):
 
     if not hasattr(data, 'facemotion'):
@@ -109,7 +129,10 @@ def add_FaceMotion(data, tlim, ax,
     x, y = data.t_facemotion[i1:i2][::subsampling], data.facemotion[i1:i2][::subsampling]
 
     dv_tools.plot_scaled_signal(data, ax, x, y, tlim, 1.,
-            fig_fraction, fig_fraction_start, color=color, scale_unit_string='') # no scale bar here
+                                ax_fraction_extent=fig_fraction,
+                                ax_fraction_start=fig_fraction_start,
+                                scale_side=scale_side,
+                                color=color, scale_unit_string='a.u.')
     
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
