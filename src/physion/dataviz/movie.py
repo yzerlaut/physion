@@ -59,17 +59,17 @@ def draw_figure(args, data,
 
     if not args.no_visual:
         AX['screen_ax'] = pt.inset(fig,
-                (top_row_space/2.+1*(width+.5*top_row_space),
+                (top_row_space/2.+0.9*(width+.5*top_row_space),
                 top_row_bottom, 1.3*width, top_row_height))
         AX['camera_ax'] = pt.inset(fig,
-                (top_row_space/2.+2*(width+top_row_space),
-                top_row_bottom, width, top_row_height))
+                (top_row_space/2.+1.8*(width+top_row_space),
+                top_row_bottom, 1.4*width, top_row_height))
     else:
         
         fig2, AX['screen_ax'] = plt.subplots(1, figsize=(0.5,0.5))
         AX['camera_ax'] = pt.inset(fig,
                 (top_row_space/2.+1.3*(width+top_row_space),
-                top_row_bottom, width, top_row_height))
+                top_row_bottom, 1.5*width, top_row_height))
         
 
     if 'ophys' in data.nwbfile.processing:
@@ -117,6 +117,9 @@ def draw_figure(args, data,
         AX['ROI2_ax'].annotate(' roi #%i' % (args.ROIs[1]+1), (0,0), color='w', fontsize=7, xycoords='axes fraction')
         add_roi_ellipse(data, args.ROIs[1], AX['ROI2_ax'],
                         size_factor=1.5, roi_lw=1)
+    else:
+        fig3, [AX['imaging_ax'], AX['ROI1_ax'], AX['ROI2_ax']] = plt.subplots(3, figsize=(0.5,0.5))
+
 
     AX['whisking_ax'] = pt.inset(fig, [0.04,0.13,0.11,0.11]) 
     AX['whisking_ax'].annotate('$F_{(t+dt)}$-$F_{(t)}$', (0,0.5),
@@ -188,9 +191,9 @@ def draw_figure(args, data,
         pupil_shape = metadata['pupil_xmax']-metadata['pupil_xmin']+1, metadata['pupil_ymax']-metadata['pupil_ymin']+1
         AX['pupil_img'] = AX['pupil_ax'].imshow(img[pupil_cond].reshape(*pupil_shape), cmap='gray')
         pupil_fit = get_pupil_fit(0, data, metadata)
-        AX['pupil_fit'], = AX['pupil_ax'].plot(pupil_fit[0], pupil_fit[1], 'o', markersize=3, color=ge.red)
+        AX['pupil_fit'], = AX['pupil_ax'].plot(pupil_fit[0], pupil_fit[1], 'o', markersize=3, color='red')
         pupil_center = get_pupil_center(0, data, metadata)
-        AX['pupil_center'], = AX['pupil_ax'].plot([pupil_center[1]], [pupil_center[0]], 'o', markersize=6, color=ge.orange)
+        AX['pupil_center'], = AX['pupil_ax'].plot([pupil_center[1]], [pupil_center[0]], 'o', markersize=6, color='orange')
 
         # whisking
         whisking_cond = (x>=metadata['whisking_ROI'][0]) & (x<=(metadata['whisking_ROI'][0]+metadata['whisking_ROI'][2])) &\
@@ -264,22 +267,24 @@ def draw_figure(args, data,
             ha='right', va='bottom', color='red', fontsize=8, xycoords='axes fraction')
 
     # rois 
-    add_CaImaging(data, args.tlim, AX['time_plot_ax'], 
-                  subquantity='dFoF',
-                  roiIndices=args.ROIs, 
-                  fig_fraction_start=fractions['rois_start'], 
-                  fig_fraction=fractions['rois'], 
-                  scale_side='right',
-                  name='', annotation_side='left')
-    AX['time_plot_ax'].annotate('fluorescence', (-0.1, fractions['raster_start']),
-            ha='right', va='top', color='green', rotation=90, xycoords='axes fraction')
 
-    # raster 
-    add_CaImagingRaster(data, args.tlim, AX['time_plot_ax'], 
-                        subquantity='dFoF', normalization='per-line',
-                        fig_fraction_start=fractions['raster_start'], 
-                        fig_fraction=fractions['raster'], 
-                        name='')
+    if 'ophys' in data.nwbfile.processing:
+        add_CaImaging(data, args.tlim, AX['time_plot_ax'], 
+                      subquantity='dFoF',
+                      roiIndices=args.ROIs, 
+                      fig_fraction_start=fractions['rois_start'], 
+                      fig_fraction=fractions['rois'], 
+                      scale_side='right',
+                      name='', annotation_side='left')
+        AX['time_plot_ax'].annotate('fluorescence', (-0.1, fractions['raster_start']),
+                ha='right', va='top', color='green', rotation=90, xycoords='axes fraction')
+
+        # raster 
+        add_CaImagingRaster(data, args.tlim, AX['time_plot_ax'], 
+                            subquantity='dFoF', normalization='per-line',
+                            fig_fraction_start=fractions['raster_start'], 
+                            fig_fraction=fractions['raster'], 
+                            name='')
     
 
     if args.Tbar>0:
@@ -355,7 +360,6 @@ def draw_figure(args, data,
                 AX['whisking_img'], AX['pupil_fit'], AX['pupil_center'],
                 AX['imaging_img'], AX['ROI1_img'], AX['ROI2_img']]
         
-    pt.plt.show()
     ani = animation.FuncAnimation(fig, 
                                   update,
                                   np.arange(len(times)),
@@ -449,7 +453,7 @@ if __name__=='__main__':
     if args.export:
         print('writing video [...]')
         writer = animation.writers['ffmpeg'](fps=args.fps)
-        ani.save('demo.mp4',writer=writer,dpi=args.dpi)# fig, ax = ge.twoD_plot(np.arange(50), np.arange(30), np.random.randn(50, 30))
+        ani.save('demo.mp4',writer=writer,dpi=args.dpi)
     else:
         pt.plt.show()
 
