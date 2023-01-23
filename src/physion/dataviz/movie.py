@@ -49,7 +49,7 @@ def draw_figure(args, data,
 
     AX = {}
     fig, AX['time_plot_ax'] = plt.subplots(1, figsize=(8,5.5))
-    plt.subplots_adjust(bottom=0.01, right=0.95, left=0.25, top=0.71)
+    plt.subplots_adjust(bottom=0.01, right=0.95, left=0.25, top=top_row_bottom*0.95)
 
     width = (1.-4*top_row_space)/4.
 
@@ -58,60 +58,65 @@ def draw_figure(args, data,
             top_row_bottom, width, top_row_height))
 
     if not args.no_visual:
+
         AX['screen_ax'] = pt.inset(fig,
-                (top_row_space/2.+0.9*(width+.5*top_row_space),
+                (top_row_space/2.+1.0*(width+.5*top_row_space),
                 top_row_bottom, 1.3*width, top_row_height))
         AX['camera_ax'] = pt.inset(fig,
-                (top_row_space/2.+1.8*(width+top_row_space),
+                (top_row_space/2.+1.9*(width+top_row_space),
                 top_row_bottom, 1.4*width, top_row_height))
+
     else:
         
         fig2, AX['screen_ax'] = plt.subplots(1, figsize=(0.5,0.5))
         AX['camera_ax'] = pt.inset(fig,
-                (top_row_space/2.+1.3*(width+top_row_space),
-                top_row_bottom, 1.5*width, top_row_height))
+                (top_row_space/2.+0.8*(width+top_row_space),
+                top_row_bottom, 2.1*width, top_row_height))
         
 
     if 'ophys' in data.nwbfile.processing:
 
         # full image
         max_proj = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:]
-        max_proj_scaled = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
-        max_proj_scaled = np.power(max_proj_scaled, 1/args.imaging_NL)
+        max_proj_scaled = np.power(max_proj/max_proj.max(), 1/args.imaging_NL)
 
         if not args.no_visual:
-            AX['imaging_ax'] = pt.inset(fig, (top_row_space/2.+3*(width+top_row_space), top_row_bottom-.04, width, top_row_height+0.08))
+            AX['imaging_ax'] = pt.inset(fig, (top_row_space/2.+3.1*(width+top_row_space), top_row_bottom-.04, width, top_row_height+0.08))
         else:
             AX['imaging_ax'] = pt.inset(fig, (top_row_space/2.+2.5*(width+top_row_space), top_row_bottom-.04, width, top_row_height+0.08))
 
         AX['imaging_ax'].annotate('imaging', (-0.05,0.5), ha='right', va='center', rotation=90, xycoords='axes fraction')
-        AX['imaging_img'] = AX['imaging_ax'].imshow(max_proj_scaled, vmin=0, vmax=1, 
+        AX['imaging_img'] = AX['imaging_ax'].imshow(max_proj_scaled, 
+                vmin=0, vmax=1,
                 cmap=pt.get_linear_colormap('k','lightgreen'), 
                 aspect='equal', interpolation='none', origin='lower')
         AX['imaging_ax'].annotate(' n=%i rois' % data.iscell.sum(), (0,0), color='w', fontsize=8, xycoords='axes fraction')
 
         # ROI 1 
         AX['ROI1_ax'] = pt.inset(fig, [0.04,0.6,0.11,0.13]) 
-        extent1 = find_roi_extent(data, args.ROIs[0], roi_zoom_factor=4)
-        max_proj = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:][extent1[0]:extent1[1], extent1[2]:extent1[3]]
-        max_proj_scaled1 = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
-        max_proj_scaled1 = np.power(max_proj_scaled1, 1/args.imaging_NL)
+        extent1 = find_roi_extent(data, args.ROIs[0], roi_zoom_factor=5)
+        max_proj1 = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:][extent1[0]:extent1[1], extent1[2]:extent1[3]]
+        # max_proj_scaled1 = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
+        # max_proj_scaled1 = np.power(max_proj_scaled1, 1/args.imaging_NL)
 
-        AX['ROI1_img'] = AX['ROI1_ax'].imshow(max_proj_scaled1, vmin=0, vmax=1, 
+        AX['ROI1_img'] = AX['ROI1_ax'].imshow(max_proj1,
+                                              vmin=0, vmax=max_proj1.max(), 
                 cmap=pt.get_linear_colormap('k','lightgreen'), extent=extent1,
                 aspect='equal', interpolation='none', origin='lower')
-        AX['ROI1_ax'].annotate(' roi #%i' % (args.ROIs[0]+1), (0,0), color='w', fontsize=7, xycoords='axes fraction')
+        AX['ROI1_ax'].annotate(' roi #%i' % (args.ROIs[0]+1), (0,0),
+                color='w', fontsize=7, xycoords='axes fraction')
         add_roi_ellipse(data, args.ROIs[0], AX['ROI1_ax'],
                         size_factor=1.5, roi_lw=1)
 
         # ROI 2 
         AX['ROI2_ax'] = pt.inset(fig, [0.04,0.45,0.11,0.13]) 
-        extent2 = find_roi_extent(data, args.ROIs[1], roi_zoom_factor=4)
-        max_proj = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:][extent2[0]:extent2[1], extent2[2]:extent2[3]]
-        max_proj_scaled2 = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
-        max_proj_scaled2 = np.power(max_proj_scaled2, 1/args.imaging_NL)
+        extent2 = find_roi_extent(data, args.ROIs[1], roi_zoom_factor=5)
+        max_proj2 = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:][extent2[0]:extent2[1], extent2[2]:extent2[3]]
+        # max_proj_scaled2 = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
+        # max_proj_scaled2 = np.power(max_proj_scaled2, 1/args.imaging_NL)
 
-        AX['ROI2_img'] = AX['ROI2_ax'].imshow(max_proj_scaled2, vmin=0, vmax=1, 
+        AX['ROI2_img'] = AX['ROI2_ax'].imshow(max_proj2,
+                                              vmin=0, vmax=max_proj2.max(), 
                 cmap=pt.get_linear_colormap('k','lightgreen'), extent=extent2, 
                 aspect='equal', interpolation='none', origin='lower')
         AX['ROI2_ax'].annotate(' roi #%i' % (args.ROIs[1]+1), (0,0), color='w', fontsize=7, xycoords='axes fraction')
@@ -141,7 +146,8 @@ def draw_figure(args, data,
     img = Image.open('../docs/exp-rig.png')
     AX['setup_ax'].imshow(img)
     AX['setup_ax'].axis('off')
-    time = AX['time_ax'].annotate('     t=%.1fs\n' % times[0], (0,0), xycoords='figure fraction', size=9)
+    time = AX['time_ax'].annotate(' ', (0,0), xycoords='figure fraction', size=9)
+    # time = AX['time_ax'].annotate('     t=%.1fs\n' % times[0], (0,0), xycoords='figure fraction', size=9)
 
     # screen inset
     if not args.no_visual:
@@ -191,16 +197,20 @@ def draw_figure(args, data,
         pupil_shape = metadata['pupil_xmax']-metadata['pupil_xmin']+1, metadata['pupil_ymax']-metadata['pupil_ymin']+1
         AX['pupil_img'] = AX['pupil_ax'].imshow(img[pupil_cond].reshape(*pupil_shape), cmap='gray')
         pupil_fit = get_pupil_fit(0, data, metadata)
-        AX['pupil_fit'], = AX['pupil_ax'].plot(pupil_fit[0], pupil_fit[1], 'o', markersize=3, color='red')
+        AX['pupil_fit'], = AX['pupil_ax'].plot(pupil_fit[0], pupil_fit[1], '.', markersize=2, color='red')
         pupil_center = get_pupil_center(0, data, metadata)
-        AX['pupil_center'], = AX['pupil_ax'].plot([pupil_center[1]], [pupil_center[0]], 'o', markersize=6, color='orange')
+        AX['pupil_center'], = AX['pupil_ax'].plot([pupil_center[1]], [pupil_center[0]], '.', markersize=8, color='orange')
 
         # whisking
         whisking_cond = (x>=metadata['whisking_ROI'][0]) & (x<=(metadata['whisking_ROI'][0]+metadata['whisking_ROI'][2])) &\
                 (y>=metadata['whisking_ROI'][1]) & (y<=(metadata['whisking_ROI'][1]+metadata['whisking_ROI'][3]))
         whisking_shape = len(np.unique(x[whisking_cond])), len(np.unique(y[whisking_cond]))
         img1 = np.load(metadata['raw_vis_FILES'][1])
-        AX['whisking_img'] = AX['whisking_ax'].imshow((img1-img)[whisking_cond].reshape(*whisking_shape), cmap='gray')
+
+        new_img = (img1-img)[whisking_cond].reshape(*whisking_shape)
+        AX['whisking_img'] = AX['whisking_ax'].imshow(new_img,
+                                                      vmin=-255/4, vmax=255+255/4,
+                                                      cmap=plt.cm.BrBG)
 
     else:
 
@@ -267,7 +277,6 @@ def draw_figure(args, data,
             ha='right', va='bottom', color='red', fontsize=8, xycoords='axes fraction')
 
     # rois 
-
     if 'ophys' in data.nwbfile.processing:
         add_CaImaging(data, args.tlim, AX['time_plot_ax'], 
                       subquantity='dFoF',
@@ -276,22 +285,30 @@ def draw_figure(args, data,
                       fig_fraction=fractions['rois'], 
                       scale_side='right',
                       name='', annotation_side='left')
-        AX['time_plot_ax'].annotate('fluorescence', (-0.1, fractions['raster_start']),
-                ha='right', va='top', color='green', rotation=90, xycoords='axes fraction')
+        AX['time_plot_ax'].annotate('fluorescence', (-0.1,
+                    fractions['rois_start']+fractions['rois']/2.),
+                ha='right', va='center', color='green', rotation=90, xycoords='axes fraction')
 
         # raster 
+        AX['dFoFscale_ax'] = pt.inset(fig,
+                        [0.2, top_row_bottom*0.95*(fractions['raster_start']+.2*fractions['raster']),
+                         0.01, top_row_bottom*0.95*0.6*fractions['raster']], facecolor=None)
         add_CaImagingRaster(data, args.tlim, AX['time_plot_ax'], 
-                            subquantity='dFoF', normalization='per-line',
-                            fig_fraction_start=fractions['raster_start'], 
-                            fig_fraction=fractions['raster'], 
-                            name='')
-    
+                    subquantity='dFoF', 
+                    normalization='per-line',
+                    fig_fraction_start=fractions['raster_start'], 
+                    fig_fraction=fractions['raster'], 
+                    axb = AX['dFoFscale_ax'],
+                    name='')
+    else:
+        AX['dFoFscale_ax'], AX['dFoFscale_cb'] = None, None
 
     if args.Tbar>0:
         AX['time_plot_ax'].plot(args.Tbar*np.arange(2)+times[0],
                                 args.Tbar_loc*np.ones(2), 'k-', lw=1)
         AX['time_plot_ax'].annotate('%is' % args.Tbar,
                                     (times[0],args.Tbar_loc), ha='left')
+
     AX['time_plot_ax'].axis('off')
     AX['time_plot_ax'].set_xlim([times[0], dv_tools.shifted_stop(args.tlim)])
     AX['time_plot_ax'].set_ylim([-0.01, 1.01])
@@ -323,23 +340,24 @@ def draw_figure(args, data,
         # imaging
         if (i in [0,len(times)-1]) or (Ca_data is None):
             AX['imaging_img'].set_array(max_proj_scaled)
-            AX['ROI1_img'].set_array(max_proj_scaled1)
-            AX['ROI2_img'].set_array(max_proj_scaled2)
+            AX['ROI1_img'].set_array(max_proj1)
+            AX['ROI2_img'].set_array(max_proj2)
+            # AX['ROI1_img'].set_array(max_proj_scaled1)
+            # AX['ROI2_img'].set_array(max_proj_scaled2)
         else:
             im_index = dv_tools.convert_time_to_index(times[i], data.Fluorescence)
             img = Ca_data.data[im_index,:,:].astype(np.uint16)
-            img = (img-imaging_scale[0])/(imaging_scale[1]-imaging_scale[0])
-            img = np.power(img, 1/args.imaging_NL)
+            img = np.power(img/np.max(max_proj), 1/args.imaging_NL)
             AX['imaging_img'].set_array(img)
 
             img1 = Ca_data.data[im_index, extent1[0]:extent1[1], extent1[2]:extent1[3]]
-            img1 = (img1-imaging_scale1[0])/(imaging_scale1[1]-imaging_scale1[0])
-            img1 = np.power(img1, 1/args.imaging_NL)
+            # img1 = (img1-imaging_scale1[0])/(imaging_scale1[1]-imaging_scale1[0])
+            # img1 = np.power(img1, 1/args.imaging_NL)
             AX['ROI1_img'].set_array(img1)
 
             img2 = Ca_data.data[im_index, extent2[0]:extent2[1], extent2[2]:extent2[3]]
-            img2 = (img2-imaging_scale2[0])/(imaging_scale2[1]-imaging_scale2[0])
-            img2 = np.power(img2, 1/args.imaging_NL)
+            # img2 = (img2-imaging_scale2[0])/(imaging_scale2[1]-imaging_scale2[0])
+            # img2 = np.power(img2, 1/args.imaging_NL)
             AX['ROI2_img'].set_array(img2)
             
 
@@ -359,7 +377,8 @@ def draw_figure(args, data,
         return [cursor, time, AX['screen_img'], AX['camera_img'], AX['pupil_img'],
                 AX['whisking_img'], AX['pupil_fit'], AX['pupil_center'],
                 AX['imaging_img'], AX['ROI1_img'], AX['ROI2_img']]
-        
+       
+
     ani = animation.FuncAnimation(fig, 
                                   update,
                                   np.arange(len(times)),
@@ -434,6 +453,7 @@ if __name__=='__main__':
 
     parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
     parser.add_argument("-e", "--export", help="export to mp4", action="store_true")
+    parser.add_argument('-o', "--output", type=str, default='demo.mp4')
     # video properties
     parser.add_argument("--fps", type=int, default=20)
     parser.add_argument("--duration", type=float, default=0, help='video duration')
@@ -453,7 +473,7 @@ if __name__=='__main__':
     if args.export:
         print('writing video [...]')
         writer = animation.writers['ffmpeg'](fps=args.fps)
-        ani.save('demo.mp4',writer=writer,dpi=args.dpi)
+        ani.save(args.output, writer=writer, dpi=args.dpi)
     else:
         pt.plt.show()
 
