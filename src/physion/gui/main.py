@@ -81,10 +81,14 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as intrinsic
 
 
-    # -- Pupil tracking
+    # -- FaceMotion tracking
     if not Acquisition:
         from physion.facemotion.gui import gui as facemotion 
-        # from physion.pupil.gui import open_pupil_data,\
+        from physion.facemotion.gui import open_facemotion_data,\
+                reset_facemotion, load_last_facemotion_gui_settings,\
+                save_facemotion_data, refresh_facemotion,\
+                process_facemotion, process_grooming
+                # refresh_from_slider_facemotion
                 # jump_to_frame, add_blankROI, add_reflectROI,\
                 # save_pupil_data, fit_pupil, process_pupil,\
                 # process_outliers_pupil,\
@@ -286,8 +290,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='visualization':
             tzoom = self.plot.getAxis('bottom').range
             self.raw_data_plot(tzoom)
+        elif self.windows[tab_id] =='facemotion':
+            self.refresh_facemotion()
         elif self.windows[tab_id] =='pupil':
-            print('shortcut activated')
             self.jump_to_frame()
         elif self.windows[tab_id] =='trial_averaging':
             self.refresh_TA()
