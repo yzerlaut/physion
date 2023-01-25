@@ -164,6 +164,12 @@ def load_TSeries_folder(self):
                 self.Nplanes.append(xml['Nplanes'])
                 self.Nchans.append(xml['Nchannels'])
                 getattr(self, 'tseriesBtn%i' % (i+1)).setChecked(True)
+
+        while i<self.nWidgetRow:
+            getattr(self, 'tseries%i' % (i+1)).setText(' - ')
+            getattr(self, 'tseriesBtn%i' % (i+1)).setChecked(False)
+            i+=1
+
     
 
 def open_suite2p(self):
