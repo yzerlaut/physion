@@ -74,12 +74,6 @@ def gui(self,
     self.TsamplingBox.setText('500')
     self.add_side_widget(tab.layout, self.TsamplingBox, 'small-right')
 
-    # self.spatialBox = QtWidgets.QCheckBox('spatial subsmpl. ?', self)
-    # self.add_side_widget(tab.layout, self.spatialBox, 'large-left')
-    # self.SsamplingBox = QtWidgets.QLineEdit()
-    # self.SsamplingBox.setText('4')
-    # self.add_side_widget(tab.layout, self.SsamplingBox, 'small-right')
-
     self.processBtn = QtWidgets.QPushButton('process data [Ctrl+P]')
     self.processBtn.clicked.connect(self.process_facemotion)
     self.add_side_widget(tab.layout, self.processBtn)

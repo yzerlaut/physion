@@ -141,7 +141,7 @@ def run_transfer(self):
             if '10.0.0.' in self.destination_folder:
                 F.write('sshpass -p $passwd rsync -avhP %s %s \n' % (f, self.destination_folder))
             else:
-                cmd = self.file_copy_command(f, self.destination_folder)
+                cmd = file_copy_command(self, f, self.destination_folder)
                 print('"%s" launched as a subprocess' % cmd)
                 p = subprocess.Popen(cmd, shell=True)
 
@@ -180,7 +180,7 @@ def run_transfer(self):
                     F.write('sshpass -p $passwd rsync -avhP %s %s \n' % (xml[0], new_folder))
                 else:
                     print(' copying "%s" [...]' % xml[0])
-                    subprocess.Popen(self.file_copy_command(xml[0], new_folder), shell=True)
+                    subprocess.Popen(file_copy_command(self, xml[0], new_folder), shell=True)
             else:
                 print(' /!\ Problem no "xml" found !! /!\  ')
             # XML metadata file
@@ -212,7 +212,7 @@ def run_transfer(self):
                     else:
                         print(' copying "%s" [...]' % n)
                         print(n, newfolder)
-                        subprocess.Popen(self.file_copy_command(n, newfolder), shell=True)
+                        subprocess.Popen(file_copy_command(self, n, newfolder), shell=True)
                     
                 if ('binary' in self.typeBox.currentText()) or ('full' in self.typeBox.currentText()):
                     print('broken !')
@@ -237,9 +237,9 @@ def run_transfer(self):
         print('processing: ', folders)
 
         FILES = ['metadata.npy', 'pupil.npy', 'facemotion.npy', 
-                'NIdaq.npy', 'NIdaq.start.npy', 
-                'visual-stim.npy', 
-                'FaceCamera-summary.npy']
+                 'NIdaq.npy', 'NIdaq.start.npy', 
+                 'visual-stim.npy', 
+                 'FaceCamera-summary.npy']
 
         for f in folders:
 
@@ -248,6 +248,6 @@ def run_transfer(self):
             pathlib.Path(new_folder).mkdir(parents=True, exist_ok=True)
             for ff in FILES:
                 print(new_folder)
-                cmd = self.file_copy_command(os.path.join(f, ff), new_folder+os.path.sep)
+                cmd = file_copy_command(self, os.path.join(f, ff), new_folder+os.path.sep)
                 print(cmd)
                 p = subprocess.Popen(cmd, shell=True)
