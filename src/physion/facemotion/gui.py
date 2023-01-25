@@ -240,9 +240,7 @@ def open_facemotion_data(self):
 
         if self.times is not None:
             self.refresh_facemotion()
-            self.timeLabel.setEnabled(True)
             self.frameSlider.setEnabled(True)
-            self.movieLabel.setText(folder)
 
 
 def reset_facemotion(self):
@@ -307,8 +305,8 @@ def refresh_facemotion(self):
 
         # full image 
         self.fullimg = np.load(os.path.join(self.imgfolder,
-                                            self.FILES[self.cframe]))
-        self.pimg.setImage(self.fullimg)
+                                            self.FILES[self.cframe])).T
+        self.fullImg.setImage(self.fullimg)
 
 
         # zoomed image
@@ -318,18 +316,20 @@ def refresh_facemotion(self):
 
             if self.motionCheckBox.isChecked():
                 self.fullimg2 = np.load(os.path.join(self.imgfolder,
-                                                     self.FILES[self.cframe+1]))
+                                                     self.FILES[self.cframe+1])).T
                 
                 self.img = self.fullimg2[self.zoom_cond].reshape(self.Nx, self.Ny)-\
                     self.fullimg[self.zoom_cond].reshape(self.Nx, self.Ny)
+
             else:
                 
                 self.img = self.fullimg[self.zoom_cond].reshape(self.Nx, self.Ny)
             
-            self.pFaceimg.setImage(self.img)
+            self.zoomImg.setImage(self.img)
             
 
     if self.scatter is not None:
+
         self.tracePlot.removeItem(self.scatter)
         
     if (self.data is not None) and ('frame' in self.data):
@@ -343,8 +343,6 @@ def refresh_facemotion(self):
 
         self.currentTime.setText('%.1f s' % (self.data['t'][self.iframe]-self.data['t'][0]))
 
-        
-    self.win.show()
     self.show()
 
 def process_facemotion(self):
@@ -354,7 +352,7 @@ def process_facemotion(self):
     process.set_ROI_area(self)
 
     frames, motion = process.compute_motion(self,
-            time_subsampling=int(self.TsamplingBox.text()) if self.temporalBox.isChecked() else 0,
+            time_subsampling=int(self.TsamplingBox.text()) if self.temporalBox.isChecked() else 1,
                                     with_ProgressBar=True)
     self.data = {'frame':frames, 't':self.times[frames],
                  'motion':motion, 'grooming':0*frames}
@@ -365,7 +363,7 @@ def process_facemotion(self):
 
 def update_grooming_threshold(self):
     self.grooming_threshold = int(self.groomingBox.text())
-    self.plot_motion_trace()
+    plot_motion_trace(self)
 
 
 def plot_motion_trace(self, xrange=None):
@@ -394,6 +392,8 @@ def process_grooming(self):
             self.data['motion_before_grooming'] = self.data['motion'].copy()
 
         self.grooming_threshold = int(self.line.value())
+        print(' --> grooming_threshold = %.1f' % self.grooming_threshold) 
+
         up_cond = self.data['motion_before_grooming']>self.grooming_threshold
         self.data['motion'][up_cond] = self.grooming_threshold
         self.data['motion'][~up_cond] = self.data['motion_before_grooming'][~up_cond]

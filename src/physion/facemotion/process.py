@@ -22,20 +22,24 @@ def set_ROI_area(cls,
 
     if roi_coords is not None:
 
-        mx, my, sx, sy = roi_coords
-        fullimg = np.load(os.path.join(cls.imgfolder, cls.FILES[0]))
+        my, mx, sy, sx = roi_coords
+        fullimg = np.load(os.path.join(cls.imgfolder, cls.FILES[0])).T
         
         cls.fullx, cls.fully = np.meshgrid(np.arange(fullimg.shape[0]),
-                                             np.arange(fullimg.shape[1]),
-                                             indexing='ij')
+                                           np.arange(fullimg.shape[1]),
+                                           indexing='ij')
 
         # subsampling mask NOT WORKING
         # subsampling_mask = np.zeros(cls.fullx.shape, dtype=bool)
         # subsampling_mask[::spatial_subsampling, ::spatial_subsampling]=True
 
+
         cls.zoom_cond = (cls.fullx>=mx) & (cls.fullx<=(mx+sx)) &\
             (cls.fully>=my) & (cls.fully<=my+sy) # & subsampling_mask
 
+        print(fullimg.shape)
+        print(cls.fullx.shape)
+        print(cls.zoom_cond.shape)
         # if cls.ROI is not None:
         #     mx = cls.fullx[cls.zoom_cond].min()
         #     my = cls.fully[cls.zoom_cond].min()
@@ -61,7 +65,7 @@ def load_ROI_data(cls, iframe1=0, iframe2=100,
     
     for frame in np.arange(iframe1, iframe2):
         fullimg = np.load(os.path.join(cls.imgfolder,
-                                       cls.FILES[frame]))
+                                       cls.FILES[frame])).T
         if flatten:
             DATA[frame-iframe1,:] = fullimg[cls.zoom_cond]
             # spatial subsampling in zoom cond
@@ -98,61 +102,6 @@ def compute_motion(cls,
         
     return frames[1:], motion
     
-def svdecon(X, k=100):
-    """
-    taken from facemap
-    """
-    NN, NT = X.shape
-    if NN>NT:
-        COV = (X.T @ X)/NT
-    else:
-        COV = (X @ X.T)/NN
-    if k==0:
-        k = np.minimum(COV.shape) - 1
-    Sv, U = eigsh(COV, k = k)
-    U, Sv = np.real(U), np.abs(Sv)
-    U, Sv = U[:, ::-1], Sv[::-1]**.5
-    if NN>NT:
-        V = U
-        U = X @ V
-        U = U/(U**2).sum(axis=0)**.5
-    else:
-        V = (U.T @ X).T
-        V = V/(V**2).sum(axis=0)**.5
-    return U, Sv, V
-
-def compute_SVD(cls,
-                Nframe_per_chunk=1000,
-                spatial_subsampling=4,
-                time_subsampling=1,
-                nmin_pc=250):
-    """
-    IN PROGRESS
-    
-    adapted from facemap:
-    see: https://github.com/MouseLand/facemap
-
-    compute the SVD over frames in chunks, combine the chunks and take a mega-SVD
-
-    nmin_pc # <- how many PCs to keep in each chunk
-
-    """
-    Nframe_per_chunk = min(Nframe_per_chunk, cls.nframes)
-    nsegs = int(np.floor(cls.nframes / Nframe_per_chunk)+1)
-
-    n_PCs = min(nmin_pc, Nframe_per_chunk-1)
-    
-    nsegs = 1 # TROUBLESHOOTING
-    for n in range(nsegs):
-        i1 = n*Nframe_per_chunk
-        i2 = min(cls.nframes, (n+1)*Nframe_per_chunk)
-        motion = np.diff(load_ROI_data(cls, i1, i2,
-                                       flatten=True), axis=0)
-        avgMot = np.mean(motion, axis=0)
-        U, Sv, V = svdecon(motion-avgMot)
-
-    return U, Sv, V
-        
     
 if __name__=='__main__':
 

@@ -49,7 +49,6 @@ class faceROI():
 
     def remove(self, parent):
         parent.fullView.removeItem(self.ROI)
-        parent.win.show()
         parent.show()
 
     def position(self, parent=None):
