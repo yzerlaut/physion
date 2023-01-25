@@ -245,8 +245,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
-            # self.transfer_gui()
-            self.suite2p_preprocessing_UI()
+            # self.pupil()
+            self.transfer_gui()
+            # self.suite2p_preprocessing_UI()
             # self.build_NWB_UI()
             # self.add_imaging()
             # self.intrinsic()

@@ -212,12 +212,15 @@ def build_NWB_func(args):
         try:
 
             FC_FILES, FC_times, FCS_data = None, None, None
+
             if os.path.isdir(os.path.join(args.datafolder, 'FaceCamera-imgs')):
                 FC_times, FC_FILES, _, _, _ = load_FaceCamera_data(os.path.join(args.datafolder,
                                                                                 'FaceCamera-imgs'),
                                                                    t0=NIdaq_Tstart,
                                                                    verbose=True)
+
             else:
+
                 FCS_data = np.load(os.path.join(args.datafolder, 'FaceCamera-summary.npy'),
                                    allow_pickle=True).item()
                 FC_times = FCS_data['times']-NIdaq_Tstart

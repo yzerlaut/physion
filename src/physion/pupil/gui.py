@@ -106,7 +106,7 @@ def gui(self,
     tab.layout.addWidget(self.keepCheckBox, 2, 8+7, 1, 1)
     
     # fit pupil
-    self.pupilFit = QtWidgets.QPushButton('fit Pupil [Ctrl+F]')
+    self.pupilFit = QtWidgets.QPushButton('fit Pupil [F]')
     tab.layout.addWidget(self.pupilFit, 1, 9+6, 1, 1)
     self.pupilFit.clicked.connect(self.fit_pupil)
     # choose pupil shape
@@ -120,7 +120,7 @@ def gui(self,
     self.reset_btn.clicked.connect(self.reset_pupil)
     # self.reset_btn.setEnabled(True)
     # draw pupil
-    self.refresh_pupil = QtWidgets.QPushButton('Refresh [Ctrl+R]')
+    self.refresh_pupil = QtWidgets.QPushButton('Refresh [R]')
     tab.layout.addWidget(self.refresh_pupil, 2, 11+6, 1, 1)
     self.refresh_pupil.setEnabled(True)
     self.refresh_pupil.clicked.connect(self.jump_to_frame)
@@ -166,35 +166,38 @@ def gui(self,
     self.folderBox.setMinimumWidth(150)
     self.folderBox.addItems(FOLDERS.keys())
 
-    self.process = QtWidgets.QPushButton('process data [Ctrl+P]')
+    self.process = QtWidgets.QPushButton('process data [P]')
     self.process.clicked.connect(self.process_pupil)
 
-    self.cursor1 = QtWidgets.QPushButton('Set Cursor 1 [Ctrl+1]')
+    self.cursor1 = QtWidgets.QPushButton('Set Cursor 1 [1]')
     self.cursor1.clicked.connect(self.set_cursor_1_pupil)
 
-    self.cursor2 = QtWidgets.QPushButton('Set Cursor 2 [Ctrl+2]')
+    self.cursor2 = QtWidgets.QPushButton('Set Cursor 2 [2]')
     self.cursor2.clicked.connect(self.set_cursor_2_pupil)
     
     # self.runAsSubprocess = QtWidgets.QPushButton('run as subprocess')
     # self.runAsSubprocess.clicked.connect(self.run_as_subprocess)
 
-    self.load = QtWidgets.QPushButton('  open data [Ctrl+O]  \u2b07')
+    self.load = QtWidgets.QPushButton('  open data [O]  \u2b07')
     self.load.clicked.connect(self.open_pupil_data)
 
     self.loadLastGUIsettings = QtWidgets.QPushButton("last GUI settings")
     self.loadLastGUIsettings.clicked.connect(self.load_last_gui_settings_pupil)
-    
-    sampLabel = QtWidgets.QLabel("Subsampling (frame)")
-    sampLabel.setStyleSheet("color: gray;")
+    # sampLabel = QtWidgets.QLabel("Subsampling (frame)")
+    self.sampLabel = QtWidgets.QCheckBox("subsampling ?")
+    self.sampLabel.setChecked(True)
+    # sampLabel.setStyleSheet("color: gray;")
     self.samplingBox = QtWidgets.QLineEdit()
     self.samplingBox.setText(str(self.subsampling))
     self.samplingBox.setFixedWidth(50)
+    self.samplingBox.setText('1000')
 
-    smoothLabel = QtWidgets.QLabel("Smoothing (px)")
-    smoothLabel.setStyleSheet("color: gray;")
+    smoothLabel = QtWidgets.QCheckBox("px smoothing ?")
+    # smoothLabel.setStyleSheet("color: gray;")
     self.smoothBox = QtWidgets.QLineEdit()
     self.smoothBox.setText(str(self.gaussian_smoothing))
-    self.smoothBox.setFixedWidth(30)
+    self.smoothBox.setFixedWidth(50)
+    self.smoothBox.setText('5')
 
     self.addROI = QtWidgets.QPushButton("add Pupil-ROI")
     
@@ -215,7 +218,7 @@ def gui(self,
     self.wdthBox.setText('0.1')
     self.wdthBox.setFixedWidth(50)
     
-    self.excludeOutliers = QtWidgets.QPushButton('exclude outlier [5]')
+    self.excludeOutliers = QtWidgets.QPushButton('(un-)exclude outlier [5]')
     self.excludeOutliers.clicked.connect(self.find_outliers_pupil)
 
     cursorLabel = QtWidgets.QLabel("set cursor 1 [1], cursor 2 [2]")
@@ -226,13 +229,6 @@ def gui(self,
 
     self.processOutliers = QtWidgets.QPushButton('Set blinking interval [3]')
     self.processOutliers.clicked.connect(self.process_outliers_pupil)
-    
-    for x in [self.process, self.cursor1, self.cursor2, self.load,
-              self.saverois, self.addROI, self.interpBtn, self.processOutliers,
-              self.stdBox, self.wdthBox, self.excludeOutliers, cursorLabel,
-              self.loadLastGUIsettings,
-              sampLabel, smoothLabel, stdLabel, wdthLabel, self.smoothBox, self.samplingBox]:
-        x.setFont(QtGui.QFont("Arial", 8, QtGui.QFont.Bold))
     
     iconSize = QtCore.QSize(30, 30)
     self.playButton = QtWidgets.QToolButton()
@@ -253,7 +249,7 @@ def gui(self,
     tab.layout.addWidget(self.folderBox,1,0,1,3)
     tab.layout.addWidget(self.load,2,0,1,3)
     tab.layout.addWidget(self.loadLastGUIsettings, 7, 0, 1, 3)
-    tab.layout.addWidget(sampLabel, 8, 0, 1, 3)
+    tab.layout.addWidget(self.sampLabel, 8, 0, 1, 3)
     tab.layout.addWidget(self.samplingBox, 8, 2, 1, 3)
     tab.layout.addWidget(smoothLabel, 9, 0, 1, 3)
     tab.layout.addWidget(self.smoothBox, 9, 2, 1, 3)
@@ -601,22 +597,6 @@ def extract_ROI(self, data):
         data[key]=boundaries[key]
     
     
-def build_cmd(self):
-    return '%s %s -df %s' % (python_path, self.process_script, self.datafolder)
-    
-def run_as_subprocess(self):
-    self.save_pupil_data()
-    cmd = self.build_cmd()
-    p = subprocess.Popen(cmd+' --verbose', shell=True)
-    print('"%s" launched as a subprocess' % cmd)
-
-def add_to_bash_script(self):
-    self.save_pupil_data()
-    cmd = self.build_cmd()
-    with open(self.script, 'a') as f:
-        f.write(cmd+' & \n')
-    print('Command: "%s"\n successfully added to the script: "%s"' % (cmd, self.script))
-
 def save_pupil_data(self):
     """ """
 
@@ -639,10 +619,13 @@ def process_pupil(self):
         extract_ROI(self, self.data)
 
         
-    self.subsampling = int(self.samplingBox.text())
+    if self.sampLabel.isChecked():
+        self.subsampling = int(self.samplingBox.text())
+    else:
+        self.subsampling = 1
 
-    print('processing pupil size over the whole recording [...]')
-    print(' with %i frame subsampling' % self.subsampling)
+    print('\nprocessing pupil size over the whole recording [...]')
+    print(' with %i frame subsampling\n' % self.subsampling)
 
     process.init_fit_area(self)
     temp = process.perform_loop(self,

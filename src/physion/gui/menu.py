@@ -30,7 +30,7 @@ def build_menu(self):
     self.preprocessingMenu = self.mainMenu.addMenu('  ** &Preprocessing')
     # --
     self.preprocessingMenu.addAction('&Pupil',
-                                     self.in_progress)
+                                     self.pupil)
     self.preprocessingMenu.addAction('&Whisking',
                                      self.in_progress)
     self.preprocessingMenu.addAction('&Intrinsic Imaging Maps',
