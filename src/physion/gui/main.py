@@ -83,12 +83,27 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # -- Pupil tracking
     if not Acquisition:
+        from physion.facemotion.gui import gui as facemotion 
+        # from physion.pupil.gui import open_pupil_data,\
+                # jump_to_frame, add_blankROI, add_reflectROI,\
+                # save_pupil_data, fit_pupil, process_pupil,\
+                # process_outliers_pupil,\
+                # interpolate_pupil, find_outliers_pupil,\
+                # reset_pupil, set_cursor_1_pupil, set_cursor_2_pupil,\
+                # set_precise_time_pupil, go_to_frame_pupil, add_ROI_pupil,\
+                # load_last_gui_settings_pupil, save_pupil_data
+    else:
+        from physion.gui.parts import inactivated as pupil 
+
+    # -- Pupil tracking
+    if not Acquisition:
         from physion.pupil.gui import gui as pupil
         from physion.pupil.gui import open_pupil_data,\
                 jump_to_frame, add_blankROI, add_reflectROI,\
                 save_pupil_data, fit_pupil, process_pupil,\
+                process_outliers_pupil,\
+                interpolate_pupil, find_outliers_pupil,\
                 reset_pupil, set_cursor_1_pupil, set_cursor_2_pupil,\
-                process_outliers_pupil, interpolate_pupil, find_outliers_pupil,\
                 set_precise_time_pupil, go_to_frame_pupil, add_ROI_pupil,\
                 load_last_gui_settings_pupil, save_pupil_data
     else:
@@ -180,7 +195,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.build_menu()
 
-        self.add_keyboard_shortcuts()
+        self.add_keyboard_shortcuts(Acquisition=Acquisition)
         #, pre_key='Ctrl+') # to require Ctrl in the shortcuts
 
         # =================================================
@@ -245,8 +260,9 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
+            self.facemotion()
             # self.pupil()
-            self.transfer_gui()
+            # self.transfer_gui()
             # self.suite2p_preprocessing_UI()
             # self.build_NWB_UI()
             # self.add_imaging()
@@ -271,7 +287,8 @@ class MainWindow(QtWidgets.QMainWindow):
             tzoom = self.plot.getAxis('bottom').range
             self.raw_data_plot(tzoom)
         elif self.windows[tab_id] =='pupil':
-            self.refresh_pupil()
+            print('shortcut activated')
+            self.jump_to_frame()
         elif self.windows[tab_id] =='trial_averaging':
             self.refresh_TA()
         elif self.windows[tab_id] =='FOV':
@@ -341,7 +358,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def press2(self):
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='pupil':
-            self.set_cursor_1_pupil()
+            self.set_cursor_2_pupil()
         else:
             print('no shortcut')
 
@@ -362,7 +379,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def press5(self):
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='pupil':
-            self.exclude_outliers_pupil()
+            self.find_outliers_pupil()
         else:
             print('no shortcut')
 
@@ -381,7 +398,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def in_progress(self):
         print('\n feature not available yet, integration in the new UI still in progress')
         print('      to benefit form this feature --> install the old UI from source:')
-        print('                       see https://github.com/yzerlaut/physion ')
+        print('                       see https://github.com/yzerlaut/old_physion ')
         
     def quit(self):
         if hasattr(self, 'quit_event') and (self.quit_event is not None):

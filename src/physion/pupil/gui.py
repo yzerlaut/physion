@@ -11,9 +11,6 @@ from physion.gui.parts import Slider
 from physion.utils.paths import FOLDERS
 from assembling.tools import load_FaceCamera_data
 
-gaussian_smoothing = 0
-subsampling = 1
-
 def gui(self,
         box_width=250,
         tab_id=2):
@@ -28,11 +25,8 @@ def gui(self,
     ##### module quantities #####
     #############################
 
-    self.gaussian_smoothing = gaussian_smoothing
-    self.subsampling = subsampling
-    self.process_script = os.path.join(\
-            str(pathlib.Path(__file__).resolve().parents[0]),
-                                       'process.py')
+    self.gaussian_smoothing = 0
+    self.subsampling = 1
     self.ROI, self.pupil, self.times = None, None, None
     self.data = None
     self.bROI, self.reflectors = [], []
@@ -58,9 +52,8 @@ def gui(self,
 
     # A plot area (ViewBox + axes) for displaying the image
     self.p0 = self.win.addViewBox(lockAspect=False,
-                                  row=0,col=0,#border=[100,100,100],
-                                  invertY=True)
-
+                                  invertY=True,
+                                  row=0,col=0)
     self.p0.setMouseEnabled(x=False,y=False)
     self.p0.setMenuEnabled(False)
     self.pimg = pg.ImageItem()
@@ -120,10 +113,10 @@ def gui(self,
     self.reset_btn.clicked.connect(self.reset_pupil)
     # self.reset_btn.setEnabled(True)
     # draw pupil
-    self.refresh_pupil = QtWidgets.QPushButton('Refresh [R]')
-    tab.layout.addWidget(self.refresh_pupil, 2, 11+6, 1, 1)
-    self.refresh_pupil.setEnabled(True)
-    self.refresh_pupil.clicked.connect(self.jump_to_frame)
+    self.refreshButton = QtWidgets.QPushButton('Refresh [R]')
+    tab.layout.addWidget(self.refreshButton, 2, 11+6, 1, 1)
+    self.refreshButton.setEnabled(True)
+    self.refreshButton.clicked.connect(self.jump_to_frame)
 
     self.p1 = self.win.addPlot(name='plot1',row=1,col=0, colspan=2, rowspan=4,
                                title='Pupil diameter')
@@ -175,27 +168,20 @@ def gui(self,
     self.cursor2 = QtWidgets.QPushButton('Set Cursor 2 [2]')
     self.cursor2.clicked.connect(self.set_cursor_2_pupil)
     
-    # self.runAsSubprocess = QtWidgets.QPushButton('run as subprocess')
-    # self.runAsSubprocess.clicked.connect(self.run_as_subprocess)
-
     self.load = QtWidgets.QPushButton('  open data [O]  \u2b07')
     self.load.clicked.connect(self.open_pupil_data)
 
     self.loadLastGUIsettings = QtWidgets.QPushButton("last GUI settings")
     self.loadLastGUIsettings.clicked.connect(self.load_last_gui_settings_pupil)
-    # sampLabel = QtWidgets.QLabel("Subsampling (frame)")
     self.sampLabel = QtWidgets.QCheckBox("subsampling ?")
     self.sampLabel.setChecked(True)
-    # sampLabel.setStyleSheet("color: gray;")
     self.samplingBox = QtWidgets.QLineEdit()
     self.samplingBox.setText(str(self.subsampling))
     self.samplingBox.setFixedWidth(50)
     self.samplingBox.setText('1000')
 
-    smoothLabel = QtWidgets.QCheckBox("px smoothing ?")
-    # smoothLabel.setStyleSheet("color: gray;")
+    self.smoothLabel = QtWidgets.QCheckBox("px smooth. ?")
     self.smoothBox = QtWidgets.QLineEdit()
-    self.smoothBox.setText(str(self.gaussian_smoothing))
     self.smoothBox.setFixedWidth(50)
     self.smoothBox.setText('5')
 
@@ -251,7 +237,7 @@ def gui(self,
     tab.layout.addWidget(self.loadLastGUIsettings, 7, 0, 1, 3)
     tab.layout.addWidget(self.sampLabel, 8, 0, 1, 3)
     tab.layout.addWidget(self.samplingBox, 8, 2, 1, 3)
-    tab.layout.addWidget(smoothLabel, 9, 0, 1, 3)
+    tab.layout.addWidget(self.smoothLabel, 9, 0, 1, 3)
     tab.layout.addWidget(self.smoothBox, 9, 2, 1, 3)
     tab.layout.addWidget(self.addROI,14,0,1,3)
     tab.layout.addWidget(self.process, 16, 0, 1, 3)
@@ -331,7 +317,7 @@ def load_data(self):
             self.ROI = roi.sROI(parent=self,
                                 pos=roi.ellipse_props_to_ROI(self.data['ROIellipse']))
 
-            self.plot_pupil_trace()
+            plot_pupil_trace(self)
             
         else:
             self.data = None
@@ -348,15 +334,19 @@ def load_data(self):
 
 def save_gui_settings(self):
 
-    settings = {'gaussian_smoothing':int(self.smoothBox.text())}
+    settings = {'gaussian_smoothing':int(self.smoothBox.text()) if self.smoothLabel.isChecked() else 0}
     if len(self.bROI)>0:
         settings['blanks'] = [r.extract_props() for r in self.bROI]
+
     if len(self.reflectors)>0:
         settings['reflectors'] = [r.extract_props() for r in self.reflectors]
+
     if self.ROI is not None:
         settings['ROIellipse'] = self.ROI.extract_props()
+
     if self.pupil is not None:
         settings['ROIpupil'] = self.pupil.extract_props()
+
     settings['ROIsaturation'] = self.sl.value()
     
     np.save(os.path.join(pathlib.Path(__file__).resolve().parent, '_gui_settings.npy'), settings)
@@ -367,15 +357,22 @@ def load_last_gui_settings_pupil(self):
         settings = np.load(os.path.join(pathlib.Path(__file__).resolve().parent, '_gui_settings.npy'),
                            allow_pickle=True).item()
 
-        self.smoothBox.setText('%i' % settings['gaussian_smoothing'])
+        if settings['gaussian_smoothing']>0:
+            self.smoothLabel.setChecked(True)
+            self.smoothBox.setText('%i' % settings['gaussian_smoothing'])
+        else:
+            self.smoothLabel.setChecked(False)
+            self.smoothBox.setText('5')
+
         self.sl.setValue(int(settings['ROIsaturation']))
         self.ROI = roi.sROI(parent=self,
                             pos=roi.ellipse_props_to_ROI(settings['ROIellipse']))
 
         self.bROI, self.reflectors = [], [] # blanks & reflectors
-        for b in settings['blanks']:
-            self.bROI.append(roi.reflectROI(len(self.bROI), moveable=True, parent=self,
-                                            pos=roi.ellipse_props_to_ROI(b)))
+        if 'blanks' in settings:
+            for b in settings['blanks']:
+                self.bROI.append(roi.reflectROI(len(self.bROI), moveable=True, parent=self,
+                                                pos=roi.ellipse_props_to_ROI(b)))
         if 'reflectors' in settings:
             for r in settings['reflectors']:
                 self.reflectors.append(roi.reflectROI(len(self.bROI), moveable=True, parent=self,
@@ -451,20 +448,20 @@ def interpolate_pupil(self, with_blinking_flag=False):
             I = np.arange(i1, i2)
             self.data[key][i1:i2] = self.data[key][new_i1]+(I-i1)/(i2-i1)*(self.data[key][new_i2]-self.data[key][new_i1])
 
-        self.plot_pupil_trace(xrange=self.xaxis.range)
+        plot_pupil_trace(self, xrange=self.xaxis.range)
         self.cframe1, self.cframe2 = 0, 0
 
     elif self.cframe1==0:
         i2 = np.arange(len(self.data['frame']))[self.data['frame']>=self.cframe2][0]
         for key in ['cx', 'cy', 'sx', 'sy', 'residual', 'angle']:
             self.data[key][self.cframe1:i2] = self.data[key][i2] # set to i2 level !!
-        self.plot_pupil_trace(xrange=self.xaxis.range)
+        plot_pupil_trace(self, xrange=self.xaxis.range)
         self.cframe1, self.cframe2 = 0, 0
     elif self.cframe2==(len(self.data['frame'])-1):
         i1 = np.arange(len(self.data['frame']))[self.data['frame']>=self.cframe1][0]
         for key in ['cx', 'cy', 'sx', 'sy', 'residual', 'angle']:
             self.data[key][i1:self.cframe2] = self.data[key][i1] # set to i2 level !!
-        self.plot_pupil_trace(xrange=self.xaxis.range)
+        plot_pupil_trace(self, xrange=self.xaxis.range)
         self.cframe1, self.cframe2 = 0, 0
     else:
         print('cursors at: ', self.cframe1, self.cframe2)
@@ -474,6 +471,7 @@ def process_outliers_pupil(self):
     self.interpolate_pupil(with_blinking_flag=True)
 
 def find_outliers_pupil(self):
+
     if not hasattr(self, 'data_before_outliers') or (self.data_before_outliers==None):
 
         self.data['std_exclusion_factor'] = float(self.stdBox.text())
@@ -484,13 +482,16 @@ def find_outliers_pupil(self):
         process.remove_outliers(self.data,
                                 std_criteria=self.data['std_exclusion_factor'],
                                 width_criteria=self.data['exclusion_width'])
+
     else:
+
         # we revert to before
         for key in self.data_before_outliers:
             self.data[key] = self.data_before_outliers[key]
         self.data['blinking'] = 0*self.data['frame']
         self.data_before_outliers = None
-    self.plot_pupil_trace()
+
+    plot_pupil_trace(self)
     
     
 def debug(self):
@@ -523,9 +524,10 @@ def updateFrameSlider(self):
 def jump_to_frame(self):
 
     if self.FILES is not None:
+        
         # full image 
         self.fullimg = np.load(os.path.join(self.imgfolder,
-                                            self.FILES[self.cframe]))
+                                            self.FILES[self.cframe])).T
         self.pimg.setImage(self.fullimg)
 
         # zoomed image
@@ -540,6 +542,7 @@ def jump_to_frame(self):
 
     if self.scatter is not None:
         self.p1.removeItem(self.scatter)
+
     if self.fit is not None:
         self.fit.remove(self)
         
@@ -562,7 +565,7 @@ def jump_to_frame(self):
                 coords.append(self.data[key][self.iframe])
 
 
-        self.plot_pupil_ellipse(coords)
+        plot_pupil_ellipse(self, coords)
         # self.fit = roi.pupilROI(moveable=True,
         #                         parent=self,
         #                         color=(0, 200, 0),
@@ -573,9 +576,9 @@ def jump_to_frame(self):
 
 def plot_pupil_ellipse(self, coords):
 
-    self.pupilContour.setData(*process.ellipse_coords(*coords, transpose=True),
+    self.pupilContour.setData(*process.ellipse_coords(*coords, transpose=False),
                               size=3, brush=pg.mkBrush(255,0,0))
-    self.pupilCenter.setData([coords[1]], [coords[0]],
+    self.pupilCenter.setData([coords[0]], [coords[1]],
                              size=8, brush=pg.mkBrush(255,0,0))
     
 
@@ -607,7 +610,7 @@ def save_pupil_data(self):
         # self.data = process.clip_to_finite_values(self.data, ['cx', 'cy', 'sx', 'sy', 'residual', 'angle'])
         np.save(os.path.join(self.datafolder, 'pupil.npy'), self.data)
         print('Data successfully saved as "%s"' % os.path.join(self.datafolder, 'pupil.npy'))
-        self.save_gui_settings()
+        save_gui_settings(self)
     else:
         print('Need to pre-process data ! ')
         
@@ -641,7 +644,7 @@ def process_pupil(self):
             
     # self.save_gui_settings()
     
-    self.plot_pupil_trace()
+    plot_pupil_trace(self)
         
     self.win.show()
     self.show()
@@ -680,7 +683,7 @@ def fit_pupil(self, value=0, coords_only=False):
                                        reflectors=[r.extract_props() for r in self.reflectors])
 
     if not coords_only:
-        self.plot_pupil_ellipse(coords)
+        plot_pupil_ellipse(self, coords)
 
     # TROUBLESHOOTING
     # from datavyz import ge
@@ -700,7 +703,7 @@ def interpolate_data(self):
     self.data['frame'] = np.arange(self.nframes)
     self.data['times'] = self.times[self.data['frame']]
 
-    self.plot_pupil_trace()
+    plot_pupil_trace(self)
     print('[ok] interpolation successfull !')
     
     
