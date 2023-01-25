@@ -63,8 +63,8 @@ def build_suite2p_options(folder,
 
 
 def run_preprocessing(args):
-    if args.remove_previous and (os.path.isdir(os.path.join(args.CaImaging_folder, 'suite2p'))):
-        shutil.rmtree(os.path.join(args.CaImaging_folder, 'suite2p'))
+    #if args.remove_previous and (os.path.isdir(os.path.join(args.CaImaging_folder, 'suite2p'))):
+    #    shutil.rmtree(os.path.join(args.CaImaging_folder, 'suite2p'))
     build_suite2p_options(args.CaImaging_folder, PREPROCESSING_SETTINGS[args.setting_key])
     cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
                                      os.path.join(args.CaImaging_folder,'db.npy'),
@@ -85,7 +85,6 @@ if __name__=='__main__':
         descr += ' - %s \n' % s
     parser.add_argument('-sk', "--setting_key", type=str, default='', help=descr)
     parser.add_argument('-v', "--verbose", action="store_true")
-    parser.add_argument("--remove_previous", action="store_true")
     parser.add_argument("--silent", action="store_true")
     args = parser.parse_args()
 

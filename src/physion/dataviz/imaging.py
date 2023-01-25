@@ -9,7 +9,7 @@ import physion.utils.plot_tools as pt
 def add_CaImagingRaster(data, tlim, ax, raster=None,
                         fig_fraction_start=0., fig_fraction=1., color='green',
                         subquantity='Fluorescence', roiIndices='all', subquantity_args={},
-                        cmap=plt.cm.binary,
+                        cmap=plt.cm.binary, axb=None,
                         normalization='None', subsampling=1,
                         name='\nROIs'):
 
@@ -47,13 +47,16 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
 
     if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
 
-        axb = pt.inset(ax, [-.08, fig_fraction_start+.2*fig_fraction,
-                           .01, .6*fig_fraction], facecolor=None)
+        if axb is None:
+            axb = pt.inset(ax, [-.08, fig_fraction_start+.2*fig_fraction,
+                               .01, .6*fig_fraction], facecolor='w')
+
         cb = plt.colorbar(ims, cax=axb)
         cb.set_ticks([])
         axb.set_ylabel('$\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.', fontsize=9)
         axb.annotate(' max', (1,1), fontsize=6, xycoords='axes fraction')
         axb.annotate(' min', (1,0), fontsize=6, va='top', xycoords='axes fraction')
+
         
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, rotation=90)
@@ -65,6 +68,7 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
                 (tlim[1], fig_fraction_start+fig_fraction/2.),
                 va='center', rotation=-90, xycoords='data',
                 fontsize=8)
+
     
     
 def add_CaImaging(data, tlim, ax,

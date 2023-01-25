@@ -44,8 +44,12 @@ def suite2p_preprocessing_UI(self, tab_id=1):
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
-    self.registrOnly = QtWidgets.QCheckBox('registration only', self)
-    self.add_side_widget(tab.layout, self.registrOnly)
+    self.registrButton = QtWidgets.QCheckBox('registr.', self)
+    self.registrButton.setChecked(True)
+    self.add_side_widget(tab.layout, self.registrButton, 'small-left')
+    self.roiDetectButton = QtWidgets.QCheckBox('ROI detection', self)
+    self.roiDetectButton.setChecked(True)
+    self.add_side_widget(tab.layout, self.roiDetectButton, 'large-right')
 
     self.rigidBox = QtWidgets.QCheckBox('rigid registration', self)
     self.rigidBox.setChecked(False)
@@ -174,9 +178,9 @@ def run_TSeries_analysis(self):
     
     settings = defaults.copy()
     
-    if self.registrOnly.isChecked():
-
-        settings['roidetect'] = False
+    if not self.registrButton.isChecked():
+        settings['do_registration'] = 0
+    settings['roidetect'] = self.roiDetectButton.isChecked()
 
     settings['nonrigid'] = (not self.rigidBox.isChecked())
 

@@ -214,8 +214,9 @@ def estimate_time_overlap(nwb, imaging):
     fn = get_files_with_extension(imaging, extension='.xml')[0]
     xml = bruker_xml_parser(fn) # metadata
     start = StartTime_to_day_seconds(xml['StartTime'])
-    start_time = start+xml['Ch1']['absoluteTime'][0]
-    end_time = start+xml['Ch1']['absoluteTime'][-1]
+    start_time = start+xml['Ch2']['absoluteTime'][0]
+    end_time = start+xml['Ch2']['absoluteTime'][-1]
+        
 
     dateCa = stringdatetime_to_date(xml['date'])
     timesCa = np.arange(int(start_time), int(end_time))
