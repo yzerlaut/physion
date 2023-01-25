@@ -87,17 +87,10 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.facemotion.gui import open_facemotion_data,\
                 reset_facemotion, load_last_facemotion_gui_settings,\
                 save_facemotion_data, refresh_facemotion,\
-                process_facemotion, process_grooming
-                # refresh_from_slider_facemotion
-                # jump_to_frame, add_blankROI, add_reflectROI,\
-                # save_pupil_data, fit_pupil, process_pupil,\
-                # process_outliers_pupil,\
-                # interpolate_pupil, find_outliers_pupil,\
-                # reset_pupil, set_cursor_1_pupil, set_cursor_2_pupil,\
-                # set_precise_time_pupil, go_to_frame_pupil, add_ROI_pupil,\
-                # load_last_gui_settings_pupil, save_pupil_data
+                process_facemotion, process_grooming, add_facemotion_ROI,\
+                update_grooming_threshold
     else:
-        from physion.gui.parts import inactivated as pupil 
+        from physion.gui.parts import inactivated as facemotion 
 
     # -- Pupil tracking
     if not Acquisition:

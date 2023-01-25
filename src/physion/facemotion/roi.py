@@ -14,7 +14,7 @@ class faceROI():
         self.moveable = moveable
         
         if pos is None:
-            view = parent.p0.viewRange()
+            view = parent.fullView.viewRange()
             imx = (view[0][1] + view[0][0]) / 2
             imy = (view[1][1] + view[1][0]) / 2
             dx = (view[0][1] - view[0][0]) / 4
@@ -45,10 +45,10 @@ class faceROI():
         self.ROI.addScaleHandle([1, 0.5], [0., 0.5])
         self.ROI.addScaleHandle([0.5, 0], [0.5, 1])
         self.ROI.setAcceptedMouseButtons(QtCore.Qt.LeftButton)
-        parent.p0.addItem(self.ROI)
+        parent.fullView.addItem(self.ROI)
 
     def remove(self, parent):
-        parent.pFace.removeItem(self.ROI)
+        parent.fullView.removeItem(self.ROI)
         parent.win.show()
         parent.show()
 

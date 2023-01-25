@@ -276,9 +276,6 @@ def gui(self,
     self.show()
 
 def open_pupil_data(self):
-    load_data(self)
-    
-def load_data(self):
 
     self.cframe = 0
     

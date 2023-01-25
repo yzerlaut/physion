@@ -6,7 +6,7 @@ from scipy.interpolate import interp1d
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
-# from physion.facemotion import process, roi
+from physion.facemotion import process, roi
 from physion.gui.parts import Slider
 from physion.utils.paths import FOLDERS
 from assembling.tools import load_FaceCamera_data
@@ -33,6 +33,10 @@ def gui(self,
     self.nframes, self.cframe, self.FILES= 0, 0, None
     self.grooming_threshold = -1
 
+    ########################
+    ##### side bar     #####
+    ########################
+
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel('data folder:'))
 
@@ -48,17 +52,52 @@ def gui(self,
     self.load.clicked.connect(self.open_facemotion_data)
     self.add_side_widget(tab.layout, self.load)
 
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
+    self.loadLastGUIsettings = QtWidgets.QPushButton("last GUI settings")
+    self.loadLastGUIsettings.clicked.connect(\
+            self.load_last_facemotion_gui_settings)
+    self.add_side_widget(tab.layout, self.loadLastGUIsettings)
+    
     self.motionCheckBox = QtWidgets.QCheckBox("display motion frames")
     self.motionCheckBox.setChecked(False)
     self.add_side_widget(tab.layout, self.motionCheckBox)
 
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.addROI = QtWidgets.QPushButton("set ROI")
+    self.addROI.clicked.connect(self.add_facemotion_ROI)
+    self.add_side_widget(tab.layout, self.addROI)
+
+    self.temporalBox = QtWidgets.QCheckBox('temporal subsmpl. ?', self)
+    self.add_side_widget(tab.layout, self.temporalBox, 'large-left')
+    self.temporalBox.setChecked(True)
+    self.TsamplingBox = QtWidgets.QLineEdit()
+    self.TsamplingBox.setText('500')
+    self.add_side_widget(tab.layout, self.TsamplingBox, 'small-right')
+
+    # self.spatialBox = QtWidgets.QCheckBox('spatial subsmpl. ?', self)
+    # self.add_side_widget(tab.layout, self.spatialBox, 'large-left')
+    # self.SsamplingBox = QtWidgets.QLineEdit()
+    # self.SsamplingBox.setText('4')
+    # self.add_side_widget(tab.layout, self.SsamplingBox, 'small-right')
 
     self.processBtn = QtWidgets.QPushButton('process data [Ctrl+P]')
-    self.processBtn.clicked.connect(self.process)
+    self.processBtn.clicked.connect(self.process_facemotion)
     self.add_side_widget(tab.layout, self.processBtn)
+
+    self.saveData = QtWidgets.QPushButton('save data [Ctrl+S]')
+    self.saveData.clicked.connect(self.save_facemotion_data)
+    self.add_side_widget(tab.layout, self.saveData)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel("grooming threshold"),
+                         'large-left')
+    self.groomingBox = QtWidgets.QLineEdit()
+    self.groomingBox.setText('-1')
+    self.groomingBox.returnPressed.connect(self.update_grooming_threshold)
+    self.add_side_widget(tab.layout, self.groomingBox, 'small-right')
+
+    self.processGrooming = QtWidgets.QPushButton("process grooming")
+    self.processGrooming.clicked.connect(self.process_grooming)
+    self.add_side_widget(tab.layout, self.processGrooming)
 
     #########################
     ##### main view     #####
@@ -102,13 +141,13 @@ def gui(self,
     self.tracePlot.hideAxis('left')
     self.scatter = pg.ScatterPlotItem()
     self.tracePlot.addItem(self.scatter)
-    self.tracePlot.setLabel('bottom', 'time (frame #)')
+    self.tracePlot.setLabel('bottom', 'frame # (time)')
     self.tracePlot.setMouseEnabled(x=True,y=False)
     self.tracePlot.setMenuEnabled(False)
     self.xaxis = self.tracePlot.getAxis('bottom')
     tab.layout.addWidget(self.plotWidget,
                          1+int(self.nWidgetRow)/2, 0,
-                         int(self.nWidgetRow)/2-1, self.nWidgetCol)
+                         int(self.nWidgetRow)/2-2, self.nWidgetCol)
     self.tracePlot.autoRange(padding=0.01)
 
     self.frameSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
@@ -144,7 +183,7 @@ def gui(self,
 
 
 
-def add_ROI(self):
+def add_facemotion_ROI(self):
     self.ROI = roi.faceROI(moveable=True, parent=self)
 
 def open_facemotion_data(self):
@@ -153,8 +192,7 @@ def open_facemotion_data(self):
     
     folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
                                 "Choose datafolder",
-                                FOLDERS[self.folderB.currentText()])
-    # folder = '/home/yann/DATA/14-10-48/'
+                                FOLDERS[self.folderBox.currentText()])
 
     if folder!='':
         
@@ -162,7 +200,8 @@ def open_facemotion_data(self):
         
         if os.path.isdir(os.path.join(folder, 'FaceCamera-imgs')):
             
-            self.reset()
+            self.reset_facemotion()
+
             self.imgfolder = os.path.join(self.datafolder, 'FaceCamera-imgs')
             process.load_folder(self) # in init: self.times, _, self.nframes, ...
             
@@ -194,7 +233,7 @@ def open_facemotion_data(self):
             self.groomingBox.setText(str(self.grooming_threshold))
                 
             if 'frame' in self.data:
-                self.plot_motion_trace()
+                plot_motion_trace(self)
             
         else:
             self.data = None
@@ -313,14 +352,19 @@ def process_facemotion(self):
     save_gui_settings(self)
     
     process.set_ROI_area(self)
+
     frames, motion = process.compute_motion(self,
-                                    time_subsampling=int(self.TsamplingBox.text()),
+            time_subsampling=int(self.TsamplingBox.text()) if self.temporalBox.isChecked() else 0,
                                     with_ProgressBar=True)
     self.data = {'frame':frames, 't':self.times[frames],
                  'motion':motion, 'grooming':0*frames}
     if self.grooming_threshold==-1:
         self.grooming_threshold = int(self.data['motion'].max())+1
         
+    plot_motion_trace(self)
+
+def update_grooming_threshold(self):
+    self.grooming_threshold = int(self.groomingBox.text())
     self.plot_motion_trace()
 
 
@@ -360,7 +404,7 @@ def process_grooming(self):
         self.data['grooming'][up_cond] = 1
         self.data['grooming'][~up_cond] = 0
 
-        self.plot_motion_trace()
+        plot_motion_trace(self)
     else:
         print('\n /!\ Need to process data first ! \n')
 
