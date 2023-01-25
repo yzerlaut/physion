@@ -11,7 +11,7 @@ try:
 except ModuleNotFoundError:
     def build_stim(**args):
         return None
-    print(' /!\ Problem with the Visual-Stimulation module /!\ ')
+    # print(' /!\ Problem with the Visual-Stimulation module /!\ ')
 
 
 try:
@@ -19,14 +19,14 @@ try:
 except ModuleNotFoundError:
     def Acquisition(**args):
         return None
-    print(' /!\ Problem with the NIdaq module /!\ ')
+    # print(' /!\ Problem with the NIdaq module /!\ ')
 
 try:
     from physion.hardware.FLIRcamera.recording import launch_FaceCamera
 except ModuleNotFoundError:
     def launch_FaceCamera(**args):
         return None
-    print(' /!\ Problem with the FLIR camera module /!\ ')
+    # print(' /!\ Problem with the FLIR camera module /!\ ')
 
 
 def init_visual_stim(self):
