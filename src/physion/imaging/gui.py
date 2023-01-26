@@ -165,7 +165,8 @@ def load_TSeries_folder(self):
                 self.Nchans.append(xml['Nchannels'])
                 getattr(self, 'tseriesBtn%i' % (i+1)).setChecked(True)
 
-        while i<self.nWidgetRow:
+        i+=1
+        while i<self.nWidgetRow-1:
             getattr(self, 'tseries%i' % (i+1)).setText(' - ')
             getattr(self, 'tseriesBtn%i' % (i+1)).setChecked(False)
             i+=1

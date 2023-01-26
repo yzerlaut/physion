@@ -379,14 +379,18 @@ def draw_figure(args, data,
                 AX['imaging_img'], AX['ROI1_img'], AX['ROI2_img']]
        
 
-    ani = animation.FuncAnimation(fig, 
-                                  update,
-                                  np.arange(len(times)),
-                                  init_func=update,
-                                  interval=100,
-                                  blit=True)
+    if args.export:
+        ani = animation.FuncAnimation(fig, 
+                                      update,
+                                      np.arange(len(times)),
+                                      init_func=update,
+                                      interval=100,
+                                      blit=True)
 
-    return fig, AX, ani
+        return fig, AX, ani
+    else:
+        return fig, AX, None 
+
 
 def get_pupil_center(index, data, metadata):
     coords = []
@@ -402,7 +406,7 @@ def get_pupil_fit(index, data, metadata):
         coords.append(data.nwbfile.processing['Pupil'].data_interfaces['angle'].data[index])
     else:
         coords.append(0)
-    return process.ellipse_coords(*coords)
+    return process.ellipse_coords(*coords, transpose=False)
     
 def load_faceCamera(metadata):
     imgfolder = os.path.join(metadata['raw_vis_folder'], 'FaceCamera-imgs')

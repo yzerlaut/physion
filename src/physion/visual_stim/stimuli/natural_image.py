@@ -18,8 +18,7 @@ params = {"movie_refresh_freq":0.01,
 def get_NaturalImages_as_array(screen):
     
     NI_FOLDERS = [os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'NI_bank'),
-                  os.path.join(os.path.expanduser('~'), 'physion', 'physion', 'visual_stim', 'NI_bank'),
-                  os.path.join(os.path.expanduser('~'), 'work', 'physion', 'physion', 'visual_stim', 'NI_bank')]
+                  os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src', 'physion', 'visual_stim', 'NI_bank')]
     
     NIarray = []
 
