@@ -151,6 +151,7 @@ def build_NWB_func(args):
             metadata[key] = VisualStim[key]
             
         success, metadata = realign_from_photodiode(Psignal, metadata,
+                                                    max_episode=args.max_episode,
                                                     sampling_rate=(args.photodiode_sampling if args.photodiode_sampling>0 else None),
                                                     indices_forced=(metadata['realignement_indices_forced'] if ('realignement_indices_forced' in metadata) else []),
                                                     times_forced=(metadata['realignement_times_forced'] if ('realignement_times_forced' in metadata) else []),
@@ -506,6 +507,10 @@ if __name__=='__main__':
     parser.add_argument('-df', "--datafolder", type=str, default='')
 
     parser.add_argument('-M', "--modalities", nargs='*', type=str, default=ALL_MODALITIES)
+
+    ######## INTRODUCING A MAX EPISODE VARIABLE                     ####
+    ##             IN CASE SOMETHING WENT WRONG IN THE RECORDING    ####
+    parser.add_argument("--max_episode", type=int, default=-1)
 
     parser.add_argument('-rs', "--running_sampling", default=50., type=float)
     parser.add_argument('-ps', "--photodiode_sampling", default=1000., type=float)

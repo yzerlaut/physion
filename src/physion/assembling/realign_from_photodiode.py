@@ -9,6 +9,7 @@ def realign_from_photodiode(signal,
                             photodiode_rise_time=0.01,
                             shift_time=0.3, # MODIFY IT HERE IN CASE NEEDED
                             debug=False, istart_debug=0, n_vis=5,
+                            max_episode=-1,
                             indices_forced=[],
                             times_forced=[],
                             durations_forced=[],
@@ -23,6 +24,9 @@ def realign_from_photodiode(signal,
         print('---> Realigning data with respect to photodiode signal [...] ')
 
     success = True
+
+    if max_episode==-1:
+        max_episode = len(metadata['time_duration'])
 
     # extract parameters
     if sampling_rate is None:
@@ -50,7 +54,7 @@ def realign_from_photodiode(signal,
 
     # looping over episodes
     i=0
-    while (i<len(metadata['time_duration'])) and (tstart<(t[-1]-metadata['time_duration'][i])) and success:
+    while (i<max_episode) and (tstart<(t[-1]-metadata['time_duration'][i])) and success:
 
         # the next time point above being above threshold
         cond_thresh = (t[:-2]>tstart+shift_time) & (smooth_signal[1:]>=(baseline+threshold)) & (smooth_signal[:-1]<(baseline+threshold))
@@ -156,6 +160,7 @@ if __name__=='__main__':
     """,formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument("datafolder")
     parser.add_argument('-n', "--n_vis", type=int, default=5)
+    parser.add_argument("--max_episode", type=int, default=-1)
     parser.add_argument('-id', "--istart_debug", type=int, default=0)
     parser.add_argument("--smoothing_time", type=float, help='in s', default=20e-3)
     parser.add_argument('-st', "--shift_time", type=float, help='in s', default=0.3)
@@ -178,6 +183,7 @@ if __name__=='__main__':
     # plt.show()
 
     realign_from_photodiode(data, metadata,
+                            max_episode=args.max_episode,
                             debug=True,
                             istart_debug=args.istart_debug,
                             shift_time=args.shift_time,
