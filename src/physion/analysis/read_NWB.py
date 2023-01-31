@@ -197,7 +197,7 @@ class Data:
             np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)/self.nwbfile.acquisition['Running-Speed'].rate
 
         if specific_time_sampling is not None:
-            return tools.resample(self.t_running_speed, self.running_speed, specific_time_sampling, interpolation=interpolation)
+            return tools.resample(self.t_running_speed, self.running_speed, specific_time_sampling, interpolation=interpolation, verbose=verbose)
 
     
     ######################
@@ -225,7 +225,7 @@ class Data:
 
         if specific_time_sampling is not None:
             return tools.resample(self.t_pupil, self.pupil_diameter,
-                    specific_time_sampling, interpolation=interpolation)
+                    specific_time_sampling, interpolation=interpolation, verbose=verbose)
 
 
     def build_gaze_movement(self,
@@ -241,7 +241,7 @@ class Data:
         self.gaze_movement = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
 
         if specific_time_sampling is not None:
-            return tools.resample(self.t_pupil, self.gaze_movement, specific_time_sampling, interpolation=interpolation)
+            return tools.resample(self.t_pupil, self.gaze_movement, specific_time_sampling, interpolation=interpolation, verbose=verbose)
         
 
     #########################
@@ -264,7 +264,7 @@ class Data:
         self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:]
 
         if specific_time_sampling is not None:
-            return tools.resample(self.t_facemotion, self.facemotion, specific_time_sampling, interpolation=interpolation)
+            return tools.resample(self.t_facemotion, self.facemotion, specific_time_sampling, interpolation=interpolation, verbose=verbose)
 
     #############################
     #       Calcium Imaging     #
