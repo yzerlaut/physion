@@ -5,6 +5,7 @@ from scipy.interpolate import interp1d
 
 from physion.utils.files import get_files_with_extension
 from physion.visual_stim.build import build_stim
+from physion.analysis import tools
 from physion.imaging.Calcium import compute_dFoF, METHOD,\
         T_SLIDING_MIN, PERCENTILE_SLIDING_MIN, NEUROPIL_CORRECTION_FACTOR
 
@@ -147,25 +148,6 @@ class Data:
             self.read_facemotion()
             
 
-    def resample(self, x, y, new_time_sampling,
-                 interpolation='linear',
-                 verbose=True):
-        try:
-            func = interp1d(x, y,
-                            kind=interpolation)
-            return func(new_time_sampling)
-        except ValueError:
-            if verbose:
-                print(' /!\ ValueError: A value in x_new is above the interpolation range /!\ ' )
-                print('   -->  interpolated at boundaries with mean value ' )
-            func = interp1d(x, y,
-                            kind=interpolation,
-                            bounds_error=False,
-                            fill_value=np.mean(y))
-            return func(new_time_sampling)
-            
-   
-
     #########################################################
     #       CALCIUM IMAGING DATA (from suite2p output)      #
     #########################################################
@@ -215,7 +197,7 @@ class Data:
             np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)/self.nwbfile.acquisition['Running-Speed'].rate
 
         if specific_time_sampling is not None:
-            return self.resample(self.t_running_speed, self.running_speed, specific_time_sampling, interpolation=interpolation)
+            return tools.resample(self.t_running_speed, self.running_speed, specific_time_sampling, interpolation=interpolation)
 
     
     ######################
@@ -242,7 +224,8 @@ class Data:
                                          self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:]], axis=0)
 
         if specific_time_sampling is not None:
-            return self.resample(self.t_pupil, self.pupil_diameter, specific_time_sampling, interpolation=interpolation)
+            return tools.resample(self.t_pupil, self.pupil_diameter,
+                    specific_time_sampling, interpolation=interpolation)
 
 
     def build_gaze_movement(self,
@@ -258,7 +241,7 @@ class Data:
         self.gaze_movement = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
 
         if specific_time_sampling is not None:
-            return self.resample(self.t_pupil, self.gaze_movement, specific_time_sampling, interpolation=interpolation)
+            return tools.resample(self.t_pupil, self.gaze_movement, specific_time_sampling, interpolation=interpolation)
         
 
     #########################
@@ -281,7 +264,7 @@ class Data:
         self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:]
 
         if specific_time_sampling is not None:
-            return self.resample(self.t_facemotion, self.facemotion, specific_time_sampling, interpolation=interpolation)
+            return tools.resample(self.t_facemotion, self.facemotion, specific_time_sampling, interpolation=interpolation)
 
     #############################
     #       Calcium Imaging     #

@@ -3,6 +3,23 @@ import numpy as np
 from scipy.ndimage.filters import gaussian_filter1d
 from scipy.interpolate import interp1d
 
+def resample(x, y, new_time_sampling,
+             interpolation='linear',
+             verbose=True):
+    try:
+        func = interp1d(x, y,
+                        kind=interpolation)
+        return func(new_time_sampling)
+    except ValueError:
+        if verbose:
+            print(' /!\ ValueError: A value in x_new is above the interpolation range /!\ ' )
+            print('   -->  interpolated at boundaries with mean value ' )
+        func = interp1d(x, y,
+                        kind=interpolation,
+                        bounds_error=False,
+                        fill_value=np.mean(y))
+        return func(new_time_sampling)
+            
 def normalize(response, norm_type, verbose=False):
     """
     
