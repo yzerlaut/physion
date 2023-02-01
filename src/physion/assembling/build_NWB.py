@@ -150,12 +150,21 @@ def build_NWB_func(args):
         for key in ['time_start', 'time_stop', 'time_duration']:
             metadata[key] = VisualStim[key]
             
+        if (args.indices_forced is not None) and (args.times_forced is not None) and (args.times_forced is not None):
+            print(' FORCING ALIGNEMENT IN SPECIFIC EPISODES: ', args.indices_forced)
+            indices_forced=args.indices_forced
+            times_forced=args.times_forced
+            durations_forced=args.durations_forced
+        else:
+            indices_forced=(metadata['realignement_indices_forced'] if ('realignement_indices_forced' in metadata) else []),
+            times_forced=(metadata['realignement_times_forced'] if ('realignement_times_forced' in metadata) else []),
+            durations_forced=(metadata['realignement_durations_forced'] if ('realignement_durations_forced' in metadata) else []),
         success, metadata = realign_from_photodiode(Psignal, metadata,
                                                     max_episode=args.max_episode,
                                                     sampling_rate=(args.photodiode_sampling if args.photodiode_sampling>0 else None),
-                                                    indices_forced=(metadata['realignement_indices_forced'] if ('realignement_indices_forced' in metadata) else []),
-                                                    times_forced=(metadata['realignement_times_forced'] if ('realignement_times_forced' in metadata) else []),
-                                                    durations_forced=(metadata['realignement_durations_forced'] if ('realignement_durations_forced' in metadata) else []),
+                                                    indices_forced=indices_forced,
+                                                    times_forced=times_forced,
+                                                    durations_forced=durations_forced,
                                                     verbose=args.verbose)
 
         if success:
@@ -511,6 +520,11 @@ if __name__=='__main__':
     ######## INTRODUCING A MAX EPISODE VARIABLE                     ####
     ##             IN CASE SOMETHING WENT WRONG IN THE RECORDING    ####
     parser.add_argument("--max_episode", type=int, default=-1)
+    ######## ALSO THE ABILITY TO FORCE EPISODE START AND DURATION   ####
+    ##  e.g. for the protocols without the photodiode (screen off)  ####
+    parser.add_argument("--indices_forced", nargs='*', type=int)
+    parser.add_argument("--times_forced", nargs='*', type=float)
+    parser.add_argument("--durations_forced", nargs='*', type=float)
 
     parser.add_argument('-rs', "--running_sampling", default=50., type=float)
     parser.add_argument('-ps', "--photodiode_sampling", default=1000., type=float)
