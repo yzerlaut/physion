@@ -79,7 +79,7 @@ def NWB_to_dataframe(nwbfile,
             # a binary array for this stimulation protocol,
             #       same for all stimulation parameters
 
-            dataframe['VisStim-%s'%protocol] = \
+            dataframe['VisStim_%s'%protocol] = \
                     build_stim_specific_array(data,
                                               protocol_cond,
                                               dataframe['time'])  
@@ -112,9 +112,9 @@ def NWB_to_dataframe(nwbfile,
                             episode_cond[ep_in_protocol] = True 
 
 
-                    stim_name = 'VisStim-%s'%protocol
+                    stim_name = 'VisStim_%s'%protocol
                     for key, index in zip(VARIED_KEYS, indices):
-                        stim_name+='-%s-%s' % (key,
+                        stim_name+='--%s_%s' % (key,
                                         episodes.varied_parameters[key][index])
                     dataframe[stim_name] =\
                             build_stim_specific_array(data,
@@ -146,6 +146,31 @@ def build_stim_specific_array(data, index_cond, time):
 
     return array
 
+def extract_stim_keys(dataframe):
+
+    STIM = {}
+    for key in dataframe.keys():
+        if 'VisStim_' in key:
+            s = key.replace('VisStim_', '')
+            protocol = s.split('--')[0]
+
+            if not protocol in STIM:
+                STIM[protocol] = {'DF-key':[]}
+
+            STIM[protocol]['DF-key'].append(key)
+
+            keys_vals = s.split('--')
+            if len(keys_vals)>1:
+                for key_val in keys_vals[1:]:
+                    k, v = key_val.split('_')
+                    if not k in STIM[protocol]:
+                        STIM[protocol][k] = [v]
+                    else:
+                        STIM[protocol][k].append(v)
+
+
+    return STIM
+
 if __name__=='__main__':
 
 
@@ -154,7 +179,9 @@ if __name__=='__main__':
         dataframe = NWB_to_dataframe(sys.argv[-1],
                     visual_stim_label='per-protocol-and-parameters',
                                      verbose=False)
-        print(dataframe)
+
+        print(extract_stim_keys(dataframe))
+        # print(dataframe)
     else:
 
         print('you need to provide a datafile as argument')
