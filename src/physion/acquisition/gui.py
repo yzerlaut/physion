@@ -4,11 +4,14 @@ import numpy as np
 import multiprocessing # for the camera streams !!
 from ctypes import c_char_p
 import pyqtgraph as pg
+import subprocess
 
 from physion.acquisition.settings import get_config_list
+from physion.utils.files import last_datafolder_in_dayfolder, day_folder
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import load_settings
+from physion.assembling.gui import build_cmd
 
 def multimodal(self,
                tab_id=0):
@@ -81,7 +84,6 @@ def multimodal(self,
     self.webcamButton.setCheckable(True)
     self.add_side_widget(tab.layout, self.webcamButton)
 
-
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel(' * Notes * '))
@@ -89,14 +91,18 @@ def multimodal(self,
     self.add_side_widget(tab.layout, self.qmNotes)
 
     # -------------------------------------------------------
-    # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-    # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-    self.demoW = QtWidgets.QCheckBox('demo', self)
-    self.add_side_widget(tab.layout, self.demoW, 'large-left')
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
-    self.saveSetB = QtWidgets.QPushButton('save', self)
+    self.demoW = QtWidgets.QCheckBox('demo', self)
+    self.add_side_widget(tab.layout, self.demoW, 'small-right')
+
+    self.saveSetB = QtWidgets.QPushButton('save settings', self)
     self.saveSetB.clicked.connect(self.save_settings)
-    self.add_side_widget(tab.layout, self.saveSetB, 'small-right')
+    self.add_side_widget(tab.layout, self.saveSetB)
+
+    self.buildNWB = QtWidgets.QPushButton('build NWB for last', self)
+    self.buildNWB.clicked.connect(build_NWB_for_last)
+    self.add_side_widget(tab.layout, self.buildNWB)
 
     # ========================================================
 
@@ -218,5 +224,16 @@ def multimodal(self,
     # READ CONFIGS
     get_config_list(self) # first
     load_settings(self)
+
+def build_NWB_for_last():
+    # last folder
+    folder = last_datafolder_in_dayfolder(day_folder(FOLDERS['~/DATA']))
+    print(folder)
+    if os.path.isdir(folder):
+        cmd, cwd = build_cmd(folder)
+        print('\n launching the command \n :  %s \n ' % cmd)
+        p = subprocess.Popen(cmd,
+                             cwd=cwd,
+                             shell=True)
 
 

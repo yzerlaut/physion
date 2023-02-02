@@ -124,7 +124,7 @@ def load_NWB_folder(self):
 
 def runBuildNWB(self):
     modalities = [modality for modality in ALL_MODALITIES\
-            if getattr(self, '%sCheckBox'%modality).isChecked()]
+                  if getattr(self, '%sCheckBox'%modality).isChecked()]
     for folder in self.folders:
         cmd, cwd = build_cmd(folder,
                              modalities=modalities)
