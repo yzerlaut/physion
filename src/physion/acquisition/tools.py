@@ -20,7 +20,12 @@ def save_experiment(self, metadata):
     for key in self.protocol:
         metadata[key] = self.protocol[key]
     np.save(os.path.join(str(self.datafolder.get()), 'metadata.npy'), metadata)
-    print('[ok] Metadata data saved as: %s ' % os.path.join(str(self.datafolder.get()), 'metadata.npy'))
+
+    with open('file_name.json', 'w', encoding='utf-8') as f:
+        json.dump(os.path.join(str(self.datafolder.get()), 'metadata.json'), f,
+                  ensure_ascii=False, indent=4)
+
+    print('[ok] Metadata data saved as: %s ' % os.path.join(str(self.datafolder.get()), 'metadata.json'))
     self.statusBar.showMessage('Metadata saved as: "%s" ' % os.path.join(str(self.datafolder.get()), 'metadata.npy'))
 
 
@@ -48,6 +53,7 @@ def check_gui_to_init_metadata(self):
                 'VisualStim':self.protocolBox.currentText()!='None',
                 'intervention':self.interventionBox.currentText(),
                 'notes':self.qmNotes.toPlainText(),
+                'FOV':self.fovPick.currentText(),
                 'subject_ID':self.subjectBox.currentText(),
                 'subject_props':get_subject_props(self)}
 

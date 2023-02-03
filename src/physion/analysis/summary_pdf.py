@@ -76,6 +76,10 @@ def metadata_fig(data, short=True):
     s=' [--  %s --] \n ' % data.filename
     for key in ['protocol', 'subject_ID', 'notes']:
         s+='- %s :\n    "%s" \n' % (key, data.metadata[key])
+    if 'FOV' in data.metadata:
+        s+='- %s :\n    "%s" \n' % ('FOV', data.metadata[key])
+
+
     s += '- completed:\n       n=%i/%i episodes' %(data.nwbfile.stimulus['time_start_realigned'].data.shape[0],
                                                    data.nwbfile.stimulus['time_start'].data.shape[0])
     ax.annotate(s, (0,1), va='top', fontsize=8)

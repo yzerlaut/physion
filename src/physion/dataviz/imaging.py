@@ -9,9 +9,11 @@ import physion.utils.plot_tools as pt
 def add_CaImagingRaster(data, tlim, ax, raster=None,
                         fig_fraction_start=0., fig_fraction=1., color='green',
                         subquantity='Fluorescence', roiIndices='all', subquantity_args={},
-                        cmap=plt.cm.binary, axb=None,
+                        cmap=plt.cm.binary, 
+                        axb=None,
+                        bar_inset_start=-0.08, bar_inset_width=0.01,
                         normalization='None', subsampling=1,
-                        name='\nROIs'):
+                        name=''):
 
     if subquantity=='Fluorescence' and (raster is None):
         if (roiIndices=='all'):
@@ -48,8 +50,8 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
 
         if axb is None:
-            axb = pt.inset(ax, [-.08, fig_fraction_start+.2*fig_fraction,
-                               .01, .6*fig_fraction], facecolor='w')
+            axb = pt.inset(ax, [bar_inset_start, fig_fraction_start+.2*fig_fraction,
+                                bar_inset_width, .6*fig_fraction], facecolor='w')
 
         cb = plt.colorbar(ims, cax=axb)
         cb.set_ticks([])
