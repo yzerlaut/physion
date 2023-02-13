@@ -90,7 +90,11 @@ def generate_figs(args,
     pdf_folder = summary_pdf_folder(args.datafile)
 
     data = Data(args.datafile)
-    data.build_dFoF()
+    if args.imaging_quantity=='dFoF':
+        data.build_dFoF()
+    else:
+        data.build_rawFluo()
+
 
     # ## --- METADATA  ---
     fig = metadata_fig(data, short=True)
@@ -115,13 +119,13 @@ def generate_figs(args,
         settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=4, subsampling=2, 
-                                    subquantity='dF/F', color='green',
+                                    subquantity=args.imaging_quantity, color='green',
                                     roiIndices=np.random.choice(data.nROIs,5))
         settings['CaImagingRaster']=dict(fig_fraction=2, subsampling=4,
                                          bar_inset_start=-0.04, 
                                          roiIndices='all',
                                          normalization='per-line',
-                                         subquantity='dF/F')
+                                         subquantity=args.imaging_quantity)
     
     fig, ax = pt.plt.subplots(1, figsize=(7, 2.5))
     pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.95)
@@ -168,7 +172,7 @@ def generate_figs(args,
 
     episodes = EpisodeData(data,
                            protocol_id=0,
-                           quantities=['dFoF'],
+                           quantities=[args.imaging_quantity],
                            prestim_duration=3,
                            # with_visual_stim=True,
                            verbose=True)
@@ -178,6 +182,7 @@ def generate_figs(args,
                               figsize=(7,3.5))
 
     plot_trial_average(episodes,
+                       quantity=args.imaging_quantity, 
                        column_key='x-center', 
                        row_key='y-center', 
                        xbar=1, xbarlabel='1s', 
@@ -208,6 +213,7 @@ def generate_figs(args,
                                   len(episodes.varied_parameters['x-center']),
                                   figsize=(7,3))
         plot_trial_average(episodes,
+                           quantity=args.imaging_quantity, 
                            roiIndex=roi,
                            column_key='x-center', 
                            row_key='y-center', 
@@ -244,7 +250,7 @@ def responsiveness(episodes, data):
                                                           interval_post=[1,2],
                                                           test='ttest',
                                                           positive=True),
-                                                          response_args={'quantity':'dFoF',
+                                                          response_args={'quantity':args.imaging_quantity,
                                                                          'roiIndex':roi},
                                                           response_significance_threshold=0.05)
         if np.sum(summary_data['significant'])>0:
@@ -348,6 +354,7 @@ if __name__=='__main__':
 
     parser.add_argument("--iprotocol", type=int, default=0,
         help='index for the protocol in case of multiprotocol in datafile')
+    parser.add_argument("--imaging_quantity", default='dFoF')
     parser.add_argument("-s", "--seed", type=int, default=1)
     parser.add_argument('-nmax', "--Nmax", type=int, default=1000000)
     parser.add_argument("-d", "--debug", action="store_true")
@@ -356,10 +363,12 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     if '.nwb' in args.datafile:
-        generate_pdf(args)
-        # generate_figs(args)
         if args.debug:
+            generate_figs(args)
             pt.plt.show()
+        else:
+            generate_pdf(args)
+
     else:
         print('/!\ Need to provide a NWB datafile as argument ')
 

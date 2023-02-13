@@ -15,11 +15,11 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
                         normalization='None', subsampling=1,
                         name=''):
 
-    if subquantity=='Fluorescence' and (raster is None):
+    if (subquantity in ['Fluorescence', 'rawFluo']) and (raster is None):
         if (roiIndices=='all'):
-            raster = data.Fluorescence.data[:,:]
+            raster = data.rawFluo[:,:]
         else:
-            raster = data.Fluorescence.data[roiIndices,:]
+            raster = data.rawFluo[roiIndices,:]
             
     elif (subquantity in ['dFoF', 'dF/F']) and (raster is None):
         if not hasattr(data, 'dFoF'):
@@ -107,7 +107,7 @@ def add_CaImaging(data, tlim, ax,
                               color=color, scale_side=scale_side,
                              scale_unit_string=('%.0f$\Delta$F/F' if (n==0) else ' '))
         else:
-            y = data.Fluorescence.data[:,ir][np.arange(i1,i2)][::subsampling]
+            y = data.rawFluo[ir,np.arange(i1,i2)][::subsampling]
             dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1.,
                    ax_fraction_extent=fig_fraction/len(roiIndices),
                    ax_fraction_start=ypos, color=color,
@@ -132,7 +132,7 @@ def add_CaImagingSum(data, tlim, ax,
     if (subquantity in ['dF/F', 'dFoF']):
         y = data.dFoF.sum(axis=0)[np.arange(i1,i2)][::subsampling]
     else:
-        y = data.Fluorescence.data[:,:].sum(axis=0)[np.arange(i1,i2)][::subsampling]
+        y = data.rawFluo.sum(axis=0)[np.arange(i1,i2)][::subsampling]
 
     dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1., fig_fraction, fig_fraction_start, color=color,
                             scale_unit_string=('%.0fdF/F' if subquantity in ['dF/F', 'dFoF'] else ''))
