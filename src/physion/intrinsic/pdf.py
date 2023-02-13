@@ -219,7 +219,7 @@ if __name__=='__main__':
                        formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument("datafolder", type=str,default='')
-    parser.add_argument("--vasc_exponent", type=float,default=0.25)
+    parser.add_argument("--vasc_exponent", type=float,default=1.00)
     parser.add_argument("--fluo_exponent", type=float,default=1.00)
     parser.add_argument("--angle_from_rig", type=float,default=0) # mm
     parser.add_argument("--image_height", type=float,default=2.70) # mm

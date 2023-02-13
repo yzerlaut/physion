@@ -4,7 +4,7 @@ import pynwb, PIL, pandas
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
-from physion.utils.paths import FOLDERS
+from physion.utils.paths import FOLDERS, python_path
 from physion.utils.files import last_datafolder_in_dayfolder, day_folder
 from physion.intrinsic.tools import default_segmentation_params
 from physion.intrinsic import tools as intrinsic_analysis
@@ -266,11 +266,16 @@ def open_intrinsic_folder(self):
         self.subject = metadata['subject']
         self.timestamps = str(self.datafolder.split(os.path.sep)[-2:])
 
-        if 'headplate-angle-from-rig-axis' in metadata:
+        try:
             self.angleButton.setValue(metadata['headplate-angle-from-rig-axis'])
+        except BaseException:
+            pass
 
-        if 'Height-of-Microscope-Camera-Image-in-mm' in metadata:
+        try:
             self.scaleButton.setValue(metadata['Height-of-Microscope-Camera-Image-in-mm'])
+        except BaseException:
+            pass
+        # if 'Height-of-Microscope-Camera-Image-in-mm' in metadata:
 
     else:
         print(' metadata information missing !! ')
@@ -564,7 +569,7 @@ def get_datafolder(self):
 
 def pdf_intrinsic(self):
 
-    cmd = 'python -m physion.intrinsic.pdf %s' % self.datafolder
+    cmd = '%s -m physion.intrinsic.pdf %s' % (python_path, self.datafolder)
     cmd += ' --output %s' % os.path.join(FOLDERS[self.folderBox.currentText()], self.subject+'.pdf')
     cmd += ' --image_height %.1f ' % self.scaleButton.value()
     cmd += ' --angle_from_rig %.1f ' % self.angleButton.value()
