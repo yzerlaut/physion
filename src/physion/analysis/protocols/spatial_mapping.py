@@ -7,7 +7,7 @@ import physion.utils.plot_tools as pt
 
 from physion.analysis.read_NWB import Data
 from physion.analysis.summary_pdf import summary_pdf_folder,\
-        metadata_fig, generate_FOV_fig, join_pdf
+        metadata_fig, generate_FOV_fig, generate_raw_data_figs, join_pdf
 from physion.dataviz.raw import plot as plot_raw
 from physion.dataviz.tools import format_key_value
 from physion.dataviz.episodes.trial_average import plot_trial_average
@@ -80,68 +80,6 @@ def generate_pdf(args,
 
     join_pdf(PAGES, pdf_file)
 
-
-
-def generate_full_raw_data_fig(data, args):
-
-    settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue')}
-    if 'FaceMotion' in data.nwbfile.processing:
-        settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
-    if 'Pupil' in data.nwbfile.processing:
-        settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
-    if 'ophys' in data.nwbfile.processing:
-        settings['CaImaging']= dict(fig_fraction=4, subsampling=2, 
-                                    subquantity=args.imaging_quantity, color='green',
-                                    roiIndices=np.random.choice(data.nROIs,5))
-        settings['CaImagingRaster']=dict(fig_fraction=2, subsampling=4,
-                                         bar_inset_start=-0.04, 
-                                         roiIndices='all',
-                                         normalization='per-line',
-                                         subquantity=args.imaging_quantity)
-    fig, ax = pt.plt.subplots(1, figsize=(7, 2.5))
-    pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.95)
-    plot_raw(data, data.tlim, 
-              settings=settings, Tbar=20, ax=ax)
-    ax.annotate('full recording: %.1fmin  ' % ((data.tlim[1]-data.tlim[0])/60), (1,1), 
-                 ha='right', xycoords='axes fraction', size=8)
-    fig.savefig(os.path.join(tempfile.tempdir, 'raw0.png'), dpi=300)
-    if not args.debug:
-        pt.plt.close(fig)
-
-    return settings
-
-def generate_zoom_raw_data_fig(data, settings ,args):
-
-    # ## --- ZOOM WITH STIM 1 --- 
-
-    settings['VisualStim'] = dict(fig_fraction=0, color='black',
-                                  with_screen_inset=True)
-    settings['CaImagingRaster']['fig_fraction'] =0.5 
-    settings['CaImaging']['roiIndices'] = np.random.choice(data.nROIs,15)
-
-    tlim = [15, 35]
-    fig, ax = pt.plt.subplots(1, figsize=(7, 2.5))
-    pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.95)
-    ax.annotate('t=%.1fmin  ' % (tlim[1]/60), (1,1), 
-                 ha='right', xycoords='axes fraction', size=8)
-    plot_raw(data, tlim, 
-             settings=settings, Tbar=1, ax=ax)
-    fig.savefig(os.path.join(tempfile.tempdir, 'raw1.png'), dpi=300)
-    if not args.debug:
-        pt.plt.close(fig)
-
-    # ## --- ZOOM WITH STIM 2 --- 
-
-    tlim = [data.tlim[1]-100, data.tlim[1]-80]
-    fig, ax = pt.plt.subplots(1, figsize=(7, 2.5))
-    pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.95)
-    ax.annotate('t=%.1fmin  ' % (tlim[1]/60), (1,1), 
-                 ha='right', xycoords='axes fraction', size=8)
-    plot_raw(data, tlim, 
-             settings=settings, Tbar=1, ax=ax)
-    fig.savefig(os.path.join(tempfile.tempdir, 'raw2.png'), dpi=300)
-    if not args.debug:
-        pt.plt.close(fig)
 
 
 def show_all_ROIs(episodes, args):
@@ -240,6 +178,9 @@ def generate_figs(args,
     else:
         data.build_rawFluo()
 
+    args.unique_ID = np.random.randint(1000)
+    print('unique ID', args.unique_ID)
+
     # ## --- METADATA  ---
     fig = metadata_fig(data, short=True)
     fig.savefig(os.path.join(tempfile.tempdir, 'metadata.png'), dpi=300)
@@ -249,8 +190,9 @@ def generate_figs(args,
     fig.savefig(os.path.join(tempfile.tempdir, 'FOV.png'), dpi=300)
 
     # ## --- FULL RECORDING VIEW --- 
-    settings = generate_full_raw_data_fig(data, args)
-    generate_zoom_raw_data_fig(data, settings, args)
+    generate_raw_data_figs(data, args,
+                           TLIMS = [[15, 35],
+                           [data.tlim[1]-100, data.tlim[1]-80]])
 
     # ## --- EPISODES AVERAGE -- 
 

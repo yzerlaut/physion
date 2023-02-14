@@ -1,3 +1,6 @@
+"""
+Red Channel Labelling
+"""
 import os
 import numpy as np
 from PyQt5 import QtWidgets, QtCore, QtGui

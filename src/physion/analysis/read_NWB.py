@@ -454,6 +454,7 @@ class Data:
             
         
 def scan_folder_for_NWBfiles(folder, 
+                             sorted_by='filename',
                              Nmax=1000000,
                              exclude_intrinsic_imaging_files=True,
                              verbose=True):
@@ -492,7 +493,20 @@ def scan_folder_for_NWBfiles(folder,
     if verbose:
         print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES), (time.time()-t0)))
 
-    return {'files':np.array(FILES), 
-            'dates':np.array(DATES),
-            'subjects':np.array(SUBJECTS),
-            'protocols':PROTOCOLS}
+    # sorted by filename
+
+    if sorted_by=='filename':
+        isorted = np.argsort(DATASET['files'])
+    elif sorted_by=='subject':
+        isorted = np.argsort(DATASET['subjects'])
+    elif sorted_by=='date':
+        isorted = np.argsort(DATASET['dates'])
+    else:
+        print(' "%s" no recognized , --> sorted by filename by default ! ' % sorted_by)
+        isorted = np.argsort(DATASET['files'])
+    print(isorted)
+
+    return {'files':np.array(FILES)[isorted], 
+            'dates':np.array(DATES)[isorted],
+            'subjects':np.array(SUBJECTS)[isorted],
+            'protocols':np.array(PROTOCOLS)[isorted]}

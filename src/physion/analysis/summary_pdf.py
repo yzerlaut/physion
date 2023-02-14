@@ -8,6 +8,7 @@ from physion.utils.paths import python_path
 from physion.analysis.read_NWB import Data
 from physion.utils.plot_tools import *
 
+from physion.dataviz.raw import plot as plot_raw
 from physion.dataviz.imaging import show_CaImaging_FOV
 
 cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src') # current working directory
@@ -151,6 +152,64 @@ def generate_FOV_fig(data, args):
 
     return fig
 
+
+
+def generate_raw_data_figs(data, args,
+                           TLIMS=[[15, 75]]):
+                                
+    # ## --- FULL VIEW FIRST ---
+
+    settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue')}
+    if 'FaceMotion' in data.nwbfile.processing:
+        settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
+    if 'Pupil' in data.nwbfile.processing:
+        settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
+    if 'ophys' in data.nwbfile.processing:
+        settings['CaImaging']= dict(fig_fraction=4, subsampling=2, 
+                                    subquantity=args.imaging_quantity, color='green',
+                                    roiIndices=np.random.choice(data.nROIs,5,replace=False))
+        settings['CaImagingRaster']=dict(fig_fraction=2, subsampling=4,
+                                         bar_inset_start=-0.04, 
+                                         roiIndices='all',
+                                         normalization='per-line',
+                                         subquantity=args.imaging_quantity)
+    fig, ax = plt.subplots(1, figsize=(7, 2.5))
+    plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.9)
+
+    plot_raw(data, data.tlim, 
+              settings=settings, Tbar=20, ax=ax)
+
+    ax.annotate('full recording: %.1fmin  ' % ((data.tlim[1]-data.tlim[0])/60), (1,1), 
+                 ha='right', xycoords='axes fraction', size=8)
+
+    fig.savefig(os.path.join(tempfile.tempdir, 'raw-full.png'), dpi=300)
+
+    if not args.debug:
+        plt.close(fig)
+
+    # ## --- ZOOM WITH STIM  --- 
+
+    settings['VisualStim'] = dict(fig_fraction=0, color='black',
+                                  with_screen_inset=True)
+    settings['CaImagingRaster']['fig_fraction'] =0.5 
+
+    for iplot, tlim in enumerate(TLIMS):
+
+        settings['CaImaging']['roiIndices'] = np.random.choice(data.nROIs,5,replace=False)
+
+        fig, ax = plt.subplots(1, figsize=(7, 2.5))
+        plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.9)
+
+        ax.annotate('t=%.1fmin  ' % (tlim[1]/60), (1,1), 
+                     ha='right', xycoords='axes fraction', size=8)
+
+        plot_raw(data, tlim, 
+                 settings=settings, Tbar=1, ax=ax)
+
+        fig.savefig(os.path.join(tempfile.tempdir, 'rawi-%i.png' % iplot), dpi=300)
+
+        if not args.debug:
+            plt.close(fig)
 
 def summary_fig(CELL_RESPS):
     # find the varied keys:
