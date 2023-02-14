@@ -8,11 +8,30 @@ from physion.utils.paths import python_path
 from physion.analysis.read_NWB import Data
 from physion.utils.plot_tools import *
 
+from physion.dataviz.imaging import show_CaImaging_FOV
+
 def summary_pdf_folder(filename):
+
     folder = os.path.join(os.path.dirname(filename),
             'pdfs', os.path.basename(filename).replace('.nwb', ''))
     pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
+
     return folder
+
+def join_pdf(PAGES, pdf):
+    """
+    Using PDFTK, only on linux for now
+    """
+    cmd = '/usr/bin/pdftk ' 
+    for page in PAGES:
+        cmd += '%s '%page
+    cmd += 'cat output %s' % pdf
+
+    subprocess.Popen(cmd,
+                     shell=True,
+                     stdout=subprocess.PIPE,
+                     stderr=subprocess.STDOUT)
+
 
 def open_pdf(self,
              Nmax=1000000,
@@ -111,6 +130,21 @@ def metadata_fig(data, short=True):
     ax.axis('off')
         
     return fig
+
+
+def generate_FOV_fig(data, args):
+
+    fig, AX = plt.subplots(1, 3, figsize=(4.3,1.5))
+    plt.subplots_adjust(wspace=0.01, bottom=0, right=0.99, left=0.05)
+    show_CaImaging_FOV(data,key='meanImg',ax=AX[0],NL=4,with_annotation=False)
+    show_CaImaging_FOV(data, key='max_proj', ax=AX[1], NL=3, with_annotation=False)
+    show_CaImaging_FOV(data, key='meanImg', ax=AX[2], NL=4, with_annotation=False,
+                       roiIndices=np.arange(data.nROIs))
+    for ax, title in zip(AX, ['meanImg', 'max_proj', 'n=%iROIs' % data.nROIs]):
+        ax.set_title(title, fontsize=6)
+
+    return fig
+
 
 def summary_fig(CELL_RESPS):
     # find the varied keys:

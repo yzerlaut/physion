@@ -7,20 +7,28 @@ import physion.utils.plot_tools as pt
 
 from physion.analysis.read_NWB import Data
 from physion.analysis.summary_pdf import summary_pdf_folder,\
-        metadata_fig
+        metadata_fig, generate_FOV_fig, join_pdf
 from physion.dataviz.raw import plot as plot_raw
-from physion.dataviz.imaging import show_CaImaging_FOV
+from physion.dataviz.tools import format_key_value
 from physion.dataviz.episodes.trial_average import plot_trial_average
 from physion.analysis.process_NWB import EpisodeData
 from physion.utils.plot_tools import pie
 
 tempfile.gettempdir()
 
+stat_test_props = dict(interval_pre=[-1,0],
+                       interval_post=[0.5,1.5],
+                       test='ttest',
+                       positive=True)
+
 def generate_pdf(args,
                  subject='Mouse'):
 
     pdf_file= os.path.join(summary_pdf_folder(args.datafile), 'Summary.pdf')
     # pdf_file= os.path.join(os.path.expanduser('~'), 'Desktop', 'Summary.pdf'),
+
+    PAGES  = [os.path.join(tempfile.tempdir, 'session-summary-1.pdf'),
+              os.path.join(tempfile.tempdir, 'session-summary-2.pdf')]
 
     rois = generate_figs(args)
 
@@ -45,8 +53,7 @@ def generate_pdf(args,
         page.paste(fig, box=loc)
         fig.close()
 
-    # page.save(os.path.join(os.path.expanduser('~'), 'Desktop',
-    page.save(os.path.join(tempfile.tempdir, 'session-summary-1.pdf'))
+    page.save(PAGES[0])
 
     ### Page 2 - Analysis
 
@@ -54,12 +61,12 @@ def generate_pdf(args,
 
     KEYS = ['resp-fraction', 'TA-all']
 
-    LOCS = [(1500, 100), (100, 400)]
+    LOCS = [(300, 150), (200, 600)]
 
-    for i in rois:
+    for i in range(2):
 
         KEYS.append('TA-%i'%i)
-        LOCS.append((100, 1500+950*i))
+        LOCS.append((300, 1700+850*i))
 
     for key, loc in zip(KEYS, LOCS):
         
@@ -69,49 +76,14 @@ def generate_pdf(args,
             page.paste(fig, box=loc)
             fig.close()
 
-    page.save(os.path.join(tempfile.tempdir, 'session-summary-2.pdf'))
-    # page.save(os.path.join(os.path.expanduser('~'), 'Desktop', 'session-summary-2.pdf'))
+    page.save(PAGES[1])
 
-    cmd = '/usr/bin/pdftk %s %s cat output %s' % (os.path.join(tempfile.tempdir, 'session-summary-1.pdf'),
-                                                  os.path.join(tempfile.tempdir, 'session-summary-2.pdf'),
-                                                  pdf_file)
-
-    subprocess.Popen(cmd,
-                     shell=True,
-                     stdout=subprocess.PIPE,
-                     stderr=subprocess.STDOUT)
+    join_pdf(PAGES, pdf_file)
 
 
 
-def generate_figs(args,
-                  Nexample=2):
+def generate_full_raw_data_fig(data, args):
 
-
-    pdf_folder = summary_pdf_folder(args.datafile)
-
-    data = Data(args.datafile)
-    if args.imaging_quantity=='dFoF':
-        data.build_dFoF()
-    else:
-        data.build_rawFluo()
-
-
-    # ## --- METADATA  ---
-    fig = metadata_fig(data, short=True)
-    fig.savefig(os.path.join(tempfile.tempdir, 'metadata.png'), dpi=300)
-
-    # ##  --- FOVs ---
-    fig, AX = pt.plt.subplots(1, 3, figsize=(5,1.5))
-    pt.plt.subplots_adjust(wspace=0.3, bottom=0, right=0.99, left=0.05)
-    show_CaImaging_FOV(data,key='meanImg',ax=AX[0],NL=4,with_annotation=False)
-    show_CaImaging_FOV(data, key='max_proj', ax=AX[1], NL=3, with_annotation=False)
-    show_CaImaging_FOV(data, key='meanImg', ax=AX[2], NL=4, with_annotation=False,
-                       roiIndices=np.arange(data.nROIs))
-    for ax, title in zip(AX, ['meanImg', 'max_proj', 'n=%iROIs' % data.nROIs]):
-        ax.set_title(title, fontsize=6)
-    fig.savefig(os.path.join(tempfile.tempdir, 'FOV.png'), dpi=300)
-
-    # ## --- FULL RECORDING VIEW --- 
     settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue')}
     if 'FaceMotion' in data.nwbfile.processing:
         settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
@@ -126,7 +98,6 @@ def generate_figs(args,
                                          roiIndices='all',
                                          normalization='per-line',
                                          subquantity=args.imaging_quantity)
-    
     fig, ax = pt.plt.subplots(1, figsize=(7, 2.5))
     pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.95)
     plot_raw(data, data.tlim, 
@@ -136,6 +107,10 @@ def generate_figs(args,
     fig.savefig(os.path.join(tempfile.tempdir, 'raw0.png'), dpi=300)
     if not args.debug:
         pt.plt.close(fig)
+
+    return settings
+
+def generate_zoom_raw_data_fig(data, settings ,args):
 
     # ## --- ZOOM WITH STIM 1 --- 
 
@@ -168,13 +143,122 @@ def generate_figs(args,
     if not args.debug:
         pt.plt.close(fig)
 
+
+def show_all_ROIs(episodes, args):
+
+    fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']), 
+                              len(episodes.varied_parameters['x-center']),
+                              figsize=(6.5,2.7))
+
+    for i, roi in enumerate(args.SIGNIFICANT_ROIS):
+
+        plot_trial_average(episodes,
+                           quantity=args.imaging_quantity, 
+                           roiIndex=roi,
+                           column_key='x-center', 
+                           row_key='y-center', 
+                           xbar=1, xbarlabel='1s', 
+                           ybar=0.1, ybarlabel='0.1$\Delta$F/F',
+                           with_std=False, 
+                           no_set=True, 
+                           with_annotation=(i==0),
+                           color=pt.plt.cm.tab10(i%10),
+                           AX=AX)
+
+    fig.suptitle('all responsive ROIs (n=%i) ' % len(args.SIGNIFICANT_ROIS))
+    fig.savefig(os.path.join(tempfile.tempdir, 'TA-0.png'), dpi=300)
+
+    if not args.debug:
+        pt.plt.close(fig)
+
+    fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']), 
+                              len(episodes.varied_parameters['x-center']),
+                              figsize=(6.5,2.7))
+
+    for i, roi in enumerate(args.NON_SIGNIFICANT_ROIS):
+
+        plot_trial_average(episodes,
+                           quantity=args.imaging_quantity, 
+                           roiIndex=roi,
+                           column_key='x-center', 
+                           row_key='y-center', 
+                           xbar=1, xbarlabel='1s', 
+                           ybar=0.1, ybarlabel='0.1$\Delta$F/F',
+                           with_std=False, 
+                           no_set=True, 
+                           with_annotation=(i==0),
+                           color=pt.plt.cm.tab10(i%10),
+                           AX=AX)
+
+    fig.suptitle('non responsive ROIs (n=%i) ' % len(args.NON_SIGNIFICANT_ROIS))
+    fig.savefig(os.path.join(tempfile.tempdir, 'TA-1.png'), dpi=300)
+
+    if not args.debug:
+        pt.plt.close(fig)
+
+def show_picked_ROIs(episodes, args,
+                     Nexample=2):
+    np.random.seed(args.seed)
+    picks = np.random.choice(args.SIGNIFICANT_ROIS,
+                             min([Nexample, len(args.SIGNIFICANT_ROIS)]),
+                             replace=False)
+
+    for i, roi in enumerate(picks):
+
+        fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']), 
+                                  len(episodes.varied_parameters['x-center']),
+                                  figsize=(6.5,2.7))
+        plot_trial_average(episodes,
+                           quantity=args.imaging_quantity, 
+                           roiIndex=roi,
+                           column_key='x-center', 
+                           row_key='y-center', 
+                           xbar=1, xbarlabel='1s', 
+                           ybar=0.1, ybarlabel='0.1$\Delta$F/F',
+                           with_stat_test=True,
+                           stat_test_props=stat_test_props,
+                           with_std=True, 
+                           with_annotation=True,
+                           no_set=False, AX=AX)
+
+        fig.suptitle('example %i: responsive ROI, ROI #%i' % (i+1, roi))
+        fig.savefig(os.path.join(tempfile.tempdir, 'TA-%i.png' % i), dpi=300)
+
+        if not args.debug:
+            pt.plt.close(fig)
+
+
+def generate_figs(args,
+                  Nexample=2):
+
+
+    pdf_folder = summary_pdf_folder(args.datafile)
+
+    data = Data(args.datafile)
+    if args.imaging_quantity=='dFoF':
+        data.build_dFoF()
+    else:
+        data.build_rawFluo()
+
+    # ## --- METADATA  ---
+    fig = metadata_fig(data, short=True)
+    fig.savefig(os.path.join(tempfile.tempdir, 'metadata.png'), dpi=300)
+
+    # ##  --- FOVs ---
+    fig = generate_FOV_fig(data, args)
+    fig.savefig(os.path.join(tempfile.tempdir, 'FOV.png'), dpi=300)
+
+    # ## --- FULL RECORDING VIEW --- 
+    settings = generate_full_raw_data_fig(data, args)
+    generate_zoom_raw_data_fig(data, settings, args)
+
     # ## --- EPISODES AVERAGE -- 
 
     episodes = EpisodeData(data,
                            protocol_id=0,
                            quantities=[args.imaging_quantity],
                            prestim_duration=3,
-                           # with_visual_stim=True,
+                           with_visual_stim=True,
                            verbose=True)
 
     fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']), 
@@ -189,158 +273,112 @@ def generate_figs(args,
                        ybar=0.1, ybarlabel='0.1$\Delta$F/F',
                        with_screen_inset=True,
                        with_std_over_rois=True, 
-                       with_annotation=True, no_set=False, AX=AX)
+                       with_annotation=True, 
+                       no_set=False, AX=AX)
+
     fig.suptitle('response average (n=%i ROIs, s.d. over all ROIs)' % data.nROIs)
     fig.savefig(os.path.join(tempfile.tempdir, 'TA-all.png'), dpi=300)
     if not args.debug:
         pt.plt.close(fig)
 
     # ## --- FRACTION RESPONSIVE ---
-    fig, SIGNIFICANT_ROIS = responsiveness(episodes, data)
+
+    args.SIGNIFICANT_ROIS, args.NON_SIGNIFICANT_ROIS = [], []
+    results = {'Ntot':episodes.data.nROIs, 'significant':[]}
+
+    for roi in range(data.nROIs):
+
+        resp = episodes.compute_summary_data(dict(interval_pre=[-1,0],
+                                                  interval_post=[0.5,1.5],
+                                                  test='ttest',
+                                                  positive=True),
+                                                  response_args={'quantity':args.imaging_quantity,
+                                                                 'roiIndex':roi},
+                                                  response_significance_threshold=0.05)
+
+        significant_cond, label = (resp['significant']==True), '  -> max resp.: '
+        if np.sum(significant_cond)>0:
+            args.SIGNIFICANT_ROIS.append(roi)
+            imax = np.argmax(resp['value'][significant_cond])
+            for key in resp:
+                if ('-bins' not in key):
+                    if (key not in results):
+                        results[key] = [] # initialize if not done
+                    results[key].append(resp[key][significant_cond][imax])
+                    label+=format_key_value(key, resp[key][significant_cond][imax])+', ' # should have a unique value
+                    print(label)
+        else:
+            args.NON_SIGNIFICANT_ROIS.append(roi)
+
+    # then adding the bins
+    for key in resp:
+        if ('-bins' in key):
+            results[key] = resp[key]
+
+
+    summary_fig(results, episodes, args)
+
+
+    # SHOW OTHER TRIAL AVERAGE RESPONSES
+    if args.show_all_ROIs:
+        show_all_ROIs(episodes, args)
+    else:
+        show_picked_ROIs(episodes, args)
+
+
+def summary_fig(results, episodes, args):
+
+    other_keys = []
+    for key in results:
+        if (key not in ['Ntot', 'significant', 'std-value', 'value']) and\
+                        ('-index' not in key) and\
+                        ('-bins' not in key) and ('relative_' not in key):
+            other_keys.append(key)
+
+    fig, AX = pt.plt.subplots(1, 2+len(other_keys), 
+                              figsize=(6.3, 1.5))
+    fig.subplots_adjust(wspace=0.03)
+
+    if ('x-center' in results) and ('y-center' in results):
+        hist, be1, be2 = np.histogram2d(results['x-center'], results['y-center'],
+                                        bins=(results['x-center-bins'], results['y-center-bins']))
+
+        AX[0].imshow(hist, origin='lower',
+                     aspect='auto',
+                     extent=(results['x-center-bins'][0],
+                             results['x-center-bins'][-1],
+                             results['y-center-bins'][0],
+                             results['y-center-bins'][-1]))
+        AX[0].set_title('2D count')
+        AX[0].set_xlabel('x-center')
+        AX[0].set_ylabel('y-center')
+    else:
+        AX[0].axis('off')
+    
+    for i, key in enumerate(other_keys):
+        AX[i+1].hist(results[key], bins=results[key+'-bins'], color='lightgray')
+        AX[i+1].set_title('max resp')
+        # AX[i+1].set_xticks(np.unique(results[key]))
+        AX[i+1].set_ylabel('count')
+        AX[i+1].set_xlabel(key)
+        
+    # responsivess pie 
+    X = [100*len(args.SIGNIFICANT_ROIS)/episodes.data.nROIs,
+         100-100*len(args.SIGNIFICANT_ROIS)/episodes.data.nROIs]
+    
+    pie(X, ext_labels=['responsive\n%.1f%%  (n=%i)'%(X[0], 
+                                                     len(args.SIGNIFICANT_ROIS)),
+                       'non  \nresp.'],
+           COLORS=['green', 'grey'], 
+           ax=AX[-1])
+    AX[-1].set_title('local grating stim.')
+
     fig.savefig(os.path.join(tempfile.tempdir, 'resp-fraction.png'), dpi=300)
     if not args.debug:
         pt.plt.close(fig)
 
 
-    # starting with responsive ROIs
-    np.random.seed(args.seed)
-    picks = np.random.choice(SIGNIFICANT_ROIS,
-                             min([Nexample, len(SIGNIFICANT_ROIS)]),
-                             replace=False)
 
-    for i, roi in enumerate(picks):
-        fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']), 
-                                  len(episodes.varied_parameters['x-center']),
-                                  figsize=(7,3))
-        plot_trial_average(episodes,
-                           quantity=args.imaging_quantity, 
-                           roiIndex=roi,
-                           column_key='x-center', 
-                           row_key='y-center', 
-                           xbar=1, xbarlabel='1s', 
-                           ybar=0.1, ybarlabel='0.1$\Delta$F/F',
-                           with_stat_test=True,
-                           with_std=True, 
-                           with_annotation=True,
-                           no_set=False, AX=AX)
-
-        fig.suptitle('example %i: responsive ROI, ROI #%i' % (i+1, roi))
-        fig.savefig(os.path.join(tempfile.tempdir, 'TA-%i.png' % i), dpi=300)
-        if not args.debug:
-            pt.plt.close(fig)
-
-    # roi_choice = input('\n\n - roi to display (by example number, default 1,2,3): ')
-    roi_values = range(len(picks))
-    # if len(roi_choice.split(',')):
-        # try:
-            # roi_values = [int(i) for i in roi_choice.split(',')]
-        # except BaseException as be:
-            # print(roi_choice)
-            # pass
-
-    return roi_values
-
-
-
-def responsiveness(episodes, data):
-
-    SIGNIFICANT_ROIS = []
-    for roi in range(data.nROIs):
-        summary_data = episodes.compute_summary_data(dict(interval_pre=[0,1],
-                                                          interval_post=[1,2],
-                                                          test='ttest',
-                                                          positive=True),
-                                                          response_args={'quantity':args.imaging_quantity,
-                                                                         'roiIndex':roi},
-                                                          response_significance_threshold=0.05)
-        if np.sum(summary_data['significant'])>0:
-            SIGNIFICANT_ROIS.append(roi)
-
-
-    X = [100*len(SIGNIFICANT_ROIS)/data.nROIs,100-100*len(SIGNIFICANT_ROIS)/data.nROIs]
-    
-    fig, ax = pt.plt.subplots(1, figsize=(2,1))
-    fig, ax = pie(X,
-           ext_labels=['responsive\n%.1f%%  (n=%i)'%(X[0], len(SIGNIFICANT_ROIS)),
-                       'non  \nresp.'],
-           COLORS=['green', 'grey'], ax=ax)
-    ax.set_title('local grating stim.')
-
-    return fig, SIGNIFICANT_ROIS
-
-
-
-
-
-    
-    RESP = {}
-    
-    # we take 10 second security around each
-    tfull_wStim_start = 10
-
-    # fetching the grey screen protocol interval
-    igrey = np.flatnonzero(data.nwbfile.stimulus['protocol_id'].data[:]==1) # grey
-    tgrey_start = 10+data.nwbfile.stimulus['time_start_realigned'].data[igrey][0]
-    tgrey_stop = tgrey_start-10+data.nwbfile.stimulus['time_duration'].data[igrey][0]
-
-    # fetching the black screen protocol interval
-    iblank = np.flatnonzero(data.nwbfile.stimulus['protocol_id'].data[:]==2) # blank
-    tblank_start = 10+data.nwbfile.stimulus['time_start_realigned'].data[iblank][0]
-    tblank_stop = tblank_start-10+data.nwbfile.stimulus['time_duration'].data[iblank][0]
-
-    # fetching the interval with visual stimulation after the last blank
-    tStim_start = tblank_stop+10
-    tStim_stop = tStim_start + data.nwbfile.stimulus['time_duration'].data[iblank][0] # same length
-    
-    for key, interval in zip(['black', 'grey', 'wStim'],
-                             [(tblank_start, tblank_stop),
-                              (tgrey_start, tgrey_stop),
-                              (tStim_start, tStim_stop)]):
-
-        time_cond = (data.t_dFoF>interval[0]) & (data.t_dFoF<interval[1])
-        RESP[key+'-mean'], RESP[key+'-std'], RESP[key+'-skew'] = [], [], []
-        for roi in range(data.nROIs):
-            RESP[key+'-mean'].append(data.dFoF[roi,time_cond].mean())
-            RESP[key+'-std'].append(data.dFoF[roi,time_cond].std())
-            RESP[key+'-skew'].append(skew(data.dFoF[roi,time_cond]))
-
-    for key in RESP:
-        RESP[key] = np.array(RESP[key])
-        
-    fig, [ax1, ax2, ax3] = pt.plt.subplots(1, 3, figsize=(4.1,1.5))
-
-    fig.suptitle('Activity under different screen conditions ')
-
-    COLORS = ['k', 'grey', 'lightgray']
-
-    for i, key in enumerate(['black', 'grey', 'wStim']):
-
-        parts = ax1.violinplot([RESP[key+'-mean']], [i], showextrema=False, showmedians=False)#, color=COLORS[i])
-        parts['bodies'][0].set_facecolor(COLORS[i])
-        parts['bodies'][0].set_alpha(1)
-        ax1.plot([i], [np.median(RESP[key+'-mean'])], 'r_')
-
-        parts = ax2.violinplot([RESP[key+'-mean']/RESP['black-mean']], [i], 
-                               showextrema=False, showmedians=False)#, color=COLORS[i])
-        parts['bodies'][0].set_facecolor(COLORS[i])
-        parts['bodies'][0].set_alpha(1)
-        ax2.plot([i], [np.mean(RESP[key+'-mean']/RESP['black-mean'])], 'r_')
-
-        parts = ax3.violinplot([RESP[key+'-skew']], [i], showextrema=False, showmedians=False)#, color=COLORS[i])
-        parts['bodies'][0].set_facecolor(COLORS[i])
-        parts['bodies'][0].set_alpha(1)
-        ax3.plot([i], [np.median(RESP[key+'-skew'])], 'r_')
-
-    for label, ax in zip(['mean $\Delta$F/F', 'mean $\Delta$F/F    \n norm. to "black"    ', '$\Delta$F/F skewness    '],
-                          [ax1, ax2, ax3]):
-
-        ylim = [np.max([0, ax.get_ylim()[0]]), np.min([4, ax.get_ylim()[1]])]
-        ax.set_ylim(ylim)
-        ax.set_ylabel(label)
-        ax.set_xticks(range(3))
-        ax.set_xticklabels(['black', 'grey', 'wStim'], rotation=50)
-        
-    return fig
 
 
 
@@ -355,6 +393,7 @@ if __name__=='__main__':
     parser.add_argument("--iprotocol", type=int, default=0,
         help='index for the protocol in case of multiprotocol in datafile')
     parser.add_argument("--imaging_quantity", default='dFoF')
+    parser.add_argument("--show_all_ROIs", action='store_true')
     parser.add_argument("-s", "--seed", type=int, default=1)
     parser.add_argument('-nmax', "--Nmax", type=int, default=1000000)
     parser.add_argument("-d", "--debug", action="store_true")

@@ -116,7 +116,7 @@ def plot_trial_average(episodes,
                                 verbose=verbose)
 
     episodes.ylim = [np.inf, -np.inf]
-    for irow, row_cond in enumerate(ROW_CONDS):
+    for irow, row_cond in enumerate(ROW_CONDS[::-1]):
         for icol, col_cond in enumerate(COL_CONDS):
             for icolor, color_cond in enumerate(COLOR_CONDS):
 
@@ -144,7 +144,7 @@ def plot_trial_average(episodes,
                     AX[irow][icol].axis('off')
                         
                 if with_screen_inset:
-                    inset = ge.inset(AX[irow][icol], [.83, .9, .3, .25])
+                    inset = pt.inset(AX[irow][icol], [.83, .9, .3, .25])
                     istim = np.flatnonzero(cond)[0]
                     episodes.visual_stim.plot_stim_picture(istim, ax=inset)
                     
