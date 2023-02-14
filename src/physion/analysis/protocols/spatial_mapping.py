@@ -44,8 +44,8 @@ def generate_pdf(args,
             'FOV']
 
     LOCS = [(200, 130),
-            (100, 650), (100, 1500), (100, 2300),
-            (800, 130)]
+            (150, 650), (150, 1500), (150, 2300),
+            (900, 130)]
 
     for key, loc in zip(KEYS, LOCS):
         
@@ -61,12 +61,12 @@ def generate_pdf(args,
 
     KEYS = ['resp-fraction', 'TA-all']
 
-    LOCS = [(300, 150), (200, 600)]
+    LOCS = [(300, 150), (200, 700)]
 
     for i in range(2):
 
         KEYS.append('TA-%i'%i)
-        LOCS.append((300, 1700+850*i))
+        LOCS.append((300, 1750+800*i))
 
     for key, loc in zip(KEYS, LOCS):
         
@@ -296,7 +296,7 @@ def generate_figs(args,
                                                                  'roiIndex':roi},
                                                   response_significance_threshold=0.05)
 
-        significant_cond, label = (resp['significant']==True), '  -> max resp.: '
+        significant_cond, label = (resp['significant']==True), 'ROI %i  -> max resp.: '%(roi+1)
         if np.sum(significant_cond)>0:
             args.SIGNIFICANT_ROIS.append(roi)
             imax = np.argmax(resp['value'][significant_cond])
@@ -306,7 +306,7 @@ def generate_figs(args,
                         results[key] = [] # initialize if not done
                     results[key].append(resp[key][significant_cond][imax])
                     label+=format_key_value(key, resp[key][significant_cond][imax])+', ' # should have a unique value
-                    print(label)
+            print(label)
         else:
             args.NON_SIGNIFICANT_ROIS.append(roi)
 
@@ -337,13 +337,13 @@ def summary_fig(results, episodes, args):
 
     fig, AX = pt.plt.subplots(1, 2+len(other_keys), 
                               figsize=(6.3, 1.5))
-    fig.subplots_adjust(wspace=0.03)
+    fig.subplots_adjust(wspace=0.4, left=0.1, bottom=0.25, right=0.95)
 
     if ('x-center' in results) and ('y-center' in results):
         hist, be1, be2 = np.histogram2d(results['x-center'], results['y-center'],
                                         bins=(results['x-center-bins'], results['y-center-bins']))
-
-        AX[0].imshow(hist, origin='lower',
+        # TRANSPOSE
+        AX[0].imshow(hist.T, origin='lower',
                      aspect='auto',
                      extent=(results['x-center-bins'][0],
                              results['x-center-bins'][-1],
