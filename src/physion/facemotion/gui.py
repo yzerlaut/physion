@@ -97,14 +97,14 @@ def gui(self,
     ##### main view     #####
     #########################
 
-    half_width = int(self.nWidgetCol-self.side_wdgt_length)/2
+    half_width = int((self.nWidgetCol-self.side_wdgt_length)/2)
 
     # image panels layout:
 
     self.fullWidget= pg.GraphicsLayoutWidget()
     tab.layout.addWidget(self.fullWidget,
                          1, self.side_wdgt_length,
-                         int(self.nWidgetRow)/2, 
+                         int(self.nWidgetRow/2), 
                          half_width)
     self.fullView = self.fullWidget.addViewBox(lockAspect=False,
                                      row=0,col=0,
@@ -117,7 +117,7 @@ def gui(self,
     self.zoomWidget= pg.GraphicsLayoutWidget()
     tab.layout.addWidget(self.zoomWidget,
                          1, half_width+self.side_wdgt_length,
-                         int(self.nWidgetRow)/2, 
+                         int(self.nWidgetRow/2), 
                          half_width)
     self.zoomView = self.zoomWidget.addViewBox(lockAspect=False,
                                      row=0,col=0,
@@ -140,8 +140,8 @@ def gui(self,
     self.tracePlot.setMenuEnabled(False)
     self.xaxis = self.tracePlot.getAxis('bottom')
     tab.layout.addWidget(self.plotWidget,
-                         1+int(self.nWidgetRow)/2, 0,
-                         int(self.nWidgetRow)/2-2, self.nWidgetCol)
+                         1+int(self.nWidgetRow/2), 0,
+                         int(self.nWidgetRow/2)-2, self.nWidgetCol)
     self.tracePlot.autoRange(padding=0.01)
 
     self.frameSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
