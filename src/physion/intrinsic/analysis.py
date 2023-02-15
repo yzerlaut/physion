@@ -266,11 +266,16 @@ def open_intrinsic_folder(self):
         self.subject = metadata['subject']
         self.timestamps = str(self.datafolder.split(os.path.sep)[-2:])
 
-        if 'headplate-angle-from-rig-axis' in metadata:
-            self.angleButton.setValue(metadata['headplate-angle-from-rig-axis'])
+        try:
+            self.angleButton.setValue(int(metadata['headplate-angle-from-rig-axis']))
+        except BaseException:
+            print(' pb with:', 'headplate-angle', metadata['headplate-angle-from-rig-axis'])
 
-        if 'Height-of-Microscope-Camera-Image-in-mm' in metadata:
-            self.scaleButton.setValue(metadata['Height-of-Microscope-Camera-Image-in-mm'])
+        try:
+            self.scaleButton.setValue(float(metadata['Height-of-Microscope-Camera-Image-in-mm']))
+        except BaseException:
+            print('print pb with', 'Height-of-Microscope-Camera-Image-in-mm',
+                  metadata['Height-of-Microscope-Camera-Image-in-mm'])
 
     else:
         print(' metadata information missing !! ')

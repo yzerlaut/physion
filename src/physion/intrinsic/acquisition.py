@@ -1,6 +1,6 @@
 import sys, os, shutil, glob, time, pathlib, json, tempfile, datetime
 import numpy as np
-import pynwb, PIL
+import pandas, pynwb, PIL
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
@@ -430,7 +430,7 @@ def save_intrinsic_metadata(self):
     filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
                                       filename='metadata', extension='.npy')
 
-    subjects = pandas.read_csv(os.path.join(physion.acquisition.tools.base_path,
+    subjects = pandas.read_csv(os.path.join(base_path,
                                'subjects',self.config['subjects_file']))
     subject = get_subject_props(self)
         
