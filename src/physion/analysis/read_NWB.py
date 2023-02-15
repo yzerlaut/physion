@@ -504,7 +504,6 @@ def scan_folder_for_NWBfiles(folder,
     else:
         print(' "%s" no recognized , --> sorted by filename by default ! ' % sorted_by)
         isorted = np.argsort(DATASET['files'])
-    print(isorted)
 
     return {'files':np.array(FILES)[isorted], 
             'dates':np.array(DATES)[isorted],

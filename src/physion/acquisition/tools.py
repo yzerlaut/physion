@@ -28,8 +28,8 @@ def save_experiment(self, metadata):
         json.dump(metadata, f,
                   ensure_ascii=False, indent=4)
 
-    print('[ok] Metadata data saved as: %s ' % os.path.join(str(self.datafolder.get()), 'metadata.json'))
-    self.statusBar.showMessage('Metadata saved as: "%s" ' % os.path.join(str(self.datafolder.get()), 'metadata.npy'))
+    print('[ok] Metadata data saved as: %s ' % json_file)
+    self.statusBar.showMessage('Metadata saved as: "%s" ' % json_file)
 
 
 def get_subject_props(self):
