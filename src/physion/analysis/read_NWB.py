@@ -496,14 +496,14 @@ def scan_folder_for_NWBfiles(folder,
     # sorted by filename
 
     if sorted_by=='filename':
-        isorted = np.argsort(DATASET['files'])
+        isorted = np.argsort(FILES)
     elif sorted_by=='subject':
-        isorted = np.argsort(DATASET['subjects'])
+        isorted = np.argsort(SUBJECTS)
     elif sorted_by=='date':
-        isorted = np.argsort(DATASET['dates'])
+        isorted = np.argsort(DATES)
     else:
         print(' "%s" no recognized , --> sorted by filename by default ! ' % sorted_by)
-        isorted = np.argsort(DATASET['files'])
+        isorted = np.argsort(FILES)
 
     return {'files':np.array(FILES)[isorted], 
             'dates':np.array(DATES)[isorted],
