@@ -116,7 +116,7 @@ def plot_trial_average(episodes,
                                 verbose=verbose)
 
     episodes.ylim = [np.inf, -np.inf]
-    for irow, row_cond in enumerate(ROW_CONDS[::-1]):
+    for irow, row_cond in enumerate(ROW_CONDS):
         for icol, col_cond in enumerate(COL_CONDS):
             for icolor, color_cond in enumerate(COLOR_CONDS):
 

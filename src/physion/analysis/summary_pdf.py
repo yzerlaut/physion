@@ -182,7 +182,7 @@ def generate_raw_data_figs(data, args,
     ax.annotate('full recording: %.1fmin  ' % ((data.tlim[1]-data.tlim[0])/60), (1,1), 
                  ha='right', xycoords='axes fraction', size=8)
 
-    fig.savefig(os.path.join(tempfile.tempdir, 'raw-full.png'), dpi=300)
+    fig.savefig(os.path.join(tempfile.tempdir, 'raw-full-%i.png' % args.unique_run_ID), dpi=300)
 
     if not args.debug:
         plt.close(fig)
@@ -206,7 +206,8 @@ def generate_raw_data_figs(data, args,
         plot_raw(data, tlim, 
                  settings=settings, Tbar=1, ax=ax)
 
-        fig.savefig(os.path.join(tempfile.tempdir, 'rawi-%i.png' % iplot), dpi=300)
+        fig.savefig(os.path.join(tempfile.tempdir,
+                    'raw-%i-%i.png' % (iplot, args.unique_run_ID)), dpi=300)
 
         if not args.debug:
             plt.close(fig)

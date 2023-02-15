@@ -31,8 +31,8 @@ def build_menu(self):
     # --
     self.preprocessingMenu.addAction('&Pupil',
                                      self.pupil)
-    self.preprocessingMenu.addAction('&Whisking',
-                                     self.in_progress)
+    self.preprocessingMenu.addAction('&Facemotion',
+                                     self.facemotion)
     self.preprocessingMenu.addAction('&Intrinsic Imaging Maps',
                                      self.intrinsic)
     self.preprocessingMenu.addAction('&Suite2P Preprocessing',

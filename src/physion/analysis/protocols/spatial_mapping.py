@@ -26,8 +26,8 @@ def generate_pdf(args,
     pdf_file= os.path.join(summary_pdf_folder(args.datafile), 'Summary.pdf')
     # pdf_file= os.path.join(os.path.expanduser('~'), 'Desktop', 'Summary.pdf'),
 
-    PAGES  = [os.path.join(tempfile.tempdir, 'session-summary-1.pdf'),
-              os.path.join(tempfile.tempdir, 'session-summary-2.pdf')]
+    PAGES  = [os.path.join(tempfile.tempdir, 'session-summary-1-%i.pdf' % args.unique_run_ID),
+              os.path.join(tempfile.tempdir, 'session-summary-2-%i.pdf' % args.unique_run_ID)]
 
     rois = generate_figs(args)
 
@@ -39,7 +39,7 @@ def generate_pdf(args,
     page = Image.new('RGB', (width, height), 'white')
 
     KEYS = ['metadata',
-            'raw0', 'raw1', 'raw2',
+            'raw-full', 'raw-0', 'raw-1',
             'FOV']
 
     LOCS = [(200, 130),
@@ -48,7 +48,7 @@ def generate_pdf(args,
 
     for key, loc in zip(KEYS, LOCS):
         
-        fig = Image.open(os.path.join(tempfile.tempdir, '%s.png' % key))
+        fig = Image.open(os.path.join(tempfile.tempdir, '%s-%i.png' % (key, args.unique_run_ID)))
         page.paste(fig, box=loc)
         fig.close()
 
@@ -69,9 +69,9 @@ def generate_pdf(args,
 
     for key, loc in zip(KEYS, LOCS):
         
-        if os.path.isfile(os.path.join(tempfile.tempdir, '%s.png' % key)):
+        if os.path.isfile(os.path.join(tempfile.tempdir, '%s-%i.png' % (key, args.unique_run_ID))):
 
-            fig = Image.open(os.path.join(tempfile.tempdir, '%s.png' % key))
+            fig = Image.open(os.path.join(tempfile.tempdir, '%s-%i.png' % (key, args.unique_run_ID)))
             page.paste(fig, box=loc)
             fig.close()
 
@@ -159,7 +159,7 @@ def show_picked_ROIs(episodes, args,
                            no_set=False, AX=AX)
 
         fig.suptitle('example %i: responsive ROI, ROI #%i' % (i+1, roi))
-        fig.savefig(os.path.join(tempfile.tempdir, 'TA-%i.png' % i), dpi=300)
+        fig.savefig(os.path.join(tempfile.tempdir, 'TA-%i-%i.png' % (i, args.unique_run_ID)), dpi=300)
 
         if not args.debug:
             pt.plt.close(fig)
@@ -177,16 +177,13 @@ def generate_figs(args,
     else:
         data.build_rawFluo()
 
-    args.unique_ID = np.random.randint(1000)
-    print('unique ID', args.unique_ID)
-
     # ## --- METADATA  ---
     fig = metadata_fig(data, short=True)
-    fig.savefig(os.path.join(tempfile.tempdir, 'metadata.png'), dpi=300)
+    fig.savefig(os.path.join(tempfile.tempdir, 'metadata-%i.png' % args.unique_run_ID), dpi=300)
 
     # ##  --- FOVs ---
     fig = generate_FOV_fig(data, args)
-    fig.savefig(os.path.join(tempfile.tempdir, 'FOV.png'), dpi=300)
+    fig.savefig(os.path.join(tempfile.tempdir, 'FOV-%i.png' % args.unique_run_ID), dpi=300)
 
     # ## --- FULL RECORDING VIEW --- 
     generate_raw_data_figs(data, args,
@@ -218,7 +215,7 @@ def generate_figs(args,
                        no_set=False, AX=AX)
 
     fig.suptitle('response average (n=%i ROIs, s.d. over all ROIs)' % data.nROIs)
-    fig.savefig(os.path.join(tempfile.tempdir, 'TA-all.png'), dpi=300)
+    fig.savefig(os.path.join(tempfile.tempdir, 'TA-all-%i.png' % args.unique_run_ID), dpi=300)
     if not args.debug:
         pt.plt.close(fig)
 
@@ -314,7 +311,7 @@ def summary_fig(results, episodes, args):
            ax=AX[-1])
     AX[-1].set_title('local grating stim.')
 
-    fig.savefig(os.path.join(tempfile.tempdir, 'resp-fraction.png'), dpi=300)
+    fig.savefig(os.path.join(tempfile.tempdir, 'resp-fraction-%i.png' % args.unique_run_ID), dpi=300)
     if not args.debug:
         pt.plt.close(fig)
 
@@ -341,6 +338,9 @@ if __name__=='__main__':
     parser.add_argument("-v", "--verbose", action="store_true")
 
     args = parser.parse_args()
+
+    args.unique_run_ID = np.random.randint(10000)
+    print('unique run ID', args.unique_run_ID)
 
     if '.nwb' in args.datafile:
         if args.debug:

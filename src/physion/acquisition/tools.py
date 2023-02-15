@@ -15,14 +15,17 @@ def set_filename_and_folder(self):
 
 
 def save_experiment(self, metadata):
+
     # SAVING THE METADATA FILES
     metadata['filename'] = str(self.datafolder.get())
     for key in self.protocol:
         metadata[key] = self.protocol[key]
     np.save(os.path.join(str(self.datafolder.get()), 'metadata.npy'), metadata)
 
-    with open('file_name.json', 'w', encoding='utf-8') as f:
-        json.dump(os.path.join(str(self.datafolder.get()), 'metadata.json'), f,
+    # saving a copy as a json file
+    json_file = os.path.join(str(self.datafolder.get()), 'metadata.json')
+    with open(json_file, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f,
                   ensure_ascii=False, indent=4)
 
     print('[ok] Metadata data saved as: %s ' % os.path.join(str(self.datafolder.get()), 'metadata.json'))
