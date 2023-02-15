@@ -3062,7 +3062,9 @@ def plot_mask(mask, plotAxis=None, color='#ff0000', zoom=1, borderWidth=None, cl
     return currfig
 
 
-def plot_mask_borders(mask, plotAxis=None, color='#ff0000', zoom=1, borderWidth=2, closingIteration=None,
+def plot_mask_borders(mask, plotAxis=None,
+                      color='#ff0000', zoom=1,
+                      borderWidth=2, closingIteration=None,
                       is_filled=False, **kwargs):
     """
     plot mask (ROI) borders by using pyplot.contour function. all the 0s and Nans in the input mask will be considered

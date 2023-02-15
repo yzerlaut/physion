@@ -8,11 +8,33 @@ from physion.utils.paths import python_path
 from physion.analysis.read_NWB import Data
 from physion.utils.plot_tools import *
 
+from physion.dataviz.raw import plot as plot_raw
+from physion.dataviz.imaging import show_CaImaging_FOV
+
+cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src') # current working directory
+
 def summary_pdf_folder(filename):
+
     folder = os.path.join(os.path.dirname(filename),
             'pdfs', os.path.basename(filename).replace('.nwb', ''))
     pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
+
     return folder
+
+def join_pdf(PAGES, pdf):
+    """
+    Using PDFTK, only on linux for now
+    """
+    cmd = '/usr/bin/pdftk ' 
+    for page in PAGES:
+        cmd += '%s '%page
+    cmd += 'cat output %s' % pdf
+
+    subprocess.Popen(cmd,
+                     shell=True,
+                     stdout=subprocess.PIPE,
+                     stderr=subprocess.STDOUT)
+
 
 def open_pdf(self,
              Nmax=1000000,
@@ -35,6 +57,7 @@ def open_pdf(self,
     else:
         print('\n \n Need to pick a datafile')
 
+    
 def generate_pdf(self,
                  Nmax=1000000,
                  include=['exp', 'raw', 'behavior', 'rois', 'protocols'],
@@ -46,9 +69,12 @@ def generate_pdf(self,
 
         if data.metadata['protocol']=='FFDG-contrast-curve+blank':
             cmd = '%s -m physion.analysis.protocols.FFDG_with_blank %s' % (python_path, self.datafile)
+        elif data.metadata['protocol']=='spatial-mapping':
+            cmd = '%s -m physion.analysis.protocols.spatial_mapping %s' % (python_path, self.datafile)
         else:
             cmd = ''
-            print(data.metadata['protocol'])
+            print('')
+            print(' /!\ no analysis set up for: "%s"  ' % data.metadata['protocol'])
 
         if cmd!='':
             print(cmd)
@@ -76,6 +102,10 @@ def metadata_fig(data, short=True):
     s=' [--  %s --] \n ' % data.filename
     for key in ['protocol', 'subject_ID', 'notes']:
         s+='- %s :\n    "%s" \n' % (key, data.metadata[key])
+    if 'FOV' in data.metadata:
+        s+='- %s :\n    "%s" \n' % ('FOV', data.metadata[key])
+
+
     s += '- completed:\n       n=%i/%i episodes' %(data.nwbfile.stimulus['time_start_realigned'].data.shape[0],
                                                    data.nwbfile.stimulus['time_start'].data.shape[0])
     ax.annotate(s, (0,1), va='top', fontsize=8)
@@ -107,6 +137,80 @@ def metadata_fig(data, short=True):
     ax.axis('off')
         
     return fig
+
+
+def generate_FOV_fig(data, args):
+
+    fig, AX = plt.subplots(1, 3, figsize=(4.3,1.5))
+    plt.subplots_adjust(wspace=0.01, bottom=0, right=0.99, left=0.05)
+    show_CaImaging_FOV(data,key='meanImg',ax=AX[0],NL=4,with_annotation=False)
+    show_CaImaging_FOV(data, key='max_proj', ax=AX[1], NL=3, with_annotation=False)
+    show_CaImaging_FOV(data, key='meanImg', ax=AX[2], NL=4, with_annotation=False,
+                       roiIndices=np.arange(data.nROIs))
+    for ax, title in zip(AX, ['meanImg', 'max_proj', 'n=%iROIs' % data.nROIs]):
+        ax.set_title(title, fontsize=6)
+
+    return fig
+
+
+
+def generate_raw_data_figs(data, args,
+                           TLIMS=[[15, 75]]):
+                                
+    # ## --- FULL VIEW FIRST ---
+
+    settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue')}
+    if 'FaceMotion' in data.nwbfile.processing:
+        settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
+    if 'Pupil' in data.nwbfile.processing:
+        settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
+    if 'ophys' in data.nwbfile.processing:
+        settings['CaImaging']= dict(fig_fraction=4, subsampling=2, 
+                                    subquantity=args.imaging_quantity, color='green',
+                                    roiIndices=np.random.choice(data.nROIs,5,replace=False))
+        settings['CaImagingRaster']=dict(fig_fraction=2, subsampling=4,
+                                         bar_inset_start=-0.04, 
+                                         roiIndices='all',
+                                         normalization='per-line',
+                                         subquantity=args.imaging_quantity)
+    fig, ax = plt.subplots(1, figsize=(7, 2.5))
+    plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.9)
+
+    plot_raw(data, data.tlim, 
+              settings=settings, Tbar=20, ax=ax)
+
+    ax.annotate('full recording: %.1fmin  ' % ((data.tlim[1]-data.tlim[0])/60), (1,1), 
+                 ha='right', xycoords='axes fraction', size=8)
+
+    fig.savefig(os.path.join(tempfile.tempdir, 'raw-full-%i.png' % args.unique_run_ID), dpi=300)
+
+    if not args.debug:
+        plt.close(fig)
+
+    # ## --- ZOOM WITH STIM  --- 
+
+    settings['VisualStim'] = dict(fig_fraction=0, color='black',
+                                  with_screen_inset=True)
+    settings['CaImagingRaster']['fig_fraction'] =0.5 
+
+    for iplot, tlim in enumerate(TLIMS):
+
+        settings['CaImaging']['roiIndices'] = np.random.choice(data.nROIs,5,replace=False)
+
+        fig, ax = plt.subplots(1, figsize=(7, 2.5))
+        plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.9)
+
+        ax.annotate('t=%.1fmin  ' % (tlim[1]/60), (1,1), 
+                     ha='right', xycoords='axes fraction', size=8)
+
+        plot_raw(data, tlim, 
+                 settings=settings, Tbar=1, ax=ax)
+
+        fig.savefig(os.path.join(tempfile.tempdir,
+                    'raw-%i-%i.png' % (iplot, args.unique_run_ID)), dpi=300)
+
+        if not args.debug:
+            plt.close(fig)
 
 def summary_fig(CELL_RESPS):
     # find the varied keys:
@@ -145,163 +249,6 @@ def summary_fig(CELL_RESPS):
 
     return fig
 
-cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src')
-print(cwd)
-
-def generate_pdf(self,
-                 Nmax=1000000,
-                 include=['exp', 'raw', 'behavior', 'rois', 'protocols'],
-                 verbose=True):
-
-    if self.datafile!='':
-        print(self.datafile)
-    else:
-        print('\n \n Need to pick a datafolder ')
-
-    data = Data(self.datafile)
-
-    if data.metadata['protocol']=='FFDG-contrast-curve+blank':
-        cmd = '%s -m physion.analysis.protocols.FFDG_with_blank %s' % (python_path, self.datafile)
-    else:
-        cmd = ''
-        print(data.metadata['protocol'])
-
-    if cmd!='':
-        print(cmd)
-        print('running the command: [...]')
-
-    p = subprocess.Popen(cmd,
-                         shell=True, cwd=cwd,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-    
-    # folder = summary_pdf_folder(filename)
-    
-    # if 'exp' in include:
-        
-        # with PdfPages(os.path.join(folder, 'exp.pdf')) as pdf:
-
-            # print('* writing experimental metadata as "exp.pdf" [...] ')
-            
-            # print('   - notes')
-            # fig = metadata_fig(data)
-            # pdf.savefig()  # saves the current figure into a pdf page
-            # plt.close()
-        # print('[ok] notes saved as: "%s" ' % os.path.join(folder, 'exp.pdf'))
-
-    # if 'behavior' in include:
-        
-        # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'behavior.py')
-        # p = subprocess.Popen('%s %s %s' % (python_path, process_script, filename), shell=True)
-
-    # if 'raw' in include:
-        
-        # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'raw_data.py')
-        # p = subprocess.Popen('%s %s %s' % (python_path, process_script, filename), shell=True)
-        
-    # if 'rois' in include:
-        
-        # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'rois.py')
-        # p = subprocess.Popen('%s %s %s --Nmax %i' % (python_path, process_script, filename, Nmax), shell=True)
-        
-    # if 'protocols' in include:
-
-        # print(self.data.metadata['protocol'])
-        # print('* looping over protocols for analysis [...]')
-
-        # # --- analysis of multi-protocols ---
-        # if data.metadata['protocol']=='NDNF-protocol':
-            # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                          # 'ndnf_protocol.py')
-            # p = subprocess.Popen('%s %s %s --Nmax %i' % (python_path, process_script, filename, Nmax), shell=True)
-
-        # elif data.metadata['protocol']=='size-tuning-protocol':
-            # # spatial location first
-            # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                          # 'spatial_selectivity.py')
-            # p = subprocess.Popen('%s %s %s --Nmax %i --iprotocol 0' % (python_path, process_script, filename, Nmax), shell=True)
-            # # then size tuning
-            # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                          # 'size_tuning.py')
-            # p = subprocess.Popen('%s %s %s --Nmax %i --iprotocol 1' % (python_path, process_script, filename, Nmax), shell=True)
-
-        # elif data.metadata['protocol']=='mismatch-negativity':
-            # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                          # 'mismatch_negativity.py')
-            # p = subprocess.Popen('%s %s %s --Nmax %i' % (python_path, process_script, filename, Nmax), shell=True)
-
-        # elif ('surround-suppression' in data.metadata['protocol']):
-            # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                          # 'surround_suppression.py')
-            # p = subprocess.Popen('%s %s %s --Nmax %i' % (python_path, process_script, filename, Nmax), shell=True)
-
-        # elif ('spatial-location' in data.metadata['protocol']) or ('spatial-mapping' in data.metadata['protocol']):
-            # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                          # 'spatial_selectivity.py')
-            # p = subprocess.Popen('%s %s %s --Nmax %i' % (python_path, process_script, filename, Nmax), shell=True)
-
-        # elif 'contrast-curve' in data.metadata['protocol']:
-            # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                          # 'contrast_curves.py')
-            # p = subprocess.Popen('%s %s %s --Nmax %i' % (python_path, process_script, filename, Nmax), shell=True)
-
-        # elif ('secondary' in data.metadata['protocol']):
-            # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                          # 'secondary_RF.py')
-            # p = subprocess.Popen('%s %s %s --Nmax %i' % (python_path, process_script, filename, Nmax), shell=True)
-
-        # elif ('motion-contour-interaction' in data.metadata['protocol']):
-            # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                          # 'motion_contour_interaction.py')
-            # p = subprocess.Popen('%s %s %s' % (python_path, process_script, filename), shell=True)
-            
-        # else:
-            # # --- looping over protocols individually ---
-            # for ip, protocol in enumerate(data.protocols):
-
-                # print('* * analyzing protocol #%i: "%s" [...]' % (ip+1, protocol))
-
-                # protocol_type = (data.metadata['Protocol-%i-Stimulus' % (ip+1)] if (len(data.protocols)>1) else data.metadata['Stimulus'])
-
-                # # orientation selectivity analyis
-                # if protocol in ['Pakan-et-al-static']:
-                    # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                                  # 'orientation_direction_selectivity.py')
-                    # p = subprocess.Popen('%s %s %s orientation --iprotocol %i --Nmax %i' % (python_path, process_script, filename, ip, Nmax), shell=True)
-
-                # if protocol in ['Pakan-et-al-drifting']:
-                    # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                                  # 'orientation_direction_selectivity.py')
-                    # p = subprocess.Popen('%s %s %s direction --iprotocol %i --Nmax %i' % (python_path, process_script, filename, ip, Nmax), shell=True)
-
-                # if 'dg-' in protocol:
-                    # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                                  # 'orientation_direction_selectivity.py')
-                    # p = subprocess.Popen('%s %s %s gratings --iprotocol %i --Nmax %i' % (python_path, process_script, filename, ip, Nmax), shell=True)
-                    
-                # if 'looming-' in protocol:
-                    # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                                  # 'looming_stim.py')
-                    # p = subprocess.Popen('%s %s %s --iprotocol %i --Nmax %i' % (python_path, process_script, filename, ip, Nmax), shell=True)
-                    
-                # if 'gaussian-blobs' in protocol:
-                    # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                                  # 'gaussian_blobs.py')
-                    # p = subprocess.Popen('%s %s %s --iprotocol %i' % (python_path, process_script, filename, ip), shell=True)
-
-                # if 'noise' in protocol:
-                    # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                                  # 'receptive_field_mapping.py')
-                    # p = subprocess.Popen('%s %s %s --iprotocol %i' % (python_path, process_script, filename, ip), shell=True)
-
-
-                # if ('dot-stim' in protocol) or ('moving-dot' in protocol):
-                    # process_script = os.path.join(str(pathlib.Path(__file__).resolve().parents[0]), 'protocol_scripts', 
-                                                  # 'moving_dot_selectivity.py')
-                    # p = subprocess.Popen('%s %s %s --iprotocol %i' % (python_path, process_script, filename, ip), shell=True)
-
-    # print('subprocesses to analyze "%s" were launched !' % filename)
-    
 
 if __name__=='__main__':
     

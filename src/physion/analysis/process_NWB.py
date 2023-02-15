@@ -490,7 +490,6 @@ class EpisodeData:
 
         stim_data = {'no-window':True}
 
-        print(full_data.metadata)
         for key in full_data.metadata:
             stim_data[key]=full_data.metadata[key]
             if ('Protocol-%i-' % (self.protocol_id+1)) in key:

@@ -101,7 +101,6 @@ def plot_trial_average(episodes,
     # condition = [...]
             
     if (fig is None) and (AX is None):
-        print((len(COL_CONDS), len(ROW_CONDS)))
         fig, AX = pt.figure(axes=(len(COL_CONDS), len(ROW_CONDS)),
                             keep_shape=True)
         no_set=False
@@ -145,10 +144,9 @@ def plot_trial_average(episodes,
                     AX[irow][icol].axis('off')
                         
                 if with_screen_inset:
-                    pass
-                    # inset = ge.inset(AX[irow][icol], [.83, .9, .3, .25])
-                    # istim = np.flatnonzero(cond)[0]
-                    # episodes.visual_stim.plot_stim_picture(istim, ax=inset)
+                    inset = pt.inset(AX[irow][icol], [.83, .9, .3, .25])
+                    istim = np.flatnonzero(cond)[0]
+                    episodes.visual_stim.plot_stim_picture(istim, ax=inset)
                     
                 if with_annotation:
                     
@@ -238,20 +236,20 @@ def plot_trial_average(episodes,
         AX[0][0].annotate(label, (0,0), color=color,
                 ha='left', va='bottom', xycoords='figure fraction')
 
-    if with_annotation:
-        S = ''
-        if hasattr(episodes, 'rawFluo') or hasattr(episodes, 'dFoF') or hasattr(episodes, 'neuropil'):
-            if roiIndex is not None:
-                S+='roi #%i' % roiIndex
-            elif roiIndices in ['sum', 'mean', 'all']:
-                S+='n=%i rois' % len(episodes.data.valid_roiIndices)
-            else:
-                S+='n=%i rois' % len(roiIndices)
-        # for i, key in enumerate(episodes.varied_parameters.keys()):
-        #     if 'single-value' in getattr(episodes, '%s_plot' % key).currentText():
-        #         S += ', %s=%.2f' % (key, getattr(episodes, '%s_values' % key).currentText())
-        AX[0][0].annotate(S, (0,0), color='k', ha='left', va='bottom', size='small',
-                xycoords='figure fraction')
+    # if with_annotation:
+        # S = ''
+        # if hasattr(episodes, 'rawFluo') or hasattr(episodes, 'dFoF') or hasattr(episodes, 'neuropil'):
+            # if roiIndex is not None:
+                # S+='roi #%i' % roiIndex
+            # elif roiIndices in ['sum', 'mean', 'all']:
+                # S+='n=%i rois' % len(episodes.data.valid_roiIndices)
+            # else:
+                # S+='n=%i rois' % len(roiIndices)
+        # # for i, key in enumerate(episodes.varied_parameters.keys()):
+        # #     if 'single-value' in getattr(episodes, '%s_plot' % key).currentText():
+        # #         S += ', %s=%.2f' % (key, getattr(episodes, '%s_values' % key).currentText())
+        # AX[0][0].annotate(S, (0,0), color='k', ha='left', va='bottom', size='small',
+                # xycoords='figure fraction')
         
     return fig, AX
 

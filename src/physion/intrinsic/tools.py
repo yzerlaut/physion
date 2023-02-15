@@ -6,6 +6,7 @@ from matplotlib import colorbar, colors
 from skimage import measure
 from scipy.interpolate import interp1d
 from scipy.ndimage.filters import gaussian_filter1d, gaussian_filter
+from PIL import Image
 
 from physion.utils import plot_tools as pt
 
@@ -37,7 +38,8 @@ def load_maps(datafolder, Nsubsampling=4):
             Nsubsampling = metadata['Nsubsampling']
     else:
         metadata = None
-        
+    
+    print(Nsubsampling)
     if os.path.isfile(os.path.join(datafolder, 'raw-maps.npy')):
         print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
         maps = np.load(os.path.join(datafolder, 'raw-maps.npy'),
@@ -45,14 +47,22 @@ def load_maps(datafolder, Nsubsampling=4):
     else:
         maps = {}
 
-    if os.path.isfile(os.path.join(datafolder, 'vasculature-%s.npy' %metadata['subject'])):
+    if os.path.isfile(os.path.join(datafolder, 'vasculature-%s.tif' %metadata['subject'])):
+        maps['vasculature'] = np.array(Image.open(os.path.join(datafolder,\
+                'vasculature-%s.tif' %metadata['subject'])))
+        maps['vasculature'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
+    elif os.path.isfile(os.path.join(datafolder, 'vasculature-%s.npy' %metadata['subject'])):
         maps['vasculature'] = np.load(os.path.join(datafolder,\
                 'vasculature-%s.npy' %metadata['subject']))
         maps['vasculature'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
     elif os.path.isfile(os.path.join(datafolder, 'vasculature.npy')):
         maps['vasculature'] = np.load(os.path.join(datafolder, 'vasculature.npy'))
 
-    if os.path.isfile(os.path.join(datafolder, 'fluorescence-%s.npy' %metadata['subject'])):
+    if os.path.isfile(os.path.join(datafolder, 'fluorescence-%s.tif' %metadata['subject'])):
+        maps['fluorescence'] = np.array(Image.open(os.path.join(datafolder,\
+                'fluorescence-%s.tif' %metadata['subject'])))
+        maps['fluorescence'] = maps['fluorescence'][::Nsubsampling,::Nsubsampling]
+    elif os.path.isfile(os.path.join(datafolder, 'fluorescence-%s.npy' %metadata['subject'])):
         maps['fluorescence'] = np.load(os.path.join(datafolder,\
                 'fluorescence-%s.npy' %metadata['subject']))
         maps['fluorescence'] = maps['fluorescence'][::Nsubsampling,::Nsubsampling]

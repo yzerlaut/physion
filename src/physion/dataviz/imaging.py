@@ -9,15 +9,17 @@ import physion.utils.plot_tools as pt
 def add_CaImagingRaster(data, tlim, ax, raster=None,
                         fig_fraction_start=0., fig_fraction=1., color='green',
                         subquantity='Fluorescence', roiIndices='all', subquantity_args={},
-                        cmap=plt.cm.binary, axb=None,
+                        cmap=plt.cm.binary, 
+                        axb=None,
+                        bar_inset_start=-0.08, bar_inset_width=0.01,
                         normalization='None', subsampling=1,
-                        name='\nROIs'):
+                        name=''):
 
-    if subquantity=='Fluorescence' and (raster is None):
+    if (subquantity in ['Fluorescence', 'rawFluo']) and (raster is None):
         if (roiIndices=='all'):
-            raster = data.Fluorescence.data[:,:]
+            raster = data.rawFluo[:,:]
         else:
-            raster = data.Fluorescence.data[roiIndices,:]
+            raster = data.rawFluo[roiIndices,:]
             
     elif (subquantity in ['dFoF', 'dF/F']) and (raster is None):
         if not hasattr(data, 'dFoF'):
@@ -48,8 +50,8 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
 
         if axb is None:
-            axb = pt.inset(ax, [-.08, fig_fraction_start+.2*fig_fraction,
-                               .01, .6*fig_fraction], facecolor='w')
+            axb = pt.inset(ax, [bar_inset_start, fig_fraction_start+.2*fig_fraction,
+                                bar_inset_width, .6*fig_fraction], facecolor='w')
 
         cb = plt.colorbar(ims, cax=axb)
         cb.set_ticks([])
@@ -105,7 +107,7 @@ def add_CaImaging(data, tlim, ax,
                               color=color, scale_side=scale_side,
                              scale_unit_string=('%.0f$\Delta$F/F' if (n==0) else ' '))
         else:
-            y = data.Fluorescence.data[:,ir][np.arange(i1,i2)][::subsampling]
+            y = data.rawFluo[ir,np.arange(i1,i2)][::subsampling]
             dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1.,
                    ax_fraction_extent=fig_fraction/len(roiIndices),
                    ax_fraction_start=ypos, color=color,
@@ -130,7 +132,7 @@ def add_CaImagingSum(data, tlim, ax,
     if (subquantity in ['dF/F', 'dFoF']):
         y = data.dFoF.sum(axis=0)[np.arange(i1,i2)][::subsampling]
     else:
-        y = data.Fluorescence.data[:,:].sum(axis=0)[np.arange(i1,i2)][::subsampling]
+        y = data.rawFluo.sum(axis=0)[np.arange(i1,i2)][::subsampling]
 
     dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1., fig_fraction, fig_fraction_start, color=color,
                             scale_unit_string=('%.0fdF/F' if subquantity in ['dF/F', 'dFoF'] else ''))

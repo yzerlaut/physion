@@ -74,7 +74,12 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description="""
     Update metadata before building the NWB file
     """,formatter_class=argparse.RawTextHelpFormatter)
+    #
     parser.add_argument('-df', "--datafolder", type=str, default='')
+    #
+    parser.add_argument("--from_json", action='store_true')
+
+    # from json
     parser.add_argument('-c', "--config", type=str, default='', help='full path to a config file')
     parser.add_argument('-k', "--key", type=str, default='metadata key to change')
     parser.add_argument('-v', "--value", type=str, default='metadata value to change')
