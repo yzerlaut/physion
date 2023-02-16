@@ -51,7 +51,7 @@ for key, val in zip(['~/DATA',
     if os.path.isdir(val):
         FOLDERS[key] = val
 
-for key, val in zip(['D-drive', 'E-drive', 'F-drive', 'G-drive', 'H-drive'],
+for key, val in zip(['D:/', 'E:/', 'F:/', 'G:/', 'H:/'],
                     ['D:\\', 'E:\\', 'F:\\', 'G:\\', 'H:\\']):
     if os.path.isdir(val):
         FOLDERS[key] = val
