@@ -30,9 +30,9 @@ def raw_data_plot(self, tzoom,
         else:
             isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
 
-        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Photodiode-Signal']),
-                       scale_and_position(self,self.data.nwbfile.acquisition['Photodiode-Signal'].data[list(isampling)]),
-                       pen=pg.mkPen(color=settings['colors']['Screen']))
+        t = convert_index_to_time(isampling, self.data.nwbfile.acquisition['Photodiode-Signal'])
+        y = scale_and_position(self,self.data.nwbfile.acquisition['Photodiode-Signal'].data[list(isampling)])
+        self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['Screen']))
 
     ## -------- Locomotion --------- ##
     
@@ -45,9 +45,9 @@ def raw_data_plot(self, tzoom,
         else:
             isampling = np.unique(np.linspace(i1+1, i2-1, settings['Npoints'], dtype=int))
 
-        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Running-Speed']),
-                       scale_and_position(self,self.data.nwbfile.acquisition['Running-Speed'].data[list(isampling)]),
-                       pen=pg.mkPen(color=settings['colors']['Locomotion']))
+        t = convert_index_to_time(isampling, self.data.nwbfile.acquisition['Running-Speed'])
+        y = scale_and_position(self,self.data.nwbfile.acquisition['Running-Speed'].data[list(isampling)])
+        self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['Locomotion']))
             
 
     ## -------- FaceCamera, Face motion and Pupil-Size --------- ##

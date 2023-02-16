@@ -121,9 +121,12 @@ class MainWindow(QtWidgets.QMainWindow):
                 load_NWB_folder
         from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
             loadNWBfolder, loadCafolder, runAddOphys, check_ordered
+        from physion.assembling.FOV_coordinates import gui as FOV_coords_UI,\
+                load_intrinsic_maps_FOV
     else:
         from physion.gui.parts import inactivated as add_imaging
         from physion.gui.parts import inactivated as build_NWB_UI 
+        from physion.gui.parts import inactivated as FOV_coords_UI
 
 
     # -- Data Analysis 
