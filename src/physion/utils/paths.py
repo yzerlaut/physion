@@ -55,6 +55,9 @@ for key, val in zip(['D-drive', 'E-drive', 'F-drive', 'G-drive', 'H-drive'],
                     ['D:\\', 'E:\\', 'F:\\', 'G:\\', 'H:\\']):
     if os.path.isdir(val):
         FOLDERS[key] = val
+        for person in ['Yann', 'Taddy', 'Joana']:
+            if os.path.isdir(os.path.join(val, person)):
+                FOLDERS[key+person] = os.path.join(val, person)
 
 for user in ['yann', 'yann.zerlaut']:
     for key, val in zip(['storage-curated', 
