@@ -317,7 +317,7 @@ def violin(data,
     ax.vlines(inds, whiskers_min, whiskers_max, color='k', linestyle='-', lw=1)
 
     ax.set_xticks(range(1, 1+len(data)))
-    ax.set_xticklabels(labels)
+    ax.set_xticklabels(labels, rotation=70)
 
     return fig, ax
 
