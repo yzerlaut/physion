@@ -275,8 +275,61 @@ def draw_bar_scales(ax,
     if remove_axis:
         ax.axis('off')
 
+def adjacent_values(vals, q1, q3):
+    upper_adjacent_value = q3 + (q3 - q1) * 1.5
+    upper_adjacent_value = np.clip(upper_adjacent_value, q3, vals[-1])
+
+    lower_adjacent_value = q1 - (q3 - q1) * 1.5
+    lower_adjacent_value = np.clip(lower_adjacent_value, vals[0], q1)
+    return lower_adjacent_value, upper_adjacent_value
+
+def violin(data,
+           ax=None,
+           labels=None,
+           color='tab:red'):
+
+    if ax is None:
+        fig, ax = figure()
+    else:
+        fig = None
+
+    if labels is None:
+        labels = ['%i'%i for i in range(len(data))]
+
+    parts = ax.violinplot(data,
+            showmeans=False, showmedians=False,
+            showextrema=False)
+
+    for pc in parts['bodies']:
+        pc.set_facecolor(color)
+        pc.set_edgecolor('black')
+        pc.set_alpha(1)
+
+    quartile1, medians, quartile3 = np.percentile(data, [25, 50, 75], axis=1)
+    whiskers = np.array([
+        adjacent_values(sorted_array, q1, q3)
+        for sorted_array, q1, q3 in zip(data, quartile1, quartile3)])
+    whiskers_min, whiskers_max = whiskers[:, 0], whiskers[:, 1]
+
+    inds = np.arange(1, len(medians) + 1)
+    ax.scatter(inds, medians, marker='o', color='w', s=10, zorder=3)
+    ax.vlines(inds, quartile1, quartile3, color='k', linestyle='-', lw=3)
+    ax.vlines(inds, whiskers_min, whiskers_max, color='k', linestyle='-', lw=1)
+
+    ax.set_xticks(range(1, 1+len(data)))
+    ax.set_xticklabels(labels)
+
+    return fig, ax
+
+    
 
 def get_linear_colormap(color1='blue', color2='red'):
     return mpl.colors.LinearSegmentedColormap.from_list('mycolors',[color1, color2])
 
+if __name__=='__main__':
+    
+    data = [sorted(np.random.normal(0, std, 100)) for std in range(1, 5)]
 
+    violin(data)
+
+    plt.show()

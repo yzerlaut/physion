@@ -155,13 +155,19 @@ def generate_FOV_fig(data, args):
 
 
 def generate_raw_data_figs(data, args,
-                           TLIMS=[[15, 75]]):
+                           TLIMS=[],
+                           return_figs=False):
+
+    """
+    generates a full view + some  
                                 
+    """
+
+    FIGS, AXS = [], []
     # ## --- FULL VIEW FIRST ---
 
-    print(args.nROIs)
     if not hasattr(args, 'nROIs'):
-        args.nROIs = 5
+        args.nROIs = np.min([5, data.nROIs])
 
     settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue')}
     if 'FaceMotion' in data.nwbfile.processing:
@@ -171,7 +177,8 @@ def generate_raw_data_figs(data, args,
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=4./5.*args.nROIs, subsampling=2, 
                                     subquantity=args.imaging_quantity, color='green',
-                                    roiIndices=np.random.choice(data.nROIs, args.nROIs, replace=False))
+                                    roiIndices=np.random.choice(data.nROIs,
+                                                    args.nROIs, replace=False))
         settings['CaImagingRaster']=dict(fig_fraction=2, subsampling=4,
                                          bar_inset_start=-0.04, 
                                          roiIndices='all',
@@ -192,8 +199,11 @@ def generate_raw_data_figs(data, args,
 
     fig.savefig(os.path.join(tempfile.tempdir, 'raw-full-%i.png' % args.unique_run_ID), dpi=300)
 
-    if not args.debug:
+    if not args.debug and not return_figs:
         plt.close(fig)
+    else:
+        FIGS.append(fig)
+        AXS.append(ax)
 
     # ## --- ZOOM WITH STIM  --- 
 
@@ -203,7 +213,9 @@ def generate_raw_data_figs(data, args,
 
     for iplot, tlim in enumerate(TLIMS):
 
-        settings['CaImaging']['roiIndices'] = np.random.choice(data.nROIs,5,replace=False)
+        settings['CaImaging']['roiIndices'] = np.random.choice(data.nROIs,
+                                                               args.nROIs,
+                                                               replace=False)
 
         fig, ax = plt.subplots(1, figsize=(7, 2.5))
         plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.9)
@@ -219,6 +231,11 @@ def generate_raw_data_figs(data, args,
 
         if not args.debug:
             plt.close(fig)
+        else:
+            FIGS.append(fig)
+            AXS.append(ax)
+
+    return FIGS, AXS
 
 def summary_fig(CELL_RESPS):
     # find the varied keys:

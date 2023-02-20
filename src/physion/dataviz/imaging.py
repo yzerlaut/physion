@@ -56,8 +56,10 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
         cb = plt.colorbar(ims, cax=axb)
         cb.set_ticks([])
         axb.set_ylabel('$\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.', fontsize=9)
-        axb.annotate(' max', (1,1), fontsize=6, xycoords='axes fraction')
-        axb.annotate(' min', (1,0), fontsize=6, va='top', xycoords='axes fraction')
+        axb.annotate('max', (0.5,1.1), fontsize=7,
+                xycoords='axes fraction', ha='center')
+        axb.annotate('min', (0.5,-0.1), fontsize=7, va='top',
+                xycoords='axes fraction', ha='center')
 
         
     dv_tools.add_name_annotation(data, ax, name, tlim,
@@ -68,7 +70,9 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
                 (tlim[1], fig_fraction_start+fig_fraction), va='top', xycoords='data')
     ax.annotate('rois', 
                 (tlim[1], fig_fraction_start+fig_fraction/2.),
-                va='center', rotation=-90, xycoords='data',
+                va='center',
+                # rotation=-90,
+                xycoords='data',
                 fontsize=8)
 
     
