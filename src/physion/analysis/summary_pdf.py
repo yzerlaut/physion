@@ -159,21 +159,29 @@ def generate_raw_data_figs(data, args,
                                 
     # ## --- FULL VIEW FIRST ---
 
+    print(args.nROIs)
+    if not hasattr(args, 'nROIs'):
+        args.nROIs = 5
+
     settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue')}
     if 'FaceMotion' in data.nwbfile.processing:
         settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
     if 'Pupil' in data.nwbfile.processing:
         settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
-        settings['CaImaging']= dict(fig_fraction=4, subsampling=2, 
+        settings['CaImaging']= dict(fig_fraction=4./5.*args.nROIs, subsampling=2, 
                                     subquantity=args.imaging_quantity, color='green',
-                                    roiIndices=np.random.choice(data.nROIs,5,replace=False))
+                                    roiIndices=np.random.choice(data.nROIs, args.nROIs, replace=False))
         settings['CaImagingRaster']=dict(fig_fraction=2, subsampling=4,
                                          bar_inset_start=-0.04, 
                                          roiIndices='all',
                                          normalization='per-line',
                                          subquantity=args.imaging_quantity)
-    fig, ax = plt.subplots(1, figsize=(7, 2.5))
+
+    if not hasattr(args, 'raw_figsize'):
+        args.raw_figsize=(7, 2.5)
+    
+    fig, ax = plt.subplots(1, figsize=args.raw_figsize)
     plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.9)
 
     plot_raw(data, data.tlim, 
