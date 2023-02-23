@@ -101,6 +101,7 @@ for ax in pt.flatten(AX):
                            Xbar=1., Xbar_label='1s',
                            Ybar=1, Ybar_label='1$\Delta$F/F', fontsize=7)
 pt.set_common_xlims(AX)
+fig.savefig('/home/yann.zerlaut/Desktop/NDNF-summary/single-ROI.svg')
 
 # %% [markdown]
 # ## Showing average over ROIs
@@ -164,6 +165,7 @@ for ax in pt.flatten(AX):
                            Xbar=1., Xbar_label='1s',
                            Ybar=1, Ybar_label='1$\Delta$F/F', fontsize=7)
 pt.set_common_xlims(AX)
+fig.savefig('/home/yann.zerlaut/Desktop/NDNF-summary/single-session.svg')
 
 # %% [markdown]
 # ## Average over sessions
@@ -174,7 +176,28 @@ DATASET = scan_folder_for_NWBfiles(datafolder, verbose=False);
 # %%
 response_significance_threshold=0.01
 
-for s, filename in enumerate(DATASET['files'][:4]):
+# prepare array for final results (averaged over sessions)
+RESULTS = {}
+for protocol in protocols:
+    RESULTS[protocol] = {'significant':[], 'response':[], 'session':[]}
+protocols = [p for p in data.protocols if (p!='grey-10min')] # remove visual-stimulus-free protocol
+
+# prepare array for final results (averaged over sessions)
+RESULTS = {}
+for p, protocol in enumerate(protocols):
+    RESULTS[protocol] = {'significant':[], 'response':[], 'session':[]}
+    episodes = EpisodeData(data, 
+                           quantities=['dFoF'],
+                           protocol_name=protocol,
+                           verbose=False)
+    varied_keys = [k for k in episodes.varied_parameters.keys() if k!='repeat']
+    varied_values = [episodes.varied_parameters[k] for k in varied_keys]
+    for values in itertools.product(*varied_values):
+        RESULTS[protocol]['significant'].append([])
+        RESULTS[protocol]['response'].append([])
+        RESULTS[protocol]['session'].append([])
+
+for s, filename in enumerate(DATASET['files']):
     
     data = Data(filename,
                 verbose=False)
@@ -201,7 +224,7 @@ for s, filename in enumerate(DATASET['files'][:4]):
                 
                 for v, values in enumerate(itertools.product(*varied_values)):
 
-                    # build stim cond
+                    # build stim cond y iteration over values
                     stim_cond = np.ones(len(summary['value']), dtype=bool) # all true
                     for k, val in zip(varied_keys, values):
                         stim_cond = stim_cond & (summary[k]==val)
@@ -252,4 +275,6 @@ pt.set_common_xlims(AX)
 AX[0][0].annotate('  fraction   \n  responsive', (0,0.5), xycoords='axes fraction', rotation=90, 
                   ha='right', va='center')
 AX[1][0].set_ylabel('mean $\Delta$F/F')
-fig.savefig('/home/yann.zerlaut/Desktop/fig.png')
+fig.savefig('/home/yann.zerlaut/Desktop/NDNF-summary/session-summary.svg')
+
+# %%
