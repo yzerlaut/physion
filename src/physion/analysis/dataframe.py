@@ -1,4 +1,4 @@
-import os, sys, pandas, itertools
+import os, sys, itertools, pandas
 import numpy as np
 
 from physion.analysis import read_NWB, process_NWB

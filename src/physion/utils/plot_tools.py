@@ -322,9 +322,43 @@ def violin(data,
     return fig, ax
 
     
-
 def get_linear_colormap(color1='blue', color2='red'):
     return mpl.colors.LinearSegmentedColormap.from_list('mycolors',[color1, color2])
+
+
+# ##################################################
+# ######  FIG TOOLS   ##############################
+# ##################################################
+
+def flatten(AX):
+    """
+    to be used in 
+    "for ax in flatten(AX)"
+    """
+    List = []
+    for ax in AX:
+        if type(ax) is list:
+            List = List+ax
+        else:
+            List.append(ax)        
+    return np.array(List).flatten()
+
+def set_common_xlims(AX, lims=None):
+    if lims is None:
+        lims = [np.inf, -np.inf]
+        for ax in flatten(AX):
+            lims = [np.min([ax.get_xlim()[0], lims[0]]), np.max([ax.get_xlim()[1], lims[1]])]
+    for ax in flatten(AX):
+        ax.set_xlim(lims)
+        
+def set_common_ylims(AX, lims=None):
+    if lims is None:
+        lims = [np.inf, -np.inf]
+        for ax in flatten(AX):
+            lims = [np.min([ax.get_ylim()[0], lims[0]]), np.max([ax.get_ylim()[1], lims[1]])]
+    for ax in flatten(AX):
+        ax.set_ylim(lims)
+
 
 if __name__=='__main__':
     
