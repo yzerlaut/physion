@@ -470,7 +470,8 @@ if __name__=='__main__':
     if args.duration>0:
         args.Ndiscret = int(args.duration*args.fps)
 
-    data = physion.analysis.read_NWB.Data(args.datafile, with_visual_stim=True)
+    data = physion.analysis.read_NWB.Data(args.datafile,
+                                          with_visual_stim=True)
     # print('\n', data.nwbfile.processing['ophys'].description, '\n')
 
     fig, AX, ani = draw_figure(args, data)    

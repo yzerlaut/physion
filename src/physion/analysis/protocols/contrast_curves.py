@@ -29,7 +29,7 @@ def ROI_analysis(FullData,
                            protocol_id=iprotocol,
                            quantity='CaImaging', subquantity='dF/F',
                            prestim_duration=-stat_test_props['interval_pre'][0],
-                              roiIndex = roiIndex)
+                           roiIndex = roiIndex)
 
     fig, AX = FullData.plot_trial_average(EPISODES=EPISODES,
                                           protocol_id=iprotocol,

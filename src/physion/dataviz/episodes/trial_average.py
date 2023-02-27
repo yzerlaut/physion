@@ -1,4 +1,4 @@
-# general modules
+# thgeneral modules
 import pynwb, os, sys, pathlib, itertools
 import numpy as np
 import matplotlib.pylab as plt
