@@ -20,6 +20,36 @@ stat_test_props = dict(interval_pre=[-1,0],
                        test='ttest',
                        positive=True)
 
+def center_and_compute_size_tuning(data,
+                              imaging_quantity='dFoF',
+                              verbose=False):
+
+
+    # ## --- EPISODES -- CENTERING
+
+    episodes = EpisodeData(data,
+                           protocol_id=0,
+                           quantities=[imaging_quantity],
+                           prestim_duration=2,
+                           with_visual_stim=True,
+                           verbose=verbose)
+
+    CENTERED_ROIS, ANGLES = extract_centered_rois(data, episodes)
+
+    # ## --- EPISODES -- SIZE VARIATIONS
+    
+    episodes = EpisodeData(data,
+                           protocol_id=1,
+                           quantities=[imaging_quantity],
+                           prestim_duration=2,
+                           verbose=False)
+
+    radii, size_resps = compute_size_tuning_curves(\
+            data, episodes, CENTERED_ROIS, ANGLES,
+            stat_test_props)
+
+    return radii, size_resps
+    
 def extract_centered_rois(data, episodes,
                           imaging_quantity='dFoF',
                           response_significance_threshold=0.01):
@@ -64,7 +94,6 @@ def compute_size_tuning_curves(data, episodes, centered_rois, angles,
 
     return np.concatenate([[0], np.sort(resp['radius'][angle_cond])]),\
             SIZE_RESPS
-
 
 
 def generate_pdf(args,
@@ -187,7 +216,7 @@ def generate_figs(args,
     if not args.debug:
         pt.plt.close(fig)
 
-    # ## --- EPISODES AVERAGE -- 
+    # ## --- EPISODES AVERAGE -- SIZE VARIATIONS
     
     episodes = EpisodeData(data,
                            protocol_id=1,
