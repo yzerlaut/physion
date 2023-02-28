@@ -165,8 +165,9 @@ def compute_dFoF(data,
 
     correctedFluo = data.rawFluo-neuropil_correction_factor*data.neuropil
     
-    # exclude cells with Neuropil higher than Fluorescence:
-    valid_roiIndices = (np.mean(dF, axis=1)>0)
+    # exclude cells with Neuropil higher than Fluorescence (and fluorescence too low, min has to be higher than 1 signal unit !):
+    print(np.min(F0, axis=1))
+    valid_roiIndices = (np.mean(correctedFluo, axis=1)>0) & (np.min(F0, axis=1)>1)
 
     correctedFluo0 = compute_sliding_F0(data, correctedFluo,
                             method=method_for_F0,
@@ -187,6 +188,7 @@ def compute_dFoF(data,
     data.dFoF = (correctedFluo[valid_roiIndices,:]-correctedFluo0[valid_roiIndices,:])/F0[valid_roiIndices,:]
 
     data.valid_roiIndices = np.arange(data.iscell.sum())[valid_roiIndices]
+    data.vNrois= len(data.valid_roiIndices) # number of valid ROIs
     
     if verbose:
         print('-> dFoF calculus done !  (calculation took %.1fs)' % (time.time()-tick))
