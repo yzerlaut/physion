@@ -294,7 +294,7 @@ class Data:
                    return_corrected_F_and_F0=False,
                    verbose=True):
         """
-        creates self.nROIs, self.dFoF, self.t_dFoF
+        creates self.vNrois, self.dFoF, self.t_dFoF
         """
 
         if not hasattr(self, 'rawFluo'):

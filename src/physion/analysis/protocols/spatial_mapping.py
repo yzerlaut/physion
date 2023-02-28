@@ -176,6 +176,8 @@ def generate_figs(args,
         data.build_dFoF()
     else:
         data.build_rawFluo()
+    nROIs = (data.vNrois if args.imaging_quantity=='dFoF' else data.nROIs)
+
 
     # ## --- METADATA  ---
     fig = metadata_fig(data, short=True)
@@ -214,7 +216,7 @@ def generate_figs(args,
                        with_annotation=True, 
                        no_set=False, AX=AX)
 
-    fig.suptitle('response average (n=%i ROIs, s.d. over all ROIs)' % data.nROIs)
+    fig.suptitle('response average (n=%i ROIs, s.d. over all ROIs)' % nROIs)
     fig.savefig(os.path.join(tempfile.tempdir, 'TA-all-%i.png' % args.unique_run_ID), dpi=300)
     if not args.debug:
         pt.plt.close(fig)
@@ -222,9 +224,9 @@ def generate_figs(args,
     # ## --- FRACTION RESPONSIVE ---
 
     args.SIGNIFICANT_ROIS, args.NON_SIGNIFICANT_ROIS = [], []
-    results = {'Ntot':episodes.data.nROIs, 'significant':[]}
+    results = {'Ntot':nROIs, 'significant':[]}
 
-    for roi in range(data.nROIs):
+    for roi in range(nROIs):
 
         resp = episodes.compute_summary_data(dict(interval_pre=[-1,0],
                                                   interval_post=[0.5,1.5],
@@ -266,6 +268,8 @@ def generate_figs(args,
 
 def summary_fig(results, episodes, args):
 
+    nROIs = (data.vNrois if args.imaging_quantity=='dFoF' else data.nROIs)
+
     other_keys = []
     for key in results:
         if (key not in ['Ntot', 'significant', 'std-value', 'value']) and\
@@ -301,8 +305,8 @@ def summary_fig(results, episodes, args):
         AX[i+1].set_xlabel(key)
         
     # responsivess pie 
-    X = [100*len(args.SIGNIFICANT_ROIS)/episodes.data.nROIs,
-         100-100*len(args.SIGNIFICANT_ROIS)/episodes.data.nROIs]
+    X = [100*len(args.SIGNIFICANT_ROIS)/nROIs,
+         100-100*len(args.SIGNIFICANT_ROIS)/nROIs]
     
     pie(X, ext_labels=['responsive\n%.1f%%  (n=%i)'%(X[0], 
                                                      len(args.SIGNIFICANT_ROIS)),

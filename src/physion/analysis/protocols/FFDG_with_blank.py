@@ -116,7 +116,7 @@ def generate_figs(nwbfile,
                         'Pupil':dict(fig_fraction=1, subsampling=2, color='red'),
                         'CaImaging':dict(fig_fraction=4, subsampling=2, 
                                          subquantity='dF/F', color='green',
-                                         roiIndices=np.random.choice(data.nROIs,5)),
+                                         roiIndices=np.random.choice(data.vNrois,5)),
                         'CaImagingRaster':dict(fig_fraction=2, subsampling=4,
                                                roiIndices='all',
                                                normalization='per-line',
@@ -147,7 +147,7 @@ def generate_figs(nwbfile,
                         'Pupil':dict(fig_fraction=1, subsampling=1, color='red'),
                         'CaImaging':dict(fig_fraction=4, subsampling=1, 
                                          subquantity='dF/F', color='green',
-                                         roiIndices=np.random.choice(data.nROIs,5)),
+                                         roiIndices=np.random.choice(data.vNrois,5)),
                         'CaImagingRaster':dict(fig_fraction=2, subsampling=1,
                                                roiIndices='all',
                                                normalization='per-line',
@@ -172,7 +172,7 @@ def generate_figs(nwbfile,
                         'Pupil':dict(fig_fraction=1, subsampling=1, color='red'),
                         'CaImaging':dict(fig_fraction=4, subsampling=1, 
                                          subquantity='dF/F', color='green',
-                                         roiIndices=np.random.choice(data.nROIs,5)),
+                                         roiIndices=np.random.choice(data.vNrois,5)),
                         'CaImagingRaster':dict(fig_fraction=2, subsampling=1,
                                                roiIndices='all',
                                                normalization='per-line',
@@ -207,7 +207,7 @@ def generate_figs(nwbfile,
                                          # with_screen_inset=True,
                                          with_std_over_rois=True, 
                                          with_annotation=True, no_set=False, AX=AX)
-    fig.suptitle('response average (n=%i ROIs, s.d. over all ROIs)' % data.nROIs)
+    fig.suptitle('response average (n=%i ROIs, s.d. over all ROIs)' % data.vNrois)
     fig.savefig(os.path.join(tempfile.tempdir, 'TA-all.png'), dpi=300)
     pt.plt.close(fig)
 
@@ -257,7 +257,7 @@ def generate_figs(nwbfile,
 def responsiveness(episodes, data):
 
     SIGNIFICANT_ROIS = []
-    for roi in range(data.nROIs):
+    for roi in range(data.vNrois):
         summary_data = episodes.compute_summary_data(dict(interval_pre=[0,1],
                                                           interval_post=[1,2],
                                                           test='anova',
@@ -269,7 +269,7 @@ def responsiveness(episodes, data):
             SIGNIFICANT_ROIS.append(roi)
 
 
-    X = [100*len(SIGNIFICANT_ROIS)/data.nROIs,100-100*len(SIGNIFICANT_ROIS)/data.nROIs]
+    X = [100*len(SIGNIFICANT_ROIS)/data.vNrois,100-100*len(SIGNIFICANT_ROIS)/data.vNrois]
     
     fig, ax = pt.plt.subplots(1, figsize=(2,1))
     fig, ax = pie(X,
@@ -323,7 +323,7 @@ def zoom_light_conditions(data):
                                 'Pupil':dict(fig_fraction=1, subsampling=1, color='red'),
                                 'CaImaging':dict(fig_fraction=4, subsampling=1, 
                                                  subquantity='dF/F', color='green',
-                                                 roiIndices=np.random.choice(data.nROIs,5)),
+                                                 roiIndices=np.random.choice(data.vNrois,5)),
                                 'CaImagingRaster':dict(fig_fraction=2, subsampling=1,
                                                        roiIndices='all',
                                                        normalization='per-line',
@@ -368,7 +368,7 @@ def compute_activity_modulation_by_light(data):
 
         time_cond = (data.t_dFoF>interval[0]) & (data.t_dFoF<interval[1])
         RESP[key+'-mean'], RESP[key+'-std'], RESP[key+'-skew'] = [], [], []
-        for roi in range(data.nROIs):
+        for roi in range(data.vNrois):
             RESP[key+'-mean'].append(data.dFoF[roi,time_cond].mean())
             RESP[key+'-std'].append(data.dFoF[roi,time_cond].std())
             RESP[key+'-skew'].append(skew(data.dFoF[roi,time_cond]))

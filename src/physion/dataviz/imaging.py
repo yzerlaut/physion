@@ -32,7 +32,7 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
         roiIndices = np.arange(data.iscell.sum())
 
     elif (roiIndices=='all') and (subquantity in ['dFoF', 'dF/F']):
-        roiIndices = np.arange(data.nROIs)
+        roiIndices = np.arange(data.vNrois)
         
     if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
         raster = np.array([(raster[i,:]-np.min(raster[i,:]))/(np.max(raster[i,:])-\

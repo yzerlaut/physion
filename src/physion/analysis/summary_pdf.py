@@ -168,9 +168,11 @@ def generate_raw_data_figs(data, args,
     FIGS, AXS = [], []
     # ## --- FULL VIEW FIRST ---
 
-    if not hasattr(args, 'nROIs'):
-        args.nROIs = np.min([5, data.nROIs])
+    nROIs = (data.vNrois if args.imaging_quantity=='dFoF' else data.nROIs)
 
+    if not hasattr(args, 'nROIs'):
+        args.nROIs = np.min([5, nROIs])
+ 
     settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue')}
     if 'FaceMotion' in data.nwbfile.processing:
         settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
@@ -179,7 +181,7 @@ def generate_raw_data_figs(data, args,
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=4./5.*args.nROIs, subsampling=2, 
                                     subquantity=args.imaging_quantity, color='green',
-                                    roiIndices=np.random.choice(data.nROIs,
+                                    roiIndices=np.random.choice(nROIs,
                                                     args.nROIs, replace=False))
         settings['CaImagingRaster']=dict(fig_fraction=2, subsampling=4,
                                          bar_inset_start=-0.04, 
@@ -215,7 +217,7 @@ def generate_raw_data_figs(data, args,
 
     for iplot, tlim in enumerate(TLIMS):
 
-        settings['CaImaging']['roiIndices'] = np.random.choice(data.nROIs,
+        settings['CaImaging']['roiIndices'] = np.random.choice(nROIs,
                                                                args.nROIs,
                                                                replace=False)
 

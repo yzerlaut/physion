@@ -31,7 +31,7 @@ def NWB_to_dataframe(nwbfile,
     # --- neural activity 
     if 'ophys' in data.nwbfile.processing:
 
-        for i in range(data.nROIs):
+        for i in range(data.vNrois):
 
             dataframe['dFoF-ROI%i'%i] = data.dFoF[i,:]
 
