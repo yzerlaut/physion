@@ -33,6 +33,7 @@ def NWB_to_dataframe(nwbfile,
         time = data.t_running_speed[::subsampling]
 
     dataframe = pandas.DataFrame({'time':time})
+    dataframe.dt = time[1]-time[0] # store the time step in the metadata
 
     # - - - - - - - - - - - - - - - 
     # --- neural activity 
@@ -136,7 +137,7 @@ def NWB_to_dataframe(nwbfile,
             else:
 
                 # no varied parameter
-                dataframe['VisStim-%s'%protocol] = \
+               dataframe['VisStim-%s'%protocol] = \
                         build_stim_specific_array(data,
                                                   protocol_cond,
                                                   dataframe['time'])  
@@ -175,17 +176,22 @@ def NWB_to_dataframe(nwbfile,
                     for key, index in zip(VARIED_KEYS, indices):
                         stim_name+='--%s_%s' % (key,
                                         episodes.varied_parameters[key][index])
-                    dataframe[stim_name] =\
-                            build_stim_specific_array(data,
-                                                      episode_cond,
-                                                      dataframe['time'])  
+                    build_timelag_set_of_stim_specific_arrays(data, 
+                                                              dataframe,
+                                                              episode_cond, 
+                                                              stim_name=stim_name,
+                                                              pre_interval=0.5,
+                                                              post_interval=1.5) # PASS AS ARGUMENTS ABOVE !!
             else:
 
                 # no varied parameter
-                dataframe['VisStim-%s'%protocol] = \
-                        build_stim_specific_array(data,
-                                                  protocol_cond,
-                                                  dataframe['time'])  
+                stim_name = 'VisStim_%s'%protocol
+                build_timelag_set_of_stim_specific_arrays(data, 
+                                                          dataframe,
+                                                          protocol_cond, 
+                                                          stim_name=stim_name,
+                                                          pre_interval=0.5,
+                                                          post_interval=1.5) # PASS AS ARGUMENTS ABOVE !!
 
         else:
             print('visual_stim_label key not recognized !')
@@ -193,9 +199,13 @@ def NWB_to_dataframe(nwbfile,
 
     return dataframe
 
+
+
+############################################################################
+
 def build_stim_specific_array(data, index_cond, time):
 
-    array = 0*time
+    array = np.zeros(len(time), dtype=bool)
 
     # looping over all repeats of this index
     for i in np.flatnonzero(index_cond):
@@ -205,13 +215,13 @@ def build_stim_specific_array(data, index_cond, time):
             tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i]
 
             t_cond = (time>=tstart) & (time<tstop)
-            array[t_cond] = 1
+            array[t_cond] = True
 
     return array
 
 def build_timelag_set_of_stim_specific_arrays(data, index_cond, time):
 
-    array = 0*time
+    array = np.zeros(len(time), dtype=bool)
 
     # looping over all repeats of this index
     for i in np.flatnonzero(index_cond):
@@ -221,23 +231,71 @@ def build_timelag_set_of_stim_specific_arrays(data, index_cond, time):
             tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i]
 
             t_cond = (time>=tstart) & (time<tstop)
-            array[t_cond] = 1
+            array[t_cond] = True
 
     return array
 
 
+def build_timelag_set_of_stim_specific_arrays(data, DF, index_cond, 
+                                              stim_name='VisStim',
+                                              pre_interval=0.2,
+                                              post_interval=1.8):
+
+
+    Nframe_pre = max([1, int(pre_interval/DF.dt)]) # at least one frame
+    Nframe_post = int(post_interval/DF.dt)
+    Nframe_stim = int(np.min([data.nwbfile.stimulus['time_duration'].data[i]\
+            for i in np.flatnonzero(index_cond)])/DF.dt)
+
+
+    # set of timelag binary arrays
+    for j in np.arange(-Nframe_pre, Nframe_stim+Nframe_post+1):
+        DF['%s__%i' % (stim_name, j)] = np.zeros(len(DF['time']), dtype=bool)
+
+    # looping over all repeats of this index
+    for i in np.flatnonzero(index_cond):
+
+        if i<data.nwbfile.stimulus['time_start_realigned'].num_samples:
+            tstart = data.nwbfile.stimulus['time_start_realigned'].data[i]
+            tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i]
+
+            iT0 = np.argmin((DF['time']-tstart)**2)
+           
+            for j in np.arange(-Nframe_pre, Nframe_stim+Nframe_post+1):
+                DF.loc[iT0+j, '%s__%i' % (stim_name, j)] = True
+
+
 def extract_stim_keys(dataframe):
+    """
+    keys are of the form:
 
+    VisStim_drifting-gratings--angle_270.0--contrast_0.33
+
+    or in the case with timestamps:
+    VisStim_drifting-gratings--angle_270.0--contrast_0.33__-2
+    VisStim_drifting-gratings--angle_270.0--contrast_0.33__-1
+    VisStim_drifting-gratings--angle_270.0--contrast_0.33__0
+    VisStim_drifting-gratings--angle_270.0--contrast_0.33__1
+                                                       [...]
+    """
     STIM = {}
-    for key in dataframe.keys():
-        if 'VisStim_' in key:
-            s = key.replace('VisStim_', '')
-            protocol = s.split('--')[0]
 
+    for key in dataframe.keys():
+
+        if 'VisStim_' in key:
+
+            s = key.replace('VisStim_', '').split('__')[0] # i.e. removing timestamps if there
+            protocol = s.split('--')[0]
+                
             if not protocol in STIM:
-                STIM[protocol] = {'DF-key':[]}
+                STIM[protocol] = {'DF-key':[], 'times':[]}
 
             STIM[protocol]['DF-key'].append(key)
+
+            if len(key.split('__'))>1:
+                STIM[protocol]['times'].append(dataframe.dt*int(key.split('__')[1]))
+            else:
+                STIM[protocol]['times'].append(0)
 
             keys_vals = s.split('--')
             if len(keys_vals)>1:
@@ -248,8 +306,13 @@ def extract_stim_keys(dataframe):
                     else:
                         STIM[protocol][k].append(v)
 
+    # convert to numpy arrays
+    for protocol in STIM:
+        for key in STIM[protocol]:
+            STIM[protocol][key] = np.array(STIM[protocol][key])
 
     return STIM
+
 
 if __name__=='__main__':
 
