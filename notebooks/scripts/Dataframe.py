@@ -27,8 +27,8 @@ from physion.utils import plot_tools as pt
 filename = os.path.join(os.path.expanduser('~'), 'CURATED' , 'NDNF-December-2022', '2022_12_14-13-27-41.nwb')
 data = NWB_to_dataframe(filename,
                         visual_stim_label='per-protocol',
+                        subsampling = 10,
                         verbose=False)
-
 
 # %%
 def min_max(array):

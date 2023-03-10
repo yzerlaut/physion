@@ -292,17 +292,25 @@ class Data:
                    percentile=PERCENTILE_SLIDING_MIN,
                    sliding_window=T_SLIDING_MIN,
                    return_corrected_F_and_F0=False,
+                   specific_time_sampling=None,
+                   interpolation='linear',
                    verbose=True):
         """
         creates self.vNrois, self.dFoF, self.t_dFoF
         """
 
         if not hasattr(self, 'rawFluo'):
-            self.build_rawFluo(roiIndex=roiIndex, roiIndices='all', verbose=verbose)
+            self.build_rawFluo(roiIndex=roiIndex, roiIndices='all',
+                               specific_time_sampling=specific_time_sampling,
+                               interpolation=interpolation,
+                               verbose=verbose)
         self.t_dFoF = self.t_rawFluo
 
         if not hasattr(self, 'neuropil'):
-            self.build_neuropil(roiIndex=roiIndex, roiIndices='all', verbose=verbose)
+            self.build_neuropil(roiIndex=roiIndex, roiIndices='all',
+                                specific_time_sampling=specific_time_sampling,
+                                interpolation=interpolation,
+                                verbose=verbose)
 
         return compute_dFoF(self,
                             neuropil_correction_factor=neuropil_correction_factor,
@@ -313,6 +321,9 @@ class Data:
                             verbose=verbose)
 
     def build_Zscore_dFoF(self, verbose=True):
+        """
+        /!\ do not deal with specific time sampling /!\ 
+        """
         if not hasattr(self, 'dFoF'):
             self.build_dFoF(verbose=verbose)
         setattr(self, 'Zscore_dFoF', (self.dFoF-self.dFoF.mean(axis=0).reshape(1, self.dFoF.shape[1]))/self.dFoF.std(axis=0).reshape(1, self.dFoF.shape[1]))
@@ -320,6 +331,8 @@ class Data:
 
     def build_neuropil(self,
                        roiIndex=None, roiIndices='all',
+                       specific_time_sampling=None,
+                       interpolation='linear',
                        verbose=True):
         """
         we build the neuropil matrix in the form (nROIs, time_samples)
@@ -334,8 +347,23 @@ class Data:
         if not hasattr(self, 't_neuropil'):
             self.t_neuropil = self.Neuropil.timestamps[:]
 
+        if specific_time_sampling is not None:
+            # we first interpolate and resample the data
+            self.neuropil2 = np.zeros((self.nROIs, len(specific_time_sampling)))
+            for i in range(self.nROIs):
+                self.neuropil2[i,:] = tools.resample(self.t_neuropil,
+                                               self.neuropil[i,:],
+                                               specific_time_sampling,
+                                               interpolation=interpolation,
+                                               verbose=verbose)
+            self.neuropil = self.neuropil2
+            # then we update the timestamps
+            self.t_neuropil = specific_time_sampling
+
     def build_rawFluo(self,
                       roiIndex=None, roiIndices='all',
+                      specific_time_sampling=None,
+                      interpolation='linear',
                       verbose=True):
         """
         same than above for neuropil
@@ -352,6 +380,18 @@ class Data:
         if not hasattr(self, 't_rawFluo'):
             self.t_rawFluo = self.Fluorescence.timestamps[:]
 
+        if specific_time_sampling is not None:
+            # we first interpolate and resample the data
+            self.rawFluo2 = np.zeros((self.nROIs, len(specific_time_sampling)))
+            for i in range(self.nROIs):
+                self.rawFluo2[i,:] = tools.resample(self.t_rawFluo,
+                                               self.rawFluo[i,:],
+                                               specific_time_sampling,
+                                               interpolation=interpolation,
+                                               verbose=verbose)
+            self.rawFluo = self.rawFluo2
+            # then we update the timestamps
+            self.t_rawFluo= specific_time_sampling
 
     ################################################
     #       episodes and visual stim protocols     #

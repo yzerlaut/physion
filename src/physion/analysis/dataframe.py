@@ -6,6 +6,7 @@ from physion.analysis import read_NWB, process_NWB
 def NWB_to_dataframe(nwbfile,
                      visual_stim_label='per-protocol',
                      time_sampling_reference='dFoF',
+                     subsampling=None,
                      verbose=True):
     """
     builds a pandas.DataFrame from a nwbfile 
@@ -14,22 +15,33 @@ def NWB_to_dataframe(nwbfile,
     visual stimulation can be labelled either:
         - "per-protocol"   or
         - "per-protocol-and-parameters"
+        - "per-protocol-and-parameters-and-timepoints"
 
     """
     data = read_NWB.Data(nwbfile, verbose=verbose)
 
+    if subsampling is None:
+        subsampling = 1
+
     if time_sampling_reference=='dFoF' and ('ophys' in data.nwbfile.processing):
-        data.build_dFoF(verbose=verbose)
-        time = data.t_dFoF
+        time = np.array(data.Fluorescence.timestamps[:])[::subsampling]
+        data.build_dFoF(specific_time_sampling=time,
+                        interpolation='linear',
+                        verbose=verbose)
     else:
         print('taking running pseed by default')
-        time = data.t_running_speed
+        time = data.t_running_speed[::subsampling]
 
     dataframe = pandas.DataFrame({'time':time})
 
     # - - - - - - - - - - - - - - - 
     # --- neural activity 
     if 'ophys' in data.nwbfile.processing:
+
+        if not hasattr(data, 'dFoF'):
+            data.build_dFoF(specific_time_sampling=time,
+                            interpolation='linear',
+                            verbose=verbose)
 
         for i in range(data.vNrois):
 
@@ -83,7 +95,8 @@ def NWB_to_dataframe(nwbfile,
                     build_stim_specific_array(data,
                                               protocol_cond,
                                               dataframe['time'])  
-        else:
+
+        elif visual_stim_label=='per-protocol-and-parameters':
 
             # a binary array for this stimulation protocol,
             #       and a given set of stimulation parameters
@@ -128,6 +141,56 @@ def NWB_to_dataframe(nwbfile,
                                                   protocol_cond,
                                                   dataframe['time'])  
 
+        elif visual_stim_label=='per-protocol-and-parameters-and-timepoints':
+
+            # a binary array for this stimulation protocol,
+            #       and a given set of stimulation parameters
+            #       and a given frame delay from the stimulus start
+
+            VARIED_KEYS, VARIED_VALUES, VARIED_INDICES = [], [], []
+            for key in episodes.varied_parameters:
+                if key!='repeat':
+                    VARIED_KEYS.append(key)
+                    VARIED_VALUES.append(episodes.varied_parameters[key])
+                    VARIED_INDICES.append(\
+                            np.arange(len(episodes.varied_parameters[key])))
+                    
+            if len(VARIED_KEYS)>0:
+
+                for indices in itertools.product(*VARIED_INDICES):
+
+                    # start from protocol_condition
+                    episode_cond = np.zeros(len(protocol_cond), dtype=bool)
+                    # then find the right parameters
+                    for ep_in_protocol, in_episodes in zip(\
+                            np.flatnonzero(protocol_cond),
+                            episodes.find_episode_cond(VARIED_KEYS,
+                                                       list(indices))):
+                        # switch to True
+                        if in_episodes:
+                            episode_cond[ep_in_protocol] = True 
+
+
+                    stim_name = 'VisStim_%s'%protocol
+                    for key, index in zip(VARIED_KEYS, indices):
+                        stim_name+='--%s_%s' % (key,
+                                        episodes.varied_parameters[key][index])
+                    dataframe[stim_name] =\
+                            build_stim_specific_array(data,
+                                                      episode_cond,
+                                                      dataframe['time'])  
+            else:
+
+                # no varied parameter
+                dataframe['VisStim-%s'%protocol] = \
+                        build_stim_specific_array(data,
+                                                  protocol_cond,
+                                                  dataframe['time'])  
+
+        else:
+            print('visual_stim_label key not recognized !')
+            print(' ---> no visual stim array in the dataframe')
+
     return dataframe
 
 def build_stim_specific_array(data, index_cond, time):
@@ -145,6 +208,23 @@ def build_stim_specific_array(data, index_cond, time):
             array[t_cond] = 1
 
     return array
+
+def build_timelag_set_of_stim_specific_arrays(data, index_cond, time):
+
+    array = 0*time
+
+    # looping over all repeats of this index
+    for i in np.flatnonzero(index_cond):
+
+        if i<data.nwbfile.stimulus['time_start_realigned'].num_samples:
+            tstart = data.nwbfile.stimulus['time_start_realigned'].data[i]
+            tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i]
+
+            t_cond = (time>=tstart) & (time<tstop)
+            array[t_cond] = 1
+
+    return array
+
 
 def extract_stim_keys(dataframe):
 
