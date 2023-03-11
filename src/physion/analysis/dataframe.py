@@ -264,8 +264,8 @@ def build_timelag_set_of_stim_specific_arrays(data, DF, index_cond,
             for j in np.arange(-Nframe_pre, Nframe_stim+Nframe_post+1):
                 DF.loc[iT0+j, '%s__%i' % (stim_name, j)] = True
 
-
-def extract_stim_keys(dataframe):
+def extract_stim_keys(dataframe,
+                      indices_subset=None):
     """
     keys are of the form:
 
@@ -284,27 +284,37 @@ def extract_stim_keys(dataframe):
 
         if 'VisStim_' in key:
 
-            s = key.replace('VisStim_', '').split('__')[0] # i.e. removing timestamps if there
-            protocol = s.split('--')[0]
-                
-            if not protocol in STIM:
-                STIM[protocol] = {'DF-key':[], 'times':[]}
+            include = True
+            if indices_subset is not None:
+                # find where it 
+                iStart = np.flatnonzero(dataframe[key]>0)[0]
+                #print(iStart)
+                if not iStart in indices_subset:
+                    include = False
 
-            STIM[protocol]['DF-key'].append(key)
+            if include:
 
-            if len(key.split('__'))>1:
-                STIM[protocol]['times'].append(dataframe.dt*int(key.split('__')[1]))
-            else:
-                STIM[protocol]['times'].append(0)
+                s = key.replace('VisStim_', '').split('__')[0] # i.e. removing timestamps if there
+                protocol = s.split('--')[0]
 
-            keys_vals = s.split('--')
-            if len(keys_vals)>1:
-                for key_val in keys_vals[1:]:
-                    k, v = key_val.split('_')
-                    if not k in STIM[protocol]:
-                        STIM[protocol][k] = [v]
-                    else:
-                        STIM[protocol][k].append(v)
+                if not protocol in STIM:
+                    STIM[protocol] = {'DF-key':[], 'times':[]}
+
+                STIM[protocol]['DF-key'].append(key)
+
+                if len(key.split('__'))>1:
+                    STIM[protocol]['times'].append(dataframe.dt*int(key.split('__')[1]))
+                else:
+                    STIM[protocol]['times'].append(0)
+
+                keys_vals = s.split('--')
+                if len(keys_vals)>1:
+                    for key_val in keys_vals[1:]:
+                        k, v = key_val.split('_')
+                        if not k in STIM[protocol]:
+                            STIM[protocol][k] = [v]
+                        else:
+                            STIM[protocol][k].append(v)
 
     # convert to numpy arrays
     for protocol in STIM:
@@ -312,6 +322,8 @@ def extract_stim_keys(dataframe):
             STIM[protocol][key] = np.array(STIM[protocol][key])
 
     return STIM
+
+
 
 
 if __name__=='__main__':

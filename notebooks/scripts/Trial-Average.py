@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.5
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -101,7 +101,7 @@ for ax in pt.flatten(AX):
                            Xbar=1., Xbar_label='1s',
                            Ybar=1, Ybar_label='1$\Delta$F/F', fontsize=7)
 pt.set_common_xlims(AX)
-fig.savefig('/home/yann.zerlaut/Desktop/NDNF-summary/single-ROI.svg')
+#fig.savefig('/home/yann.zerlaut/Desktop/NDNF-summary/single-ROI.svg')
 
 # %% [markdown]
 # ## Showing average over ROIs
