@@ -67,18 +67,6 @@ def inset(stuff,
 
     return subax
 
-def pie(data,
-        ax=None):
-
-    if ax is None:
-        fig, ax = figure()
-    else:
-        fig = None
-
-    ax.pie(data)
-
-    return fig, ax
-
 
 def pie(data,
         ax=None,
@@ -187,7 +175,7 @@ def draw_bar_scales(ax,
                     color='k', xcolor='k', ycolor='k', ycolor2='grey',
                     fontsize=8, size='normal',
                     shift_factor=20., lw=1,
-                    remove_axis=False):
+                    remove_axis=''):
     """
     USE:
 
@@ -272,8 +260,15 @@ def draw_bar_scales(ax,
         - left-bottom, bottom-left
         """)
         
-    if remove_axis:
+    if remove_axis=='both':
         ax.axis('off')
+    elif remove_axis=='x':
+        ax.axes.get_xaxis().set_visible(False)
+        ax.spines[['bottom']].set_visible(False)
+    elif remove_axis=='y':
+        ax.axes.get_yaxis().set_visible(False)
+        ax.spines[['left']].set_visible(False)
+
 
 def adjacent_values(vals, q1, q3):
     upper_adjacent_value = q3 + (q3 - q1) * 1.5
