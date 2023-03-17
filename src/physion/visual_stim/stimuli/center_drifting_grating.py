@@ -66,7 +66,7 @@ class stim(vis_stim_image_built):
         cls = (parent if parent is not None else self)
         ax = self.show_frame(episode, ax=ax, label=label,
                              parent=parent)
-        arrow['direction'] = cls.experiment['direction'][episode]
+        arrow['direction'] = cls.experiment['angle'][episode]
         arrow['center'] = [cls.experiment['x-center'][episode],
                            cls.experiment['y-center'][episode]]
         self.add_arrow(arrow, ax)
