@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.5
+#       jupytext_version: 1.14.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -28,7 +28,7 @@ from physion.dataviz.episodes.trial_average import plot_trial_average
 # %%
 # load a datafile
 datafolder = os.path.join(os.path.expanduser('~'), 'CURATED' , 'NDNF-December-2022')
-filename = os.path.join(datafolder, '2022_12_14-13-27-41.nwb')
+filename = os.path.join(os.path.expanduser('~'), 'CURATED' , 'NDNF-December-2022', '2022_12_14-13-27-41.nwb')
 data = Data(filename,
             verbose=False)
 data.build_dFoF(verbose=False)
