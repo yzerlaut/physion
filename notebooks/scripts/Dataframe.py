@@ -13,6 +13,9 @@
 #     name: python3
 # ---
 
+# %% [markdown]
+# # Convert NWB files to pandas Dataframes
+
 # %%
 # general python modules for scientific analysis
 import sys, pathlib, os
@@ -27,6 +30,8 @@ from physion.utils import plot_tools as pt
 filename = os.path.join(os.path.expanduser('~'), 'CURATED' , 'NDNF-December-2022', '2022_12_14-13-27-41.nwb')
 data = NWB_to_dataframe(filename,
                         visual_stim_label='per-protocol',
+                        #visual_stim_label='per-protocol-and-parameters',
+                        #visual_stim_label='per-protocol-and-parameters-and-timepoints', #
                         subsampling = 10,
                         verbose=False)
 
@@ -53,27 +58,8 @@ i = 0
 for key in data.keys():
     if key !='time':
         c = color(key)
-        ax.plot(data['time'], -i+.8*min_max(data[key]), color=c, lw=1)
+        ax.plot(data['time'], -i+.8*min_max(data[key].astype(float)), color=c, lw=1) # convert bool to float when needed
         ax.annotate(key+' ', (0, -i+.1), ha='right', color=c)
         i+=1
                 
 ax.axis('off');
-
-# %%
-filename = os.path.join(os.path.expanduser('~'), 'CURATED' , 'NDNF-December-2022', '2022_12_14-13-27-41.nwb')
-data = NWB_to_dataframe(filename,
-                        visual_stim_label='per-protocol-and-parameters',
-                        verbose=False)
-
-# %%
-fig, ax = pt.plt.subplots(figsize=(8,10))
-i = 0
-for key in data.keys():
-    if key !='time':
-        c = color(key)
-        ax.plot(data['time'], -i+.8*min_max(data[key]), color=c, lw=1)
-        ax.annotate(key+' ', (0, -i+.1), ha='right', color=c)
-        i+=1 
-ax.axis('off');
-
-# %%
