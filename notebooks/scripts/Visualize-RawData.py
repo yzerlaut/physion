@@ -26,16 +26,18 @@ from physion.dataviz.raw import plot as plot_raw
 
 # %%
 # load a datafile
-filename = os.path.join(os.path.expanduser('~'), 'ASSEMBLE' , '2023_03_06-11-55-20.nwb')
+filename = os.path.join(os.path.expanduser('~'), 
+                        'CURATED', 'SST-GluN3KO-February-2023', '2023_02_16-10-44-38.nwb')
 data = Data(filename,
             verbose=False)
 data.build_dFoF(verbose=False)
 
+# %% [markdown]
+# ## Showing Field of View
+
 # %%
-from scipy.ndimage import gaussian_filter1d
-for i in range(data.nROIs):
-    data.dFoF[i] = gaussian_filter1d(data.dFoF[i], 1, mode='nearest')
-    
+from physion.dataviz.imaging import show_CaImaging_FOV
+show_CaImaging_FOV(data, key='meanImg', NL=10, roiIndices=range(data.nROIs))
 
 # %% [markdown]
 # ## Showing visually evoked activity
@@ -46,10 +48,10 @@ tlim = [38,88]
 fig, _ = plot_raw(data, tlim, 
                   settings={'CaImaging':dict(fig_fraction=3, subsampling=1, 
                                              subquantity='dF/F', color='tab:green',
-                                             roiIndices=[0,1,2,3,4,5,6]),
+                                             roiIndices=[6]+list(np.random.choice(range(data.nROIs), 7))),
                             'VisualStim':dict(fig_fraction=0, color='black')},
-                            Tbar=1)#, figsize=(1.5,3))
-fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'fig.svg'))
+                            Tbar=1)
+#fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'fig.svg'))
 
 # %% [markdown]
 # ## Showing visually-evoked + behavior
@@ -73,3 +75,5 @@ fig, _ = plot_raw(data, tlim,
                             Tbar=5, figsize=(2,4))
 #ge.save_on_desktop(fig)
 
+
+# %%
