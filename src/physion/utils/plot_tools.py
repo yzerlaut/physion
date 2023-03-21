@@ -2,7 +2,7 @@ import os, pathlib
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pylab as plt
-from matplotlib.pylab import Circle, setp
+from matplotlib.pylab import Circle, setp, subplots
 
 plt.style.use(os.path.join(pathlib.Path(__file__).resolve().parents[1],
                     'utils', 'matplotlib_style.py'))
