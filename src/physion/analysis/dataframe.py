@@ -286,10 +286,8 @@ def extract_stim_keys(dataframe,
 
             include = True
             if indices_subset is not None:
-                # find where it 
-                iStart = np.flatnonzero(dataframe[key]>0)[0]
-                #print(iStart)
-                if not iStart in indices_subset:
+                # add it only if interesction with indices subset
+                if not len(np.intersect1d(np.flatnonzero(dataframe[key]>0), indices_subset))>0:
                     include = False
 
             if include:
@@ -331,11 +329,21 @@ if __name__=='__main__':
 
     if ('.nwb' in sys.argv[-1]) and os.path.isfile(sys.argv[-1]):
 
-        dataframe = NWB_to_dataframe(sys.argv[-1],
+        df = NWB_to_dataframe(sys.argv[-1],
                     visual_stim_label='per-protocol-and-parameters',
                                      verbose=False)
 
-        print(extract_stim_keys(dataframe))
+        indices = np.arange(len(df['time']))
+
+        stim_cond = (~df['VisStim-grey-10min'])
+        Nstim = int(np.sum(stim_cond)/2)
+
+        stim_test_sets = [indices[stim_cond][Nstim:],
+                           indices[stim_cond][:Nstim]]
+
+        STIM = extract_stim_keys(df, indices_subset=stim_test_sets[0])
+        print(STIM)
+
         # print(dataframe)
     else:
 
