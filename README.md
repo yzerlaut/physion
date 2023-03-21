@@ -56,7 +56,7 @@ The different modules of the software are documented in the following links:
 - [Face Motion tracking](src/physion/facemotion/README.md)
 - [Behavior](src/physion/behavior/README.md) 
 - [Assembling pipeline](src/physion/assembling/README.md)
-- [Hardware control](src/physion/hardware_control/README.md)
+- [Hardware control](src/physion/hardware/README.md)
 - [Visualization](src/physion/dataviz/README.md)
 - [Analysis](src/physion/analysis/README.md)
 - [Sharing](src/physion/sharing/README.md)
