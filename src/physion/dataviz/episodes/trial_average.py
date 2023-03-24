@@ -40,7 +40,8 @@ def plot_trial_average(episodes,
                        color='k',
                        label='',
                        ylim=None, xlim=None,
-                       fig=None, AX=None, no_set=True, verbose=False):
+                       fig=None, AX=None, figsize=(5,3),
+                       no_set=True, verbose=False):
     """
         
     "norm" can be either:
@@ -101,8 +102,9 @@ def plot_trial_average(episodes,
     # condition = [...]
             
     if (fig is None) and (AX is None):
-        fig, AX = pt.figure(axes=(len(COL_CONDS), len(ROW_CONDS)),
-                            keep_shape=True)
+        fig, AX = pt.subplots(len(ROW_CONDS), len(COL_CONDS),
+                            figsize=figsize,
+                            squeeze=False)
         no_set=False
     else:
         no_set=no_set
@@ -267,11 +269,14 @@ if __name__=='__main__':
     import physion
     if os.path.isfile(args.datafile):
         data = physion.analysis.read_NWB.Data(args.datafile)
+        data.init_visual_stim()
         episodes = physion.analysis.process_NWB.EpisodeData(data,
                 quantities=['dFoF'],
                 protocol_id=args.protocol_id)
+        episodes.init_visual_stim(data)
 
-        plot_trial_average(episodes)
+        plot_trial_average(episodes,
+                           with_screen_inset=True)
         pt.plt.show()
 
     else:
