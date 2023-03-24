@@ -1,7 +1,5 @@
-# Data sharing pipeline
+# Data Sharing
 
-## ...
+[...] in progress
 
-in progress [...]
-
-
+- use fairgraph to interact with the Ebrains KG
