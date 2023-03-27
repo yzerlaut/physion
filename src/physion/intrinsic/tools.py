@@ -366,8 +366,8 @@ def plot_phase_power_maps(maps, direction,
                           ge=ge_screen):
 
 
-    fig, AX = plt.subplots(1, 2, figsize=(4,1.3))
-    plt.subplots_adjust(bottom=0, wspace=2, right=0.6)
+    fig, AX = plt.subplots(1, 2, figsize=(6,2))
+    plt.subplots_adjust(bottom=0, wspace=1, right=0.9)
 
     plt.annotate('"%s" protocol' % direction, (0.5,.99), ha='center', va='top',
                  xycoords='figure fraction')
