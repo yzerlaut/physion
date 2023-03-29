@@ -1,5 +1,2 @@
 Subject-ID,Anibio-Number,Date-of-Birth,Tatoo,Sex,Strain,Genotype,Surgery,Surgery-Date,Virus,headplate-angle-from-rig-axis,FOV1,FOV2,FOV3
-MAAD1_SSTcre,,30/10/2022,left ear cut,Female,C57B6/J,SSTcre,headplate+injection,02/03/2023,VR18+VR32,10,,,
-MAAD2_SSTcre,,30/10/2022,2 red lines,Female,C57B6/J,SSTcre,headplate+injection,02/03/2023,VR18+VR32,10,,,
-MAAE1_SSTcre,,30/10/2022,1 red line,Male,C57B6/J,SSTcre,headplate+injection,02/03/2023,VR15,10,,,
-MAAE2_SSTcre,,30/10/2022,2 red lines,Male,C57B6/J,SSTcre,headplate+injection,02/03/2023,VR15,10,,,
+MAAD1_SSTcreXtdTomato,NA,05/01/2023,NA,Male,C57B6/J,SSTcre,headplate+injection,23/02/2023,VR27,10,"(540, 43, 281)","(542, 121, 145)",
