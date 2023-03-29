@@ -1,8 +1,7 @@
 {
-  "Presentation": "Randomized-Sequence",
+  "Presentation": "Stimuli-Sequence",
   "Stimulus": "center-grating-image",
   "Screen": "Dell-2020",
-  "shuffling-seed": 23,
   "movie_refresh_freq":0.01,
   "presentation-duration": 1,
   "presentation-prestim-period": 2,
