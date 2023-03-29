@@ -331,6 +331,7 @@ def add_arrow(ax, angle,
 
     start = (xlim[1], ylim[1]+dy/2)
     delta = (-dx, np.sin(angle/180.*np.pi)*dx)
+    t
     ax.annotate('Lateral ', start,
                 ha='right', color='r', fontsize=fontsize)
     ax.arrow(*start, *delta, color='r', lw=lw)
@@ -345,8 +346,10 @@ def plot_phase_map(ax, fig, Map):
     im = ax.imshow(Map,
                    cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
     cbar = fig.colorbar(im, ax=ax,
-                  ticks=[0, np.pi, 2*np.pi], 
-                  label='phase (Rd)')
+                        ticks=[0, np.pi, 2*np.pi], 
+                        shrink=0.4,
+                        aspect=10,
+                        label='phase (Rd)')
     cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
 
 def plot_power_map(ax, fig, Map,
@@ -356,18 +359,19 @@ def plot_power_map(ax, fig, Map,
         bounds = [np.min(1e4*Map), np.max(1e4*Map)]
 
     im = ax.imshow(1e4*Map, cmap=plt.cm.binary,
-                    vmin=bounds[0], vmax=bounds[1])
+                   vmin=bounds[0], vmax=bounds[1])
     ax.set_title('power map')
     fig.colorbar(im, ax=ax,
+                 shrink=0.4,
+                 aspect=10,
                  label='relative power \n ($10^{-4}$ a.u.)')
 
 
-def plot_phase_power_maps(maps, direction,
-                          ge=ge_screen):
+def plot_phase_power_maps(maps, direction):
 
 
-    fig, AX = plt.subplots(1, 2, figsize=(6,2))
-    plt.subplots_adjust(bottom=0, wspace=1, right=0.9)
+    fig, AX = plt.subplots(1, 2, figsize=(7,2.3))
+    plt.subplots_adjust(bottom=0, top=1, wspace=1, right=0.8)
 
     plt.annotate('"%s" protocol' % direction, (0.5,.99), ha='center', va='top',
                  xycoords='figure fraction')

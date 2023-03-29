@@ -1,7 +1,2 @@
 Subject-ID,Anibio-Number,Date-of-Birth,Tatoo,Sex,Strain,Genotype,Surgery,Surgery-Date,Virus,headplate-angle-from-rig-axis,FOV1,FOV2,FOV3
-MT1_SSTtdTomato,,02/12/2022,no-mark,Female,C57B6/J,SSTtdTomato,headplate+injection,24/01/2022,VR21,10,"(381,7)","(134, 552)",
-MT2_SSTtdTomato,,02/12/2022,cut-left-ear,Female,C57B6/J,SSTtdTomato,headplate+injection,26/01/2022,VR21,10,"(-326, -157)","(-157, -970)",
-MAAA1_SSTtdTomatoxGluN1KO,473,20/10/2022,,Female,C57B6/J,SSTtdTomatoxGluN1KO,headplate+injection,21/12/2022,VR21,10,"(159, 219)","(18, -638)",
-MAAB1_SSTtdTomatoxGluN1KO,,06/12/2022,no-mark,Male,C57B6/J,SSTtdTomatoxGluN1KO,headplate+injection,16/01/2023,VR21,,,,
-MAAB2_SSTtdTomatoxGluN1KO,,06/12/2022,cut-left-ear,Male,C57B6/J,SSTtdTomatoxGluN1KO,headplate+injection,16/01/2023,VR21,10,"(-84, 221)","(-231, 716)",
-MAAC4_SSTtdTomatoxGluN1KO,,06/12/2022,cut-left+right-ear,Male,C57B6/J,SSTtdTomatoxGluN1KO,headplate+injection,26/01/2023,VR21,10,"(1026, -193)","(191, -558)",
+MAAD1_SSTcreXtdTomato,NA,05/01/2023,NA,Male,C57B6/J,SSTcre,headplate+injection,23/02/2023,VR27,10,"(540, 43, 281)","(542, 121, 145)",

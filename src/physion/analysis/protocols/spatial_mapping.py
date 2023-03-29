@@ -268,7 +268,7 @@ def generate_figs(args,
 
 def summary_fig(results, episodes, args):
 
-    nROIs = (data.vNrois if args.imaging_quantity=='dFoF' else data.nROIs)
+    nROIs = (episodes.data.vNrois if args.imaging_quantity=='dFoF' else episodes.data.nROIs)
 
     other_keys = []
     for key in results:
