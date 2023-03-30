@@ -3,9 +3,17 @@ import numpy as np
 
 from physion.analysis import read_NWB, process_NWB
 
+def Normalize(x):
+    if np.std(x)>0:
+        return (x-np.mean(x))/np.std(x)
+    else:
+        return np.zeros(len(x))
+
 def NWB_to_dataframe(nwbfile,
                      visual_stim_label='per-protocol',
+                     exclude_from_timepoints=['grey-screen-10min'],
                      time_sampling_reference='dFoF',
+                     normalize=[], # array of quantities to normalize
                      subsampling=None,
                      verbose=True):
     """
@@ -16,6 +24,10 @@ def NWB_to_dataframe(nwbfile,
         - "per-protocol"   or
         - "per-protocol-and-parameters"
         - "per-protocol-and-parameters-and-timepoints"
+
+    ---
+    possibility to normalize some quantities set in the "normalize" array
+    e.g. normalize = ['Running-Speed', 'Pupil-diameter', 'Whisking', 'dFoF']
 
     """
     data = read_NWB.Data(nwbfile, verbose=verbose)
@@ -46,7 +58,10 @@ def NWB_to_dataframe(nwbfile,
 
         for i in range(data.vNrois):
 
-            dataframe['dFoF-ROI%i'%i] = data.dFoF[i,:]
+            if ('dFoF' in normalize) or (normalize=='all'):
+                dataframe['dFoF-ROI%i'%i] = Normalize(data.dFoF[i,:])
+            else:
+                dataframe['dFoF-ROI%i'%i] = data.dFoF[i,:]
 
     # - - - - - - - - - - - - - - - 
     # --- behavioral characterization
@@ -56,6 +71,9 @@ def NWB_to_dataframe(nwbfile,
         dataframe['Running-Speed'] = data.build_running_speed(\
                                         specific_time_sampling=time,
                                         verbose=verbose)
+        if ('Running-Speed' in normalize) or (normalize=='all'):
+            dataframe['Running-Speed'] = Normalize(dataframe['Running-Speed'])
+
 
 
     if 'Pupil' in data.nwbfile.processing:
@@ -63,18 +81,24 @@ def NWB_to_dataframe(nwbfile,
         dataframe['Pupil-diameter'] = data.build_pupil_diameter(\
                                         specific_time_sampling=time,
                                         verbose=verbose)
+        if ('Pupil-diameter') in normalize or (normalize=='all'):
+            dataframe['Pupil-diameter'] = Normalize(dataframe['Pupil-diameter'])
     
     if 'Pupil' in data.nwbfile.processing:
 
         dataframe['Gaze-Position'] = data.build_gaze_movement(\
                                         specific_time_sampling=time,
                                         verbose=verbose)
+        if ('Gaze-Position') in normalize or (normalize=='all'):
+            dataframe['Gaze-Position'] = Normalize(dataframe['Gaze-Position'])
         
     if 'FaceMotion' in data.nwbfile.processing:
 
         dataframe['Whisking'] = data.build_facemotion(\
                                     specific_time_sampling=time,
                                         verbose=verbose)
+        if ('Whisking' in normalize) or (normalize=='all'):
+            dataframe['Whisking'] = Normalize(dataframe['Whisking'])
     
     # - - - - - - - - - - - - - - - 
     # --- visual stimulation
@@ -148,50 +172,52 @@ def NWB_to_dataframe(nwbfile,
             #       and a given set of stimulation parameters
             #       and a given frame delay from the stimulus start
 
-            VARIED_KEYS, VARIED_VALUES, VARIED_INDICES = [], [], []
-            for key in episodes.varied_parameters:
-                if key!='repeat':
-                    VARIED_KEYS.append(key)
-                    VARIED_VALUES.append(episodes.varied_parameters[key])
-                    VARIED_INDICES.append(\
-                            np.arange(len(episodes.varied_parameters[key])))
-                    
-            if len(VARIED_KEYS)>0:
+            if protocol not in exclude_from_timepoints:
 
-                for indices in itertools.product(*VARIED_INDICES):
+                VARIED_KEYS, VARIED_VALUES, VARIED_INDICES = [], [], []
+                for key in episodes.varied_parameters:
+                    if key!='repeat':
+                        VARIED_KEYS.append(key)
+                        VARIED_VALUES.append(episodes.varied_parameters[key])
+                        VARIED_INDICES.append(\
+                                np.arange(len(episodes.varied_parameters[key])))
+                        
+                if len(VARIED_KEYS)>0:
 
-                    # start from protocol_condition
-                    episode_cond = np.zeros(len(protocol_cond), dtype=bool)
-                    # then find the right parameters
-                    for ep_in_protocol, in_episodes in zip(\
-                            np.flatnonzero(protocol_cond),
-                            episodes.find_episode_cond(VARIED_KEYS,
-                                                       list(indices))):
-                        # switch to True
-                        if in_episodes:
-                            episode_cond[ep_in_protocol] = True 
+                    for indices in itertools.product(*VARIED_INDICES):
+
+                        # start from protocol_condition
+                        episode_cond = np.zeros(len(protocol_cond), dtype=bool)
+                        # then find the right parameters
+                        for ep_in_protocol, in_episodes in zip(\
+                                np.flatnonzero(protocol_cond),
+                                episodes.find_episode_cond(VARIED_KEYS,
+                                                           list(indices))):
+                            # switch to True
+                            if in_episodes:
+                                episode_cond[ep_in_protocol] = True 
 
 
+                        stim_name = 'VisStim_%s'%protocol
+                        for key, index in zip(VARIED_KEYS, indices):
+                            stim_name+='--%s_%s' % (key,
+                                            episodes.varied_parameters[key][index])
+                        build_timelag_set_of_stim_specific_arrays(data, 
+                                                                  dataframe,
+                                                                  episode_cond, 
+                                                                  stim_name=stim_name,
+                                                                  pre_interval=0.5,
+                                                                  post_interval=1.5) # PASS AS ARGUMENTS ABOVE !!
+                else:
+
+                    # no varied parameter
                     stim_name = 'VisStim_%s'%protocol
-                    for key, index in zip(VARIED_KEYS, indices):
-                        stim_name+='--%s_%s' % (key,
-                                        episodes.varied_parameters[key][index])
                     build_timelag_set_of_stim_specific_arrays(data, 
                                                               dataframe,
-                                                              episode_cond, 
+                                                              protocol_cond, 
                                                               stim_name=stim_name,
                                                               pre_interval=0.5,
                                                               post_interval=1.5) # PASS AS ARGUMENTS ABOVE !!
-            else:
-
-                # no varied parameter
-                stim_name = 'VisStim_%s'%protocol
-                build_timelag_set_of_stim_specific_arrays(data, 
-                                                          dataframe,
-                                                          protocol_cond, 
-                                                          stim_name=stim_name,
-                                                          pre_interval=0.5,
-                                                          post_interval=1.5) # PASS AS ARGUMENTS ABOVE !!
 
         else:
             print('visual_stim_label key not recognized !')
