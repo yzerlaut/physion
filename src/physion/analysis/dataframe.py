@@ -161,7 +161,7 @@ def NWB_to_dataframe(nwbfile,
             else:
 
                 # no varied parameter
-               dataframe['VisStim-%s'%protocol] = \
+               dataframe['VisStim_%s'%protocol] = \
                         build_stim_specific_array(data,
                                                   protocol_cond,
                                                   dataframe['time'])  
@@ -361,7 +361,7 @@ if __name__=='__main__':
 
         indices = np.arange(len(df['time']))
 
-        stim_cond = (~df['VisStim-grey-10min'])
+        stim_cond = (~df['VisStim_grey-10min'])
         Nstim = int(np.sum(stim_cond)/2)
 
         stim_test_sets = [indices[stim_cond][Nstim:],
