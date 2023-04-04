@@ -11,7 +11,7 @@ def Normalize(x):
 
 def NWB_to_dataframe(nwbfile,
                      visual_stim_label='per-protocol',
-                     exclude_from_timepoints=['grey-screen-10min'],
+                     exclude_from_timepoints=['grey-10min'],
                      time_sampling_reference='dFoF',
                      normalize=[], # array of quantities to normalize
                      subsampling=None,
