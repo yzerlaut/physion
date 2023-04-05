@@ -12,6 +12,8 @@ def Normalize(x):
 def NWB_to_dataframe(nwbfile,
                      visual_stim_label='per-protocol',
                      exclude_from_timepoints=['grey-10min'],
+                     prestim_duration=0.5,
+                     poststim_duration=1.5,
                      time_sampling_reference='dFoF',
                      normalize=[], # array of quantities to normalize
                      subsampling=None,
@@ -46,6 +48,7 @@ def NWB_to_dataframe(nwbfile,
 
     dataframe = pandas.DataFrame({'time':time})
     dataframe.dt = time[1]-time[0] # store the time step in the metadata
+    dataframe.filename = os.path.basename(nwbfile) # keep filename
 
     # - - - - - - - - - - - - - - - 
     # --- neural activity 
@@ -172,7 +175,7 @@ def NWB_to_dataframe(nwbfile,
             #       and a given set of stimulation parameters
             #       and a given frame delay from the stimulus start
 
-            if protocol not in exclude_from_timepoints:
+            if (protocol not in exclude_from_timepoints):
 
                 VARIED_KEYS, VARIED_VALUES, VARIED_INDICES = [], [], []
                 for key in episodes.varied_parameters:
@@ -206,8 +209,8 @@ def NWB_to_dataframe(nwbfile,
                                                                   dataframe,
                                                                   episode_cond, 
                                                                   stim_name=stim_name,
-                                                                  pre_interval=0.5,
-                                                                  post_interval=1.5) # PASS AS ARGUMENTS ABOVE !!
+                                                                  pre_interval=prestim_duration,
+                                                                  post_interval=poststim_duration) # PASS AS ARGUMENTS ABOVE !!
                 else:
 
                     # no varied parameter
@@ -216,8 +219,8 @@ def NWB_to_dataframe(nwbfile,
                                                               dataframe,
                                                               protocol_cond, 
                                                               stim_name=stim_name,
-                                                              pre_interval=0.5,
-                                                              post_interval=1.5) # PASS AS ARGUMENTS ABOVE !!
+                                                              pre_interval=prestim_duration,
+                                                              post_interval=poststim_duration) # PASS AS ARGUMENTS ABOVE !!
 
         else:
             print('visual_stim_label key not recognized !')
