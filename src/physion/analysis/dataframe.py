@@ -233,6 +233,14 @@ def NWB_to_dataframe(nwbfile,
                 print('visual_stim_label key not recognized !')
                 print(' ---> no visual stim array in the dataframe')
 
+   
+    # adding a visual stimulation flag variable, merging all stimulation
+    visualStimFlag = np.zeros(len(dataframe['time']), dtype=bool)
+    for key in dataframe:
+        if 'VisStim' in key:
+            visualStimFlag = visualStimFlag | dataframe[key]
+    dataframe['visualStimFlag'] = visualStimFlag
+
     return dataframe
 
 
