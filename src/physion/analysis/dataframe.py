@@ -40,9 +40,6 @@ def NWB_to_dataframe(nwbfile,
 
     if time_sampling_reference=='dFoF' and ('ophys' in data.nwbfile.processing):
         time = np.array(data.Fluorescence.timestamps[:])[::subsampling]
-        data.build_dFoF(specific_time_sampling=time,
-                        interpolation='linear',
-                        verbose=verbose)
     else:
         print('taking running pseed by default')
         time = data.t_running_speed[::subsampling]
@@ -59,6 +56,8 @@ def NWB_to_dataframe(nwbfile,
             data.build_dFoF(specific_time_sampling=time,
                             interpolation='linear',
                             verbose=verbose)
+
+        dataframe.vNrois = data.vNrois
 
         for i in range(data.vNrois):
 
