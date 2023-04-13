@@ -1,5 +1,10 @@
 import numpy as np
-import itertools, os, sys, pathlib, time, json, tempfile
+import itertools
+import os
+import pathlib
+import time
+import json
+
 try:
     from psychopy import visual, core, event, clock, monitors
 except ModuleNotFoundError:
@@ -8,8 +13,9 @@ except ModuleNotFoundError:
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
 
+
 def stop_signal(parent):
-    if (len(event.getKeys())>0) or (parent.stop_flag):
+    if (len(event.getKeys()) > 0) or parent.stop_flag:
         parent.stop_flag = True
         if hasattr(parent, 'statusBar'):
             parent.statusBar.showMessage('stimulation stopped !')
@@ -19,6 +25,8 @@ def stop_signal(parent):
 
 
 class visual_stim:
+    """
+    """
 
     def __init__(self,
                  protocol,
@@ -27,17 +35,21 @@ class visual_stim:
         """
         self.protocol = protocol
         self.screen = SCREENS[self.protocol['Screen']]
-        self.buffer = None # by default, non-buffered data
-        self.buffer_delay = 0            
+        self.buffer = None  # by default, non-buffered data
+        self.buffer_delay = 0
 
-        self.protocol['movie_refresh_freq'] = protocol['movie_refresh_freq'] if 'movie_refresh_freq' in protocol else 10.
+        self.protocol['movie_refresh_freq'] = \
+            protocol['movie_refresh_freq']\
+            if 'movie_refresh_freq' in protocol else 10.
 
         if demo or (('demo' in self.protocol) and self.protocol['demo']):
             # --------------------- #
-            ## ---- DEMO MODE ---- ##    we override the parameters
+            #  ---- DEMO MODE ---- ##    we override the parameters
             # --------------------- #
-            self.screen['monitoring_square']['size'] = int(600*self.screen['monitoring_square']['size']/self.screen['resolution'][0])
-            self.screen['resolution'] = (800,int(800*self.screen['resolution'][1]/self.screen['resolution'][0]))
+            sr0, sr1 = self.screen['resolution']
+            self.screen['monitoring_square']['size'] = \
+                int(600*self.screen['monitoring_square']['size']/sr0)
+            self.screen['resolution'] = (800, int(800*sr1/sr0))
             self.screen['screen_id'] = 0
             self.screen['fullscreen'] = False
 
@@ -48,24 +60,38 @@ class visual_stim:
 
             self.monitor = monitors.Monitor(self.screen['name'])
             self.monitor.setDistance(self.screen['distance_from_eye'])
-            self.k, self.gamma = self.screen['gamma_correction']['k'], self.screen['gamma_correction']['gamma']
+            self.k = self.screen['gamma_correction']['k']
+            self.gamma = self.screen['gamma_correction']['gamma']
 
-            self.win = visual.Window(self.screen['resolution'], monitor=self.monitor,
-                                     screen=self.screen['screen_id'], fullscr=self.screen['fullscreen'],
+            self.win = visual.Window(self.screen['resolution'],
+                                     monitor=self.monitor,
+                                     screen=self.screen['screen_id'],
+                                     fullscr=self.screen['fullscreen'],
                                      units='pix',
-                                     color=self.gamma_corrected_lum(self.protocol['presentation-prestim-screen']))
+                                     color=self.gamma_corrected_lum(
+                                        self.protocol['presentation-prestim-screen']))
 
             # ---- blank screens ----
 
-            self.blank_start = visual.GratingStim(win=self.win, size=10000, pos=[0,0], sf=0,
-                                                  color=self.gamma_corrected_lum(self.protocol['presentation-prestim-screen']),
+            pre_color=self.gamma_corrected_lum(self.protocol['presentation-prestim-screen'])
+            self.blank_start = visual.GratingStim(win=self.win, size=10000,
+                                                  pos=[0,0], sf=0,
+                                                  color=pre_color,
                                                   units='pix')
             if 'presentation-interstim-screen' in self.protocol:
-                self.blank_inter = visual.GratingStim(win=self.win, size=10000, pos=[0,0], sf=0,
-                                                      color=self.gamma_corrected_lum(self.protocol['presentation-interstim-screen']),
+
+                inter_color=self.gamma_corrected_lum(\
+                                    self.protocol['presentation-interstim-screen'])
+                self.blank_inter = visual.GratingStim(win=self.win,
+                                                      size=10000,
+                                                      pos=[0,0], sf=0,
+                                                      color=inter_color,
                                                       units='pix')
-            self.blank_end = visual.GratingStim(win=self.win, size=10000, pos=[0,0], sf=0,
-                                                color=self.gamma_corrected_lum(self.protocol['presentation-poststim-screen']),
+            end_color=self.gamma_corrected_lum(\
+                                self.protocol['presentation-poststim-screen'])
+            self.blank_end = visual.GratingStim(win=self.win, size=10000,
+                                                pos=[0,0], sf=0,
+                                                color=end_color,
                                                 units='pix')
 
 
@@ -84,10 +110,16 @@ class visual_stim:
             else:
                 print(30*'-'+'\n /!\ monitoring square location not recognized !!')
 
-            self.on = visual.GratingStim(win=self.win, size=self.screen['monitoring_square']['size'], pos=pos, sf=0,
-                                         color=self.screen['monitoring_square']['color-on'], units='pix')
-            self.off = visual.GratingStim(win=self.win, size=self.screen['monitoring_square']['size'],  pos=pos, sf=0,
-                                          color=self.screen['monitoring_square']['color-off'], units='pix')
+            self.on = visual.GratingStim(win=self.win,
+                                         size=self.screen['monitoring_square']['size'],
+                                         pos=pos, sf=0,
+                                         color=self.screen['monitoring_square']['color-on'],
+                                         units='pix')
+            self.off = visual.GratingStim(win=self.win,
+                                          size=self.screen['monitoring_square']['size'],
+                                          pos=pos, sf=0,
+                                          color=self.screen['monitoring_square']['color-off'],
+                                          units='pix')
 
             # initialize the times for the monitoring signals
             self.Ton = int(1e3*self.screen['monitoring_square']['time-on'])
@@ -98,6 +130,7 @@ class visual_stim:
     ################################
     #  ---   Gamma correction  --- #
     ################################
+
     def gamma_corrected_lum(self, level):
         return 2*np.power(((level+1.)/2./self.k), 1./self.gamma)-1.
 
@@ -209,7 +242,7 @@ class visual_stim:
 
         for k in ['index', 'repeat','time_start', 'time_stop',
                     'interstim', 'time_duration', 'interstim-screen', 'frame_run_type']:
-            self.experiment[k] = np.array(self.experiment[k]) 
+            self.experiment[k] = np.array(self.experiment[k])
 
     # the close function
     def close(self):
@@ -316,7 +349,7 @@ class visual_stim:
     def buffer_stim(self, parent, gui_refresh_func=None):
         """
         we build the buffers order so that we can call them as:
-        self.buffer[protocol_index][stim_index] 
+        self.buffer[protocol_index][stim_index]
         where:
         protocol_index = stim.experiment['protocol_id'][index]
         stim_index = stim.experiment['index'][index]
@@ -331,11 +364,11 @@ class visual_stim:
         else:
             protocol_ids = np.zeros(len(self.experiment['index']), dtype=int)
 
-        print(' --> buffering stimuli [...] ') 
+        print(' --> buffering stimuli [...] ')
         tic = time.time()
         for protocol_id in np.sort(np.unique(protocol_ids)):
             self.buffer.append([]) # adding a new set of buffers
-            print('    - protocol %i  ' % (protocol_id+1)) 
+            print('    - protocol %i  ' % (protocol_id+1))
             single_indices = np.arange(len(protocol_ids))[(protocol_ids==protocol_id) & (self.experiment['repeat']==0)] # this gives the valid
             indices_order = np.argsort(self.experiment['index'][single_indices])
             for stim_index, index_in_full_array in enumerate(single_indices[indices_order]):
@@ -349,11 +382,11 @@ class visual_stim:
                     self.buffer[protocol_id][stim_index]['FRAMES'].append(visual.ImageStim(win,
                                                                           image=self.gamma_corrected_lum(frame),
                                                                           units='pix', size=win.size))
-                    if gui_refresh_func is not None:    
+                    if gui_refresh_func is not None:
                         gui_refresh_func()
-                print('        index #%i   (%.2fs)' % (stim_index+1, time.time()-toc)) 
-   
-        print(' --> buffering done ! (t=%.2fs / %.2fmin)' % (time.time()-tic, (time.time()-tic)/60.)) 
+                print('        index #%i   (%.2fs)' % (stim_index+1, time.time()-toc))
+
+        print(' --> buffering done ! (t=%.2fs / %.2fmin)' % (time.time()-tic, (time.time()-tic)/60.))
         return True
 
     def array_sequence_buffered_presentation(self, parent, index):
@@ -385,7 +418,7 @@ class visual_stim:
             print(str(parent.datafolder.get()), 'NIdaq.start.npy', 'not found !')
             t0 = time.time()
 
-        self.start_screen(parent) 
+        self.start_screen(parent)
 
         if ('buffer' in self.protocol) and self.protocol['buffer'] and (self.buffer is None):
             self.buffer_stim(parent)
@@ -503,16 +536,16 @@ class visual_stim:
         if ax==None:
             import matplotlib.pylab as plt
             fig, ax = plt.subplots(1,
-                                   figsize=(4, 
+                                   figsize=(4,
                                             4*self.screen['resolution'][1]/self.screen['resolution'][0]))
 
         cls = (parent if parent is not None else self)
-        
+
         img = ax.imshow(cls.image_to_frame(cls.get_image(episode,
                                            time_from_episode_start=time_from_episode_start,
                                            parent=cls), psychopy_to_numpy=True),
                         extent=(0, self.screen['resolution'][0], 0, self.screen['resolution'][1]),
-                        cmap='gray', 
+                        cmap='gray',
                         vmin=0, vmax=1,
                         origin='lower',
                         aspect='equal')
@@ -537,7 +570,7 @@ class visual_stim:
             return ax
 
     def plot_stim_picture(self, episode, ax,
-                          parent=None, 
+                          parent=None,
                           label={'degree':20,
                                  'shift_factor':0.02,
                                  'lw':1, 'fontsize':10},
@@ -552,7 +585,7 @@ class visual_stim:
 
         tcenter = .5*(cls.experiment['time_stop'][episode]-\
                       cls.experiment['time_start'][episode])
-        
+
         ax = self.show_frame(episode, tcenter, ax=ax,
                              parent=parent,
                              label=label)
@@ -562,7 +595,7 @@ class visual_stim:
                      time_from_episode_start=0,
                      parent=None):
         cls = (parent if parent is not None else self)
-        
+
         img.set_array(cls.image_to_frame(cls.get_image(episode,
                                                       time_from_episode_start=time_from_episode_start,
                                                      parent=cls), psychopy_to_numpy=True))
@@ -606,7 +639,7 @@ class multiprotocol(visual_stim):
 
     def __init__(self, protocol):
 
-        super().__init__(protocol, 
+        super().__init__(protocol,
                          demo=(('demo' in protocol) and protocol['demo']))
 
         self.STIM, i = [], 1
@@ -695,7 +728,7 @@ class multiprotocol(visual_stim):
     ##############################################
     ##  ----  MAPPING TO CHILD PROTOCOLS --- #####
     ##############################################
-    
+
     # functions implemented in child class
     def get_image(self, episode, time_from_episode_start=0, parent=None):
         return self.STIM[self.experiment['protocol_id'][episode]].get_image(episode,\
@@ -754,12 +787,12 @@ class vis_stim_image_built(visual_stim):
         self.refresh_freq = protocol['movie_refresh_freq']
         # adding a appearance threshold (see blob stim)
         if 'appearance_threshold' not in protocol:
-            protocol['appearance_threshold'] = 2.5 # 
+            protocol['appearance_threshold'] = 2.5 #
 
 
     def get_frames_sequence(self, index, parent=None):
         """
-        we build a sequence of frames by successive calls to "self.get_image" 
+        we build a sequence of frames by successive calls to "self.get_image"
 
         here we use self.refresh_freq, not cls.refresh_freq
          """
@@ -775,7 +808,7 @@ class vis_stim_image_built(visual_stim):
             new_t = order[iframe]/self.refresh_freq
 
             img = self.get_image(index, new_t,
-                                 parent=parent) 
+                                 parent=parent)
 
             FRAMES.append(self.image_to_frame(img))
 
@@ -785,7 +818,7 @@ class vis_stim_image_built(visual_stim):
     def compute_frame_order(self, cls, times, index):
         """
         function to handle the randomization of frames across time
-        """   
+        """
 
         order = np.arange(len(times))
 
@@ -820,7 +853,7 @@ class vis_stim_image_built(visual_stim):
                                             contrast=1,
                                             time_phase=time_phase)-0.5
 
-        image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch 
+        image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
 
 
 
