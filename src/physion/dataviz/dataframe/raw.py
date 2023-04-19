@@ -116,7 +116,7 @@ def add_CaImagingRaster(dataframe, tlim, ax,
                         color='green',
                         subquantity='Fluorescence', 
                         roiIndices='all', subquantity_args={},
-                        cmap=plt.cm.PiYG, 
+                        cmap=plt.cm.PiYG, zlim=[-1, 2],
                         axb=None,
                         bar_inset_start=-0.08, bar_inset_width=0.01,
                         normalization='None', subsampling=1,
@@ -127,7 +127,8 @@ def add_CaImagingRaster(dataframe, tlim, ax,
     indices = np.flatnonzero((dataframe['time']>tlim[0]) & (dataframe['time']<tlim[1]))
     
     ims = ax.imshow(raster[:,indices], origin='lower', cmap=cmap,
-              aspect='auto', interpolation='none', vmin=-2, vmax=2,
+              aspect='auto', interpolation='none', 
+              vmin=zlim[0], vmax=zlim[1],
               extent=(tlim[0], tlim[1],
                       fig_fraction_start, fig_fraction_start+fig_fraction))
 
