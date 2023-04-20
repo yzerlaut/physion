@@ -5,9 +5,11 @@ import os
 import numpy as np
 from PyQt5 import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
+import matplotlib.pylab as plt
 
 from physion.utils.paths import FOLDERS
-from physion.utils.plot_tools import plt, figure
+from physion.utils.plot_tools import figure
+
 
 KEYS = ['meanImg_chan2', 'meanImg', 'max_proj', 'meanImgE']
 

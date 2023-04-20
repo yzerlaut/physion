@@ -5,7 +5,7 @@
 - Using a rotary encoder 
 
 <p align="center">
-  <img src="../../doc/rotary-encoder.png"/>
+  <img src="../../../docs/rotary-encoder.png"/>
 </p>
 
 The algorithm to compute the position was base on the case by case transitions depicted in the drawing above (left panel), see [./locomotion.py](./locomotion.py).

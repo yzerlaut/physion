@@ -165,8 +165,8 @@ def build_pdf(args,
 
     for key, loc, alpha in zip(['vasculature', 'fluorescence'], [6.5, 8.9], [0.3,0.1]):
 
-        fig, AX = plt.subplots(1, 3, figsize=(7.2,2.2))
-        plt.subplots_adjust(bottom=0, wspace=2, right=0.6)
+        fig, AX = plt.subplots(1, 3, figsize=(7.2,2.8))
+        plt.subplots_adjust(bottom=0, wspace=0.7, right=0.95)
 
         fig.supylabel(key)
 
