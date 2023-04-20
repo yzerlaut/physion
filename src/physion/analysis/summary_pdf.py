@@ -179,11 +179,13 @@ def generate_raw_data_figs(data, args,
     if 'Pupil' in data.nwbfile.processing:
         settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
-        settings['CaImaging']= dict(fig_fraction=4./5.*args.nROIs, subsampling=2, 
+        settings['CaImaging']= dict(fig_fraction=4./5.*args.nROIs, 
+                                    subsampling=1, 
                                     subquantity=args.imaging_quantity, color='green',
                                     roiIndices=np.random.choice(nROIs,
                                                     args.nROIs, replace=False))
-        settings['CaImagingRaster']=dict(fig_fraction=2, subsampling=4,
+        settings['CaImagingRaster']=dict(fig_fraction=2,
+                                         subsampling=1,
                                          bar_inset_start=-0.04, 
                                          roiIndices='all',
                                          normalization='per-line',
