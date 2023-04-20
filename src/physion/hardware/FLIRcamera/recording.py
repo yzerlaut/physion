@@ -36,7 +36,7 @@ class CameraAcquisition:
 
 
     def rec_and_check(self, run_flag, quit_flag, folder,
-                      debug=True):
+                      debug=False):
         
         self.cam.start()
         np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
