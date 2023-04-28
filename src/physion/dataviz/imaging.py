@@ -21,6 +21,12 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
         else:
             raster = data.rawFluo[roiIndices,:]
             
+    elif (subquantity in ['Neuropil', 'neuropil']) and (raster is None):
+        if (roiIndices=='all'):
+            raster = data.neuropil[:,:]
+        else:
+            raster = data.neuropil[roiIndices,:]
+
     elif (subquantity in ['dFoF', 'dF/F']) and (raster is None):
         if not hasattr(data, 'dFoF'):
             data.build_dFoF(**subquantity_args)
