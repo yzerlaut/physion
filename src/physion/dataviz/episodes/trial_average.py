@@ -81,7 +81,7 @@ def plot_trial_average(episodes,
         ROW_CONDS = [episodes.find_episode_cond(row_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in row_keys])]
     elif (ROW_CONDS is None):
         ROW_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
-        
+
     # colors
     if color_key!='':
         COLOR_CONDS = [episodes.find_episode_cond(color_key, index) for index in range(len(episodes.varied_parameters[color_key]))]
@@ -102,7 +102,7 @@ def plot_trial_average(episodes,
     # condition = [...]
             
     if (fig is None) and (AX is None):
-        fig, AX = pt.subplots(len(ROW_CONDS), len(COL_CONDS),
+        fig, AX = plt.subplots(len(ROW_CONDS), len(COL_CONDS),
                             figsize=figsize,
                             squeeze=False)
         no_set=False
