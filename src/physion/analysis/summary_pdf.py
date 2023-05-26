@@ -177,7 +177,9 @@ def generate_raw_data_figs(data, args,
     if not hasattr(args, 'nROIs'):
         args.nROIs = np.min([5, nROIs])
  
-    settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue')}
+    settings={}
+    if 'Running-Speed' in data.nwbfile.acquisition:
+        settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
     if 'FaceMotion' in data.nwbfile.processing:
         settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
     if 'Pupil' in data.nwbfile.processing:
@@ -196,10 +198,10 @@ def generate_raw_data_figs(data, args,
                                          subquantity=args.imaging_quantity)
 
     if not hasattr(args, 'raw_figsize'):
-        args.raw_figsize=(7, 2.5)
+        args.raw_figsize=(6.5, 2.5)
     
     fig, ax = plt.subplots(1, figsize=args.raw_figsize)
-    plt.subplots_adjust(bottom=0, top=0.9, left=0.05, right=0.9)
+    plt.subplots_adjust(bottom=0, top=0.9, left=0.1, right=0.9)
 
     plot_raw(data, data.tlim, 
               settings=settings, Tbar=20, ax=ax)
