@@ -192,89 +192,123 @@ def generate_figs(args,
 
     # ## --- FRACTION CENTERED ---
 
-    CENTERED_ROIS, ANGLES = extract_centered_rois(data, episodes,
-                                            imaging_quantity=args.imaging_quantity,
-                                            response_significance_threshold=0.01)
+    try:
 
-    fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']), 
-                              len(episodes.varied_parameters['x-center']),
-                              figsize=(6,2.8))
+        CENTERED_ROIS, ANGLES = extract_centered_rois(data, episodes,
+                                                imaging_quantity=args.imaging_quantity,
+                                                response_significance_threshold=0.01)
 
-    plot_trial_average(episodes,
-                       roiIndices=CENTERED_ROIS,
-                       quantity=args.imaging_quantity, 
-                       column_key='x-center', 
-                       row_key='y-center', 
-                       xbar=1, xbarlabel='1s', 
-                       ybar=0.1, ybarlabel='0.1$\Delta$F/F',
-                       with_screen_inset=True,
-                       with_std_over_rois=True, 
-                       with_annotation=True, 
-                       no_set=False, AX=AX)
+        fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']), 
+                                  len(episodes.varied_parameters['x-center']),
+                                  figsize=(6,2.8))
 
-    fig.suptitle('centered ROIs: n=%i/%i (%.1f%%)\nmean$\pm$s.d. over rois' %\
-                                                    (len(CENTERED_ROIS), nROIs,
-                                                    100*len(CENTERED_ROIS)/nROIs))
-    fig.savefig(os.path.join(tempfile.tempdir,
-                'TA-centered-%i.png' % args.unique_run_ID), dpi=300)
-    if not args.debug:
-        pt.plt.close(fig)
-
-    # ## --- EPISODES AVERAGE -- SIZE VARIATIONS
-    
-    episodes = EpisodeData(data,
-                           protocol_id=1,
-                           quantities=[args.imaging_quantity],
-                           prestim_duration=2,
-                           with_visual_stim=True,
-                           verbose=True)
-
-    radii, size_resps = compute_size_tuning_curves(\
-            data, episodes, CENTERED_ROIS, ANGLES,
-            stat_test_props, imaging_quantity=args.imaging_quantity)
-
-    fig, AX = pt.plt.subplots(Nexamples,
-                              len(episodes.varied_parameters['radius']),
-                              figsize=(7,6.5))
-    pt.plt.subplots_adjust(right=.8, top=.95, left=0.08, bottom=0.03)
-
-    for i, irdm in enumerate(np.random.choice(np.arange(len(CENTERED_ROIS)), Nexamples)):
-
-        angle_cond = episodes.find_episode_cond(key='angle', value=ANGLES[i])
         plot_trial_average(episodes,
-                           condition=angle_cond,
+                           roiIndices=CENTERED_ROIS,
                            quantity=args.imaging_quantity, 
-                           roiIndex=CENTERED_ROIS[irdm],
-                           column_key='radius',
+                           column_key='x-center', 
+                           row_key='y-center', 
                            xbar=1, xbarlabel='1s', 
                            ybar=0.1, ybarlabel='0.1$\Delta$F/F',
-                           with_stat_test=True, stat_test_props=stat_test_props,
-                           with_annotation=(i==0), 
-                           no_set=False, AX=[AX[i]])
+                           with_screen_inset=True,
+                           with_std_over_rois=True, 
+                           with_annotation=True, 
+                           no_set=False, AX=AX)
 
-        AX[i][0].annotate('roi #%i' % CENTERED_ROIS[irdm], (0,0),
-                xycoords='axes fraction', rotation=90, ha='right')
-        inset = pt.inset(AX[i][-1], [2.2,0.2,1.1,0.6])
-        inset.plot(radii, size_resps[irdm], 'ko-')
-        inset.set_ylabel('$\delta$ $\Delta$F/F')
-        inset.set_xlabel('size ($^o$)')
+        fig.suptitle('centered ROIs: n=%i/%i (%.1f%%)\nmean$\pm$s.d. over rois' %\
+                                                        (len(CENTERED_ROIS), nROIs,
+                                                        100*len(CENTERED_ROIS)/nROIs))
+        fig.savefig(os.path.join(tempfile.tempdir,
+                    'TA-centered-%i.png' % args.unique_run_ID), dpi=300)
+        if not args.debug:
+            pt.plt.close(fig)
 
-    fig.savefig(os.path.join(tempfile.tempdir, 'TA-all-%i.png' % args.unique_run_ID), dpi=300)
-    if not args.debug:
-        pt.plt.close(fig)
+        # ## --- EPISODES AVERAGE -- SIZE VARIATIONS
+        
+        episodes = EpisodeData(data,
+                               protocol_id=1,
+                               quantities=[args.imaging_quantity],
+                               prestim_duration=2,
+                               with_visual_stim=True,
+                               verbose=True)
 
-    fig, ax = pt.plt.subplots(1, figsize=(2.5,1.6))
-    pt.plt.subplots_adjust(right=.9, top=.85, left=0.25, bottom=0.25)
-    ax.plot(radii, np.mean(size_resps, axis=0), 'ko-')
-    ax.set_title('n=%i ROIs' % len(CENTERED_ROIS))
-    ax.set_ylabel('$\delta$ $\Delta$F/F')
-    ax.set_xlabel('size ($^o$)')
+        radii, size_resps = compute_size_tuning_curves(\
+                data, episodes, CENTERED_ROIS, ANGLES,
+                stat_test_props, imaging_quantity=args.imaging_quantity)
+
+        fig, AX = pt.plt.subplots(Nexamples,
+                                  len(episodes.varied_parameters['radius']),
+                                  figsize=(7,6.5))
+        pt.plt.subplots_adjust(right=.8, top=.95, left=0.08, bottom=0.03)
+
+        for i, irdm in enumerate(np.random.choice(np.arange(len(CENTERED_ROIS)), Nexamples)):
+
+            angle_cond = episodes.find_episode_cond(key='angle', value=ANGLES[i])
+            plot_trial_average(episodes,
+                               condition=angle_cond,
+                               quantity=args.imaging_quantity, 
+                               roiIndex=CENTERED_ROIS[irdm],
+                               column_key='radius',
+                               xbar=1, xbarlabel='1s', 
+                               ybar=0.1, ybarlabel='0.1$\Delta$F/F',
+                               with_stat_test=True, stat_test_props=stat_test_props,
+                               with_annotation=(i==0), 
+                               no_set=False, AX=[AX[i]])
+
+            AX[i][0].annotate('roi #%i' % CENTERED_ROIS[irdm], (0,0),
+                    xycoords='axes fraction', rotation=90, ha='right')
+            inset = pt.inset(AX[i][-1], [2.2,0.2,1.1,0.6])
+            inset.plot(radii, size_resps[irdm], 'ko-')
+            inset.set_ylabel('$\delta$ $\Delta$F/F')
+            inset.set_xlabel('size ($^o$)')
+
+        fig.savefig(os.path.join(tempfile.tempdir, 'TA-all-%i.png' % args.unique_run_ID), dpi=300)
+        if not args.debug:
+            pt.plt.close(fig)
+
+        fig, ax = pt.plt.subplots(1, figsize=(2.5,1.6))
+        pt.plt.subplots_adjust(right=.9, top=.85, left=0.25, bottom=0.25)
+        ax.plot(radii, np.mean(size_resps, axis=0), 'ko-')
+        ax.set_title('n=%i ROIs' % len(CENTERED_ROIS))
+        ax.set_ylabel('$\delta$ $\Delta$F/F')
+        ax.set_xlabel('size ($^o$)')
 
 
 
-    fig.savefig(os.path.join(tempfile.tempdir, 'size-resp-%i.png' % args.unique_run_ID), dpi=300)
-    if not args.debug:
-        pt.plt.close(fig)
+        fig.savefig(os.path.join(tempfile.tempdir, 'size-resp-%i.png' % args.unique_run_ID), dpi=300)
+        if not args.debug:
+            pt.plt.close(fig)
+
+    except BaseException as be:
+
+        episodes = EpisodeData(data,
+                               protocol_id=0,
+                               quantities=[args.imaging_quantity],
+                               prestim_duration=2,
+                               with_visual_stim=True,
+                               verbose=True)
+
+        fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']), 
+                                  len(episodes.varied_parameters['x-center']),
+                                  figsize=(6,2.8))
+
+        plot_trial_average(episodes,
+                           roiIndices='all',
+                           quantity=args.imaging_quantity, 
+                           column_key='x-center', 
+                           row_key='y-center', 
+                           xbar=1, xbarlabel='1s', 
+                           ybar=0.1, ybarlabel='0.1$\Delta$F/F',
+                           with_screen_inset=True,
+                           with_std_over_rois=True, 
+                           with_annotation=True, 
+                           no_set=False, AX=AX)
+
+        fig.suptitle('all ROIs (no centered ROI found)')
+        fig.savefig(os.path.join(tempfile.tempdir,
+                    'TA-centered-%i.png' % args.unique_run_ID), dpi=300)
+
+        if not args.debug:
+            pt.plt.close(fig)
 
 if __name__=='__main__':
     
