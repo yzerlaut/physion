@@ -69,10 +69,14 @@ def generate_pdf(self,
 
         if data.metadata['protocol']=='FFDG-contrast-curve+blank':
             cmd = '%s -m physion.analysis.protocols.FFDG_with_blank %s' % (python_path, self.datafile)
+        elif 'ff-gratings' in data.metadata['protocol']:
+            cmd = '%s -m physion.analysis.protocols.FFDG %s' % (python_path, self.datafile)
         elif data.metadata['protocol']=='spatial-mapping':
             cmd = '%s -m physion.analysis.protocols.spatial_mapping %s' % (python_path, self.datafile)
         elif 'size-tuning' in data.metadata['protocol']:
             cmd = '%s -m physion.analysis.protocols.size_tuning %s' % (python_path, self.datafile)
+        elif 'Light-Levels' in data.metadata['protocol']:
+            cmd = '%s -m physion.analysis.protocols.Light_Levels %s' % (python_path, self.datafile)
         else:
             cmd = ''
             print('')
