@@ -106,11 +106,10 @@ def metadata_fig(data, short=True):
     plt.subplots_adjust(left=0.01, right=0.99, bottom=0.01, top=0.99)
 
     s=' [--  %s --] \n ' % data.filename
-    for key in ['protocol', 'subject_ID', 'notes']:
+    for key in ['protocol', 'subject_ID', 'notes', 'FOV']:
         s+='- %s :\n    "%s" \n' % (key, data.metadata[key])
-    if 'FOV' in data.metadata:
-        s+='- %s :\n    "%s" \n' % ('FOV', data.metadata[key])
-
+    # if 'FOV' in data.metadata:
+        # s+='- %s :\n    "%s" \n' % ('FOV', data.metadata[key])
 
     s += '- completed:\n       n=%i/%i episodes' %(data.nwbfile.stimulus['time_start_realigned'].data.shape[0],
                                                    data.nwbfile.stimulus['time_start'].data.shape[0])
@@ -129,12 +128,9 @@ def metadata_fig(data, short=True):
                 s+='\n'
         ax.annotate(s, (1,1), va='top', ha='right', fontsize=6)
         
-
         s, ds ='', 150
         for key in data.nwbfile.devices:
-            S = str(data.nwbfile.devices[key])
-            # print(S[:100], len(S))
-            i=0
+            S, i = str(data.nwbfile.devices[key]), 0
             while i<len(S)-ds:
                 s += S[i:i+ds]+'\n'
                 i+=ds
