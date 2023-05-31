@@ -8,11 +8,11 @@ from physion.visual_stim.build import build_stim
 
 class EpisodeData:
     """
-    Object to Analyze Responses to several Episodes 
+    Object to Analyze Responses to several Episodes
         - episodes should have the same durations
         - episodes can correspond to diverse stimulation parameters
 
-    - Using the photodiode-signal-derived timestamps 
+    - Using the photodiode-signal-derived timestamps
             to build "episode response" by interpolating
             the raw signal on a fixed time interval (surrounding the stim)
 
@@ -33,13 +33,13 @@ class EpisodeData:
         self.dt_sampling = dt_sampling
         self.verbose = verbose
         self.data = full_data
-      
-        self.select_protocol_from(full_data, 
+
+        self.select_protocol_from(full_data,
                                   protocol_id=protocol_id,
                                   protocol_name=protocol_name)
 
         ################################################
-        #          Episode Calculations 
+        #          Episode Calculations
         ################################################
 
         self.set_quantities(full_data, quantities,
@@ -52,9 +52,9 @@ class EpisodeData:
         ################################################i
         #           some clean up
         ################################################i
-        # because "protocol_id" and "protocol_name" 
+        # because "protocol_id" and "protocol_name"
         #     are over-written by self.set_quantities
-        
+
         if (protocol_id is not None):
             # we overwrite those to single values
             self.protocol_id = protocol_id
@@ -63,11 +63,11 @@ class EpisodeData:
         elif (protocol_name is not None):
             # we overwrite those to single values
             self.protocol_id = full_data.get_protocol_id(protocol_name)
-            self.protocol_name = protocol_name 
+            self.protocol_name = protocol_name
 
         else:
             print(' /!\ need to pass either a protocol_id or a protocol_name /!\ \n')
-        
+
         # VISUAL STIM
         if with_visual_stim:
             self.init_visual_stim(full_data)
@@ -82,7 +82,7 @@ class EpisodeData:
     ###########   --- METHODS ---  ###############
     ##############################################
 
-    def select_protocol_from(self, full_data, 
+    def select_protocol_from(self, full_data,
                              protocol_id=None,
                              protocol_name=None):
         """
@@ -98,11 +98,11 @@ class EpisodeData:
             print('         ---->   set to protocol_id=0 by default \n ')
         elif (protocol_name is not None):
             protocol_id = full_data.get_protocol_id(protocol_name)
-            
+
         self.protocol_cond_in_full_data = full_data.get_protocol_cond(protocol_id)
 
 
-           
+
     def set_quantities(self, full_data, quantities,
                        quantities_args=None,
                        prestim_duration=None,
@@ -113,7 +113,7 @@ class EpisodeData:
         if quantities_args is None:
             quantities_args = [{} for q in quantities]
         for q in quantities_args:
-            q['verbose'] = self.verbose 
+            q['verbose'] = self.verbose
 
         if self.verbose:
             print('  Number of episodes over the whole recording: %i/%i (with protocol condition)' % (np.sum(self.protocol_cond_in_full_data), len(self.protocol_cond_in_full_data)))
@@ -121,7 +121,7 @@ class EpisodeData:
 
         # find the parameter(s) varied within that specific protocol
         self.varied_parameters, self.fixed_parameters =  {}, {}
-        
+
         for key in full_data.nwbfile.stimulus.keys():
             if key not in ['frame_run_type', 'index', 'protocol_id',
                            'time_duration', 'time_start',
@@ -151,16 +151,16 @@ class EpisodeData:
         #############################################################################
         ############ we do it modality by modality (quantity)  ######################
         #############################################################################
-        
+
         QUANTITIES, QUANTITY_VALUES, QUANTITY_TIMES = [], [], []
-        
+
         for iq, quantity, quantity_args in zip(range(len(quantities)), quantities, quantities_args):
 
             if type(quantity)!=str and (tfull is not None):
                 QUANTITY_VALUES.append(quantity)
                 QUANTITY_TIMES.append(tfull)
                 QUANTITIES.append('quant_%i' % iq)
-                
+
             elif quantity in ['running_speed', 'Running-Speed', 'RunningSpeed', 'Locomotion']:
                 if not hasattr(full_data, 'running_speed'):
                     full_data.build_running_speed(**quantity_args)
@@ -195,7 +195,7 @@ class EpisodeData:
                 QUANTITY_VALUES.append(full_data.rawFluo)
                 QUANTITY_TIMES.append(full_data.t_rawFluo)
                 QUANTITIES.append('rawFluo')
-                
+
             elif quantity in ['pupil_diameter', 'Pupil', 'pupil-size', 'Pupil-diameter', 'pupil-diameter', 'pupil']:
                 if not hasattr(full_data, 'pupil_diameter'):
                     full_data.build_pupil_diameter(**quantity_args)
@@ -209,14 +209,14 @@ class EpisodeData:
                 QUANTITY_VALUES.append(full_data.gaze_movement)
                 QUANTITY_TIMES.append(full_data.t_pupil)
                 QUANTITIES.append('gaze_movement')
-                
+
             elif quantity in ['facemotion', 'FaceMotion', 'faceMotion']:
                 if not hasattr(full_data, 'facemotion'):
                     full_data.build_facemotion(**quantity_args)
                 QUANTITY_VALUES.append(full_data.facemotion)
                 QUANTITY_TIMES.append(full_data.t_facemotion)
                 QUANTITIES.append('faceMotion')
-                
+
             else:
                 if quantity in full_data.nwbfile.acquisition:
                     QUANTITY_TIMES.append(np.arange(full_data.nwbfile.acquisition[quantity].data.shape[0])/full_data.nwbfile.acquisition[quantity].rate)
@@ -230,7 +230,7 @@ class EpisodeData:
                     print(30*'-')
                     print(quantity, 'not recognized')
                     print(30*'-')
-                    
+
         # adding the parameters
         for key in full_data.nwbfile.stimulus.keys():
             setattr(self, key, [])
@@ -239,7 +239,7 @@ class EpisodeData:
             setattr(self, q, [])
 
         for iEp in np.arange(full_data.nwbfile.stimulus['time_start'].num_samples)[self.protocol_cond_in_full_data]:
-           
+
             tstart = full_data.nwbfile.stimulus['time_start_realigned'].data[iEp]
             tstop = full_data.nwbfile.stimulus['time_stop_realigned'].data[iEp]
 
@@ -248,7 +248,7 @@ class EpisodeData:
 
             RESPS, success = [], True
             for quantity, tfull, valfull in zip(QUANTITIES, QUANTITY_TIMES, QUANTITY_VALUES):
-                
+
                 # compute time and interpolate
                 ep_cond = (tfull>=(tstart-2.*prestim_duration)) & (tfull<(tstop+1.5*prestim_duration)) # higher range of interpolation to avoid boundary problems
                 try:
@@ -261,7 +261,7 @@ class EpisodeData:
                                             fill_value=(valfull[j,ep_cond][0], valfull[j,ep_cond][-1]))
                             resp[j, :] = func(self.t)
                         RESPS.append(resp)
-                        
+
                     else:
                         func = interp1d(tfull[ep_cond]-tstart, valfull[ep_cond],
                                         kind=interpolation)
@@ -275,7 +275,7 @@ class EpisodeData:
                         print(be)
                         # print(tfull[ep_cond][0]-tstart, tfull[ep_cond][-1]-tstart, tstop-tstart)
                         print('Problem with episode %i between (%.2f, %.2f)s' % (iEp, tstart, tstop))
-                        
+
 
             if success:
 
@@ -340,15 +340,15 @@ class EpisodeData:
     def compute_interval_cond(self, interval):
         return (self.t>=interval[0]) & (self.t<=interval[1])
 
-    
+
     def find_episode_cond(self, key=None, index=None, value=None):
         """
         by default returns the conditions of all episodes in the protocol
         'key' and 'index' can be either lists of values
         """
-        
+
         cond = np.ones(len(self.time_start), dtype=bool)
-        
+
         if (type(key) in [list, np.ndarray, tuple]) and\
                 (type(index) in [list, np.ndarray, tuple]):
             for n in range(len(key)):
@@ -360,18 +360,18 @@ class EpisodeData:
             for n in range(len(key)):
                 if key[n] != '':
                     cond = cond & (getattr(self, key[n])==value[n])
-         
+
         elif (key is not None) and (key!='') and (index is not None):
             cond = cond & (getattr(self, key)==self.varied_parameters[key][index])
-       
+
         elif (key is not None) and (key!='') and (value is not None):
             cond = cond & (getattr(self, key)==value)
-       
+
         return cond
 
-    
+
     def stat_test_for_evoked_responses(self,
-                                       episode_cond=None, 
+                                       episode_cond=None,
                                        response_args={},
                                        interval_pre=[-2,0], interval_post=[1,3],
                                        test='wilcoxon',
@@ -380,7 +380,7 @@ class EpisodeData:
         """
         """
         response = self.get_response(**response_args)
-        
+
         if episode_cond is None:
             episode_cond = self.find_episode_cond()
 
@@ -402,10 +402,10 @@ class EpisodeData:
                                            response_args={},
                                            interval_cond=None,
                                            quantity='mean'):
-        
+
         cond = self.find_episode_cond(key, index)
         response = self.get_response(**response_args)
-        
+
         if interval_cond is None:
             interval_cond = np.ones(len(self.t), dtype=bool)
 
@@ -480,7 +480,7 @@ class EpisodeData:
 
         for key in summary_data:
             summary_data[key] = np.array(summary_data[key])
-    
+
         return summary_data
 
     def init_visual_stim(self, full_data):

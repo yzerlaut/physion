@@ -43,7 +43,7 @@ def plot_trial_average(episodes,
                        fig=None, AX=None, figsize=(5,3),
                        no_set=True, verbose=False):
     """
-        
+
     "norm" can be either:
         - "Zscore-per-roi"
         - "minmax-per-roi"
@@ -57,13 +57,13 @@ def plot_trial_average(episodes,
         print('\n /!\ visual stim of episodes was not initialized  /!\  ')
         print('    --> screen_inset display desactivated ' )
         with_screen_inset = False
-    
+
     if condition is None:
         condition = np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)
 
     elif len(condition)==len(episodes.protocol_cond_in_full_data):
         condition = condition[episodes.protocol_cond_in_full_data]
-        
+
     # ----- building conditions ------
 
     # columns
@@ -89,7 +89,7 @@ def plot_trial_average(episodes,
         COLOR_CONDS = [episodes.find_episode_cond(color_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in color_keys])]
     elif (COLOR_CONDS is None):
         COLOR_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
-        
+
     if (len(COLOR_CONDS)>1):
         try:
             COLORS= [color[c] for c in np.arange(len(COLOR_CONDS))]
@@ -97,10 +97,10 @@ def plot_trial_average(episodes,
             COLORS = [plt.cm.tab10((c%10)/10.) for c in np.arange(len(COLOR_CONDS))]
     else:
         COLORS = [color for ic in range(len(COLOR_CONDS))]
-        
+
     # single-value
     # condition = [...]
-            
+
     if (fig is None) and (AX is None):
         fig, AX = plt.subplots(len(ROW_CONDS), len(COL_CONDS),
                             figsize=figsize,
@@ -109,12 +109,12 @@ def plot_trial_average(episodes,
     else:
         no_set=no_set
 
-    # get response reshape in 
+    # get response reshape in
     response = tools.normalize(episodes.get_response(**dict(quantity=quantity,
                                                         roiIndex=roiIndex,
                                                         roiIndices=roiIndices,
-                                                        average_over_rois=False)), 
-                                norm, 
+                                                        average_over_rois=False)),
+                                norm,
                                 verbose=verbose)
 
     episodes.ylim = [np.inf, -np.inf]
@@ -123,11 +123,11 @@ def plot_trial_average(episodes,
             for icolor, color_cond in enumerate(COLOR_CONDS):
 
                 cond = np.array(condition & col_cond & row_cond & color_cond)
-                
+
                 my = response[cond,:,:].mean(axis=(0,1))
 
                 if with_std_over_trials or with_std_over_rois:
-                    if with_std_over_rois: 
+                    if with_std_over_rois:
                         sy = response[cond,:,:].mean(axis=0).std(axis=-2)
                     else:
                         sy = response[cond,:,:].std(axis=(0,1))
@@ -144,14 +144,18 @@ def plot_trial_average(episodes,
 
                 if not with_axis:
                     AX[irow][icol].axis('off')
-                        
+
                 if with_screen_inset:
                     inset = pt.inset(AX[irow][icol], [.83, .9, .3, .25])
                     istim = np.flatnonzero(cond)[0]
+                    # start -- QUICK FIX
+                    episodes.visual_stim.experiment['protocol_id'] = np.zeros(len(cond), dtype=int)+\
+                        int(episodes.visual_stim.experiment['protocol_id'][0])
+                    # end -- QUICK FIX
                     episodes.visual_stim.plot_stim_picture(istim, ax=inset)
-                    
+
                 if with_annotation:
-                    
+
                     # column label
                     if (len(COL_CONDS)>1) and (irow==0) and (icolor==0):
                         s = ''
@@ -172,7 +176,7 @@ def plot_trial_average(episodes,
                                     pass
 
                         AX[irow][icol].annotate(s[:-2], (0, 0),
-                            ha='right', va='bottom', 
+                            ha='right', va='bottom',
                             rotation=90, size='small',
                             xycoords='axes fraction')
 
@@ -189,12 +193,12 @@ def plot_trial_average(episodes,
                                 s+=20*' '+icolor*18*' '+format_key_value(key, getattr(episodes, key)[cond][0])
                                 AX[0][0].annotate(s+'  '+icolor*'\n', (1,0), color=COLORS[icolor],
                                         ha='right', va='bottom', size='small', xycoords='figure fraction')
-                
+
     if with_stat_test:
         for irow, row_cond in enumerate(ROW_CONDS):
             for icol, col_cond in enumerate(COL_CONDS):
                 for icolor, color_cond in enumerate(COLOR_CONDS):
-                    
+
                     cond = np.array(condition & col_cond & row_cond & color_cond)[:response.shape[0]]
                     results = episodes.stat_test_for_evoked_responses(episode_cond=cond,
                                                                   response_args=dict(roiIndex=roiIndex, roiIndices=roiIndices),
@@ -205,16 +209,16 @@ def plot_trial_average(episodes,
                                                              episodes.ylim[0]), va='top', ha='center', size=size-1, xycoords='data', color=COLORS[icolor])
                     AX[irow][icol].plot(stat_test_props['interval_pre'], episodes.ylim[0]*np.ones(2), 'k-', lw=1)
                     AX[irow][icol].plot(stat_test_props['interval_post'], episodes.ylim[0]*np.ones(2), 'k-', lw=1)
-                        
+
     if xlim is None:
         episodes.xlim = [episodes.t[0], episodes.t[-1]]
     else:
         episodes.xlim = xlim
-        
+
     if ylim is not None:
         episodes.ylim = ylim
 
-        
+
     for irow, row_cond in enumerate(ROW_CONDS):
         for icol, col_cond in enumerate(COL_CONDS):
             if not no_set:
@@ -252,7 +256,7 @@ def plot_trial_average(episodes,
         # #         S += ', %s=%.2f' % (key, getattr(episodes, '%s_values' % key).currentText())
         # AX[0][0].annotate(S, (0,0), color='k', ha='left', va='bottom', size='small',
                 # xycoords='figure fraction')
-        
+
     return fig, AX
 
 
@@ -281,5 +285,5 @@ if __name__=='__main__':
 
     else:
         print(' Need to provide a valid NWB file')
-    
+
 
