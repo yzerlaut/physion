@@ -6,10 +6,10 @@ import time
 # ---------------------------------
 # DEFAULT_CA_IMAGING_OPTIONS
 
-METHOD = 'sliding_percentile' # either 'maximin' or 'sliding_percentile'
-T_SLIDING_MIN = 120. # seconds
-PERCENTILE_SLIDING_MIN = 5. # percent
-NEUROPIL_CORRECTION_FACTOR = 0.7
+METHOD = 'maximin' # either 'maximin' or 'sliding_percentile'
+T_SLIDING_MIN = 60. # seconds
+PERCENTILE_SLIDING_MIN = 10. # percent
+NEUROPIL_CORRECTION_FACTOR = 0.8
 
 # ---------------------------------
 ####################################
