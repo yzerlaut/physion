@@ -6,8 +6,8 @@ import time
 # ---------------------------------
 # DEFAULT_CA_IMAGING_OPTIONS
 
-METHOD = 'maximin' # either 'maximin' or 'sliding_percentile'
-T_SLIDING_MIN = 60. # seconds
+METHOD = 'sliding_percentile' # either 'maximin' or 'sliding_percentile'
+T_SLIDING_MIN = 120. # seconds
 PERCENTILE_SLIDING_MIN = 5. # percent
 NEUROPIL_CORRECTION_FACTOR = 0.7
 
@@ -111,14 +111,13 @@ def compute_dFoF(data,
                  method_for_F0=METHOD,
                  percentile=PERCENTILE_SLIDING_MIN,
                  sliding_window=T_SLIDING_MIN,
-                 return_corrected_F_and_F0=False,
+                 with_correctedFluo_and_F0=False,
                  verbose=True):
     """
     compute fluorescence variation with a neuropil correction set by the 
     factor neuropil_correction_factor
     """
 
-    
     if verbose:
         tick = time.time()
         print('\ncalculating dF/F with method "%s" [...]' % method_for_F0)
@@ -128,74 +127,52 @@ def compute_dFoF(data,
         print('neuropil_correction_factor set to 0 !')
         neuropil_correction_factor=0.
 
-    # ## ------------------------------------ ##
-    # ############# classic way ################
-    # ## ------------------------------------ ##
-    # # performing correction 
-    # F = data.Fluorescence.data[:,:]-neuropil_correction_factor*data.Neuropil.data[:,:]
-        
-    # F0 = compute_sliding_F0(data, F,
-    #                         method=method_for_F0,
-    #                         percentile=percentile,
-    #                         sliding_window=sliding_window)
+    ## ------------------------------------ ##
+    ############# classic way ################
+    ## ------------------------------------ ##
 
-    # # exclude cells with negative F0
-    # valid_roiIndices = (np.min(F0, axis=1)>0) & (F0.mean(axis=1)>F.std(axis=1))
-
-    # if verbose:
-    #     if np.sum(~valid_roiIndices)>0:
-    #         print('\n  ** %i ROIs were discarded with the positive F0 criterion (%.1f%%) ** \n'\
-    #               % (np.sum(~valid_roiIndices), 100*np.sum(~valid_roiIndices)/F0.shape[0]))
-    #     else:
-    #         print('\n  ** all ROIs passed the positive F0 criterion ** \n')
-            
-    # data.nROIs = np.sum(valid_roiIndices)
-    # data.dFoF = (F[valid_roiIndices,:]-F0[valid_roiIndices,:])/F0[valid_roiIndices,:]
-    # data.valid_roiIndices = np.arange(data.iscell.sum())[valid_roiIndices]
-
-    ## ----------------------------------------------------------- ##
-    ############# simple way to insure F0 far from 0 ################
-    ## ----------------------------------------------------------- ##
-
-    # F0 on raw fluorescence (uncorrected)
-    F0 = compute_sliding_F0(data, data.rawFluo,
-                            method=method_for_F0,
-                            percentile=percentile,
-                            sliding_window=sliding_window)
-
+    # performing neuropil correction 
     correctedFluo = data.rawFluo-neuropil_correction_factor*data.neuropil
     
-    # exclude cells with Neuropil higher than Fluorescence and Fluorescence too low (min has to be higher than 1 signal unit !):
-    valid_roiIndices = (np.mean(correctedFluo, axis=1)>0) & (np.min(F0, axis=1)>1)
-
+    # compute the F0 term
     correctedFluo0 = compute_sliding_F0(data, correctedFluo,
-                            method=method_for_F0,
-                            percentile=percentile,
-                            sliding_window=sliding_window)
+                                        method=method_for_F0,
+                                        percentile=percentile,
+                                        sliding_window=sliding_window)
+
+    # exclude cells with too low corrected fluorescence signals
+    #    (min has to be higher than 1 signal unit !):
+    valid_roiIndices = (np.min(correctedFluo0, axis=1)>1)
 
     if verbose:
         if np.sum(~valid_roiIndices)>0:
             print('\n  ** %i ROIs were discarded with the positive F0 criterion (%.1f%%) ** \n'\
-                  % (np.sum(~valid_roiIndices), 100*np.sum(~valid_roiIndices)/F0.shape[0]))
+                  % (np.sum(~valid_roiIndices),
+                      100*np.sum(~valid_roiIndices)/correctedFluo.shape[0]))
         else:
             print('\n  ** all ROIs passed the positive F0 criterion ** \n')
             
-    # F/F0 method:
-    # data.dFoF = correctedFluo[valid_roiIndices,:]/F0[valid_roiIndices,:]
+    # dFoF = (F-F0)/F0
+    data.dFoF = (correctedFluo[valid_roiIndices,:]-\
+            correctedFluo0[valid_roiIndices,:])/correctedFluo0[valid_roiIndices,:]
 
-    # DeltaF/F0 method:
-    data.dFoF = (correctedFluo[valid_roiIndices,:]-correctedFluo0[valid_roiIndices,:])/F0[valid_roiIndices,:]
-
+    # update number of ROIs with valid ones
     data.valid_roiIndices = np.arange(data.iscell.sum())[valid_roiIndices]
     data.vNrois= len(data.valid_roiIndices) # number of valid ROIs
+
+    # we remove the discarded rois from the previous fluo quantities
+    data.rawFluo = data.rawFluo[valid_roiIndices,:]
+    data.neuropil = data.neuropil[valid_roiIndices,:]
+    data.nROIs = data.vNrois
+
+    if with_correctedFluo_and_F0:
+        data.correctedFluo0 =  correctedFluo0[valid_roiIndices,:]
+        data.correctedFluo =  correctedFluo[valid_roiIndices,:]
     
     if verbose:
         print('-> dFoF calculus done !  (calculation took %.1fs)' % (time.time()-tick))
-    
-    if return_corrected_F_and_F0:
-        return correctedFluo[valid_roiIndices,:], F0[valid_roiIndices,:]
-    else:
-        return None
+
+    return None
 
     
 ########################################################################################    

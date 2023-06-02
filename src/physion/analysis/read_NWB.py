@@ -291,7 +291,7 @@ class Data:
                    method_for_F0=METHOD,
                    percentile=PERCENTILE_SLIDING_MIN,
                    sliding_window=T_SLIDING_MIN,
-                   return_corrected_F_and_F0=False,
+                   with_correctedFluo_and_F0=False,
                    specific_time_sampling=None,
                    interpolation='linear',
                    verbose=True):
@@ -317,7 +317,7 @@ class Data:
                             method_for_F0=method_for_F0,
                             percentile=percentile,
                             sliding_window=sliding_window,
-                            return_corrected_F_and_F0=return_corrected_F_and_F0,
+                            with_correctedFluo_and_F0=with_correctedFluo_and_F0,
                             verbose=verbose)
 
     def build_Zscore_dFoF(self, verbose=True):
