@@ -127,10 +127,6 @@ def compute_dFoF(data,
         print('neuropil_correction_factor set to 0 !')
         neuropil_correction_factor=0.
 
-    ## ------------------------------------ ##
-    ############# classic way ################
-    ## ------------------------------------ ##
-
     # performing neuropil correction 
     correctedFluo = data.rawFluo-neuropil_correction_factor*data.neuropil
     
@@ -173,48 +169,3 @@ def compute_dFoF(data,
         print('-> dFoF calculus done !  (calculation took %.1fs)' % (time.time()-tick))
 
     return None
-
-    
-########################################################################################    
-####################### old code, should be deprecated #################################
-########################################################################################    
-
-
-
-
-def compute_CaImaging_raster(data, CaImaging_key,
-                             roiIndices='all',
-                             normalization='None',
-                             compute_CaImaging_options=dict(T_sliding_min=T_SLIDING_MIN,
-                                                            percentile_sliding_min=PERCENTILE_SLIDING_MIN),
-                             verbose=False):
-    """
-    normalization can be: 'None', 'per line'
-
-    """
-
-    if (not type(roiIndices) in [list, np.array]) and (roiIndices=='all'):
-        roiIndices = np.arange(data.iscell.sum())
-
-    if verbose:
-        print('computing raster [...]')
-    raster = compute_CaImaging_trace(data, CaImaging_key, roiIndices, **compute_CaImaging_options)
-
-    if verbose:
-        print('normalizing raster [...]')
-    if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
-        for n in range(raster.shape[0]):
-            Fmax, Fmin = raster[n,:].max(), raster[n,:].min()
-            if Fmax>Fmin:
-                raster[n,:] = (raster[n,:]-Fmin)/(Fmax-Fmin)
-
-    return raster
-              
-
-
-
-
-
-
-
-        

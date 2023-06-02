@@ -31,6 +31,7 @@ def center_and_compute_size_tuning(data,
 
     # ## --- EPISODES -- CENTERING
 
+    # protocol= data.get_protocol_id('size-tuning-protocol-loc-long') if  
     episodes = EpisodeData(data,
                            protocol_id = data.get_protocol_id('size-tuning-protocol-loc'),
                            quantities = [imaging_quantity],
