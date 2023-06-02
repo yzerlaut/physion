@@ -6,7 +6,6 @@ def build_stim(protocol):
     """
     """
     if (protocol['Presentation']=='multiprotocol'):
-        print('-->')
         return physion.visual_stim.main.multiprotocol(protocol)
     else:
         protocol_name = protocol['Stimulus'].replace('-image','').replace('-', '_').replace('+', '_')
@@ -49,7 +48,7 @@ def get_default_params(protocol_name):
         params['presentation-poststim-screen'] = 0
 
         return params
-        
+
     except ModuleNotFoundError:
 
         print('\n /!\ Protocol not recognized ! /!\ \n ')
