@@ -149,8 +149,9 @@ def plot_trial_average(episodes,
                     inset = pt.inset(AX[irow][icol], [.83, .9, .3, .25])
                     istim = np.flatnonzero(cond)[0]
                     # start -- QUICK FIX
-                    episodes.visual_stim.experiment['protocol_id'] = np.zeros(len(cond), dtype=int)+\
-                        int(episodes.visual_stim.experiment['protocol_id'][0])
+                    if 'protocol_id' in episodes.visual_stim.experiment:
+                        episodes.visual_stim.experiment['protocol_id'] = np.zeros(len(cond), dtype=int)+\
+                                                    int(episodes.visual_stim.experiment['protocol_id'][0])
                     # end -- QUICK FIX
                     episodes.visual_stim.plot_stim_picture(istim, ax=inset)
 
