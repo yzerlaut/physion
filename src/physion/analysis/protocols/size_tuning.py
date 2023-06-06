@@ -258,7 +258,8 @@ def generate_figs(args,
                                   figsize=(7,6.5))
         pt.plt.subplots_adjust(right=.8, top=.95, left=0.08, bottom=0.03)
 
-        for i, irdm in enumerate(np.random.choice(np.arange(len(CENTERED_ROIS)), Nexamples)):
+        for i, irdm in enumerate(np.random.choice(np.arange(len(CENTERED_ROIS)),
+                                 np.min([Nexamples, len(ANGLES)]), replace=False)):
 
             angle_cond = episodes.find_episode_cond(key='angle', value=ANGLES[i])
             plot_trial_average(episodes,
@@ -278,6 +279,11 @@ def generate_figs(args,
             inset.plot(radii, size_resps[irdm], 'ko-')
             inset.set_ylabel('$\delta$ $\Delta$F/F')
             inset.set_xlabel('size ($^o$)')
+
+        while i<(Nexamples-1):
+            i+=1
+            for ax in AX[i]:
+                ax.axis('off')
 
         fig.savefig(os.path.join(tempfile.tempdir, 'TA-all-%i.png' % args.unique_run_ID), dpi=300)
         if not args.debug:
