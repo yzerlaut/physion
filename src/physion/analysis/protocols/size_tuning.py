@@ -31,32 +31,36 @@ def center_and_compute_size_tuning(data,
 
     # ## --- EPISODES -- CENTERING
 
+    id_centering = np.flatnonzero([('size-tuning-protocol-loc' in p) for p in data.protocols])[0]
     # protocol= data.get_protocol_id('size-tuning-protocol-loc-long') if  
     episodes = EpisodeData(data,
-                           protocol_id = data.get_protocol_id('size-tuning-protocol-loc'),
+                           protocol_id = id_centering,
                            quantities = [imaging_quantity],
                            prestim_duration=prestim_duration,
                            with_visual_stim=True,
                            verbose=verbose)
 
     CENTERED_ROIS, ANGLES = extract_centered_rois(data, episodes,
+                imaging_quantity=imaging_quantity,
                 response_significance_threshold=response_significance_threshold)
 
 
     # ## --- EPISODES -- SIZE VARIATIONS
-
+    id_sizeTuning = np.flatnonzero([('size-tuning-protocol-dep' in p) for p in data.protocols])[0]
     episodes = EpisodeData(data,
-                           protocol_id = data.get_protocol_id('size-tuning-protocol-dep'),
+                           protocol_id = id_sizeTuning,
                            quantities=[imaging_quantity],
                            prestim_duration=prestim_duration,
                            verbose=False)
 
     radii, size_resps = compute_size_tuning_curves(data,\
-                                                   episodes,
-                                                   CENTERED_ROIS,
-                                                   ANGLES,
-                                                   stat_test_props,
-            response_significance_threshold=response_significance_threshold)
+                                                episodes,
+                                                CENTERED_ROIS,
+                                                ANGLES,
+                                                stat_test_props,
+                                                response_significance_threshold=\
+                                                        response_significance_threshold,
+                                                imaging_quantity=imaging_quantity)
 
     if with_rois_and_angles:
         return radii, size_resps, CENTERED_ROIS, ANGLES
@@ -69,9 +73,7 @@ def extract_centered_rois(data, episodes,
 
     CENTERED_ROIS, ANGLES = [], []
 
-    nROIs = (data.vNrois if imaging_quantity=='dFoF' else data.nROIs)
-
-    for roi in range(nROIs):
+    for roi in range(data.nROIs):
 
         resp = episodes.compute_summary_data(stat_test_props,
                                              response_args={'quantity':imaging_quantity,
@@ -181,7 +183,6 @@ def generate_figs(args,
         data.build_dFoF()
     else:
         data.build_rawFluo()
-    nROIs = (data.vNrois if args.imaging_quantity=='dFoF' else data.nROIs)
 
     # ## --- METADATA  ---
     fig = metadata_fig(data, short=True)
@@ -232,8 +233,8 @@ def generate_figs(args,
                            no_set=False, AX=AX)
 
         fig.suptitle('centered ROIs: n=%i/%i (%.1f%%)\nmean$\pm$s.d. over rois' %\
-                                                        (len(CENTERED_ROIS), nROIs,
-                                                        100*len(CENTERED_ROIS)/nROIs))
+                                                        (len(CENTERED_ROIS), data.nROIs,
+                                                        100*len(CENTERED_ROIS)/data.nROIs))
         fig.savefig(os.path.join(tempfile.tempdir,
                     'TA-centered-%i.png' % args.unique_run_ID), dpi=300)
         if not args.debug:
