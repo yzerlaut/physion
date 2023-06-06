@@ -298,6 +298,8 @@ def generate_figs(args,
 
     except BaseException as be:
 
+        print(be)
+
         episodes = EpisodeData(data,
                                protocol_id=0,
                                quantities=[args.imaging_quantity],
