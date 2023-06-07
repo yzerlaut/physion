@@ -14,7 +14,7 @@ params = {"movie_refresh_freq":10,
           "y-center (deg)":0.,
           "size (deg)":4.,
           "angle (deg)":0,
-          "radius (deg)":15.,
+          "radius (deg)":10,
           "spatial-freq (cycle/deg)":0.04,
           "contrast (lum.)":1.0,
           "bg-color (lum.)":0.5}

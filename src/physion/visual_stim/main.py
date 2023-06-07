@@ -169,7 +169,7 @@ class visual_stim:
 
     def compute_grating(self, xrot,
                         spatial_freq=0.1, contrast=1, time_phase=0.):
-        return contrast*(1+np.cos(2*np.pi*(spatial_freq*xrot-time_phase)))/2.
+        return contrast*(1+np.cos(np.pi/2.+2*np.pi*(spatial_freq*xrot-time_phase)))/2.
 
     ################################
     #  ---     Experiment      --- #
