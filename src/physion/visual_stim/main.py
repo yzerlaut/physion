@@ -153,6 +153,7 @@ class visual_stim:
         # we linearize the arctan function #
         """
         dAngle_per_pix = self.pix_to_angle(1.)
+        print(dAngle_per_pix)
         x, z = np.meshgrid(dAngle_per_pix*(np.arange(self.screen['resolution'][0])-self.screen['resolution'][0]/2.),
                            dAngle_per_pix*(np.arange(self.screen['resolution'][1])-self.screen['resolution'][1]/2.),
                            indexing='xy')

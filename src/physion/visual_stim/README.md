@@ -25,7 +25,7 @@ A list of protocols are available in the [protocol folder of the repository](../
 The setup corresponds to the following setting:
 
 <p align="center">
-  <img src="../../docs/visual-field.png"/>
+  <img src="../../docs/visual-field.svg" width="100%" />
 </p>
 
 ## Screen settings
