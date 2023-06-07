@@ -153,6 +153,7 @@ class visual_stim:
         # we linearize the arctan function #
         """
         dAngle_per_pix = self.pix_to_angle(1.)
+        print(dAngle_per_pix)
         x, z = np.meshgrid(dAngle_per_pix*(np.arange(self.screen['resolution'][0])-self.screen['resolution'][0]/2.),
                            dAngle_per_pix*(np.arange(self.screen['resolution'][1])-self.screen['resolution'][1]/2.),
                            indexing='xy')
@@ -169,7 +170,7 @@ class visual_stim:
 
     def compute_grating(self, xrot,
                         spatial_freq=0.1, contrast=1, time_phase=0.):
-        return contrast*(1+np.cos(2*np.pi*(spatial_freq*xrot-time_phase)))/2.
+        return contrast*(1+np.cos(np.pi/2.+2*np.pi*(spatial_freq*xrot-time_phase)))/2.
 
     ################################
     #  ---     Experiment      --- #

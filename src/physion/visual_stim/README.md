@@ -4,6 +4,14 @@ The stimulus presentation relies on the [PsychoPy module](https://www.psychopy.o
 
 A few examples, that were used to design and calibrate the stimuli, can be found in the [psychopy_code/demo_stim.py](./psychopy_code/demo_stim.py)
 
+## Mouse visual field and screen position
+
+The setup corresponds to the following setting:
+
+<p align="center">
+  <img src="../../docs/visual-field.svg" width="100%" />
+</p>
+
 ## Running the visual stimulation program
 
 If not starting from the main GUI (see [README](../../README.md)), open the Anaconda prompt and run:
@@ -20,13 +28,6 @@ There is a `"demo"` mode to adjust and build the protocols.
 
 A list of protocols are available in the [protocol folder of the repository](../exp/protocols/).
 
-## Mouse visual field and screen position
-
-The setup corresponds to the following setting:
-
-<p align="center">
-  <img src="../../docs/visual-field.png"/>
-</p>
 
 ## Screen settings
 

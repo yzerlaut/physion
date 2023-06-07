@@ -1,2 +1,6 @@
 Subject-ID,Anibio-Number,Date-of-Birth,Tatoo,Sex,Strain,Genotype,Surgery,Surgery-Date,Virus,headplate-angle-from-rig-axis,FOV1,FOV2,FOV3
-MAAE1_SSTcreXtdTomato,NA,17/02/2023,NA,Male,C57B6/J,SSTcre,headplate+injection,24/03/2023,VR27,10,"(-167, 305, 276)","(-306,  357, 149)",
+MAAG1_SSTcre,NA,11/02/2023,NA,Male,C57B6/J,SSTcre,headplate+injection,21/04/2023,VR27,10,"(73, 229, 220)","(-9, 336, 75)",
+MAAH1_SSTcreNR1,498,07/03/2023,NA,Male,C57B6/J,SSTCre x NR1,headplate+injection,21/04/2023,VR27,10,"(-656, 255, 270)","(-610,4 187)",
+MAAI1_SSTcreNR1,502,13/03/2023,NA,Female,C57B6/J,SSTCre x NR1,headplate+injection,20/04/2023,VR27,10,"(92, -136, 276)","(31, -289, 189)",
+MAAI2_SSTcreNR1,503,13/03/2023,NA,Female,C57B6/J,SSTCre x NR1,headplate+injection,20/04/2023,VR27,10,,,
+MAAJ1_SSTCreNR3,NA,04/03/2023,NA,Female,C57B6/J,SSTCre x NR3,headplate+injection,10/05/2023,VR27,10,"(-480, 73, 252)","(-390, 16, 183)","(-193, -118, '10')"
