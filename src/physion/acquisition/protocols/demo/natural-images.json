@@ -1,0 +1,18 @@
+{
+  "Presentation": "Randomized-Sequence",
+  "Stimulus": "natural_image",
+  "Screen": "Dell-2020",
+  "presentation-duration": 3.0,
+  "presentation-prestim-period": 4.0,
+  "presentation-poststim-period": 4.0,
+  "presentation-prestim-screen": 0,
+  "presentation-poststim-screen": 0,
+  "presentation-interstim-period": 4.0,
+  "presentation-interstim-screen": 0,
+  "N-repeat": 10,
+  "starting-index": 0,
+  "shuffling-seed": 1,
+  "Image-ID-1": 0.0,
+  "Image-ID-2": 5.0,
+  "N-Image-ID": 6
+}
