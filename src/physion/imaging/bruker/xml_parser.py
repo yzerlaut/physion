@@ -11,13 +11,25 @@ def bruker_xml_parser(filename):
     mytree = ET.parse(filename)
     root = mytree.getroot()
 
-    # print(root.attrib['version'])
-
     data = {'settings':{},
             'date':root.attrib['date'],
             'Prairie-version':root.attrib['version']}
 
-    for channel in ['Ch1', 'Ch2']:
+    try:
+        # to find channel names
+        CHANNELS = []
+        for frames in root[2:]:
+            for x in frames[:4]:
+                if x.tag == 'Frame':
+                    for f in x:
+                        if ('channelName' in f.attrib) and (f.attrib['channelName'] not in CHANNELS):
+                            CHANNELS.append(f.attrib['channelName'])
+    except BaseException as be:
+        print(be)
+        CHANNELS = ['Ch1', 'Ch2']
+        print(' \n \n  /!\  Channel Names not found /!\ taking the defaults: %s \n ' % CHANNELS)
+
+    for channel in CHANNELS:
         data[channel] = {'relativeTime':[], 'absoluteTime':[],
                          'depth_index':[], 'tifFile':[]}
 
@@ -43,13 +55,15 @@ def bruker_xml_parser(filename):
     
     data['StartTime'] = root[2].attrib['time']
 
-    if '5.5.' in data['Prairie-version']:
+    if ('5.5.' in data['Prairie-version']) or ('5.6.' in data['Prairie-version']):
+
         depths = {}
         for frames in root[2:]:
             for x in frames:
                 if x.tag == 'Frame':
                     for f in x:
-                        for channel in ['Ch1', 'Ch2']:
+                        for channel in CHANNELS:
+                            # print(f.attrib)
                             if f.tag == 'File' and (channel in f.attrib['channelName']):
                                 data[channel]['tifFile'].append(f.attrib['filename'])
                                 for key in ['relativeTime', 'absoluteTime']:
@@ -74,7 +88,7 @@ def bruker_xml_parser(filename):
 
         # dealing with depth  --- MANUAL for piezo plane-scanning mode because the bruker xml files don't hold this info...
         if np.sum(['Piezo' in key for key in depths.keys()]):
-            Ndepth = len(np.unique(data['Ch2']['depth_index'])) # SHOULD ALWAYS BE ODD
+            Ndepth = len(np.unique(data[CHANNELS[0]]['depth_index'])) # SHOULD ALWAYS BE ODD
             try:
                 for key in depths.keys():
                     if 'Piezo' in key:
@@ -109,13 +123,14 @@ def bruker_xml_parser(filename):
 
     else:
 
-        raise NotImplementedError('\n \n /!\ Prairie version of xml file not supported \n ')
+        raise NotImplementedError('\n \n  /!\  Prairie version "%s" of xml file not supported  /!\  \n ' % data['Prairie-version'])
 
     # ---------------------------- #
     #  translation to numpy arrays
     # ---------------------------- #
     data['Nchannels']=0
-    for channel in ['Ch1', 'Ch2']:
+    data['channels'] = CHANNELS
+    for channel in CHANNELS:
         if len(data[channel]['relativeTime'])>1:
             data['Nchannels'] += 1
         for key in ['relativeTime', 'absoluteTime']:
@@ -144,15 +159,16 @@ if __name__=='__main__':
     
     
     data = bruker_xml_parser(example_file)
-    print(data['depth_shift'])
+    # print(data['depth_shift'])
     # print(data.keys())
     # import pprint
     # pprint.pprint(data['settings'])
-    # for key in ['Ch1', 'Ch2']:
-        # print('--- ', key)
-        # # print(data[key].keys())
+    for key in data['channels']:
+        print('--- ', key)
+        # print(data[key].keys())
         # print(data[key]['absoluteTime'][-10:])
         # print(data[key]['tifFile'][-10:])
         # print(data[key]['depth_index'][-10:])
-    print(data['Prairie-version'])
+        print(len(data[key]['relativeTime']))
+    # print(data['Prairie-version'])
 
