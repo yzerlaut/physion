@@ -64,6 +64,7 @@ def gui(self,
     self.pPupil = self.win.addViewBox(lockAspect=True,#row=0,col=1,
                                       # border=[100,100,100],
                                       invertY=True)
+
     #self.p0.setMouseEnabled(x=False,y=False)
     self.pPupil.setMenuEnabled(False)
     self.pPupilimg = pg.ImageItem(None)
@@ -102,16 +103,19 @@ def gui(self,
     self.pupilFit = QtWidgets.QPushButton('fit Pupil [F]')
     tab.layout.addWidget(self.pupilFit, 1, 9+6, 1, 1)
     self.pupilFit.clicked.connect(self.fit_pupil)
+
     # choose pupil shape
     self.pupil_shape = QtWidgets.QComboBox(self)
     self.pupil_shape.addItem("Ellipse fit")
     self.pupil_shape.addItem("Circle fit")
     tab.layout.addWidget(self.pupil_shape, 1, 10+6, 1, 1)
+
     # reset
     self.reset_btn = QtWidgets.QPushButton('reset')
     tab.layout.addWidget(self.reset_btn, 1, 11+6, 1, 1)
     self.reset_btn.clicked.connect(self.reset_pupil)
     # self.reset_btn.setEnabled(True)
+
     # draw pupil
     self.refreshButton = QtWidgets.QPushButton('Refresh [R]')
     tab.layout.addWidget(self.refreshButton, 2, 11+6, 1, 1)
@@ -232,14 +236,14 @@ def gui(self,
     btns.addButton(self.playButton,0)
     btns.addButton(self.pauseButton,1)
 
-    tab.layout.addWidget(self.folderBox,1,0,1,3)
-    tab.layout.addWidget(self.load,2,0,1,3)
+    tab.layout.addWidget(self.folderBox, 1, 0, 1, 3)
+    tab.layout.addWidget(self.load, 2, 0, 1, 3)
     tab.layout.addWidget(self.loadLastGUIsettings, 7, 0, 1, 3)
     tab.layout.addWidget(self.sampLabel, 8, 0, 1, 3)
     tab.layout.addWidget(self.samplingBox, 8, 2, 1, 3)
     tab.layout.addWidget(self.smoothLabel, 9, 0, 1, 3)
     tab.layout.addWidget(self.smoothBox, 9, 2, 1, 3)
-    tab.layout.addWidget(self.addROI,14,0,1,3)
+    tab.layout.addWidget(self.addROI, 14, 0, 1, 3)
     tab.layout.addWidget(self.process, 16, 0, 1, 3)
     # tab.layout.addWidget(self.runAsSubprocess, 17, 0, 1, 3)
     tab.layout.addWidget(self.saverois, 19, 0, 1, 3)
@@ -282,21 +286,25 @@ def open_pupil_data(self):
     folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
                                 "Choose datafolder",
                                 FOLDERS[self.folderBox.currentText()])
-    # folder = '/home/yann/UNPROCESSED/2021_09_10/13-52-49/'
+    # FOR DEBUGGING
+    # folder = '/home/yann/DATA/DEMO-DATA/NDNF-demo/2023_01_20/15-37-57/'
 
     if folder!='':
         
         self.datafolder = folder
+        self.data_before_outliers = None
         
         if os.path.isdir(os.path.join(folder, 'FaceCamera-imgs')):
 
             if not self.keepCheckBox.isChecked():
                 self.reset()
             self.imgfolder = os.path.join(self.datafolder, 'FaceCamera-imgs')
-            self.times, self.FILES, self.nframes, self.Lx, self.Ly = load_FaceCamera_data(self.imgfolder,
-                                                                                          t0=0, verbose=True)
+            self.times, self.FILES, self.nframes,\
+                    self.Ly, self.Lx = load_FaceCamera_data(self.imgfolder,
+                                                            t0=0, verbose=True)
         else:
-            self.times, self.imgfolder, self.nframes, self.FILES = None, None, None, None
+            self.times, self.imgfolder = None, None
+            self.nframes, self.FILES = None, None
             print(' /!\ no raw FaceCamera data found ...')
 
         if os.path.isfile(os.path.join(self.datafolder, 'pupil.npy')):
@@ -331,7 +339,9 @@ def open_pupil_data(self):
 
 def save_gui_settings(self):
 
-    settings = {'gaussian_smoothing':int(self.smoothBox.text()) if self.smoothLabel.isChecked() else 0}
+    settings = {'gaussian_smoothing':int(self.smoothBox.text())\
+                        if self.smoothLabel.isChecked() else 0}
+
     if len(self.bROI)>0:
         settings['blanks'] = [r.extract_props() for r in self.bROI]
 
@@ -346,12 +356,14 @@ def save_gui_settings(self):
 
     settings['ROIsaturation'] = self.sl.value()
     
-    np.save(os.path.join(pathlib.Path(__file__).resolve().parent, '_gui_settings.npy'), settings)
+    np.save(os.path.join(pathlib.Path(__file__).resolve().parent,
+            '_gui_settings.npy'), settings)
 
 def load_last_gui_settings_pupil(self):
 
     try:
-        settings = np.load(os.path.join(pathlib.Path(__file__).resolve().parent, '_gui_settings.npy'),
+        settings = np.load(os.path.join(pathlib.Path(__file__).resolve().parent,
+                                        '_gui_settings.npy'),
                            allow_pickle=True).item()
 
         if settings['gaussian_smoothing']>0:
@@ -359,21 +371,25 @@ def load_last_gui_settings_pupil(self):
             self.smoothBox.setText('%i' % settings['gaussian_smoothing'])
         else:
             self.smoothLabel.setChecked(False)
-            self.smoothBox.setText('5')
+            self.smoothBox.setText('1')
 
         self.sl.setValue(int(settings['ROIsaturation']))
+        # print(settings['ROIellipse'])
         self.ROI = roi.sROI(parent=self,
                             pos=roi.ellipse_props_to_ROI(settings['ROIellipse']))
 
         self.bROI, self.reflectors = [], [] # blanks & reflectors
         if 'blanks' in settings:
             for b in settings['blanks']:
-                self.bROI.append(roi.reflectROI(len(self.bROI), moveable=True, parent=self,
+                self.bROI.append(roi.reflectROI(len(self.bROI),
+                                                moveable=True, parent=self,
                                                 pos=roi.ellipse_props_to_ROI(b)))
         if 'reflectors' in settings:
             for r in settings['reflectors']:
-                self.reflectors.append(roi.reflectROI(len(self.bROI), moveable=True, parent=self,
-                                                      pos=roi.ellipse_props_to_ROI(r), color='green'))
+                self.reflectors.append(roi.reflectROI(len(self.bROI),
+                                                      moveable=True, parent=self,
+                                                      pos=roi.ellipse_props_to_ROI(r),
+                                                      color='green'))
             
         self.jump_to_frame()
     except FileNotFoundError:
@@ -531,8 +547,8 @@ def jump_to_frame(self):
         if self.ROI is not None:
             process.init_fit_area(self)
             process.preprocess(self,\
-                            gaussian_smoothing=float(self.smoothBox.text()),
-                            saturation=self.sl.value())
+                               gaussian_smoothing=float(self.smoothBox.text()),
+                               saturation=self.sl.value())
             
             self.pPupilimg.setImage(self.img)
             self.pPupilimg.setLevels([self.img.min(), self.img.max()])
@@ -561,7 +577,6 @@ def jump_to_frame(self):
             for key in ['cx', 'cy', 'sx', 'sy', 'angle']:
                 coords.append(self.data[key][self.iframe])
 
-
         plot_pupil_ellipse(self, coords)
         # self.fit = roi.pupilROI(moveable=True,
         #                         parent=self,
@@ -573,7 +588,8 @@ def jump_to_frame(self):
 
 def plot_pupil_ellipse(self, coords):
 
-    self.pupilContour.setData(*process.ellipse_coords(*coords, transpose=False),
+    self.pupilContour.setData(*process.ellipse_coords(*coords,
+                                                      transpose=False),
                               size=3, brush=pg.mkBrush(255,0,0))
     self.pupilCenter.setData([coords[0]], [coords[1]],
                              size=8, brush=pg.mkBrush(255,0,0))
@@ -618,7 +634,6 @@ def process_pupil(self):
         self.data = {}
         extract_ROI(self, self.data)
 
-        
     if self.sampLabel.isChecked():
         self.subsampling = int(self.samplingBox.text())
     else:
@@ -642,7 +657,8 @@ def process_pupil(self):
     # self.save_gui_settings()
     
     plot_pupil_trace(self)
-        
+    self.data_before_outliers = None # we reset it at each process
+
     self.win.show()
     self.show()
 
