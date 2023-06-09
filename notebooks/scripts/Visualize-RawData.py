@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.14.5
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -48,7 +48,8 @@ tlim = [38,88]
 fig, _ = plot_raw(data, tlim, 
                   settings={'CaImaging':dict(fig_fraction=3, subsampling=1, 
                                              subquantity='dF/F', color='tab:green',
-                                             roiIndices=[6]+list(np.random.choice(range(data.nROIs), 7))),
+                                             roiIndices=[6]+\
+                                                 list(np.random.choice(range(data.vNrois), 7))),
                             'VisualStim':dict(fig_fraction=0, color='black')},
                             Tbar=1)
 #fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'fig.svg'))
@@ -65,8 +66,8 @@ fig, _ = plot_raw(data, tlim,
                             'Pupil':dict(fig_fraction=1, subsampling=1, color='tab:red'),
                             'CaImaging':dict(fig_fraction=3, subsampling=1, 
                                              subquantity='dF/F', color='tab:green',
-                                             roiIndices=[0,1,2,3,4,5,6,7]),
-                                             #roiIndices=np.random.choice(range(180),4)),
+                                             #roiwIndices=[0,1,2,3,4,5,6,7]),
+                                             roiIndices=np.random.choice(range(data.vNrois),4)),
                             'CaImagingRaster':dict(fig_fraction=2, subsampling=1,
                                                    roiIndices='all',
                                                    normalization='per-line',

@@ -39,9 +39,9 @@ def sliding_percentile(array, percentile, Window,
 
     x = np.zeros(len(array))
     y0 = strided_app(array, Window, 1)
-    
+
     y = np.percentile(y0, percentile, axis=-1)
-    
+
     x[:int(Window/2)] = y[0]
     x[int(Window/2):int(Window/2)+len(y)] = y
     x[-int(Window/2):] = y[-1]
@@ -49,19 +49,19 @@ def sliding_percentile(array, percentile, Window,
         return gaussian_filter1d(x, Window)
     else:
         return x
-    
+
 def compute_sliding_percentile(array, percentile, Window,
                                with_smoothing=False):
     """
     trying numpy code to evaluate efficiently the distrib percentile over a sliding window
     making use of "stride tricks" for fast looping over the sliding window
-    
+
         not really efficient so far... :(
-    
-    see: 
+
+    see:
     https://numpy.org/doc/stable/reference/generated/numpy.lib.stride_tricks.sliding_window_view.html
     """
-    
+
     # using a sliding "view" of the array
     sliding_percentile = np.zeros(array.shape)
     for roi in range(array.shape[0]):
@@ -103,10 +103,10 @@ def compute_sliding_F0(data, F,
         return F0
     else:
         print('\n --- method not recognized --- \n ')
-        
 
 
-def compute_dFoF(data,  
+
+def compute_dFoF(data,
                  neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
                  method_for_F0=METHOD,
                  percentile=PERCENTILE_SLIDING_MIN,
@@ -114,15 +114,15 @@ def compute_dFoF(data,
                  return_corrected_F_and_F0=False,
                  verbose=True):
     """
-    compute fluorescence variation with a neuropil correction set by the 
+    compute fluorescence variation with a neuropil correction set by the
     factor neuropil_correction_factor
     """
 
-    
+
     if verbose:
         tick = time.time()
         print('\ncalculating dF/F with method "%s" [...]' % method_for_F0)
-        
+
     if (neuropil_correction_factor>1) or (neuropil_correction_factor<0):
         print('/!\ neuropil_correction_factor has to be in the interval [0.,1]')
         print('neuropil_correction_factor set to 0 !')
@@ -131,9 +131,9 @@ def compute_dFoF(data,
     # ## ------------------------------------ ##
     # ############# classic way ################
     # ## ------------------------------------ ##
-    # # performing correction 
+    # # performing correction
     # F = data.Fluorescence.data[:,:]-neuropil_correction_factor*data.Neuropil.data[:,:]
-        
+
     # F0 = compute_sliding_F0(data, F,
     #                         method=method_for_F0,
     #                         percentile=percentile,
@@ -148,7 +148,7 @@ def compute_dFoF(data,
     #               % (np.sum(~valid_roiIndices), 100*np.sum(~valid_roiIndices)/F0.shape[0]))
     #     else:
     #         print('\n  ** all ROIs passed the positive F0 criterion ** \n')
-            
+
     # data.nROIs = np.sum(valid_roiIndices)
     # data.dFoF = (F[valid_roiIndices,:]-F0[valid_roiIndices,:])/F0[valid_roiIndices,:]
     # data.valid_roiIndices = np.arange(data.iscell.sum())[valid_roiIndices]
@@ -164,7 +164,7 @@ def compute_dFoF(data,
                             sliding_window=sliding_window)
 
     correctedFluo = data.rawFluo-neuropil_correction_factor*data.neuropil
-    
+
     # exclude cells with Neuropil higher than Fluorescence and Fluorescence too low (min has to be higher than 1 signal unit !):
     valid_roiIndices = (np.mean(correctedFluo, axis=1)>0) & (np.min(F0, axis=1)>1)
 
@@ -179,7 +179,7 @@ def compute_dFoF(data,
                   % (np.sum(~valid_roiIndices), 100*np.sum(~valid_roiIndices)/F0.shape[0]))
         else:
             print('\n  ** all ROIs passed the positive F0 criterion ** \n')
-            
+
     # F/F0 method:
     # data.dFoF = correctedFluo[valid_roiIndices,:]/F0[valid_roiIndices,:]
 
@@ -188,19 +188,19 @@ def compute_dFoF(data,
 
     data.valid_roiIndices = np.arange(data.iscell.sum())[valid_roiIndices]
     data.vNrois= len(data.valid_roiIndices) # number of valid ROIs
-    
+
     if verbose:
         print('-> dFoF calculus done !  (calculation took %.1fs)' % (time.time()-tick))
-    
+
     if return_corrected_F_and_F0:
         return correctedFluo[valid_roiIndices,:], F0[valid_roiIndices,:]
     else:
         return None
 
-    
-########################################################################################    
+
+########################################################################################
 ####################### old code, should be deprecated #################################
-########################################################################################    
+########################################################################################
 
 
 
@@ -232,7 +232,6 @@ def compute_CaImaging_raster(data, CaImaging_key,
                 raster[n,:] = (raster[n,:]-Fmin)/(Fmax-Fmin)
 
     return raster
-              
 
 
 
@@ -240,4 +239,5 @@ def compute_CaImaging_raster(data, CaImaging_key,
 
 
 
-        
+
+
