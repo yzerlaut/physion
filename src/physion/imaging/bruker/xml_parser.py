@@ -89,7 +89,7 @@ def bruker_xml_parser(filename):
             data['depth_shift'] = np.zeros(1)
 
 
-    else:
+    elif '5.4.' in data['Prairie-version']:
 
         # version without multiplabe scanning: 5.4.X
         for x in root[2]:
@@ -106,6 +106,10 @@ def bruker_xml_parser(filename):
 
         data['depth_shift'] = np.zeros(1)
         data['depth_index'] = np.zeros(len(data['Ch1']['relativeTime']))
+
+    else:
+
+        raise NotImplementedError('\n \n /!\ Prairie version of xml file not supported \n ')
 
     # ---------------------------- #
     #  translation to numpy arrays
@@ -144,10 +148,11 @@ if __name__=='__main__':
     # print(data.keys())
     # import pprint
     # pprint.pprint(data['settings'])
-    for key in ['Ch1', 'Ch2']:
-        print('--- ', key)
-        # print(data[key].keys())
-        print(data[key]['absoluteTime'][-10:])
-        print(data[key]['tifFile'][-10:])
-        print(data[key]['depth_index'][-10:])
+    # for key in ['Ch1', 'Ch2']:
+        # print('--- ', key)
+        # # print(data[key].keys())
+        # print(data[key]['absoluteTime'][-10:])
+        # print(data[key]['tifFile'][-10:])
+        # print(data[key]['depth_index'][-10:])
+    print(data['Prairie-version'])
 
