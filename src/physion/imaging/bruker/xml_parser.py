@@ -55,7 +55,7 @@ def bruker_xml_parser(filename):
     
     data['StartTime'] = root[2].attrib['time']
 
-    if ('5.5.' in data['Prairie-version']) or ('5.6.' in data['Prairie-version']):
+    if ('5.5.' in data['Prairie-version']) or ('5.6.' in data['Prairie-version']) or ('5.7.' in data['Prairie-version']):
 
         depths = {}
         for frames in root[2:]:
