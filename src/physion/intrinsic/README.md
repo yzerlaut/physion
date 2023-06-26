@@ -28,6 +28,12 @@ The code comes from from [a script from Jun Zhuang](https://github.com/zhuangjun
 
 [...]
 
+## Usage
+
+- 1. Start Micromanager
+- 2. Set up stream to pycromanager in micro-manager
+- 3. Start `physion`
+
 ## Installation steps
 
 ### 1) Install the Camera drivers from the manufacturer
