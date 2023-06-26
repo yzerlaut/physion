@@ -26,6 +26,38 @@ The code comes from from [a script from Jun Zhuang](https://github.com/zhuangjun
 
 ## Material and Methods
 
+[...]
+
+## Installation steps
+
+### 1) Install the Camera drivers from the manufacturer
+
+Either from:
+- QCam
+- Thorlabs
+- FLIR
+- ...
+
+### 2) Install Micromanager
+
+Download micromanager from https://micro-manager.org/ and install it.
+
+### 3) Set up the camera using the `Hardware Configuration Wizard` of Micromanager
+
+In the GUI, menu: `Devices` > `Hardware Configuration Wizard`
+
+### N.B. For Thorlab cameras (06/2023)
+
+- Follow those steps: https://micro-manager.org/TSI
+- *with* Micromanager 2.0.1 (get it from the nightly builds https://download.micro-manager.org/nightly/2.0/Windows/ )
+- *with* Thorcam >=3.7
+
+
+
+
+
+
+
 
 
 
