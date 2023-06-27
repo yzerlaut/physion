@@ -18,9 +18,13 @@ class ThorCamRecorder(ThorCam):
     filename = None
     is_saving = False
     def __init__(self,
-                 exposure = 200,
+                 parent=None,
+                 t0=0,
+                 exposure = 0.1,
                  binning = 6,
                  trigger = 'software'):
+        self.parent=parent
+        self.t0 = t0
         time.sleep(1)
         self.start_cam_process()
         time.sleep(5)
@@ -52,33 +56,43 @@ class ThorCamRecorder(ThorCam):
             buffer = image.to_bytearray()[0],
             dtype = 'uint16').reshape((H,W))
         self.frame = count
-        if self.is_saving and not self.filename is None:
-            if self.fid is None:
-                self.fid = h5.File(self.filename,'w')
-                self.dset_data = self.fid.create_dataset('frames',(1,H,W), data = self.image,
-                                                        maxshape = (None,H,W),
-                                                        dtype='uint16',
-                                                        compression = 'lzf')
-                self.dset_frameid = self.fid.create_dataset('frameid',(1,2), data = np.array([count,t]),
-                                                           maxshape = (None,2),
-                                                           dtype='int64')
-            else:
-                # dump to disk
-                self.dset_data.resize(self.dset_data.shape[0]+1,axis = 0)
-                self.dset_data[-1,:,:] = self.image[:]
-                self.dset_frameid.resize(self.dset_frameid.shape[0]+1,axis = 0)
-                self.dset_frameid[-1] = np.array([count,t])
-            
+        self.parent.TIMES.append(time.time()-self.t0)
+        self.parent.FRAMES.append(self.image)
+        # if self.is_saving and not self.filename is None:
+            # if self.fid is None:
+                # self.fid = h5.File(self.filename,'w')
+                # self.dset_data = self.fid.create_dataset('frames',(1,H,W), data = self.image,
+                                                        # maxshape = (None,H,W),
+                                                        # dtype='uint16',
+                                                        # compression = 'lzf')
+                # self.dset_frameid = self.fid.create_dataset('frameid',(1,2), data = np.array([count,t]),
+                                                           # maxshape = (None,2),
+                                                           # dtype='int64')
+            # else:
+                # # dump to disk
+                # self.dset_data.resize(self.dset_data.shape[0]+1,axis = 0)
+                # self.dset_data[-1,:,:] = self.image[:]
+                # self.dset_frameid.resize(self.dset_frameid.shape[0]+1,axis = 0)
+                # self.dset_frameid[-1] = np.array([count,t])
+    
+class Parent:
+    def __init__(self):
+        self.TIMES = []
+        self.FRAMES = []
+
 if __name__ == '__main__':
     # testing
-    cam = ThorCamRecorder()
-    cam.is_saving = True
-    cam.filename = 'test.h5'
+    parent = Parent()
+    cam = ThorCamRecorder(parent=parent)
+    # cam.is_saving = True
+    # cam.filename = 'test.h5'
 
     cam.play_camera()
 
-    time.sleep(10)
+    time.sleep(4)
 
     cam.stop_playing_camera()
     cam.close_camera()	
     cam.stop_cam_process(join = True)
+    print('average freq: ', 1./np.mean(np.diff(parent.TIMES)), 'Hz')
+    print(parent.FRAMES[-1])
