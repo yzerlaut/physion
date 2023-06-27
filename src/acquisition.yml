@@ -66,7 +66,6 @@ dependencies:
     - cffi==1.14.6
     - charset-normalizer==2.0.6
     - colorama==0.4.4
-    - datavyz==1.0
     - decorator==4.4.2
     - dukpy==0.2.3
     - esprima==4.0.1
@@ -135,7 +134,7 @@ dependencies:
     - smmap==4.0.0
     - sounddevice==0.4.2
     - soundfile==0.10.3.post1
-    - spinnaker-python==1.29.0.5
+    # - spinnaker-python==1.29.0.5
     - svgutils==0.3.4
     - tables==3.6.1
     - tobii-research==1.8.0
