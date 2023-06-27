@@ -1,3 +1,6 @@
+"""
+taken from: https://github.com/jcouto/isi-thorcam
+"""
 #      GNU GENERAL PUBLIC LICENSE
 # Joao Couto - feb 2023
 
@@ -67,7 +70,7 @@ class ThorCamRecorder(ThorCam):
                 self.dset_frameid[-1] = np.array([count,t])
             
 if __name__ == '__main__':
-    #freeze_support()
+    # testing
     cam = ThorCamRecorder()
     cam.is_saving = True
     cam.filename = 'test.h5'
