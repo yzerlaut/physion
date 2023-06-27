@@ -1,3 +1,4 @@
+import time
 from thorcam.camera import ThorCam
 
 class MyThorCam(ThorCam):
@@ -16,14 +17,19 @@ cam.start_cam_process()
 
 cam.refresh_cameras()
 
-cam.open_camera('03756')
-cam.exposure_range
-cam.play_camera()
+time.sleep(10)
+print(cam.serials)
 
-cam.stop_playing_camera()
+#cam.open_camera('03756')
+
+print(cam.exposure_range)
+
+#cam.play_camera()
+
+#cam.stop_playing_camera()
 
 # close the camera
-cam.close_camera()
+#cam.close_camera()
 
 # close the server and everything
 cam.stop_cam_process(join=True)
