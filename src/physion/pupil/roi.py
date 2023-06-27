@@ -11,9 +11,9 @@ colors = np.array([[0,200,50],[180,0,50],[40,100,250],[150,50,150]])
 
 def extract_ellipse_props(ROI):
     """ extract ellipse props from ROI (NEED TO RECENTER !)"""
-    xcenter = ROI.pos()[1]+ROI.size()[1]/2.
-    ycenter = ROI.pos()[0]+ROI.size()[0]/2.
-    sy, sx = ROI.size()
+    xcenter = ROI.pos()[0]+ROI.size()[0]/2.
+    ycenter = ROI.pos()[1]+ROI.size()[1]/2.
+    sx, sy = ROI.size()
     return xcenter, ycenter, sx, sy, ROI.angle()
 
 def ellipse_props_to_ROI(coords):
@@ -53,16 +53,17 @@ class reflectROI():
             imx = imx - dx / 2
             imy = imy - dy / 2
         else:
-            imy, imx, dy, dx, _ = pos
+            imx, imy, dx, dy, _ = pos
             self.yrange=yrange
             self.xrange=xrange
             self.ellipse=ellipse
-        self.draw(parent, imy, imx, dy, dx)
+
+        self.draw(parent, imx, imy, dx, dy)
         # self.ROI.sigRegionChangeFinished.connect(lambda: self.position(parent))
         # self.ROI.sigClicked.connect(lambda: self.position(parent))
         self.ROI.sigRemoveRequested.connect(lambda: self.remove(parent))
 
-    def draw(self, parent, imy, imx, dy, dx, angle=0):
+    def draw(self, parent, imx, imy, dx, dy, angle=0):
         roipen = pg.mkPen(self.color, width=3,
                           style=QtCore.Qt.SolidLine)
         self.ROI = pg.EllipseROI(
@@ -89,7 +90,8 @@ class reflectROI():
         return extract_ellipse_props(self.ROI)
     
 class pupilROI():
-    def __init__(self, moveable=True,
+    def __init__(self,
+                 moveable=True,
                  parent=None, pos=None,
                  yrange=None, xrange=None,
                  color = (255.0,0.0,0.0),
@@ -108,7 +110,7 @@ class pupilROI():
             imx = imx - dx / 2
             imy = imy - dy / 2
         else:
-            imy, imx, dy, dx = pos[0], pos[1], pos[2], pos[3]
+            imx, imy, dx, dy = pos[0], pos[1], pos[2], pos[3]
             if len(pos)>4:
                 angle=-180./np.pi*pos[4] # from Rd to Degrees
             else:
@@ -116,10 +118,10 @@ class pupilROI():
             self.yrange=yrange
             self.xrange=xrange
             self.ellipse=ellipse
-        self.draw(parent, imy, imx, dy, dx, angle=angle)
+        self.draw(parent, imx, imy, dx, dy, angle=angle)
         self.ROI.sigRemoveRequested.connect(lambda: self.remove(parent))
 
-    def draw(self, parent, imy, imx, dy, dx, angle=0):
+    def draw(self, parent, imx, imy, dx, dy, angle=0):
         roipen = pg.mkPen(self.color, width=3,
                           style=QtCore.Qt.SolidLine)
         self.ROI = pg.EllipseROI(
@@ -161,7 +163,8 @@ class sROI():
             self.color = color
             
         if pos is None:
-            pos = int(3*parent.Lx/8), int(3*parent.Ly/8), int(parent.Lx/4), int(parent.Ly/4), 0
+            pos = int(3*parent.Lx/8), int(3*parent.Ly/8),\
+                    int(parent.Lx/4), int(parent.Ly/4), 0
         self.draw(parent, *pos)
         
         self.moveable = moveable
@@ -170,7 +173,7 @@ class sROI():
         self.ROI.sigRemoveRequested.connect(lambda: self.remove(parent))
         self.position(parent)
 
-    def draw(self, parent, imy, imx, dy, dx, angle=0):
+    def draw(self, parent, imx, imy, dx, dy, angle=0):
         roipen = pg.mkPen(self.color, width=3,
                           style=QtCore.Qt.SolidLine)
         self.ROI = pg.EllipseROI(
@@ -190,12 +193,14 @@ class sROI():
         xrange = np.arange(parent.Lx).astype(np.int32)
         yrange = np.arange(parent.Ly).astype(np.int32)
         ellipse = np.zeros((xrange.size, yrange.size), np.bool)
-        self.x,self.y = np.meshgrid(np.arange(0,parent.Lx),
+        self.x, self.y = np.meshgrid(np.arange(0,parent.Lx),
                                     np.arange(0,parent.Ly),
                                     indexing='ij')
         # ellipse = ( (self.x - cx)**2 / (sx/2)**2 + (self.y - cy)**2 / (sy/2)**2 ) <= 1
-        ellipse = ( ((self.x-cx)*np.cos(angle)+(self.y-cy)*np.sin(angle))**2 / (sx/2)**2 +\
-                    ((self.x-cx)*np.sin(angle)-(self.y-cy)*np.cos(angle))**2 / (sy/2)**2 ) <= 1
+        ellipse = ( ((self.x-cx)*np.cos(angle)+\
+                            (self.y-cy)*np.sin(angle))**2 / (sx/2)**2 +\
+                    ((self.x-cx)*np.sin(angle)-\
+                            (self.y-cy)*np.cos(angle))**2 / (sy/2)**2 ) <= 1
         self.ellipse = ellipse
         parent.ROIellipse = self.extract_props()
         # parent.sl[1].setValue(parent.saturation * 100 / 255)

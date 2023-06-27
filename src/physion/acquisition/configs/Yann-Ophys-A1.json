@@ -15,7 +15,7 @@
 			   {"channel":1, "onset": 720,  "duration":0.5,   "value":5.0},
 			   {"channel":1, "onset": 1320,  "duration":0.5,   "value":5.0}],
     "rotating-disk":{"radius-position-on-disk-cm":9.0,
-		     "roto-encoder-value-per-rotation": -25300.0},
+		             "roto-encoder-value-per-rotation": -25300.0},
     "root_datafolder":"DATA",
     "subjects_file":"mice_yann.csv",
     "experimenter":"Yann Zerlaut",

@@ -6,10 +6,11 @@ import time
 # ---------------------------------
 # DEFAULT_CA_IMAGING_OPTIONS
 
-METHOD = 'maximin' # either 'maximin' or 'sliding_percentile'
-T_SLIDING_MIN = 60. # seconds
-PERCENTILE_SLIDING_MIN = 5. # percent
-NEUROPIL_CORRECTION_FACTOR = 0.7
+ROI_TO_NEUROPIL_INCLUSION_FACTOR = 1.1 # ratio to discard ROIs with weak fluo compared to neuropil
+METHOD = 'maximin' # either 'maximin' (for speed) or 'sliding_percentile'
+T_SLIDING_MIN = 300. # seconds
+PERCENTILE_SLIDING_MIN = 10. # percent
+NEUROPIL_CORRECTION_FACTOR = 0.8
 
 # ---------------------------------
 ####################################
@@ -105,20 +106,43 @@ def compute_sliding_F0(data, F,
         print('\n --- method not recognized --- \n ')
 
 
+<<<<<<< HEAD
 
 def compute_dFoF(data,
+=======
+def compute_dFoF(data,  
+                 roi_to_neuropil_fluo_inclusion_factor=ROI_TO_NEUROPIL_INCLUSION_FACTOR,
+>>>>>>> main
                  neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
                  method_for_F0=METHOD,
                  percentile=PERCENTILE_SLIDING_MIN,
                  sliding_window=T_SLIDING_MIN,
-                 return_corrected_F_and_F0=False,
+                 with_correctedFluo_and_F0=False,
                  verbose=True):
     """
+<<<<<<< HEAD
     compute fluorescence variation with a neuropil correction set by the
     factor neuropil_correction_factor
     """
 
 
+=======
+    -----------------
+    Compute the *Delta F over F* quantity
+    -----------------
+    1) restrict to ROIs that have a mean fluorescence larger that the mean neuropil
+        - with the "roi_to_neuropil_fluo_inclusion_factor" parameter
+            the link with the original ROIs are through: data.valid_ROIs & data.unvalid_ROIs
+    2) substract a fraction of the neuropil component to get the corrected fluo: cF
+        - with the "neuropil_correction_factor" parameter
+    3)  determine the sliding baseline component: cF0
+        - with the "method" parameter, method can be either: maximin / sliding_percentile
+        - with the "percentile" parameter (in percent)
+        - with the "sliding_windows" parameter (in s)
+    4) copmutes the ratio between (cF-cF0)/cF0
+    """
+
+>>>>>>> main
     if verbose:
         tick = time.time()
         print('\ncalculating dF/F with method "%s" [...]' % method_for_F0)
@@ -128,6 +152,7 @@ def compute_dFoF(data,
         print('neuropil_correction_factor set to 0 !')
         neuropil_correction_factor=0.
 
+<<<<<<< HEAD
     # ## ------------------------------------ ##
     # ############# classic way ################
     # ## ------------------------------------ ##
@@ -138,10 +163,12 @@ def compute_dFoF(data,
     #                         method=method_for_F0,
     #                         percentile=percentile,
     #                         sliding_window=sliding_window)
+=======
+    #######################################################################
+>>>>>>> main
 
-    # # exclude cells with negative F0
-    # valid_roiIndices = (np.min(F0, axis=1)>0) & (F0.mean(axis=1)>F.std(axis=1))
 
+<<<<<<< HEAD
     # if verbose:
     #     if np.sum(~valid_roiIndices)>0:
     #         print('\n  ** %i ROIs were discarded with the positive F0 criterion (%.1f%%) ** \n'\
@@ -168,17 +195,36 @@ def compute_dFoF(data,
     # exclude cells with Neuropil higher than Fluorescence and Fluorescence too low (min has to be higher than 1 signal unit !):
     valid_roiIndices = (np.mean(correctedFluo, axis=1)>0) & (np.min(F0, axis=1)>1)
 
-    correctedFluo0 = compute_sliding_F0(data, correctedFluo,
-                            method=method_for_F0,
-                            percentile=percentile,
-                            sliding_window=sliding_window)
+=======
+    # Step 1) -> determine the valid ROIs
+    valid_roiIndices = (\
+            (np.mean(data.rawFluo, axis=1)>\
+            roi_to_neuropil_fluo_inclusion_factor*np.mean(data.neuropil, axis=1)))
 
+    # Step 2) ->  performing neuropil correction 
+    correctedFluo = data.rawFluo[valid_roiIndices, :]-\
+            neuropil_correction_factor*data.neuropil[valid_roiIndices, :]
+    
+    # Step 3) -> compute the F0 term (~ sliding minimum/percentile)
+>>>>>>> main
+    correctedFluo0 = compute_sliding_F0(data, correctedFluo,
+                                        method=method_for_F0,
+                                        percentile=percentile,
+                                        sliding_window=sliding_window)
+
+    # Step 4) -> compute the delta F over F quantity: dFoF = (F-F0)/F0
+    data.dFoF = (correctedFluo-correctedFluo0)/correctedFluo0
+
+
+    #######################################################################
     if verbose:
         if np.sum(~valid_roiIndices)>0:
             print('\n  ** %i ROIs were discarded with the positive F0 criterion (%.1f%%) ** \n'\
-                  % (np.sum(~valid_roiIndices), 100*np.sum(~valid_roiIndices)/F0.shape[0]))
+                  % (np.sum(~valid_roiIndices),
+                      100*np.sum(~valid_roiIndices)/correctedFluo.shape[0]))
         else:
             print('\n  ** all ROIs passed the positive F0 criterion ** \n')
+<<<<<<< HEAD
 
     # F/F0 method:
     # data.dFoF = correctedFluo[valid_roiIndices,:]/F0[valid_roiIndices,:]
@@ -241,3 +287,21 @@ def compute_CaImaging_raster(data, CaImaging_key,
 
 
 
+=======
+            
+    # we update the previous quantities
+    data.valid_roiIndices = np.arange(data.iscell.sum())[valid_roiIndices]
+    data.vNrois= len(data.valid_roiIndices) # number of valid ROIs
+    data.rawFluo = data.rawFluo[valid_roiIndices,:]
+    data.neuropil = data.neuropil[valid_roiIndices,:]
+    data.nROIs = data.vNrois
+
+    if with_correctedFluo_and_F0:
+        data.correctedFluo0 = correctedFluo0
+        data.correctedFluo = correctedFluo
+    
+    if verbose:
+        print('-> dFoF calculus done !  (calculation took %.1fs)' % (time.time()-tick))
+
+    return None
+>>>>>>> main

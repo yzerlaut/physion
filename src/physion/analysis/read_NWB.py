@@ -6,7 +6,8 @@ from scipy.interpolate import interp1d
 from physion.utils.files import get_files_with_extension
 from physion.visual_stim.build import build_stim
 from physion.analysis import tools
-from physion.imaging.Calcium import compute_dFoF, METHOD,\
+from physion.imaging.Calcium import compute_dFoF,\
+        ROI_TO_NEUROPIL_INCLUSION_FACTOR, METHOD,\
         T_SLIDING_MIN, PERCENTILE_SLIDING_MIN, NEUROPIL_CORRECTION_FACTOR
 
 class Data:
@@ -274,8 +275,9 @@ class Data:
                             roiIndex=None, roiIndices='all',
                             verbose=True):
 
-        if not hasattr(self, 'dFoF') and verbose:
-            print(' /!\ ROIs did not go through the "positive F0" criterion /!\ \n       --> need to call "data.build_dFoF()" first !  ')
+        # we remove this warning
+        # if not hasattr(self, 'dFoF') and verbose:
+            # print(' /!\ ROIs did not go through the "positive F0" criterion /!\ \n       --> need to call "data.build_dFoF()" first !  ')
 
         if roiIndex is not None:
             return roiIndex
@@ -287,16 +289,17 @@ class Data:
         
     def build_dFoF(self,
                    roiIndex=None, roiIndices='all',
+                   roi_to_neuropil_fluo_inclusion_factor=ROI_TO_NEUROPIL_INCLUSION_FACTOR,
                    neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
                    method_for_F0=METHOD,
                    percentile=PERCENTILE_SLIDING_MIN,
                    sliding_window=T_SLIDING_MIN,
-                   return_corrected_F_and_F0=False,
+                   with_correctedFluo_and_F0=False,
                    specific_time_sampling=None,
                    interpolation='linear',
                    verbose=True):
         """
-        creates self.vNrois, self.dFoF, self.t_dFoF
+        creates self.dFoF, self.t_dFoF
         """
 
         if not hasattr(self, 'rawFluo'):
@@ -313,12 +316,13 @@ class Data:
                                 verbose=verbose)
 
         return compute_dFoF(self,
-                            neuropil_correction_factor=neuropil_correction_factor,
-                            method_for_F0=method_for_F0,
-                            percentile=percentile,
-                            sliding_window=sliding_window,
-                            return_corrected_F_and_F0=return_corrected_F_and_F0,
-                            verbose=verbose)
+                    roi_to_neuropil_fluo_inclusion_factor=roi_to_neuropil_fluo_inclusion_factor,
+                    neuropil_correction_factor=neuropil_correction_factor,
+                    method_for_F0=method_for_F0,
+                    percentile=percentile,
+                    sliding_window=sliding_window,
+                    with_correctedFluo_and_F0=with_correctedFluo_and_F0,
+                    verbose=verbose)
 
     def build_Zscore_dFoF(self, verbose=True):
         """
@@ -341,7 +345,7 @@ class Data:
         if self.nROIs==self.Neuropil.data.shape[0]:
             self.neuropil = self.Neuropil.data[self.compute_ROI_indices(roiIndex=roiIndex, roiIndices=roiIndices, verbose=verbose),:]
         else:
-            # transpose in that case
+            # data badly oriented --> transpose in that case
             self.neuropil = np.array(self.Neuropil.data).T[self.compute_ROI_indices(roiIndex=roiIndex, roiIndices=roiIndices, verbose=verbose),:]
 
         if not hasattr(self, 't_neuropil'):
@@ -373,7 +377,7 @@ class Data:
                                                                            roiIndices=roiIndices,
                                                                            verbose=verbose), :]
         else:
-            # transpose in that case
+            # data badly oriented --> transpose in that case
             self.rawFluo = np.array(self.Fluorescence.data).T[self.compute_ROI_indices(roiIndex=roiIndex,
                                                                              roiIndices=roiIndices,
                                                                              verbose=verbose),:]

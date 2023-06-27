@@ -16,49 +16,64 @@ from physion.utils.plot_tools import pie
 tempfile.gettempdir()
 
 stat_test_props = dict(interval_pre=[-1,0],
-                       interval_post=[0.5,2],
+                       interval_post=[1,2],
                        test='ttest',
                        positive=True)
 
 def center_and_compute_size_tuning(data,
-                              imaging_quantity='dFoF',
-                              verbose=False):
+                                   imaging_quantity='dFoF',
+                                   with_rois_and_angles=False,
+                                   prestim_duration=2,
+                                   response_significance_threshold=0.01,
+                                   stat_test_props=stat_test_props,
+                                   verbose=False):
 
 
     # ## --- EPISODES -- CENTERING
 
+    id_centering = np.flatnonzero([('size-tuning-protocol-loc' in p) for p in data.protocols])[0]
+    # protocol= data.get_protocol_id('size-tuning-protocol-loc-long') if  
     episodes = EpisodeData(data,
-                           protocol_id=0,
-                           quantities=[imaging_quantity],
-                           prestim_duration=2,
+                           protocol_id = id_centering,
+                           quantities = [imaging_quantity],
+                           prestim_duration=prestim_duration,
                            with_visual_stim=True,
                            verbose=verbose)
 
-    CENTERED_ROIS, ANGLES = extract_centered_rois(data, episodes)
+    CENTERED_ROIS, ANGLES = extract_centered_rois(data, episodes,
+                imaging_quantity=imaging_quantity,
+                response_significance_threshold=response_significance_threshold)
+
 
     # ## --- EPISODES -- SIZE VARIATIONS
-    
+    id_sizeTuning = np.flatnonzero([('size-tuning-protocol-dep' in p) for p in data.protocols])[0]
     episodes = EpisodeData(data,
-                           protocol_id=1,
+                           protocol_id = id_sizeTuning,
                            quantities=[imaging_quantity],
-                           prestim_duration=2,
+                           prestim_duration=prestim_duration,
                            verbose=False)
 
-    radii, size_resps = compute_size_tuning_curves(\
-            data, episodes, CENTERED_ROIS, ANGLES,
-            stat_test_props)
+    radii, size_resps = compute_size_tuning_curves(data,\
+                                                episodes,
+                                                CENTERED_ROIS,
+                                                ANGLES,
+                                                stat_test_props,
+                                                response_significance_threshold=\
+                                                        response_significance_threshold,
+                                                imaging_quantity=imaging_quantity)
 
-    return radii, size_resps
-    
+    if with_rois_and_angles:
+        return radii, size_resps, CENTERED_ROIS, ANGLES
+    else:
+        return radii, size_resps
+
 def extract_centered_rois(data, episodes,
                           imaging_quantity='dFoF',
                           response_significance_threshold=0.01):
 
     CENTERED_ROIS, ANGLES = [], []
 
-    nROIs = (data.vNrois if imaging_quantity=='dFoF' else data.nROIs)
-
-    for roi in range(nROIs):
+    for roi in range(data.nROIs):
 
         resp = episodes.compute_summary_data(stat_test_props,
                                              response_args={'quantity':imaging_quantity,
@@ -79,6 +94,7 @@ def extract_centered_rois(data, episodes,
 
 def compute_size_tuning_curves(data, episodes, centered_rois, angles,
                                stat_test_props,
+                               response_significance_threshold=0.01,
                                imaging_quantity='dFoF'):
 
 
@@ -88,14 +104,17 @@ def compute_size_tuning_curves(data, episodes, centered_rois, angles,
         resp = episodes.compute_summary_data(stat_test_props,
                                              response_args={'quantity':imaging_quantity,
                                                             'roiIndex':roi},
-                                             response_significance_threshold=0.01)
+                                             response_significance_threshold=response_significance_threshold)
         angle_cond = (resp['angle']==angle)
         isort = np.argsort(resp['radius'][angle_cond])
-      
+
         SIZE_RESPS.append(np.concatenate([[0], resp['value'][angle_cond][isort]]))
 
-    return np.concatenate([[0], np.sort(resp['radius'][angle_cond])]),\
-            SIZE_RESPS
+    if len(SIZE_RESPS)>0:
+        RADII = np.concatenate([[0], np.sort(resp['radius'][angle_cond])])
+        return RADII, SIZE_RESPS
+    else:
+        return [], []
 
 
 def generate_pdf(args,
@@ -125,7 +144,7 @@ def generate_pdf(args,
             (900, 130)]
 
     for key, loc in zip(KEYS, LOCS):
-        
+
         fig = Image.open(os.path.join(tempfile.tempdir, '%s-%i.png' % (key, args.unique_run_ID)))
         page.paste(fig, box=loc)
         fig.close()
@@ -141,7 +160,7 @@ def generate_pdf(args,
     LOCS = [(300, 150), (200, 900), (600, 2900)]
 
     for key, loc in zip(KEYS, LOCS):
-        
+
         if os.path.isfile(os.path.join(tempfile.tempdir, '%s-%i.png' % (key, args.unique_run_ID))):
 
             fig = Image.open(os.path.join(tempfile.tempdir, '%s-%i.png' % (key, args.unique_run_ID)))
@@ -164,7 +183,6 @@ def generate_figs(args,
         data.build_dFoF()
     else:
         data.build_rawFluo()
-    nROIs = (data.vNrois if args.imaging_quantity=='dFoF' else data.nROIs)
 
     # ## --- METADATA  ---
     fig = metadata_fig(data, short=True)
@@ -176,13 +194,13 @@ def generate_figs(args,
     fig.savefig(os.path.join(tempfile.tempdir,
                 'FOV-%i.png' % args.unique_run_ID), dpi=300)
 
-    # ## --- FULL RECORDING VIEW --- 
+    # ## --- FULL RECORDING VIEW ---
     generate_raw_data_figs(data, args,
                            TLIMS = [[15, 95],
                            [data.tlim[1]-200, data.tlim[1]-120]])
 
     # ## --- EPISODES AVERAGE - SPATIAL MAPPING ---  ##
-    
+
     episodes = EpisodeData(data,
                            protocol_id=0,
                            quantities=[args.imaging_quantity],
@@ -198,32 +216,32 @@ def generate_figs(args,
                                                 imaging_quantity=args.imaging_quantity,
                                                 response_significance_threshold=0.01)
 
-        fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']), 
+        fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']),
                                   len(episodes.varied_parameters['x-center']),
                                   figsize=(6,2.8))
 
         plot_trial_average(episodes,
                            roiIndices=CENTERED_ROIS,
-                           quantity=args.imaging_quantity, 
-                           column_key='x-center', 
-                           row_key='y-center', 
-                           xbar=1, xbarlabel='1s', 
+                           quantity=args.imaging_quantity,
+                           column_key='x-center',
+                           row_key='y-center',
+                           xbar=1, xbarlabel='1s',
                            ybar=0.1, ybarlabel='0.1$\Delta$F/F',
                            with_screen_inset=True,
-                           with_std_over_rois=True, 
-                           with_annotation=True, 
+                           with_std_over_rois=True,
+                           with_annotation=True,
                            no_set=False, AX=AX)
 
         fig.suptitle('centered ROIs: n=%i/%i (%.1f%%)\nmean$\pm$s.d. over rois' %\
-                                                        (len(CENTERED_ROIS), nROIs,
-                                                        100*len(CENTERED_ROIS)/nROIs))
+                                                        (len(CENTERED_ROIS), data.nROIs,
+                                                        100*len(CENTERED_ROIS)/data.nROIs))
         fig.savefig(os.path.join(tempfile.tempdir,
                     'TA-centered-%i.png' % args.unique_run_ID), dpi=300)
         if not args.debug:
             pt.plt.close(fig)
 
         # ## --- EPISODES AVERAGE -- SIZE VARIATIONS
-        
+
         episodes = EpisodeData(data,
                                protocol_id=1,
                                quantities=[args.imaging_quantity],
@@ -240,18 +258,19 @@ def generate_figs(args,
                                   figsize=(7,6.5))
         pt.plt.subplots_adjust(right=.8, top=.95, left=0.08, bottom=0.03)
 
-        for i, irdm in enumerate(np.random.choice(np.arange(len(CENTERED_ROIS)), Nexamples)):
+        for i, irdm in enumerate(np.random.choice(np.arange(len(CENTERED_ROIS)),
+                                 np.min([Nexamples, len(ANGLES)]), replace=False)):
 
             angle_cond = episodes.find_episode_cond(key='angle', value=ANGLES[i])
             plot_trial_average(episodes,
                                condition=angle_cond,
-                               quantity=args.imaging_quantity, 
+                               quantity=args.imaging_quantity,
                                roiIndex=CENTERED_ROIS[irdm],
                                column_key='radius',
-                               xbar=1, xbarlabel='1s', 
+                               xbar=1, xbarlabel='1s',
                                ybar=0.1, ybarlabel='0.1$\Delta$F/F',
                                with_stat_test=True, stat_test_props=stat_test_props,
-                               with_annotation=(i==0), 
+                               with_annotation=(i==0),
                                no_set=False, AX=[AX[i]])
 
             AX[i][0].annotate('roi #%i' % CENTERED_ROIS[irdm], (0,0),
@@ -260,6 +279,11 @@ def generate_figs(args,
             inset.plot(radii, size_resps[irdm], 'ko-')
             inset.set_ylabel('$\delta$ $\Delta$F/F')
             inset.set_xlabel('size ($^o$)')
+
+        while i<(Nexamples-1):
+            i+=1
+            for ax in AX[i]:
+                ax.axis('off')
 
         fig.savefig(os.path.join(tempfile.tempdir, 'TA-all-%i.png' % args.unique_run_ID), dpi=300)
         if not args.debug:
@@ -280,6 +304,8 @@ def generate_figs(args,
 
     except BaseException as be:
 
+        print(be)
+
         episodes = EpisodeData(data,
                                protocol_id=0,
                                quantities=[args.imaging_quantity],
@@ -287,20 +313,20 @@ def generate_figs(args,
                                with_visual_stim=True,
                                verbose=True)
 
-        fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']), 
+        fig, AX = pt.plt.subplots(len(episodes.varied_parameters['y-center']),
                                   len(episodes.varied_parameters['x-center']),
                                   figsize=(6,2.8))
 
         plot_trial_average(episodes,
                            roiIndices='all',
-                           quantity=args.imaging_quantity, 
-                           column_key='x-center', 
-                           row_key='y-center', 
-                           xbar=1, xbarlabel='1s', 
+                           quantity=args.imaging_quantity,
+                           column_key='x-center',
+                           row_key='y-center',
+                           xbar=1, xbarlabel='1s',
                            ybar=0.1, ybarlabel='0.1$\Delta$F/F',
                            with_screen_inset=True,
-                           with_std_over_rois=True, 
-                           with_annotation=True, 
+                           with_std_over_rois=True,
+                           with_annotation=True,
                            no_set=False, AX=AX)
 
         fig.suptitle('all ROIs (no centered ROI found)')
@@ -311,7 +337,7 @@ def generate_figs(args,
             pt.plt.close(fig)
 
 if __name__=='__main__':
-    
+
     import argparse
 
     parser=argparse.ArgumentParser()

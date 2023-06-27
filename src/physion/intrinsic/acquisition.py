@@ -5,7 +5,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
 try:
-    from pycromanager import Bridge
+    from pycromanager import Core
 except ModuleNotFoundError:
     print('camera support not available !')
 
@@ -39,12 +39,9 @@ def gui(self,
     ### trying the camera
     try:
         # we initialize the camera
-        self.bridge = Bridge()
-        self.core = self.bridge.get_core()
+        self.core = Core()
         self.exposure = self.core.get_exposure()
         self.demo = False
-        auto_shutter = self.core.get_property('Core', 'AutoShutter')
-        self.core.set_property('Core', 'AutoShutter', 0)
     except BaseException as be:
         print(be)
         print('')

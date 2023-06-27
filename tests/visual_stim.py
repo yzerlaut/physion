@@ -24,7 +24,8 @@ if args.plot:
     protocol['no-window'] = True
 
     stim = physion.visual_stim.build.build_stim(protocol)
-
+    # print(stim.z) 
+    # print(stim.x)
     fig, ax = plt.subplots(figsize=(4,3))
     
     stim.plot_stim_picture(args.index, ax)

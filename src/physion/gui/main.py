@@ -261,8 +261,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.switch_roi_RCL()
         else:
             # self.facemotion()
-            # self.pupil()
-            self.transfer_gui()
+            self.pupil()
+            # self.transfer_gui()
             # self.suite2p_preprocessing_UI()
             # self.build_NWB_UI()
             # self.add_imaging()

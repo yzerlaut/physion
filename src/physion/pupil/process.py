@@ -198,7 +198,7 @@ def init_fit_area(cls,
                   blanks=[]):
 
     if fullimg is None:
-        fullimg = np.load(os.path.join(cls.imgfolder,cls.FILES[0]))
+        fullimg = np.load(os.path.join(cls.imgfolder,cls.FILES[0])).T
 
     cls.fullx, cls.fully = np.meshgrid(np.arange(fullimg.shape[0]),
                                        np.arange(fullimg.shape[1]),
@@ -207,7 +207,7 @@ def init_fit_area(cls,
     if ellipse is not None:
         bfe = extract_boundaries_from_ellipse(ellipse, cls.Lx, cls.Ly)
         cls.zoom_cond = (cls.fullx>=bfe['xmin']) & (cls.fullx<=bfe['xmax']) &\
-                         (cls.fully>=bfe['ymin']) & (cls.fully<=bfe['ymax'])
+                        (cls.fully>=bfe['ymin']) & (cls.fully<=bfe['ymax'])
         Nx, Ny = bfe['xmax']-bfe['xmin']+1, bfe['ymax']-bfe['ymin']+1
     else:
         cls.zoom_cond = ((cls.fullx>=np.min(cls.ROI.x[cls.ROI.ellipse])) &\
@@ -221,7 +221,7 @@ def init_fit_area(cls,
     cls.Nx, cls.Ny = Nx, Ny
     
     cls.x, cls.y = cls.fullx[cls.zoom_cond].reshape(Nx,Ny),\
-        cls.fully[cls.zoom_cond].reshape(Nx,Ny)
+                   cls.fully[cls.zoom_cond].reshape(Nx,Ny)
 
     if ellipse is not None:
         cls.fit_area = inside_ellipse_cond(cls.x, cls.y, *ellipse)
@@ -253,11 +253,13 @@ def preprocess(cls, with_reinit=True,
 
     if (img is None):
         try:
-            img = np.load(os.path.join(cls.imgfolder, cls.FILES[cls.cframe]))
+            img = np.load(os.path.join(cls.imgfolder,
+                          cls.FILES[cls.cframe])).T
         except ValueError:
-            print(' /!\ Problem with frame #%i: %s' % (cls.cframe, cls.FILES[cls.cframe]))
+            print(' /!\ Problem with frame #%i: %s' % (cls.cframe,
+                                                       cls.FILES[cls.cframe]))
             print(' replaced with #%i ' % (cls.cframe-1))
-            img = np.load(os.path.join(cls.imgfolder, cls.FILES[cls.cframe-1]))
+            img = np.load(os.path.join(cls.imgfolder, cls.FILES[cls.cframe-1])).T
             
     else:
         img = img.copy()
@@ -280,7 +282,8 @@ def preprocess(cls, with_reinit=True,
 
 def load_folder(cls):
     """ see assembling/tools.py """
-    cls.times, cls.FILES, cls.nframes, cls.Lx, cls.Ly = load_FaceCamera_data(cls.imgfolder)
+    cls.times, cls.FILES, cls.nframes,\
+        cls.Ly, cls.Lx = load_FaceCamera_data(cls.imgfolder)
 
 def load_ROI(cls, with_plot=True):
 
