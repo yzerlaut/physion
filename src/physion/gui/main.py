@@ -170,7 +170,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         super(MainWindow, self).__init__()
         self.data, self.acq, self.stim = None, None, None
-        self.bridge = None # bridge to camera
+        self.camera = None # thorlabs cam
         self.windows = ['' for i in range(Ntabs)] # one window name per tab_id
         self.quit_event = None
 
@@ -410,7 +410,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.acq.close()
         if self.stim is not None:
             self.stim.quit()
-        if self.bridge is not None:
-            self.bridge.close()
+        if self.camera is not None:
+            self.camera.close_camera()
+            self.camera.stop_cam_process(join=True)
+
         QtWidgets.QApplication.quit()
         

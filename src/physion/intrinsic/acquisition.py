@@ -1,5 +1,5 @@
 import numpy as np
-import pandas, pynwb, PIL, time, os
+import pandas, pynwb, PIL, time, os, datetime
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
@@ -124,7 +124,7 @@ def gui(self,
     self.add_side_widget(tab.layout, self.ISIprotocolBox,
                          spec='small-right')
 
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - Exposure (ms):'),
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - exposure (ms):'),
                     spec='large-left')
     self.exposureBox = QtWidgets.QLineEdit()
     self.exposureBox.setText('200')
@@ -151,7 +151,7 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - spatial sub-sampling (px):'),
                     spec='large-left')
     self.spatialBox = QtWidgets.QLineEdit()
-    self.spatialBox.setText('6')
+    self.spatialBox.setText('4')
     self.add_side_widget(tab.layout, self.spatialBox, spec='small-right')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - flickering (Hz):'),
@@ -227,18 +227,8 @@ def take_fluorescence_picture(self):
 
         filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
                             filename='fluorescence-%s' % self.subjectBox.currentText(),
-                            extension='.tif')
-        
-        # save HQ image as tiff
-        # img = get_frame(self, force_HQ=True)
-        # np.save(filename.replace('.tif', '.npy'), img)
-        # img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
-        # im = PIL.Image.fromarray(img)
-        # im.save(filename)
-        # print('fluorescence image, saved as: %s ' % filename)
-
-        # then keep a version to store with imaging:
-        self.fluorescence_img = single_frame(self)
+                            extension='.h5')
+        self.fluorescence_img = single_frame(self, filename=filename)
         self.imgPlot.setImage(self.fluorescence_img.T) # show on display
 
     else:
@@ -252,18 +242,8 @@ def take_vasculature_picture(self):
 
         filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
                             filename='vasculature-%s' % self.subjectBox.currentText(),
-                            extension='.tif')
-        
-        # save HQ image as tiff
-        # img = get_frame(self, force_HQ=True)
-        # np.save(filename.replace('.tif', '.npy'), img)
-        # img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
-        # im = PIL.Image.fromarray(img)
-        # im.save(filename)
-        # print('vasculature image, saved as: %s' % filename)
-
-        # then keep a version to store with imaging:
-        self.vasculature_img = single_frame(self)
+                            extension='.h5')
+        self.vasculature_img = single_frame(self, filename=filename)
         self.imgPlot.setImage(self.vasculature_img.T) # show on display
 
     else:
@@ -357,9 +337,10 @@ def run(self):
     print('acquisition running [...]')
 
     # launch the first episode
-    self.camera.filename = '%s-%i.nwb' % (\
-            self.STIM['label'][self.iEp%len(self.STIM['label'])],
-            int(self.iEp/len(self.STIM['label']))+1)
+    # filename = '%s-%i.h5' % (\
+                    # self.STIM['label'][self.iEp%len(self.STIM['label'])],
+                    # int(self.iEp/len(self.STIM['label']))+1)
+    self.camera.filename = os.path.join(self.datafolder, 'frames.h5')
     self.camera.is_saving = True
     self.camera.fid = None
     self.camera.play_camera() # launch camera
@@ -380,7 +361,7 @@ def update_dt_intrinsic(self):
 
     # update presented stim every X frame
     self.flip_index += 1
-    if self.flip_index==3:
+    if self.flip_index==30: # UPDATE WITH FLICKERING
 
         # find image time, here %period
         self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
@@ -396,7 +377,7 @@ def update_dt_intrinsic(self):
             pass
         self.flip_index=0
 
-    self.flip = (False if self.flip else True) # flip the flag at each frame
+        self.flip = (False if self.flip else True) # flip the flag at each frame
 
     # in demo mode, we show the image
     if self.demoBox.isChecked():
@@ -407,9 +388,9 @@ def update_dt_intrinsic(self):
 
         if self.camBox.isChecked():
             self.camera.stop_playing_camera() # stop the camera
-            if self.camera.fid is not None:
-                self.camera.fid.close()
-            self.camera.is_saving = False
+            # if self.camera.fid is not None:
+                # self.camera.fid.close()
+            # self.camera.is_saving = False
             write_data(self) # writing data when over
 
         self.flip_index=0
@@ -419,11 +400,12 @@ def update_dt_intrinsic(self):
 
         if self.camBox.isChecked():
             # re-initializing datafile
-            self.camera.filename = '%s-%i.nwb' % (\
-                    self.STIM['label'][self.iEp%len(self.STIM['label'])],
-                    int(self.iEp/len(self.STIM['label']))+1)
-            self.camera.is_saving = True
-            self.camera.fid = None
+            # filename = '%s-%i.h5' % (\
+                    # self.STIM['label'][self.iEp%len(self.STIM['label'])],
+                    # int(self.iEp/len(self.STIM['label']))+1)
+            # self.camera.filename = os.path.join(self.datafolder, filename)
+            # self.camera.is_saving = True
+            # self.camera.fid = None
             self.camera.play_camera() # restart the camera 
 
     # continuing ?
@@ -536,7 +518,7 @@ def start_camera(self):
     print('')
 
     if self.camera.serials[0] is not None:
-        self.camera.close()
+        self.camera.close_camera()
         self.camera.stop_cam_process(join=True)
 
     try:
@@ -554,16 +536,18 @@ def start_camera(self):
     if self.camera.serials[0] is not None:
         self.demo = False # we turn off demo mode if we had a real camera
 
-def single_frame(self):
+def single_frame(self, 
+                 filename='single_frame.h5'):
 
     self.statusBar.showMessage(' single frame snapshot (~2s)')
     self.camera.is_saving = True
     self.camera.fid = None
-    self.camera.filename = 'single_frame.h5'
+    self.camera.filename = filename
     self.camera.play_camera()
     time.sleep(2)
     self.camera.stop_playing_camera()
-    self.camera.fid.close()
+    if self.camera.fid is not None:
+        self.camera.fid.close()
     self.camera.fid = None
     self.camera.is_saving = True
     return self.camera.image

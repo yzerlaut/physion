@@ -70,11 +70,13 @@ class Camera(ThorCam):
         if self.is_saving and not self.filename is None:
             if self.fid is None:
                 self.fid = h5.File(self.filename,'w')
-                self.dset_data = self.fid.create_dataset('frames',(1,H,W), data = self.image,
+                self.dset_data = self.fid.create_dataset('frames', (1,H,W),
+                                                        data = self.image,
                                                         maxshape = (None,H,W),
                                                         dtype='uint16',
                                                         compression = 'lzf')
-                self.dset_frameid = self.fid.create_dataset('frameid',(1,2), data = np.array([count,t]),
+                self.dset_frameid = self.fid.create_dataset('frameid',(1,2),
+                                                           data = np.array([count,t]),
                                                            maxshape = (None,2),
                                                            dtype='int64')
             else:
@@ -84,14 +86,6 @@ class Camera(ThorCam):
                 self.dset_frameid.resize(self.dset_frameid.shape[0]+1,axis = 0)
                 self.dset_frameid[-1] = np.array([count,t])
 
-
-        if self.parent.live_only:
-            self.parent.imgPlot.setImage(self.image.T)
-            self.parent.barPlot.setOpts(height=np.log(1+np.histogram(self.image,
-                                        bins=self.parent.xbins)[0]))
-        else:
-            self.parent.TIMES.append(time.time()-self.parent.t0_episode)
-            self.parent.FRAMES.append(self.image)
     
 class Parent:
     def __init__(self):
