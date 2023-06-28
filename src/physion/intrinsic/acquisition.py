@@ -33,9 +33,6 @@ class DummyCamera:
     def update_settings(self, binning, exposure):
         self.exposure = exposure
     def play_camera(self):
-        for i in range(10):
-            self.parent.TIMES.append(time.time())
-            self.parent.FRAMES.append(np.random.randn(*self.parent.imgsize))
         self.image = np.random.randn(*self.parent.imgsize)
     def stop_playing_camera(self):
         pass
@@ -62,7 +59,6 @@ def gui(self,
     
     self.t0, self.period = 0, 1
     self.live_only, self.t0_episode = False, 0
-    self.FRAMES, self.TIMES =[], []
     
     # start in demo mode until we initialize the real camera
     self.demo = False
@@ -151,14 +147,14 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - spatial sub-sampling (px):'),
                     spec='large-left')
     self.spatialBox = QtWidgets.QLineEdit()
-    self.spatialBox.setText('4')
+    self.spatialBox.setText('1')
     self.add_side_widget(tab.layout, self.spatialBox, spec='small-right')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - flickering (Hz):'),
                     spec='large-left')
-    self.freqBox = QtWidgets.QLineEdit()
-    self.freqBox.setText('10')
-    self.add_side_widget(tab.layout, self.freqBox, spec='small-right')
+    self.flickerBox = QtWidgets.QLineEdit()
+    self.flickerBox.setText('10')
+    self.add_side_widget(tab.layout, self.flickerBox, spec='small-right')
 
     self.demoBox = QtWidgets.QCheckBox("demo mode")
     self.demoBox.setStyleSheet("color: gray;")
@@ -289,7 +285,7 @@ def run(self):
     self.Nrepeat = int(self.repeatBox.text()) #
     self.period = float(self.periodBox.text()) # degree / second
     self.bar_size = float(self.barBox.text()) # degree / second
-    self.dt = 1./float(self.freqBox.text())
+    self.dt = 1./float(self.flickerBox.text())
     self.flip_index=0
 
     xmin, xmax = 1.15*np.min(self.stim.x), 1.15*np.max(self.stim.x)
@@ -349,6 +345,7 @@ def update_dt_intrinsic(self):
 
     # update presented stim every X frame
     self.flip_index += 1
+
     if self.flip_index==30: # UPDATE WITH FLICKERING
 
         # find image time, here %period
@@ -380,7 +377,6 @@ def update_dt_intrinsic(self):
 
         self.flip_index=0
         self.t0_episode = time.time()
-        self.FRAMES, self.TIMES = [], [] # re init data
         self.iEp += 1
 
         if self.camBox.isChecked():
@@ -400,46 +396,7 @@ def write_data(self):
              'tend':time.time(),
              'angles':self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'],
              'angles-timestamps':self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times']})
-    
-    # nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
-                            # 'intrinsic',
-                            # datetime.datetime.utcnow(),
-                            # file_create_date=datetime.datetime.utcnow())
 
-    # # Create our time series
-    # angles = pynwb.TimeSeries(name='angle_timeseries',
-                              # data=,
-                              # unit='Rd',
-                              # timestamps=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times'])
-    # nwbfile.add_acquisition(angles)
-
-
-    # filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])], int(self.iEp/len(self.STIM['label']))+1)
-    
-    # nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
-                            # 'intrinsic',
-                            # datetime.datetime.utcnow(),
-                            # file_create_date=datetime.datetime.utcnow())
-
-    # # Create our time series
-    # angles = pynwb.TimeSeries(name='angle_timeseries',
-                              # data=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'],
-                              # unit='Rd',
-                              # timestamps=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times'])
-    # nwbfile.add_acquisition(angles)
-
-    # # images = pynwb.image.ImageSeries(name='image_timeseries',
-                                     # # data=np.array(self.FRAMES, dtype=np.float64),
-                                     # # unit='a.u.',
-                                     # # timestamps=np.array(self.TIMES, dtype=np.float64))
-
-    # # nwbfile.add_acquisition(images)
-    
-    # # Write the data to file
-    # io = pynwb.NWBHDF5IO(os.path.join(self.datafolder, filename), 'w')
-    # print('writing:', filename)
-    # io.write(nwbfile)
-    # io.close()
     print(filename, ' saved !')
     
 
@@ -455,7 +412,7 @@ def save_intrinsic_metadata(self):
     metadata = {'subject':str(self.subjectBox.currentText()),
                 'exposure':float(self.exposureBox.text()),
                 'bar-size':float(self.barBox.text()),
-                'acq-freq':float(self.freqBox.text()),
+                'acq-freq':float(self.flickerBox.text()),
                 'period':float(self.periodBox.text()),
                 'Nsubsampling':int(self.spatialBox.text()),
                 'Nrepeat':int(self.repeatBox.text()),
@@ -487,7 +444,7 @@ def launch_intrinsic(self, live_only=False):
         self.running = True
 
         # initialization of data
-        self.FRAMES, self.TIMES, self.flip_index = [], [], 0
+        self.flip_index = 0
         self.camera.update_settings(float(self.exposureBox.text()),
                                     int(self.spatialBox.text()))
         

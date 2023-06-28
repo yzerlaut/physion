@@ -28,7 +28,28 @@ default_segmentation_params={'phaseMapFilterSigma': 2.,
                              'visualSpaceCloseIter': 15,
                              'splitOverlapThr': 1.1}
 
-def load_maps(datafolder, Nsubsampling=4):
+def load_pictures(datafolder,
+                  maps={},
+                  Nsubsampling=1):
+
+    ## VASCULATURE PICTURE ##
+    filename = os.path.join(datafolder, 'vasculature-%s.h5' % metadata['subject'])
+    if os.path.isfile(filename):
+        f = h5py.File(filename, 'r') 
+        maps['vasculature'] = np.mean(f['frames'], axis=0)
+        maps['vasculature'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
+
+    ## FLUORESCENCE PICTURE ##
+    filename = os.path.join(datafolder, 'fluorescence-%s.h5' % metadata['subject'])
+    if os.path.isfile(filename):
+        f = h5py.File(filename, 'r') 
+        maps['fluorescence'] = np.mean(f['frames'], axis=0)
+        maps['fluorescence'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
+
+    return maps
+
+def load_maps(datafolder,
+              Nsubsampling=1):
 
     if os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
         print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
@@ -46,28 +67,9 @@ def load_maps(datafolder, Nsubsampling=4):
     else:
         maps = {}
 
-    if os.path.isfile(os.path.join(datafolder, 'vasculature-%s.tif' %metadata['subject'])):
-        maps['vasculature'] = np.array(Image.open(os.path.join(datafolder,\
-                'vasculature-%s.tif' %metadata['subject'])))
-        maps['vasculature'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
-    elif os.path.isfile(os.path.join(datafolder, 'vasculature-%s.npy' %metadata['subject'])):
-        maps['vasculature'] = np.load(os.path.join(datafolder,\
-                'vasculature-%s.npy' %metadata['subject']))
-        maps['vasculature'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
-    elif os.path.isfile(os.path.join(datafolder, 'vasculature.npy')):
-        maps['vasculature'] = np.load(os.path.join(datafolder, 'vasculature.npy'))
-
-    if os.path.isfile(os.path.join(datafolder, 'fluorescence-%s.tif' %metadata['subject'])):
-        maps['fluorescence'] = np.array(Image.open(os.path.join(datafolder,\
-                'fluorescence-%s.tif' %metadata['subject'])))
-        maps['fluorescence'] = maps['fluorescence'][::Nsubsampling,::Nsubsampling]
-    elif os.path.isfile(os.path.join(datafolder, 'fluorescence-%s.npy' %metadata['subject'])):
-        maps['fluorescence'] = np.load(os.path.join(datafolder,\
-                'fluorescence-%s.npy' %metadata['subject']))
-        maps['fluorescence'] = maps['fluorescence'][::Nsubsampling,::Nsubsampling]
-    elif os.path.isfile(os.path.join(datafolder, 'fluorescence.npy')):
-        maps['fluorescence'] = np.load(os.path.join(datafolder, 'fluorescence.npy'))
-
+    maps = load_pictures(datafolder,
+                         maps=maps,
+                         Nsubsampling=Nsubsampling)
 
     return maps
 
@@ -189,7 +191,7 @@ def compute_phase_power_maps(datafolder, direction,
         p, (t, data) = load_raw_data(datafolder, direction, run_id=run_id)
 
     if 'vasculature' not in maps:
-        maps['vasculature'] = np.load(os.path.join(datafolder, 'vasculature.npy'))
+        load_pictures(datafolder, maps=maps)
 
     # FFT and write maps
     maps['%s-power' % direction],\
