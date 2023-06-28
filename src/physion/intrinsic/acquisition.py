@@ -1,23 +1,47 @@
-import sys, os, shutil, glob, time, pathlib, json, tempfile, datetime
 import numpy as np
-import pandas, pynwb, PIL
+import pandas, pynwb, PIL, time
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
-try:
-    from pycromanager import Core
-except ModuleNotFoundError:
-    print('camera support not available !')
-
 from physion.utils.paths import FOLDERS
-from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import get_config_list, get_subject_props
-from physion.visual_stim.main import visual_stim, visual
+
+try:
+    from physion.visual_stim.screens import SCREENS
+    from physion.visual_stim.main import visual_stim, visual
+except ImportError:
+    print(' Problem with the Visual Stimulation module')
+
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path
+try:
+    from physion.hardware.Thorlabs.usb_camera import Camera 
+except ImportError:
+    print(' Problem with the Hardware support')
 
-camera_depth = 12 
+camera_depth = 16 
+
+class DummyCamera:
+    def __init__(self, parent=None,
+                 exposure=1,
+                 binning=10):
+       self.parent = parent
+       self.t0 = 0 
+       self.serials = [None] # flag for dummy camera
+       self.exposure = exposure
+    def update_settings(self, binning, exposure):
+        self.exposure = exposure
+    def play_camera(self):
+        for i in range(10):
+            self.parent.TIMES.append(time.time()-self.t0)
+            self.parent.FRAMES.append(np.random.randn(100,100))
+    def stop_playing_camera(self):
+        pass
+    def close_camera(self):
+        pass
+    def stop_cam_process(self, join=False):
+        pass
 
 def gui(self,
         box_width=250,
@@ -34,22 +58,12 @@ def gui(self,
     self.datafolder, self.img = '', None,
     self.vasculature_img, self.fluorescence_img = None, None
     
-    self.t0, self.period, self.TIMES = 0, 1, []
+    self.t0, self.period = 0, 1
+    self.FRAMES, self.TIMES =[], []
     
-    ### trying the camera
-    try:
-        # we initialize the camera
-        self.core = Core()
-        self.exposure = self.core.get_exposure()
-        self.demo = False
-    except BaseException as be:
-        print(be)
-        print('')
-        print(' /!\ Problem with the Camera /!\ ')
-        print('        --> no camera found ')
-        print('')
-        self.exposure = -1 # flag for no camera
-        self.demo = True
+    # start in demo mode until we initialize the real camera
+    self.demo = True
+    self.camera = DummyCamera(parent=self)
 
     ##########################################################
     ####### GUI settings
@@ -106,8 +120,12 @@ def gui(self,
     self.ISIprotocolBox.addItems(['ALL', 'up', 'down', 'left', 'right'])
     self.add_side_widget(tab.layout, self.ISIprotocolBox,
                          spec='small-right')
-    self.add_side_widget(tab.layout,\
-        QtWidgets.QLabel('  - exposure: %.0f ms (from Micro-Manager)' % self.exposure))
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - Exposure (ms):'),
+                    spec='large-left')
+    self.exposureBox = QtWidgets.QLineEdit()
+    self.exposureBox.setText('1')
+    self.add_side_widget(tab.layout, self.exposureBox, spec='small-right')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - Nrepeat :'),
                     spec='large-left')
@@ -151,12 +169,16 @@ def gui(self,
    
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
 
-    # ---  launching acquisition ---
+    # ---  launching camera acquisition---
+    self.camButton = QtWidgets.QPushButton(" INIT ", self)
+    self.camButton.clicked.connect(self.start_camera)
+    self.add_side_widget(tab.layout, self.camButton, spec='small-left')
+
     self.liveButton = QtWidgets.QPushButton("--   live view    -- ", self)
     self.liveButton.clicked.connect(self.live_intrinsic)
-    self.add_side_widget(tab.layout, self.liveButton)
+    self.add_side_widget(tab.layout, self.liveButton, spec='large-right')
     
-    # ---  launching acquisition ---
+    # ---  launching acquisition with visual stimulation---
     self.acqButton = QtWidgets.QPushButton("-- RUN PROTOCOL -- ", self)
     self.acqButton.clicked.connect(self.launch_intrinsic)
     self.add_side_widget(tab.layout, self.acqButton, spec='large-left')
@@ -205,15 +227,15 @@ def take_fluorescence_picture(self):
                             extension='.tif')
         
         # save HQ image as tiff
-        img = get_frame(self, force_HQ=True)
-        np.save(filename.replace('.tif', '.npy'), img)
-        img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
-        im = PIL.Image.fromarray(img)
-        im.save(filename)
-        print('fluorescence image, saved as: %s ' % filename)
+        # img = get_frame(self, force_HQ=True)
+        # np.save(filename.replace('.tif', '.npy'), img)
+        # img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
+        # im = PIL.Image.fromarray(img)
+        # im.save(filename)
+        # print('fluorescence image, saved as: %s ' % filename)
 
         # then keep a version to store with imaging:
-        self.fluorescence_img = get_frame(self)
+        self.fluorescence_img = single_frame(self)
         self.imgPlot.setImage(self.fluorescence_img.T) # show on display
 
     else:
@@ -230,16 +252,16 @@ def take_vasculature_picture(self):
                             extension='.tif')
         
         # save HQ image as tiff
-        img = get_frame(self, force_HQ=True)
-        np.save(filename.replace('.tif', '.npy'), img)
-        img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
-        im = PIL.Image.fromarray(img)
-        im.save(filename)
-        print('vasculature image, saved as: %s' % filename)
+        # img = get_frame(self, force_HQ=True)
+        # np.save(filename.replace('.tif', '.npy'), img)
+        # img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
+        # im = PIL.Image.fromarray(img)
+        # im.save(filename)
+        # print('vasculature image, saved as: %s' % filename)
 
         # then keep a version to store with imaging:
-        self.vasculature_img = get_frame(self)
-        self.imgPlot.setImage(self.vasculature_img.T) # show on displayn
+        self.vasculature_img = single_frame(self)
+        self.imgPlot.setImage(self.vasculature_img.T) # show on display
 
     else:
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
@@ -330,6 +352,7 @@ def run(self):
     save_intrinsic_metadata(self)
     
     print('acquisition running [...]')
+    self.camera.play_camera() # launch camera
     
     self.update_dt_intrinsic() # while loop
 
@@ -338,17 +361,11 @@ def update_dt_intrinsic(self):
 
     self.t = time.time()
 
-    # fetch camera frame
-    if self.camBox.isChecked():
-
-        self.TIMES.append(time.time()-self.t0_episode)
-        self.FRAMES.append(get_frame(self))
-
-
     if self.live_only:
 
         self.imgPlot.setImage(self.FRAMES[-1].T)
-        self.barPlot.setOpts(height=np.log(1+np.histogram(self.FRAMES[-1], bins=self.xbins)[0]))
+        self.barPlot.setOpts(height=np.log(1+np.histogram(self.FRAMES[-1],
+                             bins=self.xbins)[0]))
 
     else:
 
@@ -378,13 +395,18 @@ def update_dt_intrinsic(self):
 
         # checking if not episode over
         if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
+
             if self.camBox.isChecked():
+                self.camera.stop_playing_camera() # stop the camera
                 write_data(self) # writing data when over
-            self.t0_episode = time.time()
+
             self.flip_index=0
+            self.t0_episode = time.time()
             self.FRAMES, self.TIMES = [], [] # re init data
             self.iEp += 1
-            
+
+            if self.camBox.isChecked():
+                self.camera.play_camera() # restart the camera 
 
     # continuing ?
     if self.running:
@@ -432,7 +454,7 @@ def save_intrinsic_metadata(self):
     subject = get_subject_props(self)
         
     metadata = {'subject':str(self.subjectBox.currentText()),
-                'exposure':self.exposure,
+                'exposure':float(self.exposureBox.text()),
                 'bar-size':float(self.barBox.text()),
                 'acq-freq':float(self.freqBox.text()),
                 'period':float(self.periodBox.text()),
@@ -467,22 +489,49 @@ def launch_intrinsic(self, live_only=False):
 
         # initialization of data
         self.FRAMES, self.TIMES, self.flip_index = [], [], 0
-        self.img = get_frame(self)
-        self.imgsize = self.img.shape
-        self.imgPlot.setImage(self.img.T)
-        self.view1.autoRange(padding=0.001)
+        self.camera.update_settings(float(self.exposureBox.text()),
+                                    int(self.spatialBox.text()))
+        # self.img = get_frame(self)
+        # self.imgsize = self.img.shape
+        # self.imgPlot.setImage(self.img.T)
+        # self.view1.autoRange(padding=0.001)
         
         if not self.live_only:
             run(self)
         else:
             self.iEp, self.t0_episode = 0, time.time()
+            self.camera.play_camera() # launch camera
             self.update_dt_intrinsic() # while loop
 
         
     else:
 
-        print(' /!\  --> pb in launching acquisition (either already running or missing camera)')
+        print(' /!\  --> acquisition already running, need to stop it first /!\ ')
 
+def start_camera(self):
+
+    try:
+        # we initialize the camera
+        self.camera = Camera(parent=self,
+                             exposure=float(self.exposureBox.text()),
+                             binning=int(self.spatialBox.text()))
+    except BaseException as be:
+        print(be)
+        print('')
+        print(' /!\ Problem with the Camera /!\ ')
+        print('        --> no camera found ')
+        print('')
+
+    if self.camera.serials[0] is not None:
+        self.demo = False # we turn off demo mode if we had a real camera
+
+def single_frame(self):
+
+    self.camera.play_camera()
+    time.sleep(2*1e-3*float(self.exposureBox.text()))
+    self.camera.stop_playing_camera()
+
+    return self.FRAMES[-1]
 
 def live_intrinsic(self):
 
@@ -492,6 +541,7 @@ def live_intrinsic(self):
 def stop_intrinsic(self):
     if self.running:
         self.running = False
+        self.camera.stop_playing_camera()
         if self.stim is not None:
             self.stim.close()
         if len(self.TIMES)>5:
