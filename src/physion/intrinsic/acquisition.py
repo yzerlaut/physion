@@ -151,13 +151,13 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - spatial sub-sampling (px):'),
                     spec='large-left')
     self.spatialBox = QtWidgets.QLineEdit()
-    self.spatialBox.setText('4')
+    self.spatialBox.setText('6')
     self.add_side_widget(tab.layout, self.spatialBox, spec='small-right')
 
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - acq. freq. (Hz):'),
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - flickering (Hz):'),
                     spec='large-left')
     self.freqBox = QtWidgets.QLineEdit()
-    self.freqBox.setText('20')
+    self.freqBox.setText('10')
     self.add_side_widget(tab.layout, self.freqBox, spec='small-right')
 
     self.demoBox = QtWidgets.QCheckBox("demo mode")
@@ -516,6 +516,7 @@ def launch_intrinsic(self, live_only=False):
         
         if self.live_only:
             self.t0_episode = time.time()
+            self.is_saving = False
             self.camera.play_camera() # launch camera
         else:
             run(self)
@@ -525,6 +526,8 @@ def launch_intrinsic(self, live_only=False):
         print(' /!\  --> acquisition already running, need to stop it first /!\ ')
 
 def start_camera(self):
+
+    self.statusBar.showMessage(' camera initializationi [...] (~15s)')
 
     print('')
     print(' --> (re) initializing the camera !')
@@ -553,9 +556,16 @@ def start_camera(self):
 
 def single_frame(self):
 
+    self.statusBar.showMessage(' single frame snapshot (~2s)')
+    self.camera.is_saving = True
+    self.camera.fid = None
+    self.camera.filename = 'single_frame.h5'
     self.camera.play_camera()
     time.sleep(2)
     self.camera.stop_playing_camera()
+    self.camera.fid.close()
+    self.camera.fid = None
+    self.camera.is_saving = True
     return self.camera.image
 
 def live_intrinsic(self):
@@ -567,6 +577,11 @@ def stop_intrinsic(self):
     if self.running:
         self.running = False
         self.camera.stop_playing_camera()
+        if self.camera.fid is not None:
+            # close the hdf5 recording 
+            self.camera.fid.close()
+            self.camera.fid = None
+            self.camera.is_saving = False
         if self.stim is not None:
             self.stim.close()
         if len(self.TIMES)>5:
