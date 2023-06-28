@@ -355,6 +355,13 @@ def run(self):
     save_intrinsic_metadata(self)
     
     print('acquisition running [...]')
+
+    # launch the first episode
+    self.camera.filename = '%s-%i.nwb' % (\
+            self.STIM['label'][self.iEp%len(self.STIM['label'])],
+            int(self.iEp/len(self.STIM['label']))+1)
+    self.camera.is_saving = True
+    self.camera.fid = None
     self.camera.play_camera() # launch camera
     
     self.update_dt_intrinsic() # while loop
@@ -364,52 +371,60 @@ def update_dt_intrinsic(self):
 
     self.t = time.time()
 
-    if self.live_only:
+    # if self.live_only:
+        # self.imgPlot.setImage(self.camera.image.T)
+        # self.barPlot.setOpts(height=np.log(1+np.histogram(self.camera.image,
+                                                          # bins=self.xbins)[0]))
+    # else:
 
-        self.imgPlot.setImage(self.FRAMES[-1].T)
-        self.barPlot.setOpts(height=np.log(1+np.histogram(self.FRAMES[-1],
-                             bins=self.xbins)[0]))
 
-    else:
+    # update presented stim every X frame
+    self.flip_index += 1
+    if self.flip_index==3:
 
-        # update presented stim every X frame
-        self.flip_index += 1
-        if self.flip_index==3:
+        # find image time, here %period
+        self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
 
-            # find image time, here %period
-            self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
+        angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'][self.iTime]
+        patterns = get_patterns(self, self.STIM['label'][self.iEp%len(self.STIM['label'])],
+                                      angle, self.bar_size)
+        for pattern in patterns:
+            pattern.draw()
+        try:
+            self.stim.win.flip()
+        except BaseException:
+            pass
+        self.flip_index=0
 
-            angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'][self.iTime]
-            patterns = get_patterns(self, self.STIM['label'][self.iEp%len(self.STIM['label'])],
-                                          angle, self.bar_size)
-            for pattern in patterns:
-                pattern.draw()
-            try:
-                self.stim.win.flip()
-            except BaseException:
-                pass
-            self.flip_index=0
+    self.flip = (False if self.flip else True) # flip the flag at each frame
 
-        self.flip = (False if self.flip else True) # flip the flag at each frame
+    # in demo mode, we show the image
+    if self.demoBox.isChecked():
+        self.imgPlot.setImage(self.camera.image.T)
 
-        # in demo mode, we show the image
-        if self.demoBox.isChecked():
-            self.imgPlot.setImage(self.FRAMES[-1].T)
+    # checking if not episode over
+    if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
 
-        # checking if not episode over
-        if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
+        if self.camBox.isChecked():
+            self.camera.stop_playing_camera() # stop the camera
+            if self.camera.fid is not None:
+                self.camera.fid.close()
+            self.camera.is_saving = False
+            write_data(self) # writing data when over
 
-            if self.camBox.isChecked():
-                self.camera.stop_playing_camera() # stop the camera
-                write_data(self) # writing data when over
+        self.flip_index=0
+        self.t0_episode = time.time()
+        self.FRAMES, self.TIMES = [], [] # re init data
+        self.iEp += 1
 
-            self.flip_index=0
-            self.t0_episode = time.time()
-            self.FRAMES, self.TIMES = [], [] # re init data
-            self.iEp += 1
-
-            if self.camBox.isChecked():
-                self.camera.play_camera() # restart the camera 
+        if self.camBox.isChecked():
+            # re-initializing datafile
+            self.camera.filename = '%s-%i.nwb' % (\
+                    self.STIM['label'][self.iEp%len(self.STIM['label'])],
+                    int(self.iEp/len(self.STIM['label']))+1)
+            self.camera.is_saving = True
+            self.camera.fid = None
+            self.camera.play_camera() # restart the camera 
 
     # continuing ?
     if self.running:
@@ -432,12 +447,12 @@ def write_data(self):
                               timestamps=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times'])
     nwbfile.add_acquisition(angles)
 
-    images = pynwb.image.ImageSeries(name='image_timeseries',
-                                     data=np.array(self.FRAMES, dtype=np.float64),
-                                     unit='a.u.',
-                                     timestamps=np.array(self.TIMES, dtype=np.float64))
+    # images = pynwb.image.ImageSeries(name='image_timeseries',
+                                     # data=np.array(self.FRAMES, dtype=np.float64),
+                                     # unit='a.u.',
+                                     # timestamps=np.array(self.TIMES, dtype=np.float64))
 
-    nwbfile.add_acquisition(images)
+    # nwbfile.add_acquisition(images)
     
     # Write the data to file
     io = pynwb.NWBHDF5IO(os.path.join(self.datafolder, filename), 'w')

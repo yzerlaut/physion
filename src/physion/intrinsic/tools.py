@@ -103,6 +103,14 @@ def load_single_datafile(datafile):
     """
     the image data need interpolation to get regularly spaced data for FFT
     """
+    #
+    # f = h5py.File(datafile.replace('.nwb', '.h5'))
+    # print(f['frames'])
+    # print(f['frameid'])
+    # x = f['frames']
+    # t = f['frameid'][1,:]
+    # f.close()
+    #
     io = pynwb.NWBHDF5IO(datafile, 'r')
     nwbfile = io.read()
     t, x = nwbfile.acquisition['image_timeseries'].timestamps[:],\

@@ -9,16 +9,21 @@ from: https://github.com/jcouto/isi-thorcam
 from thorcam.camera import ThorCam
 import time
 import numpy as np
+import h5py as h5
 
 class Camera(ThorCam):
     image = []
     frame = -1
+    fid = None
+    dset_data = None
+    dset_frameid = None
+    filename = None
+    is_saving = False
     def __init__(self,
                  parent=None,
                  exposure = 200,
                  binning = 6,
-                 trigger = 'software',
-                 off=False):
+                 trigger = 'software'):
 
         self.parent = parent
 
@@ -36,6 +41,7 @@ class Camera(ThorCam):
         self.update_settings(binning, exposure)
 
     def update_settings(self, binning, exposure):
+        print(' updating camera settings [...]')
         self.set_setting('binning_x',int(binning))
         self.set_setting('binning_y',int(binning))
         self.set_setting('exposure_ms',int(exposure))
@@ -56,9 +62,29 @@ class Camera(ThorCam):
     def got_image(self, image, count, queued_count, t):
         H = self.roi_height//self.binning_y
         W = self.roi_width//self.binning_x
+
         self.image = np.frombuffer(
             buffer = image.to_bytearray()[0],
             dtype = 'uint16').reshape((H,W))
+
+        if self.is_saving and not self.filename is None:
+            if self.fid is None:
+                self.fid = h5.File(self.filename,'w')
+                self.dset_data = self.fid.create_dataset('frames',(1,H,W), data = self.image,
+                                                        maxshape = (None,H,W),
+                                                        dtype='uint16',
+                                                        compression = 'lzf')
+                self.dset_frameid = self.fid.create_dataset('frameid',(1,2), data = np.array([count,t]),
+                                                           maxshape = (None,2),
+                                                           dtype='int64')
+            else:
+                # dump to disk
+                self.dset_data.resize(self.dset_data.shape[0]+1,axis = 0)
+                self.dset_data[-1,:,:] = self.image[:]
+                self.dset_frameid.resize(self.dset_frameid.shape[0]+1,axis = 0)
+                self.dset_frameid[-1] = np.array([count,t])
+
+
         if self.parent.live_only:
             self.parent.imgPlot.setImage(self.image.T)
             self.parent.barPlot.setOpts(height=np.log(1+np.histogram(self.image,
