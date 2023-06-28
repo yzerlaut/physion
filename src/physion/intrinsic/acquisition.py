@@ -35,7 +35,8 @@ class DummyCamera:
     def play_camera(self):
         for i in range(10):
             self.parent.TIMES.append(time.time()-self.t0)
-            self.parent.FRAMES.append(np.random.randn(100,100))
+            self.parent.FRAMES.append(np.random.randn(*self.parent.imgsize))
+        self.image = np.random.randn(*self.parent.imgsize)
     def stop_playing_camera(self):
         pass
     def close_camera(self):
@@ -55,10 +56,12 @@ def gui(self,
 
     # some initialisation
     self.running, self.stim, self.STIM = False, None, None
-    self.datafolder, self.img = '', None,
+    self.datafolder, self.img = '', None
+    self.imgsize = (10, 10)
     self.vasculature_img, self.fluorescence_img = None, None
     
     self.t0, self.period = 0, 1
+    self.live_only, self.t0_episode = False, 0
     self.FRAMES, self.TIMES =[], []
     
     # start in demo mode until we initialize the real camera
@@ -124,7 +127,7 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - Exposure (ms):'),
                     spec='large-left')
     self.exposureBox = QtWidgets.QLineEdit()
-    self.exposureBox.setText('1')
+    self.exposureBox.setText('200')
     self.add_side_widget(tab.layout, self.exposureBox, spec='small-right')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - Nrepeat :'),
@@ -496,19 +499,27 @@ def launch_intrinsic(self, live_only=False):
         # self.imgPlot.setImage(self.img.T)
         # self.view1.autoRange(padding=0.001)
         
-        if not self.live_only:
-            run(self)
-        else:
-            self.iEp, self.t0_episode = 0, time.time()
+        if self.live_only:
+            self.t0_episode = time.time()
             self.camera.play_camera() # launch camera
-            self.update_dt_intrinsic() # while loop
-
+        else:
+            run(self)
         
     else:
 
         print(' /!\  --> acquisition already running, need to stop it first /!\ ')
 
 def start_camera(self):
+
+    print('')
+    print(' --> (re) initializing the camera !')
+    print('           this will take 10s !!!! ')
+    print('')
+    print('')
+
+    if self.camera.serials[0] is not None:
+        self.camera.close()
+        self.camera.stop_cam_process(join=True)
 
     try:
         # we initialize the camera
@@ -528,10 +539,9 @@ def start_camera(self):
 def single_frame(self):
 
     self.camera.play_camera()
-    time.sleep(2*1e-3*float(self.exposureBox.text()))
+    time.sleep(2)
     self.camera.stop_playing_camera()
-
-    return self.FRAMES[-1]
+    return self.camera.image
 
 def live_intrinsic(self):
 
