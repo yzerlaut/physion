@@ -47,7 +47,7 @@ class Camera(ThorCam):
         self.set_setting('exposure_ms',int(exposure))
         H = self.roi_height//self.binning_y
         W = self.roi_width//self.binning_x
-        self.imgsize = (H, W)
+        self.parent.imgsize = (H, W)
         time.sleep(3)
         print('Camera exposure is {0} ms. Binning {1} times'.format(
             self.exposure_ms,

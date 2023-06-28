@@ -1,5 +1,5 @@
 import numpy as np
-import pandas, pynwb, PIL, time
+import pandas, pynwb, PIL, time, os
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
@@ -65,7 +65,7 @@ def gui(self,
     self.FRAMES, self.TIMES =[], []
     
     # start in demo mode until we initialize the real camera
-    self.demo = True
+    self.demo = False
     self.camera = DummyCamera(parent=self)
 
     ##########################################################
