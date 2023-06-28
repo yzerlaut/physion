@@ -79,12 +79,18 @@ class Camera(ThorCam):
                                                            data = np.array([count,t]),
                                                            maxshape = (None,2),
                                                            dtype='int64')
+                self.dset_times = self.fid.create_dataset('times',(1,1),
+                                                           data = np.array([time.time()]),
+                                                           maxshape = (None,1),
+                                                           dtype='float64')
             else:
                 # dump to disk
-                self.dset_data.resize(self.dset_data.shape[0]+1,axis = 0)
+                self.dset_data.resize(self.dset_data.shape[0]+1, axis=0)
                 self.dset_data[-1,:,:] = self.image[:]
-                self.dset_frameid.resize(self.dset_frameid.shape[0]+1,axis = 0)
+                self.dset_frameid.resize(self.dset_frameid.shape[0]+1, axis=0)
                 self.dset_frameid[-1] = np.array([count,t])
+                self.dset_times.resize(self.dset_times.shape[0]+1, axis=0)
+                self.dset_times[-1] = np.array([time.time()])
 
     
 class Parent:

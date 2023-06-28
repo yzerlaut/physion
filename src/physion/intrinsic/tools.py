@@ -1,4 +1,4 @@
-import os, sys, pathlib, pynwb, itertools, skimage
+import os, sys, pathlib, itertools, skimage, h5py
 from scipy.ndimage.filters import gaussian_filter1d
 import numpy as np
 import matplotlib.pylab as plt
@@ -39,7 +39,6 @@ def load_maps(datafolder, Nsubsampling=4):
     else:
         metadata = None
     
-    print(Nsubsampling)
     if os.path.isfile(os.path.join(datafolder, 'raw-maps.npy')):
         print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
         maps = np.load(os.path.join(datafolder, 'raw-maps.npy'),
@@ -103,21 +102,20 @@ def load_single_datafile(datafile):
     """
     the image data need interpolation to get regularly spaced data for FFT
     """
+    data = np.load(datafile, allow_pickle=True).item()
+    print(data)
     #
-    # f = h5py.File(datafile.replace('.nwb', '.h5'))
-    # print(f['frames'])
-    # print(f['frameid'])
-    # x = f['frames']
-    # t = f['frameid'][1,:]
-    # f.close()
-    #
-    io = pynwb.NWBHDF5IO(datafile, 'r')
-    nwbfile = io.read()
-    t, x = nwbfile.acquisition['image_timeseries'].timestamps[:],\
-        nwbfile.acquisition['image_timeseries'].data[:,:,:]
+    f = h5py.File(os.path.join(os.path.dirname(datafile), 'frames.h5'))
+    times = f['times'][:,0]
+
+    cond = (times>data['tstart']) & (times<data['tend'])
+   
+    t = times[cond] - data['tstart']
+    print(t[0], t[-1])
+    x = f['frames'][cond,:,:]
     interp_func = interp1d(t, x, axis=0, kind='nearest', fill_value='extrapolate')
-    real_t = nwbfile.acquisition['angle_timeseries'].timestamps[:]
-    io.close()
+    real_t = data['angles-timestamps']
+    print(real_t[0], real_t[-1])
     return real_t, interp_func(real_t)
 
 
@@ -130,8 +128,8 @@ def load_raw_data(datafolder, protocol,
     if run_id=='sum':
         Data, n = None, 0
         for i in range(1, 15): # no more than 15 repeats...(but some can be removed, hence the "for" loop)
-            if os.path.isfile(os.path.join(datafolder, '%s-%i.nwb' % (protocol, i))):
-                t, data  = load_single_datafile(os.path.join(datafolder, '%s-%i.nwb' % (protocol, i)))
+            if os.path.isfile(os.path.join(datafolder, '%s-%i.npy' % (protocol, i))):
+                t, data  = load_single_datafile(os.path.join(datafolder, '%s-%i.npy' % (protocol, i)))
                 if Data is None:
                     Data = data
                     n = 1
@@ -143,10 +141,10 @@ def load_raw_data(datafolder, protocol,
         else:
             return params, (None, None)
 
-    elif os.path.isfile(os.path.join(datafolder, '%s-%s.nwb' % (protocol, run_id))):
-        return params, load_single_datafile(os.path.join(datafolder, '%s-%s.nwb' % (protocol, run_id)))
+    elif os.path.isfile(os.path.join(datafolder, '%s-%s.npy' % (protocol, run_id))):
+        return params, load_single_datafile(os.path.join(datafolder, '%s-%s.npy' % (protocol, run_id)))
     else:
-        print('"%s" file not found' % os.path.join(datafolder, '%s-%s.nwb' % (protocol, run_id)))
+        print('"%s" file not found' % os.path.join(datafolder, '%s-%s.npy' % (protocol, run_id)))
 
 
 def preprocess_data(data, Facq,

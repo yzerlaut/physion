@@ -34,7 +34,7 @@ class DummyCamera:
         self.exposure = exposure
     def play_camera(self):
         for i in range(10):
-            self.parent.TIMES.append(time.time()-self.t0)
+            self.parent.TIMES.append(time.time())
             self.parent.FRAMES.append(np.random.randn(*self.parent.imgsize))
         self.image = np.random.randn(*self.parent.imgsize)
     def stop_playing_camera(self):
@@ -334,15 +334,10 @@ def run(self):
 
     save_intrinsic_metadata(self)
     
-    print('acquisition running [...]')
-
-    # launch the first episode
-    # filename = '%s-%i.h5' % (\
-                    # self.STIM['label'][self.iEp%len(self.STIM['label'])],
-                    # int(self.iEp/len(self.STIM['label']))+1)
     self.camera.filename = os.path.join(self.datafolder, 'frames.h5')
     self.camera.is_saving = True
     self.camera.fid = None
+    print('acquisition running [...]')
     self.camera.play_camera() # launch camera
     
     self.update_dt_intrinsic() # while loop
@@ -351,13 +346,6 @@ def run(self):
 def update_dt_intrinsic(self):
 
     self.t = time.time()
-
-    # if self.live_only:
-        # self.imgPlot.setImage(self.camera.image.T)
-        # self.barPlot.setOpts(height=np.log(1+np.histogram(self.camera.image,
-                                                          # bins=self.xbins)[0]))
-    # else:
-
 
     # update presented stim every X frame
     self.flip_index += 1
@@ -388,9 +376,6 @@ def update_dt_intrinsic(self):
 
         if self.camBox.isChecked():
             self.camera.stop_playing_camera() # stop the camera
-            # if self.camera.fid is not None:
-                # self.camera.fid.close()
-            # self.camera.is_saving = False
             write_data(self) # writing data when over
 
         self.flip_index=0
@@ -399,13 +384,6 @@ def update_dt_intrinsic(self):
         self.iEp += 1
 
         if self.camBox.isChecked():
-            # re-initializing datafile
-            # filename = '%s-%i.h5' % (\
-                    # self.STIM['label'][self.iEp%len(self.STIM['label'])],
-                    # int(self.iEp/len(self.STIM['label']))+1)
-            # self.camera.filename = os.path.join(self.datafolder, filename)
-            # self.camera.is_saving = True
-            # self.camera.fid = None
             self.camera.play_camera() # restart the camera 
 
     # continuing ?
@@ -415,32 +393,53 @@ def update_dt_intrinsic(self):
 
 def write_data(self):
 
-    filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])], int(self.iEp/len(self.STIM['label']))+1)
+    filename = '%s-%i.npy' % (self.STIM['label'][self.iEp%len(self.STIM['label'])],
+                              int(self.iEp/len(self.STIM['label']))+1)
+    np.save(os.path.join(self.datafolder, filename),
+            {'tstart':self.t0_episode,
+             'tend':time.time(),
+             'angles':self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'],
+             'angles-timestamps':self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times']})
     
-    nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
-                            'intrinsic',
-                            datetime.datetime.utcnow(),
-                            file_create_date=datetime.datetime.utcnow())
+    # nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
+                            # 'intrinsic',
+                            # datetime.datetime.utcnow(),
+                            # file_create_date=datetime.datetime.utcnow())
 
-    # Create our time series
-    angles = pynwb.TimeSeries(name='angle_timeseries',
-                              data=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'],
-                              unit='Rd',
-                              timestamps=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times'])
-    nwbfile.add_acquisition(angles)
+    # # Create our time series
+    # angles = pynwb.TimeSeries(name='angle_timeseries',
+                              # data=,
+                              # unit='Rd',
+                              # timestamps=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times'])
+    # nwbfile.add_acquisition(angles)
 
-    # images = pynwb.image.ImageSeries(name='image_timeseries',
-                                     # data=np.array(self.FRAMES, dtype=np.float64),
-                                     # unit='a.u.',
-                                     # timestamps=np.array(self.TIMES, dtype=np.float64))
 
-    # nwbfile.add_acquisition(images)
+    # filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])], int(self.iEp/len(self.STIM['label']))+1)
     
-    # Write the data to file
-    io = pynwb.NWBHDF5IO(os.path.join(self.datafolder, filename), 'w')
-    print('writing:', filename)
-    io.write(nwbfile)
-    io.close()
+    # nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
+                            # 'intrinsic',
+                            # datetime.datetime.utcnow(),
+                            # file_create_date=datetime.datetime.utcnow())
+
+    # # Create our time series
+    # angles = pynwb.TimeSeries(name='angle_timeseries',
+                              # data=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'],
+                              # unit='Rd',
+                              # timestamps=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times'])
+    # nwbfile.add_acquisition(angles)
+
+    # # images = pynwb.image.ImageSeries(name='image_timeseries',
+                                     # # data=np.array(self.FRAMES, dtype=np.float64),
+                                     # # unit='a.u.',
+                                     # # timestamps=np.array(self.TIMES, dtype=np.float64))
+
+    # # nwbfile.add_acquisition(images)
+    
+    # # Write the data to file
+    # io = pynwb.NWBHDF5IO(os.path.join(self.datafolder, filename), 'w')
+    # print('writing:', filename)
+    # io.write(nwbfile)
+    # io.close()
     print(filename, ' saved !')
     
 
@@ -491,10 +490,6 @@ def launch_intrinsic(self, live_only=False):
         self.FRAMES, self.TIMES, self.flip_index = [], [], 0
         self.camera.update_settings(float(self.exposureBox.text()),
                                     int(self.spatialBox.text()))
-        # self.img = get_frame(self)
-        # self.imgsize = self.img.shape
-        # self.imgPlot.setImage(self.img.T)
-        # self.view1.autoRange(padding=0.001)
         
         if self.live_only:
             self.t0_episode = time.time()
@@ -509,7 +504,8 @@ def launch_intrinsic(self, live_only=False):
 
 def start_camera(self):
 
-    self.statusBar.showMessage(' camera initializationi [...] (~15s)')
+    self.statusBar.showMessage(' Initializing the camera [...] (~15s)')
+    self.refresh()
 
     print('')
     print(' --> (re) initializing the camera !')
