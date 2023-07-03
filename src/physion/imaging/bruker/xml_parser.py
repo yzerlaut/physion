@@ -108,7 +108,7 @@ def bruker_xml_parser(filename):
         # version without multiplabe scanning: 5.4.X
         for x in root[2]:
             for f in x:
-                for channel in ['Ch1', 'Ch2']:
+                for channel in CHANNELS:
                     if f.tag == 'File':
                         data[channel]['tifFile'].append(f.attrib['filename'])
                         for key in ['relativeTime', 'absoluteTime']:
@@ -119,7 +119,7 @@ def bruker_xml_parser(filename):
                             data[channel]['depth_index'].append(0)
 
         data['depth_shift'] = np.zeros(1)
-        data['depth_index'] = np.zeros(len(data['Ch1']['relativeTime']))
+        data['depth_index'] = np.zeros(len(data[CHANNELS[0]]['relativeTime']))
 
     else:
 
