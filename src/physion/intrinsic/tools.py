@@ -28,23 +28,25 @@ default_segmentation_params={'phaseMapFilterSigma': 2.,
                              'visualSpaceCloseIter': 15,
                              'splitOverlapThr': 1.1}
 
-def load_pictures(datafolder,
+def load_pictures(datafolder, metadata,
                   maps={},
                   Nsubsampling=1):
 
-    ## VASCULATURE PICTURE ##
-    filename = os.path.join(datafolder, 'vasculature-%s.h5' % metadata['subject'])
-    if os.path.isfile(filename):
-        f = h5py.File(filename, 'r') 
-        maps['vasculature'] = np.mean(f['frames'], axis=0)
-        maps['vasculature'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
+    if metadata is not None:
 
-    ## FLUORESCENCE PICTURE ##
-    filename = os.path.join(datafolder, 'fluorescence-%s.h5' % metadata['subject'])
-    if os.path.isfile(filename):
-        f = h5py.File(filename, 'r') 
-        maps['fluorescence'] = np.mean(f['frames'], axis=0)
-        maps['fluorescence'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
+        ## VASCULATURE PICTURE ##
+        filename = os.path.join(datafolder, 'vasculature-%s.h5' % metadata['subject'])
+        if os.path.isfile(filename):
+            f = h5py.File(filename, 'r') 
+            maps['vasculature'] = np.mean(f['frames'], axis=0)
+            maps['vasculature'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
+
+        ## FLUORESCENCE PICTURE ##
+        filename = os.path.join(datafolder, 'fluorescence-%s.h5' % metadata['subject'])
+        if os.path.isfile(filename):
+            f = h5py.File(filename, 'r') 
+            maps['fluorescence'] = np.mean(f['frames'], axis=0)
+            maps['fluorescence'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
 
     return maps
 
@@ -67,7 +69,7 @@ def load_maps(datafolder,
     else:
         maps = {}
 
-    maps = load_pictures(datafolder,
+    maps = load_pictures(datafolder, metadata,
                          maps=maps,
                          Nsubsampling=Nsubsampling)
 
@@ -114,7 +116,8 @@ def load_single_datafile(datafile):
    
     t = times[cond] - data['tstart']
     print(t[0], t[-1])
-    x = f['frames'][cond,:,:]
+    print(len(times), f['frames'].shape)
+    x = f['frames'][:len(times),:,:][cond,:,:]
     interp_func = interp1d(t, x, axis=0, kind='nearest', fill_value='extrapolate')
     real_t = data['angles-timestamps']
     print(real_t[0], real_t[-1])
@@ -190,14 +193,17 @@ def compute_phase_power_maps(datafolder, direction,
     if (p is None) or (t is None) or (data is None):
         p, (t, data) = load_raw_data(datafolder, direction, run_id=run_id)
 
-    if 'vasculature' not in maps:
-        load_pictures(datafolder, maps=maps)
+    # if 'vasculature' not in maps:
+        # load_pictures(datafolder, maps=maps)
 
     # FFT and write maps
     maps['%s-power' % direction],\
            maps['%s-phase' % direction] = perform_fft_analysis(data, p['Nrepeat'],
                                                                phase_shift=phase_shift)
 
+    print(maps['%s-power' % direction])
+    cond = maps['%s-power' % direction]>20e-4
+    maps['%s-power' % direction][cond] = 20e-4 
     return maps
 
 def get_phase_to_angle_func(datafolder, direction):

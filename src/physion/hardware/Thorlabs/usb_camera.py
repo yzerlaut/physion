@@ -52,7 +52,11 @@ class Camera(ThorCam):
         print('Camera exposure is {0} ms. Binning {1} times'.format(
             self.exposure_ms,
             self.binning_x),flush = True)
-                            
+                           
+    def play_camera(self):
+        self.set_setting('exposure_ms', 100) # TO REMOVE !!! 
+        super(Camera, self).play_camera()
+
     def received_camera_response(self, msg, value):
         super(Camera, self).received_camera_response(msg, value)
         if msg == 'image':

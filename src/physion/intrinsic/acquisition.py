@@ -20,7 +20,7 @@ try:
 except ImportError:
     print(' Problem with the Hardware support')
 
-camera_depth = 16 
+camera_depth = 12 
 
 class DummyCamera:
     def __init__(self, parent=None,
@@ -173,7 +173,7 @@ def gui(self,
     self.camButton.clicked.connect(self.start_camera)
     self.add_side_widget(tab.layout, self.camButton, spec='small-left')
 
-    self.liveButton = QtWidgets.QPushButton("--   live view    -- ", self)
+    self.liveButton = QtWidgets.QPushButton("--   snapshot  -- ", self)
     self.liveButton.clicked.connect(self.live_intrinsic)
     self.add_side_widget(tab.layout, self.liveButton, spec='large-right')
     
@@ -451,7 +451,11 @@ def launch_intrinsic(self, live_only=False):
         if self.live_only:
             self.t0_episode = time.time()
             self.is_saving = False
-            self.camera.play_camera() # launch camera
+            self.img = single_frame(self)
+            self.imgPlot.setImage(self.img.T)
+            self.barPlot.setOpts(height=np.log(1+np.histogram(self.img,
+                                                bins=self.xbins)[0]))
+            # self.camera.play_camera() # launch camera
         else:
             run(self)
         
@@ -521,8 +525,6 @@ def stop_intrinsic(self):
             self.camera.is_saving = False
         if self.stim is not None:
             self.stim.close()
-        if len(self.TIMES)>5:
-            print('average frame rate: %.1f FPS' % (1./np.mean(np.diff(self.TIMES))))
     else:
         print('acquisition not launched')
 
