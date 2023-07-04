@@ -18,7 +18,7 @@ from physion.acquisition.tools import base_path
 try:
     from physion.hardware.Thorlabs.usb_camera import Camera 
 except ImportError:
-    print(' Problem with the Hardware support')
+    print(' Problem with the Thorlab Camera module ')
 
 camera_depth = 12 
 
@@ -330,7 +330,7 @@ def run(self):
 
     save_intrinsic_metadata(self)
     
-    self.camera.filename = os.path.join(self.datafolder, 'frames.h5')
+    self.camera.folder = os.path.join(self.datafolder, 'frames')
     self.camera.is_saving = True
     self.camera.fid = None
     print('acquisition running [...]')
