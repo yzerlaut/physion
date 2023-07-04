@@ -1,5 +1,5 @@
 import numpy as np
-import pandas, pynwb, PIL, time, os, datetime
+import pandas, pynwb, PIL, time, os, datetime, pathlib, tempfile
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
@@ -30,14 +30,25 @@ class DummyCamera:
        self.t0, self.folder = 0, None
        self.serials = [None] # flag for dummy camera
        self.exposure = exposure
+
     def update_settings(self, binning, exposure):
         self.exposure = exposure
-    def play_camera(self):
-        self.image = np.random.randn(*self.parent.imgsize)
-        np.save(os.path.join(self.folder, '%s.npy' % time.time()),
-                self.image)
+
+    def get_frame(self):
+        mean = 2**camera_depth
+        self.img = .7*mean+0.1*mean*np.random.randn(10, 10)
+        self.img_name = os.path.join(self.folder, '%s.npy' % time.time())
+        np.save(self.img_name, self.img)
+        time.sleep(1e-3*self.exposure)
+        return self.img
+
+    def play_camera(self, exposure=100):
+        self.is_playing = True
+        self.exposure = exposure
+        self.get_frame()
+
     def stop_playing_camera(self):
-        pass
+        self.is_playing = False
     def close_camera(self):
         pass
     def stop_cam_process(self, join=False):
@@ -64,7 +75,7 @@ def gui(self,
     self.imgsize = (10, 10)
     self.vasculature_img, self.fluorescence_img = None, None
     
-    self.t0, self.period = 0, 1
+    self.t0, self.period, self.Nrepeat, self.iEp = 0, 1, 0, 0
     self.live_only, self.t0_episode = False, 0
     
     # start in demo mode until we initialize the real camera
@@ -180,7 +191,7 @@ def gui(self,
     self.camButton.clicked.connect(self.start_camera)
     self.add_side_widget(tab.layout, self.camButton, spec='small-left')
 
-    self.liveButton = QtWidgets.QPushButton("--   snapshot  -- ", self)
+    self.liveButton = QtWidgets.QPushButton("--   live view  -- ", self)
     self.liveButton.clicked.connect(self.live_intrinsic)
     self.add_side_widget(tab.layout, self.liveButton, spec='large-right')
     
@@ -215,7 +226,7 @@ def gui(self,
                                               border=[100,100,100])
     self.xbins = np.linspace(0, 2**camera_depth, 30)
     self.barPlot = pg.BarGraphItem(x = self.xbins[1:], 
-                                height = np.ones(len(self.xbins)-1),
+                                height = np.zeros(len(self.xbins)-1),
                                 width= 0.8*(self.xbins[1]-self.xbins[0]),
                                 brush ='y')
     self.view2.addItem(self.barPlot)
@@ -341,7 +352,7 @@ def run(self):
     self.camera.is_saving = True
     print('acquisition running [...]')
     self.camera.play_camera(\
-            exposure=float(self.exposureBox.text()) # launch camera
+            exposure=float(self.exposureBox.text())) # launch camera
     
     self.update_dt_intrinsic() # while loop
 
@@ -353,42 +364,60 @@ def update_dt_intrinsic(self):
     # update presented stim every X frame
     self.flip_index += 1
 
-    if self.flip_index==30: # UPDATE WITH FLICKERING
+    if self.live_only:
 
-        # find image time, here %period
-        self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
+        img_name = self.camera.img_name # get image name !
+        self.img = np.load(os.path.join(self.camera.folder, img_name))
+        self.imgPlot.setImage(self.img.T)
+        self.barPlot.setOpts(height=np.log(1+np.histogram(self.img,
+                                            bins=self.xbins)[0]))
 
-        angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'][self.iTime]
-        patterns = get_patterns(self, self.STIM['label'][self.iEp%len(self.STIM['label'])],
-                                      angle, self.bar_size)
-        for pattern in patterns:
-            pattern.draw()
-        try:
-            self.stim.win.flip()
-        except BaseException:
-            pass
-        self.flip_index=0
+        # in demo mode, we show the image
+        # if self.demoBox.isChecked():
 
-        self.flip = (False if self.flip else True) # flip the flag at each frame
+    else:
 
-    # in demo mode, we show the image
-    if self.demoBox.isChecked():
-        self.imgPlot.setImage(self.camera.image.T)
+        # running protocol steps
 
-    # checking if not episode over
-    if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
+        if self.flip_index==30: # UPDATE WITH FLICKERING
 
-        if self.camBox.isChecked():
-            self.camera.stop_playing_camera() # stop the camera
-            write_data(self) # writing data when over
+            # find image time, here %period
+            self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
 
-        self.flip_index=0
-        self.t0_episode = time.time()
-        self.iEp += 1
+            angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+\
+                                                 '-angle'][self.iTime]
+            patterns = get_patterns(self, self.STIM['label'][self.iEp%len(self.STIM['label'])],
+                                          angle, self.bar_size)
+            for pattern in patterns:
+                pattern.draw()
+            try:
+                self.stim.win.flip()
+            except BaseException:
+                pass
+            self.flip_index=0
 
-        if self.camBox.isChecked():
-            self.camera.play_camera(\
-                    exposure=float(self.exposureBox.text()) # launch camera
+            self.flip = (False if self.flip else True) # flip the flag at each frame
+
+
+        # checking if not episode over
+        if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
+
+            # if self.camBox.isChecked():
+                # self.camera.stop_playing_camera() # stop the camera
+                # write_data(self) # writing data when over
+
+            self.flip_index=0
+            self.t0_episode = time.time()
+            self.iEp += 1
+
+            # if self.camBox.isChecked():
+                # self.camera.play_camera(\
+                        # exposure=float(self.exposureBox.text())) # launch camera
+
+
+    # if no camera streams, we force the camera frames here:
+    if not self.camBox.isChecked():
+        self.camera.get_frame() 
 
     # continuing ?
     if self.running:
@@ -425,7 +454,6 @@ def save_intrinsic_metadata(self):
                 'period':float(self.periodBox.text()),
                 'Nsubsampling':int(self.spatialBox.text()),
                 'Nrepeat':int(self.repeatBox.text()),
-                'imgsize':self.imgsize,
                 'headplate-angle-from-rig-axis':subject['headplate-angle-from-rig-axis'],
                 'Height-of-Microscope-Camera-Image-in-mm':\
                         self.config['Height-of-Microscope-Camera-Image-in-mm'],
@@ -444,9 +472,7 @@ def save_intrinsic_metadata(self):
     self.datafolder = os.path.dirname(filename)
 
     
-def launch_intrinsic(self, live_only=False):
-
-    self.live_only = live_only
+def launch_intrinsic(self):
 
     if not self.running:
 
@@ -456,20 +482,20 @@ def launch_intrinsic(self, live_only=False):
         self.flip_index = 0
         self.camera.update_settings(float(self.exposureBox.text()),
                                     int(self.spatialBox.text()))
+
         
         if self.live_only:
-            self.camera.folder = os.path.join(self.day_folder, 'frames')
+
+            self.camera.folder = tempfile.mkdtemp()
+            # launch camera:
             self.camera.play_camera(\
-                    exposure=float(self.exposureBox.text()) # launch camera
-            # need to display the last 
-            self.t0_episode = time.time()
-            self.is_saving = False
-            self.img = single_frame(self)
-            self.imgPlot.setImage(self.img.T)
-            self.barPlot.setOpts(height=np.log(1+np.histogram(self.img,
-                                                bins=self.xbins)[0]))
+                    exposure=float(self.exposureBox.text())) 
+
+            self.update_dt_intrinsic() # while loop
+
         else:
             run(self)
+
         
     else:
 
@@ -478,7 +504,6 @@ def launch_intrinsic(self, live_only=False):
 def start_camera(self):
 
     self.statusBar.showMessage(' Initializing the camera [...] (~15s)')
-    self.refresh()
 
     print('')
     print(' --> (re) initializing the camera !')
@@ -517,9 +542,11 @@ def single_frame(self,
     self.camera.is_saving = True
     return self.camera.image
 
+
 def live_intrinsic(self):
 
-    self.launch_intrinsic(live_only=True)
+    self.live_only = True
+    self.launch_intrinsic()
 
 
 def stop_intrinsic(self):
@@ -528,6 +555,7 @@ def stop_intrinsic(self):
         self.camera.stop_playing_camera()
         if self.stim is not None:
             self.stim.close()
+        self.live_only = False
     else:
         print('acquisition not launched')
 

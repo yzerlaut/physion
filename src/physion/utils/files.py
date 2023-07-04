@@ -108,6 +108,7 @@ def get_TSeries_folders(folder, frame_limit=-1, limit_to_subdirectories=False):
                 print('   ----> data should be at least %i frames !' % frame_limit)
     return np.sort(np.array(FOLDERS))
 
+
 def insure_ordered_frame_names(df):
     # insuring nice order of screen frames
     filenames = os.listdir(os.path.join(df,'screen-frames'))

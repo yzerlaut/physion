@@ -6,6 +6,7 @@ import pyqtgraph as pg
 
 from physion.utils.paths import FOLDERS, python_path
 from physion.utils.files import last_datafolder_in_dayfolder, day_folder
+from physion.pupil.roi import extract_ellipse_props
 from physion.intrinsic.tools import default_segmentation_params
 from physion.intrinsic import tools as intrinsic_analysis
 from physion.intrinsic import RetinotopicMapping
@@ -84,8 +85,13 @@ def gui(self,
     self.loadButton.clicked.connect(self.load_intrinsic_data)
     self.add_side_widget(tab.layout,self.loadButton)
 
+    self.roiBox = QtWidgets.QCheckBox("use ROI mask")
+    self.roiBox.setStyleSheet("color: gray;")
+    self.add_side_widget(tab.layout,self.roiBox, spec='large-left')
+    self.add_side_widget(tab.layout,QtWidgets.QLabel(''), spec='small-right')
+    # self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+
     # -------------------------------------------------------
-    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
 
     self.pmButton = QtWidgets.QPushButton(\
             " == compute phase/power maps == ", self)
@@ -224,6 +230,10 @@ def gui(self,
     self.img1 = pg.ImageItem()
     self.img1B.addItem(self.img1)
 
+    self.roiContour = pg.EllipseROI([5, 5], [10, 10],
+                                    pen=pg.mkPen('orange', width=1))
+    self.img1B.addItem(self.roiContour)
+
     self.img2B = self.graphics_layout.addViewBox(row=3, col=10,
                                                  rowspan=10, colspan=9,
                                                  lockAspect=True, invertY=True)
@@ -361,6 +371,18 @@ def load_intrinsic_data(self):
             (self.t, self.data) = intrinsic_analysis.load_raw_data(get_datafolder(self),
                                                                   self.protocolBox.currentText(),
                                                                   run_id=self.numBox.currentText())
+
+        if self.roiBox.isChecked():
+
+            print('masking outside the circle:', mx, my, sx, sy)
+            mx, my, sx, sy, _ = extract_ellipse_props(self.roiContour)
+            X, Y = np.meshgrid(\
+                    np.arange(data.shape[1]),
+                    np.arange(data.shape[2]),
+                    indexing='ij')
+            cond = ((X-mx)**2/sx**2+(Y-my)**2/sy**2) < 1
+            self.data[:, cond] = 0
+            
 
         if float(self.ssBox.text())>0:
 
