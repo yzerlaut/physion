@@ -13,7 +13,7 @@ except ImportError:
     print(' Problem with the Visual Stimulation module')
 
 from physion.intrinsic.tools import resample_img 
-from physion.utils.files import generate_filename_path
+from physion.utils.files import generate_filename_path, day_folder
 from physion.acquisition.tools import base_path
 try:
     from physion.hardware.Thorlabs.usb_camera import Camera 
@@ -27,13 +27,15 @@ class DummyCamera:
                  exposure=1,
                  binning=10):
        self.parent = parent
-       self.t0 = 0 
+       self.t0, self.folder = 0, None
        self.serials = [None] # flag for dummy camera
        self.exposure = exposure
     def update_settings(self, binning, exposure):
         self.exposure = exposure
     def play_camera(self):
         self.image = np.random.randn(*self.parent.imgsize)
+        np.save(os.path.join(self.folder, '%s.npy' % time.time()),
+                self.image)
     def stop_playing_camera(self):
         pass
     def close_camera(self):
@@ -48,6 +50,11 @@ def gui(self,
     self.windows[tab_id] = 'ISI_acquisition'
 
     tab = self.tabs[tab_id]
+
+
+    self.day_folder = day_folder(FOLDERS[self.folderBox.currentText()])
+    pathlib.Path(os.path.join(self.day_folder, 'frames')).mkdir(\
+            parents=True, exist_ok=True)
 
     self.cleanup_tab(tab)
 
@@ -330,11 +337,11 @@ def run(self):
 
     save_intrinsic_metadata(self)
     
-    self.camera.folder = os.path.join(self.datafolder, 'frames')
+    self.camera.folder = os.path.join(self.day_folder, 'frames')
     self.camera.is_saving = True
-    self.camera.fid = None
     print('acquisition running [...]')
-    self.camera.play_camera() # launch camera
+    self.camera.play_camera(\
+            exposure=float(self.exposureBox.text()) # launch camera
     
     self.update_dt_intrinsic() # while loop
 
@@ -380,7 +387,8 @@ def update_dt_intrinsic(self):
         self.iEp += 1
 
         if self.camBox.isChecked():
-            self.camera.play_camera() # restart the camera 
+            self.camera.play_camera(\
+                    exposure=float(self.exposureBox.text()) # launch camera
 
     # continuing ?
     if self.running:
@@ -403,6 +411,7 @@ def write_data(self):
 def save_intrinsic_metadata(self):
     
     filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
+                                      with_frames_folder=True,
                                       filename='metadata', extension='.npy')
 
     subjects = pandas.read_csv(os.path.join(base_path,
@@ -449,13 +458,16 @@ def launch_intrinsic(self, live_only=False):
                                     int(self.spatialBox.text()))
         
         if self.live_only:
+            self.camera.folder = os.path.join(self.day_folder, 'frames')
+            self.camera.play_camera(\
+                    exposure=float(self.exposureBox.text()) # launch camera
+            # need to display the last 
             self.t0_episode = time.time()
             self.is_saving = False
             self.img = single_frame(self)
             self.imgPlot.setImage(self.img.T)
             self.barPlot.setOpts(height=np.log(1+np.histogram(self.img,
                                                 bins=self.xbins)[0]))
-            # self.camera.play_camera() # launch camera
         else:
             run(self)
         
@@ -498,14 +510,10 @@ def single_frame(self,
 
     self.statusBar.showMessage(' single frame snapshot (~2s)')
     self.camera.is_saving = True
-    self.camera.fid = None
-    self.camera.filename = filename
+    self.camera.folder = os.path.join(self.datafolder, 'frames')
     self.camera.play_camera()
     time.sleep(2)
     self.camera.stop_playing_camera()
-    if self.camera.fid is not None:
-        self.camera.fid.close()
-    self.camera.fid = None
     self.camera.is_saving = True
     return self.camera.image
 
@@ -518,11 +526,6 @@ def stop_intrinsic(self):
     if self.running:
         self.running = False
         self.camera.stop_playing_camera()
-        if self.camera.fid is not None:
-            # close the hdf5 recording 
-            self.camera.fid.close()
-            self.camera.fid = None
-            self.camera.is_saving = False
         if self.stim is not None:
             self.stim.close()
     else:
