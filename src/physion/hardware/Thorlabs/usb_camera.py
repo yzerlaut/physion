@@ -54,8 +54,10 @@ class Camera(ThorCam):
             self.exposure_ms,
             self.binning_x),flush = True)
                            
-    def play_camera(self, exposure=100):
+    def play_camera(self, exposure=100, binning=1):
         self.set_setting('exposure_ms', exposure)
+        self.set_setting('binning_x',int(binning))
+        self.set_setting('binning_y',int(binning))
         if self.folder is None:
             pathlib.Path('./frames').mkdir(parents=True, exist_ok=True)
             self.folder = 'frames'

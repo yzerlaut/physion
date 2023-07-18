@@ -42,13 +42,14 @@ class DummyCamera:
         time.sleep(1e-3*self.exposure)
         return self.img
 
-    def play_camera(self, exposure=100):
+    def play_camera(self, exposure=100, binning=1):
         self.is_playing = True
         self.exposure = exposure
         self.get_frame()
 
     def stop_playing_camera(self):
         self.is_playing = False
+
     def close_camera(self):
         pass
     def stop_cam_process(self, join=False):
@@ -64,8 +65,6 @@ def gui(self,
 
 
     self.day_folder = day_folder(FOLDERS[self.folderBox.currentText()])
-    pathlib.Path(os.path.join(self.day_folder, 'frames')).mkdir(\
-            parents=True, exist_ok=True)
 
     self.cleanup_tab(tab)
 
@@ -349,10 +348,10 @@ def run(self):
     save_intrinsic_metadata(self)
     
     self.camera.folder = os.path.join(self.day_folder, 'frames')
-    self.camera.is_saving = True
     print('acquisition running [...]')
     self.camera.play_camera(\
-            exposure=float(self.exposureBox.text())) # launch camera
+            exposure=float(self.exposureBox.text()),
+            binning=int(self.spatialBox.text()) # launch camera
     
     self.update_dt_intrinsic() # while loop
 
@@ -413,7 +412,6 @@ def update_dt_intrinsic(self):
             # if self.camBox.isChecked():
                 # self.camera.play_camera(\
                         # exposure=float(self.exposureBox.text())) # launch camera
-
 
     # if no camera streams, we force the camera frames here:
     if not self.camBox.isChecked():
@@ -486,14 +484,18 @@ def launch_intrinsic(self):
         
         if self.live_only:
 
-            self.camera.folder = tempfile.mkdtemp()
+            # save in temporary folder
+            self.camera.folder = os.path.join(tempfile.mkdtemp(), 'frames')
+
             # launch camera:
             self.camera.play_camera(\
-                    exposure=float(self.exposureBox.text())) 
+                    exposure=float(self.exposureBox.text()),
+                    binning=int(self.spatialBox.text()) # launch camera
 
             self.update_dt_intrinsic() # while loop
 
         else:
+
             run(self)
 
         
@@ -534,12 +536,12 @@ def single_frame(self,
                  filename='single_frame.h5'):
 
     self.statusBar.showMessage(' single frame snapshot (~2s)')
-    self.camera.is_saving = True
     self.camera.folder = os.path.join(self.datafolder, 'frames')
-    self.camera.play_camera()
+    self.camera.play_camera(\
+            exposure=float(self.exposureBox.text()),
+            binning=int(self.spatialBox.text()) # launch camera
     time.sleep(2)
     self.camera.stop_playing_camera()
-    self.camera.is_saving = True
     return self.camera.image
 
 
