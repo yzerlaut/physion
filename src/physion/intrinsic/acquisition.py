@@ -1,5 +1,6 @@
 import numpy as np
 import pandas, pynwb, PIL, time, os, datetime, pathlib, tempfile
+import multiprocessing # for the dummy camera streams !!
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
@@ -30,6 +31,8 @@ class DummyCamera:
        self.t0, self.folder = 0, None
        self.serials = [None] # flag for dummy camera
        self.exposure = exposure
+       self.is_playing = multiprocessing.Event() # to turn on/off recordings 
+       self.is_playing.clear()
 
     def update_settings(self, binning, exposure):
         self.exposure = exposure
