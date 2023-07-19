@@ -1,6 +1,7 @@
 import numpy as np
 import pandas, pynwb, PIL, time, os, datetime, pathlib, tempfile
 import multiprocessing # for the dummy camera streams !!
+from ctypes import c_char_p
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
@@ -14,49 +15,17 @@ except ImportError:
     print(' Problem with the Visual Stimulation module')
 
 from physion.intrinsic.tools import resample_img 
-from physion.utils.files import generate_filename_path, day_folder
+from physion.utils.files import datetime_folder, get_last_file
 from physion.acquisition.tools import base_path
+
+
+from physion.hardware.DummyCamera import launch_Camera, camera_depth
+
 try:
     from physion.hardware.Thorlabs.usb_camera import Camera 
 except ImportError:
     print(' Problem with the Thorlab Camera module ')
 
-camera_depth = 12 
-
-class DummyCamera:
-    def __init__(self, parent=None,
-                 exposure=1,
-                 binning=10):
-       self.parent = parent
-       self.t0, self.folder = 0, None
-       self.serials = [None] # flag for dummy camera
-       self.exposure = exposure
-       self.is_playing = multiprocessing.Event() # to turn on/off recordings 
-       self.is_playing.clear()
-
-    def update_settings(self, binning, exposure):
-        self.exposure = exposure
-
-    def get_frame(self):
-        mean = 2**camera_depth
-        self.img = .7*mean+0.1*mean*np.random.randn(10, 10)
-        self.img_name = os.path.join(self.folder, '%s.npy' % time.time())
-        np.save(self.img_name, self.img)
-        time.sleep(1e-3*self.exposure)
-        return self.img
-
-    def play_camera(self, exposure=100, binning=1):
-        self.is_playing = True
-        self.exposure = exposure
-        self.get_frame()
-
-    def stop_playing_camera(self):
-        self.is_playing = False
-
-    def close_camera(self):
-        pass
-    def stop_cam_process(self, join=False):
-        pass
 
 def gui(self,
         box_width=250,
@@ -66,23 +35,29 @@ def gui(self,
 
     tab = self.tabs[tab_id]
 
-
-    self.day_folder = day_folder(FOLDERS[self.folderBox.currentText()])
-
     self.cleanup_tab(tab)
 
     # some initialisation
     self.running, self.stim, self.STIM = False, None, None
-    self.datafolder, self.img = '', None
-    self.imgsize = (10, 10)
-    self.vasculature_img, self.fluorescence_img = None, None
-    
+    self.img, self.vasculature_img, self.fluorescence_img = None, None, None
+    self.demo = False
+
     self.t0, self.period, self.Nrepeat, self.iEp = 0, 1, 0, 0
     self.live_only, self.t0_episode = False, 0
     
-    # start in demo mode until we initialize the real camera
-    self.demo = False
-    self.camera = DummyCamera(parent=self)
+    ################################################################
+    ######## Multiprocessing quantities for the Camera Stream  #####
+    ################################################################
+
+    self.Camera_process = None
+    # to be used through multiprocessing.Process:
+    self.run_event = multiprocessing.Event() # to turn on/off recordings 
+    self.run_event.clear()
+    self.stopCamera_event = multiprocessing.Event()
+    self.stopCamera_event.clear()
+    self.manager = multiprocessing.Manager() # to share a str across processes
+    self.datafolder = self.manager.Value(c_char_p,\
+            str(datetime_folder(FOLDERS[self.folderBox.currentText()])))
 
     ##########################################################
     ####### GUI settings
@@ -348,14 +323,15 @@ def run(self):
     self.iEp, self.t0_episode = 0, time.time()
     self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
 
+    # initialize datafolder
+    self.datafolder = self.manager.Value(c_char_p,\
+            str(datetime_folder(FOLDERS[self.folderBox.currentText()])))
+
     save_intrinsic_metadata(self)
     
-    self.camera.folder = os.path.join(self.day_folder, 'frames')
     print('acquisition running [...]')
-    self.camera.play_camera(\
-            exposure=float(self.exposureBox.text()),
-            binning=int(self.spatialBox.text()) # launch camera
-    
+    self.run_event.set() # this put the camera in saving mode
+
     self.update_dt_intrinsic() # while loop
 
 
@@ -368,14 +344,13 @@ def update_dt_intrinsic(self):
 
     if self.live_only:
 
-        img_name = self.camera.img_name # get image name !
-        self.img = np.load(os.path.join(self.camera.folder, img_name))
-        self.imgPlot.setImage(self.img.T)
-        self.barPlot.setOpts(height=np.log(1+np.histogram(self.img,
-                                            bins=self.xbins)[0]))
+        img_file = get_last_file(os.path.join(self.datafolder.get(), 'frames'))
 
-        # in demo mode, we show the image
-        # if self.demoBox.isChecked():
+        if img_file is not None:
+            self.img = np.load(img_file)
+            self.imgPlot.setImage(self.img.T)
+            self.barPlot.setOpts(height=np.log(1+np.histogram(self.img,
+                                                bins=self.xbins)[0]))
 
     else:
 
@@ -404,21 +379,19 @@ def update_dt_intrinsic(self):
         # checking if not episode over
         if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
 
-            # if self.camBox.isChecked():
-                # self.camera.stop_playing_camera() # stop the camera
-                # write_data(self) # writing data when over
+            # we stop the camera
+            self.run_event.clear()
+            time.sleep(0.5) # we give it some time
 
+            write_data(self) # we write the data
+
+            # initialize the next episode
             self.flip_index=0
             self.t0_episode = time.time()
             self.iEp += 1
 
-            # if self.camBox.isChecked():
-                # self.camera.play_camera(\
-                        # exposure=float(self.exposureBox.text())) # launch camera
-
-    # if no camera streams, we force the camera frames here:
-    if not self.camBox.isChecked():
-        self.camera.get_frame() 
+            # restart camera
+            self.run_even.set() 
 
     # continuing ?
     if self.running:
@@ -440,9 +413,7 @@ def write_data(self):
 
 def save_intrinsic_metadata(self):
     
-    filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                                      with_frames_folder=True,
-                                      filename='metadata', extension='.npy')
+    filename = os.path.join(self.datafolder.get(), 'metadata.npy')
 
     subjects = pandas.read_csv(os.path.join(base_path,
                                'subjects',self.config['subjects_file']))
@@ -469,9 +440,7 @@ def save_intrinsic_metadata(self):
     if self.fluorescence_img is not None:
         np.save(filename.replace('metadata', 'fluorescence'),
                 self.fluorescence_img)
-        
-    self.datafolder = os.path.dirname(filename)
-
+    
     
 def launch_intrinsic(self):
 
@@ -481,19 +450,12 @@ def launch_intrinsic(self):
 
         # initialization of data
         self.flip_index = 0
-        self.camera.update_settings(float(self.exposureBox.text()),
-                                    int(self.spatialBox.text()))
 
-        
         if self.live_only:
 
             # save in temporary folder
-            self.camera.folder = os.path.join(tempfile.mkdtemp(), 'frames')
-
-            # launch camera:
-            self.camera.play_camera(\
-                    exposure=float(self.exposureBox.text()),
-                    binning=int(self.spatialBox.text()) # launch camera
+            self.datafolder = self.manager.Value(c_char_p,\
+                    str(os.path.join(tempfile.mkdtemp())))
 
             self.update_dt_intrinsic() # while loop
 
@@ -506,9 +468,17 @@ def launch_intrinsic(self):
 
         print(' /!\  --> acquisition already running, need to stop it first /!\ ')
 
+def stop_camera(self):
+    self.stopCamera_event.set()
+    time.sleep(1)
+    if self.Camera_process is not None:
+        self.Camera_process.close()
+        self.Camera_process = None
+
 def start_camera(self):
 
-    self.statusBar.showMessage(' Initializing the camera [...] (~15s)')
+    self.statusBar.showMessage(' (re-)Initializing the camera [...] (~10s)')
+    self.show()
 
     print('')
     print(' --> (re) initializing the camera !')
@@ -516,36 +486,47 @@ def start_camera(self):
     print('')
     print('')
 
-    if self.camera.serials[0] is not None:
-        self.camera.close_camera()
-        self.camera.stop_cam_process(join=True)
+    # we systematically close and reopen the camera stream
+    stop_camera(self)
 
-    try:
-        # we initialize the camera
-        self.camera = Camera(parent=self,
-                             exposure=float(self.exposureBox.text()),
-                             binning=int(self.spatialBox.text()))
-    except BaseException as be:
-        print(be)
-        print('')
-        print(' /!\ Problem with the Camera /!\ ')
-        print('        --> no camera found ')
-        print('')
+    # then (re-)starting it
+    self.stopCamera_event.clear()
+    self.Camera_process = multiprocessing.Process(target=launch_Camera,
+                    args=(self.run_event,
+                          self.stopCamera_event,
+                          self.datafolder,
+                          {'frame_rate':30.}))
+    self.Camera_process.start()
 
-    if self.camera.serials[0] is not None:
-        self.demo = False # we turn off demo mode if we had a real camera
+    # if self.camera.serials[0] is not None:
+        # self.camera.close_camera()
+        # self.camera.stop_cam_process(join=True)
+
+    # try:
+        # # we initialize the camera
+        # self.camera = Camera(parent=self,
+                             # exposure=float(self.exposureBox.text()),
+                             # binning=int(self.spatialBox.text()))
+    # except BaseException as be:
+        # print(be)
+        # print('')
+        # print(' /!\ Problem with the Camera /!\ ')
+        # print('        --> no camera found ')
+        # print('')
+
+    # if self.camera.serials[0] is not None:
+        # self.demo = False # we turn off demo mode if we had a real camera
 
 def single_frame(self, 
                  filename='single_frame.h5'):
 
     self.statusBar.showMessage(' single frame snapshot (~2s)')
-    self.camera.folder = os.path.join(self.datafolder, 'frames')
-    self.camera.play_camera(\
-            exposure=float(self.exposureBox.text()),
-            binning=int(self.spatialBox.text()) # launch camera
-    time.sleep(2)
-    self.camera.stop_playing_camera()
-    return self.camera.image
+
+    # self.camera.play_camera(\
+            # exposure=float(self.exposureBox.text()),
+            # binning=int(self.spatialBox.text()) # launch camera
+
+    return np.random.uniform(1, 2**8, size=(10,10))
 
 
 def live_intrinsic(self):
@@ -557,7 +538,7 @@ def live_intrinsic(self):
 def stop_intrinsic(self):
     if self.running:
         self.running = False
-        self.camera.stop_playing_camera()
+        self.stopCamera_event.set() # just stop the saving
         if self.stim is not None:
             self.stim.close()
         self.live_only = False

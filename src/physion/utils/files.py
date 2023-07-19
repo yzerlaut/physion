@@ -1,19 +1,33 @@
-import datetime, os, string, pathlib, json, tempfile
+import datetime, os, string, pathlib, json, tempfile, glob
 import numpy as np
 
 def day_folder(root_folder):
-    return os.path.join(root_folder, datetime.datetime.now().strftime("%Y_%m_%d"))
+    """ create and take the day folder """
+    Day_folder = os.path.join(root_folder,
+                              datetime.datetime.now().strftime("%Y_%m_%d"))
+    if not os.path.exists(Day_folder):
+        print('creating the folder "%s"' % Day_folder)
+        pathlib.Path(Day_folder).mkdir(parents=True, exist_ok=True)
+    return Day_folder
 
-def second_folder(day_folder):
-    return os.path.join(day_folder, datetime.datetime.now().strftime("%H-%M-%S"))
+def time_folder(day_folder):
+    Time_folder = os.path.join(day_folder,
+                               datetime.datetime.now().strftime("%H-%M-%S"))
+    if not os.path.exists(Time_folder):
+        print('creating the folder "%s"' % Time_folder)
+        pathlib.Path(Time_folder).mkdir(parents=True, exist_ok=True)
+    return Time_folder
+
+def datetime_folder(root_folder):
+    return time_folder(day_folder(root_folder))
 
 def create_day_folder(root_folder):
     df = day_folder(root_folder)
     pathlib.Path(df).mkdir(parents=True, exist_ok=True)
     return day_folder(root_folder)
 
-def create_second_folder(day_folder):
-    pathlib.Path(second_folder(day_folder)).mkdir(parents=True, exist_ok=True)
+def create_time_folder(day_folder):
+    pathlib.Path(time_folder(day_folder)).mkdir(parents=True, exist_ok=True)
     
 def generate_filename_path(root_folder,
                            filename = '', extension='txt',
@@ -23,7 +37,7 @@ def generate_filename_path(root_folder,
                            with_microseconds=False):
 
     Day_folder = day_folder(root_folder)
-    Second_folder = second_folder(Day_folder)
+    Second_folder = time_folder(Day_folder)
     
     if not os.path.exists(Day_folder):
         print('creating the folder "%s"' % Day_folder)
@@ -160,4 +174,12 @@ def computerTimestamp_to_daySeconds(t):
     
     return 60*60*Hour+60*Min+Seconds
     
+def get_last_file(folder):
 
+    list_of_files = glob.glob(folder) 
+    if len(list_of_files)>1:
+        filename = max(list_of_files, key=os.path.getctime)
+        print(filename)
+        return os.path.join(folder, filename)
+    else:
+        return None

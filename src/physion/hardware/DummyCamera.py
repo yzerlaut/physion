@@ -5,12 +5,17 @@ import time, sys, os
 import numpy as np
 from pathlib import Path
 
-class Acquisition:
+
+camera_depth = 12 
+
+class Camera:
 
     def __init__(self, 
+                 subfolder='frames',
                  settings={'frame_rate':30.}):
         self.running = False
         self.times = []
+        self.subfolder = subfolder
         self.img_size=(800, 600)
         self.settings = {}
         self.update_settings(settings)
@@ -33,13 +38,15 @@ class Acquisition:
     def stop(self):
         pass
 
-    def rec_and_check(self, run_flag, quit_flag, folder,
+    def rec_and_check(self, run_flag, stop_flag, folder,
                       debug=True):
 
         # # -- while loop 
-        while not quit_flag.is_set():
-           
-            image= np.random.randn(*self.img_size).astype(np.uint16)
+        while not stop_flag.is_set():
+
+            print(run_flag.is_set())
+            image= np.random.uniform(1, 2**camera_depth,
+                                     size=self.img_size).astype(np.uint16)
             Time = time.time()
 
             if not self.running and run_flag.is_set():
@@ -59,7 +66,9 @@ class Acquisition:
             if self.running:
                 # we store the image and its timestamp
 
-                np.save(os.path.join(folder.get(), '%s.npy' % Time), image)
+                np.save(os.path.join(folder.get(),
+                                     self.subfolder,
+                                     '%s.npy' % Time), image)
                 self.times.append(Time)
                 time.sleep(1./self.settings['frame_rate'])
 
@@ -71,11 +80,11 @@ class Acquisition:
         self.stop()
 
 
-def launch_Camera(run_flag, quit_flag, datafolder,
+def launch_Camera(run_flag, stop_flag, datafolder,
                   settings={'frame_rate':30.}):
 
-    camera = Acquisition(settings=settings)
-    camera.rec_and_check(run_flag, quit_flag, datafolder)
+    camera = Camera(settings=settings)
+    camera.rec_and_check(run_flag, stop_flag, datafolder)
 
 
 if __name__=='__main__':
@@ -87,12 +96,12 @@ if __name__=='__main__':
     T=2
 
     run = multiprocessing.Event()
-    quit_event = multiprocessing.Event()
+    stop_event = multiprocessing.Event()
     manager = multiprocessing.Manager()
     datafolder = manager.Value(c_char_p, 'datafolder')    
 
     camera_process = multiprocessing.Process(target=launch_Camera,
-                                             args=(run, quit_event, datafolder))
+                                             args=(run, stop_event, datafolder))
     run.clear()
     camera_process.start()
 
@@ -108,6 +117,6 @@ if __name__=='__main__':
     time.sleep(T)
     run.clear()
     time.sleep(0.5)
-    # quit process
-    quit_event.set()
+    # stop process
+    stop_event.set()
 

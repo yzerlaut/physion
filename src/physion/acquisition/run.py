@@ -162,7 +162,8 @@ def toggle_FaceCamera_process(self):
             self.FaceCamera_process.start()
             self.statusBar.showMessage('[ok] FaceCamera initialized (in 5-6s) ! ')
             
-        elif (not self.FaceCameraButton.isChecked()) and (self.FaceCamera_process is not None):
+        elif (not self.FaceCameraButton.isChecked()) and\
+                        (self.FaceCamera_process is not None):
             # need to shut it down
             self.closeFaceCamera_event.set()
             self.statusBar.showMessage(' FaceCamera stream interupted !')
