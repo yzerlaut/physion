@@ -7,8 +7,8 @@ import json
 
 try:
     from psychopy import visual, core, event, clock, monitors
-except ModuleNotFoundError:
-    pass
+except (ModuleNotFoundError, ImportError):
+    print('psychopy module not loaded')
 
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim

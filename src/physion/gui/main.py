@@ -65,7 +65,8 @@ class MainWindow(QtWidgets.QMainWindow):
     if Acquisition:
         from physion.intrinsic.acquisition import gui as intrinsic_acq
         from physion.intrinsic.acquisition import launch_intrinsic,\
-                start_camera, stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
+                start_camera, stop_camera, stop_intrinsic, live_intrinsic,\
+                update_dt_intrinsic, update_dt_live,\
                 take_vasculature_picture, take_fluorescence_picture
     else:
         from physion.gui.parts import inactivated as intrinsic_acq
@@ -266,7 +267,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.suite2p_preprocessing_UI()
             # self.build_NWB_UI()
             # self.add_imaging()
-            self.intrinsic()
+            self.intrinsic_acq()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()

@@ -5,18 +5,18 @@ import time, sys, os
 import numpy as np
 from pathlib import Path
 
-
 camera_depth = 12 
 
 class Camera:
 
     def __init__(self, 
                  subfolder='frames',
-                 settings={'frame_rate':30.}):
-        self.running = False
+                 settings={'exposure':200.0}):
+        self.running, self.recording = False, False
+        self.rec_number = 0
         self.times = []
         self.subfolder = subfolder
-        self.img_size=(800, 600)
+        self.img_size=(600, 800)
         self.settings = {}
         self.update_settings(settings)
 
@@ -38,53 +38,62 @@ class Camera:
     def stop(self):
         pass
 
-    def rec_and_check(self, run_flag, stop_flag, folder,
-                      debug=True):
+    def run(self, run_flag, rec_flag, folder,
+            debug=True):
 
         # # -- while loop 
-        while not stop_flag.is_set():
+        while run_flag.is_set():
 
-            print(run_flag.is_set())
+            # get frame !!
             image= np.random.uniform(1, 2**camera_depth,
                                      size=self.img_size).astype(np.uint16)
             Time = time.time()
 
-            if not self.running and run_flag.is_set():
-                # not running and need to start  !
+            if not self.recording and rec_flag.is_set():
+                # not recording and need to start  !
 
-                self.running, self.times = True, []
+                self.recording , self.times = True, []
+                self.rec_number += 1 
+                print('initializing camera recording #%i' % self.rec_number)
 
-            elif self.running and not run_flag.is_set():
+            elif self.recording and not rec_flag.is_set():
                 # running and we need to stop
 
-                self.running=False
+                self.recording = False
+
+                print('saving times for camera recording #%i' % self.rec_number)
+                np.save(os.path.join(folder.get(),
+                                     self.subfolder,
+                                     '%i.times.npy' % self.rec_number), self.times)
 
                 if debug:
                     self.print_rec_infos()
 
             # after the update
-            if self.running:
+            if self.recording:
                 # we store the image and its timestamp
 
+                print('rec:', folder.get())
                 np.save(os.path.join(folder.get(),
                                      self.subfolder,
                                      '%s.npy' % Time), image)
                 self.times.append(Time)
-                time.sleep(1./self.settings['frame_rate'])
+                time.sleep(1e-3*self.settings['exposure'])
 
         # end of the while loop
         if debug:
             self.print_rec_infos()
         
         self.running=False
+        self.recording=False
         self.stop()
 
 
-def launch_Camera(run_flag, stop_flag, datafolder,
-                  settings={'frame_rate':30.}):
+def launch_Camera(run_flag, rec_flag, datafolder,
+                  settings={'exposure':200.0}):
 
     camera = Camera(settings=settings)
-    camera.rec_and_check(run_flag, stop_flag, datafolder)
+    camera.run(run_flag, rec_flag, datafolder)
 
 
 if __name__=='__main__':
@@ -96,27 +105,35 @@ if __name__=='__main__':
     T=2
 
     run = multiprocessing.Event()
-    stop_event = multiprocessing.Event()
+    rec = multiprocessing.Event()
     manager = multiprocessing.Manager()
     datafolder = manager.Value(c_char_p, 'datafolder')    
 
     camera_process = multiprocessing.Process(target=launch_Camera,
-                                             args=(run, stop_event, datafolder))
-    run.clear()
+                                             args=(run, rec, datafolder))
+
+    # start cam without recording
+    run.set()
+    rec.clear()
     camera_process.start()
 
     # start first acq
     datafolder.set(str(os.path.join(os.path.expanduser('~'), 'DATA', '1')))
-    run.set()
+    rec.set()
     time.sleep(T)
-    run.clear()
+    rec.clear()
+
+    time.sleep(T)
 
     # start second acq
     datafolder.set(str(os.path.join(os.path.expanduser('~'), 'DATA', '2')))
-    run.set()
+    rec.set()
     time.sleep(T)
-    run.clear()
+    rec.clear()
     time.sleep(0.5)
+
     # stop process
-    stop_event.set()
+    run.clear()
+    camera_process.join()
+    camera_process.close()
 

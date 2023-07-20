@@ -18,7 +18,6 @@ from physion.intrinsic.tools import resample_img
 from physion.utils.files import datetime_folder, get_last_file
 from physion.acquisition.tools import base_path
 
-
 from physion.hardware.DummyCamera import launch_Camera, camera_depth
 
 try:
@@ -43,6 +42,7 @@ def gui(self,
     self.demo = False
 
     self.t0, self.period, self.Nrepeat, self.iEp = 0, 1, 0, 0
+    self.flip_index = 0
     self.live_only, self.t0_episode = False, 0
     
     ################################################################
@@ -51,10 +51,10 @@ def gui(self,
 
     self.Camera_process = None
     # to be used through multiprocessing.Process:
-    self.run_event = multiprocessing.Event() # to turn on/off recordings 
-    self.run_event.clear()
-    self.stopCamera_event = multiprocessing.Event()
-    self.stopCamera_event.clear()
+    self.cameraRun = multiprocessing.Event() # to turn on/off recordings 
+    self.cameraRun.clear()
+    self.cameraRec = multiprocessing.Event()
+    self.cameraRec.clear()
     self.manager = multiprocessing.Manager() # to share a str across processes
     self.datafolder = self.manager.Value(c_char_p,\
             str(datetime_folder(FOLDERS[self.folderBox.currentText()])))
@@ -164,11 +164,11 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
 
     # ---  launching camera acquisition---
-    self.camButton = QtWidgets.QPushButton(" INIT ", self)
+    self.camButton = QtWidgets.QPushButton("(re)init", self)
     self.camButton.clicked.connect(self.start_camera)
     self.add_side_widget(tab.layout, self.camButton, spec='small-left')
 
-    self.liveButton = QtWidgets.QPushButton("--   live view  -- ", self)
+    self.liveButton = QtWidgets.QPushButton(" -- live camera -- ", self)
     self.liveButton.clicked.connect(self.live_intrinsic)
     self.add_side_widget(tab.layout, self.liveButton, spec='large-right')
     
@@ -216,14 +216,12 @@ def take_fluorescence_picture(self):
 
     if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
 
-        filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                            filename='fluorescence-%s' % self.subjectBox.currentText(),
-                            extension='.h5')
-        self.fluorescence_img = single_frame(self, filename=filename)
-        self.imgPlot.setImage(self.fluorescence_img.T) # show on display
+        self.fluorescence_img = single_frame(self)
+        np.save(os.path.join(self.datafolder.get(),
+                'fluorescence-%s.npy' % self.subjectBox.currentText()),
+                self.fluorescence_img)
 
     else:
-
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
 
 
@@ -231,11 +229,10 @@ def take_vasculature_picture(self):
 
     if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
 
-        filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                            filename='vasculature-%s' % self.subjectBox.currentText(),
-                            extension='.h5')
-        self.vasculature_img = single_frame(self, filename=filename)
-        self.imgPlot.setImage(self.vasculature_img.T) # show on display
+        self.vasculature_img = single_frame(self)
+        np.save(os.path.join(self.datafolder.get(),
+                'vasculature-%s.npy' % self.subjectBox.currentText()),
+                self.vasculature_img)
 
     else:
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
@@ -330,7 +327,7 @@ def run(self):
     save_intrinsic_metadata(self)
     
     print('acquisition running [...]')
-    self.run_event.set() # this put the camera in saving mode
+    self.cameraRec.set() # this put the camera in saving mode
 
     self.update_dt_intrinsic() # while loop
 
@@ -342,56 +339,43 @@ def update_dt_intrinsic(self):
     # update presented stim every X frame
     self.flip_index += 1
 
-    if self.live_only:
+    # running protocol steps
+    if self.flip_index==30: # UPDATE WITH FLICKERING
 
-        img_file = get_last_file(os.path.join(self.datafolder.get(), 'frames'))
+        # find image time, here %period
+        self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
 
-        if img_file is not None:
-            self.img = np.load(img_file)
-            self.imgPlot.setImage(self.img.T)
-            self.barPlot.setOpts(height=np.log(1+np.histogram(self.img,
-                                                bins=self.xbins)[0]))
+        angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+\
+                                             '-angle'][self.iTime]
+        patterns = get_patterns(self, self.STIM['label'][self.iEp%len(self.STIM['label'])],
+                                      angle, self.bar_size)
+        for pattern in patterns:
+            pattern.draw()
+        try:
+            self.stim.win.flip()
+        except BaseException:
+            pass
+        self.flip_index=0
 
-    else:
-
-        # running protocol steps
-
-        if self.flip_index==30: # UPDATE WITH FLICKERING
-
-            # find image time, here %period
-            self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
-
-            angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+\
-                                                 '-angle'][self.iTime]
-            patterns = get_patterns(self, self.STIM['label'][self.iEp%len(self.STIM['label'])],
-                                          angle, self.bar_size)
-            for pattern in patterns:
-                pattern.draw()
-            try:
-                self.stim.win.flip()
-            except BaseException:
-                pass
-            self.flip_index=0
-
-            self.flip = (False if self.flip else True) # flip the flag at each frame
+        self.flip = (False if self.flip else True) # flip the flag at each frame
 
 
-        # checking if not episode over
-        if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
+    # checking if not episode over
+    if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
 
-            # we stop the camera
-            self.run_event.clear()
-            time.sleep(0.5) # we give it some time
+        # we stop the camera
+        self.cameraRun.clear()
+        time.sleep(0.5) # we give it some time
 
-            write_data(self) # we write the data
+        write_data(self) # we write the data
 
-            # initialize the next episode
-            self.flip_index=0
-            self.t0_episode = time.time()
-            self.iEp += 1
+        # initialize the next episode
+        self.flip_index=0
+        self.t0_episode = time.time()
+        self.iEp += 1
 
-            # restart camera
-            self.run_even.set() 
+        # restart camera
+        self.run_even.set() 
 
     # continuing ?
     if self.running:
@@ -402,9 +386,14 @@ def write_data(self):
 
     filename = '%s-%i.npy' % (self.STIM['label'][self.iEp%len(self.STIM['label'])],
                               int(self.iEp/len(self.STIM['label']))+1)
+
+    times_file = get_last_file(os.path.join(self.datafolder.get(),
+                              'frames'), extension='*.times.npy')
+
     np.save(os.path.join(self.datafolder, filename),
             {'tstart':self.t0_episode,
              'tend':time.time(),
+             'times':np.load(times_file),
              'angles':self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'],
              'angles-timestamps':self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times']})
 
@@ -469,11 +458,13 @@ def launch_intrinsic(self):
         print(' /!\  --> acquisition already running, need to stop it first /!\ ')
 
 def stop_camera(self):
-    self.stopCamera_event.set()
-    time.sleep(1)
+    self.cameraRec.clear()
+    self.cameraRun.clear()
+    time.sleep(0.5)
     if self.Camera_process is not None:
         self.Camera_process.close()
         self.Camera_process = None
+
 
 def start_camera(self):
 
@@ -490,12 +481,13 @@ def start_camera(self):
     stop_camera(self)
 
     # then (re-)starting it
-    self.stopCamera_event.clear()
+    self.cameraRun.set()
     self.Camera_process = multiprocessing.Process(target=launch_Camera,
-                    args=(self.run_event,
-                          self.stopCamera_event,
-                          self.datafolder,
-                          {'frame_rate':30.}))
+                                args=(self.cameraRun,
+                                      self.cameraRec,
+                                      self.datafolder,
+                                      {'exposure':float(self.exposureBox.text()),
+                                       'binning':int(self.spatialBox.text())}))
     self.Camera_process.start()
 
     # if self.camera.serials[0] is not None:
@@ -517,28 +509,67 @@ def start_camera(self):
     # if self.camera.serials[0] is not None:
         # self.demo = False # we turn off demo mode if we had a real camera
 
-def single_frame(self, 
-                 filename='single_frame.h5'):
+def single_frame(self):
 
     self.statusBar.showMessage(' single frame snapshot (~2s)')
 
-    # self.camera.play_camera(\
-            # exposure=float(self.exposureBox.text()),
-            # binning=int(self.spatialBox.text()) # launch camera
+    pathlib.Path(os.path.join(self.datafolder.get(),
+                              'frames')).mkdir(parents=True, exist_ok=True)
 
-    return np.random.uniform(1, 2**8, size=(10,10))
+    self.running = True
+    self.cameraRec.set()
+    time.sleep(3*1e-3*float(self.exposureBox.text()))
+    self.cameraRec.clear()
+    self.running = False
+
+    img_file = get_last_file(os.path.join(self.datafolder.get(),
+                             'frames'), extension='*.npy')
+
+    if (img_file is not None) and ('times' not in img_file):
+        self.img = np.load(img_file)
+        self.imgPlot.setImage(self.img.T)
+        self.barPlot.setOpts(height=np.log(1+np.histogram(self.img,
+                                            bins=self.xbins)[0]))
+
+    return self.img
 
 
 def live_intrinsic(self):
 
-    self.live_only = True
-    self.launch_intrinsic()
+    # in tempdir
+    # folder = tempfile.mkdtemp() 
+    # self.datafolder = self.manager.Value(c_char_p, str(folder))
+    # self.Camera_process.join()
+    pathlib.Path(os.path.join(self.datafolder.get(),
+                              'frames')).mkdir(parents=True, exist_ok=True)
+    # time.sleep(1)
+    self.running = True
+    self.cameraRec.set()
+    self.update_dt_live()
+
+def update_dt_live(self):
+
+    self.t = time.time()
+
+    img_file = get_last_file(os.path.join(self.datafolder.get(),
+                             'frames'))
+
+    if (img_file is not None) and ('times' not in img_file):
+        self.img = np.load(img_file)
+        self.imgPlot.setImage(self.img.T)
+        self.barPlot.setOpts(height=np.log(1+np.histogram(self.img,
+                                            bins=self.xbins)[0]))
+
+    # continuing ?
+    if self.running:
+        QtCore.QTimer.singleShot(1, self.update_dt_live)
 
 
 def stop_intrinsic(self):
     if self.running:
         self.running = False
-        self.stopCamera_event.set() # just stop the saving
+        self.cameraRec.clear() # just stop the saving
+        time.sleep(0.5) # always give it a bit of time
         if self.stim is not None:
             self.stim.close()
         self.live_only = False
