@@ -164,7 +164,7 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
 
     # ---  launching camera acquisition---
-    self.camButton = QtWidgets.QPushButton("(re)init", self)
+    self.camButton = QtWidgets.QPushButton("(re-) INIT", self)
     self.camButton.clicked.connect(self.start_camera)
     self.add_side_widget(tab.layout, self.camButton, spec='small-left')
 
@@ -318,11 +318,11 @@ def run(self):
 
     # initialize one episode:
     self.iEp, self.t0_episode = 0, time.time()
-    self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
+    self.nSave = 0
 
     # initialize datafolder
-    self.datafolder = self.manager.Value(c_char_p,\
-            str(datetime_folder(FOLDERS[self.folderBox.currentText()])))
+    self.datafolder.set(str(datetime_folder(FOLDERS[self.folderBox.currentText()])))
+    time.sleep(0.5)
 
     save_intrinsic_metadata(self)
     
@@ -363,8 +363,8 @@ def update_dt_intrinsic(self):
     # checking if not episode over
     if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
 
-        # we stop the camera
-        self.cameraRun.clear()
+        # we stop the camera rec
+        self.cameraRec.clear()
         time.sleep(0.5) # we give it some time
 
         write_data(self) # we write the data
@@ -374,8 +374,8 @@ def update_dt_intrinsic(self):
         self.t0_episode = time.time()
         self.iEp += 1
 
-        # restart camera
-        self.run_even.set() 
+        # restart camera rec
+        self.cameraRec.set() 
 
     # continuing ?
     if self.running:
@@ -387,17 +387,21 @@ def write_data(self):
     filename = '%s-%i.npy' % (self.STIM['label'][self.iEp%len(self.STIM['label'])],
                               int(self.iEp/len(self.STIM['label']))+1)
 
-    times_file = get_last_file(os.path.join(self.datafolder.get(),
+    times_file = get_last_file(os.path.join(str(self.datafolder.get()),
                               'frames'), extension='*.times.npy')
+    print(times_file)
+    if times_file is not None:
+        times = np.load(times_file)
+    else:
+        times = None
 
-    np.save(os.path.join(self.datafolder, filename),
+    np.save(os.path.join(self.datafolder.get(), filename),
             {'tstart':self.t0_episode,
-             'tend':time.time(),
-             'times':np.load(times_file),
+             'times':times,
              'angles':self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'],
              'angles-timestamps':self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times']})
 
-    print(filename, ' saved !')
+    print(filename, ' saved !     (with "times_file": %s) ' % times_file)
     
 
 def save_intrinsic_metadata(self):
@@ -433,35 +437,32 @@ def save_intrinsic_metadata(self):
     
 def launch_intrinsic(self):
 
-    if not self.running:
+    if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
 
-        self.running = True
+        if not self.running:
 
-        # initialization of data
-        self.flip_index = 0
+            self.running = True
 
-        if self.live_only:
-
-            # save in temporary folder
-            self.datafolder = self.manager.Value(c_char_p,\
-                    str(os.path.join(tempfile.mkdtemp())))
-
-            self.update_dt_intrinsic() # while loop
-
-        else:
+            # initialization of data
+            self.flip_index = 0
 
             run(self)
 
-        
-    else:
+        else:
 
-        print(' /!\  --> acquisition already running, need to stop it first /!\ ')
+            print(' /!\  --> acquisition already running, need to stop it first /!\ ')
+
+    else:
+        self.statusBar.showMessage(\
+            '  /!\ Need to pick a folder and a subject first ! /!\ ')
+
 
 def stop_camera(self):
     self.cameraRec.clear()
     self.cameraRun.clear()
     time.sleep(0.5)
     if self.Camera_process is not None:
+        self.Camera_process.join()
         self.Camera_process.close()
         self.Camera_process = None
 
@@ -618,13 +619,3 @@ def get_frame(self, force_HQ=False):
         return 1.0*resample_img(img, int(self.spatialBox.text()))
     else:
         return 1.0*img
-
-    
-    
-def update_Image(self):
-    # plot it
-    self.imgPlot.setImage(get_frame(self).T)
-    #self.get_frame() # to test only the frame grabbing code
-    self.TIMES.append(time.time())
-    if self.running:
-        QtCore.QTimer.singleShot(1, self.update_Image)

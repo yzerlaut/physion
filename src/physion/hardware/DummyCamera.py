@@ -15,7 +15,7 @@ class Camera:
         self.running, self.recording = False, False
         self.rec_number = 0
         self.times = []
-        self.subfolder = subfolder
+        self.folder, self.subfolder = '.', subfolder
         self.img_size=(600, 800)
         self.settings = {}
         self.update_settings(settings)
@@ -54,6 +54,11 @@ class Camera:
 
                 self.recording , self.times = True, []
                 self.rec_number += 1 
+                # update the folder here
+                self.folder = folder.get()
+                Path(os.path.join(self.folder,
+                                  self.subfolder)).mkdir(parents=True, exist_ok=True)
+                print(self.folder)
                 print('initializing camera recording #%i' % self.rec_number)
 
             elif self.recording and not rec_flag.is_set():
@@ -62,7 +67,7 @@ class Camera:
                 self.recording = False
 
                 print('saving times for camera recording #%i' % self.rec_number)
-                np.save(os.path.join(folder.get(),
+                np.save(os.path.join(self.folder,
                                      self.subfolder,
                                      '%i.times.npy' % self.rec_number), self.times)
 
@@ -73,7 +78,6 @@ class Camera:
             if self.recording:
                 # we store the image and its timestamp
 
-                print('rec:', folder.get())
                 np.save(os.path.join(folder.get(),
                                      self.subfolder,
                                      '%s.npy' % Time), image)

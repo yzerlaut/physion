@@ -177,8 +177,8 @@ def computerTimestamp_to_daySeconds(t):
 def get_last_file(folder, extension='*.npy'):
 
     list_of_files = glob.glob(os.path.join(folder, extension))
-    if len(list_of_files)>1:
+    if len(list_of_files)>0:
         filename = max(list_of_files, key=os.path.getctime)
-        return os.path.join(folder, filename)
+        return filename
     else:
         return None

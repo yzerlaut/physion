@@ -107,18 +107,24 @@ def load_single_datafile(datafile):
     the image data need interpolation to get regularly spaced data for FFT
     """
     data = np.load(datafile, allow_pickle=True).item()
-    print(data)
-    #
-    f = h5py.File(os.path.join(os.path.dirname(datafile), 'frames.h5'))
-    times = f['times'][:,0]
 
-    cond = (times>data['tstart']) & (times<data['tend'])
+    img0 = np.load(os.path.join(os.path.dirname(datafile),
+                'frames', '%s.npy' % data['times'][0]))
+
+    cond = (data['times']>data['tstart']) # & (times<data['tend'])
    
-    t = times[cond] - data['tstart']
+    t = data['times'][cond] - data['tstart']
     print(t[0], t[-1])
-    print(len(times), f['frames'].shape)
-    x = f['frames'][:len(times),:,:][cond,:,:]
-    interp_func = interp1d(t, x, axis=0, kind='nearest', fill_value='extrapolate')
+
+    X = np.zeros((len(t), *img0.shape), dtype=img0.dtype)
+    print(X.shape)
+    for i, tt in enumerate(data['times'][cond]):
+        X[i,:,:] = np.load(os.path.join(os.path.dirname(datafile), 
+                                    'frames', '%s.npy' % tt))
+    #
+    print(X.shape, len(t))
+    interp_func = interp1d(t, X,
+            axis=0, kind='nearest', fill_value='extrapolate')
     real_t = data['angles-timestamps']
     print(real_t[0], real_t[-1])
     return real_t, interp_func(real_t)
@@ -185,7 +191,7 @@ def perform_fft_analysis(data, nrepeat,
 
 def compute_phase_power_maps(datafolder, direction,
                              maps={},
-                             p=None, t=None, data=None,
+                             p=None, t=None, data=None, mask=None,
                              run_id='sum',
                              phase_shift=0):
 
@@ -200,10 +206,10 @@ def compute_phase_power_maps(datafolder, direction,
     maps['%s-power' % direction],\
            maps['%s-phase' % direction] = perform_fft_analysis(data, p['Nrepeat'],
                                                                phase_shift=phase_shift)
+    if mask is not None:
+        maps['%s-power' % direction][mask] = 0
+        maps['%s-phase' % direction][mask] = 0
 
-    print(maps['%s-power' % direction])
-    cond = maps['%s-power' % direction]>20e-4
-    maps['%s-power' % direction][cond] = 20e-4 
     return maps
 
 def get_phase_to_angle_func(datafolder, direction):

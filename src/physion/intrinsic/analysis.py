@@ -39,7 +39,6 @@ def gui(self,
     self.datafolder, self.IMAGES = '', {} 
     self.subject, self.timestamps, self.data = '', '', None
 
-
     ##########################################################
     ####### GUI settings
     ##########################################################
@@ -358,6 +357,7 @@ def load_intrinsic_data(self):
 
     datafolder = get_datafolder(self)
 
+
     if os.path.isdir(datafolder):
 
         print('- loading and preprocessing data [...]')
@@ -372,23 +372,25 @@ def load_intrinsic_data(self):
                                                                   self.protocolBox.currentText(),
                                                                   run_id=self.numBox.currentText())
 
-        if self.roiBox.isChecked():
-
-            print('masking outside the circle:', mx, my, sx, sy)
-            mx, my, sx, sy, _ = extract_ellipse_props(self.roiContour)
-            X, Y = np.meshgrid(\
-                    np.arange(data.shape[1]),
-                    np.arange(data.shape[2]),
-                    indexing='ij')
-            cond = ((X-mx)**2/sx**2+(Y-my)**2/sy**2) < 1
-            self.data[:, cond] = 0
-            
-
         if float(self.ssBox.text())>0:
 
             print('    - spatial subsampling [...]')
             self.data = intrinsic_analysis.resample_img(self.data,
                                                         int(self.ssBox.text()))
+
+        # Masking
+        props = extract_ellipse_props(self.roiContour)
+        if props[0]*props[1]==100.0:
+            # if untouched, we set it as wull size
+            img_shape = self.data.shape[1:][::-1]
+            self.roiContour.setPos([0, 0])
+            self.roiContour.setSize(img_shape)
+
+        if self.roiBox.isChecked():
+
+            mask = get_mask_from_ellipse(self)
+            self.data[:, mask] *= 1e-5
+
             
 
         vasc_img = os.path.join(get_datafolder(self), 'vasculature.npy')
@@ -413,6 +415,16 @@ def load_intrinsic_data(self):
 
     else:
         print(' Data "%s" not found' % datafolder)
+
+def get_mask_from_ellipse(self):
+    mx, my, sx, sy, _ = extract_ellipse_props(self.roiContour)
+    print('masking outside the circle:', mx, my, sx, sy)
+
+    Y, X = np.meshgrid(\
+            np.arange(self.data.shape[1]),
+            np.arange(self.data.shape[2]),
+            indexing='ij')
+    return ((X-mx)**2/(sx/2)**2+(Y-my)**2/(sy/2)**2) > 1
 
 
 def show_raw_data(self):
@@ -452,10 +464,12 @@ def compute_phase_maps(self):
     print('- computing phase maps [...]')
 
     intrinsic_analysis.compute_phase_power_maps(get_datafolder(self), 
-                                                self.protocolBox.currentText(),
-                                                p=self.params, t=self.t, data=self.data,
-                                                run_id=self.numBox.currentText(),
-                                                maps=self.IMAGES)
+                                        self.protocolBox.currentText(),
+                                        p=self.params, t=self.t, data=self.data,
+                                        mask = (get_mask_from_ellipse(self)\
+                                                if self.roiBox.isChecked() else None),
+                                        run_id=self.numBox.currentText(),
+                                        maps=self.IMAGES)
 
 
     intrinsic_analysis.plot_phase_power_maps(self.IMAGES,

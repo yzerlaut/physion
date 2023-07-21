@@ -267,7 +267,8 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.suite2p_preprocessing_UI()
             # self.build_NWB_UI()
             # self.add_imaging()
-            self.intrinsic_acq()
+            self.intrinsic()
+            # self.intrinsic_acq()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()
@@ -407,6 +408,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.quit_event.set()
         if hasattr(self, 'FaceCamera_process') and (self.FaceCamera_process is not None):
             self.closeFaceCamera_event.set()
+        if hasattr(self, 'Camera_process') and (self.Camera_process is not None):
+            self.Camera_process.join()
+            self.Camera_process.close()
+            self.Camera_process = None
         if self.acq is not None:
             self.acq.close()
         if self.stim is not None:
