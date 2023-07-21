@@ -4,10 +4,12 @@ Dummy Camera to be used with the 'multiprocessing' model
 import time, sys, os
 import numpy as np
 from pathlib import Path
+import simple_pyspin
 
 camera_depth = 12 
+os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 
-class Camera:
+class Camera(simple_pyspin.Camera):
 
     def __init__(self, 
                  subfolder='frames',
@@ -16,15 +18,26 @@ class Camera:
         self.rec_number = 0
         self.times = []
         self.folder, self.subfolder = '.', subfolder
-        self.img_size=(600, 800)
+
+        # init the camera
+        self.init()
+
         self.settings = {}
         self.update_settings(settings)
 
     def update_settings(self,
                         settings={}):
+
+        ########################################################################
+        # -------------------------------------------------------------------- #
+        ## -- SETTINGS through the FlyCap or SpinView software, easier....  ####
+        # -------------------------------------------------------------------- #
+        ########################################################################
+
         for key in settings:
             self.settings[key] = settings[key]
             print('updated: ', key, self.settings[key])
+
 
     def print_rec_infos(self):
         # some debugging infos here
@@ -35,19 +48,16 @@ class Camera:
         else:
             print('no frames recorded by the Camera')
         
-    def stop(self):
-        pass
-
     def run(self, run_flag, rec_flag, folder,
             debug=True):
+
+        self.start()
 
         # # -- while loop 
         while run_flag.is_set():
 
-            # get frame !!
-            image= np.random.uniform(1, 2**camera_depth,
-                                     size=self.img_size).astype(np.uint16)
-            Time = time.time()
+            # get frame !! (N.B. as uint8 !!)
+            image, Time = self.cam.get_array().astype(np.uint8), time.time()
 
             if not self.recording and rec_flag.is_set():
                 # not recording and need to start  !
@@ -81,7 +91,6 @@ class Camera:
                                      self.subfolder,
                                      '%s.npy' % Time), image)
                 self.times.append(Time)
-                time.sleep(1e-3*self.settings['exposure'])
 
         # end of the while loop
         if debug:
@@ -90,9 +99,6 @@ class Camera:
         self.running=False
         self.recording=False
         self.stop()
-
-    def close(self):
-        pass
 
 
 def launch_Camera(run_flag, rec_flag, datafolder,

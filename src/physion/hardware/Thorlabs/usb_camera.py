@@ -69,17 +69,6 @@ class Camera(ThorCam):
             return
         print('Received "{}" with value "{}"'.format(msg, value))
 
-    def got_image(self, image, count, queued_count, t):
-        H = self.roi_height//self.binning_y
-        W = self.roi_width//self.binning_x
-
-        self.image = np.frombuffer(
-            buffer = image.to_bytearray()[0],
-            dtype = 'uint16').reshape((H,W))
-
-        if self.is_saving:
-            np.save(os.path.join(self.folder, '%s.npy' % time.time()),
-                    self.image)
 
     
 class Parent:

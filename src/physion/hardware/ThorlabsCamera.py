@@ -1,22 +1,40 @@
 """
-Dummy Camera to be used with the 'multiprocessing' model
+adapted by Y. Zerlaut (June 2023)
+from: https://github.com/jcouto/isi-thorcam
+
+#      GNU GENERAL PUBLIC LICENSE
+# Joao Couto - feb 2023
 """
 import time, sys, os
 import numpy as np
 from pathlib import Path
+from thorcam.camera import ThorCam
 
 camera_depth = 12 
 
-class Camera:
+class Camera(ThorCam):
 
     def __init__(self, 
                  subfolder='frames',
                  settings={'exposure':200.0}):
+        #
         self.running, self.recording = False, False
         self.rec_number = 0
         self.times = []
         self.folder, self.subfolder = '.', subfolder
-        self.img_size=(600, 800)
+
+        # init camera
+        time.sleep(1)
+        self.start_cam_process()
+        time.sleep(5)
+        self.refresh_cameras() # get the cams
+        time.sleep(2) # because the camera is super fast...
+        if not len(self.serials):
+            raise(OSError('Could not connect to any ThorCam'))
+        self.open_camera(self.serials[0])
+        print('Connecting to {0}'.format(self.serials[0]),flush = True)
+        time.sleep(5)
+
         self.settings = {}
         self.update_settings(settings)
 
@@ -24,7 +42,18 @@ class Camera:
                         settings={}):
         for key in settings:
             self.settings[key] = settings[key]
+            if key=='binning':
+                self.set_setting('binning_x',int(binning))
+                self.set_setting('binning_y',int(binning))
+            elif key=='exposure':
+                self.set_setting('exposure_ms', exposure)
             print('updated: ', key, self.settings[key])
+
+    def received_camera_response(self, msg, value):
+        super(Camera, self).received_camera_response(msg, value)
+        if msg == 'image':
+            return
+        print('Received "{}" with value "{}"'.format(msg, value))
 
     def print_rec_infos(self):
         # some debugging infos here
@@ -35,19 +64,31 @@ class Camera:
         else:
             print('no frames recorded by the Camera')
         
-    def stop(self):
-        pass
+    def got_image(self, image, count, queued_count, t):
+        """ this is executed during play_camera() """
+        H = self.roi_height//self.binning_y
+        W = self.roi_width//self.binning_x
+
+        image = np.frombuffer(
+            buffer = image.to_bytearray()[0],
+            dtype = 'uint16').reshape((H,W))
+
+        if self.recording:
+            # we store the image and its timestamp
+
+            np.save(os.path.join(folder.get(),
+                                 self.subfolder,
+                                 '%s.npy' % time.time), image)
+            self.times.append(Time)
+
+
 
     def run(self, run_flag, rec_flag, folder,
             debug=True):
 
+        self.play_camera()
         # # -- while loop 
         while run_flag.is_set():
-
-            # get frame !!
-            image= np.random.uniform(1, 2**camera_depth,
-                                     size=self.img_size).astype(np.uint16)
-            Time = time.time()
 
             if not self.recording and rec_flag.is_set():
                 # not recording and need to start  !
@@ -58,6 +99,7 @@ class Camera:
                 self.folder = folder.get()
                 Path(os.path.join(self.folder,
                                   self.subfolder)).mkdir(parents=True, exist_ok=True)
+                print(self.folder)
                 print('initializing camera recording #%i' % self.rec_number)
 
             elif self.recording and not rec_flag.is_set():
@@ -73,15 +115,8 @@ class Camera:
                 if debug:
                     self.print_rec_infos()
 
-            # after the update
-            if self.recording:
-                # we store the image and its timestamp
 
-                np.save(os.path.join(folder.get(),
-                                     self.subfolder,
-                                     '%s.npy' % Time), image)
-                self.times.append(Time)
-                time.sleep(1e-3*self.settings['exposure'])
+        self.stop_playing_camera()
 
         # end of the while loop
         if debug:
@@ -89,10 +124,11 @@ class Camera:
         
         self.running=False
         self.recording=False
-        self.stop()
 
     def close(self):
-        pass
+        self.close_camera()	
+        self.stop_cam_process(join = True)
+
 
 
 def launch_Camera(run_flag, rec_flag, datafolder,
