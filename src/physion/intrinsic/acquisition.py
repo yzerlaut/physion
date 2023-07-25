@@ -164,7 +164,7 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
 
     # ---  launching camera acquisition---
-    self.camButton = QtWidgets.QPushButton("(re-) INIT", self)
+    self.camButton = QtWidgets.QPushButton("-INIT-", self)
     self.camButton.clicked.connect(self.start_camera)
     self.add_side_widget(tab.layout, self.camButton, spec='small-left')
 
