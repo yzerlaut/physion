@@ -9,3 +9,4 @@ pip install pyqt5==5.15.9
 pip install pyqtgraph==0.13.3
 pip install matplotlib==3.7.2
 pip install scikit-image==0.21.0
+pip install thorcam=0.1.7
