@@ -69,8 +69,18 @@ class Camera(ThorCam):
             return
         print('Received "{}" with value "{}"'.format(msg, value))
 
+    def got_image(self, image, count, queued_count, t):
+        """ this is executed during play_camera() """
+        H = self.roi_height//self.binning_y
+        W = self.roi_width//self.binning_x
 
-    
+        image = np.frombuffer(
+            buffer = image.to_bytearray()[0],
+            dtype = 'uint16').reshape((H,W))
+
+        self.parent.FRAMES.append(image)
+        self.parent.TIMES.append(time.time())
+
 class Parent:
     def __init__(self):
         self.TIMES = []

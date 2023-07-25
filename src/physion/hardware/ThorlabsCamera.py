@@ -43,10 +43,10 @@ class Camera(ThorCam):
         for key in settings:
             self.settings[key] = settings[key]
             if key=='binning':
-                self.set_setting('binning_x',int(binning))
-                self.set_setting('binning_y',int(binning))
+                self.set_setting('binning_x',int(settings[key]))
+                self.set_setting('binning_y',int(settings[key]))
             elif key=='exposure':
-                self.set_setting('exposure_ms', exposure)
+                self.set_setting('exposure_ms', settings[key])
             print('updated: ', key, self.settings[key])
 
     def received_camera_response(self, msg, value):
@@ -73,12 +73,13 @@ class Camera(ThorCam):
             buffer = image.to_bytearray()[0],
             dtype = 'uint16').reshape((H,W))
 
+        print(image)
         if self.recording:
             # we store the image and its timestamp
-
+            Time = time.time()
             np.save(os.path.join(folder.get(),
                                  self.subfolder,
-                                 '%s.npy' % time.time), image)
+                                 '%s.npy' % Time), image)
             self.times.append(Time)
 
 
@@ -87,9 +88,11 @@ class Camera(ThorCam):
             debug=True):
 
         self.play_camera()
+
         # # -- while loop 
         while run_flag.is_set():
 
+            print('run', self.recording)
             if not self.recording and rec_flag.is_set():
                 # not recording and need to start  !
 
@@ -116,6 +119,7 @@ class Camera(ThorCam):
                     self.print_rec_infos()
 
 
+        time.sleep(0.5)
         self.stop_playing_camera()
 
         # end of the while loop
@@ -134,8 +138,13 @@ class Camera(ThorCam):
 def launch_Camera(run_flag, rec_flag, datafolder,
                   settings={'exposure':200.0}):
 
+    print('launch camera')
     camera = Camera(settings=settings)
-    camera.run(run_flag, rec_flag, datafolder)
+    # camera.run(run_flag, rec_flag, datafolder)
+    camera.recording = True
+    camera.play_camera()
+    time.sleep(10)
+    # camera.close()
 
 
 if __name__=='__main__':
@@ -144,7 +153,7 @@ if __name__=='__main__':
     import multiprocessing
     from ctypes import c_char_p
 
-    T=2
+    T=20
 
     run = multiprocessing.Event()
     rec = multiprocessing.Event()
@@ -157,10 +166,13 @@ if __name__=='__main__':
     # start cam without recording
     run.set()
     rec.clear()
+    datafolder.set(str(os.path.join(os.path.expanduser('~'), 'DATA', '1')))
+
     camera_process.start()
+    time.sleep(10) # give it time to launch
 
     # start first acq
-    datafolder.set(str(os.path.join(os.path.expanduser('~'), 'DATA', '1')))
+    print('first acq.')
     rec.set()
     time.sleep(T)
     rec.clear()
@@ -168,6 +180,7 @@ if __name__=='__main__':
     time.sleep(T)
 
     # start second acq
+    print('second acq.')
     datafolder.set(str(os.path.join(os.path.expanduser('~'), 'DATA', '2')))
     rec.set()
     time.sleep(T)
