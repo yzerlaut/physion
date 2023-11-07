@@ -1,6 +1,6 @@
 <!--<div><img src="https://github.com/yzerlaut/physion/raw/master/docs/physion.png" alt="physion logo" width="35%" align="right" style="margin-left: 10px"></div>-->
 
-<div><img src="./docs/physion.png" alt="physion logo" width="35%" align="right" style="margin-left: 10px"></div>
+<div><img src="./docs/icons/physion.png" alt="physion logo" width="35%" align="right" style="margin-left: 10px"></div>
 
 # Vision Physiology Software
 
@@ -27,10 +27,7 @@ pip install physion
 
 N.B. the `PyQt` package can be broken after those steps, re-start from a fresh install with `pip uninstall PyQt5` and `pip install PyQt5`.
 
--> For an installation on an acquisition setup
-```
-conda env create -n acquisition -f acquisition_environment.yml
-```
+**For an installation on an acquisition setup, see the detailed steps in [docs/install/README.md](./docs/install/README.md)**
 
 ## Usage
 
