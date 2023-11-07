@@ -68,6 +68,7 @@ class visual_stim:
                                      screen=self.screen['screen_id'],
                                      fullscr=self.screen['fullscreen'],
                                      units='pix',
+                                     checkTiming=False,
                                      color=self.gamma_corrected_lum(
                                         self.protocol['presentation-prestim-screen']))
 
