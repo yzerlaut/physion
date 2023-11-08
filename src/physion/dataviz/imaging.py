@@ -16,13 +16,13 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
                         name=''):
 
     if (subquantity in ['Fluorescence', 'rawFluo']) and (raster is None):
-        if (roiIndices=='all'):
+        if (type(roiIndices)==str) and (roiIndices=='all'):
             raster = data.rawFluo[:,:]
         else:
             raster = data.rawFluo[roiIndices,:]
             
     elif (subquantity in ['Neuropil', 'neuropil']) and (raster is None):
-        if (roiIndices=='all'):
+        if (type(roiIndices)==str) and (roiIndices=='all'):
             raster = data.neuropil[:,:]
         else:
             raster = data.neuropil[roiIndices,:]
@@ -30,14 +30,14 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     elif (subquantity in ['dFoF', 'dF/F']) and (raster is None):
         if not hasattr(data, 'dFoF'):
             data.build_dFoF(**subquantity_args)
-        if (roiIndices=='all'):
+        if (type(roiIndices)==str) and (roiIndices=='all'):
             raster = data.dFoF[:,:]
         else:
             raster = data.dFoF[roiIndices,:]
             
         roiIndices = np.arange(data.iscell.sum())
 
-    elif (roiIndices=='all') and (subquantity in ['dFoF', 'dF/F']):
+    elif (type(roiIndices)==str) and (roiIndices=='all') and (subquantity in ['dFoF', 'dF/F']):
         roiIndices = np.arange(data.vNrois)
         
     if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
@@ -226,7 +226,7 @@ def show_CaImaging_FOV(data, key='meanImg', NL=1, cmap='viridis', ax=None,
     if roiIndex is not None:
         add_roi_ellipse(data, roiIndex, ax, roi_lw=roi_lw)
 
-    if roiIndices=='all':
+    if (type(roiIndices)==str) and roiIndices=='all':
         roiIndices = data.valid_roiIndices
 
     for roiIndex in roiIndices:
