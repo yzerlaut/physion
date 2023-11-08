@@ -513,7 +513,6 @@ def scan_folder_for_NWBfiles(folder,
 
     FILES = get_files_with_extension(folder,
                     extension='.nwb', recursive=True)
-    print(FILES)
     
     if exclude_intrinsic_imaging_files:
         FILES = [f for f in FILES if (('left-' not in f) and\
