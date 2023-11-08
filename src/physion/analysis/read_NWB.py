@@ -513,6 +513,7 @@ def scan_folder_for_NWBfiles(folder,
 
     FILES = get_files_with_extension(folder,
                     extension='.nwb', recursive=True)
+    print(FILES)
     
     if exclude_intrinsic_imaging_files:
         FILES = [f for f in FILES if (('left-' not in f) and\
@@ -552,4 +553,4 @@ def scan_folder_for_NWBfiles(folder,
     return {'files':np.array(FILES)[isorted], 
             'dates':np.array(DATES)[isorted],
             'subjects':np.array(SUBJECTS)[isorted],
-            'protocols':np.array(PROTOCOLS)[isorted]}
+            'protocols':[PROTOCOLS[i] for i in isorted]}
