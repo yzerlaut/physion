@@ -63,9 +63,9 @@ class visual_stim:
             self.k = self.screen['gamma_correction']['k']
             self.gamma = self.screen['gamma_correction']['gamma']
 
-            self.win = visual.Window(self.screen['resolution'], 'stimMonitor',
+            self.win = visual.Window(self.screen['resolution'],
                                      # monitor=self.monitor,
-                                     screen=self.screen['screen_id'],
+                                     # screen=self.screen['screen_id'],
                                      fullscr=self.screen['fullscreen'],
                                      units='pix',
                                      checkTiming=False,
@@ -889,5 +889,11 @@ class vis_stim_image_built(visual_stim):
 
     def new(self):
         pass
+
+if __name__=='__main__':
+
+    ######################################
+    ####     test as a subprocess   ######
+    ######################################
 
 

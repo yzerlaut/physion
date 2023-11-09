@@ -43,7 +43,8 @@ def init_visual_stim(self):
         self.protocol['demo'] = False
 
     self.stim = build_stim(self.protocol)
-    self.stim.experiment['protocol-name'] = self.metadata['protocol'] # storing in stim for later, to check the need to re-buffer
+    self.stim.experiment['protocol-name'] =\
+            self.metadata['protocol'] # storing in stim for later, to check the need to re-buffer
 
 
 def check_FaceCamera(self):

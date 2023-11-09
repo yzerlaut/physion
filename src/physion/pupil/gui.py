@@ -302,6 +302,7 @@ def open_pupil_data(self):
             self.times, self.FILES, self.nframes,\
                     self.Ly, self.Lx = load_FaceCamera_data(self.imgfolder,
                                                             t0=0, verbose=True)
+            self.p1.setRange(xRange=(0,self.nframes))
         else:
             self.times, self.imgfolder = None, None
             self.nframes, self.FILES = None, None
