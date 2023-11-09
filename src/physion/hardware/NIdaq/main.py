@@ -172,16 +172,20 @@ class Acquisition:
         
     def reading_task_callback(self, task_idx, event_type, num_samples, callback_data=None):
         if self.running:
-            if self.Nchannel_analog_in>0:
-                analog_buffer = np.zeros((self.Nchannel_analog_in, num_samples), dtype=np.float64)
-                self.analog_reader.read_many_sample(analog_buffer, num_samples, timeout=WAIT_INFINITELY)
-                self.analog_data = np.append(self.analog_data, analog_buffer, axis=1)
-            
-            if self.Nchannel_digital_in>0:
-                digital_buffer = np.zeros((1, num_samples), dtype=np.uint32)
-                self.digital_reader.read_many_sample_port_uint32(digital_buffer,
-                                                             num_samples, timeout=WAIT_INFINITELY)
-                self.digital_data = np.append(self.digital_data, digital_buffer, axis=1)
+            try:
+                if self.Nchannel_analog_in>0:
+                    analog_buffer = np.zeros((self.Nchannel_analog_in, num_samples), dtype=np.float64)
+                    self.analog_reader.read_many_sample(analog_buffer, num_samples, timeout=WAIT_INFINITELY)
+                    self.analog_data = np.append(self.analog_data, analog_buffer, axis=1)
+                
+                if self.Nchannel_digital_in>0:
+                    digital_buffer = np.zeros((1, num_samples), dtype=np.uint32)
+                    self.digital_reader.read_many_sample_port_uint32(digital_buffer,
+                                                                 num_samples, timeout=WAIT_INFINITELY)
+                    self.digital_data = np.append(self.digital_data, digital_buffer, axis=1)
+            except nidaqmx.errors.DaqError:
+                # print('process already closed')
+                pass
         else:
             self.close()
         return 0  # needed for this callback to be well defined (see nidaqmx doc).
