@@ -4,10 +4,13 @@
 
 ## A) NI DAQ setup
 
-### A.1) Re-install Visual C++ on Windows
+### A.1) Re-install Visual C++ Redistributable on Windows
+
+That's usually a necessary step. Download `vc_redist.x64.exe` from the [Microsoft Website](https://learn.microsoft.com/fr-fr/cpp/windows/latest-supported-vc-redist?view=msvc-170) and install it.
 
 ### A.2) Install the NIDAQ MX drivers
 
+Download and install the NIDAQ MX dirvers from the [National Instruments website](https://www.ni.com/fr/support/downloads/drivers/download.ni-daq-mx.html)
 
 ## B) Screen Setup
 
