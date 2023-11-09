@@ -1,4 +1,5 @@
 import matplotlib.pylab as plt
+from PIL import Image
 
 import simple_pyspin, time, sys, os
 import numpy as np
@@ -13,4 +14,7 @@ img = cam.get_array().astype(np.uint8)
 
 plt.imshow(img)
 plt.show()
+
+Image.fromarray(img).save(os.path.join(os.path.expanduser('~'), 'Desktop', 'test.png'))
+print('test image saved on the desktop')
 
