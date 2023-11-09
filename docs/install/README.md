@@ -25,10 +25,24 @@ Set the visual stimulation screen as the second monitor
 ### B.2) Other settings
 
 - Put a black background on the Desktop (because this is what the mouse will see when not running any experiment)
+
 - Hide the taskbar on the non-primary display
 
-
 ## C) FLIR Camera setup
+
+Set up the camera to record mouse behavior (pupil dilation and whisking activity).
+
+### C.1) Install the Spinnaker SDKi
+
+Current version is: `SpinnakerSDK_FULL_3.1.0.79_x64.exe`
+
+### C.2) Install the FlyCapture software
+
+Current version is: `FlyCapture_2.13.3.61_x64.exe`
+
+### C.3) Configure the Image properties in the FlyCapture software
+
+!! SCREENSHOT THE SETTINGS HERE !!
 
 ## D) Intrinsic Imaging Camera setup
 
@@ -44,7 +58,7 @@ conda env create -n acquisition -f acquisition.yml
 
 ## F) Create Windows Launchers
 
-Create Windows shortcut to luanch 
+Create Windows shortcut to launch the Acquisition and Analysis programs.
 
 On the desktop, right click -> `New` -> `Shortcut` and modigy its `Properties as follows: 
 
@@ -69,4 +83,3 @@ On the desktop, right click -> `New` -> `Shortcut` and modigy its `Properties as
   ```
   %UserProfile%\work\physion\src
   ```
-
