@@ -32,17 +32,32 @@ Set the visual stimulation screen as the second monitor
 
 Set up the camera to record mouse behavior (pupil dilation and whisking activity).
 
-### C.1) Install the Spinnaker SDKi
+### C.1) Install the Spinnaker SDK
+
+Download the installer on the [FLIR website](https://www.flir.com/support-center/iis/machine-vision/downloads/spinnaker-sdk-download/spinnaker-sdk--download-files/)
 
 Current version is: `SpinnakerSDK_FULL_3.1.0.79_x64.exe`
 
-### C.2) Install the FlyCapture software
+### C.2) Install the python Spinnaker API
+
+Download the zip folder that contain the "wheel" on the [FLIR website](https://www.flir.com/support-center/iis/machine-vision/downloads/spinnaker-sdk-download/spinnaker-sdk--download-files/)
+
+Current version is: `spinnaker_python-3.1.0.79-cp310-cp310-win_amd64`
+
+### C.3) Install the FlyCapture software
 
 Current version is: `FlyCapture_2.13.3.61_x64.exe`
 
-### C.3) Configure the Image properties in the FlyCapture software
+### C.4) Configure the Image properties in the FlyCapture software
 
 !! SCREENSHOT THE SETTINGS HERE !!
+
+### C.5) Run the test
+
+Run the `test.py` script to make sure the camera runs fine:
+```
+cd %UserProfile%\work\physion\src\physion\hardware\FLIRcamera & python test.py
+```
 
 ## D) Intrinsic Imaging Camera setup
 
