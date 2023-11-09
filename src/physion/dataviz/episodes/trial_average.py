@@ -150,8 +150,13 @@ def plot_trial_average(episodes,
                     istim = np.flatnonzero(cond)[0]
                     # start -- QUICK FIX
                     if 'protocol_id' in episodes.visual_stim.experiment:
-                        episodes.visual_stim.experiment['protocol_id'] = np.zeros(len(cond), dtype=int)+\
-                                                    int(episodes.visual_stim.experiment['protocol_id'][0])
+                        if type(episodes.visual_stim.experiment['protocol_id']) in [int, np.int64]:
+                            episodes.visual_stim.experiment['protocol_id'] = np.zeros(len(cond), dtype=int)+\
+                                                        int(episodes.visual_stim.experiment['protocol_id'])
+                        else:
+                            episodes.visual_stim.experiment['protocol_id'] = np.zeros(len(cond), dtype=int)+\
+                                                        int(episodes.visual_stim.experiment['protocol_id'][0])
+
                     # end -- QUICK FIX
                     episodes.visual_stim.plot_stim_picture(istim, ax=inset)
 
