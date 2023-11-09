@@ -18,10 +18,12 @@ class stop_func: # dummy version of the multiprocessing.Event class
 class CameraAcquisition:
 
     def __init__(self,
+                 folder=None,
                  settings={'frame_rate':20.}):
         
         self.times, self.running = [], False
         self.init_camera(settings)
+        self.folder = folder
 
     def init_camera(self, settings):
         
@@ -38,8 +40,11 @@ class CameraAcquisition:
     def rec_and_check(self, run_flag, quit_flag, folder,
                       debug=False):
         
+        if self.folder is None:
+            self.folder = os.path.join(folder.get(), '..', 'current-FaceCamera.npy')
+
         self.cam.start()
-        np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
+        np.save(self.folder, self.cam.get_array().astype(np.uint8))
 
         if debug:
             tic = time.time()
