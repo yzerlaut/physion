@@ -38,3 +38,32 @@ Set the visual stimulation screen as the second monitor
 ```
 conda env create -n acquisition -f acquisition.yml
 ```
+
+## F) Create Windows Launchers
+
+Create Windows shortcut to luanch 
+
+On the desktop, right click -> `New` -> `Shortcut` and modigy its `Properties as follows: 
+
+### F.1) Analysis Program
+
+- Target:
+  ```
+  python -m physion 
+  ```
+- Start in:
+  ```
+  %UserProfile%\work\physion\src
+  ```
+
+### F.2) Acquisition Program
+
+- Target:
+  ```
+  %SystemRoot%\System32\cmd.exe /D /S /K %UserProfile%\miniconda3\Scripts\activate.bat %UserProfile%\miniconda3\envs\acquisition & python -m physion acquisition
+  ```
+- Start in:
+  ```
+  %UserProfile%\work\physion\src
+  ```
+
