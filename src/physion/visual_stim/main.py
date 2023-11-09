@@ -6,7 +6,7 @@ import time
 import json
 
 try:
-    from psychopy import visual, core, event, clock, monitors
+    from psychopy import visual, core, event, clock #, monitors
 except ModuleNotFoundError:
     pass
 
@@ -58,13 +58,13 @@ class visual_stim:
 
         if not ('no-window' in self.protocol):
 
-            self.monitor = monitors.Monitor(self.screen['name'])
-            self.monitor.setDistance(self.screen['distance_from_eye'])
+            # self.monitor = monitors.Monitor(self.screen['name'])
+            # self.monitor.setDistance(self.screen['distance_from_eye'])
             self.k = self.screen['gamma_correction']['k']
             self.gamma = self.screen['gamma_correction']['gamma']
 
-            self.win = visual.Window(self.screen['resolution'],
-                                     monitor=self.monitor,
+            self.win = visual.Window(self.screen['resolution'], 'stimMonitor',
+                                     # monitor=self.monitor,
                                      screen=self.screen['screen_id'],
                                      fullscr=self.screen['fullscreen'],
                                      units='pix',
