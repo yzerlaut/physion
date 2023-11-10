@@ -2,7 +2,7 @@ import sys
 
 import physion
 
-def build_stim(protocol):
+def build_stim(protocol, gui_refresh_func=None):
     """
     """
     if (protocol['Presentation']=='multiprotocol'):
@@ -10,7 +10,8 @@ def build_stim(protocol):
     else:
         protocol_name = protocol['Stimulus'].replace('-image','').replace('-', '_').replace('+', '_')
         try:
-            return getattr(getattr(physion.visual_stim.stimuli, protocol_name), 'stim')(protocol)
+            return getattr(getattr(physion.visual_stim.stimuli, protocol_name), 'stim')(protocol,
+                                                            gui_refresh_func=gui_refresh_func)
         except ModuleNotFoundError:
             print('\n /!\ Protocol not recognized ! /!\ \n ')
             return None

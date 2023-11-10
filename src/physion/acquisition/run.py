@@ -42,7 +42,7 @@ def init_visual_stim(self):
     else:
         self.protocol['demo'] = False
 
-    self.stim = build_stim(self.protocol)
+    self.stim = build_stim(self.protocol, gui_refresh_func=self.app.processEvents)
     self.stim.experiment['protocol-name'] =\
             self.metadata['protocol'] # storing in stim for later, to check the need to re-buffer
 
@@ -108,7 +108,7 @@ def initialize(self):
                                        filename= self.filename.replace('metadata', 'NIdaq'))
             except BaseException as e:
                 print(e)
-                print(' /!\ PB WITH NI-DAQ /!\ ')
+                print('\n /!\ PB WITH NI-DAQ /!\ \n')
                 self.acq = None
 
         self.init = True

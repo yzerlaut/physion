@@ -29,9 +29,11 @@ class stim(vis_stim_image_built):
     multiprotocol holding this protocol
     """
 
-    def __init__(self, protocol):
+    def __init__(self, protocol,
+                 gui_refresh_func=None):
 
         super().__init__(protocol,
+                         gui_refresh_func=gui_refresh_func,
                          keys=['bg-color', 'speed',
                                'x-center', 'y-center',
                                'radius','spatial-freq',

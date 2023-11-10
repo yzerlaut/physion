@@ -30,6 +30,7 @@ class visual_stim:
 
     def __init__(self,
                  protocol,
+                 gui_refresh_func=None,
                  demo=False):
         """
         """
@@ -126,6 +127,9 @@ class visual_stim:
             self.Ton = int(1e3*self.screen['monitoring_square']['time-on'])
             self.Toff = int(1e3*self.screen['monitoring_square']['time-off'])
             self.Tfull, self.Tfull_first = int(self.Ton+self.Toff), int((self.Ton+self.Toff)/2.)
+
+            if gui_refresh_func is not None:
+                gui_refresh_func()
 
 
     ################################
@@ -770,7 +774,8 @@ class vis_stim_image_built(visual_stim):
     """
 
     def __init__(self, protocol,
-		 keys=['bg-color', 'contrast']):
+                 gui_refresh_func=None,
+		         keys=['bg-color', 'contrast']):
 
         super().__init__(protocol)
 
@@ -790,6 +795,9 @@ class vis_stim_image_built(visual_stim):
         # adding a appearance threshold (see blob stim)
         if 'appearance_threshold' not in protocol:
             protocol['appearance_threshold'] = 2.5 #
+
+        if gui_refresh_func is not None:
+            gui_refresh_func()
 
 
     def get_frames_sequence(self, index, parent=None):
@@ -895,6 +903,25 @@ if __name__=='__main__':
     ######################################
     ####     test as a subprocess   ######
     ######################################
-    pass
 
 
+    import json, multiprocessing, tempfile
+    from ctypes import c_char_p
+    from physion.acquisition.tools import base_path
+
+    from physion.visual_stim.build import build_stim
+
+    with open(os.path.join(base_path,
+              'protocols', 'drifting-gratings.json'), 'r') as fp:
+        protocol = json.load(fp)
+
+    class DummyAcq:
+        def __init__(self, protocol):
+            self.manager = multiprocessing.Manager() # to share a str across processes
+            self.datafolder = self.manager.Value(c_char_p, tempfile.gettempdir())
+            self.stim = build_stim(protocol)
+            self.stop_flag = False
+
+
+    acq = DummyAcq(protocol)
+    acq.stim.run(parent=acq)
