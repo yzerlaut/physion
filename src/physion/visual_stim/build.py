@@ -53,3 +53,31 @@ def get_default_params(protocol_name):
 
         print('\n /!\ Protocol not recognized ! /!\ \n ')
         return None
+
+
+if __name__=='__main__':
+
+    import os, pathlib, shutil
+
+    protocol_file = sys.argv[1]
+
+    if os.path.isfile(protocol_file) and protocol_file.endswith('.json'):
+
+        # create the associated protocol folder in the binary folder
+        protocol_folder = \
+            os.path.join(os.path.dirname(protocol_file),
+                'binaries',
+                os.path.basename(protocol_file.replace('.json','')))
+        pathlib.Path(protocol_folder).mkdir(\
+                                parents=True, exist_ok=True)
+
+        #  copy the 
+        shutil.copyfile(protocol_file,
+                        os.path.join(protocol_folder, 'protocol.json'))
+
+        # produce the binaries and store them 
+
+        # ...
+
+    else:
+        print('\nERROR: need to provide a valid json file as argument\n')

@@ -903,8 +903,6 @@ if __name__=='__main__':
 
     run = multiprocessing.Event()
 
-
-
     with open(os.path.join(base_path,
               'protocols', 'drifting-gratings.json'), 'r') as fp:
         protocol = json.load(fp)
