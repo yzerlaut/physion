@@ -26,7 +26,8 @@ def multimodal(self,
                        'FaceCamera',
                        'EphysLFP',
                        'EphysVm',
-                       'CaImaging']
+                       'CaImaging',
+                       'onlyDemo']
 
     ##########################################
     ######## Multiprocessing quantities  #####
