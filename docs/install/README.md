@@ -6,11 +6,14 @@
 
 ### A.1) Download and install the `miniconda` distribution
 
+Download and install the `miniconda` environmment following the [installation instructions](https://docs.conda.io/projects/miniconda/en/latest/miniconda-install.html)
+
 ### A.2) Create the `acquisition` environment
 
 ```
 conda env create -n acquisition -f acquisition.yml
 ```
+
 ## B) NI DAQ setup
 
 ### B.1) Re-install Visual C++ Redistributable on Windows
