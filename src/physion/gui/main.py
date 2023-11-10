@@ -4,8 +4,6 @@ from PyQt5 import QtWidgets
 # import pdb # for DEBUG
 
 Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv)
-for path in sys.path:
-    Acquisition = Acquisition or ('acquisition' in path)
 
 class MainWindow(QtWidgets.QMainWindow):
     """
