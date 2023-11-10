@@ -30,7 +30,6 @@ class visual_stim:
 
     def __init__(self,
                  protocol,
-                 gui_refresh_func=None,
                  demo=False):
         """
         """
@@ -127,9 +126,6 @@ class visual_stim:
             self.Ton = int(1e3*self.screen['monitoring_square']['time-on'])
             self.Toff = int(1e3*self.screen['monitoring_square']['time-off'])
             self.Tfull, self.Tfull_first = int(self.Ton+self.Toff), int((self.Ton+self.Toff)/2.)
-
-            if gui_refresh_func is not None:
-                gui_refresh_func()
 
 
     ################################
@@ -352,7 +348,7 @@ class visual_stim:
     #####################################################
     # adding a run purely define by an array NOW BUFFERED
     #####################################################
-    def buffer_stim(self, parent, gui_refresh_func=None):
+    def buffer_stim(self, parent):
         """
         we build the buffers order so that we can call them as:
         self.buffer[protocol_index][stim_index]
@@ -388,8 +384,6 @@ class visual_stim:
                     self.buffer[protocol_id][stim_index]['FRAMES'].append(visual.ImageStim(win,
                                                                           image=self.gamma_corrected_lum(frame),
                                                                           units='pix', size=win.size))
-                    if gui_refresh_func is not None:
-                        gui_refresh_func()
                 print('        index #%i   (%.2fs)' % (stim_index+1, time.time()-toc))
 
         print(' --> buffering done ! (t=%.2fs / %.2fmin)' % (time.time()-tic, (time.time()-tic)/60.))
@@ -774,8 +768,7 @@ class vis_stim_image_built(visual_stim):
     """
 
     def __init__(self, protocol,
-                 gui_refresh_func=None,
-		         keys=['bg-color', 'contrast']):
+		 keys=['bg-color', 'contrast']):
 
         super().__init__(protocol)
 
@@ -795,9 +788,6 @@ class vis_stim_image_built(visual_stim):
         # adding a appearance threshold (see blob stim)
         if 'appearance_threshold' not in protocol:
             protocol['appearance_threshold'] = 2.5 #
-
-        if gui_refresh_func is not None:
-            gui_refresh_func()
 
 
     def get_frames_sequence(self, index, parent=None):
@@ -893,10 +883,12 @@ class vis_stim_image_built(visual_stim):
             cond = np.sqrt((self.x-pos[0])**2+(self.z-pos[1])**2)<size
         image[cond] = color
 
-
-
     def new(self):
         pass
+
+def launch_VisualStim(run_flag, datafolder):
+
+    stim = build_stim()
 
 if __name__=='__main__':
 
@@ -904,16 +896,20 @@ if __name__=='__main__':
     ####     test as a subprocess   ######
     ######################################
 
-
     import json, multiprocessing, tempfile
     from ctypes import c_char_p
     from physion.acquisition.tools import base_path
-
     from physion.visual_stim.build import build_stim
+
+    run = multiprocessing.Event()
+
+
 
     with open(os.path.join(base_path,
               'protocols', 'drifting-gratings.json'), 'r') as fp:
         protocol = json.load(fp)
+
+
 
     class DummyAcq:
         def __init__(self, protocol):

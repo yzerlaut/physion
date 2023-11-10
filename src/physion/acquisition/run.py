@@ -42,7 +42,7 @@ def init_visual_stim(self):
     else:
         self.protocol['demo'] = False
 
-    self.stim = build_stim(self.protocol, gui_refresh_func=self.app.processEvents)
+    self.stim = build_stim(self.protocol)
     self.stim.experiment['protocol-name'] =\
             self.metadata['protocol'] # storing in stim for later, to check the need to re-buffer
 
@@ -136,7 +136,7 @@ def buffer_stim(self):
     # buffers the visual stimulus
     if self.stim.buffer is None:
        self.statusBar.showMessage('buffering visual stimulation [...]')
-       self.stim.buffer_stim(self, gui_refresh_func=self.app.processEvents)
+       self.stim.buffer_stim(self)
        self.statusBar.showMessage('buffering done !')
     else:
        self.statusBar.showMessage('visual stim already buffered, keeping this !')
