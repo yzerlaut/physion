@@ -45,6 +45,16 @@ Set the visual stimulation screen as the second monitor
 ```
 cd %UserProfile%\work\physion\src\physion\visual_stim & python psychopy_test.py
 ```
+### C.3) Test the `psychopy` module for visual stimulation
+
+- Basic `psychopy` test:
+    ```
+    cd %UserProfile%\work\physion\src\physion\visual_stim & python psychopy_test.py
+    ```
+- Test of the `visual_stim` class of `physion`:
+    ```
+    python -m src.visual_stim.main
+    ```
 
 ## D) FLIR Camera setup
 

@@ -1,6 +1,8 @@
+import clr
 import time
 from thorcam.camera import ThorCam
 
+"""
 class MyThorCam(ThorCam):
     def received_camera_response(self, msg, value):
         super(MyThorCam, self).received_camera_response(msg, value)
@@ -17,19 +19,22 @@ cam.start_cam_process()
 
 cam.refresh_cameras()
 
-time.sleep(10)
-print(cam.serials)
+print('initializing camera [...]')
+time.sleep(5)
 
-#cam.open_camera('03756')
+cam.open_camera('21373')
 
-print(cam.exposure_range)
 
-#cam.play_camera()
+print('exposure range', cam.exposure_range)
 
-#cam.stop_playing_camera()
+cam.play_camera()
+
+cam.stop_playing_camera()
 
 # close the camera
-#cam.close_camera()
+cam.close_camera()
 
 # close the server and everything
 cam.stop_cam_process(join=True)
+
+"""
