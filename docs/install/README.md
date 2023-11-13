@@ -95,7 +95,44 @@ cd %UserProfile%\work\physion\src\physion\hardware\FLIRcamera & python test.py
 
 ## E) Intrinsic Imaging Camera setup
 
-[...]
+### E.1) Install `ThorCam` 
+
+Download the [installer from the Thorlabs website](https://www.thorlabs.com/software_pages/ViewSoftwarePage.cfm?Code=ThorCam) and install `ThorCam`.
+
+Choose the 64-bit version. Current Version is `3.7.0.6`
+
+### E.2) Install the Python SDK
+
+After the Thorcam installation, got to `C:\Program Files\Thorlabs\Scientific Imaging\Scientific Camera Support`
+
+There is a zipfile called `Scientific_Camera_Interfaces.zip`. Unzip it in the `Downloads` folder.
+
+This is where the python SDK is. Install it with
+ 
+```
+cd %USERPROFILE%\Downloads\Scientific_Camera_Interfaces\Scientific Camera Interfaces\SDK\Python Toolkit
+conda activate acquisition
+pip install thorlabs_tsi_camera_python_sdk_package.zip
+```
+
+E.3) Add the camera dlls to physion
+
+Now copy all the 64-bits dlls located in: 
+```
+%USERPROFILE%\Downloads\Scientific_Camera_Interfaces\Scientific Camera Interfaces\SDK\Python Toolkit\dlls\64_lib
+```
+into the folder: 
+```
+src/physion/hardware/Thorlabs/camera_dlls.
+```
+
+### E.4) Test the camera
+
+```
+conda activate acquisition
+cd %USERPROFILE%\work\physion\src\physion\hardware\Thorlabs
+python cam_test.py
+```
 
 ## F) Create Windows Launchers
 
