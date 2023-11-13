@@ -13,7 +13,6 @@ except ModuleNotFoundError:
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
 
-
 def stop_signal(parent):
     if (len(event.getKeys()) > 0) or parent.stop_flag:
         parent.stop_flag = True
@@ -245,6 +244,8 @@ class visual_stim:
         for k in ['index', 'repeat','time_start', 'time_stop',
                     'interstim', 'time_duration', 'interstim-screen', 'frame_run_type']:
             self.experiment[k] = np.array(self.experiment[k])
+        # we add a protocol_id, 0 by default for single protocols
+        self.experiment['protocol_id'] = np.zeros(len(self.experiment['index']), dtype=int)
 
     # the close function
     def close(self):

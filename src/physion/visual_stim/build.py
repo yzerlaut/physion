@@ -1,6 +1,8 @@
 import sys
+import numpy as np
 
 import physion
+
 
 def build_stim(protocol):
     """
@@ -57,7 +59,7 @@ def get_default_params(protocol_name):
 
 if __name__=='__main__':
 
-    import os, pathlib, shutil
+    import os, pathlib, shutil, json
 
     protocol_file = sys.argv[1]
 
@@ -76,7 +78,9 @@ if __name__=='__main__':
                         os.path.join(protocol_folder, 'protocol.json'))
 
         # build the protocol
-        protocol = json.load(protocol_file)
+        with open(protocol_file, 'r') as f:
+            protocol = json.load(f)
+
         stim = build_stim(protocol)
 
         # loop over stims to produce the binaries and store them 
@@ -84,11 +88,19 @@ if __name__=='__main__':
             pCond = (stim.experiment['protocol_id']==protocol_id) &\
                     (stim.experiment['repeat']==0) # taking the first one
             for stim_index in np.unique(stim.experiment['index'][pCond]):
+
+                # get
                 time_indices, frames, refresh_freq =\
                         stim.get_frames_sequence(stim_index)
+                # write as binary
+                np.array(frames).tofile(\
+                        os.path.join(\
+                            protocol_folder,\
+                            'protocol-%i_index-%i.bin' % (\
+                                protocol_id, stim_index)))
 
 
         # ...
-
+        
     else:
         print('\nERROR: need to provide a valid json file as argument\n')
