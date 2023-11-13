@@ -158,7 +158,7 @@ def toggle_FaceCamera_process(self):
             self.show()
             self.closeFaceCamera_event.clear()
             self.FaceCamera_process = multiprocessing.Process(target=launch_FaceCamera,
-                            args=(self.run_event , self.closeFaceCamera_event, self.datafolder,
+                            args=(self.runEvent, self.closeFaceCamera_event, self.datafolder,
                                        {'frame_rate':self.config['FaceCamera-frame-rate']}))
             self.FaceCamera_process.start()
             self.statusBar.showMessage('[ok] FaceCamera initialized (in 5-6s) ! ')
@@ -191,7 +191,7 @@ def run(self):
         self.bufferButton.setEnabled(False)
 
         self.stop_flag=False
-        self.run_event.set() # start the run flag for the facecamera
+        self.runEvent.set() # start the run flag for the facecamera
 
         if ((self.acq is None) and (self.stim is None)) or not self.init:
             self.statusBar.showMessage('Need to initialize the stimulation !')
@@ -211,7 +211,7 @@ def run(self):
             # ========================
             # stop and clean up things
             if self.metadata['FaceCamera']:
-                self.run_event.clear() # this will close the camera process
+                self.runEvent.clear() # this will close the camera process
             # close visual stim
             # if self.metadata['VisualStim']:
                 # self.stim.close() close the visual stim
@@ -232,7 +232,7 @@ def run(self):
 
 
 def stop(self):
-    self.run_event.clear() # this will close the camera process
+    self.runEvent.clear() # this will close the camera process
     self.stop_flag=True
     if self.acq is not None:
         self.acq.close()

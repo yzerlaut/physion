@@ -427,7 +427,7 @@ class visual_stim:
             self.buffer_stim(parent)
 
         for i in range(len(self.experiment['index'])):
-            if not run_flag.is_set()
+            if not run_flag.is_set():
                 break
             t = time.time()-t0
             print('t=%.2dh:%.2dm:%.2fs - Running protocol of index %i/%i                                protocol-ID:%i' % (t/3600,

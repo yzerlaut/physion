@@ -3,7 +3,7 @@ import numpy as np
 
 SCREEN = [1280, 720]
 #create a window
-mywin = visual.Window(SCREEN, monitor="testMonitor", units="deg", fullscr=True)
+mywin = visual.Window(SCREEN, monitor="testMonitor", units="deg", fullscr=False)
 
 #create some stimuli
 grating = visual.GratingStim(win=mywin, mask='circle', size=3, pos=[-4,0], sf=3)
