@@ -410,26 +410,30 @@ class visual_stim:
 
 
     ## FINAL RUN FUNCTION
-    def run(self, parent=None):
+    def run(self, run_flag, parent=None):
 
         try:
-            t0 = np.load(os.path.join(str(parent.datafolder.get()), 'NIdaq.start.npy'))[0]
+            t0 = np.load(os.path.join(str(parent.datafolder.get()),\
+                         'NIdaq.start.npy'))[0]
         except FileNotFoundError:
-            print(str(parent.datafolder.get()), 'NIdaq.start.npy', 'not found !')
+            print(str(parent.datafolder.get()),\
+                        'NIdaq.start.npy', 'not found !')
             t0 = time.time()
 
         self.start_screen(parent)
 
-        if ('buffer' in self.protocol) and self.protocol['buffer'] and (self.buffer is None):
+        if ('buffer' in self.protocol) and\
+                self.protocol['buffer'] and (self.buffer is None):
             self.buffer_stim(parent)
 
         for i in range(len(self.experiment['index'])):
-            if stop_signal(parent):
+            if not run_flag.is_set()
                 break
             t = time.time()-t0
             print('t=%.2dh:%.2dm:%.2fs - Running protocol of index %i/%i                                protocol-ID:%i' % (t/3600,
                 (t%3600)/60, (t%60), i+1, len(self.experiment['index']),
-                 self.experiment['protocol_id'][i] if 'protocol_id' in self.experiment else 0))
+                 self.experiment['protocol_id'][i]\
+                         if 'protocol_id' in self.experiment else 0))
 
             # ---- single_episode_run ----- #
             if self.buffer is not None:
@@ -889,6 +893,7 @@ class vis_stim_image_built(visual_stim):
 def launch_VisualStim(run_flag, datafolder):
 
     stim = build_stim()
+    stim.run(run_flag)
 
 if __name__=='__main__':
 
@@ -902,12 +907,15 @@ if __name__=='__main__':
     from physion.visual_stim.build import build_stim
 
     run = multiprocessing.Event()
+    run.clear()
+    datafolder = manager.Value(c_char_p, 'datafolder')    
+    VisualStim_process = multiprocessing.Process(target=launch_VisualStim,\
+            args=(run, datafolder))
+    VisualStim_process.start()
 
     with open(os.path.join(base_path,
               'protocols', 'drifting-gratings.json'), 'r') as fp:
         protocol = json.load(fp)
-
-
 
     class DummyAcq:
         def __init__(self, protocol):
@@ -915,7 +923,6 @@ if __name__=='__main__':
             self.datafolder = self.manager.Value(c_char_p, tempfile.gettempdir())
             self.stim = build_stim(protocol)
             self.stop_flag = False
-
 
     acq = DummyAcq(protocol)
     acq.stim.run(parent=acq)
