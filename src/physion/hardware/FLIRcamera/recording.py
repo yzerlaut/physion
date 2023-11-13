@@ -103,7 +103,8 @@ if __name__=='__main__':
     quit_event = multiprocessing.Event()
     manager = multiprocessing.Manager()
     datafolder = manager.Value(c_char_p, 'datafolder')    
-    camera_process = multiprocessing.Process(target=launch_FaceCamera, args=(run, quit_event, datafolder))
+    camera_process = multiprocessing.Process(target=launch_FaceCamera,\
+            args=(run, quit_event, datafolder))
     run.clear()
     camera_process.start()
 
