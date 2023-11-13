@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtCore
 import sys, time, os, pathlib, json
 import numpy as np
-import multiprocessing # for the camera streams !!
+import multiprocessing # different processes (cameras, visual stim, ...) are sent on different threads...
 from ctypes import c_char_p
 import pyqtgraph as pg
 import subprocess
@@ -33,8 +33,8 @@ def multimodal(self,
     ######## Multiprocessing quantities  #####
     ##########################################
     # to be used through multiprocessing.Process:
-    self.run_event = multiprocessing.Event() # to turn on/off recordings 
-    self.run_event.clear()
+    self.runEvent = multiprocessing.Event() # to turn on/off recordings 
+    self.runEvent.clear()
     self.closeFaceCamera_event = multiprocessing.Event()
     self.closeFaceCamera_event.clear()
     self.quit_event = multiprocessing.Event()

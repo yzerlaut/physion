@@ -75,7 +75,18 @@ if __name__=='__main__':
         shutil.copyfile(protocol_file,
                         os.path.join(protocol_folder, 'protocol.json'))
 
-        # produce the binaries and store them 
+        # build the protocol
+        protocol = json.load(protocol_file)
+        stim = build_stim(protocol)
+
+        # loop over stims to produce the binaries and store them 
+        for protocol_id in np.unique(stim.experiment['protocol_id']):
+            pCond = (stim.experiment['protocol_id']==protocol_id) &\
+                    (stim.experiment['repeat']==0) # taking the first one
+            for stim_index in np.unique(stim.experiment['index'][pCond]):
+                time_indices, frames, refresh_freq =\
+                        stim.get_frames_sequence(stim_index)
+
 
         # ...
 
