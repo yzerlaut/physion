@@ -98,8 +98,11 @@ if __name__=='__main__':
                         stim.get_frames_sequence(stim_index)
                 print('writing: protocol-%i_index-%i.bin' % (\
                                 protocol_id, stim_index))
+                Frames = np.array(\
+                        [255*(1.+f)/2. for f in frames],
+                        dtype=np.uint8)
                 # write as binary
-                np.array(frames).tofile(\
+                Frames.tofile(\
                         os.path.join(\
                             protocol_folder,\
                             'protocol-%i_index-%i.bin' % (\
@@ -110,7 +113,8 @@ if __name__=='__main__':
                             'protocol-%i_index-%i.npy' % (\
                                 protocol_id, stim_index)),
                             {'refresh_freq':refresh_freq,
-                             'time_indices':time_indices})
+                             'time_indices':time_indices,
+                             'binary_shape': Frames.shape})
 
 
         # ...
