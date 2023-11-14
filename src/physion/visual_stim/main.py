@@ -36,6 +36,7 @@ class visual_stim:
         self.screen = SCREENS[self.protocol['Screen']]
         self.buffer = None  # by default, non-buffered data
         self.buffer_delay = 0
+        self.running = False # to start from non running cond
 
         self.protocol['movie_refresh_freq'] = \
             protocol['movie_refresh_freq']\
@@ -57,56 +58,43 @@ class visual_stim:
 
         if not ('no-window' in self.protocol):
 
-            # self.monitor = monitors.Monitor(self.screen['name'])
-            # self.monitor.setDistance(self.screen['distance_from_eye'])
             self.k = self.screen['gamma_correction']['k']
             self.gamma = self.screen['gamma_correction']['gamma']
 
+            blank_color=self.gamma_corrected_lum(\
+                    self.protocol['presentation-blank-screen-color'])
+
             self.win = visual.Window(self.screen['resolution'],
-                                     # monitor=self.monitor,
-                                     # screen=self.screen['screen_id'],
                                      fullscr=self.screen['fullscreen'],
                                      units='pix',
                                      checkTiming=False,
-                                     color=self.gamma_corrected_lum(
-                                        self.protocol['presentation-prestim-screen']))
+                                     color=blank_color)
 
-            # ---- blank screens ----
-
-            pre_color=self.gamma_corrected_lum(self.protocol['presentation-prestim-screen'])
-            self.blank_start = visual.GratingStim(win=self.win, size=10000,
-                                                  pos=[0,0], sf=0,
-                                                  color=pre_color,
-                                                  units='pix')
-            if 'presentation-interstim-screen' in self.protocol:
-
-                inter_color=self.gamma_corrected_lum(\
-                                    self.protocol['presentation-interstim-screen'])
-                self.blank_inter = visual.GratingStim(win=self.win,
-                                                      size=10000,
-                                                      pos=[0,0], sf=0,
-                                                      color=inter_color,
-                                                      units='pix')
-            end_color=self.gamma_corrected_lum(\
-                                self.protocol['presentation-poststim-screen'])
-            self.blank_end = visual.GratingStim(win=self.win, size=10000,
-                                                pos=[0,0], sf=0,
-                                                color=end_color,
-                                                units='pix')
+            # ---- blank screen ----
+            self.blank = visual.GratingStim(win=self.win, size=10000,
+                                            pos=[0,0], sf=0,
+                                            color=blank_color,
+                                            units='pix')
 
 
             # ---- monitoring square properties ----
 
             if self.screen['monitoring_square']['location']=='top-right':
-                pos = [int(x/2.-self.screen['monitoring_square']['size']/2.) for x in self.screen['resolution']]
+                pos = [int(x/2.-self.screen['monitoring_square']['size']/2.)\
+                        for x in self.screen['resolution']]
             elif self.screen['monitoring_square']['location']=='bottom-left':
-                pos = [int(-x/2.+self.screen['monitoring_square']['size']/2.) for x in self.screen['resolution']]
+                pos = [int(-x/2.+self.screen['monitoring_square']['size']/2.)\
+                        for x in self.screen['resolution']]
             elif self.screen['monitoring_square']['location']=='top-left':
-                pos = [int(-self.screen['resolution'][0]/2.+self.screen['monitoring_square']['size']/2.),
-                       int(self.screen['resolution'][1]/2.-self.screen['monitoring_square']['size']/2.)]
+                pos = [int(-self.screen['resolution'][0]/2.+\
+                        self.screen['monitoring_square']['size']/2.),
+                       int(self.screen['resolution'][1]/2.-\
+                               self.screen['monitoring_square']['size']/2.)]
             elif self.screen['monitoring_square']['location']=='bottom-right':
-                pos = [int(self.screen['resolution'][0]/2.-self.screen['monitoring_square']['size']/2.),
-                       int(-self.screen['resolution'][1]/2.+self.screen['monitoring_square']['size']/2.)]
+                pos = [int(self.screen['resolution'][0]/2.-\
+                        self.screen['monitoring_square']['size']/2.),
+                       int(-self.screen['resolution'][1]/2.+\
+                               self.screen['monitoring_square']['size']/2.)]
             else:
                 print(30*'-'+'\n /!\ monitoring square location not recognized !!')
 
@@ -153,7 +141,7 @@ class visual_stim:
         # we linearize the arctan function #
         """
         dAngle_per_pix = self.pix_to_angle(1.)
-        print(dAngle_per_pix)
+
         x, z = np.meshgrid(dAngle_per_pix*(np.arange(self.screen['resolution'][0])-self.screen['resolution'][0]/2.),
                            dAngle_per_pix*(np.arange(self.screen['resolution'][1])-self.screen['resolution'][1]/2.),
                            indexing='xy')
@@ -192,7 +180,6 @@ class visual_stim:
                     self.experiment['time_stop'] = [protocol['presentation-duration']+protocol['presentation-prestim-period']]
                     self.experiment['time_duration'] = [protocol['presentation-duration']]
                     self.experiment['interstim'] = [protocol['presentation-interstim-period'] if 'presentation-interstim-period' in protocol else 0]
-                    self.experiment['interstim-screen'] = [protocol['presentation-interstim-screen'] if 'presentation-interstim-screen' in protocol else 0]
 
         else:
             # ------------  MULTIPLE STIMS ------------
@@ -210,7 +197,7 @@ class visual_stim:
                     FULL_VECS[key].append(vec[i])
 
             for k in ['index', 'repeat','time_start', 'time_stop',
-                    'interstim', 'time_duration', 'interstim-screen', 'frame_run_type']:
+                    'interstim', 'time_duration', 'frame_run_type']:
                 self.experiment[k] = []
 
             index_no_repeat = np.arange(len(FULL_VECS[key]))
@@ -237,12 +224,11 @@ class visual_stim:
                                                          (protocol['presentation-duration']+protocol['presentation-interstim-period']))
                     self.experiment['time_stop'].append(self.experiment['time_start'][-1]+protocol['presentation-duration'])
                     self.experiment['interstim'].append(protocol['presentation-interstim-period'])
-                    self.experiment['interstim-screen'].append(protocol['presentation-interstim-screen'])
                     self.experiment['time_duration'].append(protocol['presentation-duration'])
                     self.experiment['frame_run_type'].append(run_type)
 
         for k in ['index', 'repeat','time_start', 'time_stop',
-                    'interstim', 'time_duration', 'interstim-screen', 'frame_run_type']:
+                    'interstim', 'time_duration', 'frame_run_type']:
             self.experiment[k] = np.array(self.experiment[k])
         # we add a protocol_id, 0 by default for single protocols
         self.experiment['protocol_id'] = np.zeros(len(self.experiment['index']), dtype=int)
@@ -254,39 +240,14 @@ class visual_stim:
     def quit(self):
         core.quit()
 
-    # screen at start
-    def start_screen(self, parent):
-        if not parent.stop_flag:
-            self.blank_start.draw()
-            self.off.draw()
-            try:
-                self.win.flip()
-            except AttributeError:
-                pass
-            clock.wait(self.protocol['presentation-prestim-period'])
-
-    # screen at end
-    def end_screen(self, parent):
-        if not parent.stop_flag:
-            self.blank_end.draw()
-            self.off.draw()
-            try:
-                self.win.flip()
-            except AttributeError:
-                pass
-            clock.wait(self.protocol['presentation-poststim-period'])
-
-    # screen for interstim
-    def inter_screen(self, parent, duration=1., color=0):
-        if not parent.stop_flag and hasattr(self, 'blank_inter') and duration>0:
-            visual.GratingStim(win=self.win, size=10000, pos=[0,0], sf=0,
-                               color=self.gamma_corrected_lum(color), units='pix').draw()
-            self.off.draw()
-            try:
-                self.win.flip()
-            except AttributeError:
-                pass
-            clock.wait(duration)
+    # BLANK SCREEN
+    def blank_screen(self):
+        self.blank.draw()
+        self.off.draw()
+        try:
+            self.win.flip()
+        except AttributeError:
+            pass
 
     # blinking in one corner
     def add_monitoring_signal(self, new_t, start):
@@ -449,6 +410,87 @@ class visual_stim:
         self.end_screen(parent)
         if not parent.stop_flag and hasattr(parent, 'statusBar'):
             parent.statusBar.showMessage('stimulation over !')
+
+
+    def run_and_check(self, 
+                     run_flag, quit_flag, datafolder,
+                     binary_folder,
+                     speed=1.):
+
+        # showing start_screen
+        self.blank_screen()
+
+        # waiting for the external trigger [...]
+        while not run_flag.is_set() and not quit_flag.is_set():
+            print('waiting for the external trigger [...]')
+            time.sleep(0.1)
+        # --> here external trigger launched 
+        self.running = True
+        
+        ##########################################################
+        ###           initialize the stimulation              ####
+        ##########################################################
+        self.stim_index, is_interstim, self.dt = -1, True, 30e-3
+
+        # grab the NIdaq starting time (or set one)
+        try:
+            self.t0 = np.load(os.path.join(str(datafolder.get()),\
+                             'NIdaq.start.npy'))[0]
+        except (AttributeError, FileNotFoundError):
+            print(str(datafolder.get()),\
+                        'NIdaq.start.npy', 'not found !')
+            self.t0 = clock.getTime()
+
+        ##########################################################
+        ###                      RUN                          ####
+        ##########################################################
+        while self.running and\
+                run_flag.is_set() and\
+                (not quit_flag.is_set()):
+
+            t = (clock.getTime()-self.t0)*speed
+
+            # is_interstim, new_stim_index = FUNC(t)
+
+            if not is_interstim:
+                # we need to show the stimulus
+                self.buffer[int(t/self.dt)].draw()
+                self.add_monitoring_signal(clock.getTime(), start)
+            elif is_interstim and (new_stim_index>self.stim_index):
+                protocol_id = self.experiment['protocol_id'][self.stim_index]
+                stim_index = self.experiment['stim_index'][self.stim_index]
+                # print need to buffer a new stim
+                array = np.fromfile(
+                        os.path.join(\
+                            binary_folder,\
+                            'protocol-%i_index-%i.bin' % (\
+                                protocol_id, stim_index)))
+                props = np.load(
+                        os.path.join(\
+                            binary_folder,\
+                            'protocol-%i_index-%i.npy' % (\
+                                protocol_id, stim_index)))
+                self.dt = 1./props['refresh_freq']
+            elif is_interstim:
+                # nothing to do, already buffered, just wait the end of interstim
+                pass
+            else:
+                print('condition should never occur')
+
+
+
+
+
+            if False:
+                print('preparing the buffer for ')
+            
+            
+            self.end_screen()
+
+
+
+        
+        
 
 
     #################################################
@@ -891,12 +933,34 @@ class vis_stim_image_built(visual_stim):
     def new(self):
         pass
 
-def launch_VisualStim(run_flag, datafolder):
+def launch_VisualStim(protocol, 
+                      run_flag, quit_flag, datafolder,
+                      speed=1.):
 
-    stim = build_stim()
-    stim.run(run_flag)
+    stim = build_stim(protocol)
+    stim.run_and_check(run_flag, quit_flag, datafolder,
+                       binary_folder,
+                       speed=speed)
+
 
 if __name__=='__main__':
+
+    ######################################
+    ####  visualize the stimulation   ####
+    ######################################
+
+    import argparse
+    parser=argparse.ArgumentParser()
+    parser.add_argument("protocol", 
+                        help="protocol a json file", 
+                        default='')
+    parser.add_argument('-s', "--speed", 
+                        help="speed to visualize the stimulus (1. by default)", 
+                        default=1.)
+    parser.add_argument("--t0", 
+                        help="start time", 
+                        default=0.)
+    args = parser.parse_args()
 
     ######################################
     ####     test as a subprocess   ######
@@ -907,23 +971,32 @@ if __name__=='__main__':
     from physion.acquisition.tools import base_path
     from physion.visual_stim.build import build_stim
 
-    run = multiprocessing.Event()
-    run.clear()
-    datafolder = manager.Value(c_char_p, 'datafolder')    
+
+    manager = multiprocessing.Manager() # to share a str across processes
+    datafolder = manager.Value(c_char_p, tempfile.gettempdir())
+    runEvent = multiprocessing.Event()
+    runEvent.clear()
+    quitEvent = multiprocessing.Event()
+    quitEvent.clear()
+
+    with open(args.protocol, 'r') as fp:
+        protocol = json.load(fp)
+    protocol['demo'] = True
+
+    binary_folder = \
+        os.path.join(os.path.dirname(args.protocol), 'binaries',
+            os.path.basename(args.protocol.replace('.json','')))
+
     VisualStim_process = multiprocessing.Process(target=launch_VisualStim,\
-            args=(run, datafolder))
+            args=(protocol, runEvent, quitEvent, datafolder, binary_folder))
     VisualStim_process.start()
 
-    with open(os.path.join(base_path,
-              'protocols', 'drifting-gratings.json'), 'r') as fp:
-        protocol = json.load(fp)
+    time.sleep(2)
+    print(' launching stim ')
+    runEvent.set()
+    time.sleep(2)
+    print(' stoping stim ')
+    runEvent.clear()
+    
 
-    class DummyAcq:
-        def __init__(self, protocol):
-            self.manager = multiprocessing.Manager() # to share a str across processes
-            self.datafolder = self.manager.Value(c_char_p, tempfile.gettempdir())
-            self.stim = build_stim(protocol)
-            self.stop_flag = False
 
-    acq = DummyAcq(protocol)
-    acq.stim.run(parent=acq)

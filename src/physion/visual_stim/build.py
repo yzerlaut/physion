@@ -81,23 +81,36 @@ if __name__=='__main__':
         with open(protocol_file, 'r') as f:
             protocol = json.load(f)
 
+        protocol['no-window'] = True
+
         stim = build_stim(protocol)
 
         # loop over stims to produce the binaries and store them 
         for protocol_id in np.unique(stim.experiment['protocol_id']):
+
             pCond = (stim.experiment['protocol_id']==protocol_id) &\
                     (stim.experiment['repeat']==0) # taking the first one
+
             for stim_index in np.unique(stim.experiment['index'][pCond]):
 
                 # get
                 time_indices, frames, refresh_freq =\
                         stim.get_frames_sequence(stim_index)
+                print('writing: protocol-%i_index-%i.bin' % (\
+                                protocol_id, stim_index))
                 # write as binary
                 np.array(frames).tofile(\
                         os.path.join(\
                             protocol_folder,\
                             'protocol-%i_index-%i.bin' % (\
                                 protocol_id, stim_index)))
+                # write as npy 
+                np.save(os.path.join(\
+                            protocol_folder,\
+                            'protocol-%i_index-%i.npy' % (\
+                                protocol_id, stim_index)),
+                            {'refresh_freq':refresh_freq,
+                             'time_indices':time_indices})
 
 
         # ...
