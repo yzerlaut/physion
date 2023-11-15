@@ -1,6 +1,6 @@
 import numpy as np
 
-from physion.visual_stim.main import vis_stim_image_built,\
+from physion.visual_stim.main import visual_stim,\
         init_times_frames, init_bg_image
 
 ####################################
@@ -31,7 +31,7 @@ def compute_new_image_with_dots(cls, index,
             dot_size_pix*iz:dot_size_pix*(iz+1)] = cls.experiment['dotcolor'][index]
     return img
 
-class stim(vis_stim_image_built):
+class stim(visual_stim):
     """
     """
 

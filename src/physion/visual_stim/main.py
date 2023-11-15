@@ -1,3 +1,12 @@
+"""
+class for the visual stimulation
+
+- test with :
+python -m physion.visual_stim.main physion/acquisition/protocols/drifting-gratings.json
+
+
+N.B. Psychopy has colors between -1 (black) and +1 (white)
+"""
 import numpy as np
 import itertools
 import os
@@ -6,9 +15,9 @@ import time
 import json
 
 try:
-    from psychopy import visual, core, event
+    from psychopy import visual, core
 except ModuleNotFoundError:
-    pass
+    pass # should be able to use it without psychopy
 
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
@@ -20,14 +29,12 @@ class visual_stim:
 
     def __init__(self,
                  protocol,
+                 keys=[], # need to pass the varied parameters
                  demo=False):
         """
         """
         self.protocol = protocol
         self.screen = SCREENS[self.protocol['Screen']]
-        self.buffer = None  # by default, non-buffered data
-        self.buffer_delay = 0
-        self.running = False # to start from non running cond
 
         self.protocol['movie_refresh_freq'] = \
             protocol['movie_refresh_freq']\
@@ -46,66 +53,72 @@ class visual_stim:
 
         # then we can initialize the angle
         self.set_angle_meshgrid()
-
+        # and the screen presentation if need
         if not ('no-window' in self.protocol):
+            self.init_screen_presentation()
 
-            self.k = self.screen['gamma_correction']['k']
-            self.gamma = self.screen['gamma_correction']['gamma']
-
-            blank_color=self.gamma_corrected_lum(\
-                    self.protocol['presentation-blank-screen-color'])
-
-            self.win = visual.Window(self.screen['resolution'],
-                                     fullscr=self.screen['fullscreen'],
-                                     units='pix',
-                                     checkTiming=False,
-                                     colorSpace='rgb255',
-                                     color=blank_color)
-
-            # ---- blank screen ----
-            self.blank = visual.GratingStim(win=self.win,
-                                            size=10000,
-                                            pos=[0,0], sf=0,
-                                            color=blank_color,
-                                            units='pix')
+        ### INITIALIZE EXP ###
+        self.init_experiment(protocol, keys)
 
 
-            # ---- monitoring square properties ----
+    ################################################
+    ###                                         ####
+    ################################################
 
-            if self.screen['monitoring_square']['location']=='top-right':
-                pos = [int(x/2.-self.screen['monitoring_square']['size']/2.)\
-                        for x in self.screen['resolution']]
-            elif self.screen['monitoring_square']['location']=='bottom-left':
-                pos = [int(-x/2.+self.screen['monitoring_square']['size']/2.)\
-                        for x in self.screen['resolution']]
-            elif self.screen['monitoring_square']['location']=='top-left':
-                pos = [int(-self.screen['resolution'][0]/2.+\
-                        self.screen['monitoring_square']['size']/2.),
-                       int(self.screen['resolution'][1]/2.-\
-                               self.screen['monitoring_square']['size']/2.)]
-            elif self.screen['monitoring_square']['location']=='bottom-right':
-                pos = [int(self.screen['resolution'][0]/2.-\
-                        self.screen['monitoring_square']['size']/2.),
-                       int(-self.screen['resolution'][1]/2.+\
-                               self.screen['monitoring_square']['size']/2.)]
-            else:
-                print(30*'-'+'\n /!\ monitoring square location not recognized !!')
+    def init_screen_presentation(self):
+        self.k = self.screen['gamma_correction']['k']
+        self.gamma = self.screen['gamma_correction']['gamma']
 
-            self.on = visual.GratingStim(win=self.win,
-                                         size=self.screen['monitoring_square']['size'],
-                                         pos=pos, sf=0,
-                                         color=self.screen['monitoring_square']['color-on'],
-                                         units='pix')
-            self.off = visual.GratingStim(win=self.win,
-                                          size=self.screen['monitoring_square']['size'],
-                                          pos=pos, sf=0,
-                                          color=self.screen['monitoring_square']['color-off'],
-                                          units='pix')
+        blank_color=self.gamma_corrected_lum(\
+                self.protocol['presentation-blank-screen-color'])
 
-            # initialize the times for the monitoring signals
-            self.Ton = int(1e3*self.screen['monitoring_square']['time-on'])
-            self.Toff = int(1e3*self.screen['monitoring_square']['time-off'])
-            self.Tfull, self.Tfull_first = int(self.Ton+self.Toff), int((self.Ton+self.Toff)/2.)
+        self.win = visual.Window(self.screen['resolution'],
+                                 fullscr=self.screen['fullscreen'],
+                                 units='pix',
+                                 checkTiming=False,
+                                 color=blank_color)
+
+        # ---- blank screen ----
+        self.blank = visual.ImageStim(\
+                image=np.ones(self.win.size)*blank_color,
+                units='pix',
+                win=self.win)
+
+        # ---- monitoring square properties ----
+        if self.screen['monitoring_square']['location']=='top-right':
+            pos = [int(x/2.-self.screen['monitoring_square']['size']/2.)\
+                    for x in self.screen['resolution']]
+        elif self.screen['monitoring_square']['location']=='bottom-left':
+            pos = [int(-x/2.+self.screen['monitoring_square']['size']/2.)\
+                    for x in self.screen['resolution']]
+        elif self.screen['monitoring_square']['location']=='top-left':
+            pos = [int(-self.screen['resolution'][0]/2.+\
+                    self.screen['monitoring_square']['size']/2.),
+                   int(self.screen['resolution'][1]/2.-\
+                           self.screen['monitoring_square']['size']/2.)]
+        elif self.screen['monitoring_square']['location']=='bottom-right':
+            pos = [int(self.screen['resolution'][0]/2.-\
+                    self.screen['monitoring_square']['size']/2.),
+                   int(-self.screen['resolution'][1]/2.+\
+                           self.screen['monitoring_square']['size']/2.)]
+        else:
+            print(30*'-'+'\n /!\ monitoring square location not recognized !!')
+
+        self.on = visual.GratingStim(win=self.win,
+                                     size=self.screen['monitoring_square']['size'],
+                                     pos=pos, sf=0,
+                                     color=self.screen['monitoring_square']['color-on'],
+                                     units='pix')
+        self.off = visual.GratingStim(win=self.win,
+                                      size=self.screen['monitoring_square']['size'],
+                                      pos=pos, sf=0,
+                                      color=self.screen['monitoring_square']['color-off'],
+                                      units='pix')
+
+        # initialize the times for the monitoring signals
+        self.Ton = int(1e3*self.screen['monitoring_square']['time-on'])
+        self.Toff = int(1e3*self.screen['monitoring_square']['time-off'])
+        self.Tfull, self.Tfull_first = int(self.Ton+self.Toff), int((self.Ton+self.Toff)/2.)
 
 
     ################################
@@ -135,8 +148,12 @@ class visual_stim:
         """
         dAngle_per_pix = self.pix_to_angle(1.)
 
-        x, z = np.meshgrid(dAngle_per_pix*(np.arange(self.screen['resolution'][0])-self.screen['resolution'][0]/2.),
-                           dAngle_per_pix*(np.arange(self.screen['resolution'][1])-self.screen['resolution'][1]/2.),
+        x, z = np.meshgrid(dAngle_per_pix*(\
+                np.arange(self.screen['resolution'][0])-\
+                    self.screen['resolution'][0]/2.),
+                           dAngle_per_pix*(\
+                np.arange(self.screen['resolution'][1])-\
+                    self.screen['resolution'][1]/2.),
                            indexing='xy')
         self.x, self.z = x.T, z.T
 
@@ -152,6 +169,104 @@ class visual_stim:
     def compute_grating(self, xrot,
                         spatial_freq=0.1, contrast=1, time_phase=0.):
         return contrast*(1+np.cos(np.pi/2.+2*np.pi*(spatial_freq*xrot-time_phase)))/2.
+
+    def get_frames_sequence(self, index, parent=None):
+        """
+        we build a sequence of frames by successive calls to "self.get_image"
+
+        here we use self.refresh_freq, not cls.refresh_freq
+         """
+        cls = (parent if parent is not None else self)
+
+        time_indices, times, FRAMES = init_times_frames(cls, index,\
+                self.refresh_freq)
+
+        order = self.compute_frame_order(cls,\
+                times, index) # shuffling inside if randomize !!
+
+        for iframe, t in enumerate(times):
+            new_t = order[iframe]/self.refresh_freq
+
+            img = self.get_image(index, new_t,
+                                 parent=parent)
+
+            FRAMES.append(self.image_to_frame(img))
+
+        return time_indices, FRAMES, self.refresh_freq
+
+
+    def compute_frame_order(self, cls, times, index):
+        """
+        function to handle the randomization of frames across time
+        """
+
+        order = np.arange(len(times))
+
+        if ('randomize' in self.protocol) and (self.protocol['randomize']=="True"):
+            # we randomize the order of the time sequence here !!
+            if ('randomize-per-trial' in self.protocol) and (self.protocol['randomize-per-trial']=="True"):
+                np.random.seed(int(cls.experiment['seed'][index]+1000*index))
+            else:
+                np.random.seed(int(cls.experiment['seed'][index]))
+            np.random.shuffle(order) # shuffling
+
+        return order
+
+
+    ################################
+    #  ---  Draw Stimuli       --- #
+    ################################
+
+    def add_grating_patch(self, image,
+                          angle=0,
+                          radius=10,
+                          spatial_freq=0.1,
+                          contrast=1.,
+                          time_phase=0.,
+                          xcenter=0,
+                          zcenter=0):
+        """ add a grating patch, drifting when varying the time phase"""
+        xrot = self.compute_rotated_coords(angle,
+                                           xcenter=xcenter,
+                                           zcenter=zcenter)
+
+        cond = ((self.x-xcenter)**2+(self.z-zcenter)**2)<radius**2
+
+        full_grating = self.compute_grating(xrot,
+                                            spatial_freq=spatial_freq,
+                                            contrast=1,
+                                            time_phase=time_phase)-0.5
+
+        image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
+
+
+
+    def add_gaussian(self, image,
+                     t=0, t0=0, sT=1.,
+                     radius=10,
+                     contrast=1.,
+                     xcenter=0,
+                     zcenter=0):
+        """
+        add a gaussian luminosity increase
+        N.B. when contrast=1, you need black background, otherwise it will saturate
+             when contrast=0.5, you can start from the grey background to reach white in the center
+        """
+        image += 2*np.exp(-((self.x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
+                     contrast*np.exp(-(t-t0)**2/2./sT**2)
+
+
+    def add_dot(self, image, pos, size, color, type='square'):
+        """
+        add dot, either square or circle
+        """
+        if type=='square':
+            cond = (self.x>(pos[0]-size/2)) & (self.x<(pos[0]+size/2)) &\
+                    (self.z>(pos[1]-size/2)) & (self.z<(pos[1]+size/2))
+        else:
+            cond = np.sqrt((self.x-pos[0])**2+(self.z-pos[1])**2)<size
+        image[cond] = color
+
 
     ################################
     #  ---     Experiment      --- #
@@ -236,8 +351,6 @@ class visual_stim:
     # the close function
     def close(self):
         self.win.close()
-
-    def quit(self):
         core.quit()
 
     # BLANK SCREEN
@@ -301,19 +414,92 @@ class visual_stim:
                     time.time()-tic))
 
 
+    def buffer_stim(self, 
+                    binary_folder, 
+                    protocol_id, 
+                    stim_index):
+        """
+        BUFFERING numpy array into psychopy
+        """
+        tic = time.time()
+        # get metadata
+        props = np.load(
+                os.path.join(\
+                    binary_folder,\
+                    'protocol-%i_index-%i.npy' % (\
+                        protocol_id, stim_index)), allow_pickle=True).item()
+        dt = 1./props['refresh_freq']
+        # get stim array
+        shape = props['binary_shape']
+        array = np.fromfile(
+                os.path.join(\
+                    binary_folder,\
+                    'protocol-%i_index-%i.bin' % (\
+                        protocol_id, stim_index)),
+                    dtype=np.uint8).reshape(shape)
+        # buffer images in psychopy
+        buffer = []
+        for i in range(array.shape[0]):
+            buffer.append(\
+                visual.ImageStim(self.win,
+                    image=self.gamma_corrected_lum(\
+                         2*array[i,:,:]/255.-1.),
+                    units='pix', size=self.win.size))
+            # import matplotlib.pylab as plt
+            # plt.imshow(2*array[i,:,:]/255.-1.)
+            # plt.show()
+        print(' - buffering stim #%i of protocol #%i (took %.2fs)' % (\
+                stim_index+1, protocol_id+1, time.time()-tic))
+        return buffer, props['time_indices'], dt
+
+    def buffer_all_stims(self, binary_folder, readyEvent):
+        """
+        loop over all available binary files and buffer them
+        """
+        self.BUFFERS, self.TIME_INDICES, self.DTS = [], [], []
+        def binary_file(iProtocol, iStim):
+            return os.path.join(binary_folder, 
+                    'protocol-%i_index-%i.bin' % (\
+                            iProtocol, iStim))
+        print('------------------------------------')
+        print(' starting buffering [...]')
+        print('------------------------------------')
+        iProtocol, iStim = 0, 0
+        while os.path.isfile(binary_file(iProtocol, iStim)):
+            self.BUFFERS.append([])
+            self.TIME_INDICES.append([])
+            self.DTS.append([])
+            iStim = 0
+            while os.path.isfile(binary_file(iProtocol, iStim)):
+                buffer, time_indices, dt = \
+                        self.buffer_stim(binary_folder,
+                                         iProtocol, iStim)
+                self.BUFFERS[iProtocol].append(buffer)
+                self.TIME_INDICES[iProtocol].append(time_indices)
+                self.DTS[iProtocol].append(dt)
+                iStim += 1
+            iProtocol += 1
+        print('------------------------------------')
+        print(' [ok] buffering of all stims done ! ')
+        print('------------------------------------')
+        readyEvent.set()
+
     def run_and_check(self, 
-                     run_flag, quit_flag, datafolder,
-                     binary_folder,
-                     speed=1.,
-                     dt=10e-3,
-                     verbose=True):
+                      runEvent, readyEvent, quitEvent, 
+                      datafolder, binary_folder,
+                      use_prebuffering=True,
+                      speed=1.,
+                      dt=10e-3,
+                      verbose=True):
 
         # showing the blank screen during initialisation
         self.blank_screen()
         self.prepare_stimProps_tables(dt, verbose=verbose)
+        if use_prebuffering:
+            self.buffer_all_stims(binary_folder, readyEvent)
 
         # waiting for the external trigger [...]
-        while not run_flag.is_set() and not quit_flag.is_set():
+        while not runEvent.is_set() and not quitEvent.is_set():
             if verbose:
                 print('waiting for the external trigger [...]')
             time.sleep(0.1)
@@ -338,8 +524,8 @@ class visual_stim:
         ###               RUN (while) LOOP                    ####
         ##########################################################
         while self.running and\
-                run_flag.is_set() and\
-                (not quit_flag.is_set()):
+                runEvent.is_set() and\
+                (not quitEvent.is_set()):
 
             t = (time.time()-t0)*speed # speed factor to speed up things
             iT = int(t/dt)
@@ -350,54 +536,32 @@ class visual_stim:
 
             elif not self.is_interstim[iT]:
                 # we need to show the stimulus
-                self.buffer[int((t-self.time_start_table[iT])/self.dt)].draw()
-                self.add_monitoring_signal(t, self.time_start_table[iT])
+                iFrame = int((t-self.time_start_table[iT])/self.dt)
+                self.buffer[self.time_indices[iFrame]].draw()
+                print(t-self.time_start_table[iT], iFrame)
+                # self.add_monitoring_signal(t, self.time_start_table[iT])
                 self.win.flip()
 
-            elif self.is_interstim[iT] and (current_index<self.next_index_table[iT]):
-
-                # -*- need to buffer a new stim -*-
-                tic = time.time()
+            elif self.is_interstim[iT] and\
+                    (current_index<self.next_index_table[iT]):
+                # -*- need to update the stimulation buffer -*-
                 protocol_id = self.experiment['protocol_id'][self.protocol_id_table[iT]]
                 stim_index = self.experiment['index'][self.stim_index_table[iT]]
-                # get metadata
-                props = np.load(
-                        os.path.join(\
-                            binary_folder,\
-                            'protocol-%i_index-%i.npy' % (\
-                                protocol_id, stim_index)), allow_pickle=True).item()
-                self.dt = 1./props['refresh_freq']
-                shape = props['binary_shape']
-                # get stim array
-                array = np.fromfile(
-                        os.path.join(\
-                            binary_folder,\
-                            'protocol-%i_index-%i.bin' % (\
-                                protocol_id, stim_index)), dtype=np.uint8).reshape(shape)
-                # buffer images in psychopy
-                self.buffer = []
-                for i in range(array.shape[0]):
-                    # self.buffer.append(\
-                        # visual.ImageStim(self.win,
-                            # image=self.gamma_corrected_lum(\
-                                    # 2*(array[i,:,:].astype(float)/255.-0.5)),
-                                         # units='pix', size=self.win.size))
-                    self.buffer.append(\
-                        visual.ImageStim(self.win,
-                                         image=array[i,:,:],
-                                         colorSpace='rgb255',
-                                         units='pix', 
-                                         size=self.win.size))
-
+                if use_prebuffering:
+                    self.buffer = self.BUFFERS[protocol_id][stim_index]
+                    self.time_indices = self.TIME_INDICES[protocol_id][stim_index]
+                    self.dt = self.DTS[protocol_id][stim_index]
+                else:
+                    self.buffer, self.time_indices, self.dt =\
+                            self.buffer_stim(binary_folder,
+                                             protocol_id, stim_index)
+                    print(self.time_indices)
                 #now we update the counter
                 current_index = self.next_index_table[iT]
-                print('buffering stim #%i took %.2fs' % \
-                        (current_index, time.time()-tic))
 
-            # print('t=%.2dh:%.2dm:%.2fs - Running protocol of index %i/%i                                protocol-ID:%i' % (t/3600,
-                # (t%3600)/60, (t%60), i+1, len(self.experiment['index']),
-                 # self.experiment['protocol_id'][i]\
-                         # if 'protocol_id' in self.experiment else 0))
+                print(' - t=%.2dh:%.2dm:%.2fs - Running protocol of index %i/%i protocol-ID:%i' % (t/3600, (t%3600)/60, (t%60),\
+                        current_index, len(self.experiment['index']),
+                        protocol_id))
 
             elif self.is_interstim[iT]:
                 # nothing to do, already buffered, just wait the end of interstim
@@ -721,136 +885,138 @@ def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
     return np.arange(itend), np.arange(itend)/refresh_freq, []
 
 
-class vis_stim_image_built(visual_stim):
+# class vis_stim_image_built(visual_stim):
 
-    """
-    in this object we do not use the psychopy pre-built functions
-    to present stimuli
-    we rather build the image manually (with numpy) and we show a sequence of ImageStim
-    """
+    # """
+    # in this object we do not use the psychopy pre-built functions
+    # to present stimuli
+    # we rather build the image manually (with numpy) and we show a sequence of ImageStim
+    # """
 
-    def __init__(self, protocol,
-		 keys=['bg-color', 'contrast']):
+    # def __init__(self, protocol,
+		 # keys=['bg-color', 'contrast']):
 
-        super().__init__(protocol)
+        # super().__init__(protocol)
 
-        super().init_experiment(protocol, keys)
+        # super().init_experiment(protocol, keys)
 
-        # dealing with refresh rate
-        if 'movie_refresh_freq' not in protocol:
-            protocol['movie_refresh_freq'] = 10.
+        # # dealing with refresh rate
+        # if 'movie_refresh_freq' not in protocol:
+            # protocol['movie_refresh_freq'] = 10.
 
-        self.refresh_freq = protocol['movie_refresh_freq']
-        # adding a appearance threshold (see blob stim)
-        if 'appearance_threshold' not in protocol:
-            protocol['appearance_threshold'] = 2.5 #
-
-
-    def get_frames_sequence(self, index, parent=None):
-        """
-        we build a sequence of frames by successive calls to "self.get_image"
-
-        here we use self.refresh_freq, not cls.refresh_freq
-         """
-        cls = (parent if parent is not None else self)
-
-        time_indices, times, FRAMES = init_times_frames(cls, index,\
-                self.refresh_freq)
-
-        order = self.compute_frame_order(cls,\
-                times, index) # shuffling inside if randomize !!
-
-        for iframe, t in enumerate(times):
-            new_t = order[iframe]/self.refresh_freq
-
-            img = self.get_image(index, new_t,
-                                 parent=parent)
-
-            FRAMES.append(self.image_to_frame(img))
-
-        return time_indices, FRAMES, self.refresh_freq
+        # self.refresh_freq = protocol['movie_refresh_freq']
+        # # adding a appearance threshold (see blob stim)
+        # if 'appearance_threshold' not in protocol:
+            # protocol['appearance_threshold'] = 2.5 #
 
 
-    def compute_frame_order(self, cls, times, index):
-        """
-        function to handle the randomization of frames across time
-        """
+    # def get_frames_sequence(self, index, parent=None):
+        # """
+        # we build a sequence of frames by successive calls to "self.get_image"
 
-        order = np.arange(len(times))
+        # here we use self.refresh_freq, not cls.refresh_freq
+         # """
+        # cls = (parent if parent is not None else self)
 
-        if ('randomize' in self.protocol) and (self.protocol['randomize']=="True"):
-            # we randomize the order of the time sequence here !!
-            if ('randomize-per-trial' in self.protocol) and (self.protocol['randomize-per-trial']=="True"):
-                np.random.seed(int(cls.experiment['seed'][index]+1000*index))
-            else:
-                np.random.seed(int(cls.experiment['seed'][index]))
-            np.random.shuffle(order) # shuffling
+        # time_indices, times, FRAMES = init_times_frames(cls, index,\
+                # self.refresh_freq)
 
-        return order
+        # order = self.compute_frame_order(cls,\
+                # times, index) # shuffling inside if randomize !!
 
+        # for iframe, t in enumerate(times):
+            # new_t = order[iframe]/self.refresh_freq
 
-    def add_grating_patch(self, image,
-                          angle=0,
-                          radius=10,
-                          spatial_freq=0.1,
-                          contrast=1.,
-                          time_phase=0.,
-                          xcenter=0,
-                          zcenter=0):
-        """ add a grating patch, drifting when varying the time phase"""
-        xrot = self.compute_rotated_coords(angle,
-                                           xcenter=xcenter,
-                                           zcenter=zcenter)
+            # img = self.get_image(index, new_t,
+                                 # parent=parent)
 
-        cond = ((self.x-xcenter)**2+(self.z-zcenter)**2)<radius**2
+            # FRAMES.append(self.image_to_frame(img))
 
-        full_grating = self.compute_grating(xrot,
-                                            spatial_freq=spatial_freq,
-                                            contrast=1,
-                                            time_phase=time_phase)-0.5
-
-        image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
+        # return time_indices, FRAMES, self.refresh_freq
 
 
+    # def compute_frame_order(self, cls, times, index):
+        # """
+        # function to handle the randomization of frames across time
+        # """
 
-    def add_gaussian(self, image,
-                     t=0, t0=0, sT=1.,
-                     radius=10,
-                     contrast=1.,
-                     xcenter=0,
-                     zcenter=0):
-        """
-        add a gaussian luminosity increase
-        N.B. when contrast=1, you need black background, otherwise it will saturate
-             when contrast=0.5, you can start from the grey background to reach white in the center
-        """
-        image += 2*np.exp(-((self.x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
-                     contrast*np.exp(-(t-t0)**2/2./sT**2)
+        # order = np.arange(len(times))
+
+        # if ('randomize' in self.protocol) and (self.protocol['randomize']=="True"):
+            # # we randomize the order of the time sequence here !!
+            # if ('randomize-per-trial' in self.protocol) and (self.protocol['randomize-per-trial']=="True"):
+                # np.random.seed(int(cls.experiment['seed'][index]+1000*index))
+            # else:
+                # np.random.seed(int(cls.experiment['seed'][index]))
+            # np.random.shuffle(order) # shuffling
+
+        # return order
 
 
-    def add_dot(self, image, pos, size, color, type='square'):
-        """
-        add dot, either square or circle
-        """
-        if type=='square':
-            cond = (self.x>(pos[0]-size/2)) & (self.x<(pos[0]+size/2)) &\
-                    (self.z>(pos[1]-size/2)) & (self.z<(pos[1]+size/2))
-        else:
-            cond = np.sqrt((self.x-pos[0])**2+(self.z-pos[1])**2)<size
-        image[cond] = color
+    # def add_grating_patch(self, image,
+                          # angle=0,
+                          # radius=10,
+                          # spatial_freq=0.1,
+                          # contrast=1.,
+                          # time_phase=0.,
+                          # xcenter=0,
+                          # zcenter=0):
+        # """ add a grating patch, drifting when varying the time phase"""
+        # xrot = self.compute_rotated_coords(angle,
+                                           # xcenter=xcenter,
+                                           # zcenter=zcenter)
 
-    def new(self):
-        pass
+        # cond = ((self.x-xcenter)**2+(self.z-zcenter)**2)<radius**2
+
+        # full_grating = self.compute_grating(xrot,
+                                            # spatial_freq=spatial_freq,
+                                            # contrast=1,
+                                            # time_phase=time_phase)-0.5
+
+        # image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
+
+
+
+    # def add_gaussian(self, image,
+                     # t=0, t0=0, sT=1.,
+                     # radius=10,
+                     # contrast=1.,
+                     # xcenter=0,
+                     # zcenter=0):
+        # """
+        # add a gaussian luminosity increase
+        # N.B. when contrast=1, you need black background, otherwise it will saturate
+             # when contrast=0.5, you can start from the grey background to reach white in the center
+        # """
+        # image += 2*np.exp(-((self.x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
+                     # contrast*np.exp(-(t-t0)**2/2./sT**2)
+
+
+    # def add_dot(self, image, pos, size, color, type='square'):
+        # """
+        # add dot, either square or circle
+        # """
+        # if type=='square':
+            # cond = (self.x>(pos[0]-size/2)) & (self.x<(pos[0]+size/2)) &\
+                    # (self.z>(pos[1]-size/2)) & (self.z<(pos[1]+size/2))
+        # else:
+            # cond = np.sqrt((self.x-pos[0])**2+(self.z-pos[1])**2)<size
+        # image[cond] = color
+
+    # def new(self):
+        # pass
 
 def launch_VisualStim(protocol, 
-                      run_flag, quit_flag, datafolder, 
-                      binary_folder,
+                      runEvent, readyEvent, quitEvent,
+                      datafolder, binary_folder,
+                      use_prebuffering=True,
                       speed=1.):
 
     stim = build_stim(protocol)
-    stim.run_and_check(run_flag, quit_flag, datafolder,
-                       binary_folder, speed=speed)
-
+    stim.run_and_check(runEvent, readyEvent, quitEvent,
+                       datafolder, binary_folder,
+                       use_prebuffering=use_prebuffering,
+                       speed=speed)
 
 if __name__=='__main__':
 
@@ -885,25 +1051,34 @@ if __name__=='__main__':
     datafolder = manager.Value(c_char_p, tempfile.gettempdir())
     runEvent = multiprocessing.Event()
     runEvent.clear()
+    readyEvent = multiprocessing.Event()
+    readyEvent.clear()
     quitEvent = multiprocessing.Event()
     quitEvent.clear()
 
     with open(args.protocol, 'r') as fp:
         protocol = json.load(fp)
-    protocol['demo'] = True
+    # protocol['demo'] = True
 
     binary_folder = \
         os.path.join(os.path.dirname(args.protocol), 'binaries',
             os.path.basename(args.protocol.replace('.json','')))
 
+    use_pre_buffering = False
     VisualStim_process = multiprocessing.Process(target=launch_VisualStim,\
-            args=(protocol, runEvent, quitEvent, datafolder, binary_folder))
+            args=(protocol,
+                  runEvent, readyEvent, quitEvent,
+                  datafolder, binary_folder,
+                  use_pre_buffering, args.speed))
     VisualStim_process.start()
 
-    time.sleep(1)
-    print(' launching stim ')
+    # -- with use_prebuffering=True
+    # while not readyEvent.is_set():
+        # time.sleep(0.1)
+    # print('\n buffering ready... --> launching stim ! ')
+    time.sleep(2)
     runEvent.set()
-    time.sleep(12)
+    time.sleep(10)
     print(' stoping stim ')
     runEvent.clear()
     

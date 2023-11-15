@@ -10,9 +10,10 @@ def build_stim(protocol):
     if (protocol['Presentation']=='multiprotocol'):
         return physion.visual_stim.main.multiprotocol(protocol)
     else:
-        protocol_name = protocol['Stimulus'].replace('-image','').replace('-', '_').replace('+', '_')
+        protocol_name = protocol['Stimulus'].replace('-', '_').replace('+', '_')
         try:
-            return getattr(getattr(physion.visual_stim.stimuli, protocol_name), 'stim')(protocol)
+            return getattr(getattr(physion.visual_stim.stimuli,\
+                                protocol_name), 'stim')(protocol)
         except ModuleNotFoundError:
             print('\n /!\ Protocol not recognized ! /!\ \n ')
             return None
@@ -20,7 +21,7 @@ def build_stim(protocol):
 def get_default_params(protocol_name):
     """
     """
-    protocol_name = protocol_name.replace('-image','').replace('-', '_').replace('+', '_')
+    protocol_name = protocol_name.replace('-', '_').replace('+', '_')
 
     try:
         Dparams = getattr(getattr(physion.visual_stim.stimuli, protocol_name), 'params')
@@ -40,14 +41,11 @@ def get_default_params(protocol_name):
         params['N-seed'] = 1
         params['N-repeat'] = 1
 
+        params['presentation-blank-screen-color'] = 0
+
         params['presentation-prestim-period'] = 0.5
-        params['presentation-prestim-screen'] = 0
-
         params['presentation-interstim-period'] = 0.5
-        params['presentation-interstim-screen'] = 0
-
         params['presentation-poststim-period'] = 0.5
-        params['presentation-poststim-screen'] = 0
 
         return params
 
@@ -99,7 +97,7 @@ if __name__=='__main__':
                 print('writing: protocol-%i_index-%i.bin' % (\
                                 protocol_id, stim_index))
                 Frames = np.array(\
-                        [255*(1.+f)/2. for f in frames],
+                        [255*(1.+f.T)/2. for f in frames],
                         dtype=np.uint8)
                 # write as binary
                 Frames.tofile(\
