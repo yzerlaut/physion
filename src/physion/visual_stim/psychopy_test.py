@@ -4,7 +4,6 @@ import numpy as np
 SCREEN = [1280, 720]
 #create a window
 mywin = visual.Window(SCREEN,
-                      monitor="testMonitor", 
                       units="pix",
                       checkTiming=False,
                       fullscr=False)

@@ -80,9 +80,10 @@ class visual_stim:
 
         # ---- blank screen ----
         self.blank = visual.ImageStim(\
-                image=np.ones(self.win.size)*blank_color,
+                win=self.win,
+                image=np.ones(self.screen['resolution'])*blank_color,
                 units='pix',
-                win=self.win)
+                size=self.screen['resolution'])
 
         # ---- monitoring square properties ----
         if self.screen['monitoring_square']['location']=='top-right':
@@ -114,11 +115,6 @@ class visual_stim:
                                       pos=pos, sf=0,
                                       color=self.screen['monitoring_square']['color-off'],
                                       units='pix')
-
-        # initialize the times for the monitoring signals
-        self.Ton = int(1e3*self.screen['monitoring_square']['time-on'])
-        self.Toff = int(1e3*self.screen['monitoring_square']['time-off'])
-        self.Tfull, self.Tfull_first = int(self.Ton+self.Toff), int((self.Ton+self.Toff)/2.)
 
 
     ################################
@@ -363,17 +359,11 @@ class visual_stim:
             pass
 
     # blinking in one corner
-    def add_monitoring_signal(self, t, start):
-        """ Pulses of length Ton at the times : [0, 0.5, 1, 2, 3, 4, ...] """
-        # if (int(1e3*new_t-1e3*start)<self.Tfull) and (int(1e3*new_t-1e3*start)%self.Tfull_first<self.Ton):
-            # self.on.draw()
-        # elif int(1e3*new_t-1e3*start)%self.Tfull<self.Ton:
-            # self.on.draw()
-        # else:
-            # self.off.draw()
-        if (int(t-start)<self.Tfull) and (int(t-start)%self.Tfull_first<self.Ton):
+    def add_monitoring_signal(self, dt):
+        """ Pulses of length 0.15s at the times : [0, 0.5, 1, 2, 3, 4, ...] """
+        if (dt<0.15) or ((dt>=0.5) and (dt<0.65)):
             self.on.draw()
-        elif int(t-start)%self.Tfull<self.Ton:
+        elif int(1000*dt)%1000<150:
             self.on.draw()
         else:
             self.off.draw()
@@ -430,24 +420,23 @@ class visual_stim:
                         protocol_id, stim_index)), allow_pickle=True).item()
         dt = 1./props['refresh_freq']
         # get stim array
-        shape = props['binary_shape']
         array = np.fromfile(
                 os.path.join(\
                     binary_folder,\
                     'protocol-%i_index-%i.bin' % (\
                         protocol_id, stim_index)),
-                    dtype=np.uint8).reshape(shape)
+                    dtype=np.uint8).reshape(props['binary_shape'])
         # buffer images in psychopy
         buffer = []
         for i in range(array.shape[0]):
+            image=self.gamma_corrected_lum(\
+                         2.*array[i,:,:].T/255.-1.)
             buffer.append(\
-                visual.ImageStim(self.win,
-                    image=self.gamma_corrected_lum(\
-                         2*array[i,:,:]/255.-1.),
-                    units='pix', size=self.win.size))
-            # import matplotlib.pylab as plt
-            # plt.imshow(2*array[i,:,:]/255.-1.)
-            # plt.show()
+                visual.ImageStim(\
+                    win=self.win,
+                    image=image,
+                    units='pix', 
+                    size=self.screen['resolution']))
         print(' - buffering stim #%i of protocol #%i (took %.2fs)' % (\
                 stim_index+1, protocol_id+1, time.time()-tic))
         return buffer, props['time_indices'], dt
@@ -538,9 +527,9 @@ class visual_stim:
                 # we need to show the stimulus
                 iFrame = int((t-self.time_start_table[iT])/self.dt)
                 self.buffer[self.time_indices[iFrame]].draw()
-                print(t-self.time_start_table[iT], iFrame)
-                # self.add_monitoring_signal(t, self.time_start_table[iT])
+                self.add_monitoring_signal(t-self.time_start_table[iT])
                 self.win.flip()
+                time.sleep(0.01)
 
             elif self.is_interstim[iT] and\
                     (current_index<self.next_index_table[iT]):
@@ -555,7 +544,6 @@ class visual_stim:
                     self.buffer, self.time_indices, self.dt =\
                             self.buffer_stim(binary_folder,
                                              protocol_id, stim_index)
-                    print(self.time_indices)
                 #now we update the counter
                 current_index = self.next_index_table[iT]
 
@@ -1058,13 +1046,13 @@ if __name__=='__main__':
 
     with open(args.protocol, 'r') as fp:
         protocol = json.load(fp)
-    # protocol['demo'] = True
+    protocol['demo'] = True
 
     binary_folder = \
         os.path.join(os.path.dirname(args.protocol), 'binaries',
             os.path.basename(args.protocol.replace('.json','')))
 
-    use_pre_buffering = False
+    use_pre_buffering = True
     VisualStim_process = multiprocessing.Process(target=launch_VisualStim,\
             args=(protocol,
                   runEvent, readyEvent, quitEvent,
