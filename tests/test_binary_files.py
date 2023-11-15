@@ -9,17 +9,17 @@ mywin = visual.Window(SCREEN,
                       checkTiming=False,
                       fullscr=False)
 
-X, Z = np.meshgrid(np.linspace(-1, 1, SCREEN[0]),
-                   np.linspace(-1, 1, SCREEN[1]))
+props = np.load('../src/physion/acquisition/protocols/binaries/drifting-gratings/protocol-0_index-0.npy',
+                allow_pickle=True).item()
+array = np.fromfile('../src/physion/acquisition/protocols/binaries/drifting-gratings/protocol-0_index-0.bin',
+                    dtype=np.uint8).reshape(props['binary_shape'])
 
 #draw the stimuli and update the window
 i=0
 while True: #this creates a never-ending loop
     stim = visual.ImageStim(win=mywin,
-                            image=np.clip(np.random.randn(*X.shape)+\
-                                          np.sin(8*np.pi*X+i/10.),
+                            image=np.clip(2.*array[i,:,:]/255.-1,
                                           -1, 1),
-                            # units='pix',
                             size=mywin.size)
     stim.draw()
     mywin.flip()

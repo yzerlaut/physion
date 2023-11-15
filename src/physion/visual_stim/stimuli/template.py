@@ -9,7 +9,7 @@ copy this and rename to the desired script name
 """
 import numpy as np
 
-from physion.visual_stim.main import vis_stim_image_built,\
+from physion.visual_stim.main import visual_stim,\
         init_times_frames, init_bg_image
 
 ##########################################
@@ -32,7 +32,7 @@ params = {"movie_refresh_freq":2,
           "dotcolor-1": -1, "dotcolor-2": 1, "N-dotcolor": 0}
     
 
-class stim(vis_stim_image_built):
+class stim(visual_stim):
     """
     stimulus specific visual stimulation object
 

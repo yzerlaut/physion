@@ -1,7 +1,7 @@
 import os, pathlib
 import numpy as np
 
-from physion.visual_stim.main import vis_stim_image_built,\
+from physion.visual_stim.main import visual_stim,\
         init_times_frames, init_bg_image
 from physion.visual_stim.preprocess_NI import load,\
         img_after_hist_normalization, adapt_to_screen_resolution
@@ -37,7 +37,7 @@ def get_NaturalImages_as_array(screen):
         print(' /!\  Natural Images folder not found !!! /!\  ')
         return [np.ones((10,10))*0.5 for i in range(5)]
 
-class stim(vis_stim_image_built):
+class stim(visual_stim):
     """
     """
 

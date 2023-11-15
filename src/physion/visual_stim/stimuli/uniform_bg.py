@@ -1,6 +1,6 @@
 import numpy as np
 
-from physion.visual_stim.main import vis_stim_image_built, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 
 ##########################################
 ##  ----    UNIFORM BACKGROUND   --- #####
@@ -13,7 +13,7 @@ params = {"movie_refresh_freq":0.1,
           "bg-color-1": 0., "bg-color-2": 1., "N-bg-color": 0}
     
 
-class stim(vis_stim_image_built):
+class stim(visual_stim):
     """
     stimulus specific visual stimulation object
 
