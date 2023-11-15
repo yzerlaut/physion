@@ -59,10 +59,12 @@ class visual_stim:
                                      fullscr=self.screen['fullscreen'],
                                      units='pix',
                                      checkTiming=False,
+                                     colorSpace='rgb255',
                                      color=blank_color)
 
             # ---- blank screen ----
-            self.blank = visual.GratingStim(win=self.win, size=10000,
+            self.blank = visual.GratingStim(win=self.win,
+                                            size=10000,
                                             pos=[0,0], sf=0,
                                             color=blank_color,
                                             units='pix')
@@ -375,15 +377,17 @@ class visual_stim:
                 # buffer images in psychopy
                 self.buffer = []
                 for i in range(array.shape[0]):
-                    self.buffer.append(\
-                        visual.ImageStim(self.win,
-                            image=self.gamma_corrected_lum(\
-                                    2*(array[i,:,:].astype(float)/255.-0.5)),
-                                         units='pix', size=self.win.size))
                     # self.buffer.append(\
                         # visual.ImageStim(self.win,
-                                         # image=array[i,:,:],
+                            # image=self.gamma_corrected_lum(\
+                                    # 2*(array[i,:,:].astype(float)/255.-0.5)),
                                          # units='pix', size=self.win.size))
+                    self.buffer.append(\
+                        visual.ImageStim(self.win,
+                                         image=array[i,:,:],
+                                         colorSpace='rgb255',
+                                         units='pix', 
+                                         size=self.win.size))
 
                 #now we update the counter
                 current_index = self.next_index_table[iT]

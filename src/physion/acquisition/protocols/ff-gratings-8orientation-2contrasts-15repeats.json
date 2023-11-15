@@ -5,7 +5,7 @@
   "shuffling-seed": 1,
   "movie_refresh_freq":0.01,
   "presentation-duration": 2,
-  "presentation-blank-screen-color": 0,
+  "presentation-blank-screen-color": 0.5,
   "presentation-prestim-period": 4,
   "presentation-poststim-period": 4,
   "presentation-interstim-period": 4,

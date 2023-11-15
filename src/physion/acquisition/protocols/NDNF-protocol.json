@@ -9,7 +9,7 @@
   "Protocol-5": "subprotocols/NDNF/Natural-Images-4-repeats.json",
   "Protocol-6": "subprotocols/blank/grey-10min.json",
   "Protocol-7": "subprotocols/NDNF/drifting-gratings.json",
-  "presentation-blank-screen-color": 0,
+  "presentation-blank-screen-color": 0.5,
   "presentation-prestim-period": 3,
   "presentation-poststim-period": 3,
   "presentation-interstim-period": 3,
