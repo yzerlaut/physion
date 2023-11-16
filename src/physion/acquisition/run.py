@@ -7,9 +7,9 @@ from physion.acquisition.tools import base_path,\
         check_gui_to_init_metadata, NIdaq_metadata_init
 
 try:
-    from physion.visual_stim.build import build_stim
+    from physion.visual_stim.main import launch_VisualStim
 except ModuleNotFoundError:
-    def build_stim(**args):
+    def launch_VisualStim(**args):
         return None
     # print(' /!\ Problem with the Visual-Stimulation module /!\ ')
 
@@ -35,16 +35,36 @@ def init_visual_stim(self):
               'protocols', self.metadata['protocol']+'.json'), 'r') as fp:
         self.protocol = json.load(fp)
 
+    binary_folder = \
+        os.path.join(base_path, 'protocols', 'binaries',\
+        self.metadata['protocol'])
+
     self.protocol['screen'] = self.metadata['Screen']
 
-    if self.demoW.isChecked():
+    if self.onlyDemoButton.isChecked():
         self.protocol['demo'] = True
     else:
         self.protocol['demo'] = False
 
-    self.stim = build_stim(self.protocol)
-    self.stim.experiment['protocol-name'] =\
-            self.metadata['protocol'] # storing in stim for later, to check the need to re-buffer
+    self.VisualStim_process = multiprocessing.Process(\
+            target=launch_VisualStim,\
+            args=(self.protocol,
+                  self.runEvent, self.readyEvent, self.quitEvent,
+                  datafolder, binary_folder))
+    self.VisualStim_process.start()
+
+    ## freeze the interface until the buffering is done
+    self.initButton.setEnabled(False) # acq blocked during init
+    self.runButton.setEnabled(False) # acq blocked during init
+    self.stopButton.setEnabled(False) # acq blocked during init
+    while not self.readyEvent.is_set():
+        time.sleep(0.1)
+    self.initButton.setEnabled(True) # acq blocked during init
+    self.runButton.setEnabled(True) # acq blocked during init
+    self.stopButton.setEnabled(True) # acq blocked during init
+
+    
+
 
 
 def check_FaceCamera(self):
@@ -57,7 +77,6 @@ def initialize(self):
     if self.config is not None:
         check_FaceCamera(self)
 
-        self.bufferButton.setEnabled(False) # should be already blocked, but for security 
         self.runButton.setEnabled(False) # acq blocked during init
 
         self.metadata = check_gui_to_init_metadata(self)
@@ -98,7 +117,7 @@ def initialize(self):
 
         NIdaq_metadata_init(self)
 
-        if not self.demoW.isChecked():
+        if not self.onlyDemoButton.isChecked():
             try:
                 self.acq = Acquisition(dt=1./self.metadata['NIdaq-acquisition-frequency'],
                                        Nchannel_analog_in=self.metadata['NIdaq-analog-input-channels'],
@@ -112,8 +131,6 @@ def initialize(self):
                 self.acq = None
 
         self.init = True
-        if (self.stim is not None) and (self.stim.buffer is None):
-            self.bufferButton.setEnabled(True)
         self.runButton.setEnabled(True)
 
         self.save_experiment(self.metadata) # saving all metadata after full initialization
@@ -126,26 +143,6 @@ def initialize(self):
     else:
         self.statusBar.showMessage(' no config selected -> pick a config first !')
 
-def buffer_stim(self):
-    self.bufferButton.setEnabled(False)
-    self.initButton.setEnabled(False)
-    self.stopButton.setEnabled(False)
-    self.runButton.setEnabled(False)
-    self.update()
-    # ----------------------------------
-    # buffers the visual stimulus
-    if self.stim.buffer is None:
-       self.statusBar.showMessage('buffering visual stimulation [...]')
-       self.stim.buffer_stim(self)
-       self.statusBar.showMessage('buffering done !')
-    else:
-       self.statusBar.showMessage('visual stim already buffered, keeping this !')
-       print('\n --> visual stim already buffered, keeping this')
-    # --------------------------------
-    self.initButton.setEnabled(True)
-    self.stopButton.setEnabled(True)
-    self.runButton.setEnabled(True)
-    self.update()
 
 def toggle_FaceCamera_process(self):
 
@@ -188,7 +185,6 @@ def run(self):
 
     if self.check_metadata(): # invalid if not the same protocol !
         self.initButton.setEnabled(False)
-        self.bufferButton.setEnabled(False)
 
         self.stop_flag=False
         self.runEvent.set() # start the run flag for the facecamera
