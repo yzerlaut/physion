@@ -474,7 +474,7 @@ class visual_stim:
         readyEvent.set()
 
     def run_and_check(self, 
-                      runEvent, readyEvent, quitEvent, 
+                      runEvent, readyEvent,
                       datafolder, binary_folder,
                       use_prebuffering=True,
                       speed=1.,
@@ -488,7 +488,7 @@ class visual_stim:
             self.buffer_all_stims(binary_folder, readyEvent)
 
         # waiting for the external trigger [...]
-        while not runEvent.is_set() and not quitEvent.is_set():
+        while not runEvent.is_set():
             if verbose:
                 print('waiting for the external trigger [...]')
             time.sleep(0.1)
@@ -517,8 +517,7 @@ class visual_stim:
         print('        RUNNING PROTOCOL              ')
         print('--------------------------------------\n')
         while self.running and\
-                runEvent.is_set() and\
-                (not quitEvent.is_set()):
+                runEvent.is_set():
 
             t = (time.time()-t0)*speed # speed factor to speed up things
             iT = int(t/dt)
@@ -526,8 +525,9 @@ class visual_stim:
             if self.stim_index_table[iT]<0:
                 # we reached the end -> need to stop   (see stim_index_table[t>tstop]=-1 above)
 
-                self.running = False
                 self.blank_screen()
+                self.running = False
+
                 print('--------------------------------------')
                 print(' [ok] protocol terminated successfully')
                 print('--------------------------------------')
@@ -565,13 +565,17 @@ class visual_stim:
 
             elif self.is_interstim[iT]:
                 # nothing to do, already buffered, just wait the end of interstim
-
-                pass
+                self.blank_screen()
 
             else:
                 print('condition should never occur')
             
-        self.blank_screen()
+        print('\n')
+        print('--------------------------------------')
+        print('       STOPING PROTOCOL               ')
+        print(' --> closing the VisualStim process !')
+        print('--------------------------------------\n')
+        self.close()
 
     #################################################
     #############    DRAWING STIMULI   ##############
@@ -885,139 +889,26 @@ def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
     itend = np.max([1, int(security_factor*interval*refresh_freq)])
     return np.arange(itend), np.arange(itend)/refresh_freq, []
 
-
-# class vis_stim_image_built(visual_stim):
-
-    # """
-    # in this object we do not use the psychopy pre-built functions
-    # to present stimuli
-    # we rather build the image manually (with numpy) and we show a sequence of ImageStim
-    # """
-
-    # def __init__(self, protocol,
-		 # keys=['bg-color', 'contrast']):
-
-        # super().__init__(protocol)
-
-        # super().init_experiment(protocol, keys)
-
-        # # dealing with refresh rate
-        # if 'movie_refresh_freq' not in protocol:
-            # protocol['movie_refresh_freq'] = 10.
-
-        # self.refresh_freq = protocol['movie_refresh_freq']
-        # # adding a appearance threshold (see blob stim)
-        # if 'appearance_threshold' not in protocol:
-            # protocol['appearance_threshold'] = 2.5 #
-
-
-    # def get_frames_sequence(self, index, parent=None):
-        # """
-        # we build a sequence of frames by successive calls to "self.get_image"
-
-        # here we use self.refresh_freq, not cls.refresh_freq
-         # """
-        # cls = (parent if parent is not None else self)
-
-        # time_indices, times, FRAMES = init_times_frames(cls, index,\
-                # self.refresh_freq)
-
-        # order = self.compute_frame_order(cls,\
-                # times, index) # shuffling inside if randomize !!
-
-        # for iframe, t in enumerate(times):
-            # new_t = order[iframe]/self.refresh_freq
-
-            # img = self.get_image(index, new_t,
-                                 # parent=parent)
-
-            # FRAMES.append(self.image_to_frame(img))
-
-        # return time_indices, FRAMES, self.refresh_freq
-
-
-    # def compute_frame_order(self, cls, times, index):
-        # """
-        # function to handle the randomization of frames across time
-        # """
-
-        # order = np.arange(len(times))
-
-        # if ('randomize' in self.protocol) and (self.protocol['randomize']=="True"):
-            # # we randomize the order of the time sequence here !!
-            # if ('randomize-per-trial' in self.protocol) and (self.protocol['randomize-per-trial']=="True"):
-                # np.random.seed(int(cls.experiment['seed'][index]+1000*index))
-            # else:
-                # np.random.seed(int(cls.experiment['seed'][index]))
-            # np.random.shuffle(order) # shuffling
-
-        # return order
-
-
-    # def add_grating_patch(self, image,
-                          # angle=0,
-                          # radius=10,
-                          # spatial_freq=0.1,
-                          # contrast=1.,
-                          # time_phase=0.,
-                          # xcenter=0,
-                          # zcenter=0):
-        # """ add a grating patch, drifting when varying the time phase"""
-        # xrot = self.compute_rotated_coords(angle,
-                                           # xcenter=xcenter,
-                                           # zcenter=zcenter)
-
-        # cond = ((self.x-xcenter)**2+(self.z-zcenter)**2)<radius**2
-
-        # full_grating = self.compute_grating(xrot,
-                                            # spatial_freq=spatial_freq,
-                                            # contrast=1,
-                                            # time_phase=time_phase)-0.5
-
-        # image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
-
-
-
-    # def add_gaussian(self, image,
-                     # t=0, t0=0, sT=1.,
-                     # radius=10,
-                     # contrast=1.,
-                     # xcenter=0,
-                     # zcenter=0):
-        # """
-        # add a gaussian luminosity increase
-        # N.B. when contrast=1, you need black background, otherwise it will saturate
-             # when contrast=0.5, you can start from the grey background to reach white in the center
-        # """
-        # image += 2*np.exp(-((self.x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
-                     # contrast*np.exp(-(t-t0)**2/2./sT**2)
-
-
-    # def add_dot(self, image, pos, size, color, type='square'):
-        # """
-        # add dot, either square or circle
-        # """
-        # if type=='square':
-            # cond = (self.x>(pos[0]-size/2)) & (self.x<(pos[0]+size/2)) &\
-                    # (self.z>(pos[1]-size/2)) & (self.z<(pos[1]+size/2))
-        # else:
-            # cond = np.sqrt((self.x-pos[0])**2+(self.z-pos[1])**2)<size
-        # image[cond] = color
-
-    # def new(self):
-        # pass
+##############################################
+## to be used by the multiprocessing module ##
+##############################################
 
 def launch_VisualStim(protocol, 
-                      runEvent, readyEvent, quitEvent,
+                      runEvent, readyEvent,
                       datafolder, binary_folder,
                       use_prebuffering=True,
                       speed=1.):
 
     stim = build_stim(protocol)
-    stim.run_and_check(runEvent, readyEvent, quitEvent,
+    np.save(os.path.join(str(datafolder.get()),
+            'visual-stim.npy'), stim.experiment)
+    print('[ok] Visual-stimulation data saved as "%s"' %\
+            os.path.join(str(datafolder.get()), 'visual-stim.npy'))
+    stim.run_and_check(runEvent, readyEvent,
                        datafolder, binary_folder,
                        use_prebuffering=use_prebuffering,
                        speed=speed)
+
 
 if __name__=='__main__':
 
@@ -1047,15 +938,12 @@ if __name__=='__main__':
     from physion.acquisition.tools import base_path
     from physion.visual_stim.build import build_stim
 
-
     manager = multiprocessing.Manager() # to share a str across processes
     datafolder = manager.Value(c_char_p, tempfile.gettempdir())
     runEvent = multiprocessing.Event()
     runEvent.clear()
     readyEvent = multiprocessing.Event()
     readyEvent.clear()
-    quitEvent = multiprocessing.Event()
-    quitEvent.clear()
 
     with open(args.protocol, 'r') as fp:
         protocol = json.load(fp)
@@ -1068,7 +956,7 @@ if __name__=='__main__':
     use_pre_buffering = True
     VisualStim_process = multiprocessing.Process(target=launch_VisualStim,\
             args=(protocol,
-                  runEvent, readyEvent, quitEvent,
+                  runEvent, readyEvent,
                   datafolder, binary_folder,
                   use_pre_buffering, args.speed))
     VisualStim_process.start()

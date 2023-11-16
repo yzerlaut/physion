@@ -32,8 +32,8 @@ def update_config(self):
 
         # now update protocols
         if self.config['protocols']=='all':
-            files = os.listdir(os.path.join(base_path, 'protocols'))
-            self.protocol_list = [f.replace('.json', '') for f in files if f.endswith('.json')]
+            self.protocol_list = os.listdir(os.path.join(base_path,
+                                            'protocols', 'binaries'))
         else:
             self.protocol_list = self.config['protocols']
         self.protocolBox.clear()
