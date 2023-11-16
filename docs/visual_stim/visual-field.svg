@@ -2,24 +2,24 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    width="126.36198mm"
    height="138.32339mm"
    viewBox="0 0 126.362 138.3234"
    version="1.1"
    id="svg8"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
    sodipodi:docname="visual-field.svg"
    inkscape:export-filename="/home/yann.zerlaut/work/physion/doc/visual-field.png"
    inkscape:export-xdpi="100"
-   inkscape:export-ydpi="100"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:dc="http://purl.org/dc/elements/1.1/">
+   inkscape:export-ydpi="100">
   <defs
      id="defs2"
      style="stroke-linecap:butt;stroke-linejoin:round">
@@ -907,16 +907,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="1"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4142136"
-     inkscape:cx="150.26019"
-     inkscape:cy="266.2257"
+     inkscape:zoom="0.7071068"
+     inkscape:cx="-522.19203"
+     inkscape:cy="158.90386"
      inkscape:document-units="mm"
-     inkscape:current-layer="patch_1"
+     inkscape:current-layer="layer1"
      showgrid="false"
      inkscape:window-width="1920"
-     inkscape:window-height="1177"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
+     inkscape:window-height="1009"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
      inkscape:window-maximized="1"
      fit-margin-top="0"
      fit-margin-left="0"
@@ -931,6 +931,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -1065,8 +1066,8 @@
        d="m 38.939186,131.8809 v 91.02093"
        style="fill:none;stroke:#000000;stroke-width:0.26458299;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0.264583, 0.264583;stroke-dashoffset:0;stroke-opacity:1;marker-start:url(#marker5849);marker-end:url(#marker5967)" />
     <flowRoot
-       transform="matrix(5.1246188e-4,0.06864913,-0.06864913,5.1246188e-4,66.775735,163.61336)"
-       style="font-style:normal;font-weight:normal;font-size:46.2484px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round"
+       transform="matrix(5.1246188e-4,0.06864913,-0.06864913,5.1246188e-4,65.717401,163.61336)"
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round"
        id="flowRoot7386"
        xml:space="preserve"><flowRegion
          id="flowRegion7382"
@@ -1078,8 +1079,7 @@
            id="rect7380"
            style="stroke-linecap:butt;stroke-linejoin:round" /></flowRegion><flowPara
          id="flowPara7384"
-         style="font-size:46.2484px;stroke-linecap:butt;stroke-linejoin:round">48cm</flowPara></flowRoot>
-    <path
+         style="stroke-linecap:butt;stroke-linejoin:round">48cm</flowPara></flowRoot>    <path
        style="fill:none;stroke:#000000;stroke-width:0.26458299;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0.264583, 0.264583;stroke-dashoffset:0;stroke-opacity:1;marker-start:url(#marker6271);marker-end:url(#marker6401)"
        d="m 30.727252,175.37441 -20.9617477,0.2446"
        id="path7529"
@@ -1088,39 +1088,42 @@
     <text
        xml:space="preserve"
        id="text4733"
-       style="font-style:normal;font-weight:normal;font-size:2.82223px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect4735);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-linejoin:round"
+       style="font-style:normal;font-weight:normal;font-size:2.82223105px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect4735);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round"
        x="3.7030737"
        y="184.77969"><tspan
-         x="44.447266"
-         y="-45.913475"
-         id="tspan11229">15cm</tspan></text>
+         x="15.463096"
+         y="174.5253"
+         id="tspan9503"
+         style="stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round">15cm</tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.26458333,0,0,0.26458333,52.433736,108.81499)"
        id="text6813"
-       style="font-style:normal;font-weight:normal;font-size:10.6667px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect6815);fill:#000000;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round" />
+       style="font-style:normal;font-weight:normal;font-size:10.66670036px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect6815);fill:#000000;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round" />
     <text
        xml:space="preserve"
        id="text1044"
-       style="font-style:normal;font-weight:normal;font-size:2.82223px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect1046);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-linejoin:round"
+       style="font-style:normal;font-weight:normal;font-size:2.82223105px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect1046);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round"
        x="8.7630196"
        y="204.24594"><tspan
-         x="44.447266"
-         y="-45.913475"
-         id="tspan11233">0<tspan
-   style="font-size:0.485365px;baseline-shift:super"
-   id="tspan11231">O</tspan></tspan></text>
+         x="20.523012"
+         y="193.99156"
+         id="tspan9521"
+         style="stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round">0<tspan
+   style="font-size:0.48536491px;baseline-shift:super;stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round"
+   id="tspan9519">O</tspan></tspan></text>
     <text
        xml:space="preserve"
        id="text3652"
-       style="font-style:normal;font-weight:normal;font-size:2.82223px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect3654);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-linejoin:round"
+       style="font-style:normal;font-weight:normal;font-size:2.82223105px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect3654);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round"
        x="5.8478084"
        y="195.39735"><tspan
-         x="44.447266"
-         y="-45.913475"
-         id="tspan11237">~45<tspan
-   style="font-size:0.485365px;baseline-shift:super"
-   id="tspan11235">O</tspan></tspan></text>
+         x="17.607798"
+         y="185.14297"
+         id="tspan9529"
+         style="stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round">~45<tspan
+   style="font-size:0.48536491px;baseline-shift:super;stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round"
+   id="tspan9527">O</tspan></tspan></text>
     <path
        sodipodi:nodetypes="cccc"
        inkscape:connector-curvature="0"
@@ -1137,12 +1140,13 @@
        xml:space="preserve"
        transform="rotate(90)"
        id="text7537"
-       style="font-style:normal;font-weight:normal;font-size:3.71822px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect7539);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.0929556;stroke-linecap:butt;stroke-linejoin:round"
+       style="font-style:normal;font-weight:normal;font-size:3.71822429px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect7539);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.0929556;stroke-linecap:butt;stroke-linejoin:round"
        x="169.52328"
        y="-35.096382"><tspan
-         x="8.8378906"
-         y="-10.750333"
-         id="tspan11239">screen</tspan></text>
+         x="170.3448"
+         y="-33.018742"
+         id="tspan9531"
+         style="stroke-width:0.0929556;stroke-linecap:butt;stroke-linejoin:round">screen</tspan></text>
     <path
        style="fill:none;stroke:#000000;stroke-width:0.33986735px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="m 56.714774,202.26046 c 0,0 16.999631,6.44298 -1.38317,7.94853"
@@ -1205,8 +1209,8 @@
     <flowRoot
        xml:space="preserve"
        id="flowRoot1124"
-       style="font-style:normal;font-weight:normal;font-size:46.2484px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.02878009,0.06232714,-0.06232714,0.02878009,106.12178,167.77389)"><flowRegion
+       style="font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round"
+       transform="matrix(0.02878009,0.06232714,-0.06232714,0.02878009,105.7476,167.96098)"><flowRegion
          id="flowRegion1120"
          style="stroke-linecap:butt;stroke-linejoin:round"><rect
            id="rect1118"
@@ -1216,8 +1220,7 @@
            y="335.10577"
            style="stroke-linecap:butt;stroke-linejoin:round" /></flowRegion><flowPara
          id="flowPara1122"
-         style="font-size:46.2484px;stroke-linecap:butt;stroke-linejoin:round">27cm</flowPara></flowRoot>
-    <path
+         style="stroke-linecap:butt;stroke-linejoin:round">27cm</flowPara></flowRoot>    <path
        style="fill:#cccccc;stroke:#000000;stroke-width:0.98100001;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        d="m 74.233142,170.07527 0.508417,11.38725 12.86863,28.42433 8.221434,7.8953"
        id="path1150"
@@ -1232,11 +1235,17 @@
     <g
        style="stroke-linecap:butt;stroke-linejoin:round"
        id="patch_1"
-       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)" />
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
+      <path
+         inkscape:connector-curvature="0"
+         d="M 0,102.04724 H 119.05512 V 0 H 0 Z"
+         style="fill:#ffffff;stroke-linecap:butt;stroke-linejoin:round"
+         id="path1585" />
+    </g>
     <g
        id="patch_2"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <path
          id="path1588"
          style="fill:none;stroke-linecap:butt;stroke-linejoin:round"
@@ -1246,7 +1255,7 @@
     <g
        id="matplotlib.axis_1"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <g
          id="xtick_1"
          style="stroke-linecap:butt;stroke-linejoin:round">
@@ -1256,7 +1265,7 @@
           <defs
              id="defs1592">
             <path
-               style="stroke:#000000;stroke-width:0.8;stroke-linecap:butt;stroke-linejoin:round"
+               style="stroke:#000000;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:round"
                id="path2000"
                d="M 0,0 V 4"
                inkscape:connector-curvature="0" />
@@ -1269,7 +1278,7 @@
                y="68.196854"
                xlink:href="#mbc990f057c"
                x="48.469635"
-               style="stroke:#000000;stroke-width:0.8;stroke-linecap:butt;stroke-linejoin:round"
+               style="stroke:#000000;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:round"
                width="100%"
                height="100%" />
           </g>
@@ -1316,7 +1325,7 @@
                y="68.196854"
                xlink:href="#mbc990f057c"
                x="70.805237"
-               style="stroke:#000000;stroke-width:0.8;stroke-linecap:butt;stroke-linejoin:round"
+               style="stroke:#000000;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:round"
                width="100%"
                height="100%" />
           </g>
@@ -1371,7 +1380,7 @@
                y="68.196854"
                xlink:href="#mbc990f057c"
                x="93.140831"
-               style="stroke:#000000;stroke-width:0.8;stroke-linecap:butt;stroke-linejoin:round"
+               style="stroke:#000000;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:round"
                width="100%"
                height="100%" />
           </g>
@@ -1704,7 +1713,7 @@
     <g
        id="matplotlib.axis_2"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <g
          id="ytick_1"
          style="stroke-linecap:butt;stroke-linejoin:round">
@@ -1714,7 +1723,7 @@
           <defs
              id="defs1710">
             <path
-               style="stroke:#000000;stroke-width:0.8;stroke-linecap:butt;stroke-linejoin:round"
+               style="stroke:#000000;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:round"
                id="path2093"
                d="M 0,0 H -4"
                inkscape:connector-curvature="0" />
@@ -1727,7 +1736,7 @@
                y="65.196854"
                xlink:href="#m17ad56db27"
                x="42.354332"
-               style="stroke:#000000;stroke-width:0.8;stroke-linecap:butt;stroke-linejoin:round"
+               style="stroke:#000000;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:round"
                width="100%"
                height="100%" />
           </g>
@@ -1765,7 +1774,7 @@
                y="49.437073"
                xlink:href="#m17ad56db27"
                x="42.354332"
-               style="stroke:#000000;stroke-width:0.8;stroke-linecap:butt;stroke-linejoin:round"
+               style="stroke:#000000;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:round"
                width="100%"
                height="100%" />
           </g>
@@ -1820,7 +1829,7 @@
                y="33.677292"
                xlink:href="#m17ad56db27"
                x="42.354332"
-               style="stroke:#000000;stroke-width:0.8;stroke-linecap:butt;stroke-linejoin:round"
+               style="stroke:#000000;stroke-width:0.80000001;stroke-linecap:butt;stroke-linejoin:round"
                width="100%"
                height="100%" />
           </g>
@@ -2096,7 +2105,7 @@
     <g
        id="line2d_7"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <path
          id="path1815"
          style="fill:none;stroke:#000000;stroke-width:1.5;stroke-linecap:square;stroke-linejoin:round"
@@ -2107,7 +2116,7 @@
     <g
        id="line2d_8"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <path
          id="path1818"
          style="fill:none;stroke:#d62728;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:3.7, 1.6;stroke-dashoffset:0"
@@ -2118,7 +2127,7 @@
     <g
        id="line2d_9"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <path
          id="path1821"
          style="fill:none;stroke:#2ca02c;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:1, 1.65;stroke-dashoffset:0"
@@ -2129,7 +2138,7 @@
     <g
        id="line2d_10"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <path
          id="path1824"
          style="fill:none;stroke:#1f77b4;stroke-linecap:butt;stroke-linejoin:round;stroke-dasharray:1, 1.65;stroke-dashoffset:0"
@@ -2142,7 +2151,7 @@
     <g
        id="line2d_11"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <defs
          id="defs1828">
         <path
@@ -2176,7 +2185,7 @@
     <g
        id="line2d_12"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <g
          id="g1841"
          clip-path="url(#p763297d4c7)"
@@ -2202,17 +2211,17 @@
     <g
        id="patch_3"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <path
          id="path1844"
-         style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square;stroke-linejoin:miter"
+         style="fill:none;stroke:#000000;stroke-width:0.80000001;stroke-linecap:square;stroke-linejoin:miter"
          d="M 42.354331,65.19685 V 19.84252"
          inkscape:connector-curvature="0" />
     </g>
     <g
        id="patch_4"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <path
          id="path1847"
          style="fill:none;stroke-linecap:butt;stroke-linejoin:round"
@@ -2222,17 +2231,17 @@
     <g
        id="patch_5"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <path
          id="path1850"
-         style="fill:none;stroke:#000000;stroke-width:0.8;stroke-linecap:square;stroke-linejoin:miter"
+         style="fill:none;stroke:#000000;stroke-width:0.80000001;stroke-linecap:square;stroke-linejoin:miter"
          d="M 45.354331,68.19685 H 107.71653"
          inkscape:connector-curvature="0" />
     </g>
     <g
        id="patch_6"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <path
          id="path1853"
          style="fill:none;stroke-linecap:butt;stroke-linejoin:round"
@@ -2242,7 +2251,7 @@
     <g
        id="text_9"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,101.85162)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,98.743768)">
       <!-- lin. approx. -->
       <g
          id="g1885"
@@ -2370,7 +2379,7 @@
     <g
        id="text_10"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-14.374862,95.405988)">
+       transform="matrix(0.35277777,0,0,0.35277777,-16.227451,92.922935)">
       <!-- max. -->
       <g
          id="g1896"
@@ -2492,7 +2501,7 @@
     <g
        id="text_11"
        style="stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.3906459,0,0,0.3906459,-10.859048,99.507753)">
+       transform="matrix(0.35277777,0,0,0.35277777,-13.052451,96.627101)">
       <!-- max. -->
       <g
          id="g1928"
@@ -2751,12 +2760,11 @@
            y="-87.412704"
            style="stroke-linecap:butt;stroke-linejoin:round" /></flowRegion><flowPara
          id="flowPara2268"
-         style="stroke-linecap:butt;stroke-linejoin:round" /></flowRoot>
-    <flowRoot
+         style="stroke-linecap:butt;stroke-linejoin:round" /></flowRoot>    <flowRoot
        xml:space="preserve"
        id="flowRoot2270"
-       style="font-style:normal;font-weight:normal;font-size:10.6667px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round"
-       transform="matrix(0.29146563,0,0,0.29146563,107.11945,154.77338)"><flowRegion
+       style="font-style:normal;font-weight:normal;font-size:10.66666698px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round"
+       transform="matrix(0.29146563,0,0,0.29146563,103.0035,152.7154)"><flowRegion
          id="flowRegion2272"
          style="stroke-linecap:butt;stroke-linejoin:round"><rect
            id="rect2274"
@@ -2766,8 +2774,7 @@
            y="-231.66249"
            style="stroke-linecap:butt;stroke-linejoin:round" /></flowRegion><flowPara
          id="flowPara2276"
-         style="stroke-linecap:butt;stroke-linejoin:round">linear approx. for stimulus position and dimensions in the visual field</flowPara></flowRoot>
-    <g
+         style="stroke-linecap:butt;stroke-linejoin:round">linear approx. for stimulus position and dimensions in the visual field</flowPara></flowRoot>    <g
        id="figure_1-6"
        transform="matrix(0.35277777,0,0,0.35277777,55.129421,93.301535)"
        style="stroke-linecap:butt;stroke-linejoin:round">
@@ -3747,10 +3754,11 @@
          id="flowPara4655"
          style="baseline-shift:baseline;fill:#ff0000;stroke-linecap:butt;stroke-linejoin:round">visual field covered:</flowPara><flowPara
          style="baseline-shift:baseline;fill:#ff0000;stroke-linecap:butt;stroke-linejoin:round"
-         id="flowPara4657">- azimuth: 115 deg   (-57,57)</flowPara><flowPara
+         id="flowPara4657">- azimuth: [-57,57] deg<flowSpan
+   style="fill:#ff0000;stroke-linecap:butt;stroke-linejoin:round"
+   id="flowSpan4659" /></flowPara><flowPara
          style="baseline-shift:baseline;fill:#ff0000;stroke-linecap:butt;stroke-linejoin:round"
-         id="flowPara4661">- altitude:   84 deg    (-40,40)</flowPara></flowRoot>
-    <flowRoot
+         id="flowPara4661">- altitude: [-40,40] deg</flowPara></flowRoot>    <flowRoot
        transform="matrix(0.26458333,0,0,0.26458333,54.433881,87.678608)"
        style="font-style:normal;font-weight:normal;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;baseline-shift:baseline;fill:#ff0000;fill-opacity:1;stroke:none;stroke-linecap:butt;stroke-linejoin:round"
        id="flowRoot4675"
@@ -3766,8 +3774,7 @@
          id="flowPara4673"
          style="text-align:center;baseline-shift:baseline;text-anchor:middle;fill:#ff0000;stroke-linecap:butt;stroke-linejoin:round">azimuth</flowPara><flowPara
          style="text-align:center;baseline-shift:baseline;text-anchor:middle;fill:#ff0000;stroke-linecap:butt;stroke-linejoin:round"
-         id="flowPara5401">range</flowPara></flowRoot>
-    <path
+         id="flowPara5401">range</flowPara></flowRoot>    <path
        sodipodi:nodetypes="cc"
        inkscape:connector-curvature="0"
        id="path6547"
@@ -3776,13 +3783,14 @@
     <text
        y="3.8237295"
        x="204.38634"
-       style="font-style:normal;font-weight:normal;font-size:3.71822px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect7539);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.0929556;stroke-linecap:butt;stroke-linejoin:round"
+       style="font-style:normal;font-weight:normal;font-size:3.71822429px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect7539);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.0929556;stroke-linecap:butt;stroke-linejoin:round"
        id="text7213"
        transform="rotate(65.642164)"
        xml:space="preserve"><tspan
-         x="8.8378906"
-         y="-10.750333"
-         id="tspan11241">screen</tspan></text>
+         style="stroke-width:0.0929556;stroke-linecap:butt;stroke-linejoin:round"
+         id="tspan7211"
+         y="5.9013906"
+         x="205.20786">screen</tspan></text>
     <path
        style="fill:none;stroke:#ff0000;stroke-width:0.1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:0.1, 0.2;stroke-dashoffset:0;stroke-opacity:1"
        d="M 74.741559,181.46252 59.100994,204.79629"
@@ -3817,17 +3825,17 @@
          style="text-align:center;baseline-shift:baseline;text-anchor:middle;fill:#ff0000;stroke-linecap:butt;stroke-linejoin:round"
          id="flowPara7915">altitude</flowPara><flowPara
          id="flowPara7917"
-         style="text-align:center;baseline-shift:baseline;text-anchor:middle;fill:#ff0000;stroke-linecap:butt;stroke-linejoin:round">range</flowPara></flowRoot>
-    <text
+         style="text-align:center;baseline-shift:baseline;text-anchor:middle;fill:#ff0000;stroke-linecap:butt;stroke-linejoin:round">range</flowPara></flowRoot>    <text
        y="219.90172"
        x="-38.999897"
-       style="font-style:normal;font-weight:normal;font-size:2.82223px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect4735);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-linejoin:round"
+       style="font-style:normal;font-weight:normal;font-size:2.82223105px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect4735);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round"
        id="text9461"
        xml:space="preserve"
        transform="rotate(-25.4499)"><tspan
-         x="44.447266"
-         y="-45.913475"
-         id="tspan11243">15cm</tspan></text>
+         style="stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round"
+         id="tspan9459"
+         y="209.64732"
+         x="-27.239876">15cm</tspan></text>
     <path
        sodipodi:nodetypes="cc"
        inkscape:connector-curvature="0"
@@ -3843,13 +3851,14 @@
     <text
        y="214.2159"
        x="59.657436"
-       style="font-style:normal;font-weight:normal;font-size:2.82223px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect3654);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583;stroke-linecap:butt;stroke-linejoin:round"
+       style="font-style:normal;font-weight:normal;font-size:2.82223105px;line-height:1.25;font-family:sans-serif;white-space:pre;shape-inside:url(#rect3654);fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round"
        id="text9489"
        xml:space="preserve"><tspan
-         x="44.447266"
-         y="-45.913475"
-         id="tspan11247">~20<tspan
-   style="font-size:0.485365px;baseline-shift:super"
-   id="tspan11245">O</tspan></tspan></text>
+         style="stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round"
+         id="tspan9487"
+         y="203.96152"
+         x="71.417435">~20<tspan
+   id="tspan9485"
+   style="font-size:0.48536491px;baseline-shift:super;stroke-width:0.26458332;stroke-linecap:butt;stroke-linejoin:round">O</tspan></tspan></text>
   </g>
 </svg>
