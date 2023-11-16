@@ -1,12 +1,15 @@
 # Visual stimulation
 
-The stimulus presentation relies on the [PsychoPy module](https://www.psychopy.org) to buffer images on the graphics card. The custom code for the set of stimuli lies in the ["main.py" script](./main.py) and in the ["stimuli/" folder](./stimuli).
+The stimulus presentation relies on the [PsychoPy module](https://www.psychopy.org) to buffer images on the graphics card.
+
+The custom code for the set of stimuli lies in the ["main.py" script](./main.py) and in the ["stimuli/" folder](./stimuli).
 
 To use the visual stimulation feature, be sure to follow the installation steps and screen settings described in the [installation instructions](../../docs/install/README.md)
 
 ## Description of visual stimulation protocols
 
 The protocol files have to be in the [../acquisition/protocols/](../acquisition/protocols/) folder.
+
 A given protocol is described by a `json` file. It can be a single sitmulus type or a "multiprotocol" see below.
 
 ### Single Stimulus Type with Parameters Variations
@@ -92,7 +95,7 @@ python -m physion.visual_stim.main physion/acquisition/protocols/drifting-gratin
 The setup corresponds to the following setting:
 
 <p align="center">
-  <img src="../../../docs/visual_stim/visual-field.svg" width="100%" />
+  <img src="../../../docs/visual_stim/visual-field.svg" width="70%" />
 </p>
 
 
@@ -120,11 +123,9 @@ We show below the measurements before and after the correction
 
 The measurements and fitting procedure are described in the script: [gamma-correction.py](./gamma-correction.py).
 
-## Set of stimuli
+## Making Stimulus Schematic for Figures
 
-The set of stimuli implemented can be visualized in the GUI (with the parameters of each stimulus type).
-
-They are documented in the [file of default parameter](./default_params.py).
+A [svg file: visual-stimuli.svg](../../../docs/visual_stim/visual-stimuli.svg) provides a basis to draw stimuli schematics in Inkscape.
 
 ## Tracking stimulus presentation with a photodiode
 
