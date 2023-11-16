@@ -197,6 +197,7 @@ def multimodal(self,
     self.runButton.clicked.connect(self.run)
     tab.layout.addWidget(self.runButton,
                          ip, 10, 1, width)
+    self.runButton.setEnabled(False)
     ip+=1
     self.stopButton = QtWidgets.QPushButton(' * Stop *')
     self.stopButton.clicked.connect(self.stop)

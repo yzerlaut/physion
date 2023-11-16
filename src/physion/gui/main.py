@@ -49,8 +49,7 @@ class MainWindow(QtWidgets.QMainWindow):
     if Acquisition:
         from physion.acquisition.gui import multimodal 
         from physion.acquisition.run import initialize,\
-           run, stop, check_metadata, send_CaImaging_Stop_signal,\
-           toggle_FaceCamera_process
+           run, stop,send_CaImaging_Stop_signal, toggle_FaceCamera_process
         from physion.acquisition.tools import save_experiment,\
             set_filename_and_folder
         from physion.acquisition.settings import update_config,\
