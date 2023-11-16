@@ -95,7 +95,7 @@ python -m physion.visual_stim.main physion/acquisition/protocols/drifting-gratin
 The setup corresponds to the following setting:
 
 <p align="center">
-  <img src="../../../docs/visual_stim/visual-field.svg" width="70%" />
+  <img src="../../../docs/visual_stim/visual-field.svg" width="60%" />
 </p>
 
 
