@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore
-import sys, time, os, pathlib, json
+import sys, time, os, pathlib, json, tempfile
 import numpy as np
 import multiprocessing # different processes (cameras, visual stim, ...) are sent on different threads...
 from ctypes import c_char_p
@@ -42,8 +42,8 @@ def multimodal(self,
     self.quitEvent = multiprocessing.Event()
     self.quitEvent.clear()
     self.manager = multiprocessing.Manager() # to share a str across processes
-    self.datafolder = self.manager.Value(c_char_p,\
-            str(os.path.join(os.path.expanduser('~'), 'DATA', 'trash')))
+    self.datafolder = self.manager.Value(c_char_p,
+            str(tempfile.gettempdir())) # temp folder by default
 
     ##########################################
     ######   acquisition states/values  ######
