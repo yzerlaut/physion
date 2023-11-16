@@ -35,10 +35,12 @@ def multimodal(self,
     # to be used through multiprocessing.Process:
     self.runEvent = multiprocessing.Event() # to turn on/off recordings 
     self.runEvent.clear()
+    self.readyEvent = multiprocessing.Event() # to tell of buffering finished
+    self.readyEvent.clear()
     self.closeFaceCamera_event = multiprocessing.Event()
     self.closeFaceCamera_event.clear()
-    self.quit_event = multiprocessing.Event()
-    self.quit_event.clear()
+    self.quitEvent = multiprocessing.Event()
+    self.quitEvent.clear()
     self.manager = multiprocessing.Manager() # to share a str across processes
     self.datafolder = self.manager.Value(c_char_p,\
             str(os.path.join(os.path.expanduser('~'), 'DATA', 'trash')))
@@ -49,6 +51,7 @@ def multimodal(self,
     self.stim, self.acq, self.init = None, None, False,
     self.screen, self.stop_flag = None, False
     self.FaceCamera_process = None
+    self.VisualStim_process = None
     self.RigView_process = None
     self.params_window = None
 
@@ -79,11 +82,11 @@ def multimodal(self,
     self.FaceCameraButton.clicked.connect(self.toggle_FaceCamera_process)
 
     # -------------------------------------------------------
-    self.add_side_widget(tab.layout,
-            QtWidgets.QLabel(' * Monitoring * '))
-    self.webcamButton = QtWidgets.QPushButton('Webcam', self)
-    self.webcamButton.setCheckable(True)
-    self.add_side_widget(tab.layout, self.webcamButton)
+    # self.add_side_widget(tab.layout,
+            # QtWidgets.QLabel(' * Monitoring * '))
+    # self.webcamButton = QtWidgets.QPushButton('Webcam', self)
+    # self.webcamButton.setCheckable(True)
+    # self.add_side_widget(tab.layout, self.webcamButton)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.add_side_widget(tab.layout,
@@ -94,12 +97,9 @@ def multimodal(self,
     # -------------------------------------------------------
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
-    self.demoW = QtWidgets.QCheckBox('demo', self)
-    self.add_side_widget(tab.layout, self.demoW, 'small-right')
-
-    self.saveSetB = QtWidgets.QPushButton('save settings', self)
-    self.saveSetB.clicked.connect(self.save_settings)
-    self.add_side_widget(tab.layout, self.saveSetB)
+    # self.saveSetB = QtWidgets.QPushButton('save settings', self)
+    # self.saveSetB.clicked.connect(self.save_settings)
+    # self.add_side_widget(tab.layout, self.saveSetB)
 
     self.buildNWB = QtWidgets.QPushButton('build NWB for last', self)
     self.buildNWB.clicked.connect(build_NWB_for_last)
@@ -192,11 +192,6 @@ def multimodal(self,
     self.initButton.clicked.connect(self.initialize)
     tab.layout.addWidget(self.initButton,
                          ip, 10, 1, width)
-    ip+=1
-    self.bufferButton = QtWidgets.QPushButton(' * Buffer * ')
-    self.bufferButton.clicked.connect(self.buffer_stim)
-    tab.layout.addWidget(self.bufferButton,
-                         ip, 10, 1, width)
     ip+=2
     self.runButton = QtWidgets.QPushButton(' * RUN *')
     self.runButton.clicked.connect(self.run)
@@ -208,8 +203,7 @@ def multimodal(self,
     tab.layout.addWidget(self.stopButton,
                          ip, 10, 1, width)
 
-    for button in [self.initButton, self.bufferButton,
-            self.runButton, self.stopButton]:
+    for button in [self.initButton, self.runButton, self.stopButton]:
         button.setStyleSheet("font-weight: bold")
 
     ip+=2
