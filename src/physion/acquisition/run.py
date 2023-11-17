@@ -52,7 +52,7 @@ def init_visual_stim(self):
                   self.runEvent, self.readyEvent,
                   self.datafolder, binary_folder))
     self.VisualStim_process.start()
-    time.sleep(1) # need to wait that the stim data are written
+    time.sleep(5) # need to wait that the stim data are written
     
 
 def check_FaceCamera(self):
@@ -80,7 +80,6 @@ def initialize(self):
         self.runEvent.clear() # off, the run command should turn it on
         check_FaceCamera(self)
         self.metadata = check_gui_to_init_metadata(self)
-        print(self.metadata)
 
         # SET FILENAME AND FOLDER
         self.filename = generate_filename_path(self.metadata['root-data-folder'],
@@ -129,9 +128,6 @@ def initialize(self):
                 self.acq = None
 
         self.init = True
-        self.initButton.setEnabled(False)
-        self.runButton.setEnabled(True)
-        self.stopButton.setEnabled(True)
 
         # saving all metadata after full initialization:
         self.save_experiment(self.metadata) 
@@ -140,6 +136,11 @@ def initialize(self):
             self.statusBar.showMessage('Acquisition & Stimulation ready !')
         else:
             self.statusBar.showMessage('Acquisition ready !')
+
+        if self.animate_buttons:
+            self.initButton.setEnabled(False)
+            self.runButton.setEnabled(True)
+            self.stopButton.setEnabled(True)
 
     elif at_least_one_modality:
         self.statusBar.showMessage(' no config selected -> pick a config first !')
@@ -198,7 +199,7 @@ def run(self):
             # ========================
             # ---- HERE IT RUNS [...]
             # ========================
-            # 
+            # ----------------------------
             # now stop and clean up things
             self.runEvent.clear() # this will close all subprocesses
             if self.acq is not None:
@@ -209,9 +210,10 @@ def run(self):
                 self.VisualStim_process = None
                 
         self.init = False
-        self.initButton.setEnabled(False)
-        self.runButton.setEnabled(False)
-        self.stopButton.setEnabled(True)
+        if self.animate_buttons:
+            self.initButton.setEnabled(False)
+            self.runButton.setEnabled(False)
+            self.stopButton.setEnabled(True)
         print(100*'-', '\n', 50*'=')
 
 
@@ -241,9 +243,10 @@ def stop(self):
             print(100*'-', '\n', 50*'=')
         self.VisualStim_process = None
         self.init = False
-        self.initButton.setEnabled(True)
-        self.runButton.setEnabled(False)
-        self.stopButton.setEnabled(False)
+        if self.animate_buttons:
+            self.initButton.setEnabled(True)
+            self.runButton.setEnabled(False)
+            self.stopButton.setEnabled(False)
 
 
 
