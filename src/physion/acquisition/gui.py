@@ -17,6 +17,7 @@ def multimodal(self,
                tab_id=0):
 
     tab = self.tabs[tab_id]
+    self.animate_buttons = True
 
     self.cleanup_tab(tab)
 
@@ -220,6 +221,11 @@ def multimodal(self,
     # READ CONFIGS
     get_config_list(self) # first
     load_settings(self)
+
+    if self.animate_buttons:
+        self.initButton.setEnabled(True)
+        self.runButton.setEnabled(False)
+        self.stopButton.setEnabled(False)
 
 def build_NWB_for_last():
     # last folder

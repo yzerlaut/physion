@@ -70,7 +70,7 @@ class visual_stim:
         self.gamma = self.screen['gamma_correction']['gamma']
 
         blank_color=self.gamma_corrected_lum(\
-                self.protocol['presentation-blank-screen-color'])
+                2*self.protocol['presentation-blank-screen-color']-1)
 
         self.win = visual.Window(self.screen['resolution'],
                                  fullscr=self.screen['fullscreen'],
@@ -381,10 +381,6 @@ class visual_stim:
         # array for the interstim flag
         self.is_interstim = np.ones(len(t), dtype=bool) # default to True
         self.next_index_table = np.zeros(len(t), dtype=int)
-        # array for the protocol index
-        self.protocol_id_table = np.zeros(len(t), dtype=int)
-        # array for the stimulus index
-        self.stim_index_table = np.zeros(len(t), dtype=int)
         # array for the time start
         self.time_start_table = np.zeros(len(t), dtype=float)
         # -- loop over episode
@@ -392,14 +388,10 @@ class visual_stim:
             tCond = (t>=self.experiment['time_start'][i]) &\
                         (t<self.experiment['time_stop'][i])
             self.is_interstim[tCond] = False
-            self.protocol_id_table[tCond] = self.experiment['protocol_id'][i]
-            print(self.experiment['time_start'][i], self.experiment['index'][i])
-            self.stim_index_table[tCond] = self.experiment['index'][i]
             self.time_start_table[tCond] = self.experiment['time_start'][i]
             self.next_index_table[t>=self.experiment['time_start'][i]] = i+1
         # flag for end of stimulus
-        self.stim_index_table[(t>self.tstop)] = -1
-
+        self.next_index_table[t>=self.experiment['time_stop'][-1]] = -1
         if verbose:
             print('tables initialisation took: %.2f' % (\
                     time.time()-tic))
@@ -491,7 +483,7 @@ class visual_stim:
         while not runEvent.is_set():
             if verbose:
                 print('waiting for the external trigger [...]')
-            time.sleep(0.1)
+            time.sleep(0.2)
         # --> here external trigger launched 
         self.running = True
         
@@ -519,10 +511,11 @@ class visual_stim:
         while self.running and\
                 runEvent.is_set():
 
+            time.sleep(0.1)
             t = (time.time()-t0)*speed # speed factor to speed up things
             iT = int(t/dt)
 
-            if self.stim_index_table[iT]<0:
+            if self.next_index_table[iT]<0:
                 # we reached the end -> need to stop   (see stim_index_table[t>tstop]=-1 above)
 
                 self.blank_screen()
@@ -544,8 +537,8 @@ class visual_stim:
                     (current_index<self.next_index_table[iT]):
                 # -*- need to update the stimulation buffer -*-
 
-                protocol_id = self.protocol_id_table[iT]
-                stim_index = self.stim_index_table[iT]
+                protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
+                stim_index = self.experiment['index'][self.next_index_table[iT]]
                 if use_prebuffering:
                     self.buffer = self.BUFFERS[protocol_id][stim_index]
                     self.time_indices = self.TIME_INDICES[protocol_id][stim_index]
@@ -559,9 +552,9 @@ class visual_stim:
                 current_index = self.next_index_table[iT]
 
                 print(' - t=%.2dh:%.2dm:%.2fs' % (t/3600, (t%3600)/60, (t%60)),
-                      '- Running protocol of index %i/%i protocol-ID:%i' %\
-                            (current_index, len(self.experiment['index']),
-                            protocol_id))
+                      '- Running protocol of index %i/%i' %\
+                            (current_index+1, len(self.experiment['index'])),
+                      'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
 
             elif self.is_interstim[iT]:
                 # nothing to do, already buffered, just wait the end of interstim
@@ -921,9 +914,11 @@ if __name__=='__main__':
     parser.add_argument("protocol", 
                         help="protocol a json file", 
                         default='')
-    parser.add_argument('-s', "--speed", 
+    parser.add_argument('-s', "--speed", type=float,
                         help="speed to visualize the stimulus (1. by default)", 
                         default=1.)
+    parser.add_argument('-t', "--tstop", 
+                        type=float, default=15.)
     parser.add_argument("--t0", 
                         help="start time", 
                         default=0.)
@@ -967,7 +962,7 @@ if __name__=='__main__':
     # print('\n buffering ready... --> launching stim ! ')
     time.sleep(2)
     runEvent.set()
-    time.sleep(10)
+    time.sleep(args.tstop)
     print(' stoping stim ')
     runEvent.clear()
     
