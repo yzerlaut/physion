@@ -4,10 +4,30 @@ import pandas, pynwb, PIL
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
+CameraInterface = None
 try:
     from pycromanager import Core
+    CameraInterface = 'MicroManager'
 except ModuleNotFoundError:
-    print('camera support not available !')
+    pass
+
+try:
+    absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
+                        'work', 'physion', 'src', 'physion',
+                        'hardware', 'Thorlabs', 'camera_dlls')
+    os.environ['PATH'] = absolute_path_to_dlls + os.pathsep +\
+                                                os.environ['PATH']
+    os.add_dll_directory(absolute_path_to_dlls)
+    CameraInterface = 'ThorCam'
+    from thorlabs_tsi_sdk.tl_camera import TLCameraSDK, TLCamera, Frame
+except ModuleNotFoundError:
+    pass
+
+
+if CameraInterface is None:
+    print('------------------------------------')
+    print('   camera support not available !')
+    print('------------------------------------')
 
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
@@ -38,10 +58,13 @@ def gui(self,
     
     ### trying the camera
     try:
-        # we initialize the camera
-        self.core = Core()
-        self.exposure = self.core.get_exposure()
-        self.demo = False
+        if CameraInterface=='ThorCam':
+            pass
+        if CameraInterface=='MicroManager':
+            # we initialize the camera
+            self.core = Core()
+            self.exposure = self.core.get_exposure()
+            self.demo = False
     except BaseException as be:
         print(be)
         print('')
