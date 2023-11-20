@@ -484,8 +484,10 @@ class visual_stim:
             if verbose:
                 print('waiting for the external trigger [...]')
             time.sleep(0.2)
-        # --> here external trigger launched 
-        self.running = True
+
+
+        ##########################################
+        # --> from here external trigger launched  (now runEvent=True)
         
         ##########################################################
         ###           initialize the stimulation              ####
@@ -493,12 +495,19 @@ class visual_stim:
         current_index, refresh_freq = -1, 30.
 
         # grab the NIdaq starting time (or set one)
+        NIstart = os.path.join(str(datafolder.get()), 'NIdaq.start.npy')
+        t0 = time.time()
+        while not os.path.isfile(NIstart) and (time.time()-t0)<3:
+            # waiting 3 seconds max that the NIdaq.start gets written
+            time.sleep(0.05)
         try:
-            t0 = np.load(os.path.join(str(datafolder.get()),\
-                             'NIdaq.start.npy'))[0]
+            t0 = np.load(NIstart)[0]
         except (AttributeError, FileNotFoundError):
-            print('\n', str(datafolder.get()),\
-                        'NIdaq.start.npy', 'not found !')
+            print(' ------------------------------------------ ')
+            print('\n  /!\ ', str(datafolder.get()),\
+                        'NIdaq.start.npy', 'not found ! /!\ \n')
+            print('  THIS RECORDING WILL NOT BE SYNCHRONIZED ONLINE !!! ')
+            print(' ------------------------------------------ ')
             t0 = time.time()
 
         ##########################################################
@@ -508,10 +517,8 @@ class visual_stim:
         print('--------------------------------------')
         print('        RUNNING PROTOCOL              ')
         print('--------------------------------------\n')
-        while self.running and\
-                runEvent.is_set():
+        while runEvent.is_set():
 
-            time.sleep(0.1)
             t = (time.time()-t0)*speed # speed factor to speed up things
             iT = int(t/dt)
 
@@ -519,7 +526,7 @@ class visual_stim:
                 # we reached the end -> need to stop   (see stim_index_table[t>tstop]=-1 above)
 
                 self.blank_screen()
-                self.running = False
+                runEvent.clear() # send the stop signal to all processes
 
                 print('--------------------------------------')
                 print(' [ok] protocol terminated successfully')

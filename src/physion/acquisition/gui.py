@@ -25,6 +25,7 @@ def multimodal(self,
     self.subject, self.protocol = None, {}
     self.MODALITIES = ['Locomotion',
                        'FaceCamera',
+                       'RigCamera',
                        'EphysLFP',
                        'EphysVm',
                        'CaImaging',
@@ -52,6 +53,7 @@ def multimodal(self,
     self.stim, self.acq, self.init = None, None, False,
     self.screen, self.stop_flag = None, False
     self.FaceCamera_process = None
+    self.RigCamera_process = None
     self.VisualStim_process = None
     self.RigView_process = None
     self.params_window = None

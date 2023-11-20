@@ -1,4 +1,4 @@
-import datetime, os, string, pathlib, json, tempfile
+import datetime, os, string, pathlib, json, tempfile, glob
 import numpy as np
 
 def day_folder(root_folder):
@@ -154,5 +154,12 @@ def computerTimestamp_to_daySeconds(t):
     Seconds = float(s.split(':')[2])
     
     return 60*60*Hour+60*Min+Seconds
-    
 
+def get_latest_file(folder):
+    list_of_files = glob.glob(os.path.join(folder, '*')) 
+    latest_file = max(list_of_files, key=os.path.getctime)
+    return latest_file
+
+if __name__=='__main__':
+    import sys
+    print(get_latest_file(sys.argv[-1]))
