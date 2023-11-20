@@ -4,6 +4,9 @@ import pandas, pynwb, PIL
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 
+#################################################
+###        Select the Camera Interface    #######
+#################################################
 CameraInterface = None
 try:
     from pycromanager import Core
@@ -19,15 +22,18 @@ try:
                                                 os.environ['PATH']
     os.add_dll_directory(absolute_path_to_dlls)
     CameraInterface = 'ThorCam'
-    from thorlabs_tsi_sdk.tl_camera import TLCameraSDK, TLCamera, Frame
+    from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
 except ModuleNotFoundError:
     pass
-
 
 if CameraInterface is None:
     print('------------------------------------')
     print('   camera support not available !')
     print('------------------------------------')
+
+#################################################
+###        Now set up the Acquisition     #######
+#################################################
 
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
@@ -56,10 +62,21 @@ def gui(self,
     
     self.t0, self.period, self.TIMES = 0, 1, []
     
-    ### trying the camera
+    # initialize all to demo mode
+    self.cam, self.core = None, None
+    self.exposure = -1 # flag for no camera
+    self.demo = True
+
+    ### now trying the camera
     try:
         if CameraInterface=='ThorCam':
-            pass
+            self.sdk = TLCameraSDK()
+            self.cam = self.sdk.open_camera(self.sdk.discover_available_cameras()[0])
+            self.cam.exposure_time_us = 50000 # 50ms, 20Hz by default
+            # for software trigger
+            self.cam.frames_per_trigger_zero_for_unlimited = 0
+            self.cam.operation_mode = 0
+            print('\n [ok] Thorlabs Camera successfully initialized ! \n')
         if CameraInterface=='MicroManager':
             # we initialize the camera
             self.core = Core()
@@ -71,8 +88,6 @@ def gui(self,
         print(' /!\ Problem with the Camera /!\ ')
         print('        --> no camera found ')
         print('')
-        self.exposure = -1 # flag for no camera
-        self.demo = True
 
     ##########################################################
     ####### GUI settings
@@ -300,8 +315,7 @@ def run(self):
     self.flip = False
     
     self.stim = visual_stim({"Screen": "Dell-2020",
-                             "presentation-prestim-screen": -1,
-                             "presentation-poststim-screen": -1}, 
+                             "presentation-blank-screen-color": -1}, 
                              demo=self.demoBox.isChecked())
 
     self.Nrepeat = int(self.repeatBox.text()) #
@@ -351,7 +365,7 @@ def run(self):
     self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
 
     save_intrinsic_metadata(self)
-    
+   
     print('acquisition running [...]')
     
     self.update_dt_intrinsic() # while loop
@@ -484,6 +498,10 @@ def launch_intrinsic(self, live_only=False):
 
     self.live_only = live_only
 
+    if self.cam is not None:
+        self.cam.arm(2)
+        self.cam.issue_software_trigger()
+
     if not self.running:
 
         self.running = True
@@ -514,6 +532,8 @@ def live_intrinsic(self):
 
 def stop_intrinsic(self):
     if self.running:
+        if self.cam is not None:
+            self.cam.disarm()
         self.running = False
         if self.stim is not None:
             self.stim.close()
@@ -524,7 +544,7 @@ def stop_intrinsic(self):
 
 def get_frame(self, force_HQ=False):
     
-    if self.exposure>0:
+    if self.exposure>0 and (CameraInterface=='MicroManager'):
 
         self.core.snap_image()
         tagged_image = self.core.get_tagged_image()
@@ -532,6 +552,12 @@ def get_frame(self, force_HQ=False):
         img = np.reshape(tagged_image.pix,
                          newshape=[tagged_image.tags['Height'],
                                    tagged_image.tags['Width']])
+    elif (CameraInterface=='ThorCam'):
+
+        frame = self.cam.get_pending_frame_or_null()
+        while frame is None:
+            frame = self.cam.get_pending_frame_or_null()
+        img = frame.image_buffer
 
     elif (self.stim is not None) and (self.STIM is not None):
 
