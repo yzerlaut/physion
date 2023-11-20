@@ -1,1 +1,1 @@
-from . import NIdaq, FLIRcamera
+from . import NIdaq, FLIRcamera, Thorlabs
