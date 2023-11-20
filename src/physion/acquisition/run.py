@@ -1,8 +1,10 @@
 import os, json, time
 import numpy as np
 import multiprocessing
+from PyQt5 import QtCore
 
-from physion.utils.files import generate_filename_path
+from physion.utils.files import generate_filename_path,\
+        get_latest_file
 from physion.acquisition.tools import base_path,\
         check_gui_to_init_metadata, NIdaq_metadata_init
 
@@ -21,9 +23,9 @@ except ModuleNotFoundError:
     # print(' /!\ Problem with the NIdaq module /!\ ')
 
 try:
-    from physion.hardware.FLIRcamera.recording import launch_FaceCamera
+    from physion.hardware.FLIRcamera.recording import launch_Camera
 except ModuleNotFoundError:
-    def launch_FaceCamera(**args):
+    def launch_Camera(**args):
         return None
     # print(' /!\ Problem with the FLIR camera module /!\ ')
 
@@ -88,23 +90,26 @@ def initialize(self):
                     with_FaceCamera_frames_folder=self.metadata['FaceCamera'])
         self.datafolder.set(str(os.path.dirname(self.filename)))
 
-        max_time = 2*60*60 # 2 hours by default, so should be stopped manually
+        self.max_time = 2*60*60 # 2 hours by default, so should be stopped manually
 
         if self.metadata['VisualStim']:
             self.statusBar.showMessage(\
                     '[...] initializing acquisition & stimulation')
             # ---- INIT VISUAL STIM ---- #
             init_visual_stim(self)
-            # use the time stop as the new max time
-            max_time = 1.5*np.load(\
-                    os.path.join(str(self.datafolder.get()), 'visual-stim.npy'),\
-                    allow_pickle=True).item()['time_stop'][-1]
+            visual_stim_file = os.path.join(str(self.datafolder.get()), 'visual-stim.npy')
+            while not os.path.isfile(visual_stim_file):
+                time.sleep(0.25)
+                # print('waiting for the visual stim data to be written')
+            # --- use the time stop as the new max time
+            stim = np.load(visual_stim_file, allow_pickle=True).item()
+            self.max_time = stim['time_stop'][-1]+stim['time_start'][0]
         else:
             self.readyEvent.set()
             self.statusBar.showMessage('[...] initializing acquisition')
 
         print('max_time of NIdaq recording: %.2dh:%.2dm:%.2ds' %\
-                (max_time/3600, (max_time%3600)/60, (max_time%60)))
+                (self.max_time/3600, (self.max_time%3600)/60, (self.max_time%60)))
 
         output_steps = []
         if self.metadata['CaImaging']:
@@ -119,7 +124,7 @@ def initialize(self):
                 self.acq = Acquisition(dt=1./self.metadata['NIdaq-acquisition-frequency'],
                                        Nchannel_analog_in=self.metadata['NIdaq-analog-input-channels'],
                                        Nchannel_digital_in=self.metadata['NIdaq-digital-input-channels'],
-                                       max_time=max_time,
+                                       max_time=self.max_time,
                                        output_steps=output_steps,
                                        filename= self.filename.replace('metadata', 'NIdaq'))
             except BaseException as e:
@@ -155,9 +160,9 @@ def toggle_FaceCamera_process(self):
         self.statusBar.showMessage('  starting FaceCamera stream [...] ')
         self.show()
         self.closeFaceCamera_event.clear()
-        self.FaceCamera_process = multiprocessing.Process(target=launch_FaceCamera,
+        self.FaceCamera_process = multiprocessing.Process(target=launch_Camera,
                         args=(self.runEvent, self.closeFaceCamera_event, self.datafolder,
-                                   {'frame_rate':self.config['FaceCamera-frame-rate']}))
+                              'FaceCamera', 0, {'frame_rate':self.config['FaceCamera-frame-rate']}))
         self.FaceCamera_process.start()
         self.statusBar.showMessage('[ok] FaceCamera initialized ! (in 5-6s) ')
         
@@ -169,6 +174,7 @@ def toggle_FaceCamera_process(self):
         self.FaceCamera_process = None
 
 
+
 def run(self):
 
     check_FaceCamera(self)
@@ -176,46 +182,51 @@ def run(self):
     if not self.readyEvent.is_set():
         self.statusBar.showMessage(\
             ' ---- /!\ Need to wait that the buffering ends /!\ ---- ')
+    elif not self.init:
+        self.statusBar.showMessage('Need to initialize the stimulation !')
     else:
-        self.initButton.setEnabled(False)
 
-        self.stop_flag=False
 
         # -------------------------------------------- #
         #    start the run flag for the subprocesses !
         # -------------------------------------------- #
         self.runEvent.set() 
+        self.init = False # turn off init with acquisition
 
-        if (self.acq is None) or not self.init:
-            self.statusBar.showMessage('Need to initialize the stimulation !')
-        elif self.acq is not None:
-            self.acq.launch()
-            self.statusBar.showMessage('Acquisition running [...]')
-        else:
-            self.statusBar.showMessage('Stimulation & Acquisition running [...]')
-            # Ni-Daq
-            if self.acq is not None:
-                self.acq.launch()
-            # ========================
-            # ---- HERE IT RUNS [...]
-            # ========================
-            # ----------------------------
-            # now stop and clean up things
-            self.runEvent.clear() # this will close all subprocesses
-            if self.acq is not None:
-                self.acq.close()
-            if self.metadata['CaImaging'] and not self.stop_flag: # outside the pure acquisition case
-                self.send_CaImaging_Stop_signal()
-            if self.metadata['VisualStim']:
-                self.VisualStim_process = None
-                
-        self.init = False
         if self.animate_buttons:
             self.initButton.setEnabled(False)
             self.runButton.setEnabled(False)
             self.stopButton.setEnabled(True)
-        print(100*'-', '\n', 50*'=')
 
+        # Ni-Daq first
+        if self.acq is not None:
+            self.acq.launch()
+            self.t0 = self.acq.t0
+            self.statusBar.showMessage('Stimulation & Acquisition running [...]')
+        else:
+            self.statusBar.showMessage('Stimulation running [...]')
+            self.t0 = time.time()
+
+        # ========================
+        # ---- HERE IT RUNS [...]
+        # ========================
+        self.run_update() # while loop
+
+
+def run_update(self):
+
+    # ----- online visualization here -----
+    if self.FaceCamera_process is not None:
+        image = np.load(get_latest_file(\
+                os.path.join(str(self.datafolder.get()), 'FaceCamera-imgs')))
+        self.pFaceimg.setImage(image.T)
+    
+    # ----- while loop with qttimer object ----- #
+    if self.runEvent.is_set() and ((time.time()-self.t0)<self.max_time):
+        QtCore.QTimer.singleShot(1, self.run_update)
+    else:
+        # we reached the end
+        self.stop()
 
 def stop(self):
 
@@ -229,20 +240,19 @@ def stop(self):
             self.runEvent.set()
             time.sleep(0.5)
             self.runEvent.clear()
+            self.init = False
         else:
             # means that a recording was running
             self.runEvent.clear() # this will stop all subprocesses
-            self.stop_flag=True
             if self.acq is not None:
                 self.acq.close()
-            self.init = False
             if self.metadata['CaImaging']:
                 # stop the Ca imaging recording
                 self.send_CaImaging_Stop_signal()
             self.statusBar.showMessage('stimulation stopped !')
             print(100*'-', '\n', 50*'=')
+
         self.VisualStim_process = None
-        self.init = False
         if self.animate_buttons:
             self.initButton.setEnabled(True)
             self.runButton.setEnabled(False)

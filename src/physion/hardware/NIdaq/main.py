@@ -134,8 +134,9 @@ class Acquisition:
             
         self.sample_clk_task.start()
         if self.filename is not None:
-            np.save(self.filename.replace('.npy', '.start.npy'),
-                    np.ones(1)*time.time()) # saving the time stamp of the start !
+            self.t0 = time.time()
+            # saving the time stamp of the start !
+            np.save(self.filename.replace('.npy', '.start.npy'), self.t0*np.ones(1))
 
         self.running, self.data_saved = True, False
         
