@@ -279,6 +279,7 @@ class visual_stim:
                 if key.split(' (')[0] in keys:
                     self.experiment[key.split(' (')[0]] = [protocol[key]]
                     self.experiment['index'] = [0]
+                    self.experiment['repeat'] = [0]
                     self.experiment['time_start'] = [protocol['presentation-prestim-period']]
                     self.experiment['time_stop'] = [protocol['presentation-duration']+\
                             protocol['presentation-prestim-period']]

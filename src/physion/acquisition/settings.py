@@ -16,9 +16,10 @@ def get_config_list(self):
     self.configBox.addItems(['']+self.config_list)
    
     # interventions
-    files = os.listdir(os.path.join(base_path, 'interventions'))
-    self.intervention_list = [f.replace('.json', '') for f in files[::-1] if f.endswith('.json')]
-    self.interventionBox.addItems(['']+self.intervention_list)
+    if hasattr(self, 'interventionBox'):
+        files = os.listdir(os.path.join(base_path, 'interventions'))
+        self.intervention_list = [f.replace('.json', '') for f in files[::-1] if f.endswith('.json')]
+        self.interventionBox.addItems(['']+self.intervention_list)
 
 def update_config(self):
 

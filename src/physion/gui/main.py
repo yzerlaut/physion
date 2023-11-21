@@ -3,7 +3,7 @@ from PyQt5 import QtWidgets
 
 # import pdb # for DEBUG
 
-Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv)
+Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv) or ('intrinsic' in sys.argv)
 
 class MainWindow(QtWidgets.QMainWindow):
     """
@@ -227,6 +227,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if ('acquisition' in sys.argv):
             self.multimodal()
+        elif ('intrinsic' in sys.argv):
+            self.intrinsic_acq()
         else:
             self.calendar()
         self.show()
