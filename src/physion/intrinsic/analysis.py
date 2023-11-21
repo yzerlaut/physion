@@ -379,7 +379,9 @@ def load_intrinsic_data(self):
                 self.IMAGES['vasculature'] = np.load(vasc_img)
 
         self.IMAGES['raw-img-start'] = self.data[0,:,:]
-        self.IMAGES['raw-img-mid'] = self.data[int(self.data.shape[0]/2),:,:]
+        self.IMAGES['raw-img-mid1'] = self.data[int(1.*self.data.shape[0]/4.),:,:]
+        self.IMAGES['raw-img-mid2'] = self.data[int(self.data.shape[0]/2.),:,:]
+        self.IMAGES['raw-img-mid3'] = self.data[int(3.*self.data.shape[0]/4.),:,:]
         self.IMAGES['raw-img-stop'] = self.data[-1,:,:]
        
         update_imgButtons(self)

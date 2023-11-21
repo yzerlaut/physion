@@ -105,13 +105,13 @@ def load_single_datafile(datafile):
     """
     io = pynwb.NWBHDF5IO(datafile, 'r')
     nwbfile = io.read()
-    t, x = nwbfile.acquisition['image_timeseries'].timestamps[:],\
-        nwbfile.acquisition['image_timeseries'].data[:,:,:]
+    t, x = nwbfile.acquisition['image_timeseries'].timestamps[:].astype(np.float64),\
+        nwbfile.acquisition['image_timeseries'].data[:,:,:].astype(np.uint16)
     interp_func = interp1d(t, x, axis=0, kind='nearest', fill_value='extrapolate')
     real_t = nwbfile.acquisition['angle_timeseries'].timestamps[:]
+    # return t, nwbfile.acquisition['image_timeseries'].data[:,:,:]
     io.close()
     return real_t, interp_func(real_t)
-
 
 def load_raw_data(datafolder, protocol,
                   run_id='sum'):
