@@ -8,12 +8,13 @@ import pyqtgraph as pg
 ###        Select the Camera Interface    #######
 #################################################
 CameraInterface = None
+### --------- MicroManager Interface -------- ###
 try:
     from pycromanager import Core
     CameraInterface = 'MicroManager'
 except ModuleNotFoundError:
     pass
-
+### ------------ ThorCam Interface ---------- ###
 try:
     absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
                         'work', 'physion', 'src', 'physion',
@@ -23,9 +24,9 @@ try:
     os.add_dll_directory(absolute_path_to_dlls)
     CameraInterface = 'ThorCam'
     from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
-except ModuleNotFoundError:
+except (AttributeError, ModuleNotFoundError):
     pass
-
+### --------- None -> demo mode ------------- ###
 if CameraInterface is None:
     print('------------------------------------')
     print('   camera support not available !')
@@ -314,15 +315,22 @@ def run(self):
 
     self.flip = False
     
-    self.stim = visual_stim({"Screen": "Dell-2020",
-                             "presentation-blank-screen-color": -1}, 
-                             demo=self.demoBox.isChecked())
-
     self.Nrepeat = int(self.repeatBox.text()) #
     self.period = float(self.periodBox.text()) # degree / second
     self.bar_size = float(self.barBox.text()) # degree / second
     self.dt = 1./float(self.freqBox.text())
     self.flip_index=0
+
+    self.stim = visual_stim({"Screen": "Dell-2020",
+                             "Presentation": "Single-Stimulus",
+                             "null (None)": 0,
+                             "presentation-prestim-period":0,
+                             "presentation-poststim-period":0,
+                             "presentation-duration":self.period*self.Nrepeat,
+                             "presentation-blank-screen-color": -1}, 
+                             keys=['null'],
+                             demo=self.demoBox.isChecked())
+
 
     xmin, xmax = 1.15*np.min(self.stim.x), 1.15*np.max(self.stim.x)
     zmin, zmax = 1.2*np.min(self.stim.z), 1.2*np.max(self.stim.z)
