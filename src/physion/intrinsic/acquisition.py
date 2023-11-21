@@ -73,7 +73,6 @@ def gui(self,
         if CameraInterface=='ThorCam':
             self.sdk = TLCameraSDK()
             self.cam = self.sdk.open_camera(self.sdk.discover_available_cameras()[0])
-            self.cam.exposure_time_us = 50000 # 50ms, 20Hz by default
             # for software trigger
             self.cam.frames_per_trigger_zero_for_unlimited = 0
             self.cam.operation_mode = 0
@@ -109,8 +108,6 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel('config:'),
                          spec='small-left')
     self.configBox = QtWidgets.QComboBox(self)
-    # self.protocolBox = QtWidgets.QComboBox(self) # needed even if not shown
-    # self.fovPick = QtWidgets.QComboBox(self) # need even f not shown
     self.configBox.activated.connect(self.update_config)
     self.add_side_widget(tab.layout, self.configBox, spec='large-right')
     # subject box
@@ -123,12 +120,20 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel('screen:'),
                          spec='small-left')
     self.screenBox = QtWidgets.QComboBox(self)
-    self.screenBox.addItems(['']+list(SCREENS.keys()))
+    self.screenBox.addItems(list(SCREENS.keys()))
     self.add_side_widget(tab.layout, self.screenBox, spec='large-right')
     
     get_config_list(self)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
+
+    #self.add_side_widget(tab.layout,\
+    #    QtWidgets.QLabel('  - exposure: %.0f ms (from Micro-Manager)' % self.exposure))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - exposure (ms) :'),
+                    spec='large-left')
+    self.exposureBox = QtWidgets.QLineEdit()
+    self.exposureBox.setText('50')
+    self.add_side_widget(tab.layout, self.exposureBox, spec='small-right')
 
     self.vascButton = QtWidgets.QPushButton(" - = save Vasculature Picture = - ", self)
     self.vascButton.clicked.connect(self.take_vasculature_picture)
@@ -145,8 +150,6 @@ def gui(self,
     self.ISIprotocolBox.addItems(['ALL', 'up', 'down', 'left', 'right'])
     self.add_side_widget(tab.layout, self.ISIprotocolBox,
                          spec='small-right')
-    self.add_side_widget(tab.layout,\
-        QtWidgets.QLabel('  - exposure: %.0f ms (from Micro-Manager)' % self.exposure))
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - Nrepeat :'),
                     spec='large-left')
@@ -243,6 +246,11 @@ def take_fluorescence_picture(self):
                             filename='fluorescence-%s' % self.subjectBox.currentText(),
                             extension='.tif')
         
+        if self.cam is not None:
+            self.cam.exposure_time_us = int(1e3*int(self.exposureBox.text()))
+            self.cam.arm(2)
+            self.cam.issue_software_trigger()
+
         for fn, HQ in zip([filename.replace('.tif', '-HQ.tif'), filename],
                           [True, False]):
             # save first HQ and then subsampled version
@@ -257,6 +265,9 @@ def take_fluorescence_picture(self):
         self.fluorescence_img = img
         self.imgPlot.setImage(self.fluorescence_img.T) # show on display
 
+        if self.cam is not None:
+            self.cam.disarm()
+
     else:
 
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
@@ -270,6 +281,11 @@ def take_vasculature_picture(self):
                             filename='vasculature-%s' % self.subjectBox.currentText(),
                             extension='.tif')
         
+        if self.cam is not None:
+            self.cam.exposure_time_us = int(1e3*int(self.exposureBox.text()))
+            self.cam.arm(2)
+            self.cam.issue_software_trigger()
+
         for fn, HQ in zip([filename.replace('.tif', '-HQ.tif'), filename],
                           [True, False]):
             # save first HQ and then subsampled version
@@ -283,6 +299,9 @@ def take_vasculature_picture(self):
         # then keep a version to store with imaging:
         self.vasculature_img = img
         self.imgPlot.setImage(self.vasculature_img.T) # show on displayn
+
+        if self.cam is not None:
+            self.cam.disarm()
 
     else:
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
@@ -335,6 +354,7 @@ def run(self):
                              keys=['null'],
                              demo=self.demoBox.isChecked())
 
+    self.stim.blank_screen()
 
     xmin, xmax = 1.15*np.min(self.stim.x), 1.15*np.max(self.stim.x)
     zmin, zmax = 1.2*np.min(self.stim.z), 1.2*np.max(self.stim.z)
@@ -512,6 +532,7 @@ def launch_intrinsic(self, live_only=False):
     self.live_only = live_only
 
     if self.cam is not None:
+        self.cam.exposure_time_us = int(1e3*int(self.exposureBox.text()))
         self.cam.arm(2)
         self.cam.issue_software_trigger()
 
