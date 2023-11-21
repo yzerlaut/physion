@@ -109,8 +109,8 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel('config:'),
                          spec='small-left')
     self.configBox = QtWidgets.QComboBox(self)
-    self.protocolBox = QtWidgets.QComboBox(self) # needed even if not shown
-    self.fovPick = QtWidgets.QComboBox(self) # need even f not shown
+    # self.protocolBox = QtWidgets.QComboBox(self) # needed even if not shown
+    # self.fovPick = QtWidgets.QComboBox(self) # need even f not shown
     self.configBox.activated.connect(self.update_config)
     self.add_side_widget(tab.layout, self.configBox, spec='large-right')
     # subject box

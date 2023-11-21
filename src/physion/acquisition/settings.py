@@ -31,14 +31,15 @@ def update_config(self):
         with open(fn) as f:
             self.config = json.load(f)
 
-        # now update protocols
-        if self.config['protocols']=='all':
-            self.protocol_list = os.listdir(os.path.join(base_path,
-                                            'protocols', 'binaries'))
-        else:
-            self.protocol_list = self.config['protocols']
-        self.protocolBox.clear()
-        self.protocolBox.addItems(['None']+self.protocol_list)
+        if hasattr(self, 'protocolBox'):
+            # now update protocols
+            if self.config['protocols']=='all':
+                self.protocol_list = os.listdir(os.path.join(base_path,
+                                                'protocols', 'binaries'))
+            else:
+                self.protocol_list = self.config['protocols']
+            self.protocolBox.clear()
+            self.protocolBox.addItems(['None']+self.protocol_list)
 
         # now update subjects
         subjects = pandas.read_csv(os.path.join(base_path,
@@ -56,14 +57,16 @@ def update_config(self):
 def update_subject(self):
 
     subject = get_subject_props(self)
-    # dealing with FOV option
-    self.fovPick.clear()
-    fovs = ['']
-    for i in range(1, 10):
-        key = 'FOV%i'%i
-        if (key in subject) and (subject[key]!='nan'):
-            fovs.append(key)
-    self.fovPick.addItems(fovs)
+
+    if hasattr(self, 'fovPick'):
+        # dealing with FOV option
+        self.fovPick.clear()
+        fovs = ['']
+        for i in range(1, 10):
+            key = 'FOV%i'%i
+            if (key in subject) and (subject[key]!='nan'):
+                fovs.append(key)
+        self.fovPick.addItems(fovs)
 
 
 def save_settings(self):
