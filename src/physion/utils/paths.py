@@ -51,6 +51,10 @@ for key, val in zip(['~/DATA',
     if os.path.isdir(val):
         FOLDERS[key] = val
 
+############# some exceptions ##############
+if 'logusr' in os.path.expanduser('~'):
+    FOLDERS['~/DATA'] = 'C:\\DATA'
+
 for key, val in zip(['D:/', 'E:/', 'F:/', 'G:/', 'H:/'],
                     ['D:\\', 'E:\\', 'F:\\', 'G:\\', 'H:\\']):
     if os.path.isdir(val):
