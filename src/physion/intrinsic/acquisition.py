@@ -64,7 +64,7 @@ def gui(self,
     self.t0, self.period, self.TIMES = 0, 1, []
     
     # initialize all to demo mode
-    self.cam, self.core = None, None
+    self.cam, self.sdk, self.core = None, None, None
     self.exposure = -1 # flag for no camera
     self.demo = True
 
@@ -77,10 +77,12 @@ def gui(self,
             self.cam.frames_per_trigger_zero_for_unlimited = 0
             self.cam.operation_mode = 0
             print('\n [ok] Thorlabs Camera successfully initialized ! \n')
+            self.demo = False
         if CameraInterface=='MicroManager':
             # we initialize the camera
             self.core = Core()
             self.exposure = self.core.get_exposure()
+            print('\n [ok] Camera successfully initialized though pycromanager ! \n')
             self.demo = False
     except BaseException as be:
         print(be)

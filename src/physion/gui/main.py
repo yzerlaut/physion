@@ -411,5 +411,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.stim.quit()
         if self.bridge is not None:
             self.bridge.close()
+        if hasattr(self, 'cam') and self.cam is not None:
+            self.cam.dispose() # Thorlabs Camera SDK
+        if hasattr(self, 'sdk') and self.sdk is not None:
+            self.sdk.dispose() # Thorlabs Camera SDK
         QtWidgets.QApplication.quit()
         
