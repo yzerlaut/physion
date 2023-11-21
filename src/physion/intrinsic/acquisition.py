@@ -531,7 +531,7 @@ def launch_intrinsic(self, live_only=False):
 
     self.live_only = live_only
 
-    if self.cam is not None:
+    if (self.cam is not None) and not self.demoBox.isChecked():
         self.cam.exposure_time_us = int(1e3*int(self.exposureBox.text()))
         self.cam.arm(2)
         self.cam.issue_software_trigger()
@@ -566,7 +566,7 @@ def live_intrinsic(self):
 
 def stop_intrinsic(self):
     if self.running:
-        if self.cam is not None:
+        if (self.cam is not None) and not self.demoBox.isChecked():
             self.cam.disarm()
         self.running = False
         if self.stim is not None:
