@@ -243,16 +243,18 @@ def take_fluorescence_picture(self):
                             filename='fluorescence-%s' % self.subjectBox.currentText(),
                             extension='.tif')
         
-        # save HQ image as tiff
-        img = get_frame(self, force_HQ=True)
-        np.save(filename.replace('.tif', '.npy'), img)
-        img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
-        im = PIL.Image.fromarray(img)
-        im.save(filename)
-        print('fluorescence image, saved as: %s ' % filename)
+        for fn, HQ in zip([filename.replace('.tif', '-HQ.tif'), filename],
+                          [True, False]):
+            # save first HQ and then subsampled version
+            img = get_frame(self, force_HQ=HQ)
+            img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
+            im = PIL.Image.fromarray(img)
+            im.save(fn)
 
+        np.save(filename.replace('.tif', '.npy'), img)
+        print('fluorescence image, saved as: %s ' % filename)
         # then keep a version to store with imaging:
-        self.fluorescence_img = get_frame(self)
+        self.fluorescence_img = img
         self.imgPlot.setImage(self.fluorescence_img.T) # show on display
 
     else:
@@ -268,16 +270,18 @@ def take_vasculature_picture(self):
                             filename='vasculature-%s' % self.subjectBox.currentText(),
                             extension='.tif')
         
-        # save HQ image as tiff
-        img = get_frame(self, force_HQ=True)
-        np.save(filename.replace('.tif', '.npy'), img)
-        img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
-        im = PIL.Image.fromarray(img)
-        im.save(filename)
-        print('vasculature image, saved as: %s' % filename)
+        for fn, HQ in zip([filename.replace('.tif', '-HQ.tif'), filename],
+                          [True, False]):
+            # save first HQ and then subsampled version
+            img = get_frame(self, force_HQ=HQ)
+            img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
+            im = PIL.Image.fromarray(img)
+            im.save(fn)
 
+        np.save(filename.replace('.tif', '.npy'), img)
+        print('vasculature image, saved as: %s' % filename)
         # then keep a version to store with imaging:
-        self.vasculature_img = get_frame(self)
+        self.vasculature_img = img
         self.imgPlot.setImage(self.vasculature_img.T) # show on displayn
 
     else:
@@ -438,7 +442,8 @@ def update_dt_intrinsic(self):
 
 def write_data(self):
 
-    filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])], int(self.iEp/len(self.STIM['label']))+1)
+    filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])],\
+                                                 int(self.iEp/len(self.STIM['label']))+1)
     
     nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
                             'intrinsic',
@@ -453,7 +458,7 @@ def write_data(self):
     nwbfile.add_acquisition(angles)
 
     images = pynwb.image.ImageSeries(name='image_timeseries',
-                                     data=np.array(self.FRAMES, dtype=np.float64),
+                                     data=np.array(self.FRAMES, dtype=np.uint16),
                                      unit='a.u.',
                                      timestamps=np.array(self.TIMES, dtype=np.float64))
 
@@ -588,16 +593,20 @@ def get_frame(self, force_HQ=False):
                 np.exp(-(self.stim.z+(40*it/self.Npoints-20))**2/2./10**2)*\
                 np.exp(-self.stim.x**2/2./15**2)
 
-        img = img.T+.2*(time.time()-self.t0_episode)/10.
+        img = img.T+.2*(time.time()-self.t0_episode)/10. # + a drift term
+        img = 2**12*(img-img.min())/(img.max()-img.min())
             
     else:
         time.sleep(0.03) # grabbing frames takes minimum 30ms
-        img = np.random.uniform(0, 2**camera_depth, size=(100, 70))
+        img = np.random.uniform(0, 2**camera_depth,
+                                size=(720, 1280))
 
     if (int(self.spatialBox.text())>1) and not force_HQ:
-        return 1.0*resample_img(img, int(self.spatialBox.text()))
+        return np.array(\
+                resample_img(img, int(self.spatialBox.text())),
+                dtype=np.uint16)
     else:
-        return 1.0*img
+        return img.astype(np.uint16)
 
     
     
