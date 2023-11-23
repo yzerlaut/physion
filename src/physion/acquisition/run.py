@@ -265,7 +265,7 @@ def stop(self):
 
 def send_CaImaging_Stop_signal(self):
     self.statusBar.showMessage('sending stop signal for 2-Photon acq.')
-    acq = Acquisition(dt=1e-3, # 1kHz
+    acq = Acquisition(sampling_rate=1000, # 1kHz
                       Nchannel_analog_in=1, Nchannel_digital_in=0,
                       max_time=1.1,
                       buffer_time=0.1,
