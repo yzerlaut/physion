@@ -15,7 +15,7 @@ from physion.hardware.NIdaq.config import find_x_series_devices,\
 class Acquisition:
 
     def __init__(self,
-                 dt=1e-3,
+                 sampling_rate=10000,
                  Nchannel_analog_in=2,
                  Nchannel_digital_in=1,
                  max_time=10,
@@ -28,10 +28,10 @@ class Acquisition:
         
         self.running, self.data_saved = False, False
 
-        self.dt = dt
+        self.sampling_rate = sampling_rate
+        self.dt = 1./self.sampling_rate
         self.max_time = max_time
-        self.sampling_rate = 1./self.dt
-        self.buffer_size = int(buffer_time/self.dt)
+        self.buffer_size = int(buffer_time*self.sampling_rate)
         self.Nchannel_analog_in = Nchannel_analog_in
         self.Nchannel_digital_in = Nchannel_digital_in
         self.filename = filename
@@ -53,7 +53,7 @@ class Acquisition:
         elif len(output_steps)>0:
             Nchannel = max([d['channel'] for d in output_steps])+1
             # have to be elements 
-            t = np.arange(int(self.max_time/self.dt))*self.dt
+            t = np.arange(int(self.max_time*self.sampling_rate))*self.dt
             outputs = np.zeros((Nchannel,len(t)))
             # add as many channels as necessary
             for step in output_steps:
@@ -90,7 +90,8 @@ class Acquisition:
                 max_val=10, min_val=-10)
             self.write_task.timing.cfg_samp_clk_timing(
                 self.sampling_rate, source=self.samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=int(self.max_time/self.dt))
+                active_edge=Edge.FALLING, 
+                samps_per_chan=int(self.max_time*self.sampling_rate))
         
         ### ---- INPUTS ---- ##
         if self.Nchannel_analog_in>0:
@@ -104,11 +105,11 @@ class Acquisition:
         if self.Nchannel_analog_in>0:
             self.read_analog_task.timing.cfg_samp_clk_timing(
                 self.sampling_rate, source=self.samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=int(self.max_time/self.dt))
+                active_edge=Edge.FALLING, samps_per_chan=int(self.max_time*self.sampling_rate))
         if self.Nchannel_digital_in>0:
             self.read_digital_task.timing.cfg_samp_clk_timing(
                 self.sampling_rate, source=self.samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=int(self.max_time/self.dt))
+                active_edge=Edge.FALLING, samps_per_chan=int(self.max_time*self.sampling_rate))
         
         if self.Nchannel_analog_in>0:
             self.analog_reader = AnalogMultiChannelReader(self.read_analog_task.in_stream)

@@ -90,7 +90,7 @@ def initialize(self):
                     with_FaceCamera_frames_folder=self.metadata['FaceCamera'])
         self.datafolder.set(str(os.path.dirname(self.filename)))
 
-        self.max_time = 2*60*60 # 2 hours by default, so should be stopped manually
+        self.max_time = 0.3*60*60 # 2 hours by default, so should be stopped manually
 
         if self.metadata['VisualStim']:
             self.statusBar.showMessage(\
@@ -112,7 +112,9 @@ def initialize(self):
                 (self.max_time/3600, (self.max_time%3600)/60, (self.max_time%60)))
 
         output_steps = []
+        print('CaImaging', self.metadata['CaImaging'])
         if self.metadata['CaImaging']:
+            print('Ca Imaging step')
             output_steps.append(self.config['STEP_FOR_CA_IMAGING_TRIGGER'])
         if self.metadata['intervention']=='Photostimulation':
             output_steps += self.config['STEPS_FOR_PHOTOSTIMULATION']
@@ -121,12 +123,13 @@ def initialize(self):
 
         if not self.onlyDemoButton.isChecked():
             try:
-                self.acq = Acquisition(dt=1./self.metadata['NIdaq-acquisition-frequency'],
-                                       Nchannel_analog_in=self.metadata['NIdaq-analog-input-channels'],
-                                       Nchannel_digital_in=self.metadata['NIdaq-digital-input-channels'],
-                                       max_time=self.max_time,
-                                       output_steps=output_steps,
-                                       filename= self.filename.replace('metadata', 'NIdaq'))
+                self.acq = Acquisition(\
+                    sampling_rate=self.metadata['NIdaq-acquisition-frequency'],
+                   Nchannel_analog_in=self.metadata['NIdaq-analog-input-channels'],
+                   Nchannel_digital_in=self.metadata['NIdaq-digital-input-channels'],
+                   max_time=self.max_time,
+                   output_steps=output_steps,
+                   filename= self.filename.replace('metadata', 'NIdaq'))
             except BaseException as e:
                 print(e)
                 print('\n /!\ PB WITH NI-DAQ /!\ \n')
