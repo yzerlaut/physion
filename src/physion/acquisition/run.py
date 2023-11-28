@@ -57,11 +57,6 @@ def init_visual_stim(self):
     time.sleep(5) # need to wait that the stim data are written
     
 
-def check_FaceCamera(self):
-    if os.path.isfile(os.path.join(self.datafolder.get(), '..', 'current-FaceCamera.npy')):
-        image = np.load(os.path.join(self.datafolder.get(), '..', 'current-FaceCamera.npy'))
-        self.pFaceimg.setImage(image.T)
-
 def initialize(self):
 
     # INSURING THAT AT LEAST ONE MODALITY IS SELECTED
@@ -80,14 +75,14 @@ def initialize(self):
 
         self.readyEvent.clear() # off, the init procedure should turn it on
         self.runEvent.clear() # off, the run command should turn it on
-        check_FaceCamera(self)
         self.metadata = check_gui_to_init_metadata(self)
 
         # SET FILENAME AND FOLDER
         self.filename = generate_filename_path(self.metadata['root-data-folder'],
                                                filename='metadata',
                                                extension='.npy',
-                    with_FaceCamera_frames_folder=self.metadata['FaceCamera'])
+                    with_FaceCamera_frames_folder=self.metadata['FaceCamera'],
+                    with_RigCamera_frames_folder=self.metadata['RigCamera'])
         self.datafolder.set(str(os.path.dirname(self.filename)))
 
         self.max_time = 0.3*60*60 # 2 hours by default, so should be stopped manually
@@ -162,25 +157,45 @@ def toggle_FaceCamera_process(self):
         # need to launch it
         self.statusBar.showMessage('  starting FaceCamera stream [...] ')
         self.show()
-        self.closeFaceCamera_event.clear()
+        self.closeCamera_event.clear()
         self.FaceCamera_process = multiprocessing.Process(target=launch_Camera,
-                        args=(self.runEvent, self.closeFaceCamera_event, self.datafolder,
+                        args=(self.runEvent, self.closeCamera_event, self.datafolder,
                               'FaceCamera', 0, {'frame_rate':self.config['FaceCamera-frame-rate']}))
         self.FaceCamera_process.start()
         self.statusBar.showMessage('[ok] FaceCamera initialized ! (in 5-6s) ')
         
     elif (not self.FaceCameraButton.isChecked()) and (self.FaceCamera_process is not None):
         # need to shut it down
-        self.closeFaceCamera_event.set()
+        self.closeCamera_event.set()
         self.statusBar.showMessage(' FaceCamera stream interupted !')
         self.FaceCamera_process.terminate()
         self.FaceCamera_process = None
 
+def toggle_RigCamera_process(self):
+
+    if self.config is None:
+        self.statusBar.showMessage(' no config selected -> pick a config first !')
+    elif self.RigCameraButton.isChecked() and (self.RigCamera_process is None):
+        # need to launch it
+        self.statusBar.showMessage('  starting RigCamera stream [...] ')
+        self.show()
+        self.closeCamera_event.clear()
+        self.RigCamera_process = multiprocessing.Process(target=launch_Camera,
+                        args=(self.runEvent, self.closeCamera_event, self.datafolder,
+                              'RigCamera', 1, {'frame_rate':self.config['RigCamera-frame-rate']}))
+        self.RigCamera_process.start()
+        self.statusBar.showMessage('[ok] RigCamera initialized ! (in 5-6s) ')
+        
+    elif (not self.RigCameraButton.isChecked()) and (self.RigCamera_process is not None):
+        # need to shut it down
+        self.closeRigCamera_event.set()
+        self.statusBar.showMessage(' RigCamera stream interupted !')
+        self.RigCamera_process.terminate()
+        self.RigCamera_process = None
+
 
 
 def run(self):
-
-    check_FaceCamera(self)
 
     if not self.readyEvent.is_set():
         self.statusBar.showMessage(\
