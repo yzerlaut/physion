@@ -75,6 +75,7 @@ class visual_stim:
         self.win = visual.Window(self.screen['resolution'],
                                  fullscr=self.screen['fullscreen'],
                                  units='pix',
+                                 screen=1,
                                  checkTiming=False,
                                  color=blank_color)
 

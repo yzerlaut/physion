@@ -39,8 +39,8 @@ def multimodal(self,
     self.runEvent.clear()
     self.readyEvent = multiprocessing.Event() # to tell of buffering finished
     self.readyEvent.clear()
-    self.closeFaceCamera_event = multiprocessing.Event()
-    self.closeFaceCamera_event.clear()
+    self.closeCamera_event = multiprocessing.Event()
+    self.closeCamera_event.clear()
     self.quitEvent = multiprocessing.Event()
     self.quitEvent.clear()
     self.manager = multiprocessing.Manager() # to share a str across processes
@@ -83,6 +83,7 @@ def multimodal(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.FaceCameraButton.clicked.connect(self.toggle_FaceCamera_process)
+    self.RigCameraButton.clicked.connect(self.toggle_RigCamera_process)
 
     # -------------------------------------------------------
     # self.add_side_widget(tab.layout,

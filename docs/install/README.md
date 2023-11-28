@@ -14,6 +14,8 @@ Download and install the `miniconda` environmment following the [installation in
 conda env create -n acquisition -f acquisition.yml
 ```
 
+N.B. uninstall and re-install `psychopy` with `pip` to get the latest version
+
 ## B) NI DAQ setup
 
 ### B.1) Re-install Visual C++ Redistributable on Windows

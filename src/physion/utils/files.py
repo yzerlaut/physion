@@ -19,6 +19,7 @@ def generate_filename_path(root_folder,
                            filename = '', extension='txt',
                            with_screen_frames_folder=False,
                            with_FaceCamera_frames_folder=False,
+                           with_RigCamera_frames_folder=False,
                            with_microseconds=False):
 
     Day_folder = day_folder(root_folder)
@@ -37,6 +38,8 @@ def generate_filename_path(root_folder,
 
     if with_FaceCamera_frames_folder:
         pathlib.Path(os.path.join(Second_folder, 'FaceCamera-imgs')).mkdir(parents=True, exist_ok=True)
+    if with_RigCamera_frames_folder:
+        pathlib.Path(os.path.join(Second_folder, 'RigCamera-imgs')).mkdir(parents=True, exist_ok=True)
         
     if not extension.startswith('.'):
         extension='.'+extension
