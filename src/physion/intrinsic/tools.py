@@ -156,7 +156,7 @@ def preprocess_data(data, Facq,
     return pData
 
 def perform_fft_analysis(data, nrepeat,
-                         phase_shift=0):
+                         phase_range='-pi:pi'):
     """
     Fourier transform
         we center the phase around pi/2
@@ -166,8 +166,10 @@ def perform_fft_analysis(data, nrepeat,
     # relative power w.r.t. luminance
     rel_power = np.abs(spectrum)[nrepeat, :, :]/data.shape[0]/data.mean(axis=0)
 
-    # phase in [-pi/2, 3*pi/2] interval
-    phase = (np.angle(spectrum)[nrepeat, :, :]+phase_shift)%(2.*np.pi)
+    if phase_range=='-pi:pi':
+        phase = np.angle(spectrum)[nrepeat, :, :]
+    elif phase_range=='0:2*pi':
+        phase = (np.angle(spectrum)[nrepeat, :, :])%(2.*np.pi)
 
     return rel_power, phase
 
@@ -176,7 +178,7 @@ def compute_phase_power_maps(datafolder, direction,
                              maps={},
                              p=None, t=None, data=None,
                              run_id='sum',
-                             phase_shift=0):
+                             phase_range='-pi:pi'):
 
     # load raw data
     if (p is None) or (t is None) or (data is None):
@@ -188,7 +190,7 @@ def compute_phase_power_maps(datafolder, direction,
     # FFT and write maps
     maps['%s-power' % direction],\
            maps['%s-phase' % direction] = perform_fft_analysis(data, p['Nrepeat'],
-                                                               phase_shift=phase_shift)
+                                                    phase_range=phase_range)
 
     return maps
 
@@ -342,15 +344,26 @@ def add_arrow(ax, angle,
     ax.set_xlim(xlim)
 
 
-def plot_phase_map(ax, fig, Map):
-    im = ax.imshow(Map,
-                   cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
-    cbar = fig.colorbar(im, ax=ax,
-                        ticks=[0, np.pi, 2*np.pi], 
-                        shrink=0.4,
-                        aspect=10,
-                        label='phase (Rd)')
-    cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
+def plot_phase_map(ax, fig, Map,
+                   phase_range='-pi:pi'):
+    if phase_range=='-pi:pi':
+        im = ax.imshow(Map,
+                       cmap=plt.cm.twilight, vmin=-np.pi, vmax=np.pi)
+        cbar = fig.colorbar(im, ax=ax,
+                            ticks=[-np.pi, 0, np.pi], 
+                            shrink=0.4,
+                            aspect=10,
+                            label='phase (Rd)')
+        cbar.ax.set_yticklabels(['-$\pi$', '0', '$\pi$'])
+    else:
+        im = ax.imshow(Map,
+                       cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
+        cbar = fig.colorbar(im, ax=ax,
+                            ticks=[0, np.pi, 2*np.pi], 
+                            shrink=0.4,
+                            aspect=10,
+                            label='phase (Rd)')
+        cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
 
 def plot_power_map(ax, fig, Map,
                    bounds=None):
@@ -367,8 +380,8 @@ def plot_power_map(ax, fig, Map,
                  label='relative power \n ($10^{-4}$ a.u.)')
 
 
-def plot_phase_power_maps(maps, direction):
-
+def plot_phase_power_maps(maps, direction,
+                          phase_range='-pi:pi'):
 
     fig, AX = plt.subplots(1, 2, figsize=(7,2.3))
     plt.subplots_adjust(bottom=0, top=1, wspace=1, right=0.8)
@@ -380,7 +393,8 @@ def plot_phase_power_maps(maps, direction):
     plot_power_map(AX[0], fig, maps['%s-power' % direction])
     
     # # then phase of the stimulus
-    plot_phase_map(AX[1], fig, maps['%s-phase' % direction])
+    plot_phase_map(AX[1], fig, maps['%s-phase' % direction],
+                   phase_range=phase_range)
 
     for ax in AX:
         ax.axis('off')
