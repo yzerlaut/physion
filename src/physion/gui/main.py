@@ -62,7 +62,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     # -- Intrinsic Imaging -- acquisition
-    if Acquisition:
+    if False:
         from physion.intrinsic.acquisition import gui as intrinsic_acq
         from physion.intrinsic.acquisition import launch_intrinsic,\
                 stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
@@ -71,7 +71,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as intrinsic_acq
 
     # -- Intrinsic Imaging -- analysis
-    if not Acquisition:
+    if False:
         from physion.intrinsic.analysis import gui as intrinsic
         from physion.intrinsic.analysis import open_intrinsic_folder,\
                 moved_pixels, load_intrinsic_data, compute_phase_maps,\
