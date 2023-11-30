@@ -3,7 +3,8 @@ from PyQt5 import QtWidgets
 
 # import pdb # for DEBUG
 
-Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv) or ('intrinsic' in sys.argv)
+Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv)
+Intrinsic = ('all' in sys.argv) or ('intrinsic' in sys.argv)
 
 class MainWindow(QtWidgets.QMainWindow):
     """
@@ -60,7 +61,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     # -- Intrinsic Imaging -- acquisition
-    if Acquisition:
+    if Intrinsic:
         from physion.intrinsic.acquisition import gui as intrinsic_acq
         from physion.intrinsic.acquisition import launch_intrinsic,\
                 stop_intrinsic, live_intrinsic, update_dt_intrinsic,\

@@ -10,7 +10,7 @@ from physion.acquisition.tools import base_path,\
 
 try:
     from physion.visual_stim.main import launch_VisualStim
-except ModuleNotFoundError:
+except (ImportError, ModuleNotFoundError):
     def launch_VisualStim(**args):
         return None
     # print(' /!\ Problem with the Visual-Stimulation module /!\ ')
@@ -26,6 +26,13 @@ try:
     from physion.hardware.FLIRcamera.main import launch_Camera as launch_FlirCamera
 except ModuleNotFoundError:
     def launch_FlirCamera(**args):
+        return None
+    # print(' /!\ Problem with the FLIR camera module /!\ ')
+
+try:
+    from physion.hardware.LogitechWebcam.main import launch_Camera as launch_WebCam
+except ModuleNotFoundError:
+    def launch_WebCam(**args):
         return None
     # print(' /!\ Problem with the FLIR camera module /!\ ')
 
@@ -182,7 +189,7 @@ def toggle_RigCamera_process(self):
         self.closeCamera_event.clear()
         self.RigCamera_process = multiprocessing.Process(target=launch_WebCam,
                         args=(self.runEvent, self.closeCamera_event, self.datafolder,
-                              'RigCamera', 1, {'frame_rate':self.config['RigCamera-frame-rate']}))
+                              'RigCamera', {'frame_rate':self.config['RigCamera-frame-rate']}))
         self.RigCamera_process.start()
         self.statusBar.showMessage('[ok] RigCamera initialized ! (in 5-6s) ')
         
