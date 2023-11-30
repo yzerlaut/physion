@@ -405,8 +405,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def quit(self):
         if hasattr(self, 'quit_event') and (self.quit_event is not None):
             self.quit_event.set()
-        if hasattr(self, 'FaceCamera_process') and (self.FaceCamera_process is not None):
-            self.closeFaceCamera_event.set()
         if self.acq is not None:
             self.acq.close()
         if self.stim is not None:
@@ -417,5 +415,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cam.dispose() # Thorlabs Camera SDK
         if hasattr(self, 'sdk') and self.sdk is not None:
             self.sdk.dispose() # Thorlabs Camera SDK
+        if hasattr(self, 'FaceCamera_process') and (self.FaceCamera_process is not None):
+            self.FaceCamera_process.terminate()
+        if hasattr(self, 'RigCamera_process') and (self.RigCamera_process is not None):
+            self.RigCamera_process.terminate()
         QtWidgets.QApplication.quit()
         

@@ -26,8 +26,8 @@ def multimodal(self,
     self.MODALITIES = ['Locomotion',
                        'FaceCamera',
                        'RigCamera',
-                       #'EphysLFP',
-                       #'EphysVm',
+                       'EphysLFP',
+                       'EphysVm',
                        'CaImaging',
                        'onlyDemo']
 

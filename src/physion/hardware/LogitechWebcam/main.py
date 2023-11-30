@@ -41,7 +41,7 @@ class CameraAcquisition:
             r = self.vc.read()
             Time = time.time()
             if r[0]:
-                image = cv2.cvtColor(r[1], cv2.COLOR_BRG2GRAY).astype(np.uint8)
+                image = cv2.cvtColor(r[1], cv2.COLOR_BGR2GRAY).astype(np.uint8)
             else:
                 image = np.zeros((10,10), dtype=np.uint8)
                 print(' /!\ Pb with the LogiTech Camera, frame not working... ')
