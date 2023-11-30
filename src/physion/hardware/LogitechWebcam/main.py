@@ -1,33 +1,26 @@
 """
 
 """
-import time, sys, os
+import time, sys, os, cv2
 import numpy as np
 from pathlib import Path
 
 x=int(1920/2)
 y=int(1080/2)
 
-class stop_func: # dummy version of the multiprocessing.Event class
-    def __init__(self):
-        self.stop = False
-    def set(self):
-        self.stop = True
-    def is_set(self):
-        return self.stop
-    
 class CameraAcquisition:
 
     def __init__(self,
                  name='RigCamera',
+                 settings={'frame_rate':20.},
                  camera_index=2):
-        
+
         self.name = name
         self.times, self.running = [], False
-        self.vc = cv.VideoCapture(camera_index)
+        self.vc = cv2.VideoCapture(camera_index)
         self.vc.set(3,int(x))
         self.vc.set(4,int(y))
-        self.cv.set(cv2.CAP_PROP_FPS, int(fps))
+        self.vc.set(cv2.CAP_PROP_FPS, int(settings['frame_rate']))
 
         ##############################################£########
         # --------------------------------------------------- #
@@ -48,7 +41,7 @@ class CameraAcquisition:
             r = self.vc.read()
             Time = time.time()
             if r[0]:
-                image = r[1].astype(np.unint8)
+                image = cv2.cvtColor(r[1], cv2.COLOR_BRG2GRAY).astype(np.uint8)
             else:
                 image = np.zeros((10,10), dtype=np.uint8)
                 print(' /!\ Pb with the LogiTech Camera, frame not working... ')
@@ -109,7 +102,7 @@ if __name__=='__main__':
     manager = multiprocessing.Manager()
     datafolder = manager.Value(c_char_p, 'datafolder')    
     camera_process = multiprocessing.Process(target=launch_Camera,\
-            args=(run, quit_event, datafolder, 'Facecamera', 0, {'frame-rate':20.}))
+            args=(run, quit_event, datafolder, 'RigCamera', 0, {'frame-rate':20.}))
     run.clear()
     camera_process.start()
 

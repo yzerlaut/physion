@@ -44,8 +44,6 @@ class CameraAcquisition:
                       debug=False):
         
         self.cam.start()
-        np.save(os.path.join(folder.get(), '..', 'current-%s.npy' % self.name),\
-                self.cam.get_array().astype(np.uint8))
 
         if debug:
             tic = time.time()
@@ -62,7 +60,6 @@ class CameraAcquisition:
 
             if not self.running and run_flag.is_set() : # not running and need to start  !
 
-                np.save(os.path.join(folder.get(), '..', 'current-%s.npy' % self.name), image)
                 self.running, self.times = True, []
                 # reinitialize recording
                 self.imgs_folder = os.path.join(folder.get(), '%s-imgs' % self.name)
@@ -73,7 +70,6 @@ class CameraAcquisition:
                 self.running=False
                 print('%s -- effective sampling frequency: %.1f Hz ' %\
                         (self.name, 1./np.mean(np.diff(self.times))))
-                np.save(os.path.join(folder.get(), '..', 'current-%s.npy' % self.name), image)
                 
 
             # after the update
@@ -85,7 +81,6 @@ class CameraAcquisition:
         if len(self.times)>0:
             print('%s -- effective sampling frequency: %.1f Hz ' % (\
                     self.name, 1./np.mean(np.diff(self.times))))
-            np.save(os.path.join(folder.get(), '..', 'current-%s.npy' % self.name), image)
         
         self.running=False
         self.cam.stop()

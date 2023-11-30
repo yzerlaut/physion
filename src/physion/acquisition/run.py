@@ -164,16 +164,14 @@ def toggle_FaceCamera_process(self):
         # need to launch it
         self.statusBar.showMessage('  starting FaceCamera stream [...] ')
         self.show()
-        self.closeCamera_event.clear()
         self.FaceCamera_process = multiprocessing.Process(target=launch_FlirCamera,
-                        args=(self.runEvent, self.closeCamera_event, self.datafolder,
+                        args=(self.runEvent, self.quitEvent, self.datafolder,
                               'FaceCamera', 0, {'frame_rate':self.config['FaceCamera-frame-rate']}))
         self.FaceCamera_process.start()
         self.statusBar.showMessage('[ok] FaceCamera initialized ! (in 5-6s) ')
         
     elif (not self.FaceCameraButton.isChecked()) and (self.FaceCamera_process is not None):
         # need to shut it down
-        self.closeCamera_event.set()
         self.statusBar.showMessage(' FaceCamera stream interupted !')
         self.FaceCamera_process.terminate()
         self.FaceCamera_process = None
@@ -186,16 +184,14 @@ def toggle_RigCamera_process(self):
         # need to launch it
         self.statusBar.showMessage('  starting RigCamera stream [...] ')
         self.show()
-        self.closeCamera_event.clear()
         self.RigCamera_process = multiprocessing.Process(target=launch_WebCam,
-                        args=(self.runEvent, self.closeCamera_event, self.datafolder,
-                              'RigCamera', {'frame_rate':self.config['RigCamera-frame-rate']}))
+                        args=(self.runEvent, self.quitEvent, self.datafolder,
+                              'RigCamera', 2, {'frame_rate':self.config['RigCamera-frame-rate']}))
         self.RigCamera_process.start()
         self.statusBar.showMessage('[ok] RigCamera initialized ! (in 5-6s) ')
         
     elif (not self.RigCameraButton.isChecked()) and (self.RigCamera_process is not None):
         # need to shut it down
-        self.closeRigCamera_event.set()
         self.statusBar.showMessage(' RigCamera stream interupted !')
         self.RigCamera_process.terminate()
         self.RigCamera_process = None
@@ -241,10 +237,16 @@ def run(self):
 def run_update(self):
 
     # ----- online visualization here -----
-    if self.FaceCamera_process is not None:
+    if (self.FaceCamera_process is not None) and\
+                    (self.imgButton.currentText()=='FaceCamera'):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'FaceCamera-imgs')))
-        self.pFaceimg.setImage(image.T)
+        self.pCamImg.setImage(image.T)
+    elif (self.RigCamera_process is not None) and\
+                    (self.imgButton.currentText()=='RigCamera'):
+        image = np.load(get_latest_file(\
+                os.path.join(str(self.datafolder.get()), 'RigCamera-imgs')))
+        self.pCamImg.setImage(image.T)
     
     # ----- while loop with qttimer object ----- #
     if self.runEvent.is_set() and ((time.time()-self.t0)<self.max_time):
