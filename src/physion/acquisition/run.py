@@ -23,9 +23,9 @@ except ModuleNotFoundError:
     # print(' /!\ Problem with the NIdaq module /!\ ')
 
 try:
-    from physion.hardware.FLIRcamera.recording import launch_Camera
+    from physion.hardware.FLIRcamera.main import launch_Camera as launch_FlirCamera
 except ModuleNotFoundError:
-    def launch_Camera(**args):
+    def launch_FlirCamera(**args):
         return None
     # print(' /!\ Problem with the FLIR camera module /!\ ')
 
@@ -158,7 +158,7 @@ def toggle_FaceCamera_process(self):
         self.statusBar.showMessage('  starting FaceCamera stream [...] ')
         self.show()
         self.closeCamera_event.clear()
-        self.FaceCamera_process = multiprocessing.Process(target=launch_Camera,
+        self.FaceCamera_process = multiprocessing.Process(target=launch_FlirCamera,
                         args=(self.runEvent, self.closeCamera_event, self.datafolder,
                               'FaceCamera', 0, {'frame_rate':self.config['FaceCamera-frame-rate']}))
         self.FaceCamera_process.start()
@@ -180,7 +180,7 @@ def toggle_RigCamera_process(self):
         self.statusBar.showMessage('  starting RigCamera stream [...] ')
         self.show()
         self.closeCamera_event.clear()
-        self.RigCamera_process = multiprocessing.Process(target=launch_Camera,
+        self.RigCamera_process = multiprocessing.Process(target=launch_WebCam,
                         args=(self.runEvent, self.closeCamera_event, self.datafolder,
                               'RigCamera', 1, {'frame_rate':self.config['RigCamera-frame-rate']}))
         self.RigCamera_process.start()
