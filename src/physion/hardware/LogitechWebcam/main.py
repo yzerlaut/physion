@@ -102,7 +102,7 @@ if __name__=='__main__':
     manager = multiprocessing.Manager()
     datafolder = manager.Value(c_char_p, 'datafolder')    
     camera_process = multiprocessing.Process(target=launch_Camera,\
-            args=(run, quit_event, datafolder, 'RigCamera', 0, {'frame-rate':20.}))
+            args=(run, quit_event, datafolder, 'RigCamera', 0, {'frame_rate':20.}))
     run.clear()
     camera_process.start()
 

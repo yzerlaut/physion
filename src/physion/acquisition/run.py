@@ -25,16 +25,12 @@ except ModuleNotFoundError:
 try:
     from physion.hardware.FLIRcamera.main import launch_Camera as launch_FlirCamera
 except ModuleNotFoundError:
-    def launch_FlirCamera(**args):
-        return None
-    # print(' /!\ Problem with the FLIR camera module /!\ ')
+    from physion.hardware.Dummy.camera import launch_Camera as launch_FlirCamera
 
 try:
     from physion.hardware.LogitechWebcam.main import launch_Camera as launch_WebCam
 except ModuleNotFoundError:
-    def launch_WebCam(**args):
-        return None
-    # print(' /!\ Problem with the FLIR camera module /!\ ')
+    from physion.hardware.Dummy.camera import launch_Camera as launch_WebCam
 
 
 def init_visual_stim(self):

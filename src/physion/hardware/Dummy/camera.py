@@ -5,8 +5,8 @@ import time, sys, os, cv2
 import numpy as np
 from pathlib import Path
 
-x=int(1920/2)
-y=int(1080/2)
+x=int(800/5)
+y=int(600/5)
 
 class CameraAcquisition:
 
@@ -17,17 +17,7 @@ class CameraAcquisition:
 
         self.name = name
         self.times, self.running = [], False
-        self.vc = cv2.VideoCapture(camera_index)
-        self.vc.set(3,int(x))
-        self.vc.set(4,int(y))
-        self.vc.set(cv2.CAP_PROP_FPS, int(settings['frame_rate']))
-
-        ##############################################£########
-        # --------------------------------------------------- #
-        ## -- SETTINGS through Logi Capture software       ####
-        ##  the live view has to be running in Logi Capture ###
-        # --------------------------------------------------- #
-        #######################################################
+        self.dt = 1./settings['frame_rate']
 
 
     def rec_and_check(self, run_flag, quit_flag, folder,
@@ -38,14 +28,8 @@ class CameraAcquisition:
 
         while not quit_flag.is_set():
           
-            r = self.vc.read()
+            image = np.random.uniform(0, 255, size=(y, x)).astype(np.uint8)
             Time = time.time()
-            if r[0]:
-                image = cv2.cvtColor(r[1], cv2.COLOR_BGR2GRAY).astype(np.uint8)
-            else:
-                image = np.zeros((10,10), dtype=np.uint8)
-                print(' /!\ Pb with the LogiTech Camera, frame not working... ')
-
 
             if debug:
                 toc = time.time()
@@ -78,7 +62,6 @@ class CameraAcquisition:
                     self.name, 1./np.mean(np.diff(self.times))))
         
         self.running=False
-        self.cam.stop()
 
 def launch_Camera(run_flag, quit_flag, datafolder,
                   name='RigCamera',
@@ -102,7 +85,7 @@ if __name__=='__main__':
     manager = multiprocessing.Manager()
     datafolder = manager.Value(c_char_p, 'datafolder')    
     camera_process = multiprocessing.Process(target=launch_Camera,\
-            args=(run, quit_event, datafolder, 'RigCamera', 0, {'frame-rate':20.}))
+            args=(run, quit_event, datafolder, 'RigCamera', 0, {'frame_rate':20.}))
     run.clear()
     camera_process.start()
 
