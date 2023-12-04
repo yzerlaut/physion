@@ -76,7 +76,7 @@ class visual_stim:
                                  fullscr=self.screen['fullscreen'],
                                  units='pix',
                                  screen=1,
-                                 checkTiming=False,
+                                 checkTiming=(os.name=='posix'), # for os x
                                  color=blank_color)
 
         # ---- blank screen ----

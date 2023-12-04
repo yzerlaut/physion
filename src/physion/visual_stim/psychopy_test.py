@@ -1,11 +1,12 @@
+import os
 from psychopy import visual, core, event #import some libraries from PsychoPy
 import numpy as np
 
-SCREEN = [1280, 720]
+SCREEN = [int(1280/2), int(720/2)]
 #create a window
 mywin = visual.Window(SCREEN,
                       units="pix",
-                      checkTiming=False,
+                      checkTiming=(os.name=='posix'),
                       fullscr=False)
 
 X, Z = np.meshgrid(np.linspace(-1, 1, SCREEN[0]),

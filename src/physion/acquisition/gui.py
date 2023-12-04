@@ -39,8 +39,6 @@ def multimodal(self,
     self.runEvent.clear()
     self.readyEvent = multiprocessing.Event() # to tell of buffering finished
     self.readyEvent.clear()
-    self.closeCamera_event = multiprocessing.Event()
-    self.closeCamera_event.clear()
     self.quitEvent = multiprocessing.Event()
     self.quitEvent.clear()
     self.manager = multiprocessing.Manager() # to share a str across processes
@@ -192,8 +190,8 @@ def multimodal(self,
     # FaceCamera panel
     self.pFace = self.winImg.addViewBox(lockAspect=True,
                         invertY=True, border=[1, 1, 1])
-    self.pFaceimg = pg.ImageItem(np.ones((10,12))*50)
-    self.pFace.addItem(self.pFaceimg)
+    self.pCamImg = pg.ImageItem(np.ones((10,12))*50)
+    self.pFace.addItem(self.pCamImg)
 
     # NOW MENU INTERACTION BUTTONS
     ip, width = 1, 5

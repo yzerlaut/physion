@@ -1,0 +1,24 @@
+name: physion 
+channels:
+- conda-forge
+dependencies:
+- python=3.9.18
+- psychopy
+- pip
+- pynwb
+- scipy
+- scikit-learn
+- scikit-image
+- pathlib
+- pyqt
+- pyqtgraph
+- pip:
+  - psychtoolbox
+  - pygame
+  - pyo
+  - pyparallel; platform_system != "Windows"
+  - SoundFile; platform_system == "Windows"
+  - websocket_client
+  - pyqtdarktheme
+  - natsort
+

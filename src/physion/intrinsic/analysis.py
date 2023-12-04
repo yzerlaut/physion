@@ -408,10 +408,10 @@ def show_raw_data(self):
     spectrum = np.fft.fft((new_data-new_data.mean())/new_data.mean())
     power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
 
-    # if self.twoPiBox.isChecked():
-        # power, phase = np.abs(spectrum), -np.angle(spectrum)%(2.*np.pi)
-    # else:
-        # power, phase = np.abs(spectrum), np.angle(spectrum)
+    if self.twoPiBox.isChecked():
+        power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
+    else:
+        power, phase = np.abs(spectrum), np.angle(spectrum)
 
     x = np.arange(len(power))
     self.spectrum_power.plot(np.log10(x[1:]), np.log10(power[1:]))
@@ -433,11 +433,13 @@ def compute_phase_maps(self):
                                                 self.protocolBox.currentText(),
                                                 p=self.params, t=self.t, data=self.data,
                                                 run_id=self.numBox.currentText(),
-                                                maps=self.IMAGES)
+                                                maps=self.IMAGES,
+                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
 
 
     intrinsic_analysis.plot_phase_power_maps(self.IMAGES,
-                                             self.protocolBox.currentText())
+                                             self.protocolBox.currentText(),
+                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
 
     intrinsic_analysis.plt.show()
 

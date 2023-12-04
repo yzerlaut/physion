@@ -3,7 +3,8 @@ from PyQt5 import QtWidgets
 
 # import pdb # for DEBUG
 
-Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv) or ('intrinsic' in sys.argv)
+Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv)
+Intrinsic = ('all' in sys.argv) or ('intrinsic' in sys.argv)
 
 class MainWindow(QtWidgets.QMainWindow):
     """
@@ -60,7 +61,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     # -- Intrinsic Imaging -- acquisition
-    if Acquisition:
+    if Intrinsic:
         from physion.intrinsic.acquisition import gui as intrinsic_acq
         from physion.intrinsic.acquisition import launch_intrinsic,\
                 stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
@@ -404,8 +405,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def quit(self):
         if hasattr(self, 'quit_event') and (self.quit_event is not None):
             self.quit_event.set()
-        if hasattr(self, 'FaceCamera_process') and (self.FaceCamera_process is not None):
-            self.closeFaceCamera_event.set()
         if self.acq is not None:
             self.acq.close()
         if self.stim is not None:
@@ -416,5 +415,9 @@ class MainWindow(QtWidgets.QMainWindow):
             self.cam.dispose() # Thorlabs Camera SDK
         if hasattr(self, 'sdk') and self.sdk is not None:
             self.sdk.dispose() # Thorlabs Camera SDK
+        if hasattr(self, 'FaceCamera_process') and (self.FaceCamera_process is not None):
+            self.FaceCamera_process.terminate()
+        if hasattr(self, 'RigCamera_process') and (self.RigCamera_process is not None):
+            self.RigCamera_process.terminate()
         QtWidgets.QApplication.quit()
         

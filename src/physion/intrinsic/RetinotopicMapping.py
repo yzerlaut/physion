@@ -122,7 +122,7 @@ def dilationPatches(rawPatches, smallPatchThr=5, borderWidth=1):  # pixel width 
 
     # thicking patch borders
     if borderWidth > 1:
-        patchBorder = ni.binary_dilation(patchBorder, iterations=borderWidth - 1).astype(np.int)
+        patchBorder = ni.binary_dilation(patchBorder, iterations=borderWidth - 1).astype(np.int16)
 
     # genertating new patches
     newPatches = np.multiply(-1 * (patchBorder - 1), total_area)
@@ -142,7 +142,7 @@ def dilationPatches(rawPatches, smallPatchThr=5, borderWidth=1):  # pixel width 
 
         else:
             currPatch = ni.binary_closing(currPatch,
-                                          structure=np.ones((borderWidth + 2, borderWidth + 2))).astype(np.int)
+                                          structure=np.ones((borderWidth + 2, borderWidth + 2))).astype(np.int16)
             newPatches[currPatch == 1] = 1
 
     return newPatches
@@ -155,7 +155,7 @@ def dilationPatches2(rawPatches, dilationIter=20, borderWidth=1):  # pixel width
     narrow as defined by 'borderWidth'.
     """
 
-    total_area = ni.binary_dilation(rawPatches, iterations=dilationIter).astype(np.int)
+    total_area = ni.binary_dilation(rawPatches, iterations=dilationIter).astype(np.int16)
     patchBorder = total_area - rawPatches
 
     # thinning patch borders
@@ -163,7 +163,7 @@ def dilationPatches2(rawPatches, dilationIter=20, borderWidth=1):  # pixel width
 
     # thickening patch borders
     if borderWidth > 1:
-        patchBorder = ni.binary_dilation(patchBorder, iterations=borderWidth - 1).astype(np.int)
+        patchBorder = ni.binary_dilation(patchBorder, iterations=borderWidth - 1).astype(np.int16)
 
     # genertating new patches
     newPatches = np.multiply(-1 * (patchBorder - 1), total_area)
@@ -171,16 +171,16 @@ def dilationPatches2(rawPatches, dilationIter=20, borderWidth=1):  # pixel width
     # removing small edges
     labeledPatches, patchNum = ni.label(newPatches)
 
-    newPatches2 = np.zeros(newPatches.shape, dtype=np.int)
+    newPatches2 = np.zeros(newPatches.shape, dtype=np.int16)
 
     for i in range(1, patchNum + 1):
-        currPatch = np.zeros(labeledPatches.shape, dtype=np.int)
+        currPatch = np.zeros(labeledPatches.shape, dtype=np.int16)
         currPatch[labeledPatches == i] = 1
         currPatch[labeledPatches != i] = 0
 
         if (np.sum(np.multiply(currPatch, rawPatches)[:]) > 0):
             #            currPatch = ni.binary_closing(currPatch,
-            #                                          structure = np.ones((borderWidth+2,borderWidth+2))).astype(np.int)
+            #                                          structure = np.ones((borderWidth+2,borderWidth+2))).astype(np.int16)
             newPatches2[currPatch == 1] = 1
 
     return newPatches2
@@ -195,10 +195,10 @@ def labelPatches(patchmap, signMap):
     labeledPatches, patchNum = ni.label(patchmap)
 
     # list of area of every patch, first column: patch label, second column: area
-    patchArea = np.zeros((patchNum, 2), dtype=np.int)
+    patchArea = np.zeros((patchNum, 2), dtype=np.int16)
 
     for i in range(1, patchNum + 1):
-        currPatch = np.zeros(labeledPatches.shape, dtype=np.int)
+        currPatch = np.zeros(labeledPatches.shape, dtype=np.int16)
         currPatch[labeledPatches == i] = 1
         currPatch[labeledPatches != i] = 0
         patchArea[i - 1] = [i, np.sum(currPatch[:])]
@@ -208,7 +208,7 @@ def labelPatches(patchmap, signMap):
 
     patches = {}
     for i, ind in enumerate(sortArea[:, 0]):
-        currPatch = np.zeros(labeledPatches.shape, dtype=np.int)
+        currPatch = np.zeros(labeledPatches.shape, dtype=np.int16)
         currPatch[labeledPatches == ind] = 1
         currPatch[labeledPatches != ind] = 0
         currSignPatch = np.multiply(currPatch, signMap)
@@ -272,7 +272,7 @@ def visualCoverage(patch, altMap, aziMap,
 
     """
 
-    pixelSize = np.float(pixelSize)
+    pixelSize = np.float64(pixelSize)
 
     gridAzi, gridAlt = np.meshgrid(np.arange(*AZIMUTH_RANGE, pixelSize),
                                    np.arange(*ALTITUDE_RANGE, pixelSize))
@@ -289,10 +289,10 @@ def visualCoverage(patch, altMap, aziMap,
                 if (corAlt >= ALTITUDE_RANGE[0]) & (corAlt < ALTITUDE_RANGE[1]) & (corAzi >= AZIMUTH_RANGE[0]) & (corAzi < AZIMUTH_RANGE[1]):
                     indAlt = (corAlt - ALTITUDE_RANGE[0]) // pixelSize
                     indAzi = (corAzi - AZIMUTH_RANGE[0]) // pixelSize
-                    visualSpace[np.int(indAlt), np.int(indAzi)] = 1
+                    visualSpace[np.int16(indAlt), np.int16(indAzi)] = 1
 
     if closeIter >= 1:
-        visualSpace = ni.binary_closing(visualSpace, iterations=closeIter).astype(np.int)
+        visualSpace = ni.binary_closing(visualSpace, iterations=closeIter).astype(np.int16)
 
     uniqueArea = np.sum(visualSpace[:]) * (pixelSize ** 2)
 
@@ -314,7 +314,7 @@ def plotVisualCoverage(visualSpace, pixelSize,
     plot visual space in given plotAxis
     """
 
-    pixelSize = np.float(pixelSize)
+    pixelSize = np.float64(pixelSize)
 
     altRange = np.arange(altStart, altStart + pixelSize * visualSpace.shape[0], pixelSize)
     aziRange = np.arange(aziStart, aziStart + pixelSize * visualSpace.shape[1], pixelSize)
@@ -358,7 +358,7 @@ def localMin(eccMap, binSize):
     i = 0
     while (NumOfMin <= 1) and (i < len(cutStep)):
         currThr = cutStep[i]
-        marker = np.zeros(eccMap.shape, dtype=np.int)
+        marker = np.zeros(eccMap.shape, dtype=np.int16)
         marker[eccMap2 <= (currThr)] = 1
         marker, NumOfMin = ni.measurements.label(marker)
         i = i + 1
@@ -541,7 +541,7 @@ def plotPatchBorders(patches, plotaxis=None, borderWidth=2, color='#ff0000', zoo
         currCenter = currPatch.getCenter()
         if currArea > area:
             center = currCenter
-            area = np.int(currArea)
+            area = np.int16(currArea)
 
         # print 'currArea:', currArea, '   currCenter:', currCenter, '    center:', center
 
@@ -568,7 +568,7 @@ def plotPatchBorders(patches, plotaxis=None, borderWidth=2, color='#ff0000', zoo
         SE = np.array([borderArray.shape[0], borderArray.shape[1]])
 
         # calculate maximum distance to four corners
-        maxDis = np.int(np.ceil(np.max([ia.distance(center, NW),
+        maxDis = np.int16(np.ceil(np.max([ia.distance(center, NW),
                                         ia.distance(center, NE),
                                         ia.distance(center, SW),
                                         ia.distance(center, SE)
@@ -656,7 +656,7 @@ def plotPatchBorders2(patches, plotAxis=None, plotSize=None, borderWidth=2, zoom
     SE = np.array([height, width])
 
     # calculate maximum distance to four corners
-    maxDis = np.int(np.ceil(np.max([ia.distance(center, NW),
+    maxDis = np.int16(np.ceil(np.max([ia.distance(center, NW),
                                     ia.distance(center, NE),
                                     ia.distance(center, SW),
                                     ia.distance(center, SE)
@@ -782,7 +782,7 @@ def plotPatchBorders3(patches, altPosMap, aziPosMap, plotAxis=None, plotSize=Non
     SE = np.array([height, width])
 
     # calculate maximum distance to four corners
-    maxDis = np.int(np.ceil(np.max([ia.distance(center, NW),
+    maxDis = np.int16(np.ceil(np.max([ia.distance(center, NW),
                                     ia.distance(center, NE),
                                     ia.distance(center, SW),
                                     ia.distance(center, SE)
@@ -808,7 +808,7 @@ def plotPatchBorders3(patches, altPosMap, aziPosMap, plotAxis=None, plotSize=Non
         zoomedArray = tsfm.rotate(zoomedArray, rotationAngle)
 
         # get center
-        zoomedCenter = np.round(np.mean(np.argwhere(zoomedArray).astype(np.float32), axis=0)).astype(np.int)
+        zoomedCenter = np.round(np.mean(np.argwhere(zoomedArray).astype(np.float32), axis=0)).astype(np.int16)
 
         # binarize current border map
         zoomedArray[zoomedArray < 0.9] = np.nan
@@ -1087,15 +1087,15 @@ class RetinotopicMappingTrial(object):
         patchmap[signMapf >= signMapThr] = 1
         patchmap[signMapf <= -1 * signMapThr] = 1
         patchmap[(signMapf < signMapThr) & (signMapf > -1 * signMapThr)] = 0
-        patchmap = ni.binary_opening(np.abs(patchmap), iterations=openIter).astype(np.int)
+        patchmap = ni.binary_opening(np.abs(patchmap), iterations=openIter).astype(np.int16)
         patches, patchNum = ni.label(patchmap)
 
         # closing each patch, then put them together
-        patchmap2 = np.zeros(patchmap.shape).astype(np.int)
+        patchmap2 = np.zeros(patchmap.shape).astype(np.int16)
         for i in range(patchNum):
-            currPatch = np.zeros(patches.shape).astype(np.int)
+            currPatch = np.zeros(patches.shape).astype(np.int16)
             currPatch[patches == i + 1] = 1
-            currPatch = ni.binary_closing(currPatch, iterations=closeIter).astype(np.int)
+            currPatch = ni.binary_closing(currPatch, iterations=closeIter).astype(np.int16)
             patchmap2 = patchmap2 + currPatch
 
         if isPlot:
@@ -1421,7 +1421,7 @@ class RetinotopicMappingTrial(object):
 
                     # calculate the overlapping area of these two patches
                     sumSpace = visualSpace1 + visualSpace2
-                    overlapSpace = np.zeros(sumSpace.shape, dtype=np.int)
+                    overlapSpace = np.zeros(sumSpace.shape, dtype=np.int16)
                     overlapSpace[sumSpace == 2] = 1
                     Aoverlap = np.sum(overlapSpace[:]) * (visualSpacePixelSize ** 2)
 
@@ -1792,7 +1792,7 @@ class RetinotopicMappingTrial(object):
         centerPixel, rotationAngle = self.getNormalizeTransform(centerPatchKey=centerPatchKey)
 
         try:
-            vasMap = self.vasculatureMap.astype(np.float)
+            vasMap = self.vasculatureMap.astype(np.float64)
             zoom = int(float(vasMap.shape[0]) / float(self.aziPosMapf.shape[0]))
         except AttributeError as e:
             print('Can not find vasculature map!!\n\n')
@@ -1810,7 +1810,7 @@ class RetinotopicMappingTrial(object):
 
         patchesNor = {}
         for key, patch in patches.items():
-            patchArray = patch.array.astype(np.float)
+            patchArray = patch.array.astype(np.float64)
             patchArrayNor = ni.zoom(patchArray, zoom=zoom)
             patchArrayNor = ia.center_image(patchArrayNor, centerPixel=centerPixel, newSize=mapSize,
                                             fill_value=borderValue)
@@ -1873,7 +1873,7 @@ class RetinotopicMappingTrial(object):
             patchArrayN = ia.rotate_image(patchArrayC, rotationAngle)
             patchArrayN[patchArrayN < 0.5] = 0
             patchArrayN[patchArrayN >= 0.5] = 1
-            newPatch = Patch(patchArrayN.astype(np.int), patchSign)
+            newPatch = Patch(patchArrayN.astype(np.int16), patchSign)
             center = newPatch.getCenter()
 
             if patchSign == 1:
@@ -2248,8 +2248,8 @@ class RetinotopicMappingTrial(object):
             V1array = ni.zoom(V1array, zoom)
             V1array = ia.binarize(V1array, 0.5)
 
-        V1area = np.sum(V1array).astype(np.float)
-        V1totalF = np.sum(V1array * vasMap).astype(np.float)
+        V1area = np.sum(V1array).astype(np.float64)
+        V1totalF = np.sum(V1array * vasMap).astype(np.float64)
         V1meanF = V1totalF / V1area
 
         # get fluorscence for all visual areas normalized by V1
@@ -2261,9 +2261,9 @@ class RetinotopicMappingTrial(object):
                 array = ni.zoom(array, zoom)
                 array = ia.binarize(array, 0.5)
 
-            area = np.sum(array).astype(np.float)
+            area = np.sum(array).astype(np.float64)
 
-            totalF = np.sum(array * vasMap).astype(np.float)
+            totalF = np.sum(array * vasMap).astype(np.float64)
 
             meanFnor = (totalF / area) / V1meanF
 
@@ -2295,8 +2295,8 @@ class RetinotopicMappingTrial(object):
 
         V1array = V1.array
 
-        V1area = np.sum(V1array).astype(np.float)
-        V1totalPower = np.sum(V1array * powerMap).astype(np.float)
+        V1area = np.sum(V1array).astype(np.float64)
+        V1totalPower = np.sum(V1array * powerMap).astype(np.float64)
         V1meanPower = V1totalPower / V1area
 
         # get mean power amplitude for all visual areas normalized by V1
@@ -2304,9 +2304,9 @@ class RetinotopicMappingTrial(object):
         for key, patch in finalPatches.items():
             array = patch.array
 
-            area = np.sum(array).astype(np.float)
+            area = np.sum(array).astype(np.float64)
 
-            totalPower = np.sum(array * powerMap).astype(np.float)
+            totalPower = np.sum(array * powerMap).astype(np.float64)
 
             meanPowerNor = (totalPower / area) / V1meanPower
 
@@ -2328,7 +2328,7 @@ class RetinotopicMappingTrial(object):
         # get mean power amplitude for all visual areas normalized by V1
         areaDict = {}
         for key, patch in finalPatches.items():
-            area = patch.getArea().astype(np.float) * (pixelSize ** 2)
+            area = patch.getArea().astype(np.float64) * (pixelSize ** 2)
 
             areaDict.update({key: area})
 
@@ -2359,7 +2359,7 @@ class RetinotopicMappingTrial(object):
         # get mean power amplitude for all visual areas normalized by V1
         magDict = {}
         for key, patch in finalPatches.items():
-            array = patch.array.astype(np.float)
+            array = patch.array.astype(np.float64)
 
             if erodeIter:
                 array = ni.binary_erosion(array, iterations=erodeIter)
@@ -2388,17 +2388,17 @@ class RetinotopicMappingTrial(object):
             _ = self._getSignMap()
 
         try:
-            V1 = self.finalPatchesMarked['V1'].array.astype(np.float)
-            LM = self.finalPatchesMarked['LM'].array.astype(np.float)
-            RL = self.finalPatchesMarked['RL'].array.astype(np.float)
+            V1 = self.finalPatchesMarked['V1'].array.astype(np.float64)
+            LM = self.finalPatchesMarked['LM'].array.astype(np.float64)
+            RL = self.finalPatchesMarked['RL'].array.astype(np.float64)
 
             overlap = 0  # number of overlaping pixels
             iterNum = 1  # number of iteration
             while overlap < 1:
                 #            print 'Iteration number for finding overlapping pixel:', iterNum
-                V1 = ni.morphology.binary_dilation(V1, iterations=1).astype(np.float)
-                LM = ni.morphology.binary_dilation(LM, iterations=1).astype(np.float)
-                RL = ni.morphology.binary_dilation(RL, iterations=1).astype(np.float)
+                V1 = ni.morphology.binary_dilation(V1, iterations=1).astype(np.float64)
+                LM = ni.morphology.binary_dilation(LM, iterations=1).astype(np.float64)
+                RL = ni.morphology.binary_dilation(RL, iterations=1).astype(np.float64)
                 totalField = V1 + LM + RL
                 #            plt.imshow(totalField)
                 overlap = len(np.argwhere(totalField == 3))
@@ -2458,7 +2458,7 @@ class RetinotopicMappingTrial(object):
         mask = np.zeros(self.altPosMap.shape)
 
         for patch in self.finalPatches.itervalues():
-            mask = mask + patch.array.astype(np.float)
+            mask = mask + patch.array.astype(np.float64)
 
         mask = ni.binary_closing(mask,
                                  structure=np.array([[1., 1., 1.],
@@ -2500,15 +2500,15 @@ class RetinotopicMappingTrial(object):
         altMask = np.logical_and(altPosMap >= altMin, altPosMap <= altMax)
         aziMask = np.logical_and(aziPosMap >= aziMin, aziPosMap <= aziMax)
 
-        mask = np.logical_and(altMask, aziMask).astype(np.float)
+        mask = np.logical_and(altMask, aziMask).astype(np.float64)
         totalMask = self._generateTotalMask()
-        mask = (mask * totalMask).astype(np.int)
+        mask = (mask * totalMask).astype(np.int16)
 
         mask = ni.binary_closing(mask, iterations=closeIter)
 
         mask = ni.binary_opening(mask, iterations=openIter)
 
-        mask = mask.astype(np.float)
+        mask = mask.astype(np.float64)
         mask[mask == 0] = np.nan
 
         plot_mask(mask, plotAxis=plotAxis, color=color, borderWidth=borderWidth)
@@ -2693,7 +2693,7 @@ class Patch(object):
         """
         pixels = np.argwhere(self.array)
         center = np.mean(pixels.astype(np.float32), axis=0)
-        return np.round(center).astype(np.int)
+        return np.round(center).astype(np.int16)
 
     def getArea(self):
         """
@@ -2735,7 +2735,7 @@ class Patch(object):
             raise LookupError('distance should be integer no less than 1.')
 
         bigPatch = ni.binary_dilation(self.array,
-                                      iterations=distance).astype(np.int)
+                                      iterations=distance).astype(np.int16)
 
         if np.amax(bigPatch + patch2.array) > 1:
             return True
@@ -2751,7 +2751,7 @@ class Patch(object):
         #        altRange = np.array([np.amin(altMap)-10., np.amax(altMap)+10.])
         #        aziRange = np.array([np.amin(aziMap)-10., np.amax(aziMap)+10.])
 
-        pixelSize = np.float(pixelSize)
+        pixelSize = np.float64(pixelSize)
 
         if visualFieldOrigin:
             altMap = altMap - visualFieldOrigin[0]
@@ -2773,10 +2773,10 @@ class Patch(object):
                         corAzi < AZIMUTH_RANGE[1]):
                         indAlt = (corAlt - ALTITUDE_RANGE[0]) // pixelSize
                         indAzi = (corAzi - AZIMUTH_RANGE[0]) // pixelSize
-                        visualSpace[np.int(indAlt), np.int(indAzi)] = 1
+                        visualSpace[np.int16(indAlt), np.int16(indAzi)] = 1
 
         if closeIter >= 1:
-            visualSpace = ni.binary_closing(visualSpace, iterations=closeIter).astype(np.int)
+            visualSpace = ni.binary_closing(visualSpace, iterations=closeIter).astype(np.int16)
 
         uniqueArea = np.sum(visualSpace[:]) * (pixelSize ** 2)
 
@@ -2948,11 +2948,11 @@ class Patch(object):
         plt.title('markers 3')
         plt.show()
 
-        newBorder = np.zeros(newLabel.shape).astype(np.int)
+        newBorder = np.zeros(newLabel.shape).astype(np.int16)
 
         newBorder[newLabel == -1] = 1
 
-        border = ni.binary_dilation(self.array).astype(np.int) - self.array
+        border = ni.binary_dilation(self.array).astype(np.int16) - self.array
 
         border = newBorder + border
 
@@ -3014,7 +3014,7 @@ class Patch(object):
         return the coordinates of the pixel representing the center of the
         visual space of the patch
         """
-        eccMap2 = np.array(eccMap).astype(np.float)
+        eccMap2 = np.array(eccMap).astype(np.float64)
 
         eccMap2[self.array == 0] = np.nan
 
@@ -3079,7 +3079,7 @@ def plot_mask_borders(mask, plotAxis=None,
     plotingMask[np.logical_or(np.isnan(mask), mask == 0)] = 0
 
     if zoom != 1:
-        plotingMask = cv2.resize(plotingMask.astype(np.float),
+        plotingMask = cv2.resize(plotingMask.astype(np.float64),
                                  dsize=(int(plotingMask.shape[1] * zoom), int(plotingMask.shape[0] * zoom)))
         plotingMask[plotingMask < 0.5] = 0
         plotingMask[plotingMask >= 0.5] = 1
