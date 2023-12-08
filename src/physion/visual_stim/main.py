@@ -35,6 +35,7 @@ class visual_stim:
         """
         self.protocol = protocol
         self.screen = SCREENS[self.protocol['Screen']]
+        self.blank_color = 0
 
         self.protocol['movie_refresh_freq'] = \
             protocol['movie_refresh_freq']\
@@ -58,8 +59,8 @@ class visual_stim:
             self.init_screen_presentation()
 
         ### INITIALIZE EXP ###
-        self.init_experiment(protocol, keys)
-
+        if not (self.protocol['Presentation']=='multiprotocol'):
+            self.init_experiment(protocol, keys)
 
     ################################################
     ###                                         ####
@@ -281,6 +282,7 @@ class visual_stim:
                     self.experiment[key.split(' (')[0]] = [protocol[key]]
                     self.experiment['index'] = [0]
                     self.experiment['repeat'] = [0]
+                    self.experiment['bg-color'] = [self.blank_color]
                     self.experiment['time_start'] = [protocol['presentation-prestim-period']]
                     self.experiment['time_stop'] = [protocol['presentation-duration']+\
                             protocol['presentation-prestim-period']]
@@ -308,7 +310,7 @@ class visual_stim:
                     FULL_VECS[key].append(vec[i])
 
             for k in ['index', 'repeat', 'time_start', 'time_stop',
-                      'interstim', 'time_duration']:
+                      'bg-color', 'interstim', 'time_duration']:
                 self.experiment[k] = []
 
             index_no_repeat = np.arange(len(FULL_VECS[key]))
@@ -329,6 +331,7 @@ class visual_stim:
                     for key in keys:
                         self.experiment[key].append(FULL_VECS[key][i])
                     self.experiment['index'].append(i) # shuffled
+                    self.experiment['bg-color'].append(self.blank_color)
                     self.experiment['repeat'].append(r)
                     self.experiment['time_start'].append(protocol['presentation-prestim-period']+\
                                                          (r*len(index_no_repeat)+n)*\
@@ -339,7 +342,7 @@ class visual_stim:
                     self.experiment['time_duration'].append(protocol['presentation-duration'])
 
         for k in ['index', 'repeat','time_start', 'time_stop',
-                    'interstim', 'time_duration']:
+                  'bg-color', 'interstim', 'time_duration']:
             self.experiment[k] = np.array(self.experiment[k])
         # we add a protocol_id, 0 by default for single protocols, overwritten for multiprotocols
         self.experiment['protocol_id'] = np.zeros(len(self.experiment['index']), dtype=int)
@@ -790,6 +793,7 @@ class multiprotocol(visual_stim):
                 i+=1
         else:
             while 'Protocol-%i'%i in protocol:
+                print(i)
                 path_list = [pathlib.Path(__file__).resolve().parents[1], 'acquisition', 'protocols']+protocol['Protocol-%i'%i].split('/')
                 Ppath = os.path.join(*path_list)
                 if not os.path.isfile(Ppath):
