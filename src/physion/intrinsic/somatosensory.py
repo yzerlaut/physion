@@ -17,17 +17,18 @@ try:
 except ModuleNotFoundError:
     pass
 ### ------------ ThorCam Interface ---------- ###
-try:
-    absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
-                        'work', 'physion', 'src', 'physion',
-                        'hardware', 'Thorlabs', 'camera_dlls')
-    os.environ['PATH'] = absolute_path_to_dlls + os.pathsep +\
-                                                os.environ['PATH']
-    os.add_dll_directory(absolute_path_to_dlls)
-    CameraInterface = 'ThorCam'
-    from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
-except (AttributeError, ModuleNotFoundError):
-    pass
+if CameraInterface is None:
+    try:
+        absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
+                            'work', 'physion', 'src', 'physion',
+                            'hardware', 'Thorlabs', 'camera_dlls')
+        os.environ['PATH'] = absolute_path_to_dlls + os.pathsep +\
+                                                    os.environ['PATH']
+        os.add_dll_directory(absolute_path_to_dlls)
+        CameraInterface = 'ThorCam'
+        from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
+    except (AttributeError, ModuleNotFoundError):
+        pass
 ### --------- None -> demo mode ------------- ###
 if CameraInterface is None:
     print('------------------------------------')
@@ -269,13 +270,19 @@ def take_vasculature_picture(self):
             self.cam.arm(2)
             self.cam.issue_software_trigger()
 
+        """
         for fn, HQ in zip([filename.replace('.tif', '-HQ.tif'), filename],
                           [True, False]):
             # save first HQ and then subsampled version
             img = get_frame(self, force_HQ=HQ)
-            img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
+            # img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
             im = PIL.Image.fromarray(img)
             im.save(fn)
+        """
+
+        img = get_frame(self)
+        im = PIL.Image.fromarray(img)
+        im.save(filename)
 
         np.save(filename.replace('.tif', '.npy'), img)
         print('vasculature image, saved as: %s' % filename)
@@ -337,7 +344,7 @@ def run(self):
         #########################################
 
         # build output steps
-        output_steps = {}
+        output_steps = [] 
         for i in range(self.Nrepeat):
             output_steps.append({"channel":0,
                                  "onset": i*self.period+self.period/2.,
@@ -504,6 +511,7 @@ def get_frame(self, force_HQ=False):
         img = np.reshape(tagged_image.pix,
                          newshape=[tagged_image.tags['Height'],
                                    tagged_image.tags['Width']])
+
     elif (CameraInterface=='ThorCam'):
 
         frame = self.cam.get_pending_frame_or_null()

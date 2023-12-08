@@ -255,10 +255,10 @@ def load_raw_data(datafolder, run_id):
         else:
             return params, (None, None)
 
-    elif os.path.isfile(os.path.join(datafolder, 'SS_intrinsic-%s.nwb' % (run_id))):
-        return params, load_single_datafile(os.path.join(datafolder, 'SS_intrinsic-%s.nwb' % (run_id)), params)
+    elif os.path.isfile(os.path.join(datafolder, 'SS-intrinsic-%s.nwb' % (run_id))):
+        return params, load_single_datafile(os.path.join(datafolder, 'SS-intrinsic-%s.nwb' % (run_id)), params)
     else:
-        print('"%s" file not found' % os.path.join(datafolder, 'SS_intrinsic-%s.nwb' % (run_id)))
+        print('"%s" file not found' % os.path.join(datafolder, 'SS-intrinsic-%s.nwb' % (run_id)))
 
 
 
@@ -278,8 +278,7 @@ def load_SS_intrinsic_data(self):
             plot.clear()
 
         # load data
-        self.params,\
-            (self.t, self.data) = load_raw_data(datafolder, self.numBox.currentText())
+        self.params, (self.t, self.data) = load_raw_data(datafolder, self.numBox.currentText())
 
         if float(self.ssBox.text())>0:
 
@@ -343,15 +342,16 @@ def show_raw_data(self):
 
 def compute_SS_power_maps(self):
 
-    print('- computing phase maps [...]')
+    print('- computing power maps [...]')
 
+    maps = {}
     maps['power'], _ = intrinsic_analysis.perform_fft_analysis(self.data,
                                                     self.params['Nrepeat'])
 
 
     fig, ax = plt.subplots(figsize=(4,2.3))
     intrinsic_analysis.plot_power_map(ax, fig, maps['power'])
-    print(' -> phase maps calculus done !')
+    print(' -> power maps calculus done !')
 
     plt.show()
     update_imgButtons(self)

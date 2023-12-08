@@ -408,7 +408,7 @@ def show_raw_data(self):
     spectrum = np.fft.fft((new_data-new_data.mean())/new_data.mean())
     power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
 
-    if self.twoPiBox.isChecked():
+    if hasattr(self, 'twoPiBox') and self.twoPiBox.isChecked():
         power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
     else:
         power, phase = np.abs(spectrum), np.angle(spectrum)
