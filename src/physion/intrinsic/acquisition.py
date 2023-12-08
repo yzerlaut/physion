@@ -15,17 +15,18 @@ try:
 except ModuleNotFoundError:
     pass
 ### ------------ ThorCam Interface ---------- ###
-try:
-    absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
-                        'work', 'physion', 'src', 'physion',
-                        'hardware', 'Thorlabs', 'camera_dlls')
-    os.environ['PATH'] = absolute_path_to_dlls + os.pathsep +\
-                                                os.environ['PATH']
-    os.add_dll_directory(absolute_path_to_dlls)
-    CameraInterface = 'ThorCam'
-    from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
-except (AttributeError, ModuleNotFoundError):
-    pass
+if CameraInterface is None:
+    try:
+        absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
+                            'work', 'physion', 'src', 'physion',
+                            'hardware', 'Thorlabs', 'camera_dlls')
+        os.environ['PATH'] = absolute_path_to_dlls + os.pathsep +\
+                                                    os.environ['PATH']
+        os.add_dll_directory(absolute_path_to_dlls)
+        CameraInterface = 'ThorCam'
+        from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
+    except (AttributeError, ModuleNotFoundError):
+        pass
 ### --------- None -> demo mode ------------- ###
 if CameraInterface is None:
     print('------------------------------------')
