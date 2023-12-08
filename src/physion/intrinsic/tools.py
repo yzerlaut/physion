@@ -333,7 +333,7 @@ def add_arrow(ax, angle,
 
     start = (xlim[1], ylim[1]+dy/2)
     delta = (-dx, np.sin(angle/180.*np.pi)*dx)
-    t
+    
     ax.annotate('Lateral ', start,
                 ha='right', color='r', fontsize=fontsize)
     ax.arrow(*start, *delta, color='r', lw=lw)
