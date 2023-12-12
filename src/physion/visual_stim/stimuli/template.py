@@ -46,10 +46,6 @@ class stim(visual_stim):
                          keys=['radius', 'bg-color', 'ndots',
                                'size', 'dotcolor', 'seed'])
 
-        ## /!\ inside here always use self.refresh_freq 
-        ##        not the parent cls.refresh_freq 
-        # when the parent multiprotocol will have ~10Hz refresh rate,
-        ##                this can remain 2-3Hz
         self.refresh_freq = protocol['movie_refresh_freq']
 
 
@@ -59,18 +55,16 @@ class stim(visual_stim):
         """ 
         return the frame at a given time point
         """
-        cls = (parent if parent is not None else self)
-
-        img = init_bg_image(cls, index)
+        img = init_bg_image(self, index)
 
         # do you image construction/processing here:
-        for i in range(int(cls.experiment['ndots'][index])):
+        for i in range(int(self.experiment['ndots'][index])):
 
-            pos = np.random.randn(2)*cls.experiment['radius'][index]
+            pos = np.random.randn(2)*self.experiment['radius'][index]
 
             self.add_dot(img, pos,
-                         cls.experiment['size'][index],
-                         cls.experiment['dotcolor'][index],
+                         self.experiment['size'][index],
+                         self.experiment['dotcolor'][index],
                          type='circle')
 
         return img
@@ -90,10 +84,8 @@ class stim(visual_stim):
 
         # """
         # """
-        # cls = (parent if parent is not None else self)
-
-        # tcenter = .5*(cls.experiment['time_stop'][episode]-\
-                      # cls.experiment['time_start'][episode])
+        # tcenter = .5*(self.experiment['time_stop'][episode]-\
+                      # self.experiment['time_start'][episode])
         
         # ax = self.show_frame(episode, tcenter, ax=ax,
                              # parent=parent,

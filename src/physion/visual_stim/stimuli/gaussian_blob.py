@@ -40,25 +40,23 @@ class stim(visual_stim):
                           'contrast', 'bg-color'])
 
     def get_image(self, index, time_from_episode_start=0, parent=None):
-        cls = (parent if parent is not None else self)
-        img = init_bg_image(cls, index)
+        img = init_bg_image(self, index)
         self.add_gaussian(img,
                           t=time_from_episode_start, 
-                          contrast = cls.experiment['contrast'][index],
-                          xcenter=cls.experiment['x-center'][index],
-                          zcenter=cls.experiment['y-center'][index],
-                          radius = cls.experiment['radius'][index],
-                          t0=cls.experiment['center-time'][index],
-                          sT=cls.experiment['extent-time'][index])
+                          contrast = self.experiment['contrast'][index],
+                          xcenter=self.experiment['x-center'][index],
+                          zcenter=self.experiment['y-center'][index],
+                          radius = self.experiment['radius'][index],
+                          t0=self.experiment['center-time'][index],
+                          sT=self.experiment['extent-time'][index])
         return img    
 
     def plot_stim_picture(self, episode,
                           ax=None, parent=None,
                           label=None, vse=False):
 
-        cls = (parent if parent is not None else self)
         ax = self.show_frame(episode,
-                             time_from_episode_start=cls.experiment['center-time'][episode],
+                             time_from_episode_start=self.experiment['center-time'][episode],
                              ax=ax, parent=parent)
 
         return ax

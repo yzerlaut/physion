@@ -86,6 +86,7 @@ if __name__=='__main__':
         # loop over stims to produce the binaries and store them 
         for protocol_id in np.unique(stim.experiment['protocol_id']):
 
+            print(protocol_id, len(stim.experiment['protocol_id']), len(stim.experiment['repeat']))
             pCond = (stim.experiment['protocol_id']==protocol_id) &\
                     (stim.experiment['repeat']==0) # taking the first one
 

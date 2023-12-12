@@ -4,7 +4,6 @@ class for the visual stimulation
 - test with :
 python -m physion.visual_stim.main physion/acquisition/protocols/drifting-gratings.json
 
-
 N.B. Psychopy has colors between -1 (black) and +1 (white)
 """
 import numpy as np
@@ -540,7 +539,8 @@ class visual_stim:
             elif not self.is_interstim[iT]:
                 # we need to show the stimulus
 
-                iFrame = int((t-self.time_start_table[iT])*self.refresh_freq)
+                iFrame = min([int((t-self.time_start_table[iT])*self.refresh_freq),#
+                              len(self.time_indices)-1])
                 self.buffer[self.time_indices[iFrame]].draw()
                 self.add_monitoring_signal(speed*(t-self.time_start_table[iT]))
                 self.win.flip()
@@ -550,6 +550,7 @@ class visual_stim:
                 # -*- need to update the stimulation buffer -*-
 
                 protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
+                print(protocol_id, len(self.BUFFERS))
                 stim_index = self.experiment['index'][self.next_index_table[iT]]
                 if use_prebuffering:
                     self.buffer = self.BUFFERS[protocol_id][stim_index]
@@ -793,7 +794,6 @@ class multiprotocol(visual_stim):
                 i+=1
         else:
             while 'Protocol-%i'%i in protocol:
-                print(i)
                 path_list = [pathlib.Path(__file__).resolve().parents[1], 'acquisition', 'protocols']+protocol['Protocol-%i'%i].split('/')
                 Ppath = os.path.join(*path_list)
                 if not os.path.isfile(Ppath):
@@ -858,7 +858,7 @@ class multiprotocol(visual_stim):
         for i in range(1, len(self.experiment['index'])):
             self.experiment['time_start'][i] = self.experiment['time_stop'][i-1]+self.experiment['interstim'][i]
             self.experiment['time_stop'][i] = self.experiment['time_start'][i]+self.experiment['time_duration'][i]
-
+        self.tstop = self.experiment['time_stop'][-1]+protocol['presentation-poststim-period']
         for key in ['protocol_id', 'index', 'repeat', 'interstim', 'time_start', 'time_stop', 'time_duration']:
             self.experiment[key] = np.array(self.experiment[key])
 

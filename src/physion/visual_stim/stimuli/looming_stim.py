@@ -37,10 +37,6 @@ class stim(visual_stim):
                                'color', 'looming-nonlinearity', 'looming-duration',
                                'end-duration', 'bg-color'])
 
-        ## /!\ inside here always use self.refresh_freq 
-        ##        not the parent cls.refresh_freq 
-        # when the parent multiprotocol will have ~10Hz refresh rate,
-        ##                this can remain 2-3Hz
         self.refresh_freq = protocol['movie_refresh_freq']
 
     def compute_looming_trajectory(self,
@@ -51,36 +47,33 @@ class stim(visual_stim):
         angles = np.linspace(0, 1, len(time_indices))**nonlinearity
         return time_indices, angles*(end_size-start_size)+start_size
 
-    def get_frames_sequence(self, index, parent=None):
+    def get_frames_sequence(self, index):
         """
         
         """
-        cls = (parent if parent is not None else self)
-        
-        interval = cls.experiment['time_stop'][index]-cls.experiment['time_start'][index]
-
         # background frame:
-        bg = 2*cls.experiment['bg-color'][index]-1.+0.*self.x
+        bg = 2*self.experiment['bg-color'][index]-1.+0.*self.x
 
-        t, angles = self.compute_looming_trajectory(duration=cls.experiment['looming-duration'][index],
-                                                    nonlinearity=cls.experiment['looming-nonlinearity'][index],
+        interval = self.experiment['time_stop'][index]-self.experiment['time_start'][index]
+        t, angles = self.compute_looming_trajectory(duration=self.experiment['looming-duration'][index],
+                                                    nonlinearity=self.experiment['looming-nonlinearity'][index],
                                                     dt=1./self.refresh_freq,
-                                                    start_size=cls.experiment['radius-start'][index],
-                                                    end_size=cls.experiment['radius-end'][index])
+                                                    start_size=self.experiment['radius-start'][index],
+                                                    end_size=self.experiment['radius-end'][index])
 
         itend = int(1.2*interval*self.refresh_freq)
 
         times_index_to_frames, FRAMES = [0], [bg.copy()]
         for it in range(len(t))[1:]:
             img = bg.copy()
-            self.add_dot(img, (cls.experiment['x-center'][index], cls.experiment['y-center'][index]),
+            self.add_dot(img, (self.experiment['x-center'][index], self.experiment['y-center'][index]),
                          angles[it],
-                         cls.experiment['color'][index],
+                         self.experiment['color'][index],
                          type='circle')
             FRAMES.append(img)
             times_index_to_frames.append(it)
         it = len(t)-1
-        while it<len(t)+int(cls.experiment['end-duration'][index]*self.refresh_freq):
+        while it<len(t)+int(self.experiment['end-duration'][index]*self.refresh_freq):
             times_index_to_frames.append(len(FRAMES)-1) # the last one
             it+=1
         while it<itend:
@@ -90,12 +83,11 @@ class stim(visual_stim):
         return times_index_to_frames, FRAMES, self.refresh_freq
 
     def get_image(self, index, time_from_episode_start=0, parent=None):
-        cls = (parent if parent is not None else self)
-        img = cls.experiment['bg-color'][index]+0.*self.x
-        self.add_dot(img, (cls.experiment['x-center'][index],
-                           cls.experiment['y-center'][index]),
-                     cls.experiment['radius-end'][index]/4.,
-                     cls.experiment['color'][index],
+        img = self.experiment['bg-color'][index]+0.*self.x
+        self.add_dot(img, (self.experiment['x-center'][index],
+                           self.experiment['y-center'][index]),
+                     self.experiment['radius-end'][index]/4.,
+                     self.experiment['color'][index],
                      type='circle')
         return img
 
@@ -105,15 +97,14 @@ class stim(visual_stim):
                                  'width_factor':0.05,
                                  'color':'red'}):
 
-        cls = (parent if parent is not None else self)
         ax = self.show_frame(episode, ax=ax, label=label, enhance=enhance,
                              parent=parent)
 
-        l = cls.experiment['radius-end'][episode]/3.8 # just like above
+        l = self.experiment['radius-end'][episode]/3.8 # just like above
         for d in np.linspace(0, 2*np.pi, 3, endpoint=False):
-            arrow['center'] = [cls.experiment['x-center'][episode]+np.cos(d)*l+\
+            arrow['center'] = [self.experiment['x-center'][episode]+np.cos(d)*l+\
                                np.cos(d)*arrow['length']/2.,
-                               cls.experiment['y-center'][episode]+np.sin(d)*l+\
+                               self.experiment['y-center'][episode]+np.sin(d)*l+\
                                np.sin(d)*arrow['length']/2.]
                 
             arrow['direction'] = -180*d/np.pi

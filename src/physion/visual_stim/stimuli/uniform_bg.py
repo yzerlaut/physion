@@ -34,6 +34,4 @@ class stim(visual_stim):
         """ 
         return the frame at a given time point
         """
-        cls = (parent if parent is not None else self)
-
-        return init_bg_image(cls, index)
+        return init_bg_image(self, index)

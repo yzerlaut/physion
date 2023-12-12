@@ -49,21 +49,18 @@ class stim(visual_stim):
         """ 
         return the frame at a given time point
         """
-        cls = (parent if parent is not None else self)
-        return compute_new_image_with_dots(cls, index)
+        return compute_new_image_with_dots(self, index)
 
     def get_frames_sequence(self, index, parent=None):
         """
         get frame seq
         """
 
-        cls = (parent if parent is not None else self)
+        time_indices, times, FRAMES = init_times_frames(self, index, self.refresh_freq)
 
-        time_indices, times, FRAMES = init_times_frames(cls, index, self.refresh_freq)
-
-        np.random.seed(int(cls.experiment['seed'][index]+3*index)) # changing seed at each realization
+        np.random.seed(int(self.experiment['seed'][index]+3*index)) # changing seed at each realization
         for iframe, t in enumerate(times):
-            img = compute_new_image_with_dots(cls, index)
+            img = compute_new_image_with_dots(self, index)
             FRAMES.append(self.image_to_frame(img))
 
         return time_indices, FRAMES, self.refresh_freq

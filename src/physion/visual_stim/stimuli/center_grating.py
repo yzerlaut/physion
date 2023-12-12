@@ -36,23 +36,18 @@ class stim(visual_stim):
                                'radius','spatial-freq',
                                'angle', 'contrast'])
 
-        ## /!\ inside here always use self.refresh_freq 
-        ##        not the parent cls.refresh_freq 
-        # when the parent multiprotocol will have ~10Hz refresh rate,
-        ##                this can remain 2-3Hz
         self.refresh_freq = protocol['movie_refresh_freq']
 
 
     def get_image(self, episode, time_from_episode_start=0, parent=None):
-        cls = (parent if parent is not None else self)
-        img = init_bg_image(cls, episode)
+        img = init_bg_image(self, episode)
         self.add_grating_patch(img,
-                       angle=cls.experiment['angle'][episode],
-                       radius=cls.experiment['radius'][episode],
-                       spatial_freq=cls.experiment['spatial-freq'][episode],
-                       contrast=cls.experiment['contrast'][episode],
-                       xcenter=cls.experiment['x-center'][episode],
-                       zcenter=cls.experiment['y-center'][episode])
+                       angle=self.experiment['angle'][episode],
+                       radius=self.experiment['radius'][episode],
+                       spatial_freq=self.experiment['spatial-freq'][episode],
+                       contrast=self.experiment['contrast'][episode],
+                       xcenter=self.experiment['x-center'][episode],
+                       zcenter=self.experiment['y-center'][episode])
         return img
 
     def plot_stim_picture(self, episode,
@@ -61,7 +56,6 @@ class stim(visual_stim):
                                  'width_factor':0.05,
                                  'color':'red'}):
 
-        cls = (parent if parent is not None else self)
         ax = self.show_frame(episode, ax=ax, label=label,
                              parent=parent)
         return ax
