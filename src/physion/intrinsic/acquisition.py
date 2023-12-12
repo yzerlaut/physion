@@ -45,7 +45,7 @@ from physion.intrinsic.tools import resample_img
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path
 
-camera_depth = 12 
+camera_depth = 12
 
 def gui(self,
         box_width=250,
@@ -258,7 +258,6 @@ def take_fluorescence_picture(self):
                           [True, False]):
             # save first HQ and then subsampled version
             img = get_frame(self, force_HQ=HQ)
-            img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
             im = PIL.Image.fromarray(img)
             im.save(fn)
 
@@ -293,7 +292,6 @@ def take_vasculature_picture(self):
                           [True, False]):
             # save first HQ and then subsampled version
             img = get_frame(self, force_HQ=HQ)
-            img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
             im = PIL.Image.fromarray(img)
             im.save(fn)
 
@@ -589,6 +587,7 @@ def get_frame(self, force_HQ=False):
         img = np.reshape(tagged_image.pix,
                          newshape=[tagged_image.tags['Height'],
                                    tagged_image.tags['Width']])
+
     elif (CameraInterface=='ThorCam'):
 
         frame = self.cam.get_pending_frame_or_null()
@@ -622,15 +621,14 @@ def get_frame(self, force_HQ=False):
             
     else:
         time.sleep(0.03) # grabbing frames takes minimum 30ms
-        img = np.random.uniform(0, 2**camera_depth,
+        img = np.random.uniform(0, 2**8,
                                 size=(720, 1280))
 
     if (int(self.spatialBox.text())>1) and not force_HQ:
         return np.array(\
-                resample_img(img, int(self.spatialBox.text())),
-                dtype=np.uint16)
+                resample_img(img, int(self.spatialBox.text())))
     else:
-        return img.astype(np.uint16)
+        return img
 
     
     
