@@ -282,12 +282,16 @@ class visual_stim:
                     self.experiment['index'] = [0]
                     self.experiment['repeat'] = [0]
                     self.experiment['bg-color'] = [self.blank_color]
-                    self.experiment['time_start'] = [protocol['presentation-prestim-period']]
-                    self.experiment['time_stop'] = [protocol['presentation-duration']+\
+                    self.experiment['time_start'] = [\
                             protocol['presentation-prestim-period']]
-                    self.experiment['time_duration'] = [protocol['presentation-duration']]
-                    self.experiment['interstim'] = [protocol['presentation-interstim-period']\
-                            if 'presentation-interstim-period' in protocol else 0]
+                    self.experiment['time_stop'] = [\
+                            protocol['presentation-duration']+\
+                            protocol['presentation-prestim-period']]
+                    self.experiment['time_duration'] = [\
+                            protocol['presentation-duration']]
+                    self.experiment['interstim'] = [\
+                        protocol['presentation-interstim-period']\
+                        if 'presentation-interstim-period' in protocol else 0]
 
         else:
 
@@ -296,14 +300,20 @@ class visual_stim:
             for key in keys:
                 FULL_VECS[key], self.experiment[key] = [], []
                 if ('N-log-'+key in protocol) and (protocol['N-log-'+key]>1):
-                    VECS.append(np.logspace(np.log10(protocol[key+'-1']),\
-                            np.log10(protocol[key+'-2']),protocol['N-log-'+key]))
+                    # LOG-SPACED parameters
+                    VECS.append(np.logspace(np.log10(protocol[key+'-1']),
+                                            np.log10(protocol[key+'-2']),
+                                            protocol['N-log-'+key]))
                 elif protocol['N-'+key]>1:
-                    VECS.append(np.linspace(protocol[key+'-1'],\
-                            protocol[key+'-2'],protocol['N-'+key]))
+                    # LIN-SPACED parameters
+                    VECS.append(np.linspace(protocol[key+'-1'],
+                                            protocol[key+'-2'],
+                                            protocol['N-'+key]))
                 else:
-                    VECS.append(np.array([protocol[key+'-2']])) #  /!\ we pick the SECOND VALUE
-                    #                      as the constant one (so remember to fill this right in GUI)
+                    #  /!\ we pick the SECOND VALUE as the constant one 
+                    #         (so remember to fill this right in GUI)
+                    VECS.append(np.array([protocol[key+'-2']])) 
+
             for vec in itertools.product(*VECS):
                 for i, key in enumerate(keys):
                     FULL_VECS[key].append(vec[i])
@@ -332,21 +342,30 @@ class visual_stim:
                     self.experiment['index'].append(i) # shuffled
                     self.experiment['bg-color'].append(self.blank_color)
                     self.experiment['repeat'].append(r)
-                    self.experiment['time_start'].append(protocol['presentation-prestim-period']+\
-                                                         (r*len(index_no_repeat)+n)*\
-                                                         (protocol['presentation-duration']+\
-                                                          protocol['presentation-interstim-period']))
-                    self.experiment['time_stop'].append(self.experiment['time_start'][-1]+protocol['presentation-duration'])
-                    self.experiment['interstim'].append(protocol['presentation-interstim-period'])
-                    self.experiment['time_duration'].append(protocol['presentation-duration'])
+                    self.experiment['time_start'].append(\
+                            protocol['presentation-prestim-period']+\
+                            (r*len(index_no_repeat)+n)*\
+                                (protocol['presentation-duration']+\
+                                protocol['presentation-interstim-period']))
+                    self.experiment['time_stop'].append(\
+                            self.experiment['time_start'][-1]+\
+                            protocol['presentation-duration'])
+                    self.experiment['interstim'].append(\
+                            protocol['presentation-interstim-period'])
+                    self.experiment['time_duration'].append(\
+                            protocol['presentation-duration'])
 
         for k in ['index', 'repeat','time_start', 'time_stop',
                   'bg-color', 'interstim', 'time_duration']:
             self.experiment[k] = np.array(self.experiment[k])
-        # we add a protocol_id, 0 by default for single protocols, overwritten for multiprotocols
-        self.experiment['protocol_id'] = np.zeros(len(self.experiment['index']), dtype=int)
+
+        # we add a protocol_id
+        # 0 by default for single protocols, overwritten for multiprotocols
+        self.experiment['protocol_id'] = np.zeros(\
+                len(self.experiment['index']), dtype=int)
         # we write a tstop 
-        self.tstop = self.experiment['time_stop'][-1]+protocol['presentation-poststim-period']
+        self.tstop = self.experiment['time_stop'][-1]+\
+                            protocol['presentation-poststim-period']
 
     # the close function
     def close(self):
@@ -464,6 +483,7 @@ class visual_stim:
                 self.REFRESH_FREQS[iProtocol].append(refresh_freq)
                 iStim += 1
             iProtocol += 1
+            iStim = 0
         print('--------------------------------------')
         print(' [ok] buffering of all stims done !   ')
         print('--------------------------------------')
@@ -781,7 +801,9 @@ class multiprotocol(visual_stim):
 
         self.STIM, i = [], 1
 
-        if ('load_from_protocol_data' in protocol) and protocol['load_from_protocol_data']:
+        if ('load_from_protocol_data' in protocol) and\
+                            protocol['load_from_protocol_data']:
+            # we load a previously saved multiprotocol
             while 'Protocol-%i'%i in protocol:
                 subprotocol = {'Screen':protocol['Screen'],
                                'Presentation':'',
@@ -789,15 +811,20 @@ class multiprotocol(visual_stim):
                                'no-window':True}
                 for key in protocol:
                     if ('Protocol-%i-'%i in key):
-                        subprotocol[key.replace('Protocol-%i-'%i, '')] = protocol[key]
+                        nKey = key.replace('Protocol-%i-'%i, '')
+                        subprotocol[nKey] = protocol[key]
                 self.STIM.append(build_stim(subprotocol))
                 i+=1
         else:
+            # we generate a new multiprotocol
             while 'Protocol-%i'%i in protocol:
-                path_list = [pathlib.Path(__file__).resolve().parents[1], 'acquisition', 'protocols']+protocol['Protocol-%i'%i].split('/')
+                path_list = [pathlib.Path(__file__).resolve().parents[1],
+                            'acquisition', 
+                             'protocols']+protocol['Protocol-%i'%i].split('/')
                 Ppath = os.path.join(*path_list)
                 if not os.path.isfile(Ppath):
-                    print(' /!\ "%s" not found in Protocol folder /!\  ' % protocol['Protocol-%i'%i])
+                    print(' /!\ "%s" not found in Protocol folder /!\  ' %\
+                                            protocol['Protocol-%i'%i])
                 with open(Ppath, 'r') as fp:
                     subprotocol = json.load(fp)
                     subprotocol['Screen'] = protocol['Screen']
@@ -809,18 +836,21 @@ class multiprotocol(visual_stim):
                 i+=1
 
         self.experiment = {'protocol_id':[]}
-        # we initialize the keys
+
+        # we initialize the keys of all stims
         for stim in self.STIM:
             for key in stim.experiment:
                 self.experiment[key] = []
+
         # then we iterate over values
         for IS, stim in enumerate(self.STIM):
             for i in range(len(stim.experiment['index'])):
                 for key in self.experiment:
-                    if (key in stim.experiment):
+                    if (key in stim.experiment) and (key!='protocol_id'):
                         self.experiment[key].append(stim.experiment[key][i])
                     elif key in ['interstim-screen']:
-                        self.experiment[key].append(0) # if not in keys, mean 0 interstim (e.g. sparse noise stim.)
+                        # if not in keys, mean 0 interstim (e.g. sparse noise stim.)
+                        self.experiment[key].append(0) 
                     elif key not in ['protocol_id', 'time_duration']:
                         self.experiment[key].append(None)
                 self.experiment['protocol_id'].append(IS)
@@ -851,16 +881,27 @@ class multiprotocol(visual_stim):
             for key in self.experiment:
                 self.experiment[key] = np.array(self.experiment[key])[new_indices]
 
-        # we rebuild time
-        self.experiment['time_start'][0] = protocol['presentation-prestim-period']
-        self.experiment['time_stop'][0] = protocol['presentation-prestim-period']+self.experiment['time_duration'][0]
-        self.experiment['interstim'] = np.concatenate([self.experiment['interstim'][1:],[self.experiment['interstim'][0]]])
+        # we rebuild the time course 
+        self.experiment['time_start'][0] =\
+                protocol['presentation-prestim-period']
+        self.experiment['time_stop'][0] =\
+                protocol['presentation-prestim-period']+\
+                    self.experiment['time_duration'][0]
+        self.experiment['interstim'] = \
+                np.concatenate([self.experiment['interstim'][1:],\
+                [self.experiment['interstim'][0]]])
         for i in range(1, len(self.experiment['index'])):
-            self.experiment['time_start'][i] = self.experiment['time_stop'][i-1]+self.experiment['interstim'][i]
-            self.experiment['time_stop'][i] = self.experiment['time_start'][i]+self.experiment['time_duration'][i]
-        self.tstop = self.experiment['time_stop'][-1]+protocol['presentation-poststim-period']
-        for key in ['protocol_id', 'index', 'repeat', 'interstim', 'time_start', 'time_stop', 'time_duration']:
-            self.experiment[key] = np.array(self.experiment[key])
+            self.experiment['time_start'][i] = \
+                    self.experiment['time_stop'][i-1]+\
+                    self.experiment['interstim'][i]
+            self.experiment['time_stop'][i] = \
+                    self.experiment['time_start'][i]+\
+                        self.experiment['time_duration'][i]
+        self.tstop = self.experiment['time_stop'][-1]+\
+                protocol['presentation-poststim-period']
+        for key in self.experiment:
+            if type(self.experiment[key])==list:
+                self.experiment[key] = np.array(self.experiment[key])
 
     ##############################################
     ##  ----  MAPPING TO CHILD PROTOCOLS --- #####
@@ -970,9 +1011,9 @@ if __name__=='__main__':
     VisualStim_process.start()
 
     # -- with use_prebuffering=True
-    # while not readyEvent.is_set():
-        # time.sleep(0.1)
-    # print('\n buffering ready... --> launching stim ! ')
+    while not readyEvent.is_set():
+        time.sleep(0.1)
+    print('\n buffering ready... --> launching stim ! ')
     time.sleep(2)
     runEvent.set()
     time.sleep(args.tstop)
