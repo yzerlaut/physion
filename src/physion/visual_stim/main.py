@@ -167,32 +167,28 @@ class visual_stim:
                         spatial_freq=0.1, contrast=1, time_phase=0.):
         return contrast*(1+np.cos(np.pi/2.+2*np.pi*(spatial_freq*xrot-time_phase)))/2.
 
-    def get_frames_sequence(self, index, parent=None):
+    def get_frames_sequence(self, index):
         """
         we build a sequence of frames by successive calls to "self.get_image"
 
         here we use self.refresh_freq, not cls.refresh_freq
          """
-        cls = (parent if parent is not None else self)
+        time_indices, times, FRAMES = init_times_frames(self, index,\
+                                                        self.refresh_freq)
 
-        time_indices, times, FRAMES = init_times_frames(cls, index,\
-                self.refresh_freq)
-
-        order = self.compute_frame_order(cls,\
-                times, index) # shuffling inside if randomize !!
+        order = self.compute_frame_order(times, index) # shuffling inside if randomize !!
 
         for iframe, t in enumerate(times):
             new_t = order[iframe]/self.refresh_freq
 
-            img = self.get_image(index, new_t,
-                                 parent=parent)
+            img = self.get_image(index, new_t)
 
             FRAMES.append(self.image_to_frame(img))
 
         return time_indices, FRAMES, self.refresh_freq
 
 
-    def compute_frame_order(self, cls, times, index):
+    def compute_frame_order(self, times, index):
         """
         function to handle the randomization of frames across time
         """
@@ -201,10 +197,11 @@ class visual_stim:
 
         if ('randomize' in self.protocol) and (self.protocol['randomize']=="True"):
             # we randomize the order of the time sequence here !!
-            if ('randomize-per-trial' in self.protocol) and (self.protocol['randomize-per-trial']=="True"):
-                np.random.seed(int(cls.experiment['seed'][index]+1000*index))
+            if ('randomize-per-trial' in self.protocol) and\
+                    (self.protocol['randomize-per-trial']=="True"):
+                np.random.seed(int(self.experiment['seed'][index]+1000*index))
             else:
-                np.random.seed(int(cls.experiment['seed'][index]))
+                np.random.seed(int(self.experiment['seed'][index]))
             np.random.shuffle(order) # shuffling
 
         return order
@@ -281,7 +278,8 @@ class visual_stim:
                     self.experiment[key.split(' (')[0]] = [protocol[key]]
                     self.experiment['index'] = [0]
                     self.experiment['repeat'] = [0]
-                    self.experiment['bg-color'] = [self.blank_color]
+                    self.experiment['bg-color'] = \
+                            [protocol['presentation-blank-screen-color']]
                     self.experiment['time_start'] = [\
                             protocol['presentation-prestim-period']]
                     self.experiment['time_stop'] = [\
@@ -340,7 +338,7 @@ class visual_stim:
                     for key in keys:
                         self.experiment[key].append(FULL_VECS[key][i])
                     self.experiment['index'].append(i) # shuffled
-                    self.experiment['bg-color'].append(self.blank_color)
+                    # self.experiment['bg-color'].append(self.blank_color)
                     self.experiment['repeat'].append(r)
                     self.experiment['time_start'].append(\
                             protocol['presentation-prestim-period']+\
@@ -358,6 +356,10 @@ class visual_stim:
         for k in ['index', 'repeat','time_start', 'time_stop',
                   'bg-color', 'interstim', 'time_duration']:
             self.experiment[k] = np.array(self.experiment[k])
+
+        if len(self.experiment['bg-color'])!=len(self.experiment['index']):
+            self.experiment['bg-color'] = self.blank_color*\
+                    np.ones(len(self.experiment['index']))
 
         # we add a protocol_id
         # 0 by default for single protocols, overwritten for multiprotocols
@@ -570,7 +572,6 @@ class visual_stim:
                 # -*- need to update the stimulation buffer -*-
 
                 protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
-                print(protocol_id, len(self.BUFFERS))
                 stim_index = self.experiment['index'][self.next_index_table[iT]]
                 if use_prebuffering:
                     self.buffer = self.BUFFERS[protocol_id][stim_index]
@@ -913,13 +914,17 @@ class multiprotocol(visual_stim):
                 time_from_episode_start=time_from_episode_start, parent=self)
 
     def get_frames_sequence(self, index):
-        return self.STIM[self.experiment['protocol_id'][index]].get_frames_sequence(index, parent=self)
+        return getattr(self.STIM[self.experiment['protocol_id'][index]],
+                       'get_frames_sequence')(index)
 
-    def plot_stim_picture(self, episode, ax=None, parent=None, label=None, vse=False):
-        return self.STIM[self.experiment['protocol_id'][episode]].plot_stim_picture(episode, ax=ax, parent=self, label=label, vse=vse)
+    def plot_stim_picture(self, index, 
+                          ax=None, parent=None, label=None, vse=False):
+        return getattr(self.STIM[self.experiment['protocol_id'][index]],
+                       'plot_stim_picture')(index, ax=ax, label=label, vse=vse)
 
-    def get_vse(self, episode, ax=None, parent=None, label=None, vse=False):
-        return self.STIM[self.experiment['protocol_id'][episode]].get_vse(episode, parent=self)
+    def get_vse(self, index, ax=None, parent=None, label=None, vse=False):
+        return getattr(self.STIM[self.experiment['protocol_id'][index]],
+                       'get_vse')(index)
 
 
 #####################################

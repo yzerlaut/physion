@@ -72,8 +72,9 @@ class stim(visual_stim):
     def __init__(self, protocol):
 
         super().__init__(protocol,
-                         keys=['speed', 'bg-color', 'ndots', 'spacing',
-                               'direction', 'size', 'dotcolor', 'seed'])
+                         keys=['speed', 'bg-color', 'ndots',
+                               'spacing', 'direction', 'size',
+                               'dotcolor', 'seed'])
 
         self.refresh_freq = protocol['movie_refresh_freq']
 

@@ -1,6 +1,6 @@
 {
   "Presentation": "multiprotocol",
-  "shuffling" :"None",
+  "shuffling" :"full",
   "shuffling-seed" :23,
   "Protocol-1": "subprotocols/NDNF/moving-dots.json",
   "Protocol-2": "subprotocols/NDNF/random-dots.json",
