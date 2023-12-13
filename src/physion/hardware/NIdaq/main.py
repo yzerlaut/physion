@@ -24,6 +24,7 @@ class Acquisition:
                  device=None,
                  outputs=None,
                  output_steps=[], # should be a set of dictionaries, output_steps=[{'channel':0, 'onset': 2.3, 'duration': 1., 'value':5}]
+                 output_funcs=None, # should be a set of functions func(t) 
                  verbose=False):
         
         self.running, self.data_saved = False, False
@@ -41,16 +42,30 @@ class Acquisition:
         # - analog:
         self.analog_data = np.zeros((Nchannel_analog_in, 1), dtype=np.float64)
         if self.Nchannel_analog_in>0:
-            self.analog_input_channels = get_analog_input_channels(self.device)[:Nchannel_analog_in]
+            self.analog_input_channels = \
+                    get_analog_input_channels(self.device)[:Nchannel_analog_in]
         # - digital:
         self.digital_data = np.zeros((1, 1), dtype=np.uint32)
         if self.Nchannel_digital_in>0:
-            self.digital_input_channels = get_digital_input_channels(self.device)[:Nchannel_digital_in]
+            self.digital_input_channels = \
+                    get_digital_input_channels(self.device)[:Nchannel_digital_in]
 
         # preparing output channels
         if outputs is not None: # used as a flag for output or not
-            self.output_channels = get_analog_output_channels(self.device)[:outputs.shape[0]]
+            # -
+            self.output_channels = \
+                    get_analog_output_channels(self.device)[:outputs.shape[0]]
+
+        elif output_funcs is not None:
+            # -
+            Nchannel = len(output_funcs)
+            t = np.arange(int(self.max_time*self.sampling_rate))*self.dt
+            outputs = np.zeros((Nchannel,len(t)))
+            for i, func in enumerate(output_funcs):
+                outputs[i] = func(t)
+
         elif len(output_steps)>0:
+            # -
             Nchannel = max([d['channel'] for d in output_steps])+1
             # have to be elements 
             t = np.arange(int(self.max_time*self.sampling_rate))*self.dt
@@ -63,6 +78,8 @@ class Acquisition:
                 cond = (t>step['onset']) & (t<=step['onset']+step['duration'])
                 outputs[step['channel']][cond] = step['value']
             self.output_channels = get_analog_output_channels(self.device)[:outputs.shape[0]]
+
+
         self.outputs = outputs      
             
     def launch(self):

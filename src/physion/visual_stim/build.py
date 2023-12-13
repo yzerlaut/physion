@@ -94,6 +94,7 @@ if __name__=='__main__':
                 # get
                 time_indices, frames, refresh_freq =\
                         stim.get_frames_sequence(stim_index)
+                print(np.unique(frames))
                 print('writing: protocol-%i_index-%i.bin' % (\
                                 protocol_id, stim_index))
                 Frames = np.array(\

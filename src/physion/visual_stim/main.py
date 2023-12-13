@@ -497,7 +497,7 @@ class visual_stim:
                       use_prebuffering=True,
                       speed=1.,
                       dt=10e-3,
-                      verbose=True):
+                      verbose=False):
 
         # showing the blank screen during initialisation
         self.blank_screen()

@@ -110,9 +110,7 @@ def initialize(self):
                 (self.max_time/3600, (self.max_time%3600)/60, (self.max_time%60)))
 
         output_steps = []
-        print('CaImaging', self.metadata['CaImaging'])
         if self.metadata['CaImaging']:
-            print('Ca Imaging step')
             output_steps.append(self.config['STEP_FOR_CA_IMAGING_TRIGGER'])
         if self.metadata['intervention']=='Photostimulation':
             output_steps += self.config['STEPS_FOR_PHOTOSTIMULATION']
@@ -123,11 +121,11 @@ def initialize(self):
             try:
                 self.acq = Acquisition(\
                     sampling_rate=self.metadata['NIdaq-acquisition-frequency'],
-                   Nchannel_analog_in=self.metadata['NIdaq-analog-input-channels'],
-                   Nchannel_digital_in=self.metadata['NIdaq-digital-input-channels'],
-                   max_time=self.max_time,
-                   output_steps=output_steps,
-                   filename= self.filename.replace('metadata', 'NIdaq'))
+                    Nchannel_analog_in=self.metadata['NIdaq-analog-input-channels'],
+                    Nchannel_digital_in=self.metadata['NIdaq-digital-input-channels'],
+                    max_time=self.max_time,
+                    output_steps=output_steps,
+                    filename= self.filename.replace('metadata', 'NIdaq'))
             except BaseException as e:
                 print(e)
                 print('\n /!\ PB WITH NI-DAQ /!\ \n')
