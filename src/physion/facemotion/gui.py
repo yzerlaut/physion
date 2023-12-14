@@ -198,6 +198,7 @@ def open_facemotion_data(self):
 
             self.imgfolder = os.path.join(self.datafolder, 'FaceCamera-imgs')
             process.load_folder(self) # in init: self.times, _, self.nframes, ...
+            self.tracePlot.setRange(xRange=(0,self.nframes))
             
         else:
             self.times, self.imgfolder, self.nframes, self.FILES = None, None, None, None

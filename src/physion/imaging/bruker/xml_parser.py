@@ -108,18 +108,18 @@ def bruker_xml_parser(filename):
         # version without multiplabe scanning: 5.4.X
         for x in root[2]:
             for f in x:
-                for channel in ['Ch1', 'Ch2']:
-                    if f.tag == 'File':
-                        data[channel]['tifFile'].append(f.attrib['filename'])
-                        for key in ['relativeTime', 'absoluteTime']:
-                            data[channel][key].append(float(x.attrib[key]))
-                        if len(root)>3:
-                            data[channel]['depth_index'].append(int(x.attrib['index'])-1)
-                        else:
-                            data[channel]['depth_index'].append(0)
+                if f.tag == 'File':
+                    channel = f.attrib['channelName']
+                    data[channel]['tifFile'].append(f.attrib['filename'])
+                    for key in ['relativeTime', 'absoluteTime']:
+                        data[channel][key].append(float(x.attrib[key]))
+                    if len(root)>3:
+                        data[channel]['depth_index'].append(int(x.attrib['index'])-1)
+                    else:
+                        data[channel]['depth_index'].append(0)
 
         data['depth_shift'] = np.zeros(1)
-        data['depth_index'] = np.zeros(len(data['Ch1']['relativeTime']))
+        data['depth_index'] = np.zeros(len(data[CHANNELS[0]]['relativeTime']))
 
     else:
 
@@ -163,6 +163,7 @@ if __name__=='__main__':
     # print(data.keys())
     # import pprint
     # pprint.pprint(data['settings'])
+    print(data['Prairie-version'])
     for key in data['channels']:
         print('--- ', key)
         # print(data[key].keys())

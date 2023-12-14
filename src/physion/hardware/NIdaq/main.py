@@ -15,7 +15,7 @@ from physion.hardware.NIdaq.config import find_x_series_devices,\
 class Acquisition:
 
     def __init__(self,
-                 dt=1e-3,
+                 sampling_rate=10000,
                  Nchannel_analog_in=2,
                  Nchannel_digital_in=1,
                  max_time=10,
@@ -24,14 +24,15 @@ class Acquisition:
                  device=None,
                  outputs=None,
                  output_steps=[], # should be a set of dictionaries, output_steps=[{'channel':0, 'onset': 2.3, 'duration': 1., 'value':5}]
+                 output_funcs=None, # should be a set of functions func(t) 
                  verbose=False):
         
         self.running, self.data_saved = False, False
 
-        self.dt = dt
+        self.sampling_rate = sampling_rate
+        self.dt = 1./self.sampling_rate
         self.max_time = max_time
-        self.sampling_rate = 1./self.dt
-        self.buffer_size = int(buffer_time/self.dt)
+        self.buffer_size = int(buffer_time*self.sampling_rate)
         self.Nchannel_analog_in = Nchannel_analog_in
         self.Nchannel_digital_in = Nchannel_digital_in
         self.filename = filename
@@ -41,19 +42,33 @@ class Acquisition:
         # - analog:
         self.analog_data = np.zeros((Nchannel_analog_in, 1), dtype=np.float64)
         if self.Nchannel_analog_in>0:
-            self.analog_input_channels = get_analog_input_channels(self.device)[:Nchannel_analog_in]
+            self.analog_input_channels = \
+                    get_analog_input_channels(self.device)[:Nchannel_analog_in]
         # - digital:
         self.digital_data = np.zeros((1, 1), dtype=np.uint32)
         if self.Nchannel_digital_in>0:
-            self.digital_input_channels = get_digital_input_channels(self.device)[:Nchannel_digital_in]
+            self.digital_input_channels = \
+                    get_digital_input_channels(self.device)[:Nchannel_digital_in]
 
         # preparing output channels
         if outputs is not None: # used as a flag for output or not
-            self.output_channels = get_analog_output_channels(self.device)[:outputs.shape[0]]
+            # -
+            self.output_channels = \
+                    get_analog_output_channels(self.device)[:outputs.shape[0]]
+
+        elif output_funcs is not None:
+            # -
+            Nchannel = len(output_funcs)
+            t = np.arange(int(self.max_time*self.sampling_rate))*self.dt
+            outputs = np.zeros((Nchannel,len(t)))
+            for i, func in enumerate(output_funcs):
+                outputs[i] = func(t)
+
         elif len(output_steps)>0:
+            # -
             Nchannel = max([d['channel'] for d in output_steps])+1
             # have to be elements 
-            t = np.arange(int(self.max_time/self.dt))*self.dt
+            t = np.arange(int(self.max_time*self.sampling_rate))*self.dt
             outputs = np.zeros((Nchannel,len(t)))
             # add as many channels as necessary
             for step in output_steps:
@@ -63,6 +78,8 @@ class Acquisition:
                 cond = (t>step['onset']) & (t<=step['onset']+step['duration'])
                 outputs[step['channel']][cond] = step['value']
             self.output_channels = get_analog_output_channels(self.device)[:outputs.shape[0]]
+
+
         self.outputs = outputs      
             
     def launch(self):
@@ -90,7 +107,8 @@ class Acquisition:
                 max_val=10, min_val=-10)
             self.write_task.timing.cfg_samp_clk_timing(
                 self.sampling_rate, source=self.samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=int(self.max_time/self.dt))
+                active_edge=Edge.FALLING, 
+                samps_per_chan=int(self.max_time*self.sampling_rate))
         
         ### ---- INPUTS ---- ##
         if self.Nchannel_analog_in>0:
@@ -104,11 +122,11 @@ class Acquisition:
         if self.Nchannel_analog_in>0:
             self.read_analog_task.timing.cfg_samp_clk_timing(
                 self.sampling_rate, source=self.samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=int(self.max_time/self.dt))
+                active_edge=Edge.FALLING, samps_per_chan=int(self.max_time*self.sampling_rate))
         if self.Nchannel_digital_in>0:
             self.read_digital_task.timing.cfg_samp_clk_timing(
                 self.sampling_rate, source=self.samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=int(self.max_time/self.dt))
+                active_edge=Edge.FALLING, samps_per_chan=int(self.max_time*self.sampling_rate))
         
         if self.Nchannel_analog_in>0:
             self.analog_reader = AnalogMultiChannelReader(self.read_analog_task.in_stream)
@@ -134,8 +152,9 @@ class Acquisition:
             
         self.sample_clk_task.start()
         if self.filename is not None:
-            np.save(self.filename.replace('.npy', '.start.npy'),
-                    np.ones(1)*time.time()) # saving the time stamp of the start !
+            self.t0 = time.time()
+            # saving the time stamp of the start !
+            np.save(self.filename.replace('.npy', '.start.npy'), self.t0*np.ones(1))
 
         self.running, self.data_saved = True, False
         
@@ -172,16 +191,20 @@ class Acquisition:
         
     def reading_task_callback(self, task_idx, event_type, num_samples, callback_data=None):
         if self.running:
-            if self.Nchannel_analog_in>0:
-                analog_buffer = np.zeros((self.Nchannel_analog_in, num_samples), dtype=np.float64)
-                self.analog_reader.read_many_sample(analog_buffer, num_samples, timeout=WAIT_INFINITELY)
-                self.analog_data = np.append(self.analog_data, analog_buffer, axis=1)
-            
-            if self.Nchannel_digital_in>0:
-                digital_buffer = np.zeros((1, num_samples), dtype=np.uint32)
-                self.digital_reader.read_many_sample_port_uint32(digital_buffer,
-                                                             num_samples, timeout=WAIT_INFINITELY)
-                self.digital_data = np.append(self.digital_data, digital_buffer, axis=1)
+            try:
+                if self.Nchannel_analog_in>0:
+                    analog_buffer = np.zeros((self.Nchannel_analog_in, num_samples), dtype=np.float64)
+                    self.analog_reader.read_many_sample(analog_buffer, num_samples, timeout=WAIT_INFINITELY)
+                    self.analog_data = np.append(self.analog_data, analog_buffer, axis=1)
+                
+                if self.Nchannel_digital_in>0:
+                    digital_buffer = np.zeros((1, num_samples), dtype=np.uint32)
+                    self.digital_reader.read_many_sample_port_uint32(digital_buffer,
+                                                                 num_samples, timeout=WAIT_INFINITELY)
+                    self.digital_data = np.append(self.digital_data, digital_buffer, axis=1)
+            except nidaqmx.errors.DaqError:
+                # print('process already closed')
+                pass
         else:
             self.close()
         return 0  # needed for this callback to be well defined (see nidaqmx doc).

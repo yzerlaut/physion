@@ -1,4 +1,4 @@
-import os, sys, pathlib, itertools, skimage, h5py
+import os, sys, pathlib, pynwb, itertools, skimage
 from scipy.ndimage.filters import gaussian_filter1d
 import numpy as np
 import matplotlib.pylab as plt
@@ -28,30 +28,7 @@ default_segmentation_params={'phaseMapFilterSigma': 2.,
                              'visualSpaceCloseIter': 15,
                              'splitOverlapThr': 1.1}
 
-def load_pictures(datafolder, metadata,
-                  maps={},
-                  Nsubsampling=1):
-
-    if metadata is not None:
-
-        ## VASCULATURE PICTURE ##
-        filename = os.path.join(datafolder, 'vasculature-%s.h5' % metadata['subject'])
-        if os.path.isfile(filename):
-            f = h5py.File(filename, 'r') 
-            maps['vasculature'] = np.mean(f['frames'], axis=0)
-            maps['vasculature'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
-
-        ## FLUORESCENCE PICTURE ##
-        filename = os.path.join(datafolder, 'fluorescence-%s.h5' % metadata['subject'])
-        if os.path.isfile(filename):
-            f = h5py.File(filename, 'r') 
-            maps['fluorescence'] = np.mean(f['frames'], axis=0)
-            maps['fluorescence'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
-
-    return maps
-
-def load_maps(datafolder,
-              Nsubsampling=1):
+def load_maps(datafolder, Nsubsampling=4):
 
     if os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
         print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
@@ -62,6 +39,7 @@ def load_maps(datafolder,
     else:
         metadata = None
     
+    print(Nsubsampling)
     if os.path.isfile(os.path.join(datafolder, 'raw-maps.npy')):
         print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
         maps = np.load(os.path.join(datafolder, 'raw-maps.npy'),
@@ -69,9 +47,28 @@ def load_maps(datafolder,
     else:
         maps = {}
 
-    maps = load_pictures(datafolder, metadata,
-                         maps=maps,
-                         Nsubsampling=Nsubsampling)
+    if os.path.isfile(os.path.join(datafolder, 'vasculature-%s.tif' %metadata['subject'])):
+        maps['vasculature'] = np.array(Image.open(os.path.join(datafolder,\
+                'vasculature-%s.tif' %metadata['subject'])))
+        maps['vasculature'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
+    elif os.path.isfile(os.path.join(datafolder, 'vasculature-%s.npy' %metadata['subject'])):
+        maps['vasculature'] = np.load(os.path.join(datafolder,\
+                'vasculature-%s.npy' %metadata['subject']))
+        maps['vasculature'] = maps['vasculature'][::Nsubsampling,::Nsubsampling]
+    elif os.path.isfile(os.path.join(datafolder, 'vasculature.npy')):
+        maps['vasculature'] = np.load(os.path.join(datafolder, 'vasculature.npy'))
+
+    if os.path.isfile(os.path.join(datafolder, 'fluorescence-%s.tif' %metadata['subject'])):
+        maps['fluorescence'] = np.array(Image.open(os.path.join(datafolder,\
+                'fluorescence-%s.tif' %metadata['subject'])))
+        maps['fluorescence'] = maps['fluorescence'][::Nsubsampling,::Nsubsampling]
+    elif os.path.isfile(os.path.join(datafolder, 'fluorescence-%s.npy' %metadata['subject'])):
+        maps['fluorescence'] = np.load(os.path.join(datafolder,\
+                'fluorescence-%s.npy' %metadata['subject']))
+        maps['fluorescence'] = maps['fluorescence'][::Nsubsampling,::Nsubsampling]
+    elif os.path.isfile(os.path.join(datafolder, 'fluorescence.npy')):
+        maps['fluorescence'] = np.load(os.path.join(datafolder, 'fluorescence.npy'))
+
 
     return maps
 
@@ -106,29 +103,15 @@ def load_single_datafile(datafile):
     """
     the image data need interpolation to get regularly spaced data for FFT
     """
-    data = np.load(datafile, allow_pickle=True).item()
-
-    img0 = np.load(os.path.join(os.path.dirname(datafile),
-                'frames', '%s.npy' % data['times'][0]))
-
-    cond = (data['times']>data['tstart']) # & (times<data['tend'])
-   
-    t = data['times'][cond] - data['tstart']
-    print(t[0], t[-1])
-
-    X = np.zeros((len(t), *img0.shape), dtype=img0.dtype)
-    print(X.shape)
-    for i, tt in enumerate(data['times'][cond]):
-        X[i,:,:] = np.load(os.path.join(os.path.dirname(datafile), 
-                                    'frames', '%s.npy' % tt))
-    #
-    print(X.shape, len(t))
-    interp_func = interp1d(t, X,
-            axis=0, kind='nearest', fill_value='extrapolate')
-    real_t = data['angles-timestamps']
-    print(real_t[0], real_t[-1])
+    io = pynwb.NWBHDF5IO(datafile, 'r')
+    nwbfile = io.read()
+    t, x = nwbfile.acquisition['image_timeseries'].timestamps[:].astype(np.float64),\
+        nwbfile.acquisition['image_timeseries'].data[:,:,:].astype(np.uint16)
+    interp_func = interp1d(t, x, axis=0, kind='nearest', fill_value='extrapolate')
+    real_t = nwbfile.acquisition['angle_timeseries'].timestamps[:]
+    io.close()
     return real_t, interp_func(real_t)
-
+    # return t, nwbfile.acquisition['image_timeseries'].data[:,:,:]
 
 def load_raw_data(datafolder, protocol,
                   run_id='sum'):
@@ -139,8 +122,8 @@ def load_raw_data(datafolder, protocol,
     if run_id=='sum':
         Data, n = None, 0
         for i in range(1, 15): # no more than 15 repeats...(but some can be removed, hence the "for" loop)
-            if os.path.isfile(os.path.join(datafolder, '%s-%i.npy' % (protocol, i))):
-                t, data  = load_single_datafile(os.path.join(datafolder, '%s-%i.npy' % (protocol, i)))
+            if os.path.isfile(os.path.join(datafolder, '%s-%i.nwb' % (protocol, i))):
+                t, data  = load_single_datafile(os.path.join(datafolder, '%s-%i.nwb' % (protocol, i)))
                 if Data is None:
                     Data = data
                     n = 1
@@ -152,10 +135,10 @@ def load_raw_data(datafolder, protocol,
         else:
             return params, (None, None)
 
-    elif os.path.isfile(os.path.join(datafolder, '%s-%s.npy' % (protocol, run_id))):
-        return params, load_single_datafile(os.path.join(datafolder, '%s-%s.npy' % (protocol, run_id)))
+    elif os.path.isfile(os.path.join(datafolder, '%s-%s.nwb' % (protocol, run_id))):
+        return params, load_single_datafile(os.path.join(datafolder, '%s-%s.nwb' % (protocol, run_id)))
     else:
-        print('"%s" file not found' % os.path.join(datafolder, '%s-%s.npy' % (protocol, run_id)))
+        print('"%s" file not found' % os.path.join(datafolder, '%s-%s.nwb' % (protocol, run_id)))
 
 
 def preprocess_data(data, Facq,
@@ -173,7 +156,7 @@ def preprocess_data(data, Facq,
     return pData
 
 def perform_fft_analysis(data, nrepeat,
-                         phase_shift=0):
+                         phase_range='-pi:pi'):
     """
     Fourier transform
         we center the phase around pi/2
@@ -183,32 +166,31 @@ def perform_fft_analysis(data, nrepeat,
     # relative power w.r.t. luminance
     rel_power = np.abs(spectrum)[nrepeat, :, :]/data.shape[0]/data.mean(axis=0)
 
-    # phase in [-pi/2, 3*pi/2] interval
-    phase = (np.angle(spectrum)[nrepeat, :, :]+phase_shift)%(2.*np.pi)
+    if phase_range=='-pi:pi':
+        phase = np.angle(spectrum)[nrepeat, :, :]
+    elif phase_range=='0:2*pi':
+        phase = (np.angle(spectrum)[nrepeat, :, :])%(2.*np.pi)
 
     return rel_power, phase
 
 
 def compute_phase_power_maps(datafolder, direction,
                              maps={},
-                             p=None, t=None, data=None, mask=None,
+                             p=None, t=None, data=None,
                              run_id='sum',
-                             phase_shift=0):
+                             phase_range='-pi:pi'):
 
     # load raw data
     if (p is None) or (t is None) or (data is None):
         p, (t, data) = load_raw_data(datafolder, direction, run_id=run_id)
 
-    # if 'vasculature' not in maps:
-        # load_pictures(datafolder, maps=maps)
+    if 'vasculature' not in maps:
+        maps['vasculature'] = np.load(os.path.join(datafolder, 'vasculature.npy'))
 
     # FFT and write maps
     maps['%s-power' % direction],\
            maps['%s-phase' % direction] = perform_fft_analysis(data, p['Nrepeat'],
-                                                               phase_shift=phase_shift)
-    if mask is not None:
-        maps['%s-power' % direction][mask] = 0
-        maps['%s-phase' % direction][mask] = 0
+                                                    phase_range=phase_range)
 
     return maps
 
@@ -351,7 +333,7 @@ def add_arrow(ax, angle,
 
     start = (xlim[1], ylim[1]+dy/2)
     delta = (-dx, np.sin(angle/180.*np.pi)*dx)
-    t
+    
     ax.annotate('Lateral ', start,
                 ha='right', color='r', fontsize=fontsize)
     ax.arrow(*start, *delta, color='r', lw=lw)
@@ -362,15 +344,26 @@ def add_arrow(ax, angle,
     ax.set_xlim(xlim)
 
 
-def plot_phase_map(ax, fig, Map):
-    im = ax.imshow(Map,
-                   cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
-    cbar = fig.colorbar(im, ax=ax,
-                        ticks=[0, np.pi, 2*np.pi], 
-                        shrink=0.4,
-                        aspect=10,
-                        label='phase (Rd)')
-    cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
+def plot_phase_map(ax, fig, Map,
+                   phase_range='-pi:pi'):
+    if phase_range=='-pi:pi':
+        im = ax.imshow(Map,
+                       cmap=plt.cm.twilight, vmin=-np.pi, vmax=np.pi)
+        cbar = fig.colorbar(im, ax=ax,
+                            ticks=[-np.pi, 0, np.pi], 
+                            shrink=0.4,
+                            aspect=10,
+                            label='phase (Rd)')
+        cbar.ax.set_yticklabels(['-$\pi$', '0', '$\pi$'])
+    else:
+        im = ax.imshow(Map,
+                       cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
+        cbar = fig.colorbar(im, ax=ax,
+                            ticks=[0, np.pi, 2*np.pi], 
+                            shrink=0.4,
+                            aspect=10,
+                            label='phase (Rd)')
+        cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
 
 def plot_power_map(ax, fig, Map,
                    bounds=None):
@@ -387,8 +380,8 @@ def plot_power_map(ax, fig, Map,
                  label='relative power \n ($10^{-4}$ a.u.)')
 
 
-def plot_phase_power_maps(maps, direction):
-
+def plot_phase_power_maps(maps, direction,
+                          phase_range='-pi:pi'):
 
     fig, AX = plt.subplots(1, 2, figsize=(7,2.3))
     plt.subplots_adjust(bottom=0, top=1, wspace=1, right=0.8)
@@ -400,7 +393,8 @@ def plot_phase_power_maps(maps, direction):
     plot_power_map(AX[0], fig, maps['%s-power' % direction])
     
     # # then phase of the stimulus
-    plot_phase_map(AX[1], fig, maps['%s-phase' % direction])
+    plot_phase_map(AX[1], fig, maps['%s-phase' % direction],
+                   phase_range=phase_range)
 
     for ax in AX:
         ax.axis('off')

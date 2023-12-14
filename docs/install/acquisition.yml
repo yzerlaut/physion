@@ -18,3 +18,4 @@ dependencies:
     - nidaqmx
     - pyqtdarktheme
     - simple_pyspin
+    - natsort

@@ -552,4 +552,4 @@ def scan_folder_for_NWBfiles(folder,
     return {'files':np.array(FILES)[isorted], 
             'dates':np.array(DATES)[isorted],
             'subjects':np.array(SUBJECTS)[isorted],
-            'protocols':np.array(PROTOCOLS)[isorted]}
+            'protocols':[PROTOCOLS[i] for i in isorted]}

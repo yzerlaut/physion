@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtCore
-import sys, time, os, pathlib, json
+import sys, time, os, pathlib, json, tempfile
 import numpy as np
-import multiprocessing # for the camera streams !!
+import multiprocessing # different processes (cameras, visual stim, ...) are sent on different threads...
 from ctypes import c_char_p
 import pyqtgraph as pg
 import subprocess
@@ -17,6 +17,7 @@ def multimodal(self,
                tab_id=0):
 
     tab = self.tabs[tab_id]
+    self.animate_buttons = True
 
     self.cleanup_tab(tab)
 
@@ -24,23 +25,25 @@ def multimodal(self,
     self.subject, self.protocol = None, {}
     self.MODALITIES = ['Locomotion',
                        'FaceCamera',
+                       'RigCamera',
                        'EphysLFP',
                        'EphysVm',
-                       'CaImaging']
+                       'CaImaging',
+                       'onlyDemo']
 
     ##########################################
     ######## Multiprocessing quantities  #####
     ##########################################
     # to be used through multiprocessing.Process:
-    self.run_event = multiprocessing.Event() # to turn on/off recordings 
-    self.run_event.clear()
-    self.closeFaceCamera_event = multiprocessing.Event()
-    self.closeFaceCamera_event.clear()
-    self.quit_event = multiprocessing.Event()
-    self.quit_event.clear()
+    self.runEvent = multiprocessing.Event() # to turn on/off recordings 
+    self.runEvent.clear()
+    self.readyEvent = multiprocessing.Event() # to tell of buffering finished
+    self.readyEvent.clear()
+    self.quitEvent = multiprocessing.Event()
+    self.quitEvent.clear()
     self.manager = multiprocessing.Manager() # to share a str across processes
-    self.datafolder = self.manager.Value(c_char_p,\
-            str(os.path.join(os.path.expanduser('~'), 'DATA', 'trash')))
+    self.datafolder = self.manager.Value(c_char_p,
+            str(tempfile.gettempdir())) # temp folder by default
 
     ##########################################
     ######   acquisition states/values  ######
@@ -48,6 +51,8 @@ def multimodal(self,
     self.stim, self.acq, self.init = None, None, False,
     self.screen, self.stop_flag = None, False
     self.FaceCamera_process = None
+    self.RigCamera_process = None
+    self.VisualStim_process = None
     self.RigView_process = None
     self.params_window = None
 
@@ -76,13 +81,14 @@ def multimodal(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.FaceCameraButton.clicked.connect(self.toggle_FaceCamera_process)
+    self.RigCameraButton.clicked.connect(self.toggle_RigCamera_process)
 
     # -------------------------------------------------------
-    self.add_side_widget(tab.layout,
-            QtWidgets.QLabel(' * Monitoring * '))
-    self.webcamButton = QtWidgets.QPushButton('Webcam', self)
-    self.webcamButton.setCheckable(True)
-    self.add_side_widget(tab.layout, self.webcamButton)
+    # self.add_side_widget(tab.layout,
+            # QtWidgets.QLabel(' * Monitoring * '))
+    # self.webcamButton = QtWidgets.QPushButton('Webcam', self)
+    # self.webcamButton.setCheckable(True)
+    # self.add_side_widget(tab.layout, self.webcamButton)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.add_side_widget(tab.layout,
@@ -93,12 +99,9 @@ def multimodal(self,
     # -------------------------------------------------------
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
-    self.demoW = QtWidgets.QCheckBox('demo', self)
-    self.add_side_widget(tab.layout, self.demoW, 'small-right')
-
-    self.saveSetB = QtWidgets.QPushButton('save settings', self)
-    self.saveSetB.clicked.connect(self.save_settings)
-    self.add_side_widget(tab.layout, self.saveSetB)
+    # self.saveSetB = QtWidgets.QPushButton('save settings', self)
+    # self.saveSetB.clicked.connect(self.save_settings)
+    # self.add_side_widget(tab.layout, self.saveSetB)
 
     self.buildNWB = QtWidgets.QPushButton('build NWB for last', self)
     self.buildNWB.clicked.connect(build_NWB_for_last)
@@ -178,12 +181,17 @@ def multimodal(self,
                          ip, self.side_wdgt_length,
                          self.nWidgetRow-ip, 
                          self.nWidgetCol-self.side_wdgt_length)
-
+    # image choice box
+    self.imgButton = QtWidgets.QComboBox()
+    self.imgButton.addItems([' *pick camera* ', 'FaceCamera', 'RigCamera'])
+    tab.layout.addWidget(self.imgButton,
+                         ip, self.nWidgetCol-2,
+                         1, 2)
     # FaceCamera panel
     self.pFace = self.winImg.addViewBox(lockAspect=True,
                         invertY=True, border=[1, 1, 1])
-    self.pFaceimg = pg.ImageItem(np.ones((10,12))*50)
-    self.pFace.addItem(self.pFaceimg)
+    self.pCamImg = pg.ImageItem(np.ones((10,12))*50)
+    self.pFace.addItem(self.pCamImg)
 
     # NOW MENU INTERACTION BUTTONS
     ip, width = 1, 5
@@ -191,24 +199,19 @@ def multimodal(self,
     self.initButton.clicked.connect(self.initialize)
     tab.layout.addWidget(self.initButton,
                          ip, 10, 1, width)
-    ip+=1
-    self.bufferButton = QtWidgets.QPushButton(' * Buffer * ')
-    self.bufferButton.clicked.connect(self.buffer_stim)
-    tab.layout.addWidget(self.bufferButton,
-                         ip, 10, 1, width)
     ip+=2
     self.runButton = QtWidgets.QPushButton(' * RUN *')
     self.runButton.clicked.connect(self.run)
     tab.layout.addWidget(self.runButton,
                          ip, 10, 1, width)
+    self.runButton.setEnabled(False)
     ip+=1
     self.stopButton = QtWidgets.QPushButton(' * Stop *')
     self.stopButton.clicked.connect(self.stop)
     tab.layout.addWidget(self.stopButton,
                          ip, 10, 1, width)
 
-    for button in [self.initButton, self.bufferButton,
-            self.runButton, self.stopButton]:
+    for button in [self.initButton, self.runButton, self.stopButton]:
         button.setStyleSheet("font-weight: bold")
 
     ip+=2
@@ -224,6 +227,11 @@ def multimodal(self,
     # READ CONFIGS
     get_config_list(self) # first
     load_settings(self)
+
+    if self.animate_buttons:
+        self.initButton.setEnabled(True)
+        self.runButton.setEnabled(False)
+        self.stopButton.setEnabled(False)
 
 def build_NWB_for_last():
     # last folder

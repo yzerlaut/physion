@@ -6,7 +6,6 @@ import pyqtgraph as pg
 
 from physion.utils.paths import FOLDERS, python_path
 from physion.utils.files import last_datafolder_in_dayfolder, day_folder
-from physion.pupil.roi import extract_ellipse_props
 from physion.intrinsic.tools import default_segmentation_params
 from physion.intrinsic import tools as intrinsic_analysis
 from physion.intrinsic import RetinotopicMapping
@@ -38,6 +37,7 @@ def gui(self,
     
     self.datafolder, self.IMAGES = '', {} 
     self.subject, self.timestamps, self.data = '', '', None
+
 
     ##########################################################
     ####### GUI settings
@@ -84,13 +84,8 @@ def gui(self,
     self.loadButton.clicked.connect(self.load_intrinsic_data)
     self.add_side_widget(tab.layout,self.loadButton)
 
-    self.roiBox = QtWidgets.QCheckBox("use ROI mask")
-    self.roiBox.setStyleSheet("color: gray;")
-    self.add_side_widget(tab.layout,self.roiBox, spec='large-left')
-    self.add_side_widget(tab.layout,QtWidgets.QLabel(''), spec='small-right')
-    # self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
-
     # -------------------------------------------------------
+    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
 
     self.pmButton = QtWidgets.QPushButton(\
             " == compute phase/power maps == ", self)
@@ -229,10 +224,6 @@ def gui(self,
     self.img1 = pg.ImageItem()
     self.img1B.addItem(self.img1)
 
-    self.roiContour = pg.EllipseROI([5, 5], [10, 10],
-                                    pen=pg.mkPen('orange', width=1))
-    self.img1B.addItem(self.roiContour)
-
     self.img2B = self.graphics_layout.addViewBox(row=3, col=10,
                                                  rowspan=10, colspan=9,
                                                  lockAspect=True, invertY=True)
@@ -357,7 +348,6 @@ def load_intrinsic_data(self):
 
     datafolder = get_datafolder(self)
 
-
     if os.path.isdir(datafolder):
 
         print('- loading and preprocessing data [...]')
@@ -377,20 +367,6 @@ def load_intrinsic_data(self):
             print('    - spatial subsampling [...]')
             self.data = intrinsic_analysis.resample_img(self.data,
                                                         int(self.ssBox.text()))
-
-        # Masking
-        props = extract_ellipse_props(self.roiContour)
-        if props[0]*props[1]==100.0:
-            # if untouched, we set it as wull size
-            img_shape = self.data.shape[1:][::-1]
-            self.roiContour.setPos([0, 0])
-            self.roiContour.setSize(img_shape)
-
-        if self.roiBox.isChecked():
-
-            mask = get_mask_from_ellipse(self)
-            self.data[:, mask] *= 1e-5
-
             
 
         vasc_img = os.path.join(get_datafolder(self), 'vasculature.npy')
@@ -403,8 +379,8 @@ def load_intrinsic_data(self):
                 self.IMAGES['vasculature'] = np.load(vasc_img)
 
         self.IMAGES['raw-img-start'] = self.data[0,:,:]
-        self.IMAGES['raw-img-mid'] = self.data[int(self.data.shape[0]/2),:,:]
-        self.IMAGES['raw-img-stop'] = self.data[-1,:,:]
+        self.IMAGES['raw-img-mid'] = self.data[int(self.data.shape[0]/2.)-1,:,:]
+        self.IMAGES['raw-img-stop'] = self.data[-2,:,:]
        
         update_imgButtons(self)
 
@@ -415,16 +391,6 @@ def load_intrinsic_data(self):
 
     else:
         print(' Data "%s" not found' % datafolder)
-
-def get_mask_from_ellipse(self):
-    mx, my, sx, sy, _ = extract_ellipse_props(self.roiContour)
-    print('masking outside the circle:', mx, my, sx, sy)
-
-    Y, X = np.meshgrid(\
-            np.arange(self.data.shape[1]),
-            np.arange(self.data.shape[2]),
-            indexing='ij')
-    return ((X-mx)**2/(sx/2)**2+(Y-my)**2/(sy/2)**2) > 1
 
 
 def show_raw_data(self):
@@ -442,10 +408,10 @@ def show_raw_data(self):
     spectrum = np.fft.fft((new_data-new_data.mean())/new_data.mean())
     power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
 
-    # if self.twoPiBox.isChecked():
-        # power, phase = np.abs(spectrum), -np.angle(spectrum)%(2.*np.pi)
-    # else:
-        # power, phase = np.abs(spectrum), np.angle(spectrum)
+    if hasattr(self, 'twoPiBox') and self.twoPiBox.isChecked():
+        power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
+    else:
+        power, phase = np.abs(spectrum), np.angle(spectrum)
 
     x = np.arange(len(power))
     self.spectrum_power.plot(np.log10(x[1:]), np.log10(power[1:]))
@@ -464,16 +430,16 @@ def compute_phase_maps(self):
     print('- computing phase maps [...]')
 
     intrinsic_analysis.compute_phase_power_maps(get_datafolder(self), 
-                                        self.protocolBox.currentText(),
-                                        p=self.params, t=self.t, data=self.data,
-                                        mask = (get_mask_from_ellipse(self)\
-                                                if self.roiBox.isChecked() else None),
-                                        run_id=self.numBox.currentText(),
-                                        maps=self.IMAGES)
+                                                self.protocolBox.currentText(),
+                                                p=self.params, t=self.t, data=self.data,
+                                                run_id=self.numBox.currentText(),
+                                                maps=self.IMAGES,
+                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
 
 
     intrinsic_analysis.plot_phase_power_maps(self.IMAGES,
-                                             self.protocolBox.currentText())
+                                             self.protocolBox.currentText(),
+                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
 
     intrinsic_analysis.plt.show()
 

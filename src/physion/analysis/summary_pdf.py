@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
 from physion.utils.paths import python_path
+from physion.utils.files import get_files_with_extension
 from physion.analysis.read_NWB import Data
 from physion.utils.plot_tools import *
 
@@ -300,16 +301,19 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    generate_pdf(args)
+    # generate_pdf(args)
 
-    # if args.remove_all_pdfs and os.path.isdir(args.datafile):
-        # FILES = get_files_with_extension(args.datafile, extension='.pdf', recursive=True)
-        # for f in FILES:
-            # print('removing', f)
-            # os.remove(f)
-    # elif os.path.isdir(args.datafile):
-        # FILES = get_files_with_extension(args.datafile, extension='.nwb', recursive=True)
-        # for f in FILES:
+    if args.remove_all_pdfs and os.path.isdir(args.datafile):
+        FILES = get_files_with_extension(args.datafile, extension='.pdf', recursive=True)
+        for f in FILES:
+            print('removing', f)
+            os.remove(f)
+    elif os.path.isdir(args.datafile):
+        folder = args.datafile
+        FILES = get_files_with_extension(folder, extension='.nwb', recursive=True)
+        for f in FILES:
+            args.datafile = f
+            generate_pdf(args)
             # try:
                 # make_summary_pdf(f,
                                  # include=args.ops,
@@ -320,13 +324,13 @@ if __name__=='__main__':
                 # print('Pb with', f)
                 # print(be)
                 # print('')
-    # elif os.path.isfile(args.datafile):
-        # make_summary_pdf(args.datafile,
-                         # include=args.ops,
-                         # Nmax=args.Nmax,
-                         # verbose=args.verbose)
-    # else:
-        # print(' /!\ provide a valid folder or datafile /!\ ')
+    elif os.path.isfile(args.datafile):
+        make_summary_pdf(args.datafile,
+                         include=args.ops,
+                         Nmax=args.Nmax,
+                         verbose=args.verbose)
+    else:
+        print(' /!\ provide a valid folder or datafile /!\ ')
 
     
 

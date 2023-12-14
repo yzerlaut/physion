@@ -1,7 +1,7 @@
 import os, pathlib
 import numpy as np
 
-from physion.visual_stim.main import vis_stim_image_built,\
+from physion.visual_stim.main import visual_stim,\
         init_times_frames, init_bg_image
 from physion.visual_stim.preprocess_NI import load,\
         img_after_hist_normalization, adapt_to_screen_resolution
@@ -37,7 +37,7 @@ def get_NaturalImages_as_array(screen):
         print(' /!\  Natural Images folder not found !!! /!\  ')
         return [np.ones((10,10))*0.5 for i in range(5)]
 
-class stim(vis_stim_image_built):
+class stim(visual_stim):
     """
     """
 
@@ -54,25 +54,24 @@ class stim(vis_stim_image_built):
     def get_image(self, index,
                   time_from_episode_start=0,
                   parent=None):
-        cls = (parent if parent is not None else self)
-        return self.NIarray[int(cls.experiment['Image-ID'][index])]
+        return self.NIarray[int(self.experiment['Image-ID'][index])]
 
     def plot_stim_picture(self, episode, parent=None, 
                           vse=True, ax=None, label=None,
                           time_from_episode_start=0):
 
-        cls = (parent if parent is not None else self)
-
         if ax==None:
             import matplotlib.pylab as plt
             fig, ax = plt.subplots(1)
 
-        img = ax.imshow(cls.image_to_frame(cls.get_image(episode,
-				                         time_from_episode_start=time_from_episode_start,
-				                         parent=cls), psychopy_to_numpy=True),
-	                cmap='gray', vmin=0, vmax=1,
-                        origin='lower',
-                        aspect='equal')
+        img = ax.imshow(\
+            self.image_to_frame(\
+                self.get_image(episode,
+			                   time_from_episode_start=time_from_episode_start),
+                               psychopy_to_numpy=True),
+                        cmap='gray', vmin=0, vmax=1,
+                            origin='lower',
+                            aspect='equal')
 
         ax.axis('off')
 

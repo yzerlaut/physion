@@ -19,8 +19,10 @@ def build_menu(self):
                                   self.multimodal)
     self.experimentMenu.addAction('Visual Stimulation',
                                   self.in_progress)
-    self.experimentMenu.addAction('Intrinsic Imaging',
+    self.experimentMenu.addAction('Retinotopic Mapping (intrinsic)',
                                   self.intrinsic_acq)
+    self.experimentMenu.addAction('Whisker Mapping (intrinsic)',
+                                  self.SS_intrinsic_acq)
     self.experimentMenu.addAction('Face Camera',
                                   self.in_progress)
     self.experimentMenu.addAction('Webcam',
@@ -33,8 +35,10 @@ def build_menu(self):
                                      self.pupil)
     self.preprocessingMenu.addAction('&Facemotion',
                                      self.facemotion)
-    self.preprocessingMenu.addAction('&Intrinsic Imaging Maps',
+    self.preprocessingMenu.addAction('&Visual Maps',
                                      self.intrinsic)
+    self.preprocessingMenu.addAction('&Whisker Maps',
+                                     self.SS_intrinsic)
     self.preprocessingMenu.addAction('&Suite2P Preprocessing',
                                      self.suite2p_preprocessing_UI)
     self.preprocessingMenu.addAction('&Red Channel Labelling',

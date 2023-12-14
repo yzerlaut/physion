@@ -1,7 +1,7 @@
 import sys, pathlib
 import numpy as np
 
-from physion.visual_stim.main import vis_stim_image_built, init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim, init_times_frames, init_bg_image
 
 ####################################################
 ##  ----    SCATTERED MOVING DOTS          --- #####
@@ -68,7 +68,7 @@ def get_starting_point_and_direction_mv_dots(line,
 
 
 
-class stim(vis_stim_image_built):
+class stim(visual_stim):
     """
     stimulus specific visual stimulation object
 
@@ -81,8 +81,6 @@ class stim(vis_stim_image_built):
                          keys=['speed', 'bg-color', 'ndots', 'spacing',
                                'direction', 'size', 'dotcolor', 'seed'])
 
-        ## /!\ here always use self.refresh_freq not the parent cls.refresh_freq ##
-        # when the parent multiprotocol will have ~10Hz refresh rate, this can  remain 2-3Hz
         self.refresh_freq = protocol['movie_refresh_freq']
 
 
@@ -92,20 +90,19 @@ class stim(vis_stim_image_built):
         """ 
         return the frame at a given time point
         """
-        cls = (parent if parent is not None else self)
 
-        img = init_bg_image(cls, index)
+        img = init_bg_image(self, index)
 
-        line = np.arange(int(cls.experiment['ndots'][index]))*\
-                cls.experiment['spacing'][index]
+        line = np.arange(int(self.experiment['ndots'][index]))*\
+                self.experiment['spacing'][index]
 
         X0, Y0, dx_per_time, dy_per_time =\
             get_starting_point_and_direction_mv_dots(line,
-            cls.experiment['time_stop'][index]-\
-                    cls.experiment['time_start'][index],
-                    cls.experiment['direction'][index],
-                    cls.experiment['speed'][index],
-                    int(cls.experiment['ndots'][index]))
+            self.experiment['time_stop'][index]-\
+                    self.experiment['time_start'][index],
+                    self.experiment['direction'][index],
+                    self.experiment['speed'][index],
+                    int(self.experiment['ndots'][index]))
 
         for x0, y0 in zip(X0, Y0):
 
@@ -113,8 +110,8 @@ class stim(vis_stim_image_built):
                             y0+dy_per_time*time_from_episode_start)
 
             self.add_dot(img, new_position,
-                         cls.experiment['size'][index],
-                         cls.experiment['dotcolor'][index])
+                         self.experiment['size'][index],
+                         self.experiment['dotcolor'][index])
 
         return img
 
@@ -129,23 +126,21 @@ class stim(vis_stim_image_built):
 
         """
         """
-        cls = (parent if parent is not None else self)
-
-        tcenter = .45*(cls.experiment['time_stop'][episode]-\
-                      cls.experiment['time_start'][episode])
+        tcenter = .45*(self.experiment['time_stop'][episode]-\
+                      self.experiment['time_start'][episode])
         
         ax = self.show_frame(episode, tcenter, ax=ax,
                              parent=parent)
 
-        direction = cls.experiment['direction'][episode]
+        direction = self.experiment['direction'][episode]
         arrow['direction'] = ((direction+180)%180)+180
 
-        arrow['direction'] = cls.experiment['direction'][episode]+180
+        arrow['direction'] = self.experiment['direction'][episode]+180
         print(arrow['direction'])
 
         for shift in [-.5, 0, .5]:
 
-            arrow['center'] = [shift*np.sin(np.pi/180.*direction)*cls.x.max()/3.,
-                               shift*np.cos(np.pi/180.*direction)*cls.x.max()/3.]
+            arrow['center'] = [shift*np.sin(np.pi/180.*direction)*self.x.max()/3.,
+                               shift*np.cos(np.pi/180.*direction)*self.x.max()/3.]
 
             self.add_arrow(arrow, ax)

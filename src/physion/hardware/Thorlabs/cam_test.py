@@ -1,35 +1,37 @@
-import time
-from thorcam.camera import ThorCam
+import os
 
-class MyThorCam(ThorCam):
-    def received_camera_response(self, msg, value):
-        super(MyThorCam, self).received_camera_response(msg, value)
-        if msg == 'image':
-            return
-        print('Received "{}" with value "{}"'.format(msg, value))
-    def got_image(self, image, count, queued_count, t):
-        print('Received image "{}" with time "{}" and counts "{}", "{}"'
-              .format(image, t, count, queued_count))
+absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
+                                  'work', 'physion', 'src', 'physion',
+                                  'hardware', 'Thorlabs', 'camera_dlls')
+os.environ['PATH'] = absolute_path_to_dlls + os.pathsep + os.environ['PATH']
+os.add_dll_directory(absolute_path_to_dlls)
 
-cam = MyThorCam()
+from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
 
-cam.start_cam_process()
+import matplotlib.pylab as plt
 
-cam.refresh_cameras()
+with TLCameraSDK() as sdk:
 
-time.sleep(10)
-print(cam.serials)
+    cameras = sdk.discover_available_cameras()
+    if len(cameras) == 0:
+        print("Error: no cameras detected!")
+    elif len(cameras)==1:
+        print(cameras[0])
+        print("[ok] 1 camera found !")
+    else:
+        print(cameras)
+        print("[ok] %i camera found ! \n   --> taking the first one !" % len(cameras))
 
-#cam.open_camera('03756')
+    with sdk.open_camera(cameras[0]) as camera:
+        #  setup the camera for continuous acquisition
+        camera.frames_per_trigger_zero_for_unlimited = 0
+        camera.image_poll_timeout_ms = 2000  # 2 second timeout
+        camera.arm(2)
 
-print(cam.exposure_range)
+        # save these values to place in our custom TIFF tags later
+        print('bit_depth ', camera.bit_depth)
+        print('exposure', camera.exposure_time_us)
 
-#cam.play_camera()
-
-#cam.stop_playing_camera()
-
-# close the camera
-#cam.close_camera()
-
-# close the server and everything
-cam.stop_cam_process(join=True)
+        # need to save the image width and height for color processing
+        print('image_width', camera.image_width_pixels)
+        print('image_height', camera.image_height_pixels)

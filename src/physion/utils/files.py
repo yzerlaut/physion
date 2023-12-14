@@ -2,42 +2,28 @@ import datetime, os, string, pathlib, json, tempfile, glob
 import numpy as np
 
 def day_folder(root_folder):
-    """ create and take the day folder """
-    Day_folder = os.path.join(root_folder,
-                              datetime.datetime.now().strftime("%Y_%m_%d"))
-    if not os.path.exists(Day_folder):
-        print('creating the folder "%s"' % Day_folder)
-        pathlib.Path(Day_folder).mkdir(parents=True, exist_ok=True)
-    return Day_folder
+    return os.path.join(root_folder, datetime.datetime.now().strftime("%Y_%m_%d"))
 
-def time_folder(day_folder):
-    Time_folder = os.path.join(day_folder,
-                               datetime.datetime.now().strftime("%H-%M-%S"))
-    if not os.path.exists(Time_folder):
-        print('creating the folder "%s"' % Time_folder)
-        pathlib.Path(Time_folder).mkdir(parents=True, exist_ok=True)
-    return Time_folder
-
-def datetime_folder(root_folder):
-    return time_folder(day_folder(root_folder))
+def second_folder(day_folder):
+    return os.path.join(day_folder, datetime.datetime.now().strftime("%H-%M-%S"))
 
 def create_day_folder(root_folder):
     df = day_folder(root_folder)
     pathlib.Path(df).mkdir(parents=True, exist_ok=True)
     return day_folder(root_folder)
 
-def create_time_folder(day_folder):
-    pathlib.Path(time_folder(day_folder)).mkdir(parents=True, exist_ok=True)
+def create_second_folder(day_folder):
+    pathlib.Path(second_folder(day_folder)).mkdir(parents=True, exist_ok=True)
     
 def generate_filename_path(root_folder,
                            filename = '', extension='txt',
                            with_screen_frames_folder=False,
                            with_FaceCamera_frames_folder=False,
-                           with_frames_folder=False,
+                           with_RigCamera_frames_folder=False,
                            with_microseconds=False):
 
     Day_folder = day_folder(root_folder)
-    Second_folder = time_folder(Day_folder)
+    Second_folder = second_folder(Day_folder)
     
     if not os.path.exists(Day_folder):
         print('creating the folder "%s"' % Day_folder)
@@ -50,11 +36,10 @@ def generate_filename_path(root_folder,
     if with_screen_frames_folder:
         pathlib.Path(os.path.join(Second_folder, 'screen-frames')).mkdir(parents=True, exist_ok=True)
 
-    if with_frames_folder:
-        pathlib.Path(os.path.join(Second_folder, 'frames')).mkdir(parents=True, exist_ok=True)
-
     if with_FaceCamera_frames_folder:
         pathlib.Path(os.path.join(Second_folder, 'FaceCamera-imgs')).mkdir(parents=True, exist_ok=True)
+    if with_RigCamera_frames_folder:
+        pathlib.Path(os.path.join(Second_folder, 'RigCamera-imgs')).mkdir(parents=True, exist_ok=True)
         
     if not extension.startswith('.'):
         extension='.'+extension
@@ -122,7 +107,6 @@ def get_TSeries_folders(folder, frame_limit=-1, limit_to_subdirectories=False):
                 print('   ----> data should be at least %i frames !' % frame_limit)
     return np.sort(np.array(FOLDERS))
 
-
 def insure_ordered_frame_names(df):
     # insuring nice order of screen frames
     filenames = os.listdir(os.path.join(df,'screen-frames'))
@@ -173,12 +157,12 @@ def computerTimestamp_to_daySeconds(t):
     Seconds = float(s.split(':')[2])
     
     return 60*60*Hour+60*Min+Seconds
-    
-def get_last_file(folder, extension='*.npy'):
 
-    list_of_files = glob.glob(os.path.join(folder, extension))
-    if len(list_of_files)>0:
-        filename = max(list_of_files, key=os.path.getctime)
-        return filename
-    else:
-        return None
+def get_latest_file(folder):
+    list_of_files = glob.glob(os.path.join(folder, '*')) 
+    latest_file = max(list_of_files, key=os.path.getctime)
+    return latest_file
+
+if __name__=='__main__':
+    import sys
+    print(get_latest_file(sys.argv[-1]))

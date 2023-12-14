@@ -18,14 +18,19 @@ class stop_func: # dummy version of the multiprocessing.Event class
 class CameraAcquisition:
 
     def __init__(self,
-                 settings={'frame_rate':20.}):
+                 name='FaceCamera',
+                 settings={'frame_rate':20.},
+                 camera_index=0):
         
+        self.name = name
         self.times, self.running = [], False
-        self.init_camera(settings)
+        self.init_camera(settings, 
+                         index=camera_index)
 
-    def init_camera(self, settings):
+    def init_camera(self, settings,
+                    index=0):
         
-        self.cam = simple_pyspin.Camera()
+        self.cam = simple_pyspin.Camera(index=index)
         self.cam.init()
 
         ########################################################################
@@ -39,7 +44,6 @@ class CameraAcquisition:
                       debug=False):
         
         self.cam.start()
-        np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), self.cam.get_array().astype(np.uint8))
 
         if debug:
             tic = time.time()
@@ -51,22 +55,21 @@ class CameraAcquisition:
             if debug:
                 toc = time.time()
                 if (toc-tic)>10:
-                    print(' FaceCamera seemingly working fine, current image:', image[:5,:5])
+                    print(' %s seemingly working fine, current image:', (self.name, image[:5,:5]))
                     tic = time.time()
 
             if not self.running and run_flag.is_set() : # not running and need to start  !
 
-                np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), image)
                 self.running, self.times = True, []
                 # reinitialize recording
-                self.imgs_folder = os.path.join(folder.get(), 'FaceCamera-imgs')
+                self.imgs_folder = os.path.join(folder.get(), '%s-imgs' % self.name)
                 Path(self.imgs_folder).mkdir(parents=True, exist_ok=True)
 
             elif self.running and not run_flag.is_set(): # running and we need to stop
 
                 self.running=False
-                print('FaceCamera -- effective sampling frequency: %.1f Hz ' % (1./np.mean(np.diff(self.times))))
-                np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), image)
+                print('%s -- effective sampling frequency: %.1f Hz ' %\
+                        (self.name, 1./np.mean(np.diff(self.times))))
                 
 
             # after the update
@@ -76,15 +79,19 @@ class CameraAcquisition:
                 self.times.append(Time)
 
         if len(self.times)>0:
-            print('FaceCamera -- effective sampling frequency: %.1f Hz ' % (1./np.mean(np.diff(self.times))))
-            np.save(os.path.join(folder.get(), '..', 'current-FaceCamera.npy'), image)
+            print('%s -- effective sampling frequency: %.1f Hz ' % (\
+                    self.name, 1./np.mean(np.diff(self.times))))
         
         self.running=False
         self.cam.stop()
 
-def launch_FaceCamera(run_flag, quit_flag, datafolder,
-                      settings={'frame_rate':20.}):
-    camera = CameraAcquisition(settings=settings)
+def launch_Camera(run_flag, quit_flag, datafolder,
+                  name='FaceCamera',
+                  camera_index=0, 
+                  settings={'frame_rate':20.}):
+    camera = CameraAcquisition(name=name,
+                               settings=settings,
+                               camera_index=camera_index)
     camera.rec_and_check(run_flag, quit_flag, datafolder)
 
     
@@ -101,7 +108,8 @@ if __name__=='__main__':
     quit_event = multiprocessing.Event()
     manager = multiprocessing.Manager()
     datafolder = manager.Value(c_char_p, 'datafolder')    
-    camera_process = multiprocessing.Process(target=launch_FaceCamera, args=(run, quit_event, datafolder))
+    camera_process = multiprocessing.Process(target=launch_Camera,\
+            args=(run, quit_event, datafolder, 'Facecamera', 0, {'frame_rate':20.}))
     run.clear()
     camera_process.start()
 
