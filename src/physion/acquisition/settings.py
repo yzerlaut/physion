@@ -12,14 +12,16 @@ def get_config_list(self):
 
     # configs
     files = os.listdir(os.path.join(base_path, 'configs'))
-    self.config_list = [f.replace('.json', '') for f in files[::-1] if f.endswith('.json')]
+    self.config_list = [f.replace('.json', '')\
+            for f in files[::-1] if f.endswith('.json')]
     self.configBox.addItems(['']+self.config_list)
    
-    # interventions
-    if hasattr(self, 'interventionBox'):
-        files = os.listdir(os.path.join(base_path, 'interventions'))
-        self.intervention_list = [f.replace('.json', '') for f in files[::-1] if f.endswith('.json')]
-        self.interventionBox.addItems(['']+self.intervention_list)
+    # recordings
+    if hasattr(self, 'recordingBox'):
+        files = os.listdir(os.path.join(base_path, 'recordings'))
+        self.recording_list = [f.replace('.py', '')\
+                for f in files[::-1] if f.endswith('.py')]
+        self.recordingBox.addItems(['']+self.recording_list)
 
 def update_config(self):
 
@@ -75,7 +77,7 @@ def save_settings(self):
                 'protocol':self.protocolBox.currentText(),
                 'subject':self.subjectBox.currentText(),
                 'screen':self.screenBox.currentText(),
-                'intervention':self.interventionBox.currentText()}
+                'recording':self.recordingBox.currentText()}
     
     for i, k in enumerate(self.MODALITIES):
         settings[k] = getattr(self, k+'Button').isChecked()
@@ -97,8 +99,8 @@ def load_settings(self):
         if settings['subject'] in self.subject_list:
             self.subjectBox.setCurrentText(settings['subject'])
             self.update_subject()
-        if settings['intervention'] in self.intervention_list:
-            self.interventionBox.setCurrentText(settings['intervention'])
+        if settings['recording'] in self.recording_list:
+            self.recordingBox.setCurrentText(settings['recording'])
         for i, k in enumerate(self.MODALITIES):
             getattr(self, k+'Button').setChecked(settings[k])
         self.statusBar.showMessage(' settings loaded')

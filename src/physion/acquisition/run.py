@@ -48,7 +48,7 @@ def init_visual_stim(self):
         os.path.join(base_path, 'protocols', 'binaries',\
         self.metadata['protocol'])
 
-    # self.protocol['screen'] = self.metadata['Screen']
+    self.protocol['screen'] = self.config['Screen']
 
     if self.onlyDemoButton.isChecked():
         self.protocol['demo'] = True

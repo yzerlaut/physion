@@ -136,7 +136,7 @@ def multimodal(self,
     tab.layout.addWidget(self.subjectBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
-    # ip+=1
+    ip+=1
     # # -
     # tab.layout.addWidget(\
         # QtWidgets.QLabel(40*' '+'** Screen **', self),
@@ -149,7 +149,7 @@ def multimodal(self,
     # tab.layout.addWidget(self.screenBox,\
                          # ip, self.side_wdgt_length+1, 
                          # 1, width)
-    ip+=1
+    # ip+=1
     # -
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Visual Protocol **', self),
@@ -164,13 +164,13 @@ def multimodal(self,
     ip+=1
     # -
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Intervention **', self),
+        QtWidgets.QLabel(40*' '+'** Recording **', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
     # -
-    self.interventionBox = QtWidgets.QComboBox(self)
-    tab.layout.addWidget(self.interventionBox,\
+    self.recordingBox = QtWidgets.QComboBox(self)
+    tab.layout.addWidget(self.recordingBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
