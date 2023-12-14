@@ -59,6 +59,8 @@ class Acquisition:
         elif output_funcs is not None:
             # -
             Nchannel = len(output_funcs)
+            self.output_channels = \
+                    get_analog_output_channels(self.device)[:Nchannel]
             t = np.arange(int(self.max_time*self.sampling_rate))*self.dt
             outputs = np.zeros((Nchannel,len(t)))
             for i, func in enumerate(output_funcs):
