@@ -6,7 +6,7 @@ from . import Scan1Plane_Screen342V
 # ----------  Off Scan Periods  --------  #
 ###########################################
 framePeriod= 0.033986672351684885
-duration = 1.1e-3
+duration = 3.1e-3
 security = 0.1e-3
 
 t0 = Scan1Plane_Screen342V.t0
@@ -22,7 +22,7 @@ def off_scan_periods(t):
                  ( ((t-t0)%framePeriod)<(framePeriod-security) )  ] = 0. # switch to 0
     return 1.0*array
 
-output_funcs = [Scan1Plane_Screen342V.trigger2P,
-                off_scan_periods]
-# output_funcs = [Scan1Plane_Screen342V.trigger2P]
+# output_funcs = [Scan1Plane_Screen342V.trigger2P,
+#                 off_scan_periods]
+output_funcs = [Scan1Plane_Screen342V.trigger2P]
 

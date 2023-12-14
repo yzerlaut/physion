@@ -85,9 +85,9 @@ if __name__=='__main__':
                 'binaries',
                 os.path.basename(protocol_file.replace('.json','')))
 
-        # remove the previous content for security
-        # shutil.rmtree(os.path.join(protocol_folder, '*'))
-        shutil.rmtree(protocol_folder)
+        if os.path.isfile(os.path.join(protocol_folder, 'protocol.json')):
+            # remove the previous content for security
+            shutil.rmtree(protocol_folder)
 
         # re-create an empty one
         pathlib.Path(protocol_folder).mkdir(\
