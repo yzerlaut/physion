@@ -54,6 +54,22 @@ def get_default_params(protocol_name):
         print('\n /!\ Protocol not recognized ! /!\ \n ')
         return None
 
+def write_binary(stim, index, protocol_id):
+
+    time_indices, frames, refresh_freq = stim.get_frames_sequence(index)
+    print('writing: protocol-%i_index-%i.bin' % (protocol_id, index))
+    Frames = np.array([255*(1.+f.T)/2. for f in frames], dtype=np.uint8)
+    # write as binary
+    Frames.tofile(os.path.join(protocol_folder,\
+                    'protocol-%i_index-%i.bin' % (protocol_id, index)))
+    # write as npy 
+    np.save(os.path.join(\
+                protocol_folder,\
+                'protocol-%i_index-%i.npy' % (protocol_id, index)),
+                {'refresh_freq':refresh_freq,
+                 'time_indices':time_indices,
+                 'binary_shape': Frames.shape})
+
 
 if __name__=='__main__':
 
@@ -68,10 +84,16 @@ if __name__=='__main__':
             os.path.join(os.path.dirname(protocol_file),
                 'binaries',
                 os.path.basename(protocol_file.replace('.json','')))
+
+        # remove the previous content for security
+        # shutil.rmtree(os.path.join(protocol_folder, '*'))
+        shutil.rmtree(protocol_folder)
+
+        # re-create an empty one
         pathlib.Path(protocol_folder).mkdir(\
                                 parents=True, exist_ok=True)
 
-        #  copy the 
+        #  copy the protocol infos
         shutil.copyfile(protocol_file,
                         os.path.join(protocol_folder, 'protocol.json'))
 
@@ -81,41 +103,15 @@ if __name__=='__main__':
 
         protocol['no-window'] = True
 
-        stim = build_stim(protocol)
+        Stim = build_stim(protocol)
 
-        # loop over stims to produce the binaries and store them 
-        for protocol_id in np.unique(stim.experiment['protocol_id']):
+        if protocol['Presentation']=='multiprotocol':
+            for iProtocol, stim in enumerate(Stim.STIM):
+                for index in np.unique(stim.experiment['index']):
+                    write_binary(stim, index, iProtocol)
+        else:
+            for index in np.unique(Stim.experiment['index']):
+                write_binary(Stim, index, 0)
 
-            pCond = (stim.experiment['protocol_id']==protocol_id) &\
-                    (stim.experiment['repeat']==0) # taking the first one
-
-            for stim_index in np.unique(stim.experiment['index'][pCond]):
-
-                # get
-                time_indices, frames, refresh_freq =\
-                        stim.get_frames_sequence(stim_index)
-                print('writing: protocol-%i_index-%i.bin' % (\
-                                protocol_id, stim_index))
-                Frames = np.array(\
-                        [255*(1.+f.T)/2. for f in frames],
-                        dtype=np.uint8)
-                # write as binary
-                Frames.tofile(\
-                        os.path.join(\
-                            protocol_folder,\
-                            'protocol-%i_index-%i.bin' % (\
-                                protocol_id, stim_index)))
-                # write as npy 
-                np.save(os.path.join(\
-                            protocol_folder,\
-                            'protocol-%i_index-%i.npy' % (\
-                                protocol_id, stim_index)),
-                            {'refresh_freq':refresh_freq,
-                             'time_indices':time_indices,
-                             'binary_shape': Frames.shape})
-
-
-        # ...
-        
     else:
         print('\nERROR: need to provide a valid json file as argument\n')

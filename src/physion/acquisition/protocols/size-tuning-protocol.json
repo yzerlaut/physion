@@ -4,9 +4,9 @@
   "shuffling-seed" :34,
   "Protocol-1": "subprotocols/size-tuning/size-tuning-protocol-loc.json",
   "Protocol-2": "subprotocols/size-tuning/size-tuning-protocol-dep.json",
-  "presentation-blank-screen-color": 0.5,
-  "presentation-prestim-period": 3,
-  "presentation-poststim-period": 3,
+  "presentation-prestim-period": 3.0,
+  "presentation-poststim-period": 3.0,
   "presentation-interstim-period": 3.0,
+  "presentation-blank-screen-color": 0.5,
   "Screen": "Dell-2020"
 }

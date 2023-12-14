@@ -475,7 +475,6 @@ class visual_stim:
             self.BUFFERS.append([])
             self.TIME_INDICES.append([])
             self.REFRESH_FREQS.append([])
-            iStim = 0
             while os.path.isfile(binary_file(iProtocol, iStim)):
                 buffer, time_indices, refresh_freq = \
                         self.buffer_stim(binary_folder,
@@ -573,6 +572,7 @@ class visual_stim:
 
                 protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
                 stim_index = self.experiment['index'][self.next_index_table[iT]]
+                print(protocol_id, stim_index)
                 if use_prebuffering:
                     self.buffer = self.BUFFERS[protocol_id][stim_index]
                     self.time_indices = self.TIME_INDICES[protocol_id][stim_index]
@@ -909,22 +909,24 @@ class multiprotocol(visual_stim):
     ##############################################
 
     # functions implemented in child class
-    def get_image(self, episode, time_from_episode_start=0, parent=None):
-        return self.STIM[self.experiment['protocol_id'][episode]].get_image(episode,\
-                time_from_episode_start=time_from_episode_start, parent=self)
+    def get_image(self, index, time_from_episode_start=0):
+        return getattr(self.STIM[self.experiment['protocol_id'][index]],
+                       'get_image')(self.experiment['index'][index],
+                                    time_from_episode_start=time_from_episode_start)
 
     def get_frames_sequence(self, index):
         return getattr(self.STIM[self.experiment['protocol_id'][index]],
-                       'get_frames_sequence')(index)
+                       'get_frames_sequence')(self.experiment['index'][index])
 
     def plot_stim_picture(self, index, 
                           ax=None, parent=None, label=None, vse=False):
         return getattr(self.STIM[self.experiment['protocol_id'][index]],
-                       'plot_stim_picture')(index, ax=ax, label=label, vse=vse)
+                       'plot_stim_picture')(self.experiment['index'][index],
+                                            ax=ax, label=label, vse=vse)
 
-    def get_vse(self, index, ax=None, parent=None, label=None, vse=False):
+    def get_vse(self, index, ax=None, label=None, vse=False):
         return getattr(self.STIM[self.experiment['protocol_id'][index]],
-                       'get_vse')(index)
+                       'get_vse')(self.experiment['index'][index])
 
 
 #####################################
