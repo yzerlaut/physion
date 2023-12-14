@@ -136,19 +136,19 @@ def multimodal(self,
     tab.layout.addWidget(self.subjectBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
-    ip+=1
-    # -
-    tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Screen **', self),
-                         ip, self.side_wdgt_length, 
-                         1, width)
-    ip+=1
-    # -
-    self.screenBox = QtWidgets.QComboBox(self)
-    self.screenBox.addItems(['']+list(SCREENS.keys()))
-    tab.layout.addWidget(self.screenBox,\
-                         ip, self.side_wdgt_length+1, 
-                         1, width)
+    # ip+=1
+    # # -
+    # tab.layout.addWidget(\
+        # QtWidgets.QLabel(40*' '+'** Screen **', self),
+                         # ip, self.side_wdgt_length, 
+                         # 1, width)
+    # ip+=1
+    # # -
+    # self.screenBox = QtWidgets.QComboBox(self)
+    # self.screenBox.addItems(['']+list(SCREENS.keys()))
+    # tab.layout.addWidget(self.screenBox,\
+                         # ip, self.side_wdgt_length+1, 
+                         # 1, width)
     ip+=1
     # -
     tab.layout.addWidget(\

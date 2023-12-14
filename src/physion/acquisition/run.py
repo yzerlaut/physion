@@ -23,14 +23,18 @@ except ModuleNotFoundError:
     # print(' /!\ Problem with the NIdaq module /!\ ')
 
 try:
-    from physion.hardware.FLIRcamera.main import launch_Camera as launch_FlirCamera
+    from physion.hardware.FLIRcamera.main\
+            import launch_Camera as launch_FlirCamera
 except ModuleNotFoundError:
-    from physion.hardware.Dummy.camera import launch_Camera as launch_FlirCamera
+    from physion.hardware.Dummy.camera\
+            import launch_Camera as launch_FlirCamera
 
 try:
-    from physion.hardware.LogitechWebcam.main import launch_Camera as launch_WebCam
+    from physion.hardware.LogitechWebcam.main\
+            import launch_Camera as launch_WebCam
 except ModuleNotFoundError:
-    from physion.hardware.Dummy.camera import launch_Camera as launch_WebCam
+    from physion.hardware.Dummy.camera\
+            import launch_Camera as launch_WebCam
 
 
 def init_visual_stim(self):
@@ -44,7 +48,7 @@ def init_visual_stim(self):
         os.path.join(base_path, 'protocols', 'binaries',\
         self.metadata['protocol'])
 
-    self.protocol['screen'] = self.metadata['Screen']
+    # self.protocol['screen'] = self.metadata['Screen']
 
     if self.onlyDemoButton.isChecked():
         self.protocol['demo'] = True
