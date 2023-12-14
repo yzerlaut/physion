@@ -164,7 +164,7 @@ def multimodal(self,
     ip+=1
     # -
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Recording **'+40*' ', self),
+        QtWidgets.QLabel(40*' '+'** Rec. Settings **'+40*' ', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
