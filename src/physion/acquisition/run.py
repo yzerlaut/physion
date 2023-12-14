@@ -7,6 +7,7 @@ from physion.utils.files import generate_filename_path,\
         get_latest_file
 from physion.acquisition.tools import base_path,\
         check_gui_to_init_metadata, NIdaq_metadata_init
+from physion.acquisition import recordings
 
 try:
     from physion.visual_stim.main import launch_VisualStim
@@ -113,12 +114,10 @@ def initialize(self):
         print('max_time of NIdaq recording: %.2dh:%.2dm:%.2ds' %\
                 (self.max_time/3600, (self.max_time%3600)/60, (self.max_time%60)))
 
-        output_steps = []
-        if self.metadata['CaImaging']:
-            output_steps.append(self.config['STEP_FOR_CA_IMAGING_TRIGGER'])
-        if self.metadata['intervention']=='Photostimulation':
-            output_steps += self.config['STEPS_FOR_PHOTOSTIMULATION']
-
+        output_funcs= []
+        if self.metadata['recording']!='':
+            output_funcs = \
+                getattr(recordings, self.metadata['recording']).output_funcs
         NIdaq_metadata_init(self)
 
         if not self.onlyDemoButton.isChecked():
@@ -128,7 +127,7 @@ def initialize(self):
                     Nchannel_analog_in=self.metadata['NIdaq-analog-input-channels'],
                     Nchannel_digital_in=self.metadata['NIdaq-digital-input-channels'],
                     max_time=self.max_time,
-                    output_steps=output_steps,
+                    output_funcs=output_funcs,
                     filename= self.filename.replace('metadata', 'NIdaq'))
             except BaseException as e:
                 print(e)

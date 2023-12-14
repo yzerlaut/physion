@@ -111,7 +111,7 @@ def multimodal(self,
 
     # ========================================================
     #------------------- THEN MAIN PANEL   -------------------
-    ip, width = 0, 3
+    ip, width = 0, 4
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Config **', self),
                          ip, self.side_wdgt_length, 
@@ -152,7 +152,7 @@ def multimodal(self,
     # ip+=1
     # -
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Visual Protocol **', self),
+        QtWidgets.QLabel(40*' '+'** Visual Protocol **'+40*' ', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
@@ -164,7 +164,7 @@ def multimodal(self,
     ip+=1
     # -
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Recording **', self),
+        QtWidgets.QLabel(40*' '+'** Recording **'+40*' ', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1

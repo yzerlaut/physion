@@ -51,8 +51,8 @@ def update_config(self):
         self.subjectBox.addItems(self.subject_list)
 
         # now update screen 
-        if 'Screen' in self.config:
-            self.screenBox.setCurrentText(self.config['Screen'])
+        # if 'Screen' in self.config:
+            # self.screenBox.setCurrentText(self.config['Screen'])
 
 
 
