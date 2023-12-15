@@ -17,20 +17,12 @@ from physion.dataviz.imaging import *
 
 plt.rcParams['figure.autolayout'] = False
 
-def draw_figure(args, data,
-                top_row_bottom=0.75,
-                top_row_space=0.08,
-                top_row_height=0.2,
-                Ndiscret=100):
+def layout(args,
+           top_row_bottom=0.75,
+           top_row_space=0.08,
+           top_row_height=0.2):
 
-    metadata = dict(data.metadata)
-
-    metadata['raw_vis_folder'] = args.raw_vis_folder
-    metadata['raw_imaging_folder'] = args.raw_imaging_folder
-
-    times = np.linspace(args.tlim[0], args.tlim[1], args.Ndiscret)
-
-
+    
     if args.no_visual:
         fractions = {'running':0.15, 'running_start':0.,
                      'whisking':0.15, 'whisking_start':0.15,
@@ -48,9 +40,32 @@ def draw_figure(args, data,
                      'raster':0.2, 'raster_start':0.8}
 
     AX = {}
-    fig, AX['time_plot_ax'] = plt.subplots(1, figsize=(8,5.5))
-    plt.subplots_adjust(bottom=0.01, right=0.95, left=0.25, top=top_row_bottom*0.95)
+    fig = plt.figure(figsize=(9,5))
 
+    height0, width0 = 0.63, 0.21
+
+    AX['axImaging'] = pt.inset(fig, (0., height0, width0, 1-height0))
+    AX['axImaging'].imshow(np.zeros((2,2)), vmin=0)
+    AX['axImaging'].axis('equal')
+
+
+    width1 = (1-width0)
+    keys = ['axVisStim', 'axRig', 'axFace', 'axSetup']
+    for i, key in enumerate(keys):
+        AX[key] = pt.inset(fig, (width0+i*width1/len(keys),
+                                 height0+.05, 0.95*width1/len(keys),
+                                 0.4*height0))
+
+    pt.annotate(AX['axImaging'], args.imaging_title, (0.5,0.98),
+                fontsize=7, va='top', ha='center', color='w')
+
+    img = Image.open('../docs/exp-rig.png')
+    AX['axSetup'].imshow(img)
+    # AX['axSetup'].axis('off')
+
+    AX['axTraces'] = pt.inset(fig, (width0, 0, 1-width0, height0))
+
+    """
     width = (1.-4*top_row_space)/4.
 
     AX['setup_ax'] = pt.inset(fig,
@@ -72,44 +87,96 @@ def draw_figure(args, data,
         AX['camera_ax'] = pt.inset(fig,
                 (top_row_space/2.+0.8*(width+top_row_space),
                 top_row_bottom, 2.1*width, top_row_height))
+
+
+    if not args.no_visual:
+        AX['imaging_ax'] = pt.inset(fig,\
+                (top_row_space/2.+3.1*(width+top_row_space),
+                 top_row_bottom-.04, width, top_row_height+0.08))
+    else:
+        AX['imaging_ax'] = pt.inset(fig,
+                (top_row_space/2.+2.5*(width+top_row_space),
+                 top_row_bottom-.04, width, top_row_height+0.08))
+
+    AX['imaging_ax'].annotate('imaging',
+                              (-0.05,0.5),
+                              ha='right', va='center',
+                              rotation=90, xycoords='axes fraction')
+
+
+    AX['ROI1_ax'] = pt.inset(fig, [0.04,0.6,0.11,0.13]) 
+    AX['ROI1_ax'].annotate(' neuron #1', (0,0),
+            color='w', fontsize=7, xycoords='axes fraction')
+
+    AX['ROI2_ax'] = pt.inset(fig, [0.04,0.45,0.11,0.13]) 
+    AX['ROI1_ax'].annotate(' neuron #2', (0,0),
+            color='w', fontsize=7, xycoords='axes fraction')
+
+    AX['whisking_ax'] = pt.inset(fig, [0.04,0.13,0.11,0.11]) 
+
+    AX['pupil_ax'] = pt.inset(fig, [0.04,0.26,0.11,0.13]) 
+
+    AX['time_ax'] = pt.inset(fig, [0.02,0.05,0.08,0.05]) 
+
+    AX['camera_ax'].set_title('camera')
+    if not args.no_visual:
+        AX['screen_ax'].axis('off')
+        AX['screen_ax'].set_title('screen')
+
+    """
+    return fig, AX
+
         
+def draw_figure(args, data,
+                Ndiscret=100):
+
+    fig, AX = layout(args)
+
+    metadata = dict(data.metadata)
+
+    metadata['raw_vis_folder'] = args.raw_vis_folder
+    metadata['raw_imaging_folder'] = args.raw_imaging_folder
+
+    times = np.linspace(args.tlim[0], args.tlim[1], args.Ndiscret)
+
 
     if 'ophys' in data.nwbfile.processing:
 
         # full image
         max_proj = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:]
-        max_proj_scaled = np.power(max_proj/max_proj.max(), 1/args.imaging_NL)
+        max_proj_scaled = np.power(max_proj/max_proj.max(),
+                                   1/args.imaging_NL)
 
-        if not args.no_visual:
-            AX['imaging_ax'] = pt.inset(fig, (top_row_space/2.+3.1*(width+top_row_space), top_row_bottom-.04, width, top_row_height+0.08))
-        else:
-            AX['imaging_ax'] = pt.inset(fig, (top_row_space/2.+2.5*(width+top_row_space), top_row_bottom-.04, width, top_row_height+0.08))
-
-        AX['imaging_ax'].annotate('imaging', (-0.05,0.5), ha='right', va='center', rotation=90, xycoords='axes fraction')
         AX['imaging_img'] = AX['imaging_ax'].imshow(max_proj_scaled, 
-                vmin=0, vmax=1,
-                cmap=pt.get_linear_colormap('k','lightgreen'), 
-                aspect='equal', interpolation='none', origin='lower')
-        AX['imaging_ax'].annotate(' n=%i rois' % data.iscell.sum(), (0,0), color='w', fontsize=8, xycoords='axes fraction')
+                            vmin=0, vmax=1,
+                            cmap=pt.get_linear_colormap('k','lightgreen'),
+                            aspect='equal', interpolation='none',
+                                                    origin='lower')
+
+        AX['imaging_ax'].annotate(' n=%i rois' % data.iscell.sum(),
+                                  (0,0), color='w', fontsize=8,
+                                  xycoords='axes fraction')
 
         # ROI 1 
-        AX['ROI1_ax'] = pt.inset(fig, [0.04,0.6,0.11,0.13]) 
-        extent1 = find_roi_extent(data, args.ROIs[0], roi_zoom_factor=5)
+        extent1 = find_roi_extent(data, args.ROIs[0],
+                                  roi_zoom_factor=5)
         max_proj1 = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:][extent1[0]:extent1[1], extent1[2]:extent1[3]]
         # max_proj_scaled1 = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
         # max_proj_scaled1 = np.power(max_proj_scaled1, 1/args.imaging_NL)
 
-        AX['ROI1_img'] = AX['ROI1_ax'].imshow(max_proj1,
-                                              vmin=0, vmax=max_proj1.max(), 
-                cmap=pt.get_linear_colormap('k','lightgreen'), extent=extent1,
-                aspect='equal', interpolation='none', origin='lower')
-        AX['ROI1_ax'].annotate(' roi #%i' % (args.ROIs[0]+1), (0,0),
-                color='w', fontsize=7, xycoords='axes fraction')
+        AX['ROI1_img'] = \
+                AX['ROI1_ax'].imshow(max_proj1,
+                                      vmin=0, 
+                                      vmax=max_proj1.max(), 
+                cmap=pt.get_linear_colormap('k','lightgreen'), 
+                                      extent=extent1,
+                                      aspect='equal',
+                                      interpolation='none', 
+                                     origin='lower')
         add_roi_ellipse(data, args.ROIs[0], AX['ROI1_ax'],
                         size_factor=1.5, roi_lw=1)
 
         # ROI 2 
-        AX['ROI2_ax'] = pt.inset(fig, [0.04,0.45,0.11,0.13]) 
         extent2 = find_roi_extent(data, args.ROIs[1], roi_zoom_factor=5)
         max_proj2 = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:][extent2[0]:extent2[1], extent2[2]:extent2[3]]
         # max_proj_scaled2 = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
@@ -119,33 +186,24 @@ def draw_figure(args, data,
                                               vmin=0, vmax=max_proj2.max(), 
                 cmap=pt.get_linear_colormap('k','lightgreen'), extent=extent2, 
                 aspect='equal', interpolation='none', origin='lower')
-        AX['ROI2_ax'].annotate(' roi #%i' % (args.ROIs[1]+1), (0,0), color='w', fontsize=7, xycoords='axes fraction')
+        # AX['ROI2_ax'].annotate(' roi #%i' % (args.ROIs[1]+1), (0,0), color='w', fontsize=7, xycoords='axes fraction')
         add_roi_ellipse(data, args.ROIs[1], AX['ROI2_ax'],
                         size_factor=1.5, roi_lw=1)
-    else:
-        fig3, [AX['imaging_ax'], AX['ROI1_ax'], AX['ROI2_ax']] = plt.subplots(3, figsize=(0.5,0.5))
 
-
-    AX['whisking_ax'] = pt.inset(fig, [0.04,0.13,0.11,0.11]) 
+    """
     AX['whisking_ax'].annotate('$F_{(t+dt)}$-$F_{(t)}$', (0,0.5),
             ha='right', va='center',
             xycoords='axes fraction', rotation=90, fontsize=6)
     AX['whisking_ax'].annotate('whisker-pad\nmotion frames', (0.5,0), ha='center',
         va='top', fontsize=8, xycoords='axes fraction')
 
-    AX['pupil_ax'] = pt.inset(fig, [0.04,0.26,0.11,0.13]) 
     AX['pupil_ax'].annotate('pupil', (0.5, 1),
             va='bottom', ha='center',
             xycoords='axes fraction', rotation=0, fontsize=8)
 
-    AX['time_ax'] = pt.inset(fig, [0.02,0.05,0.08,0.05]) 
-
     t0 = times[0]
 
     # setup drawing
-    img = Image.open('../docs/exp-rig.png')
-    AX['setup_ax'].imshow(img)
-    AX['setup_ax'].axis('off')
     time = AX['time_ax'].annotate(' ', (0,0), xycoords='figure fraction', size=9)
     # time = AX['time_ax'].annotate('     t=%.1fs\n' % times[0], (0,0), xycoords='figure fraction', size=9)
 
@@ -224,7 +282,9 @@ def draw_figure(args, data,
     AX['setup_ax'].axis('off')
     
     # time cursor
-    cursor, = AX['time_plot_ax'].plot(np.ones(2)*times[0], np.arange(2), 'k-')#color='grey', lw=3, alpha=.3) 
+    cursor, = AX['time_plot_ax'].plot(\
+         np.ones(2)*times[0], np.arange(2),
+         'k-')#color='grey', lw=3, alpha=.3) 
 
     #   ----  filling time plot
 
@@ -315,10 +375,6 @@ def draw_figure(args, data,
 
     for i, label in enumerate(['imaging', 'pupil', 'whisking', 'ROI1', 'ROI2', 'time', 'camera']):
         AX['%s_ax'%label].axis('off')
-    AX['camera_ax'].set_title('camera')
-    if not args.no_visual:
-        AX['screen_ax'].axis('off')
-        AX['screen_ax'].set_title('screen')
 
     def update(i=0):
 
@@ -379,6 +435,7 @@ def draw_figure(args, data,
                 AX['imaging_img'], AX['ROI1_img'], AX['ROI2_img']]
        
 
+    """
     if args.export:
         ani = animation.FuncAnimation(fig, 
                                       update,
@@ -441,21 +498,32 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument("datafile", type=str)
 
-    parser.add_argument("-rvf", '--raw_vis_folder', type=str, default='')
-    parser.add_argument("-rif", '--raw_imaging_folder', type=str, default='')
+    parser.add_argument("-rvf", '--raw_vis_folder', 
+                        type=str, default='')
+    # IMAGING props
+    parser.add_argument("-rif", '--raw_imaging_folder', 
+                        type=str, default='')
+    parser.add_argument('--imaging_title', type=str, 
+                        default='GCamp6s fluorescence')
     
-    parser.add_argument("--tlim", type=float, nargs='*', default=[10, 100], help='')
+    parser.add_argument("--tlim", type=float, nargs='*', 
+                        default=[10, 100], help='')
     parser.add_argument("--Tbar", type=int, default=0)
-    parser.add_argument("--Tbar_loc", type=float, default=1.005, help='y-loc of Tbar in [0,1]')
+    parser.add_argument("--Tbar_loc", type=float, 
+                        default=1.005, help='y-loc of Tbar in [0,1]')
 
     parser.add_argument("--no_visual", 
-                        help="remove visual stimulation", action="store_true")
+                        help="remove visual stimulation", 
+                        action="store_true")
 
-    parser.add_argument('-rois', "--ROIs", type=int, default=[0,1], nargs='*')
+    parser.add_argument('-rois', "--ROIs", type=int, 
+                        default=[0,1,2], nargs=3)
     parser.add_argument('-n', "--Ndiscret", type=int, default=10)
     parser.add_argument('-q', "--quantity", type=str, default='dFoF')
 
     parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+    parser.add_argument("--layout", help="show layout",
+                        action="store_true")
     parser.add_argument("-e", "--export", help="export to mp4", action="store_true")
     parser.add_argument('-o', "--output", type=str, default='demo.mp4')
     # video properties
@@ -470,17 +538,26 @@ if __name__=='__main__':
     if args.duration>0:
         args.Ndiscret = int(args.duration*args.fps)
 
-    data = physion.analysis.read_NWB.Data(args.datafile,
-                                          with_visual_stim=True)
     # print('\n', data.nwbfile.processing['ophys'].description, '\n')
 
-    fig, AX, ani = draw_figure(args, data)    
-    if args.export:
-        print('writing video [...]')
-        writer = animation.writers['ffmpeg'](fps=args.fps)
-        ani.save(args.output, writer=writer, dpi=args.dpi)
-    else:
+
+    if args.layout:
+
+        fig, AX = layout(args)
         pt.plt.show()
+
+    else:
+        data = physion.analysis.read_NWB.Data(args.datafile,
+                                              with_visual_stim=True)
+        fig, AX, ani = draw_figure(args, data)    
+
+        if args.export:
+            print('writing video [...]')
+            writer = animation.writers['ffmpeg'](fps=args.fps)
+            ani.save(args.output, writer=writer, dpi=args.dpi)
+
+        else:
+            pt.plt.show()
 
 
 
