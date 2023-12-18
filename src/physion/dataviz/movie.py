@@ -20,13 +20,19 @@ plt.rcParams['figure.autolayout'] = False
 
 iMap = pt.get_linear_colormap('k','lightgreen')
 
-fractions = {'photodiode':0.06, 'photodiode_start':0,
-             'running':0.13, 'running_start':0.07,
-             'whisking':0.12, 'whisking_start':0.2,
-             'gaze':0.1, 'gaze_start':0.32,
-             'pupil':0.13, 'pupil_start':0.4,
-             'rois':0.27, 'rois_start':0.53,
-             'raster':0.2, 'raster_start':0.8}
+# fractions = {'photodiode':0.06, 'photodiode_start':0,
+             # 'running':0.13, 'running_start':0.07,
+             # 'whisking':0.12, 'whisking_start':0.2,
+             # 'gaze':0.1, 'gaze_start':0.32,
+             # 'pupil':0.13, 'pupil_start':0.4,
+             # 'rois':0.27, 'rois_start':0.53,
+             # 'raster':0.2, 'raster_start':0.8}
+
+fractions = {'running':0.13, 'running_start':0.,
+             'whisking':0.12, 'whisking_start':0.14,
+             'pupil':0.13, 'pupil_start':0.27,
+             'rois':0.35, 'rois_start':0.40,
+             'raster':0.25, 'raster_start':0.75}
 
 def layout(args,
            top_row_bottom=0.75,
@@ -63,9 +69,10 @@ def layout(args,
 
     AX['axTraces'] = pt.inset(fig,(width1,0,1-width1,0.98*height0))
 
-    keys = ['axWhisking', 'axPupil', 'axROI1', 'axROI2', 'axROI3']
-    titles = ['whisking', 'pupil',
-              'neuron #1', 'neuron #2', 'neuron #3']
+    keys = ['axWhisking', 'axPupil']+\
+            ['axROI%i'%(n+1) for n in range(len(args.ROIs))]
+    titles = ['whisking', 'pupil']+\
+            ['cell %i'%(r+1) for r in args.ROIs]
     for i, key in enumerate(keys):
         AX[key] = pt.inset(fig, (0.03,
                                  i*height1/len(keys), 
@@ -130,13 +137,13 @@ def draw_figure(args, data,
                             AX['axROI%i' % (i+1)],
                             size_factor=1.5, roi_lw=1)
 
-    AX['axWhisking'].annotate('whisker-pad\nmotion frames', 
-                              (0.,0.5), va='center', ha='right',
+    AX['axWhisking'].annotate('whisker-pad\nmotion frames',
+                              (0.,0.5), va='center', ha='right', rotation=90,
                               fontsize=7, xycoords='axes fraction')
 
     AX['axPupil'].annotate('ellipse\nfitting',
-                              (0.,0.5), va='center', ha='right',
-                              fontsize=7, xycoords='axes fraction')
+                           (0.,0.5), va='center', ha='right', rotation=90,
+                           fontsize=7, xycoords='axes fraction')
 
     t0 = times[0]
 
@@ -164,7 +171,7 @@ def draw_figure(args, data,
 
         imaging_scales = []
 
-        for n in range(3):
+        for n in range(len(args.ROIs)):
             imaging_scales.append(\
                     (Ca_data.data[i1:i2,
                                  extents[n][0]:extents[n][1],
@@ -187,12 +194,12 @@ def draw_figure(args, data,
 
         # Rig Image
         img = np.load(metadata['raw_Rig_FILES'][0])
-        AX['imgRig'] = AX['axRig'].imshow(imgRig_process(img),
+        AX['imgRig'] = AX['axRig'].imshow(imgRig_process(img,args),
                                     vmin=0, vmax=1, cmap='gray')
 
         # Pupil Image
         img = np.load(metadata['raw_Face_FILES'][0])
-        AX['imgFace'] = AX['axFace'].imshow(imgFace_process(img),
+        AX['imgFace'] = AX['axFace'].imshow(imgFace_process(img,args),
                                             vmin=0, vmax=1, cmap='gray')
 
         # pupil
@@ -228,47 +235,47 @@ def draw_figure(args, data,
     # photodiode and visual stim
     if not args.no_visual:
         add_VisualStim(data, args.tlim, AX['axTraces'], 
-                       fig_fraction=2., with_screen_inset=False,
+                       fig_fraction=2., with_screen_inset=True,
                        name='')
-        add_Photodiode(data, args.tlim, AX['axTraces'], 
-                       fig_fraction_start=fractions['photodiode_start'], 
-                       fig_fraction=fractions['photodiode'], name='')
-        AX['axTraces'].annotate('photodiode', (-0.01, fractions['photodiode_start']),
-                ha='right', va='bottom', color='grey', fontsize=8, xycoords='axes fraction')
+        # add_Photodiode(data, args.tlim, AX['axTraces'], 
+                       # fig_fraction_start=fractions['photodiode_start'], 
+                       # fig_fraction=fractions['photodiode'], name='')
+        # AX['axTraces'].annotate('photodiode', (-0.01, fractions['photodiode_start']),
+                # ha='right', va='bottom', color='grey', fontsize=8, xycoords='axes fraction')
 
 
     # locomotion
     add_Locomotion(data, args.tlim, AX['axTraces'], 
                         fig_fraction_start=fractions['running_start'], 
                         fig_fraction=fractions['running'], 
-                        scale_side='right',
+                        scale_side='right', subsampling=1,
                         name='')
-    AX['axTraces'].annotate('locomotion \nspeed \n ', (-0.01, fractions['running_start']),
+    AX['axTraces'].annotate('running \nspeed \n ', (-0.01, fractions['running_start']),
             ha='right', va='bottom', color='#1f77b4', fontsize=8, xycoords='axes fraction')
 
     # whisking 
     add_FaceMotion(data, args.tlim, AX['axTraces'], 
                    fig_fraction_start=fractions['whisking_start'], 
                    fig_fraction=fractions['whisking'], 
-                   scale_side='right',
+                   scale_side='right', subsampling=1,
                    name='')
     AX['axTraces'].annotate('whisking \n', (-0.01, fractions['whisking_start']),
             ha='right', va='bottom', color='purple', fontsize=8, xycoords='axes fraction')
 
     # gaze 
-    add_GazeMovement(data, args.tlim, AX['axTraces'], 
-                        fig_fraction_start=fractions['gaze_start'], 
-                        fig_fraction=fractions['gaze'], 
-                  scale_side='right',
-                        name='')
-    AX['axTraces'].annotate('gaze \nmov. ', (-0.01, fractions['gaze_start']),
-            ha='right', va='bottom', color='orange', fontsize=8, xycoords='axes fraction')
+    # add_GazeMovement(data, args.tlim, AX['axTraces'], 
+                        # fig_fraction_start=fractions['gaze_start'], 
+                        # fig_fraction=fractions['gaze'], 
+                  # scale_side='right',
+                        # name='')
+    # AX['axTraces'].annotate('gaze \nmov. ', (-0.01, fractions['gaze_start']),
+            # ha='right', va='bottom', color='orange', fontsize=8, xycoords='axes fraction')
 
     # pupil 
     add_Pupil(data, args.tlim, AX['axTraces'], 
                         fig_fraction_start=fractions['pupil_start'], 
                         fig_fraction=fractions['pupil'], 
-                        scale_side='right',
+                        scale_side='right', subsampling=1,
                         name='')
     AX['axTraces'].annotate('pupil \ndiam. ', (-0.01, fractions['pupil_start']),
             ha='right', va='bottom', color='red', fontsize=8, xycoords='axes fraction')
@@ -287,15 +294,11 @@ def draw_figure(args, data,
                 ha='right', va='center', color='green', rotation=90, xycoords='axes fraction')
 
         # raster 
-        # AX['dFoFscale_ax'] = pt.inset(fig,
-                        # [0.2, top_row_bottom*0.95*(fractions['raster_start']+.2*fractions['raster']),
-                         # 0.01, top_row_bottom*0.95*0.6*fractions['raster']], facecolor=None)
         add_CaImagingRaster(data, args.tlim, AX['axTraces'], 
                     subquantity='dFoF', 
                     normalization='per-line',
                     fig_fraction_start=fractions['raster_start'], 
                     fig_fraction=fractions['raster'], 
-                    # axb = AX['dFoFscale_ax'],
                     name='')
     else:
         AX['dFoFscale_ax'], AX['dFoFscale_cb'] = None, None
@@ -314,16 +317,15 @@ def draw_figure(args, data,
 
         if 'raw_Rig_times' in metadata:
             # Rig camera
-            print(True)
             camera_index = np.argmin((metadata['raw_Rig_times']-times[i])**2)
             img = np.load(metadata['raw_Rig_FILES'][camera_index])
-            AX['imgRig'].set_array(img)
+            AX['imgRig'].set_array(imgRig_process(img, args))
 
         if 'raw_Face_times' in metadata:
             # Face camera
             camera_index = np.argmin((metadata['raw_Face_times']-times[i])**2)
             img = np.load(metadata['raw_Face_FILES'][camera_index])
-            AX['imgFace'].set_array(img)
+            AX['imgFace'].set_array(imgFace_process(img, args))
             # pupil
             AX['imgPupil'].set_array(img[pupil_cond].reshape(*pupil_shape))
             pupil_fit = get_pupil_fit(camera_index, data, metadata)
@@ -337,7 +339,7 @@ def draw_figure(args, data,
         # imaging
         if (i in [0,len(times)-1]) or (Ca_data is None):
             AX['imgImaging'].set_array(max_proj_scaled)
-            for n in range(3):
+            for n in range(len(args.ROIs)):
                 AX['imgROI%i' % (n+1)].set_array(max_projs[n])
         else:
             im_index = dv_tools.convert_time_to_index(times[i], data.Fluorescence)
@@ -345,7 +347,7 @@ def draw_figure(args, data,
             img = np.power(img/np.max(max_proj), 1/args.imaging_NL)
             AX['imgImaging'].set_array(img)
 
-            for n in range(3):
+            for n in range(len(args.ROIs)):
                 imgN = Ca_data.data[im_index,
                                     extents[n][0]:extents[n][1],
                                     extents[n][2]:extents[n][3]]
@@ -387,18 +389,19 @@ def draw_figure(args, data,
         return fig, AX, None 
 
 
-def imgFace_process(img, exp=0.1,
+def imgFace_process(img, args, exp=0.1,
                     bounds=[0.05, 0.75]):
     Img = (img-np.min(img))/(np.max(img)-np.min(img))
-    # Img = np.power(Img, exp) 
-    Img[Img<bounds[0]]=bounds[0]
-    Img[Img>bounds[1]]=bounds[1]
-    Img = 0.2+0.6*(Img-np.min(Img))/(np.max(Img)-np.min(Img))
+    # # Img = np.power(Img, exp) 
+    # Img[Img<bounds[0]]=bounds[0]
+    # Img[Img>bounds[1]]=bounds[1]
+    # Img = 0.2+0.6*(Img-np.min(Img))/(np.max(Img)-np.min(Img))
     return Img
 
-def imgRig_process(img):
+def imgRig_process(img, args):
     Img = (img-np.min(img))/(np.max(img)-np.min(img))
-    return Img[10:,:-150] 
+    return Img[args.RigCamLim[0]:args.RigCamLim[2],\
+               args.RigCamLim[1]:args.RigCamLim[3]] 
 
 def get_pupil_center(index, data, metadata):
     coords = []
@@ -471,6 +474,12 @@ if __name__=='__main__':
 
     parser.add_argument("-rvf", '--raw_vis_folder', 
                         type=str, default='')
+    # FaceCamera props
+
+    # RigCamera props
+    parser.add_argument("--RigCamLim", type=int, nargs=4, 
+                        default=[0, 0, 10000, 10000])
+
     # IMAGING props
     parser.add_argument("-rif", '--raw_imaging_folder', 
                         type=str, default='')
@@ -488,7 +497,7 @@ if __name__=='__main__':
                         action="store_true")
 
     parser.add_argument('-rois', "--ROIs", type=int, 
-                        default=[0,1,2], nargs=3)
+                        default=[0,1,2], nargs='*')
     parser.add_argument('-n', "--Ndiscret", type=int, default=10)
     parser.add_argument('-q', "--quantity", type=str, default='dFoF')
 

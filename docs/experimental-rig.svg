@@ -41,9 +41,9 @@
      inkscape:document-units="mm"
      showgrid="false"
      units="px"
-     inkscape:zoom="0.58644365"
-     inkscape:cx="427.15101"
-     inkscape:cy="106.5746"
+     inkscape:zoom="0.82935656"
+     inkscape:cx="343.03702"
+     inkscape:cy="173.0257"
      inkscape:window-width="1512"
      inkscape:window-height="916"
      inkscape:window-x="0"
@@ -56,7 +56,8 @@
      fit-margin-right="0"
      fit-margin-bottom="0"
      inkscape:showpageshadow="2"
-     inkscape:deskcolor="#d1d1d1" />
+     inkscape:deskcolor="#d1d1d1"
+     showguides="true" />
   <defs
      id="defs2">
     <marker
@@ -4486,11 +4487,11 @@
            transform="translate(-21.36815,51.720707)"><tspan
              x="198.57905"
              y="30.773757"
-             id="tspan1">blinking signal
+             id="tspan26">blinking signal
 </tspan><tspan
              x="196.95745"
              y="38.711246"
-             id="tspan2">+ photodiode   </tspan></text>
+             id="tspan27">+ photodiode   </tspan></text>
         <g
            id="g82429-9"
            transform="matrix(0.76912433,-0.2461986,0.2461986,0.76912433,128.99879,49.930287)"
@@ -4671,7 +4672,7 @@
            y="0"><tspan
              x="43.339844"
              y="40.613795"
-             id="tspan3">IR camera</tspan></text>
+             id="tspan28">IR camera</tspan></text>
         <text
            xml:space="preserve"
            id="text82433-6"
@@ -4681,7 +4682,7 @@
            transform="translate(86.456426,141.57452)"><tspan
              x="169.26467"
              y="30.773766"
-             id="tspan4">circular treadmill</tspan></text>
+             id="tspan29">circular treadmill</tspan></text>
         <text
            xml:space="preserve"
            transform="matrix(0.37057301,0,0,0.37057301,149.58033,170.55332)"
@@ -4691,7 +4692,7 @@
            y="0"><tspan
              x="43.339844"
              y="40.613795"
-             id="tspan5">IR LEDs</tspan></text>
+             id="tspan30">IR LEDs</tspan></text>
         <g
            id="g82477-5"
            transform="matrix(0.55658214,0.641195,-0.641195,0.55658214,287.81841,45.445627)">
@@ -4800,7 +4801,7 @@
            y="0"><tspan
              x="43.339844"
              y="40.613795"
-             id="tspan6">screen</tspan></text>
+             id="tspan31">screen</tspan></text>
         <text
            xml:space="preserve"
            transform="matrix(0.37057301,0,0,0.37057301,223.30636,66.456991)"
@@ -4810,10 +4811,10 @@
            y="0"><tspan
              x="43.339844"
              y="40.613795"
-             id="tspan7">2-photon </tspan><tspan
+             id="tspan32">2-photon </tspan><tspan
              x="43.339844"
              y="62.033294"
-             id="tspan8">imaging</tspan></text>
+             id="tspan33">imaging</tspan></text>
         <path
            style="fill:#4d4d4d;stroke:#000000;stroke-width:0.274226;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
            d="m 254.73687,120.21678 4.42249,-2.85593 4.08828,-0.0802 0.0934,5.33885 -8.56505,0.16794 z"
@@ -5442,42 +5443,6 @@
              inkscape:connector-curvature="0" />
         </g>
         <path
-           sodipodi:nodetypes="ccccccccccccccccccccccccccccccccc"
-           id="path2147"
-           d="m 212.54044,272.1981 c -10.56622,-3.38493 -21.73042,-3.03416 -27.74281,14.56144 -1.39155,1.56894 -3.43295,2.42322 -5.89888,2.81065 -8.95312,2.54853 -2.02598,5.93607 1.27361,6.31707 8.7503,1.35839 14.63047,0.72036 24.45269,0.25346 -6.25963,-0.30912 -12.42122,-0.50656 -18.97775,-1.15397 -2.84656,-0.1813 -5.70331,-0.2715 -8.37692,-2.00101 -1.07241,-1.40762 2.38221,-1.67072 4.40947,-2.29469 l 4.07547,-1.34957 c 3.00986,1.54541 4.93605,1.09242 7.10637,1.08959 0.28706,0.88677 0.84295,1.593 2.07694,1.8439 l 2.92937,0.15058 c 0.89575,0.6997 1.86419,1.85055 1.62614,0.0514 l 1.1129,-0.11862 1.62124,0.31187 c 0.93536,-0.1623 0.83791,-0.54219 1.03762,-0.85949 0.15324,-0.35565 1.07761,-0.57349 -0.22665,-1.18964 l 6.77671,-1.13105 c 1.54158,0.88301 1.38349,0.98395 2.99657,1.30626 1.37035,0.52469 1.66301,0.21863 1.47283,-0.45963 3.93026,-0.16753 4.97457,-2.23617 2.02252,-2.74901 l -1.26284,-0.0462 c -1.45721,-0.28361 -1.32936,-0.71358 -1.00114,-1.16203 1.11933,-1.04452 2.9537,-0.65718 4.51321,-0.82025 2.73551,-0.3419 4.52965,0.11339 6.77848,0.18362 2.04924,0.50277 3.93155,-1.3459 4.61258,-1.9594 0.37866,-0.31511 0.99765,-0.96713 0.14992,-2.38568 -0.80162,-1.34627 -1.93935,-3.0963 -3.97997,-4.68739 -1.26894,-1.35589 -2.59932,-2.62452 -4.46749,-2.42177 -0.60702,-2.49754 -0.82948,-4.94277 -3.19234,-6.41058 -1.62444,-0.72343 -2.60519,-0.0923 -1.83102,1.35472 0.22497,1.53568 0.30484,1.81334 0.44384,2.60358 -1.84834,-0.89458 -3.63344,-0.52334 -4.53067,0.36186 z"
-           style="fill:#999999;stroke:#000000;stroke-width:0.214212px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           inkscape:connector-curvature="0"
-           inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
-           inkscape:export-xdpi="100"
-           inkscape:export-ydpi="100" />
-        <path
-           sodipodi:nodetypes="ccc"
-           id="path2149"
-           d="m 212.54044,272.19811 c -1.66503,1.63967 -2.23717,3.62539 -0.0317,6.49058 2.63445,2.79619 3.4693,1.76109 3.88497,1.51079"
-           style="fill:#999999;stroke:#000000;stroke-width:0.214212px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           inkscape:connector-curvature="0"
-           inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
-           inkscape:export-xdpi="100"
-           inkscape:export-ydpi="100" />
-        <path
-           sodipodi:nodetypes="cc"
-           id="path2151"
-           d="m 230.09326,283.67987 c -0.66576,0.2622 -1.01255,0.0215 -1.32733,-0.20717"
-           style="fill:none;stroke:#000000;stroke-width:0.214212px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           inkscape:connector-curvature="0"
-           inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
-           inkscape:export-xdpi="100"
-           inkscape:export-ydpi="100" />
-        <path
-           sodipodi:nodetypes="csc"
-           id="path2153"
-           d="m 214.99449,276.67044 c 0.44137,0.55663 1.33536,0.58415 1.05234,1.8703 0,0 -0.3789,2.48661 1.05748,-0.26248"
-           style="fill:#999999;stroke:#000000;stroke-width:0.121444;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-           inkscape:connector-curvature="0"
-           inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
-           inkscape:export-xdpi="100"
-           inkscape:export-ydpi="100" />
-        <path
            sodipodi:nodetypes="cc"
            id="path2155"
            d="m 221.27332,274.17305 c -0.82371,-0.69158 -1.85003,-0.39149 -2.49013,-0.13244"
@@ -5495,42 +5460,6 @@
            inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
            inkscape:export-xdpi="100"
            inkscape:export-ydpi="100" />
-        <path
-           sodipodi:nodetypes="cc"
-           id="path2159"
-           d="m 225.01892,283.1636 c -1.05523,1.61005 -1.50721,3.05062 -3.11163,5.09433"
-           style="fill:none;stroke:#000000;stroke-width:0.179919px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           inkscape:connector-curvature="0"
-           inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
-           inkscape:export-xdpi="100"
-           inkscape:export-ydpi="100" />
-        <path
-           sodipodi:nodetypes="cc"
-           id="path2161"
-           d="m 224.16242,282.85695 c -1.15943,1.52532 -1.4998,2.36448 -3.55736,4.33419"
-           style="fill:none;stroke:#000000;stroke-width:0.179919px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           inkscape:connector-curvature="0"
-           inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
-           inkscape:export-xdpi="100"
-           inkscape:export-ydpi="100" />
-        <path
-           sodipodi:nodetypes="cc"
-           id="path2163"
-           d="m 226.15681,283.26655 c -0.83991,1.75039 -1.26516,3.26811 -2.5546,5.34103"
-           style="fill:none;stroke:#000000;stroke-width:0.179919px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           inkscape:connector-curvature="0"
-           inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
-           inkscape:export-xdpi="100"
-           inkscape:export-ydpi="100" />
-        <path
-           sodipodi:nodetypes="cc"
-           id="path2165"
-           d="m 226.93172,285.74185 -0.40053,-0.97916"
-           style="fill:#808080;stroke:#000000;stroke-width:0.214212px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           inkscape:connector-curvature="0"
-           inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
-           inkscape:export-xdpi="100"
-           inkscape:export-ydpi="100" />
         <ellipse
            transform="rotate(-1.1903321)"
            ry="0.10643525"
@@ -5542,15 +5471,46 @@
            inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
            inkscape:export-xdpi="100"
            inkscape:export-ydpi="100" />
-        <path
-           sodipodi:nodetypes="cc"
-           id="path2169"
-           d="m 214.70711,275.61161 c 1.32843,-1.74142 2.26879,-0.81305 2.85807,0.073"
-           style="fill:#999999;stroke:#000000;stroke-width:0.121444;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-           inkscape:connector-curvature="0"
-           inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
-           inkscape:export-xdpi="100"
-           inkscape:export-ydpi="100" />
+        <g
+           id="g2"
+           style="fill:#b3b3b3">
+          <path
+             sodipodi:nodetypes="ccccccccccccccccccccccccccccccccc"
+             id="path2147"
+             d="m 212.54044,272.1981 c -10.56622,-3.38493 -21.73042,-3.03416 -27.74281,14.56144 -1.39155,1.56894 -3.43295,2.42322 -5.89888,2.81065 -8.95312,2.54853 -2.02598,5.93607 1.27361,6.31707 8.7503,1.35839 14.63047,0.72036 24.45269,0.25346 -6.25963,-0.30912 -12.42122,-0.50656 -18.97775,-1.15397 -2.84656,-0.1813 -5.70331,-0.2715 -8.37692,-2.00101 -1.07241,-1.40762 2.38221,-1.67072 4.40947,-2.29469 l 4.07547,-1.34957 c 3.00986,1.54541 4.93605,1.09242 7.10637,1.08959 0.28706,0.88677 0.84295,1.593 2.07694,1.8439 l 2.92937,0.15058 c 0.89575,0.6997 1.86419,1.85055 1.62614,0.0514 l 1.1129,-0.11862 1.62124,0.31187 c 0.93536,-0.1623 0.83791,-0.54219 1.03762,-0.85949 0.15324,-0.35565 1.07761,-0.57349 -0.22665,-1.18964 l 6.77671,-1.13105 c 1.54158,0.88301 1.38349,0.98395 2.99657,1.30626 1.37035,0.52469 1.66301,0.21863 1.47283,-0.45963 3.93026,-0.16753 4.97457,-2.23617 2.02252,-2.74901 l -1.26284,-0.0462 c -1.45721,-0.28361 -1.32936,-0.71358 -1.00114,-1.16203 1.11933,-1.04452 2.9537,-0.65718 4.51321,-0.82025 2.73551,-0.3419 4.52965,0.11339 6.77848,0.18362 2.04924,0.50277 3.93155,-1.3459 4.61258,-1.9594 0.37866,-0.31511 0.99765,-0.96713 0.14992,-2.38568 -0.80162,-1.34627 -1.93935,-3.0963 -3.97997,-4.68739 -1.26894,-1.35589 -2.59932,-2.62452 -4.46749,-2.42177 -0.60702,-2.49754 -0.82948,-4.94277 -3.19234,-6.41058 -1.62444,-0.72343 -2.60519,-0.0923 -1.83102,1.35472 0.22497,1.53568 0.30484,1.81334 0.44384,2.60358 -1.84834,-0.89458 -3.63344,-0.52334 -4.53067,0.36186 z"
+             style="fill:#b3b3b3;stroke:#000000;stroke-width:0.214212px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+             inkscape:connector-curvature="0"
+             inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
+             inkscape:export-xdpi="100"
+             inkscape:export-ydpi="100" />
+          <path
+             sodipodi:nodetypes="ccc"
+             id="path2149"
+             d="m 212.54044,272.19811 c -1.66503,1.63967 -2.23717,3.62539 -0.0317,6.49058 2.63445,2.79619 3.4693,1.76109 3.88497,1.51079"
+             style="fill:#b3b3b3;stroke:#000000;stroke-width:0.214212px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+             inkscape:connector-curvature="0"
+             inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
+             inkscape:export-xdpi="100"
+             inkscape:export-ydpi="100" />
+          <path
+             sodipodi:nodetypes="csc"
+             id="path2153"
+             d="m 214.99449,276.67044 c 0.44137,0.55663 1.33536,0.58415 1.05234,1.8703 0,0 -0.3789,2.48661 1.05748,-0.26248"
+             style="fill:#b3b3b3;stroke:#000000;stroke-width:0.121444;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+             inkscape:connector-curvature="0"
+             inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
+             inkscape:export-xdpi="100"
+             inkscape:export-ydpi="100" />
+          <path
+             sodipodi:nodetypes="cc"
+             id="path2169"
+             d="m 214.70711,275.61161 c 1.32843,-1.74142 2.26879,-0.81305 2.85807,0.073"
+             style="fill:#b3b3b3;stroke:#000000;stroke-width:0.121444;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+             inkscape:connector-curvature="0"
+             inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
+             inkscape:export-xdpi="100"
+             inkscape:export-ydpi="100" />
+        </g>
         <path
            sodipodi:nodetypes="cc"
            id="path2171"
@@ -5758,7 +5718,7 @@
            inkscape:export-ydpi="100"><tspan
              x="43.339844"
              y="39.352773"
-             id="tspan9">screen</tspan></text>
+             id="tspan34">screen</tspan></text>
         <text
            xml:space="preserve"
            id="text2297"
@@ -5771,15 +5731,15 @@
            transform="matrix(0.64271584,0,0,0.64271584,135.38801,217.99743)"><tspan
              x="43.339844"
              y="39.352773"
-             id="tspan11"><tspan
+             id="tspan36"><tspan
                style="font-weight:bold"
-               id="tspan10">2-photon
+               id="tspan35">2-photon
 </tspan></tspan><tspan
              x="43.339844"
              y="59.044523"
-             id="tspan13"><tspan
+             id="tspan38"><tspan
                style="font-weight:bold"
-               id="tspan12">imaging</tspan></tspan></text>
+               id="tspan37">imaging</tspan></tspan></text>
         <text
            y="318.5589"
            x="141.37096"
@@ -5792,11 +5752,11 @@
            transform="matrix(0.75618719,0,0,0.75618719,191.67839,307.06799)"><tspan
              x="43.339844"
              y="39.352773"
-             id="tspan14">face
+             id="tspan39">face
 </tspan><tspan
              x="43.339844"
              y="59.044523"
-             id="tspan15">camera</tspan></text>
+             id="tspan40">camera</tspan></text>
         <text
            y="318.5589"
            x="428.17435"
@@ -5809,15 +5769,15 @@
            transform="matrix(0.75618719,0,0,0.75618719,96.026995,269.41009)"><tspan
              x="43.339844"
              y="39.352773"
-             id="tspan17"><tspan
+             id="tspan42"><tspan
                style="text-align:justify"
-               id="tspan16">rig
+               id="tspan41">rig
 </tspan></tspan><tspan
              x="43.339844"
              y="59.044523"
-             id="tspan19"><tspan
+             id="tspan44"><tspan
                style="text-align:justify"
-               id="tspan18">cam.</tspan></tspan></text>
+               id="tspan43">cam.</tspan></tspan></text>
         <g
            id="g64"
            transform="matrix(0.62863194,-0.26630604,-0.26630604,-0.62863194,154.40895,419.69002)"
@@ -5998,18 +5958,18 @@
            inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
            inkscape:export-xdpi="100"
            inkscape:export-ydpi="100"
-           transform="matrix(0.64743324,0,0,0.64743324,124.12934,302.19474)"><tspan
+           transform="matrix(0.64743324,0,0,0.64743324,111.74792,308.38545)"><tspan
              x="59.257995"
              y="39.352773"
-             id="tspan21"><tspan
+             id="tspan46"><tspan
                style="text-align:center;text-anchor:middle"
-               id="tspan20">infrared
+               id="tspan45">infrared
 </tspan></tspan><tspan
              x="72.769151"
              y="59.044523"
-             id="tspan23"><tspan
+             id="tspan48"><tspan
                style="text-align:center;text-anchor:middle"
-               id="tspan22">light</tspan></tspan></text>
+               id="tspan47">light</tspan></tspan></text>
         <text
            y="318.5589"
            x="141.37096"
@@ -6022,12 +5982,12 @@
            transform="matrix(0.55390949,0,0,0.55390949,155.70289,286.66969)"><tspan
              x="43.339844"
              y="39.352773"
-             id="tspan25"><tspan
+             id="tspan50"><tspan
                style="font-weight:bold"
-               id="tspan24">treadmill</tspan></tspan></text>
+               id="tspan49">treadmill</tspan></tspan></text>
         <g
            id="g29"
-           transform="matrix(1.0544482,-0.19794663,0.19794663,1.0544482,88.664204,-28.376973)">
+           transform="matrix(1.062022,0.15216187,-0.15216187,1.062022,200.10087,-45.141143)">
           <g
              id="g30"
              transform="rotate(-73.63445,29.827816,372.15903)">
@@ -6070,6 +6030,54 @@
                  id="path28" />
             </g>
           </g>
+        </g>
+        <g
+           id="g6">
+          <path
+             sodipodi:nodetypes="cc"
+             id="path2"
+             d="m 230.09326,283.67987 c -0.66576,0.2622 -1.01255,0.0215 -1.32733,-0.20717"
+             style="fill:none;stroke:#000000;stroke-width:0.214212px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+             inkscape:connector-curvature="0"
+             inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
+             inkscape:export-xdpi="100"
+             inkscape:export-ydpi="100" />
+          <path
+             sodipodi:nodetypes="cc"
+             id="path3"
+             d="m 225.01892,283.1636 c -1.05523,1.61005 -1.50721,3.05062 -3.11163,5.09433"
+             style="fill:none;stroke:#000000;stroke-width:0.179919px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+             inkscape:connector-curvature="0"
+             inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
+             inkscape:export-xdpi="100"
+             inkscape:export-ydpi="100" />
+          <path
+             sodipodi:nodetypes="cc"
+             id="path4"
+             d="m 224.16242,282.85695 c -1.15943,1.52532 -1.4998,2.36448 -3.55736,4.33419"
+             style="fill:none;stroke:#000000;stroke-width:0.179919px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+             inkscape:connector-curvature="0"
+             inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
+             inkscape:export-xdpi="100"
+             inkscape:export-ydpi="100" />
+          <path
+             sodipodi:nodetypes="cc"
+             id="path5"
+             d="m 226.15681,283.26655 c -0.83991,1.75039 -1.26516,3.26811 -2.5546,5.34103"
+             style="fill:none;stroke:#000000;stroke-width:0.179919px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+             inkscape:connector-curvature="0"
+             inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
+             inkscape:export-xdpi="100"
+             inkscape:export-ydpi="100" />
+          <path
+             sodipodi:nodetypes="cc"
+             id="path6"
+             d="m 226.93172,285.74185 -0.40053,-0.97916"
+             style="fill:#808080;stroke:#000000;stroke-width:0.214212px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+             inkscape:connector-curvature="0"
+             inkscape:export-filename="/home/yann.zerlaut/Desktop/text2301.png"
+             inkscape:export-xdpi="100"
+             inkscape:export-ydpi="100" />
         </g>
       </g>
     </g>
