@@ -1,0 +1,3 @@
+Subject-ID,Anibio-Number,Date-of-Birth,Tatoo,Sex,Strain,Genotype,Surgery,Surgery-Date,Virus,headplate-angle-from-rig-axis,misc,FOV1,FOV2,FOV3,FOV4,FOV5,FOV6,injection-location,virus-injection
+Mouse_G3-NDNF,135,05/09/2023,,Male,C57B6/J,NDNF-Cre,headplate+injection,,VR21,10,,"(79, 39)","(26, 280)",,,,,,
+Mouse_G4-NDNF,141,05/09/2023,,Female,C57B6/J,NDNF-Cre,headplate+injection,,VR21,10,,(),"(-281,244)","(-411,63)","(-47,545)","(-556,142)","(-530,290)",,
