@@ -1,6 +1,5 @@
 {
-  "Presentation": "Stimuli-Sequence",
-  "Stimulus": "center-grating",
+  "Presentation": "multiprotocol",
   "shuffling" :"full",
   "shuffling-seed" :23,
   "Protocol-1": "subprotocols/stim-demo/inside.json",

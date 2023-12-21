@@ -93,7 +93,7 @@ def initialize(self):
                     with_RigCamera_frames_folder=self.metadata['RigCamera'])
         self.datafolder.set(str(os.path.dirname(self.filename)))
 
-        self.max_time = 0.5*60 # 2 hours by default, so should be stopped manually
+        self.max_time = 30*60 # 2 hours by default, so should be stopped manually
 
         if self.metadata['VisualStim']:
             self.statusBar.showMessage(\
