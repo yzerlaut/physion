@@ -10,4 +10,4 @@ def trigger2P(t):
     array[(t>=t0) & (t<(t0+length))] = 1.
     return 5.*array 
 
-output_funcs = [trigger2P]
+output_funcs = []

@@ -93,7 +93,7 @@ def initialize(self):
                     with_RigCamera_frames_folder=self.metadata['RigCamera'])
         self.datafolder.set(str(os.path.dirname(self.filename)))
 
-        self.max_time = 0.3*60*60 # 2 hours by default, so should be stopped manually
+        self.max_time = 0.5*60 # 2 hours by default, so should be stopped manually
 
         if self.metadata['VisualStim']:
             self.statusBar.showMessage(\
@@ -115,9 +115,14 @@ def initialize(self):
                 (self.max_time/3600, (self.max_time%3600)/60, (self.max_time%60)))
 
         output_funcs= []
+        if self.metadata['CaImaging']:
+            output_funcs.append(recordings.trigger2P)
         if self.metadata['recording']!='':
-            output_funcs = \
+            other_funcs = \
                 getattr(recordings, self.metadata['recording']).output_funcs
+            for func in other_funcs:
+                output_funcs.append(func)
+
         NIdaq_metadata_init(self)
 
         if not self.onlyDemoButton.isChecked():

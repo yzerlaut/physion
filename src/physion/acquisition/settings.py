@@ -20,7 +20,7 @@ def get_config_list(self):
     if hasattr(self, 'recordingBox'):
         files = os.listdir(os.path.join(base_path, 'recordings'))
         self.recording_list = [f.replace('.py', '')\
-                for f in files[::-1] if f.endswith('.py')]
+                for f in files[::-1] if (f.endswith('.py') and ('__' not in f))]
         self.recordingBox.addItems(['']+self.recording_list)
 
 def update_config(self):
