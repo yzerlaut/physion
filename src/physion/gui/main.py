@@ -36,7 +36,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # -- Data Visualization
     if not Acquisition:
         from physion.dataviz.gui import visualization, update_frame,\
-            select_visualStim, select_imgDisplay
+            select_visualStim, snapshot, movie
         from physion.dataviz.plots import raw_data_plot
         from physion.dataviz.FOV import FOV, select_ROI_FOV,\
             next_ROI_FOV, prev_ROI_FOV, toggle_FOV, draw_image_FOV
@@ -276,7 +276,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
-            self.SS_intrinsic()
+            # self.SS_intrinsic()
             # self.facemotion()
             # self.pupil()
             # self.transfer_gui()
@@ -288,13 +288,13 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()
             # DEBUG
-            # import physion
-            # self.datafile = '/home/yann.zerlaut/ASSEMBLE/2022_12_02-11-39-37.nwb'
-            # self.data = physion.analysis.read_NWB.Data(self.datafile)
+            self.datafile = '/Users/yann/UNPROCESSED/DEMO-PYR/2023_12_20-15-14-20.nwb'
+            from physion.analysis import read_NWB
+            self.data = read_NWB.Data(self.datafile)
             # self.data.build_rawFluo()
             # print(self.data.t_rawFluo.shape, self.data.rawFluo.shape)
             # self.trial_averaging()
-            # # # self.visualization()
+            self.visualization()
             # self.FOV()
             # self.multimodal()
 
