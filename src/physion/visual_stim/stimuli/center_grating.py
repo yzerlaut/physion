@@ -39,7 +39,7 @@ class stim(visual_stim):
         self.refresh_freq = protocol['movie_refresh_freq']
 
 
-    def get_image(self, episode, time_from_episode_start=0, parent=None):
+    def get_image(self, episode, time_from_episode_start=0):
         img = init_bg_image(self, episode)
         self.add_grating_patch(img,
                        angle=self.experiment['angle'][episode],
@@ -51,11 +51,9 @@ class stim(visual_stim):
         return img
 
     def plot_stim_picture(self, episode,
-                          ax=None, parent=None, label=None, vse=False,
+                          ax=None, label=None, vse=False,
                           arrow={'length':10,
                                  'width_factor':0.05,
                                  'color':'red'}):
 
-        ax = self.show_frame(episode, ax=ax, label=label,
-                             parent=parent)
-        return ax
+        return self.show_frame(episode, ax=ax, label=label)

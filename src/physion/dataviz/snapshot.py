@@ -25,6 +25,7 @@ params = {
     ############################################
     ###         DATAFILE         ###############
     ############################################
+    'nwbfile':'',
     'raw_Behavior_folder':'',
     'raw_Imaging_folder':'',
 
@@ -134,7 +135,7 @@ def layout(args,
     return fig, AX
 
         
-def draw_figure(args, data)
+def draw_figure(args, data):
 
     fig, AX = layout(args)
 
@@ -164,7 +165,9 @@ def draw_figure(args, data)
             extents.append(find_roi_extent(data, args['ROIs'][i],
                                            roi_zoom_factor=5))
             max_projs.append(\
-                  data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'][:][extents[i][0]:extents[i][1], extents[i][2]:extents[i][3]])
+                getattr(data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'],
+                        'images')['max_proj'][:][extents[i][0]:extents[i][1],
+                                                 extents[i][2]:extents[i][3]])
             # max_proj_scaled1 = (max_proj-max_proj.min())/(max_proj.max()-max_proj.min())
             # max_proj_scaled1 = np.power(max_proj_scaled1, 1/args['imaging_NL)
 
@@ -186,7 +189,7 @@ def draw_figure(args, data)
                            (0.,0.5), va='center', ha='right', rotation=90,
                            fontsize=7, xycoords='axes fraction')
 
-    t0 = times[0]
+    # t0 = times[0]
 
     # setup drawing
     # time = AX['axTime'].annotate(' ', (0,0), xycoords='figure fraction', size=9)
@@ -266,11 +269,6 @@ def draw_figure(args, data)
                                                       cmap=plt.cm.BrBG)
 
 
-    # time cursor
-    cursor, = AX['axTraces'].plot(\
-         np.ones(2)*times[0], np.arange(2),
-         'k-')#color='grey', lw=3, alpha=.3) 
-
     #   ----  filling time plot
 
     # photodiode and visual stim
@@ -279,46 +277,46 @@ def draw_figure(args, data)
                        fig_fraction=2., with_screen_inset=True,
                        name='')
         # add_Photodiode(data, args['tlim'], AX['axTraces'], 
-                       # fig_fraction_start=fractions['photodiode_start'], 
-                       # fig_fraction=fractions['photodiode'], name='')
-        # AX['axTraces'].annotate('photodiode', (-0.01, fractions['photodiode_start']),
+                       # fig_fraction_start=args['fraction']['photodiode_start'], 
+                       # fig_fraction=args['fraction']['photodiode'], name='')
+        # AX['axTraces'].annotate('photodiode', (-0.01, args['fraction']['photodiode_start']),
                 # ha='right', va='bottom', color='grey', fontsize=8, xycoords='axes fraction')
 
 
     # locomotion
     add_Locomotion(data, args['tlim'], AX['axTraces'], 
-                        fig_fraction_start=fractions['running_start'], 
-                        fig_fraction=fractions['running'], 
+                        fig_fraction_start=args['fractions']['running_start'], 
+                        fig_fraction=args['fractions']['running'], 
                         scale_side='right', subsampling=1,
                         name='')
-    AX['axTraces'].annotate('running \nspeed \n ', (-0.01, fractions['running_start']),
+    AX['axTraces'].annotate('running \nspeed \n ', (-0.01, args['fractions']['running_start']),
             ha='right', va='bottom', color='#1f77b4', fontsize=8, xycoords='axes fraction')
 
     # whisking 
     add_FaceMotion(data, args['tlim'], AX['axTraces'], 
-                   fig_fraction_start=fractions['whisking_start'], 
-                   fig_fraction=fractions['whisking'], 
+                   fig_fraction_start=args['fractions']['whisking_start'], 
+                   fig_fraction=args['fractions']['whisking'], 
                    scale_side='right', subsampling=1,
                    name='')
-    AX['axTraces'].annotate('whisking \n', (-0.01, fractions['whisking_start']),
+    AX['axTraces'].annotate('whisking \n', (-0.01, args['fractions']['whisking_start']),
             ha='right', va='bottom', color='purple', fontsize=8, xycoords='axes fraction')
 
     # gaze 
     # add_GazeMovement(data, args['tlim'], AX['axTraces'], 
-                        # fig_fraction_start=fractions['gaze_start'], 
-                        # fig_fraction=fractions['gaze'], 
+                        # fig_fraction_start=args['fractions']['gaze_start'], 
+                        # fig_fraction=args['fractions']['gaze'], 
                   # scale_side='right',
                         # name='')
-    # AX['axTraces'].annotate('gaze \nmov. ', (-0.01, fractions['gaze_start']),
+    # AX['axTraces'].annotate('gaze \nmov. ', (-0.01, args['fractions']['gaze_start']),
             # ha='right', va='bottom', color='orange', fontsize=8, xycoords='axes fraction')
 
     # pupil 
     add_Pupil(data, args['tlim'], AX['axTraces'], 
-                        fig_fraction_start=fractions['pupil_start'], 
-                        fig_fraction=fractions['pupil'], 
+                        fig_fraction_start=args['fractions']['pupil_start'], 
+                        fig_fraction=args['fractions']['pupil'], 
                         scale_side='right', subsampling=1,
                         name='')
-    AX['axTraces'].annotate('pupil \ndiam. ', (-0.01, fractions['pupil_start']),
+    AX['axTraces'].annotate('pupil \ndiam. ', (-0.01, args['fractions']['pupil_start']),
             ha='right', va='bottom', color='red', fontsize=8, xycoords='axes fraction')
 
     # rois 
@@ -326,20 +324,20 @@ def draw_figure(args, data)
         add_CaImaging(data, args['tlim'], AX['axTraces'], 
                       subquantity='dFoF',
                       roiIndices=args['ROIs'], 
-                      fig_fraction_start=fractions['rois_start'], 
-                      fig_fraction=fractions['rois'], 
+                      fig_fraction_start=args['fractions']['rois_start'], 
+                      fig_fraction=args['fractions']['rois'], 
                       scale_side='right',
                       name='', annotation_side='left')
         AX['axTraces'].annotate('fluorescence', (-0.1,
-                    fractions['rois_start']+fractions['rois']/2.),
+                    args['fractions']['rois_start']+args['fractions']['rois']/2.),
                 ha='right', va='center', color='green', rotation=90, xycoords='axes fraction')
 
         # raster 
         add_CaImagingRaster(data, args['tlim'], AX['axTraces'], 
                     subquantity='dFoF', 
                     normalization='per-line',
-                    fig_fraction_start=fractions['raster_start'], 
-                    fig_fraction=fractions['raster'], 
+                    fig_fraction_start=args['fractions']['raster_start'], 
+                    fig_fraction=args['fractions']['raster'], 
                     name='')
     else:
         AX['dFoFscale_ax'], AX['dFoFscale_cb'] = None, None
@@ -351,7 +349,7 @@ def draw_figure(args, data)
                                     (times[0],args['Tbar_loc']), ha='left')
 
     AX['axTraces'].axis('off')
-    AX['axTraces'].set_xlim([times[0], dv_tools.shifted_stop(args['tlim'])])
+    # AX['axTraces'].set_xlim([times[0], dv_tools.shifted_stop(args['tlim'])])
     AX['axTraces'].set_ylim([-0.01, 1.01])
 
     def update(i=0):
@@ -417,17 +415,7 @@ def draw_figure(args, data)
                 AX['imgROI1'], AX['imgROI2'], AX['imgROI3']]
        
 
-    if args['export'] or not args['snapshot']:
-        ani = animation.FuncAnimation(fig, 
-                                      update,
-                                      np.arange(len(times)),
-                                      init_func=update,
-                                      interval=100,
-                                      blit=True)
-
-        return fig, AX, ani
-    else:
-        return fig, AX, None 
+    return fig, AX
 
 
 def imgFace_process(img, args, exp=0.1,
@@ -534,8 +522,7 @@ if __name__=='__main__':
         params['layout'] = False
         data = physion.analysis.read_NWB.Data(args.datafile,
                                               with_visual_stim=True)
-        fig, AX, ani = draw_figure(params, data)    
-        print(ani)
+        fig, AX = draw_figure(params, data)    
 
         plt.show()
 

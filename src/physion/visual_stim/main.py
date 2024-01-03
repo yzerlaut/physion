@@ -608,22 +608,19 @@ class visual_stim:
     #############    DRAWING STIMULI   ##############
     #################################################
 
-    def get_image(self, episode, time_from_episode_start=0, parent=None):
+    def get_image(self, episode, time_from_episode_start=0):
         """
         print('to be implemented in child class')
         """
         return 0*self.x+0.5
 
     def plot_stim_picture(self, episode,
-                          ax=None, parent=None,
-                          label=None, vse=False):
+                          ax=None, label=None, vse=False):
 
-        cls = (parent if parent is not None else self)
         ax = self.show_frame(episode,
                              ax=ax,
                              label=label,
-                             vse=vse,
-                             parent=parent)
+                             vse=vse)
 
         return ax
 
@@ -657,7 +654,7 @@ class visual_stim:
         else:
             return img.T
 
-    def get_vse(self, episode, parent=None):
+    def get_vse(self, episode):
         """
         Virtual Scene Exploration dictionary
         None by default, should be overriden by method in children class
@@ -666,7 +663,6 @@ class visual_stim:
 
     def show_frame(self, episode,
                    time_from_episode_start=0,
-                   parent=None,
                    label={'degree':10,
                           'shift_factor':0.02,
                           'lw':2, 'fontsize':12},
@@ -697,19 +693,19 @@ class visual_stim:
                                    figsize=(4,
                                             4*self.screen['resolution'][1]/self.screen['resolution'][0]))
 
-        cls = (parent if parent is not None else self)
-
-        img = ax.imshow(cls.image_to_frame(cls.get_image(episode,
-                                           time_from_episode_start=time_from_episode_start,
-                                           parent=cls), psychopy_to_numpy=True),
-                        extent=(0, self.screen['resolution'][0], 0, self.screen['resolution'][1]),
+        img = ax.imshow(self.image_to_frame(self.get_image(episode,
+                                                time_from_episode_start=\
+                                                        time_from_episode_start),
+                                            psychopy_to_numpy=True),
+                        extent=(0, self.screen['resolution'][0],
+                                0, self.screen['resolution'][1]),
                         cmap='gray',
                         vmin=0, vmax=1,
                         origin='lower',
                         aspect='equal')
 
         if vse:
-            self.vse = self.get_vse(episode, parent=cls)
+            self.vse = self.get_vse(episode)
             if self.vse is not None:
                 self.add_vse(ax, self.vse)
 
@@ -728,7 +724,6 @@ class visual_stim:
             return ax
 
     def plot_stim_picture(self, episode, ax,
-                          parent=None,
                           label={'degree':20,
                                  'shift_factor':0.02,
                                  'lw':1, 'fontsize':10},
@@ -739,24 +734,19 @@ class visual_stim:
 
         """
         """
-        cls = (parent if parent is not None else self)
-
-        tcenter = .5*(cls.experiment['time_stop'][episode]-\
-                      cls.experiment['time_start'][episode])
+        tcenter = .5*(self.experiment['time_stop'][episode]-\
+                      self.experiment['time_start'][episode])
 
         ax = self.show_frame(episode, tcenter, ax=ax,
-                             parent=parent,
                              label=label)
 
 
     def update_frame(self, episode, img,
-                     time_from_episode_start=0,
-                     parent=None):
-        cls = (parent if parent is not None else self)
-
-        img.set_array(cls.image_to_frame(cls.get_image(episode,
-                                                      time_from_episode_start=time_from_episode_start,
-                                                     parent=cls), psychopy_to_numpy=True))
+                     time_from_episode_start=0):
+        img.set_array(self.image_to_frame(self.get_image(episode,
+                                                time_from_episode_start=\
+                                                    time_from_episode_start),
+                                          psychopy_to_numpy=True))
 
 
     def add_arrow(self, arrow, ax):
@@ -919,7 +909,7 @@ class multiprotocol(visual_stim):
                        'get_frames_sequence')(self.experiment['index'][index])
 
     def plot_stim_picture(self, index, 
-                          ax=None, parent=None, label=None, vse=False):
+                          ax=None, label=None, vse=False):
         return getattr(self.STIM[self.experiment['protocol_id'][index]],
                        'plot_stim_picture')(self.experiment['index'][index],
                                             ax=ax, label=label, vse=vse)
