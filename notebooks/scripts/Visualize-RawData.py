@@ -27,7 +27,7 @@ from physion.dataviz.raw import plot as plot_raw
 # %%
 # load a datafile
 filename = os.path.join(os.path.expanduser('~'), 
-                        'CURATED', 'SST-GluN3KO-February-2023', '2023_02_16-10-44-38.nwb')
+                        'CURATED', 'Pyr-FlexiCortPrelim-FebJuly2022', '2022_07_07-14-45-08.nwb')
 data = Data(filename,
             verbose=False)
 data.build_dFoF(verbose=False)

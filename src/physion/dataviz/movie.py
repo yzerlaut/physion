@@ -17,91 +17,20 @@ from physion.dataviz.imaging import *
 
 plt.rcParams['figure.autolayout'] = False
 
-
-iMap = pt.get_linear_colormap('k','lightgreen')
-
-# fractions = {'photodiode':0.06, 'photodiode_start':0,
-             # 'running':0.13, 'running_start':0.07,
-             # 'whisking':0.12, 'whisking_start':0.2,
-             # 'gaze':0.1, 'gaze_start':0.32,
-             # 'pupil':0.13, 'pupil_start':0.4,
-             # 'rois':0.27, 'rois_start':0.53,
-             # 'raster':0.2, 'raster_start':0.8}
-
-fractions = {'running':0.13, 'running_start':0.,
-             'whisking':0.12, 'whisking_start':0.14,
-             'pupil':0.13, 'pupil_start':0.27,
-             'rois':0.35, 'rois_start':0.40,
-             'raster':0.25, 'raster_start':0.75}
-
-def layout(args,
-           top_row_bottom=0.75,
-           top_row_space=0.08,
-           top_row_height=0.2):
-
-    
-    AX = {}
-    fig = plt.figure(figsize=(9,5))
-
-    height0, height1, width0, width1 = 0.63, 0.75, 0.79, 0.25
-    AX['axImaging'] = pt.inset(fig, 
-                (width0, height0, 1-width0, 1-height0))
-    if args.layout:
-        AX['axImaging'].imshow(np.zeros((2,2)), vmin=0, cmap=iMap)
-    AX['axImaging'].axis('off')
-    AX['axSetup'] = pt.inset(fig,
-                (0, height1, .9*width1, .95*(1-height1)))
-    keys = ['axRig', 'axFace', 'axScreen']
-    titles = ['rig camera', 'face camera', 
-              'screen\n(visual stimulation)']
-    for i, key in enumerate(keys):
-        AX[key] = pt.inset(fig,
-              (width1+i*(width0-width1)/len(keys), height0+0.05,
-              0.9*(width0-width1)/len(keys), 0.4*height0))
-        AX[key].set_title(titles[i], fontsize=8)
-        AX[key].axis('off')
-
-    pt.annotate(AX['axImaging'], args.imaging_title, (0.5,0.98),
-                fontsize=7, va='top', ha='center', color='w')
-    img = Image.open('../docs/exp-rig.png')
-    AX['axSetup'].imshow(img)
-    AX['axSetup'].axis('off')
-
-    AX['axTraces'] = pt.inset(fig,(width1,0,1-width1,0.98*height0))
-
-    keys = ['axWhisking', 'axPupil']+\
-            ['axROI%i'%(n+1) for n in range(len(args.ROIs))]
-    titles = ['whisking', 'pupil']+\
-            ['cell %i'%(r+1) for r in args.ROIs]
-    for i, key in enumerate(keys):
-        AX[key] = pt.inset(fig, (0.03,
-                                 i*height1/len(keys), 
-                                 0.15,
-                                 0.9*height1/len(keys)))
-        if args.layout:
-            AX[key].imshow(np.zeros((2,2)), vmin=0)
-        AX[key].axis('equal')
-        pt.annotate(AX[key], titles[i], (0.5,1), 
-                    ha='center', va='top', color='w')
-        AX[key].axis('off')
-    AX['axTime'] = pt.inset(fig, (0, 0, 0.05, 0.05))
-
-    return fig, AX
-
-        
-def draw_figure(args, data,
-                Ndiscret=100):
-
-    fig, AX = layout(args)
-
-    metadata = dict(data.metadata)
-
-    metadata['raw_vis_folder'] = args.raw_vis_folder
-    metadata['raw_imaging_folder'] = args.raw_imaging_folder
-
-    times = np.linspace(args.tlim[0], args.tlim[1], args.Ndiscret)
+from physion.dataviz.snapshot import *
 
 
+def draw_movie(args, data,
+               Ndiscret=100):
+
+    fig, AX = draw_figure(args, data)
+
+
+    times = np.linspace(args['tlim'][0], args['tlim'][1], 
+                        args['Ndiscret'])
+
+
+    """
     if 'ophys' in data.nwbfile.processing:
 
         # full image
@@ -384,86 +313,11 @@ def draw_figure(args, data,
                                       interval=100,
                                       blit=True)
 
-        return fig, AX, ani
     else:
         return fig, AX, None 
-
-
-def imgFace_process(img, args, exp=0.1,
-                    bounds=[0.05, 0.75]):
-    Img = (img-np.min(img))/(np.max(img)-np.min(img))
-    # # Img = np.power(Img, exp) 
-    # Img[Img<bounds[0]]=bounds[0]
-    # Img[Img>bounds[1]]=bounds[1]
-    # Img = 0.2+0.6*(Img-np.min(Img))/(np.max(Img)-np.min(Img))
-    return Img
-
-def imgRig_process(img, args):
-    Img = (img-np.min(img))/(np.max(img)-np.min(img))
-    return Img[args.RigCamLim[0]:args.RigCamLim[2],\
-               args.RigCamLim[1]:args.RigCamLim[3]] 
-
-def get_pupil_center(index, data, metadata):
-    coords = []
-    for key in ['cx', 'cy']:
-        coords.append(\
-            data.nwbfile.processing['Pupil'].data_interfaces[key].data[index]/metadata['pix_to_mm'])
-    return coords
-
-def get_pupil_fit(index, data, metadata):
-    coords = []
-    for key in ['cx', 'cy', 'sx', 'sy']:
-        coords.append(data.nwbfile.processing['Pupil'].data_interfaces[key].data[index]/metadata['pix_to_mm'])
-    if 'angle' in data.nwbfile.processing['Pupil'].data_interfaces:
-        coords.append(data.nwbfile.processing['Pupil'].data_interfaces['angle'].data[index])
-    else:
-        coords.append(0)
-    return process.ellipse_coords(*coords, transpose=False)
-    
-def loadCameraData(metadata):
-    # FaceCamera
-    imgfolder = os.path.join(metadata['raw_vis_folder'],
-                             'FaceCamera-imgs')
-    times, FILES, nframes, Lx, Ly =\
-            load_FaceCamera_data(imgfolder, 
-                                 t0=metadata['NIdaq_Tstart'], 
-                                 verbose=True)
-    metadata['raw_Face_times'] = times 
-    metadata['raw_Face_FILES'] = \
-            [os.path.join(imgfolder, f) for f in FILES]
-    # RigCamera
-    imgfolder = os.path.join(metadata['raw_vis_folder'],
-                             'RigCamera-imgs')
-    times, FILES, nframes, Lx, Ly =\
-            load_FaceCamera_data(imgfolder, 
-                                 t0=metadata['NIdaq_Tstart'], 
-                                 verbose=True)
-    metadata['raw_Rig_times'] = times 
-    metadata['raw_Rig_FILES'] = \
-            [os.path.join(imgfolder, f) for f in FILES]
-    dataP = np.load(os.path.join(metadata['raw_vis_folder'], 
-                                 'pupil.npy'),
-                                 allow_pickle=True).item()
-    for key in dataP:
-        metadata['pupil_'+key] = dataP[key]
-    dataW = np.load(os.path.join(metadata['raw_vis_folder'],
-                                 'facemotion.npy'),
-                                  allow_pickle=True).item()
-    for key in dataW:
-        metadata['whisking_'+key] = dataW[key]
-
-    if 'FaceCamera-1cm-in-pix' in metadata:
-        metadata['pix_to_mm'] = \
-                10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
-    else:
-        metadata['pix_to_mm'] = 1
-        
-
-def load_NIdaq(metadata):
-    metadata['NIdaq_Tstart'] = np.load(os.path.join(metadata['raw_vis_folder'], 'NIdaq.start.npy'))[0]
-
-def load_Imaging(metadata):
-    metadata['raw_imaging_folder'] = args.raw_imaging_folder
+    """
+    ani=None
+    return fig, AX, ani
 
 if __name__=='__main__':
 
@@ -472,74 +326,52 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument("datafile", type=str)
 
-    parser.add_argument("-rvf", '--raw_vis_folder', 
-                        type=str, default='')
-    # FaceCamera props
+    parser.add_argument("--fps", 
+                        type=int, default=20)
+    parser.add_argument("--duration", 
+                        type=float, default=0, help='video duration')
+    parser.add_argument("--dpi", 
+                        type=int, default=100, help='video duration')
 
-    # RigCamera props
-    parser.add_argument("--RigCamLim", type=int, nargs=4, 
-                        default=[0, 0, 10000, 10000])
-
-    # IMAGING props
-    parser.add_argument("-rif", '--raw_imaging_folder', 
-                        type=str, default='')
-    parser.add_argument('--imaging_title', type=str, 
-                        default='GCamp6s fluorescence')
-    
-    parser.add_argument("--tlim", type=float, nargs='*', 
-                        default=[10, 100], help='')
-    parser.add_argument("--Tbar", type=int, default=0)
-    parser.add_argument("--Tbar_loc", type=float, 
-                        default=1.005, help='y-loc of Tbar in [0,1]')
-
-    parser.add_argument("--no_visual", 
-                        help="remove visual stimulation", 
-                        action="store_true")
-
-    parser.add_argument('-rois', "--ROIs", type=int, 
-                        default=[0,1,2], nargs='*')
-    parser.add_argument('-n', "--Ndiscret", type=int, default=10)
-    parser.add_argument('-q', "--quantity", type=str, default='dFoF')
-
-    parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
-    parser.add_argument("--layout", help="show layout",
-                        action="store_true")
-    parser.add_argument("-e", "--export", help="export to mp4", action="store_true")
-    parser.add_argument("--snapshot", help="export to mp4", action="store_true")
-    parser.add_argument('-o', "--output", type=str, default='demo.mp4')
-    # video properties
-    parser.add_argument("--fps", type=int, default=20)
-    parser.add_argument("--duration", type=float, default=0, help='video duration')
-    parser.add_argument("--dpi", type=int, default=100, help='video duration')
-
-    parser.add_argument("--imaging_NL", type=int, default=3, help='1/exponent for image transform')
+    parser.add_argument("--export", action="store_true")
 
     args = parser.parse_args()
 
     if args.duration>0:
         args.Ndiscret = int(args.duration*args.fps)
-
-    # print('\n', data.nwbfile.processing['ophys'].description, '\n')
-
-
-    if args.layout:
-
-        fig, AX = layout(args)
-        plt.show()
-
     else:
-        data = physion.analysis.read_NWB.Data(args.datafile,
-                                              with_visual_stim=True)
-        fig, AX, ani = draw_figure(args, data)    
-        print(ani)
+        args.Ndiscret = 10
 
-        if args.export:
+
+    args = vars(args)
+
+    if os.path.isfile(args['datafile']):
+
+        with open(args['datafile']) as f:
+            string_params = f.read()
+            exec(string_params)
+
+        params['Ndiscret'] = 10
+        params['datafile'] = params['nwbfile']
+        data = physion.analysis.read_NWB.Data(params['datafile'],
+                                              with_visual_stim=True)
+
+        fig, AX, ani = draw_movie(params, data)
+
+        if args['export']:
             print('writing video [...]')
             writer = animation.writers['ffmpeg'](fps=args.fps)
             ani.save(args.output, writer=writer, dpi=args.dpi)
 
         else:
             plt.show()
+
+        plt.show()
+
+    else:
+        print('')
+        print(' provide either a movie.py file as argument')
+        print('')
 
 
 
