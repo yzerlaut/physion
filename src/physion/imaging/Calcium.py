@@ -166,7 +166,7 @@ def compute_dFoF(data,
     #######################################################################
 
     # Step 1) ->  performing neuropil correction 
-    correctedFluo = data.rawFluo-
+    correctedFluo = data.rawFluo-\
             neuropil_correction_factor*data.neuropil
     # correctedFluo = data.rawFluo[valid_roiIndices, :]-\
             # neuropil_correction_factor*data.neuropil[valid_roiIndices, :]
