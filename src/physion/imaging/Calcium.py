@@ -25,42 +25,15 @@ def compute_percentile(array, percentile):
                      array.shape[1],
                      axis=1)
 
-"""
-trying numpy code to evaluate efficiently the distrib percentile over a sliding window
-making use of "stride tricks" for fast looping over the sliding window
-
-    not really efficient so far... :(
-
-see: 
-https://numpy.org/doc/stable/reference/generated/numpy.lib.stride_tricks.sliding_window_view.html
-
-#  not used anymore
-
-def fill_center_and_edges(N, Window, smv):
-    sliding_min = np.zeros(N)
-    iw = int(Window/2)+1
-    if len(smv.shape)==1:
-        sliding_min[:iw] = smv[0]
-        sliding_min[-iw:] = smv[-1]
-        sliding_min[iw:iw+smv.shape[-1]] = smv
-    elif len(smv.shape)==2:
-        sliding_min[:,:iw] = np.broadcast_to(smv[:,0], (iw, array.shape[0])).T
-        sliding_min[:,-iw:] = np.broadcast_to(smv[:,-1], (iw, array.shape[0])).T
-        sliding_min[:,iw:iw+smv.shape[-1]] = smv
-    return sliding_min
-
-# numpy code for ~efficiently evaluating the distrib percentile over a sliding window
 def strided_app(a, L, S ):  # Window len = L, Stride len/stepsize = S
+    """ 
+    for sliding window analysis, see: 
+    https://numpy.org/doc/stable/reference/generated/numpy.lib.stride_tricks.sliding_window_view.html
+    """
     nrows = ((a.size-L)//S)+1
     n = a.strides[0]
-    return np.lib.stride_tricks.as_strided(a, shape=(nrows,L), strides=(S*n,n))
-
-# not used anymore
-# view = np.lib.stride_tricks.sliding_window_view(array[roi,:], Window, axis=-1)
-# smv = np.percentile(view, percentile, axis=-1)
-# replacing values, N.B. need to deal with edges
-# sliding_percentile[roi,:] = fill_center_and_edges(len(sliding_percentile[roi,:]), Window, smv)
-"""
+    return np.lib.stride_tricks.as_strided(a,
+                        shape=(nrows,L), strides=(S*n,n))
 
 def sliding_percentile(array, percentile, Window):
 
@@ -178,11 +151,11 @@ def compute_dFoF(data,
                                 sliding_window=sliding_window)
 
     # Step 3) -> determine the valid ROIs
+    # ROIs with strictly positive baseline
+    valid_roiIndices = np.min(correctedFluo0, axis=1)>1
     # valid_roiIndices = (\
             # (np.mean(data.rawFluo, axis=1)>\
             # roi_to_neuropil_fluo_inclusion_factor*np.mean(data.neuropil, axis=1)))
-    # ROIs with strictly positive baseline
-    valid_roiIndices = np.min(correctedFluo0, axis=1)>1
 
     # Step 4) -> compute the delta F over F quantity: dFoF = (F-F0)/F0
     data.dFoF = (correctedFluo[valid_roiIndices, :]-\
@@ -199,11 +172,12 @@ def compute_dFoF(data,
             print('\n  ** all ROIs passed the positive F0 criterion ** \n')
             
     # we update the previous quantities
-    data.valid_roiIndices = np.arange(data.iscell.sum())[valid_roiIndices]
-    data.vNrois= len(data.valid_roiIndices) # number of valid ROIs
+    data.initialize_ROIs(\
+            valid_roiIndices= np.arange(data.iscell.sum())[valid_roiIndices])
+
+    # we resrict the rawFluo and neuropil to valid ROIs
     data.rawFluo = data.rawFluo[valid_roiIndices,:]
     data.neuropil = data.neuropil[valid_roiIndices,:]
-    data.nROIs = data.vNrois
 
     if with_correctedFluo_and_F0:
         data.correctedFluo0 = correctedFluo0

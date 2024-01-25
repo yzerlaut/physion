@@ -153,34 +153,59 @@ class Data:
     #       CALCIUM IMAGING DATA (from suite2p output)      #
     #########################################################
     
+    def initialize_ROIs(self, 
+                        valid_roiIndices=None):
+        if valid_roiIndices is None:
+            self.nROIs = self.Segmentation.columns[0].data.shape[0]
+            self.valid_roiIndices = np.arange(self.nROIs)
+        else:
+            self.nROIs = len(valid_roiIndices)
+            self.valid_roiIndices = valid_roiIndices
+            
+        # initialize rois properties to default values
+        self.iscell = np.ones(self.nROIs, dtype=bool) # deprecated
+        self.planeID = np.zeros(self.nROIs, dtype=int)
+        self.redcell = np.zeros(self.nROIs, dtype=bool) 
+
+        # looping over the table properties (0,1 -> rois locs)
+        #      for the ROIS to overwrite the defaults:
+        for i in range(2, len(self.Segmentation.columns)):
+            if self.Segmentation.columns[i].name=='iscell': # DEPRECATED
+                self.valid_roiIndices = self.valid_roiIndices[\
+                        self.Segmentation.columns[i].data[:,0].astype(bool)]
+            if self.Segmentation.columns[i].name=='plane':
+                self.planeID = self.valid_roiIndices[\
+                        self.Segmentation.columns[i].data[:].astype(int)]
+            if self.Segmentation.columns[i].name=='redcell':
+                self.redcell = self.valid_roiIndices[\
+                        self.Segmentation.columns[2].data[:,0].astype(bool)]
+
     def read_and_format_ophys_data(self):
         
         ### ROI activity ###
-        self.Fluorescence = self.nwbfile.processing['ophys'].data_interfaces['Fluorescence'].roi_response_series['Fluorescence']
-        self.Neuropil = self.nwbfile.processing['ophys'].data_interfaces['Neuropil'].roi_response_series['Neuropil']
-        self.CaImaging_dt = (self.Neuropil.timestamps[1]-self.Neuropil.timestamps[0])
+        self.Fluorescence = \
+                getattr(\
+                    getattr(self.nwbfile.processing['ophys'],
+                        'data_interfaces')['Fluorescence'],
+                            'roi_response_series')['Fluorescence']
+        self.Neuropil = \
+                getattr(\
+                    getattr(self.nwbfile.processing['ophys'],
+                        'data_interfaces')['Neuropil'],
+                            'roi_response_series')['Neuropil']
+        self.CaImaging_dt = (self.Neuropil.timestamps[1]-\
+                                    self.Neuropil.timestamps[0])
 
         ### ROI properties ###
-        self.Segmentation = self.nwbfile.processing['ophys'].data_interfaces['ImageSegmentation'].plane_segmentations['PlaneSegmentation']
+        self.Segmentation = \
+                getattr(\
+                    getattr(self.nwbfile.processing['ophys'],
+                        'data_interfaces')['ImageSegmentation'],
+                            'plane_segmentations')['PlaneSegmentation']
         self.pixel_masks_index = self.Segmentation.columns[0].data[:]
         self.pixel_masks = self.Segmentation.columns[1].data[:]
-        # other ROI properties --- by default:
 
-        self.nROIs = self.Segmentation.columns[0].data.shape[0]
-        # initialize rois properties to default values
-        self.iscell = np.ones(self.nROIs, dtype=bool) # deprecated
-        self.valid_roiIndices = np.arange(self.nROIs) # POTENTIALLY UPDATED AT THE dF/F calculus point (because of the positive F0 criterion) 
-        self.planeID = np.zeros(self.nROIs, dtype=int)
-        self.redcell = np.zeros(self.nROIs, dtype=bool) 
-        # looping over the table properties (0,1 -> rois locs) for the ROIS to overwrite the defaults:
-        for i in range(2, len(self.Segmentation.columns)):
-            if self.Segmentation.columns[i].name=='iscell': # DEPRECATED
-                self.iscell = self.Segmentation.columns[i].data[:,0].astype(bool)
-                self.valid_roiIndices = np.arange(self.nROIs)[self.iscell]
-            if self.Segmentation.columns[i].name=='plane':
-                self.planeID = self.Segmentation.columns[i].data[:].astype(int)
-            if self.Segmentation.columns[i].name=='redcell':
-                self.redcell = self.Segmentation.columns[2].data[:,0].astype(bool)
+        self.initialize_ROIs(valid_roiIndices=None)
                 
         
     ######################
@@ -270,6 +295,7 @@ class Data:
     #############################
     #       Calcium Imaging     #
     #############################
+
 
     def compute_ROI_indices(self,
                             roiIndex=None,
