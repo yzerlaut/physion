@@ -7,13 +7,16 @@ from PIL import Image
 
 import physion.utils.plot_tools as pt
 
-from physion.pupil import roi, process
-from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders
-from physion.assembling.tools import StartTime_to_day_seconds, load_FaceCamera_data
+from physion.utils.files import get_files_with_extension,\
+        list_dayfolder, get_TSeries_folders
+from physion.assembling.tools import StartTime_to_day_seconds,\
+        load_FaceCamera_data
 from physion.dataviz.tools import convert_times_to_indices
 from physion.assembling.IO.binary import BinaryFile
 from physion.dataviz.raw import *
 from physion.dataviz.imaging import *
+from physion.dataviz.camera import *
+from physion.dataviz.pupil import *
 
 plt.rcParams['figure.autolayout'] = False
 
@@ -228,8 +231,7 @@ def draw_figure(args, data):
         AX['imgRig'] = AX['axRig'].imshow(imgRig_process(img,args),
                                     vmin=0, vmax=1, cmap='gray')
 
-        # Pupil Image
-        img = np.load(metadata['raw_Face_FILES'][0])
+        # Face Image
         AX['imgFace'] = AX['axFace'].imshow(imgFace_process(img,args),
                                             vmin=0, vmax=1, cmap='gray')
 
@@ -412,50 +414,6 @@ def get_pupil_fit(index, data, metadata):
         coords.append(0)
     return process.ellipse_coords(*coords, transpose=False)
     
-def loadCameraData(metadata):
-    # FaceCamera
-    imgfolder = os.path.join(metadata['raw_Behavior_folder'],
-                             'FaceCamera-imgs')
-    times, FILES, nframes, Lx, Ly =\
-            load_FaceCamera_data(imgfolder, 
-                                 t0=metadata['NIdaq_Tstart'], 
-                                 verbose=True)
-    metadata['raw_Face_times'] = times 
-    metadata['raw_Face_FILES'] = \
-            [os.path.join(imgfolder, f) for f in FILES]
-    # RigCamera
-    imgfolder = os.path.join(metadata['raw_Behavior_folder'],
-                             'RigCamera-imgs')
-    times, FILES, nframes, Lx, Ly =\
-            load_FaceCamera_data(imgfolder, 
-                                 t0=metadata['NIdaq_Tstart'], 
-                                 verbose=True)
-    metadata['raw_Rig_times'] = times 
-    metadata['raw_Rig_FILES'] = \
-            [os.path.join(imgfolder, f) for f in FILES]
-    dataP = np.load(os.path.join(metadata['raw_Behavior_folder'], 
-                                 'pupil.npy'),
-                                 allow_pickle=True).item()
-    for key in dataP:
-        metadata['pupil_'+key] = dataP[key]
-    dataW = np.load(os.path.join(metadata['raw_Behavior_folder'],
-                                 'facemotion.npy'),
-                                  allow_pickle=True).item()
-    for key in dataW:
-        metadata['whisking_'+key] = dataW[key]
-
-    if 'FaceCamera-1cm-in-pix' in metadata:
-        metadata['pix_to_mm'] = \
-                10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
-    else:
-        metadata['pix_to_mm'] = 1
-        
-
-def load_NIdaq(metadata):
-    metadata['NIdaq_Tstart'] = np.load(\
-            os.path.join(metadata['raw_Behavior_folder'],
-                         'NIdaq.start.npy'))[0]
-
 def load_Imaging(metadata):
     metadata['raw_Imaging_folder'] = args['raw_Imaging_folder']
 
