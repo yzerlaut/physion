@@ -354,7 +354,7 @@ def draw_figure(args, data):
                       scale_side='right',
                       name='', annotation_side='left')
         AX['axTraces'].annotate('fluorescence', (-0.1,
-                    args['fractions']['rois_start']+\
+                    args['fractions']['pupil rois_start']+\
                             args['fractions']['rois']/2.),
                                 ha='right', va='center', color='green',
                                 rotation=90, xycoords='axes fraction')
