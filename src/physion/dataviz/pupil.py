@@ -25,12 +25,10 @@ def add_pupil_fit(metadata, ax, index):
     return ax.plot(pupil_fit[0], pupil_fit[1], '.', 
                        markersize=1, color='red')
 
-
-
 def show_pupil(metadata, 
                t=0, 
                ax=None,
-               zoom=1.):
+               zoom=0.):
 
     t_index = np.argmin((metadata['raw_Face_times']-t)**2)
 
@@ -76,12 +74,10 @@ if __name__=='__main__':
                                     'metadata.npy'),
                        allow_pickle=True).item()
 
-    metadata['FaceCameraLim'] = [0, 0, 10000, 10000]
-
     loadCameraData(metadata, args['raw_data_folder'])
 
     show_pupil(metadata, t=120)
-    show_pupil(metadata, t=170)
+    show_pupil(metadata, t=150)
     plt.show()
 
  
