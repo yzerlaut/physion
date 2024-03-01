@@ -155,6 +155,7 @@ class Data:
     
     def initialize_ROIs(self, 
                         valid_roiIndices=None):
+
         if valid_roiIndices is None:
             self.nROIs = self.Segmentation.columns[0].data.shape[0]
             self.valid_roiIndices = np.arange(self.nROIs)
@@ -178,7 +179,7 @@ class Data:
                         self.Segmentation.columns[i].data[:].astype(int)]
             if self.Segmentation.columns[i].name=='redcell':
                 self.redcell = self.valid_roiIndices[\
-                        self.Segmentation.columns[2].data[:,0].astype(bool)]
+                        self.Segmentation.columns[i].data[:,0].astype(bool)]
 
     def read_and_format_ophys_data(self):
         
