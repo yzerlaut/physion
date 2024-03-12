@@ -63,7 +63,6 @@ def compute_sliding_percentile(array, percentile, Window,
     """
 
     subsampling = max([1,int(subsampling_window_factor*Window)])
-    print(subsampling)
     Flow = np.zeros(array.shape)
     indices = np.arange(array.shape[1])
     sbsmplIndices = (indices%subsampling)==0
