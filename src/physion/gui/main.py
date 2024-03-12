@@ -52,12 +52,14 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.acquisition.run import initialize, run_update,\
            run, stop,send_CaImaging_Stop_signal, toggle_FaceCamera_process,\
            toggle_RigCamera_process
+    else:
+        from physion.gui.parts import inactivated as multimodal
+
+    if Acquisition or Intrinsic:
         from physion.acquisition.tools import save_experiment,\
             set_filename_and_folder
         from physion.acquisition.settings import update_config,\
             update_subject, save_settings
-    else:
-        from physion.gui.parts import inactivated as multimodal
 
 
     # -- Intrinsic Imaging -- acquisition
