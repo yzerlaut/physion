@@ -1,0 +1,21 @@
+{
+    "NIdaq-acquisition-frequency":10000,
+    "NIdaq-analog-input-channels":1,
+    "NIdaq-digital-input-channels":2,
+    "Rig":"ICM-A1-2P-setup",
+    "Screen":"Dell-2020",
+    "Z-sign-correction-for-rig":-1,
+    "FaceCamera-frame-rate":30,
+    "FaceCamera-1cm-in-pix":480,
+    "RigCamera-frame-rate":30,
+    "RigCamera-1cm-in-pix":480,
+    "Height-of-Microscope-Camera-Image-in-mm":2.7,
+    "rotating-disk":{"radius-position-on-disk-cm":9.0,
+		             "roto-encoder-value-per-rotation": -25300.0},
+    "root_datafolder":"DATA",
+    "subjects_file":"mice_marie.csv",
+    "experimenter":"Marie Martinez",
+    "lab":"Rebola lab",
+    "institution":"Institut du Cerveau et de la Moelle, Paris",
+    "protocols":"all"
+}

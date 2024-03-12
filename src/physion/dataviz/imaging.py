@@ -7,8 +7,15 @@ from physion.dataviz import tools as dv_tools
 import physion.utils.plot_tools as pt
 
 def add_CaImagingRaster(data, tlim, ax, raster=None,
-                        fig_fraction_start=0., fig_fraction=1., color='green',
-                        subquantity='Fluorescence', roiIndices='all', subquantity_args={},
+                        #
+                        fig_fraction_start=0., 
+                        fig_fraction=1., 
+                        color='green',
+                        # 
+                        subquantity='Fluorescence', 
+                        roiIndices='all', 
+                        subquantity_args={},
+                        #
                         cmap=plt.cm.binary, 
                         axb=None,
                         bar_inset_start=-0.08, bar_inset_width=0.01,

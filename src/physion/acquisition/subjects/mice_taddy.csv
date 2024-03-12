@@ -4,3 +4,7 @@ MAAH1_SSTcreNR1,498,07/03/2023,NA,Male,C57B6/J,SSTCre x NR1,headplate+injection,
 MAAI1_SSTcreNR1,502,13/03/2023,NA,Female,C57B6/J,SSTCre x NR1,headplate+injection,20/04/2023,VR27,10,"(92, -136, 276)","(31, -289, 189)",
 MAAI2_SSTcreNR1,503,13/03/2023,NA,Female,C57B6/J,SSTCre x NR1,headplate+injection,20/04/2023,VR27,10,,,
 MAAJ1_SSTCreNR3,NA,04/03/2023,NA,Female,C57B6/J,SSTCre x NR3,headplate+injection,10/05/2023,VR27,10,"(-480, 73, 252)","(-390, 16, 183)","(-193, -118, '10')"
+MAAT1_WT,,18/09/2023,NA,Female,C57B6/J,WT,headplate+ VC injection,03/12/2023,VR12 + VR 52,10,,,
+MAAT2_WT,,18/09/2023,RHS cut,Female,C57B6/J,WT,headplate+ VC injection,03/12/2023,VR12 + VR 52,10,,,
+MAAT3_SSTCre,105,01/10/2023,NA,Male,C57B6/J,SST Cre x tdTOM,headplate+ BC injection,04/12/2023,VR27,10,"(-463, 30, 114)","(-626, -703, 198)","(-1082, -434, 152)"
+MAAT4_SSTCre,108,01/10/2023,NA,Female,C57B6/J,SST Cre x tdTOM,headplate+ BC injection,04/12/2023,VR27,10,"(-256, -206, 211)","(562, -775, 121)","(-309, -254, 127)"

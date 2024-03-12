@@ -8,10 +8,12 @@ import pyqtgraph as pg
 ###        Select the Camera Interface    #######
 #################################################
 CameraInterface = None
+camera_depth = 8
 ### --------- MicroManager Interface -------- ###
 try:
     from pycromanager import Core
     CameraInterface = 'MicroManager'
+    camera_depth = 12 
 except ModuleNotFoundError:
     pass
 ### ------------ ThorCam Interface ---------- ###
@@ -33,6 +35,13 @@ if CameraInterface is None:
     print('   camera support not available !')
     print('------------------------------------')
 
+try:
+    from physion.hardware.NIdaq.main import Acquisition
+except ModuleNotFoundError:
+    def Acquisition(**args):
+        return None
+    # print(' /!\ Problem with the NIdaq module /!\ ')
+
 #################################################
 ###        Now set up the Acquisition     #######
 #################################################
@@ -40,12 +49,9 @@ if CameraInterface is None:
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import get_config_list, get_subject_props
-from physion.visual_stim.main import visual_stim, visual
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path
-
-camera_depth = 12
 
 def gui(self,
         box_width=250,
@@ -67,7 +73,7 @@ def gui(self,
     # initialize all to demo mode
     self.cam, self.sdk, self.core = None, None, None
     self.exposure = -1 # flag for no camera
-    self.demo = True
+    self.demo, self.acq = True, None
 
     ### now trying the camera
     try:
@@ -119,12 +125,6 @@ def gui(self,
     self.subjectBox = QtWidgets.QComboBox(self)
     self.subjectBox.activated.connect(self.update_subject)
     self.add_side_widget(tab.layout, self.subjectBox, spec='large-right')
-    # screen box
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('screen:'),
-                         spec='small-left')
-    self.screenBox = QtWidgets.QComboBox(self)
-    self.screenBox.addItems(list(SCREENS.keys()))
-    self.add_side_widget(tab.layout, self.screenBox, spec='large-right')
     
     get_config_list(self)
 
@@ -147,42 +147,23 @@ def gui(self,
     
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
     
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - protocol:'),
-                         spec='large-left')
-    self.ISIprotocolBox = QtWidgets.QComboBox(self)
-    self.ISIprotocolBox.addItems(['ALL', 'up', 'down', 'left', 'right'])
-    self.add_side_widget(tab.layout, self.ISIprotocolBox,
-                         spec='small-right')
-
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - Nrepeat :'),
                     spec='large-left')
     self.repeatBox = QtWidgets.QLineEdit()
-    self.repeatBox.setText('10')
+    self.repeatBox.setText('20')
     self.add_side_widget(tab.layout, self.repeatBox, spec='small-right')
 
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - stim. period (s):'),
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - interstim. period (s):'),
                     spec='large-left')
     self.periodBox = QtWidgets.QLineEdit()
-    self.periodBox.setText('12')
+    self.periodBox.setText('8')
     self.add_side_widget(tab.layout, self.periodBox, spec='small-right')
     
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - bar size (degree):'),
-                    spec='large-left')
-    self.barBox = QtWidgets.QLineEdit()
-    self.barBox.setText('10')
-    self.add_side_widget(tab.layout, self.barBox, spec='small-right')
-
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - spatial sub-sampling (px):'),
                     spec='large-left')
     self.spatialBox = QtWidgets.QLineEdit()
     self.spatialBox.setText('4')
     self.add_side_widget(tab.layout, self.spatialBox, spec='small-right')
-
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - acq. freq. (Hz):'),
-                    spec='large-left')
-    self.freqBox = QtWidgets.QLineEdit()
-    self.freqBox.setText('20')
-    self.add_side_widget(tab.layout, self.freqBox, spec='small-right')
 
     self.demoBox = QtWidgets.QCheckBox("demo mode")
     self.demoBox.setStyleSheet("color: gray;")
@@ -203,10 +184,10 @@ def gui(self,
     
     # ---  launching acquisition ---
     self.acqButton = QtWidgets.QPushButton("-- RUN PROTOCOL -- ", self)
-    self.acqButton.clicked.connect(self.launch_intrinsic)
+    self.acqButton.clicked.connect(self.launch_SS_intrinsic)
     self.add_side_widget(tab.layout, self.acqButton, spec='large-left')
     self.stopButton = QtWidgets.QPushButton(" STOP ", self)
-    self.stopButton.clicked.connect(self.stop_intrinsic)
+    self.stopButton.clicked.connect(self.stop_SS_intrinsic)
     self.add_side_widget(tab.layout, self.stopButton, spec='small-right')
 
     # ========================================================
@@ -258,6 +239,7 @@ def take_fluorescence_picture(self):
                           [True, False]):
             # save first HQ and then subsampled version
             img = get_frame(self, force_HQ=HQ)
+            img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
             im = PIL.Image.fromarray(img)
             im.save(fn)
 
@@ -288,12 +270,19 @@ def take_vasculature_picture(self):
             self.cam.arm(2)
             self.cam.issue_software_trigger()
 
+        """
         for fn, HQ in zip([filename.replace('.tif', '-HQ.tif'), filename],
                           [True, False]):
             # save first HQ and then subsampled version
             img = get_frame(self, force_HQ=HQ)
+            # img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
             im = PIL.Image.fromarray(img)
             im.save(fn)
+        """
+
+        img = get_frame(self)
+        im = PIL.Image.fromarray(img)
+        im.save(filename)
 
         np.save(filename.replace('.tif', '.npy'), img)
         print('vasculature image, saved as: %s' % filename)
@@ -341,57 +330,7 @@ def run(self):
     
     self.Nrepeat = int(self.repeatBox.text()) #
     self.period = float(self.periodBox.text()) # degree / second
-    self.bar_size = float(self.barBox.text()) # degree / second
-    self.dt = 1./float(self.freqBox.text())
     self.flip_index=0
-
-    self.stim = visual_stim({"Screen": "Dell-2020",
-                             "Presentation": "Single-Stimulus",
-                             "null (None)": 0,
-                             "presentation-prestim-period":0,
-                             "presentation-poststim-period":0,
-                             "presentation-duration":self.period*self.Nrepeat,
-                             "presentation-blank-screen-color": -1}, 
-                             keys=['null'],
-                             demo=self.demoBox.isChecked())
-
-    self.stim.blank_screen()
-
-    xmin, xmax = 1.15*np.min(self.stim.x), 1.15*np.max(self.stim.x)
-    zmin, zmax = 1.2*np.min(self.stim.z), 1.2*np.max(self.stim.z)
-
-    self.angle_start, self.angle_max, self.protocol, self.label = 0, 0, '', ''
-    self.Npoints = int(self.period/self.dt)
-
-    if self.ISIprotocolBox.currentText()=='ALL':
-        self.STIM = {'angle_start':[zmin, xmax, zmax, xmin],
-                     'angle_stop':[zmax, xmin, zmin, xmax],
-                     'label': ['up', 'left', 'down', 'right'],
-                     'xmin':xmin, 'xmax':xmax, 'zmin':zmin, 'zmax':zmax}
-        self.label = 'up' # starting point
-    else:
-        self.STIM = {'label': [self.ISIprotocolBox.currentText()],
-                     'xmin':xmin, 'xmax':xmax, 'zmin':zmin, 'zmax':zmax}
-        if self.ISIprotocolBox.currentText()=='up':
-            self.STIM['angle_start'] = [zmin]
-            self.STIM['angle_stop'] = [zmax]
-        if self.ISIprotocolBox.currentText()=='down':
-            self.STIM['angle_start'] = [zmax]
-            self.STIM['angle_stop'] = [zmin]
-        if self.ISIprotocolBox.currentText()=='left':
-            self.STIM['angle_start'] = [xmax]
-            self.STIM['angle_stop'] = [xmin]
-        if self.ISIprotocolBox.currentText()=='right':
-            self.STIM['angle_start'] = [xmin]
-            self.STIM['angle_stop'] = [xmax]
-        self.label = self.ISIprotocolBox.currentText()
-        
-    for il, label in enumerate(self.STIM['label']):
-        self.STIM[label+'-times'] = np.arange(self.Npoints*self.Nrepeat)*self.dt
-        self.STIM[label+'-angle'] = np.concatenate([np.linspace(self.STIM['angle_start'][il],
-                                                                self.STIM['angle_stop'][il],
-                                                                self.Npoints)\
-                                                                for n in range(self.Nrepeat)])
 
     # initialize one episode:
     self.iEp, self.t0_episode = 0, time.time()
@@ -399,12 +338,34 @@ def run(self):
 
     save_intrinsic_metadata(self)
    
+    if not self.demoBox.isChecked():
+        #########################################
+        ###     launch NI daq stimulation    ####
+        #########################################
+
+        # build output steps
+        output_steps = [] 
+        for i in range(self.Nrepeat):
+            output_steps.append({"channel":0,
+                                 "onset": i*self.period+self.period/2.,
+                                 "duration":0.5,
+                                 "value":5.0})
+
+        self.acq = Acquisition(\
+            sampling_rate=1000,
+            Nchannel_analog_in=1,
+            Nchannel_digital_in=1,
+            max_time=self.period*self.Nrepeat,
+            output_steps=output_steps,
+            filename= os.path.join(self.datafolder, 'NIdaq.npy'))
+
+        self.acq.launch()
+
     print('acquisition running [...]')
-    
-    self.update_dt_intrinsic() # while loop
+    self.update_dt_SS_intrinsic() # while loop
 
 
-def update_dt_intrinsic(self):
+def update_dt_SS_intrinsic(self):
 
     self.t = time.time()
 
@@ -422,26 +383,6 @@ def update_dt_intrinsic(self):
 
     else:
 
-        # update presented stim every X frame
-        self.flip_index += 1
-        if self.flip_index==3:
-
-            # find image time, here %period
-            self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
-
-            angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'][self.iTime]
-            patterns = get_patterns(self, self.STIM['label'][self.iEp%len(self.STIM['label'])],
-                                          angle, self.bar_size)
-            for pattern in patterns:
-                pattern.draw()
-            try:
-                self.stim.win.flip()
-            except BaseException:
-                pass
-            self.flip_index=0
-
-        self.flip = (False if self.flip else True) # flip the flag at each frame
-
         # in demo mode, we show the image
         if self.demoBox.isChecked():
             self.imgPlot.setImage(self.FRAMES[-1].T)
@@ -458,31 +399,20 @@ def update_dt_intrinsic(self):
 
     # continuing ?
     if self.running:
-        QtCore.QTimer.singleShot(1, self.update_dt_intrinsic)
+        QtCore.QTimer.singleShot(1, self.update_dt_SS_intrinsic)
 
 
 def write_data(self):
 
-    filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])],\
-                                                 int(self.iEp/len(self.STIM['label']))+1)
-    
-    nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
+    filename = 'SS-intrinsic-%i.nwb' % (self.iEp+1)
+    nwbfile = pynwb.NWBFile('Intrinsic Imaging data following Whisker Puff Stimulation',
                             'intrinsic',
                             datetime.datetime.utcnow(),
                             file_create_date=datetime.datetime.utcnow())
-
-    # Create our time series
-    angles = pynwb.TimeSeries(name='angle_timeseries',
-                              data=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'],
-                              unit='Rd',
-                              timestamps=self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-times'])
-    nwbfile.add_acquisition(angles)
-
     images = pynwb.image.ImageSeries(name='image_timeseries',
                                      data=np.array(self.FRAMES, dtype=np.uint16),
                                      unit='a.u.',
                                      timestamps=np.array(self.TIMES, dtype=np.float64))
-
     nwbfile.add_acquisition(images)
     
     # Write the data to file
@@ -504,16 +434,13 @@ def save_intrinsic_metadata(self):
         
     metadata = {'subject':str(self.subjectBox.currentText()),
                 'exposure':self.exposure,
-                'bar-size':float(self.barBox.text()),
-                'acq-freq':float(self.freqBox.text()),
                 'period':float(self.periodBox.text()),
                 'Nsubsampling':int(self.spatialBox.text()),
                 'Nrepeat':int(self.repeatBox.text()),
                 'imgsize':self.imgsize,
                 'headplate-angle-from-rig-axis':subject['headplate-angle-from-rig-axis'],
                 'Height-of-Microscope-Camera-Image-in-mm':\
-                        self.config['Height-of-Microscope-Camera-Image-in-mm'],
-                'STIM':self.STIM}
+                        self.config['Height-of-Microscope-Camera-Image-in-mm']}
     
     np.save(filename, metadata)
 
@@ -528,7 +455,7 @@ def save_intrinsic_metadata(self):
     self.datafolder = os.path.dirname(filename)
 
     
-def launch_intrinsic(self, live_only=False):
+def launch_SS_intrinsic(self, live_only=False):
 
     self.live_only = live_only
 
@@ -552,7 +479,7 @@ def launch_intrinsic(self, live_only=False):
             run(self)
         else:
             self.iEp, self.t0_episode = 0, time.time()
-            self.update_dt_intrinsic() # while loop
+            self.update_dt_SS_intrinsic() # while loop
 
         
     else:
@@ -560,18 +487,15 @@ def launch_intrinsic(self, live_only=False):
         print(' /!\  --> pb in launching acquisition (either already running or missing camera)')
 
 
-def live_intrinsic(self):
 
-    self.launch_intrinsic(live_only=True)
-
-
-def stop_intrinsic(self):
+def stop_SS_intrinsic(self):
     if self.running:
         if (self.cam is not None) and not self.demoBox.isChecked():
             self.cam.disarm()
+        if self.acq is not None:
+            self.acq.close()
+            self.acq = None
         self.running = False
-        if self.stim is not None:
-            self.stim.close()
         if len(self.TIMES)>5:
             print('average frame rate: %.1f FPS' % (1./np.mean(np.diff(self.TIMES))))
     else:
@@ -595,42 +519,18 @@ def get_frame(self, force_HQ=False):
             frame = self.cam.get_pending_frame_or_null()
         img = frame.image_buffer
 
-    elif (self.stim is not None) and (self.STIM is not None):
-
-        it = int((time.time()-self.t0_episode)/self.dt)%int(self.period/self.dt)
-        protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
-        if protocol=='left':
-            img = np.random.randn(*self.stim.x.shape)+\
-                np.exp(-(self.stim.x-(40*it/self.Npoints-20))**2/2./10**2)*\
-                np.exp(-self.stim.z**2/2./15**2)
-        elif protocol=='right':
-            img = np.random.randn(*self.stim.x.shape)+\
-                np.exp(-(self.stim.x+(40*it/self.Npoints-20))**2/2./10**2)*\
-                np.exp(-self.stim.z**2/2./15**2)
-        elif protocol=='up':
-            img = np.random.randn(*self.stim.x.shape)+\
-                np.exp(-(self.stim.z-(40*it/self.Npoints-20))**2/2./10**2)*\
-                np.exp(-self.stim.x**2/2./15**2)
-        else: # down
-            img = np.random.randn(*self.stim.x.shape)+\
-                np.exp(-(self.stim.z+(40*it/self.Npoints-20))**2/2./10**2)*\
-                np.exp(-self.stim.x**2/2./15**2)
-
-        img = img.T+.2*(time.time()-self.t0_episode)/10. # + a drift term
-        img = 2**12*(img-img.min())/(img.max()-img.min())
-            
     else:
         time.sleep(0.03) # grabbing frames takes minimum 30ms
-        img = np.random.uniform(0, 2**8,
+        img = np.random.uniform(0, 2**camera_depth,
                                 size=(720, 1280))
 
     if (int(self.spatialBox.text())>1) and not force_HQ:
         return np.array(\
-                resample_img(img, int(self.spatialBox.text())))
+                resample_img(img, int(self.spatialBox.text())),
+                dtype=np.uint8)
     else:
-        return img
+        return img.astype(np.uint8)
 
-    
     
 def update_Image(self):
     # plot it

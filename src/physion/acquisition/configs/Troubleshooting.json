@@ -4,6 +4,7 @@
     "NIdaq-digital-input-channels":2,
     "FaceCamera-frame-rate":30,
     "FaceCamera-1cm-in-pix":480,
+    "Screen":"Dell-2020",
     "STEP_FOR_CA_IMAGING_TRIGGER":{"channel":0,
 				   "onset": 0.1,
 				   "duration":0.3,

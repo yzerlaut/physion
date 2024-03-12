@@ -10,6 +10,12 @@ def update_frame(self):
     """
     pass
 
+def snapshot(self):
+    pass
+
+def movie(self):
+    pass
+
 
 def visualization(self, 
                   withRawImages=False,
@@ -29,8 +35,6 @@ def visualization(self,
 
     create_modality_button_ticks(self, tab,
                                  (nRowImages if withRawImages else 0))
-
-    self.imgSelect.setChecked(withRawImages)
 
     create_slider(self, tab)
 
@@ -118,7 +122,7 @@ def create_modality_button_ticks(self, tab,
 
     self.visualStimSelect.clicked.connect(self.select_visualStim)
     
-    for i, key in enumerate(['sbsmpl', 'annot', 'img']):
+    for i, key in enumerate(['sbsmpl', 'annot']):
         
         setattr(self, '%sSelect'%key, QtWidgets.QCheckBox(key))
         getattr(self, '%sSelect'%key).setStyleSheet('color: dimgrey')
@@ -127,9 +131,16 @@ def create_modality_button_ticks(self, tab,
                              nRowImages+2+i, self.nWidgetCol-1,
                              1, 1)
 
+    for i, key in enumerate(['snapshot', 'movie']):
+        
+        setattr(self, '%sButton'%key, QtWidgets.QPushButton(key))
+        getattr(self, '%sButton'%key).setStyleSheet('color: dimgrey')
+        getattr(self, '%sButton'%key).setFont(physion.gui.parts.smallfont)
+        getattr(self, '%sButton'%key).clicked.connect(getattr(self, key))
+        tab.layout.addWidget(getattr(self, '%sButton'%key),
+                             nRowImages+4+i, self.nWidgetCol-1,
+                             1, 1)
     self.sbsmplSelect.setChecked(True)
-
-    self.imgSelect.clicked.connect(self.select_imgDisplay)
 
 
 def init_panel_imgs(self):
@@ -190,35 +201,35 @@ def init_image_panels(self):
 def select_visualStim(self):
     pass
 
-def select_imgDisplay(self):
+# def select_imgDisplay(self):
 
-    if self.imgSelect.isChecked():
+    # if self.imgSelect.isChecked():
 
-        self.visualization(withRawImages=True)
+        # self.visualization(withRawImages=True)
 
-        if 'FaceMotion' in self.data.nwbfile.processing:
-            coords = self.data.nwbfile.processing['FaceMotion'].description.split('facemotion ROI: (x0,dx,y0,dy)=(')[1].split(')\n')[0].split(',')
-            coords = [int(c) for c in coords]
-            self.faceMotionContour.setData(np.concatenate([np.linspace(x1, x2, 20)\
-                                                for x1, x2 in zip([coords[1], coords[1], coords[1]+coords[3], coords[1]+coords[3], coords[1]],                                                                                  [coords[1], coords[1]+coords[3], coords[1]+coords[3], coords[1], coords[1]])]),
-                                           np.concatenate([np.linspace(y1, y2, 20)\
-                                                for y1, y2 in zip([coords[0], coords[0]+coords[2], coords[0]+coords[2], coords[0], coords[0]],
-                                                                  [coords[0]+coords[2], coords[0]+coords[2], coords[0], coords[0], coords[0]])]))
+        # if 'FaceMotion' in self.data.nwbfile.processing:
+            # coords = self.data.nwbfile.processing['FaceMotion'].description.split('facemotion ROI: (x0,dx,y0,dy)=(')[1].split(')\n')[0].split(',')
+            # coords = [int(c) for c in coords]
+            # self.faceMotionContour.setData(np.concatenate([np.linspace(x1, x2, 20)\
+                                                # for x1, x2 in zip([coords[1], coords[1], coords[1]+coords[3], coords[1]+coords[3], coords[1]],                                                                                  [coords[1], coords[1]+coords[3], coords[1]+coords[3], coords[1], coords[1]])]),
+                                           # np.concatenate([np.linspace(y1, y2, 20)\
+                                                # for y1, y2 in zip([coords[0], coords[0]+coords[2], coords[0]+coords[2], coords[0], coords[0]],
+                                                                  # [coords[0]+coords[2], coords[0]+coords[2], coords[0], coords[0], coords[0]])]))
             
-        if 'Pupil' in self.data.nwbfile.processing:
-            self.pupil_mm_to_pix = 1./float(self.data.nwbfile.processing['Pupil'].description.split('pix_to_mm=')[1].split('\n')[0])
-            coords = self.data.nwbfile.processing['Pupil'].description.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')\n')[0].split(',')
-            if len(coords)==3: # bug (fixed), typo in previous datafiles
-                coords.append(coords[2][3:])
-                coords[2] = coords[2][:3]
-            coords = [int(c) for c in coords]
-            self.facePupilContour.setData(np.concatenate([np.linspace(x1, x2, 10) for x1, x2 in zip([coords[2], coords[2], coords[3], coords[3]],
-                                                                                                    [coords[2], coords[3], coords[3], coords[2]])]),
-                                           np.concatenate([np.linspace(y1, y2, 10) for y1, y2 in zip([coords[0], coords[1], coords[1], coords[0]],
-                                                                                                     [coords[1], coords[1], coords[0], coords[0]])]))
+        # if 'Pupil' in self.data.nwbfile.processing:
+            # self.pupil_mm_to_pix = 1./float(self.data.nwbfile.processing['Pupil'].description.split('pix_to_mm=')[1].split('\n')[0])
+            # coords = self.data.nwbfile.processing['Pupil'].description.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')\n')[0].split(',')
+            # if len(coords)==3: # bug (fixed), typo in previous datafiles
+                # coords.append(coords[2][3:])
+                # coords[2] = coords[2][:3]
+            # coords = [int(c) for c in coords]
+            # self.facePupilContour.setData(np.concatenate([np.linspace(x1, x2, 10) for x1, x2 in zip([coords[2], coords[2], coords[3], coords[3]],
+                                                                                                    # [coords[2], coords[3], coords[3], coords[2]])]),
+                                           # np.concatenate([np.linspace(y1, y2, 10) for y1, y2 in zip([coords[0], coords[1], coords[1], coords[0]],
+                                                                                                     # [coords[1], coords[1], coords[0], coords[0]])]))
         
-    else:
-        self.visualization(withRawImages=False)
+    # else:
+        # self.visualization(withRawImages=False)
 
 
 def analyze_datafile(self):

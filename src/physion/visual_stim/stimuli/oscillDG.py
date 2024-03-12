@@ -43,15 +43,14 @@ class stim(visual_stim):
             self.experiment['time_stop'][i] = self.experiment['time_start'][i]+duration
 
     def get_image(self, episode, time_from_episode_start=0, parent=None):
-        cls = (parent if parent is not None else self)
-        img = init_bg_image(cls, episode)
+        img = init_bg_image(self, episode)
         self.add_grating_patch(img,
-                       angle=cls.experiment['angle'][episode],
+                       angle=self.experiment['angle'][episode],
                        radius=200,
-                       spatial_freq=cls.experiment['spatial-freq'][episode],
-                       contrast=cls.experiment['contrast'][episode]*(1-np.cos(2*np.pi*time_from_episode_start*cls.experiment['frequency'][episode]))/2,
+                       spatial_freq=self.experiment['spatial-freq'][episode],
+                       contrast=self.experiment['contrast'][episode]*(1-np.cos(2*np.pi*time_from_episode_start*self.experiment['frequency'][episode]))/2,
                        xcenter=0, zcenter=0,
-                       time_phase=cls.experiment['speed'][episode]*time_from_episode_start)
+                       time_phase=self.experiment['speed'][episode]*time_from_episode_start)
         return img
 
 
@@ -59,19 +58,17 @@ class stim(visual_stim):
         """
         we build a sequence of frames by successive calls to "self.get_image" 
 
-        here we use self.refresh_freq, not cls.refresh_freq
          """
-        cls = (parent if parent is not None else self)
 
         # we adapt the refresh freq accoring to the stim freq
-        refresh_freq = max([cls.experiment['frequency'][index]*20,
-                            cls.experiment['speed'][index]*5])
+        refresh_freq = max([self.experiment['frequency'][index]*20,
+                            self.experiment['speed'][index]*5])
 
-        time_indices, times, FRAMES = init_times_frames(cls, index,\
+        time_indices, times, FRAMES = init_times_frames(self, index,\
                                                         refresh_freq)
 
 	# length of one cycle
-        T = 1./cls.experiment['frequency'][index]
+        T = 1./self.experiment['frequency'][index]
         N = int(T*refresh_freq)
 
         for iframe, t in enumerate(times):

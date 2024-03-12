@@ -4,7 +4,7 @@
   "shuffling-seed" :34,
   "Protocol-1": "subprotocols/contrast-curves/ff-drifting-gratings-4orientation-5contrasts-log-spaced-10repeats.json",
   "Protocol-2": "subprotocols/blank/grey-5min.json",
-  "Protocol-3": "subprotocols/blank/blank-5min.json",
+  "Protocol-3": "subprotocols/blank/black-5min.json",
   "presentation-blank-screen-color": 0,
   "presentation-prestim-period": 2.0,
   "presentation-poststim-period": 2.0,

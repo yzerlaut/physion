@@ -44,17 +44,16 @@ class stim(visual_stim):
         self.refresh_freq = protocol['movie_refresh_freq']
 
 
-    def get_image(self, episode, time_from_episode_start=0, parent=None):
-        cls = (parent if parent is not None else self)
-        img = init_bg_image(cls, episode)
+    def get_image(self, episode, time_from_episode_start=0):
+        img = init_bg_image(self, episode)
         self.add_grating_patch(img,
-                       angle=cls.experiment['angle'][episode],
-                       radius=cls.experiment['radius'][episode],
-                       spatial_freq=cls.experiment['spatial-freq'][episode],
-                       contrast=cls.experiment['contrast'][episode],
-                       xcenter=cls.experiment['x-center'][episode],
-                       zcenter=cls.experiment['y-center'][episode],
-                       time_phase=cls.experiment['speed'][episode]*time_from_episode_start)
+                       angle=self.experiment['angle'][episode],
+                       radius=self.experiment['radius'][episode],
+                       spatial_freq=self.experiment['spatial-freq'][episode],
+                       contrast=self.experiment['contrast'][episode],
+                       xcenter=self.experiment['x-center'][episode],
+                       zcenter=self.experiment['y-center'][episode],
+                       time_phase=self.experiment['speed'][episode]*time_from_episode_start)
         return img
 
     def plot_stim_picture(self, episode,
@@ -63,12 +62,11 @@ class stim(visual_stim):
                                  'width_factor':0.05,
                                  'color':'red'}):
 
-        cls = (parent if parent is not None else self)
         ax = self.show_frame(episode, ax=ax, label=label,
                              parent=parent)
-        arrow['direction'] = cls.experiment['angle'][episode]
-        arrow['center'] = [cls.experiment['x-center'][episode],
-                           cls.experiment['y-center'][episode]]
+        arrow['direction'] = self.experiment['angle'][episode]
+        arrow['center'] = [self.experiment['x-center'][episode],
+                           self.experiment['y-center'][episode]]
         self.add_arrow(arrow, ax)
         return ax
 

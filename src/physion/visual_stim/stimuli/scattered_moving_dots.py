@@ -72,11 +72,10 @@ class stim(visual_stim):
     def __init__(self, protocol):
 
         super().__init__(protocol,
-                         keys=['speed', 'bg-color', 'ndots', 'spacing',
-                               'direction', 'size', 'dotcolor', 'seed'])
+                         keys=['speed', 'bg-color', 'ndots',
+                               'spacing', 'direction', 'size',
+                               'dotcolor', 'seed'])
 
-        ## /!\ here always use self.refresh_freq not the parent cls.refresh_freq ##
-        # when the parent multiprotocol will have ~10Hz refresh rate, this can  remain 2-3Hz
         self.refresh_freq = protocol['movie_refresh_freq']
 
         # we initialize the trajectories
@@ -106,19 +105,17 @@ class stim(visual_stim):
         """ 
         return the frame at a given time point
         """
-        cls = (parent if parent is not None else self)
+        img = init_bg_image(self, index)
 
-        img = init_bg_image(cls, index)
-
-        Index = str(cls.experiment['index'][index])
+        Index = str(self.experiment['index'][index])
         for x0, y0 in zip(self.X0[Index], self.Y0[Index]):
 
             new_position = (x0+self.dx_per_time[Index]*time_from_episode_start,
                             y0+self.dy_per_time[Index]*time_from_episode_start)
 
             self.add_dot(img, new_position,
-                         cls.experiment['size'][index],
-                         cls.experiment['dotcolor'][index])
+                         self.experiment['size'][index],
+                         self.experiment['dotcolor'][index])
 
         return img
 
@@ -133,23 +130,21 @@ class stim(visual_stim):
 
         """
         """
-        cls = (parent if parent is not None else self)
-
-        tcenter = .45*(cls.experiment['time_stop'][episode]-\
-                      cls.experiment['time_start'][episode])
+        tcenter = .45*(self.experiment['time_stop'][episode]-\
+                      self.experiment['time_start'][episode])
         
         ax = self.show_frame(episode, tcenter, ax=ax,
                              parent=parent)
 
-        direction = cls.experiment['direction'][episode]
+        direction = self.experiment['direction'][episode]
         arrow['direction'] = ((direction+180)%180)+180
 
-        arrow['direction'] = cls.experiment['direction'][episode]+180
+        arrow['direction'] = self.experiment['direction'][episode]+180
         print(arrow['direction'])
 
         for shift in [-.5, 0, .5]:
 
-            arrow['center'] = [shift*np.sin(np.pi/180.*direction)*cls.x.max()/3.,
-                               shift*np.cos(np.pi/180.*direction)*cls.x.max()/3.]
+            arrow['center'] = [shift*np.sin(np.pi/180.*direction)*self.x.max()/3.,
+                               shift*np.cos(np.pi/180.*direction)*self.x.max()/3.]
 
             self.add_arrow(arrow, ax)

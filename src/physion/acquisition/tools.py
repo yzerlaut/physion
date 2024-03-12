@@ -51,10 +51,10 @@ def check_gui_to_init_metadata(self):
     ### set up all metadata based on GUI infos
     metadata = {'config':self.configBox.currentText(),
                 'root-data-folder':FOLDERS[self.folderBox.currentText()],
-                'Screen':self.screenBox.currentText(),
+                # 'Screen':self.screenBox.currentText(),
                 'protocol':self.protocolBox.currentText(),
                 'VisualStim':self.protocolBox.currentText()!='None',
-                'intervention':self.interventionBox.currentText(),
+                'recording':self.recordingBox.currentText(),
                 'notes':self.qmNotes.toPlainText(),
                 'FOV':self.fovPick.currentText(),
                 'subject_ID':self.subjectBox.currentText(),
