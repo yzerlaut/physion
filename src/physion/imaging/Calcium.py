@@ -51,16 +51,36 @@ def sliding_percentile(array, percentile, Window):
 
     return x
     
+
 def compute_sliding_percentile(array, percentile, Window,
-                               with_smoothing=False):
+                               subsampling_window_factor=0.1,
+                               with_smoothing=True):
+    """
+    sliding percentile over a window
+            with subsampling to make it more efficient
+            subsampling_window_factor=0 -> no subsampling !
+    """
+
+    subsampling = max([1,int(subsampling_window_factor*Window)])
+    print(subsampling)
     Flow = np.zeros(array.shape)
+    indices = np.arange(array.shape[1])
+    sbsmplIndices = (indices%subsampling)==0
     for roi in range(array.shape[0]):
-        Flow[roi,:] = sliding_percentile(array[roi,:], percentile, Window)
+        Flow[roi,sbsmplIndices] = sliding_percentile(array[roi,sbsmplIndices], percentile,
+                                                     max([1,int(Window/subsampling)]))
 
     if with_smoothing:
-        Flow = filters.gaussian_filter1d(Flow, Window, axis=1)
+        Flow[:,sbsmplIndices] = filters.gaussian_filter1d(Flow[:,sbsmplIndices], 
+                                                          max([1,int(Window/subsampling)]), 
+                                                          axis=-1)
+
+    Flow[:,~sbsmplIndices] = interp1d(indices[sbsmplIndices], Flow[:,sbsmplIndices],
+                                      kind='linear', fill_value='extrapolate',
+                                      axis=-1)(indices[~sbsmplIndices])
 
     return Flow
+
 
 def compute_sliding_minimum(array, Window,
                             pre_smoothing=0,

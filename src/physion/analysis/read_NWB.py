@@ -159,27 +159,35 @@ class Data:
         if valid_roiIndices is None:
             self.nROIs = self.Segmentation.columns[0].data.shape[0]
             self.valid_roiIndices = np.arange(self.nROIs)
+            # ---------------------------------------------------------
+            # only when they were no previous roi validation
+            #         -> we read the table properties
+            # ---------------------------------------------------------
+            # looping over the table properties (0,1 -> rois locs)
+            #      for the ROIS to overwrite the defaults:
+            for i in range(2, len(self.Segmentation.columns)):
+                if self.Segmentation.columns[i].name=='iscell': # DEPRECATED
+                    self.valid_roiIndices = self.valid_roiIndices[\
+                            self.Segmentation.columns[i].data[:,0].astype(bool)]
+                if self.Segmentation.columns[i].name=='plane':
+                    self.planeID = self.valid_roiIndices[\
+                            self.Segmentation.columns[i].data[:].astype(int)]
+                if self.Segmentation.columns[i].name=='redcell':
+                    self.redcell = self.valid_roiIndices[\
+                            self.Segmentation.columns[i].data[:,0].astype(bool)]
         else:
             self.nROIs = len(valid_roiIndices)
             self.valid_roiIndices = valid_roiIndices
+            if hasattr(self, 'planeID'):
+                self.planeID = self.planeID[self.valid_roiIndices]
+            if hasattr(self, 'redcell'):
+                self.redcell= self.redcell[self.valid_roiIndices]
             
         # initialize rois properties to default values
         self.iscell = np.ones(self.nROIs, dtype=bool) # deprecated
         self.planeID = np.zeros(self.nROIs, dtype=int)
         self.redcell = np.zeros(self.nROIs, dtype=bool) 
 
-        # looping over the table properties (0,1 -> rois locs)
-        #      for the ROIS to overwrite the defaults:
-        for i in range(2, len(self.Segmentation.columns)):
-            if self.Segmentation.columns[i].name=='iscell': # DEPRECATED
-                self.valid_roiIndices = self.valid_roiIndices[\
-                        self.Segmentation.columns[i].data[:,0].astype(bool)]
-            if self.Segmentation.columns[i].name=='plane':
-                self.planeID = self.valid_roiIndices[\
-                        self.Segmentation.columns[i].data[:].astype(int)]
-            if self.Segmentation.columns[i].name=='redcell':
-                self.redcell = self.valid_roiIndices[\
-                        self.Segmentation.columns[i].data[:,0].astype(bool)]
 
     def read_and_format_ophys_data(self):
         
