@@ -9,6 +9,7 @@ from physion.analysis import tools
 from physion.imaging.Calcium import compute_dFoF,\
         ROI_TO_NEUROPIL_INCLUSION_FACTOR, METHOD,\
         T_SLIDING, PERCENTILE, NEUROPIL_CORRECTION_FACTOR
+from physion.imaging.dcnv import oasis
 
 class Data:
     
@@ -331,6 +332,7 @@ class Data:
                    sliding_window=T_SLIDING,
                    with_correctedFluo_and_F0=False,
                    specific_time_sampling=None,
+                   smoothing=None,
                    interpolation='linear',
                    verbose=True):
         """
@@ -362,6 +364,7 @@ class Data:
                             sliding_window=sliding_window,
                             with_correctedFluo_and_F0=\
                                     with_correctedFluo_and_F0,
+                            smoothing=smoothing,
                             verbose=verbose)
 
     def build_Zscore_dFoF(self, verbose=True):
@@ -371,6 +374,15 @@ class Data:
         if not hasattr(self, 'dFoF'):
             self.build_dFoF(verbose=verbose)
         setattr(self, 'Zscore_dFoF', (self.dFoF-self.dFoF.mean(axis=0).reshape(1, self.dFoF.shape[1]))/self.dFoF.std(axis=0).reshape(1, self.dFoF.shape[1]))
+
+    def build_Deconvolved(self, Tau=1.3):
+        if not hasattr(self, 'dFoF'):
+            print('\n deconvolution not possible \n --> need to build_dFoF(**options) first !! ')
+        else:
+            setattr(self, 'Deconvolved',
+                    oasis(self.dFoF, 
+                          self.dFoF.shape[0], # batch size
+                              Tau, 1./self.CaImaging_dt))
 
 
     def build_neuropil(self,

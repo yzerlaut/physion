@@ -130,6 +130,7 @@ def compute_dFoF(data,
                  percentile=PERCENTILE,
                  sliding_window=T_SLIDING,
                  with_correctedFluo_and_F0=False,
+                 smoothing=None,
                  verbose=True):
     """
     -----------------
@@ -145,6 +146,7 @@ def compute_dFoF(data,
         - with the "percentile" parameter (in percent)
         - with the "sliding_windows" parameter (in s)
     4) copmutes the ratio between (cF-cF0)/cF0
+    5) [optional] adds a Gaussian smoothing (smoothing in frame units)
     """
 
     if verbose:
@@ -181,6 +183,9 @@ def compute_dFoF(data,
     data.dFoF = (correctedFluo[valid_roiIndices, :]-\
       correctedFluo0[valid_roiIndices, :])/correctedFluo0[valid_roiIndices, :]
 
+    # Step 5) -> Gaussian smoothing if required
+    if smoothing is not None:
+        data.dFoF = gaussian_filter1d(data.dFoF, smoothing, axis=1)
 
     #######################################################################
     if verbose:
