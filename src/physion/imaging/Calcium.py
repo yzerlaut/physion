@@ -185,7 +185,7 @@ def compute_dFoF(data,
 
     # Step 5) -> Gaussian smoothing if required
     if smoothing is not None:
-        data.dFoF = gaussian_filter1d(data.dFoF, smoothing, axis=1)
+        data.dFoF = filters.gaussian_filter1d(data.dFoF, smoothing, axis=1)
 
     #######################################################################
     if verbose:
