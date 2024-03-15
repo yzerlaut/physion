@@ -59,6 +59,7 @@ def build_NWB_UI(self, tab_id=1):
         # self.add_side_widget(tab.layout, getattr(self, '%sBox'%modality),
                 # 'small-right')
 
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(20*'-'))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
