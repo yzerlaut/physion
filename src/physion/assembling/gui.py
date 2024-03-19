@@ -55,11 +55,13 @@ def build_NWB_UI(self, tab_id=1):
         setattr(self, '%sCheckBox'%modality, QtWidgets.QCheckBox(modality, self))
         self.add_side_widget(tab.layout, getattr(self, '%sCheckBox'%modality))#, 'large-left')
         getattr(self, '%sCheckBox'%modality).setChecked(default)
-        # setattr(self, '%sBox'%modality, QtWidgets.QLineEdit(modality, self))
-        # self.add_side_widget(tab.layout, getattr(self, '%sBox'%modality),
-                # 'small-right')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(20*'-'))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    # an option to force based on Visual Stim infos
+    self.alignFromStimCheckBox = QtWidgets.QCheckBox('align from VisStim label (!=diode) ', self)
+    self.add_side_widget(tab.layout, self.alignFromStimCheckBox)
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
@@ -122,13 +124,14 @@ def load_NWB_folder(self):
                  self.ISImaps[i]))
 
 
-
 def runBuildNWB(self):
     modalities = [modality for modality in ALL_MODALITIES\
                   if getattr(self, '%sCheckBox'%modality).isChecked()]
     for folder in self.folders:
         cmd, cwd = build_cmd(folder,
-                             modalities=modalities)
+                             modalities=modalities,
+                             force_to_visualStimTimestamps=\
+                                self.alignFromStimCheckBox.isChecked())
         print('\n launching the command \n :  %s \n ' % cmd)
         p = subprocess.Popen(cmd,
                              cwd=cwd,

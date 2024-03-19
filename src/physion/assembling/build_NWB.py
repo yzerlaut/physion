@@ -508,12 +508,15 @@ def build_NWB_func(args):
 
 
 def build_cmd(datafolder,
-              modalities=['Locomotion', 'VisualStim']):
+              modalities=['Locomotion', 'VisualStim'],
+              force_to_visualStimTimestamps=False):
     cmd = '%s -m physion.assembling.build_NWB -df %s -M ' % (python_path,
                                                              datafolder)
     cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src')
     for m in modalities:
         cmd += '%s '%m
+    if force_to_visualStimTimestamps:
+        cmd += '--force_to_visualStimTimestamps'
     return cmd, cwd
 
 
