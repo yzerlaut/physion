@@ -14,6 +14,7 @@ classifiers = [
 ]
 dependencies = [
     "numpy",
+    "numba",
     "scipy",
     "matplotlib",
     "scikit-image",
