@@ -200,7 +200,11 @@ def add_roi_ellipse(data, roiIndex, ax,
     ellipse = plt.Circle((mx, my), size_factor*(sy+sx), edgecolor='lightgray', facecolor='none', lw=roi_lw)
     ax.add_patch(ellipse)
 
-def show_CaImaging_FOV(data, key='meanImg', NL=1, cmap='viridis', ax=None,
+def show_CaImaging_FOV(data, 
+                       key='meanImg', 
+                       NL=1, 
+                       cmap=pt.get_linear_colormap('k', 'g'), 
+                       ax=None,
                        roiIndex=None, roiIndices=[],
                        roi_zoom_factor=10,
                        roi_lw=3,
