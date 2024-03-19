@@ -5,8 +5,6 @@ import matplotlib.pylab as plt
 
 # custom modules
 import physion.utils.plot_tools as pt
-
-from physion.analysis import tools
 from physion.analysis import tools
 from physion.dataviz.raw import format_key_value
 from physion.visual_stim.build import build_stim
@@ -15,33 +13,33 @@ from physion.visual_stim.build import build_stim
 ###  -- Trial Average response  --
 ### ---------------------------------
 
-def plot_trial_average(episodes,
-                       # episodes props
-                       quantity='dFoF', roiIndex=None, roiIndices='all',
-                       norm='',
-                       interpolation='linear',
-                       baseline_substraction=False,
-                       condition=None,
-                       COL_CONDS=None, column_keys=[], column_key='',
-                       ROW_CONDS=None, row_keys=[], row_key='',
-                       COLOR_CONDS = None, color_keys=[], color_key='',
-                       fig_preset=' ',
-                       xbar=0., xbarlabel='',
-                       ybar=0., ybarlabel='',
-                       with_std=True, with_std_over_trials=False, with_std_over_rois=False,
-                       with_screen_inset=False,
-                       with_stim=True,
-                       with_axis=False,
-                       with_stat_test=False, stat_test_props=dict(interval_pre=[-1,0],
-                                                                  interval_post=[1,2],
-                                                                  test='wilcoxon',
-                                                                  positive=True),
-                       with_annotation=False,
-                       color='k',
-                       label='',
-                       ylim=None, xlim=None,
-                       fig=None, AX=None, figsize=(5,3),
-                       no_set=True, verbose=False):
+def plot(episodes,
+           # episodes props
+           quantity='dFoF', roiIndex=None, roiIndices='all',
+           norm='',
+           interpolation='linear',
+           baseline_substraction=False,
+           condition=None,
+           COL_CONDS=None, column_keys=[], column_key='',
+           ROW_CONDS=None, row_keys=[], row_key='',
+           COLOR_CONDS = None, color_keys=[], color_key='',
+           fig_preset=' ',
+           Xbar=0., Xbar_label='',
+           Ybar=0., Ybar_label='',
+           with_std=True, with_std_over_trials=False, with_std_over_rois=False,
+           with_screen_inset=False,
+           with_stim=True,
+           with_axis=False,
+           with_stat_test=False, stat_test_props=dict(interval_pre=[-1,0],
+                                                      interval_post=[1,2],
+                                                      test='wilcoxon',
+                                                      positive=True),
+           with_annotation=False,
+           color='k',
+           label='',
+           ylim=None, xlim=None,
+           fig=None, AX=None, figsize=(5,3),
+           no_set=True, verbose=False):
     """
 
     "norm" can be either:
@@ -238,8 +236,8 @@ def plot_trial_average(episodes,
 
     if not with_axis and not no_set:
         pt.draw_bar_scales(AX[0][0],
-                           Xbar=xbar, Xbar_label=xbarlabel,
-                           Ybar=ybar,  Ybar_label=ybarlabel,
+                           Xbar=Xbar, Xbar_label=Xbar_label,
+                           Ybar=Ybar,  Ybar_label=Ybar_label,
                            Xbar_fraction=0.1, Xbar_label_format='%.1f',
                            Ybar_fraction=0.2, Ybar_label_format='%.1f',
                            loc='top-left')
