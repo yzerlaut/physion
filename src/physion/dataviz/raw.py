@@ -200,49 +200,65 @@ def show_VisualStim(data, tlim,
     return fig, AX
 
 
-def find_default_plot_settings(data, Nmax=7):
+def find_default_plot_settings(data, 
+                               with_subsampling=False,
+                               Nmax=7):
     settings = {}
 
     if data.metadata['VisualStim']:
-        settings['Photodiode'] = dict(fig_fraction=.5, subsampling=1, color='grey')
+        settings['Photodiode'] = dict(fig_fraction=.5, 
+                                      subsampling=100 if with_subsampling else 1, 
+                                      color='grey')
 
     if data.metadata['Locomotion']:
-        settings['Locomotion'] = dict(fig_fraction=1, subsampling=1, color='#1f77b4')
+        settings['Locomotion'] = dict(fig_fraction=1, 
+                                      subsampling=10 if with_subsampling else 1, 
+                                      color='#1f77b4')
 
     if 'FaceMotion' in data.nwbfile.processing:
-        settings['FaceMotion'] = dict(fig_fraction=1, subsampling=10, color='purple')
+        settings['FaceMotion'] = dict(fig_fraction=1, 
+                                      subsampling=10 if with_subsampling else 1, 
+                                      color='purple')
 
     if 'Pupil' in data.nwbfile.processing:
-        settings['GazeMovement'] = dict(fig_fraction=0.5, subsampling=1, color='#ff7f0e')
+        settings['GazeMovement'] = dict(fig_fraction=0.5, 
+                                        subsampling=10 if with_subsampling else 1, 
+                                        color='#ff7f0e')
 
     if 'Pupil' in data.nwbfile.processing:
-        settings['Pupil']= dict(fig_fraction=2, subsampling=1, color='#d62728')
+        settings['Pupil']= dict(fig_fraction=2, 
+                                subsampling=10 if with_subsampling else 1, 
+                                color='#d62728')
 
     if 'ophys' in data.nwbfile.processing:
-        settings['CaImaging'] = dict(fig_fraction=4, subsampling=1,
+        settings['CaImaging'] = dict(fig_fraction=4, 
+                                     subsampling=10 if with_subsampling else 1, 
                                      subquantity='dF/F', color='#2ca02c',
                                      roiIndices=np.sort(np.random.choice(np.arange(np.sum(data.iscell)),
-                                         np.min([Nmax, data.iscell.sum()]), replace=False)))
+                                          np.min([Nmax, data.iscell.sum()]), replace=False)))
 
     if 'ophys' in data.nwbfile.processing:
-        settings['CaImagingRaster'] = dict(fig_fraction=3, subsampling=1,
+        settings['CaImagingRaster'] = dict(fig_fraction=3, 
+                                           subsampling=10 if with_subsampling else 1, 
                                            roiIndices='all',
                                            normalization='per-line',
                                            subquantity='dF/F')
 
-    if data.metadata['VisualStim']:
-        settings['VisualStim'] = dict(fig_fraction=.5, color='black')
+    if data.metadata['VisualStim'] and not with_subsampling:
+        settings['VisualStim'] = dict(fig_fraction=.5, 
+                                      color='black')
 
     return settings
 
 def plot(data,
          tlim=[0,100],
          settings = {},
-         figsize=(3,5), Tbar=0., zoom_area=None,
+         figsize=(9,6), 
+         Tbar=0., zoom_area=None,
          ax=None):
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10,4))
+        fig, ax = plt.subplots(figsize=figsize)
     else:
         fig = None
 
