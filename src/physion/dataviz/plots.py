@@ -188,18 +188,23 @@ def raw_data_plot(self, tzoom,
 
         try:
             iHeight = int(str(self.ophysSettings.text()).split('h:')[1].split(',')[0].split('}')[0])
+            iStart = int(str(self.ophysSettings.text()).split('i:')[1].split(',')[0].split('}')[0])
             nROIs = int(str(self.ophysSettings.text()).split('n:')[1].split(',')[0].split('}')[0])
         except BaseException as be:
             print(be)
             print(' ophys options not recognized ! setting defaults ')
-            iHeight, nROIs = 3, 10 
+            iHeight, iStart, nROIs = 3, -1, 10 
 
-        # FIND A GOOD WAY TO CHANGE ROIs
-        # if hasattr(self, 'roiIndices'):
-            # roiIndices = self.roiIndices
-        # else:
-            # roiIndices = np.random.choice(np.arange(self.data.nROIs), np.min([nROIs, self.data.nROIs]), replace=False)
-        roiIndices = np.random.choice(np.arange(self.data.nROIs), np.min([nROIs, self.data.nROIs]), replace=False)
+        if iStart==-1:
+            # random pick
+            roiIndices = np.sort(\
+                    np.random.choice(np.arange(self.data.nROIs),
+                                          np.min([nROIs, self.data.nROIs]),
+                                     replace=False))[::-1]
+        else:
+            # ordered
+            roiIndices = np.arange(iStart,
+                            np.min([iStart+nROIs, self.data.nROIs]))[::-1]
 
     if 'CaImaging-TimeSeries' in self.data.nwbfile.acquisition and self.ophysSelect.isChecked():
         i0 = convert_time_to_index(self.time, self.data.nwbfile.acquisition['CaImaging-TimeSeries'])
