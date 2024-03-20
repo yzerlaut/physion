@@ -274,10 +274,11 @@ def raw_data_plot(self, tzoom,
                 self.plot.plot(tt,
                         loc+1.3*width*(F[ir,:]-F[ir,:].min())/(F[ir,:].max()-F[ir,:].min())/len(roiIndices),
                         pen=pg.mkPen(color), linewidth=1)
-                if self.annotSelect.isChecked():
-                    roiAnnot = pg.TextItem(str(ir), color=(200, 250, 200))
-                    roiAnnot.setPos(tt[0], loc+width/len(roiIndices)/2.)
-                    self.plot.addItem(roiAnnot)
+
+                # roi number annotation
+                roiAnnot = pg.TextItem(str(ir), color=(200, 250, 200))
+                roiAnnot.setPos(tt[0], loc+width/len(roiIndices)/2.)
+                self.plot.addItem(roiAnnot)
 
 
     # ## -------- Visual Stimulation --------- ##

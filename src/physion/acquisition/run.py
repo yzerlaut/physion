@@ -50,6 +50,7 @@ def init_visual_stim(self):
         self.metadata['protocol'])
 
     self.protocol['screen'] = self.config['Screen']
+    self.protocol['Rig'] = self.config['Rig']
 
     if self.onlyDemoButton.isChecked():
         self.protocol['demo'] = True
@@ -100,7 +101,8 @@ def initialize(self):
                     '[...] initializing acquisition & stimulation')
             # ---- INIT VISUAL STIM ---- #
             init_visual_stim(self)
-            visual_stim_file = os.path.join(str(self.datafolder.get()), 'visual-stim.npy')
+            visual_stim_file = os.path.join(str(self.datafolder.get()),
+                                            'visual-stim.npy')
             while not os.path.isfile(visual_stim_file):
                 time.sleep(0.25)
                 # print('waiting for the visual stim data to be written')
