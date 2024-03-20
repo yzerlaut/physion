@@ -1,4 +1,6 @@
-<!--<div><img src="https://github.com/yzerlaut/physion/raw/master/docs/physion.png" alt="physion logo" width="35%" align="right" style="margin-left: 10px"></div>-->
+<!-- ** Build Instructions ** -->
+<!--  python -m build  -->
+<!--  python -m twine upload --repository pypi dist/*  -->
 
 <div><img src="./docs/icons/physion.png" alt="physion logo" width="35%" align="right" style="margin-left: 10px"></div>
 
