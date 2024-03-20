@@ -75,7 +75,8 @@ class visual_stim:
         self.win = visual.Window(self.screen['resolution'],
                                  fullscr=self.screen['fullscreen'],
                                  units='pix',
-                                 screen=2,
+                                 screen=1 if (('Rig' in self.protocol) and\
+                                         ('A1' in self.protocol['Rig'])) else 2,
                                  checkTiming=(os.name=='posix'), # for os x
                                  color=blank_color)
 
@@ -572,7 +573,6 @@ class visual_stim:
 
                 protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
                 stim_index = self.experiment['index'][self.next_index_table[iT]]
-                print(protocol_id, stim_index)
                 if use_prebuffering:
                     self.buffer = self.BUFFERS[protocol_id][stim_index]
                     self.time_indices = self.TIME_INDICES[protocol_id][stim_index]
