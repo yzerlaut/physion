@@ -114,7 +114,7 @@ def create_modality_button_ticks(self, tab,
             getattr(self, '%sSettings'%key).setStyleSheet('color: %s;' % color)
             getattr(self, '%sSettings'%key).setMaximumWidth(130)
             getattr(self, '%sSettings'%key).setFont(physion.gui.parts.smallfont)
-            getattr(self, '%sSettings'%key).setText('{h:3,n:10}')
+            getattr(self, '%sSettings'%key).setText('{h:3,i:-1,n:10}')
             tab.layout.addWidget(getattr(self, '%sSettings'%key),
                                  nRowImages+1, self.nWidgetCol-1-i,
                                  1, 1)

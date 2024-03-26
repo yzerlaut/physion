@@ -1,4 +1,4 @@
-import os, sys, pathlib, shutil, time, datetime, tempfile
+import os, sys, pathlib, shutil, time, datetime, tempfile, json
 from PIL import Image
 import numpy as np
 
@@ -29,9 +29,15 @@ def build_NWB_func(args):
     #################################################
     ####            BASIC metadata            #######
     #################################################
-    metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
-                       allow_pickle=True).item()
+
+    # (deprecated, loading from metadata.npy)
+    # metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
+                       # allow_pickle=True).item()
     
+    with open(os.path.join(args.datafolder, 'metadata.json'),
+              'r', encoding='utf-8') as f:
+        metadata = json.load(f)
+
     # replace by day and time in metadata !!
     if os.path.sep in args.datafolder:
         sep = os.path.sep
