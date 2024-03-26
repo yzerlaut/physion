@@ -20,9 +20,11 @@ def save_experiment(self, metadata):
     metadata['filename'] = str(self.datafolder.get())
     for key in self.protocol:
         metadata[key] = self.protocol[key]
-    np.save(os.path.join(str(self.datafolder.get()), 'metadata.npy'), metadata)
 
-    # saving a copy as a json file
+    # saving as npy (REMOVED)
+    # np.save(os.path.join(str(self.datafolder.get()), 'metadata.npy'), metadata)
+
+    # (NOW only) saving as a json file
     json_file = os.path.join(str(self.datafolder.get()), 'metadata.json')
     with open(json_file, 'w', encoding='utf-8') as f:
         json.dump(metadata, f,
