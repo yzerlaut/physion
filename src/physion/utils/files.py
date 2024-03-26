@@ -49,9 +49,9 @@ def generate_filename_path(root_folder,
 
 def list_dayfolder(day_folder, with_NIdaq=True):
     if with_NIdaq:
-        folders = [os.path.join(day_folder, d) for d in sorted(os.listdir(day_folder)) if ((d[0] in string.digits) and (len(d)==8) and os.path.isdir(os.path.join(day_folder, d)) and os.path.isfile(os.path.join(day_folder, d, 'metadata.npy')) and os.path.isfile(os.path.join(day_folder, d, 'NIdaq.npy')) and os.path.isfile(os.path.join(day_folder, d, 'NIdaq.start.npy')))]
+        folders = [os.path.join(day_folder, d) for d in sorted(os.listdir(day_folder)) if ((d[0] in string.digits) and (len(d)==8) and os.path.isdir(os.path.join(day_folder, d)) and os.path.isfile(os.path.join(day_folder, d, 'metadata.json')) and os.path.isfile(os.path.join(day_folder, d, 'NIdaq.npy')) and os.path.isfile(os.path.join(day_folder, d, 'NIdaq.start.npy')))]
     else:
-        folders = [os.path.join(day_folder, d) for d in sorted(os.listdir(day_folder)) if ((d[0] in string.digits) and (len(d)==8) and os.path.isdir(os.path.join(day_folder, d)) and os.path.isfile(os.path.join(day_folder, d, 'metadata.npy')))]
+        folders = [os.path.join(day_folder, d) for d in sorted(os.listdir(day_folder)) if ((d[0] in string.digits) and (len(d)==8) and os.path.isdir(os.path.join(day_folder, d)) and os.path.isfile(os.path.join(day_folder, d, 'metadata.json')))]
     return folders
 
 
