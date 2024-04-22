@@ -63,13 +63,16 @@ class Data:
 
     def read_metadata(self):
         
-        self.df_name = self.nwbfile.session_start_time.strftime("%Y/%m/%d -- %H:%M:%S")+\
-                ' ---- '+self.nwbfile.experiment_description
+        self.df_name = self.nwbfile.session_start_time.strftime(\
+                                    "%Y/%m/%d -- %H:%M:%S")+\
+                        ' ---- '+self.nwbfile.experiment_description
         
-        self.metadata = ast.literal_eval(self.nwbfile.session_description)
+        self.metadata = ast.literal_eval(\
+                self.nwbfile.session_description)
 
         space = '        '
-        self.description = '\n - Subject: %s %s \n' % (space, self.metadata['subject_ID'])
+        self.description = '\n - Subject: %s %s \n' % (space,
+                                        self.metadata['subject_ID'])
 
         if self.metadata['protocol']=='None':
             self.description += '\n - Spont. Act. (no visual stim.)\n'
@@ -77,7 +80,8 @@ class Data:
             self.description += '\n - Visual-Stim: \n %s' % space
 
         # deal with multi-protocols
-        if ('Presentation' in self.metadata) and (self.metadata['Presentation']=='multiprotocol'):
+        if ('Presentation' in self.metadata) and\
+                (self.metadata['Presentation']=='multiprotocol'):
             self.protocols, ii = [], 1
             while ('Protocol-%i' % ii) in self.metadata:
                 self.protocols.append(self.metadata['Protocol-%i' % ii].split('/')[-1].replace('.json','').replace('-many',''))
@@ -191,7 +195,10 @@ class Data:
 
 
     def read_and_format_ophys_data(self):
-        
+       
+        self.TSeries_folder = self.nwbfile.acquisition[\
+                'CaImaging-TimeSeries'].comments.split('**')[-1]
+
         ### ROI activity ###
         self.Fluorescence = \
                 getattr(\
