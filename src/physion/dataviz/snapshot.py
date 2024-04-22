@@ -33,7 +33,8 @@ params = {
     ############################################
     ###         VIEW OPTIONS     ###############
     ############################################
-    'tlim':[20,90],
+    'tlim':[20,80],
+    'Ndiscret':100, # for movie only
 
     # imaging
     'imaging_NL':3,
@@ -88,7 +89,8 @@ def layout(args):
     AX['axRig'] = fig.add_axes([0.25, height0+0.03, 0.17, 0.2])
     AX['axFace'] = fig.add_axes([0.45, height0, 0.2, 0.25])
 
-    AX['axWhisking'] = fig.add_axes([0.67, height0+0.02, 0.15, 0.2])
+    AX['axWhisking'] = fig.add_axes([0.67, height0+0.04, 0.15, 0.2])
+    AX['cbWhisking'] = fig.add_axes([0.68, height0+0.01, 0.13, 0.02])
     AX['axPupil'] = fig.add_axes([0.84, height0+0.02, 0.15, 0.2])
 
     if (not 'layout' in args) or (not args['layout']):
@@ -183,7 +185,7 @@ def draw_figure(args, data):
                                     vmin=0, vmax=1, cmap='gray')
 
         # Face Image
-        imgFace = np.load(metadata['raw_Face_FILES'][0])
+        imgFace = np.load(metadata['raw_Face_FILES'][0]).astype(int)
         AX['imgFace'] = AX['axFace'].imshow(\
                                     imgFace_process(imgFace.copy(), args),
                                             vmin=0, vmax=1, cmap='gray')
@@ -225,11 +227,15 @@ def draw_figure(args, data):
             metadata['whisking_cond'] = whisking_cond
             metadata['whisking_shape'] = whisking_shape
 
-            img1 = np.load(metadata['raw_Face_FILES'][1])
-            new_img = (img1-imgFace)[whisking_cond].reshape(*whisking_shape)
+            img1 = np.load(metadata['raw_Face_FILES'][1]).astype(int)
+            new_img = (img1-imgFace)[whisking_cond].reshape(\
+                                                *whisking_shape)
             AX['imgWhisking'] = AX['axWhisking'].imshow(new_img,
-                                            vmin=-255/4, vmax=255+255/4,
-                                            cmap=plt.cm.BrBG)
+                                vmin=-255/5., vmax=255/5.,
+                                cmap=plt.cm.BrBG)
+            plt.colorbar(AX['imgWhisking'], 
+                         orientation='horizontal',
+                         cax=AX['cbWhisking'])
 
 
     #   ----  filling time plot
@@ -370,81 +376,51 @@ if __name__=='__main__':
     parser.add_argument("--tlim", default=[10,100], 
                         nargs=2, type=float)
 
-    parser.add_argument("--debug",
-                        action="store_true")
-
     parser.add_argument("--layout", help="show layout",
                         action="store_true")
 
-    args = vars(parser.parse_args())
- 
+    args = parser.parse_args()
+
+
     exec(string_params)
 
-    params['layout'] = args['layout']
-
-    if args['debug']:
-
-        params['nwbfile'] = os.path.join(os.path.expanduser('~'),
-                                         'UNPROCESSED', 'DEMO-PYR',
-                                         '2024_04_18-16-45-46.nwb')
-        params['raw_Behavior_folder'] =\
-                os.path.join(os.path.expanduser('~'),
-                                'UNPROCESSED', 'DEMO-PYR',
-                                 '16-45-46')
-        params['raw_Imaging_folder'] =\
-                os.path.join(os.path.expanduser('~'),
-                                'UNPROCESSED', 'DEMO-PYR',
-                                 'TSeries-04182024-005')
-        params['zoomROIs'] = [21,9]
-        params['ROIs'] = [21,16,9,1]
-
-        args = params
-        args['datafile'] = params['nwbfile']
-
-
-    if args['layout']:
+    if args.layout:
 
         fig, AX = layout(params)
         plt.show()
 
-    if '.nwb' in args['datafile']:
+    if ('.nwb' in args.datafile) and os.path.isfile(args.datafile):
 
-        data = physion.analysis.read_NWB.Data(args['datafile'],
+        params['zoomROIs'] = [21,9]
+        params['ROIs'] = [21,16,9,1]
+
+        data = physion.analysis.read_NWB.Data(args.datafile,
                                               with_visual_stim=True)
-        fig, AX, metadata = draw_figure(params, data)    
 
-        plt.show()
+        root_path = os.path.dirname(args.datafile)
+        subfolder = os.path.basename(\
+                args.datafile).replace('.nwb','')[-8:]
 
-        # replace params in strings
-        string_params=string_params.replace("[10,100]", 
-                                            str(args['tlim']))
-        string_params=string_params.replace("range(5)", 
-                                            str(args['ROIs']))
-        string_params=string_params.replace("[0,1]", 
-                                            str(args['zoomROIs']))
-        string_params=string_params.replace("'-'", 
-                                    '"%s"'%args['datafile'])
+         # "raw_Behavior_folder"
+        if os.path.isdir(os.path.join(root_path, subfolder)):
+            args.raw_Behavior_folder = os.path.join(root_path,
+                                                    subfolder)
+        else:
+            print(os.path.join(root_path, subfolder), 'not found')
 
-        if not args['debug']:
-            if 'y' in input(\
-                    '\n write ~/Desktop/snapshot.py file ? [N/y]\n   '):
-                with open(os.path.join(os.path.expanduser('~'),
-                                       'Desktop', 'snapshot.py'), 
-                          'w') as f:
-                    f.write(string_params)
+         # "raw_Imaging_folder"
+        if os.path.isdir(os.path.join(root_path,data.TSeries_folder)):
+            args.raw_Imaging_folder = os.path.join(root_path,
+                                                data.TSeries_folder)
+        else:
+            print(os.path.join(root_path, data.TSeries_folder),
+                  'not found')
 
-    elif os.path.isfile(args['datafile']):
+        for key in params:
+            if not hasattr(args, key):
+                setattr(args, key, params[key])
 
-        with open(args['datafile']) as f:
-            string_params = f.read()
-            exec(string_params)
-
-        params['layout'] = args['layout']
-        params['datafile'] = params['nwbfile']
-        data = physion.analysis.read_NWB.Data(params['datafile'],
-                            with_visual_stim=bool(params['with_screen_inset']))
-
-        fig, AX = draw_figure(params, data) 
+        fig, AX, metadata = draw_figure(vars(args), data)    
 
         plt.show()
 
