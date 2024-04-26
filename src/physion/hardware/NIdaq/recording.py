@@ -165,7 +165,6 @@ if __name__=='__main__':
                                    2e-2*np.sin(2*np.pi*t_array)])
 
 
-    
     print('running rec & stim [...]')
     analog_inputs, digital_inputs = stim_and_rec(args.device, t_array, analog_inputs, analog_outputs,
                                                  args.Nchannel_digital_rec)
@@ -193,6 +192,6 @@ if __name__=='__main__':
         ax.plot(t_array, signal)
         ax.set_ylabel('Channel %s (V)' % l)
     """
-    # plt.plot(1e3*t_array, analog_inputs[0,:])
+    plt.plot(1e3*t_array, analog_inputs[0,:])
     plt.xlabel('time (ms)')
     plt.show()

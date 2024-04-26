@@ -77,7 +77,7 @@ def gui(self,
             tab.layout,QtWidgets.QLabel('  - spatial-subsampling (pix):'),
             spec='large-left')
     self.ssBox = QtWidgets.QLineEdit()
-    self.ssBox.setText('0')
+    self.ssBox.setText('4')
     self.add_side_widget(tab.layout,self.ssBox, spec='small-right')
 
     self.loadButton = QtWidgets.QPushButton(" === load data === ", self)
