@@ -11,6 +11,7 @@ from physion.gui.parts import Slider
 from physion.utils.paths import FOLDERS
 from assembling.tools import load_FaceCamera_data
 
+
 def gui(self,
         box_width=250,
         tab_id=2):
