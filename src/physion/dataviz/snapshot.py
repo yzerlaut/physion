@@ -2,8 +2,6 @@
 import pynwb, os, sys, pathlib, itertools
 import numpy as np
 import matplotlib.pylab as plt
-import matplotlib.animation as animation
-from PIL import Image
 
 import physion.utils.plot_tools as pt
 
@@ -28,32 +26,34 @@ params = {
     ############################################
     ###         DATAFILE         ###############
     ############################################
-    'nwbfile':"-",
+    'nwbfile':'-',
     'raw_Behavior_folder':'',
     'raw_Imaging_folder':'',
 
     ############################################
     ###         VIEW OPTIONS     ###############
     ############################################
-    'tlim':[10,100],
+    'tlim':[20,90],
 
     # imaging
     'imaging_NL':3,
-    'trace_quantity':'rawFluo',
+    'imaging_clip':[0.2,0.9],
+    'trace_quantity':'dFoF',
+    'dFoF_smoothing':1,
     # ROIs zoom
     'zoomROIs':[0,1],
 
     # FaceCamera
     'FaceCameraLim':[0, 0, 10000, 10000],
+    'FaceCamera_NL':3,
     # RigCamera
     'RigCameraLim':[0, 0, 10000, 10000],
 
     ############################################
     ###      ANNOTATIONS         ###############
     ############################################
-    'imaging_title':'',
     'Tbar':2, 'Tbar_loc':1.0,
-    'with_screen_inset':True,
+    'with_screen_inset':False,
 
     ############################################
     ###       LAYOUT OPTIONS     ###############
@@ -63,74 +63,59 @@ params = {
                   'whisking':0.12, 'whisking_start':0.14,
                   'pupil':0.13, 'pupil_start':0.27,
                   'rois':0.35, 'rois_start':0.40,
-                  'raster':0.24, 'raster_start':0.75,
-                  'visual_stim':2., 'visual_stim_start':2.},
+                  'visual_stim':2, 'visual_stim_start':2.,
+                  'raster':0.24, 'raster_start':0.75},
 }
 """
 
 
 def layout(args):
 
-    height0, height1, width0, width1 = 0.65, 0.75, 0.79, 0.25
-    
     AX = {}
-    fig = plt.figure(figsize=(9,5))
+    fig = plt.figure(figsize=(8,4))
 
-    AX['axImaging'] = pt.inset(fig, 
-                (width0, height0, 1-width0, 1-height0))
-    if 'layout' in args and args['layout']:
-        AX['axImaging'].imshow(np.zeros((2,2)), vmin=0, cmap=iMap)
-    AX['axImaging'].axis('off')
-    AX['axSetup'] = pt.inset(fig,
-                (0, height1, .9*width1, .95*(1-height1)))
-    keys = ['axRig', 'axFace', 'axScreen']
-    titles = ['rig camera', 'face camera', 
-              'screen\n(visual stimulation)']
-    for i, key in enumerate(keys):
-        AX[key] = pt.inset(fig,
-              (width1+i*(width0-width1)/len(keys), height0+0.05,
-              0.9*(width0-width1)/len(keys), 0.4*height0))
-        AX[key].set_title(titles[i], fontsize=8)
-        AX[key].axis('off')
+    AX['axTraces'] = fig.add_axes([0.42, 0.02, 0.54, 0.63])
 
-    pt.annotate(AX['axImaging'], args['imaging_title'], (0.5,0.98),
-                fontsize=7, va='top', ha='center', color='w')
-    img = Image.open('../docs/exp-rig.png')
-    AX['axSetup'].imshow(img)
-    AX['axSetup'].axis('off')
+    AX['axImaging'] = fig.add_axes([0.01, 0.1, 0.3, 0.5])
 
-    AX['axTraces'] = pt.inset(fig,(width1,0,1-width1,0.98*height0))
+    AX['axTime'] = fig.add_axes([0.1, 0.01, 0.1, 0.05])
 
-    keys = ['axWhisking', 'axPupil']+\
-            ['axROI%i'%(n+1) for n in range(len(args['zoomROIs']))]
-    titles = ['whisking\n(motion $\epsilon$)', 'pupil\n(ellipse fit)']+\
-                ['cell #%i'%(n+1) for n in args['zoomROIs']]
-    colors = ['tab:purple', 'red']+\
-                ['tab:green' for n in range(len(args['zoomROIs']))]
-    height1 *= 0.87
-    for i, key in enumerate(keys):
-        AX[key] = pt.inset(fig, (0.03, 0.07+i*height1/len(keys), 
-                                 0.12, 0.9*height1/len(keys)))
-        if 'layout' in args and args['layout']:
-            AX[key].imshow(np.zeros((2,2)), vmin=0)
-        AX[key].axis('equal')
-        AX[key].axis('off')
-        AX[key].annotate(titles[i],
-                         (0.,0.5), va='center', ha='center',
-                         rotation=90, fontsize=8, 
-                         color=colors[i], xycoords='axes fraction')
+    height0 = 0.68
+    AX['axROI1'] = fig.add_axes([0.3, 0.15, 0.1, 0.2])
+    AX['axROI2'] = fig.add_axes([0.3, 0.4, 0.1, 0.2])
+    height0 += 0.02
+    AX['axScreen'] = fig.add_axes([0.01, height0, 0.2, 0.25])
+    AX['axRig'] = fig.add_axes([0.25, height0+0.03, 0.17, 0.2])
+    AX['axFace'] = fig.add_axes([0.45, height0, 0.2, 0.25])
 
-    AX['axTime'] = pt.inset(fig, (0, 0, 0.05, 0.05))
-    AX['axTime'].axis('off')
+    AX['axWhisking'] = fig.add_axes([0.67, height0+0.02, 0.15, 0.2])
+    AX['axPupil'] = fig.add_axes([0.84, height0+0.02, 0.15, 0.2])
 
-    if 'layout' in args and args['layout']:
+    if (not 'layout' in args) or (not args['layout']):
+        for key in AX:
+            AX[key].axis('off')
 
-        AX['axTime'].annotate(20*' '+'t=0.0s', (0,0),
-                              xycoords='figure fraction', size=9)
+    AX['cursor'] = AX['axTraces'].plot(args['tlim'][0]*np.ones(2), 
+                                       [0,0], 'k-', lw=3, alpha=.3)[0]
+    AX['time'] = AX['axTime'].annotate(' ',
+                            (0,0), xycoords='figure fraction', size=8)
 
     return fig, AX
 
-        
+       
+def show_img(img, args,
+             key='imaging'):
+  
+    img -= np.min(img)
+    if 'norm_%s'%key in args:
+        img /= args['norm_%s'%key]
+    if '%s_NL'%key in args:
+        img = np.power(img, 1./args['%s_NL'%key])
+    if '%s_clip'%key in args:
+        img[img<args['%s_clip'%key][0]] = args['%s_clip'%key][0]
+        img[img>args['%s_clip'%key][1]] = args['%s_clip'%key][1]
+    return img
+
 def draw_figure(args, data):
 
     fig, AX = layout(args)
@@ -146,36 +131,33 @@ def draw_figure(args, data):
         max_proj = getattr(getattr(data.nwbfile.processing['ophys'],
                            'data_interfaces')['Backgrounds_0'],
                            'images')['max_proj'][:]
-        max_proj_scaled = np.power(max_proj/max_proj.max(),
-                                   1/args['imaging_NL'])
+        args['norm_imaging'] = np.max(max_proj)-np.min(max_proj)
 
-        AX['imgImaging'] = AX['axImaging'].imshow(max_proj_scaled, 
-                    vmin=0, vmax=1, cmap=iMap, origin='lower',
-                    aspect='equal', interpolation='none')
+        AX['imgImaging'] = AX['axImaging'].imshow(\
+                                    show_img(max_proj, args, 'imaging'),
+                                    vmin=0.5, vmax=1.2, 
+                                        cmap=iMap, origin='lower',
+                                    aspect='equal', interpolation='none')
 
-        AX['axImaging'].annotate(' n=%i rois' % data.iscell.sum(),
-                                  (0,0), color='w', fontsize=8,
-                                  xycoords='axes fraction')
 
         # zoomed ROIs
-        extents, max_projs = [], []
         for i, roi in enumerate(args['zoomROIs']):
-            extents.append(find_roi_extent(data, roi, roi_zoom_factor=5))
-            max_projs.append(\
-                getattr(getattr(data.nwbfile.processing['ophys'],
-                                'data_interfaces')['Backgrounds_0'],
-                    'images')['max_proj'][:][extents[i][0]:extents[i][1],
-                                             extents[i][2]:extents[i][3]])
-            # max_proj_scaled1 = \
-                # (max_proj-max_proj.min())/\
-                # (max_proj.max()-max_proj.min())
-            # max_proj_scaled1 = np.power(max_proj_scaled1,
-                                          # 1/args['imaging_NL)
+            args['ROI%i_NL'%i] = 1 # NL HERE FOR NOW
+
+            args['ROI%i_extent'%i] = find_roi_extent(data,
+                                        roi, roi_zoom_factor=3)
+
+            extent = args['ROI%i_extent'%i]
+            max_proj_ROI = max_proj[extent[0]:extent[1],
+                                    extent[2]:extent[3]] 
+            args['norm_ROI%i'%i] = np.max(max_proj_ROI) 
+
 
             AX['imgROI%i' % (i+1)] = \
-                    AX['axROI%i' % (i+1)].imshow(max_projs[i],
-                            vmin=0, vmax=max_projs[i].max(), 
-                            cmap=iMap, extent=extents[i],
+                    AX['axROI%i' % (i+1)].imshow(
+                            show_img(max_proj_ROI, args, 'ROI%i'%i),
+                            vmin=0, vmax=1,
+                            cmap=iMap, 
                             aspect='equal', interpolation='none', 
                             origin='lower')
             add_roi_ellipse(data, roi,
@@ -183,62 +165,33 @@ def draw_figure(args, data):
                             size_factor=1.5, roi_lw=1)
 
 
-    # setup drawing
-    time = AX['axTime'].annotate(20*' '+'t=%.1fs\n' % args['tlim'][0],
-                                (0,0), xycoords='figure fraction', size=8)
-
     # screen inset
-    # AX['imgScreen'] = data.visual_stim.show_frame(0,
-                                                  # ax=AX['axScreen'],
-                                                  # return_img=True,
-                                                  # label=None)
-
-    # Calcium Imaging
-    if metadata['raw_Imaging_folder']!='':
-        
-        Ly, Lx = getattr(getattr(data.nwbfile.processing['ophys'],
-                         'data_interfaces')['Backgrounds_0'], 
-                         'images')['meanImg'].shape
-        Ca_data = BinaryFile(Ly=Ly, Lx=Lx,
-                             read_filename=os.path.join(\
-                                     metadata['raw_Imaging_folder'],
-                                     'suite2p', 'plane0','data.bin'))
-        i1, i2 = convert_times_to_indices(args['tlim'][0], args['tlim'][1],
-                                          data.Fluorescence)
-
-        imaging_scale = Ca_data.data[i1:i2,:,:].min(),\
-                                    Ca_data.data[i1:i2,:,:].max()
-        imaging_scales = []
-        for n in range(len(args['zoomROIs'])):
-            imaging_scales.append(\
-                    (Ca_data.data[i1:i2,
-                                 extents[n][0]:extents[n][1],
-                                 extents[n][2]:extents[n][3]].min(),\
-                    (Ca_data.data[i1:i2,
-                                 extents[n][0]:extents[n][1],
-                                 extents[n][2]:extents[n][3]].max())))
-
+    AX['imgScreen'] = data.visual_stim.show_frame(0,
+                                                  ax=AX['axScreen'],
+                                                  return_img=True,
+                                                  label=None)
 
     # Face Camera
     if metadata['raw_Behavior_folder']!='':
 
-        load_NIdaq(metadata)
-
-        loadCameraData(metadata)
+        loadCameraData(metadata, metadata['raw_Behavior_folder'])
 
         # Rig Image
-        img = np.load(metadata['raw_Rig_FILES'][0])
-        AX['imgRig'] = AX['axRig'].imshow(imgRig_process(img,args),
+        imgRig = np.load(metadata['raw_Rig_FILES'][0])
+        AX['imgRig'] = AX['axRig'].imshow(\
+                                imgRig_process(imgRig.copy(), args),
                                     vmin=0, vmax=1, cmap='gray')
 
         # Face Image
-        AX['imgFace'] = AX['axFace'].imshow(imgFace_process(img,args),
+        imgFace = np.load(metadata['raw_Face_FILES'][0])
+        AX['imgFace'] = AX['axFace'].imshow(\
+                                    imgFace_process(imgFace.copy(), args),
                                             vmin=0, vmax=1, cmap='gray')
 
         # pupil
         if 'pupil' in args['fractions']:
-            x, y = np.meshgrid(np.arange(0,img.shape[0]),
-                               np.arange(0,img.shape[1]), indexing='ij')
+            x, y = np.meshgrid(np.arange(0,imgFace.shape[0]),
+                            np.arange(0,imgFace.shape[1]), indexing='ij')
             pupil_cond = (y>=metadata['pupil_xmin']) &\
                          (y<=metadata['pupil_xmax']) &\
                          (x>=metadata['pupil_ymin']) &\
@@ -246,12 +199,15 @@ def draw_figure(args, data):
             pupil_shape = len(np.unique(x[pupil_cond])),\
                                     len(np.unique(y[pupil_cond]))
             AX['imgPupil'] = AX['axPupil'].imshow(\
-                    img[pupil_cond].reshape(*pupil_shape), cmap='gray')
+                    imgFace[pupil_cond].reshape(*pupil_shape), cmap='gray')
+            metadata['pupil_cond'] = pupil_cond
+            metadata['pupil_shape'] = pupil_shape
             pupil_fit = get_pupil_fit(0, data, metadata)
             AX['pupil_fit'], = AX['axPupil'].plot(pupil_fit[0],
                                                   pupil_fit[1],
                                 '.', markersize=1, color='red')
 
+        AX['pupil_center'] = None
         if 'gaze' in args['fractions']:
             pupil_center = get_pupil_center(0, data, metadata)
             AX['pupil_center'], = AX['axPupil'].plot(\
@@ -266,9 +222,11 @@ def draw_figure(args, data):
               (y<=(metadata['whisking_ROI'][1]+metadata['whisking_ROI'][3]))
             whisking_shape = len(np.unique(x[whisking_cond])),\
                                     len(np.unique(y[whisking_cond]))
-            img1 = np.load(metadata['raw_Face_FILES'][1])
+            metadata['whisking_cond'] = whisking_cond
+            metadata['whisking_shape'] = whisking_shape
 
-            new_img = (img1-img)[whisking_cond].reshape(*whisking_shape)
+            img1 = np.load(metadata['raw_Face_FILES'][1])
+            new_img = (img1-imgFace)[whisking_cond].reshape(*whisking_shape)
             AX['imgWhisking'] = AX['axWhisking'].imshow(new_img,
                                             vmin=-255/4, vmax=255+255/4,
                                             cmap=plt.cm.BrBG)
@@ -288,11 +246,6 @@ def draw_figure(args, data):
         add_Photodiode(data, args['tlim'], AX['axTraces'], 
             fig_fraction_start=args['fractions']['photodiode_start'], 
             fig_fraction=args['fractions']['photodiode'], name='')
-        AX['axTraces'].annotate('photodiode',
-                    (-0.01, args['fraction']['photodiode_start']),
-                                ha='right', va='bottom',
-                                color='grey', fontsize=8,
-                                xycoords='axes fraction')
 
     # locomotion
     if 'running' in args['fractions']:
@@ -301,11 +254,6 @@ def draw_figure(args, data):
                     fig_fraction=args['fractions']['running'], 
                     scale_side='right', subsampling=1,
                     name='')
-        AX['axTraces'].annotate('running \nspeed \n ',
-                            (-0.01, args['fractions']['running_start']),
-                            ha='right', va='bottom',
-                            color='#1f77b4', fontsize=8,
-                            xycoords='axes fraction')
 
     # whisking 
     if 'whisking' in args['fractions']:
@@ -313,11 +261,6 @@ def draw_figure(args, data):
                 fig_fraction_start=args['fractions']['whisking_start'], 
                 fig_fraction=args['fractions']['whisking'], 
                 scale_side='right', subsampling=1, name='')
-        AX['axTraces'].annotate('whisking \n',
-                        (-0.01, args['fractions']['whisking_start']),
-                        ha='right', va='bottom',
-                        color='purple', fontsize=8,
-                        xycoords='axes fraction')
 
     # gaze 
     if 'gaze' in args['fractions']:
@@ -325,11 +268,6 @@ def draw_figure(args, data):
                 fig_fraction_start=args['fractions']['gaze_start'], 
                 fig_fraction=args['fractions']['gaze'], 
                 scale_side='right', name='')
-        AX['axTraces'].annotate('gaze \nmov. ',
-                                (-0.01, args['fractions']['gaze_start']),
-                                ha='right', va='bottom', 
-                                color='orange', fontsize=8,
-                                xycoords='axes fraction')
 
     # pupil 
     if 'pupil' in args['fractions']:
@@ -337,33 +275,27 @@ def draw_figure(args, data):
                     fig_fraction_start=args['fractions']['pupil_start'], 
                     fig_fraction=args['fractions']['pupil'], 
                     scale_side='right', subsampling=1, name='')
-        AX['axTraces'].annotate('pupil \ndiam. ',
-                                (-0.01, args['fractions']['pupil_start']),
-                                ha='right', va='bottom',
-                                color='red', fontsize=8,
-                                xycoords='axes fraction')
 
     # rois 
     if 'ophys' in data.nwbfile.processing:
         data.build_rawFluo()
+        if 'dFoF' in args['trace_quantity']:
+            data.build_dFoF(smoothing=args['dFoF_smoothing'])
         add_CaImaging(data, args['tlim'], AX['axTraces'], 
+                      subsampling=1,
                       subquantity=args['trace_quantity'],
                       roiIndices=args['ROIs'], 
                       fig_fraction_start=args['fractions']['rois_start'], 
                       fig_fraction=args['fractions']['rois'], 
                       scale_side='right',
-                      name='', annotation_side='left')
-        AX['axTraces'].annotate('fluorescence', (-0.1,
-                    args['fractions']['pupil rois_start']+\
-                            args['fractions']['rois']/2.),
-                                ha='right', va='center', color='green',
-                                rotation=90, xycoords='axes fraction')
+                      name='', annotation_side='')
 
         # raster 
         if 'raster' in args['fractions']:
             add_CaImagingRaster(data, args['tlim'], AX['axTraces'], 
                         subquantity='dFoF', 
                         normalization='per-line',
+                        bar_inset_start=1.02,
                         fig_fraction_start=args['fractions']['raster_start'], 
                         fig_fraction=args['fractions']['raster'], 
                         name='')
@@ -374,18 +306,16 @@ def draw_figure(args, data):
         AX['axTraces'].annotate('%is' % args['Tbar'],
                                 (args['tlim'][0], 1.005*args['Tbar_loc']),
                                  ha='left', fontsize=8,)
-
-    AX['axTraces'].axis('off')
-    AX['axTraces'].set_xlim(args['tlim'])
+    # AX['axTraces'].set_xlim(args['tlim'])
     AX['axTraces'].set_ylim([-0.01, 1.01])
 
-    return fig, AX
+    return fig, AX, metadata
 
 
 def imgFace_process(img, args, exp=0.5,
                     bounds=[0.05, 0.75]):
     Img = (img-np.min(img))/(np.max(img)-np.min(img))
-    Img = np.power(Img, exp) 
+    Img = np.power(Img, 1./args['FaceCamera_NL']) 
     # Img[Img<bounds[0]]=bounds[0]
     # Img[Img>bounds[1]]=bounds[1]
     # Img = 0.2+0.6*(Img-np.min(Img))/(np.max(Img)-np.min(Img))
@@ -417,6 +347,10 @@ def get_pupil_fit(index, data, metadata):
 def load_Imaging(metadata):
     metadata['raw_Imaging_folder'] = args['raw_Imaging_folder']
 
+def fill_sheet_with_datafiles(nwbfile, args):
+    """
+    """
+
 if __name__=='__main__':
 
     import argparse, physion
@@ -436,6 +370,9 @@ if __name__=='__main__':
     parser.add_argument("--tlim", default=[10,100], 
                         nargs=2, type=float)
 
+    parser.add_argument("--debug",
+                        action="store_true")
+
     parser.add_argument("--layout", help="show layout",
                         action="store_true")
 
@@ -444,30 +381,57 @@ if __name__=='__main__':
     exec(string_params)
 
     params['layout'] = args['layout']
+
+    if args['debug']:
+
+        params['nwbfile'] = os.path.join(os.path.expanduser('~'),
+                                         'UNPROCESSED', 'DEMO-PYR',
+                                         '2024_04_18-16-45-46.nwb')
+        params['raw_Behavior_folder'] =\
+                os.path.join(os.path.expanduser('~'),
+                                'UNPROCESSED', 'DEMO-PYR',
+                                 '16-45-46')
+        params['raw_Imaging_folder'] =\
+                os.path.join(os.path.expanduser('~'),
+                                'UNPROCESSED', 'DEMO-PYR',
+                                 'TSeries-04182024-005')
+        params['zoomROIs'] = [21,9]
+        params['ROIs'] = [21,16,9,1]
+
+        args = params
+        args['datafile'] = params['nwbfile']
+
+
     if args['layout']:
 
         fig, AX = layout(params)
         plt.show()
 
-    elif '.nwb' in args['datafile']:
+    if '.nwb' in args['datafile']:
 
         data = physion.analysis.read_NWB.Data(args['datafile'],
-                            with_visual_stim=bool(args['with_screen_inset']))
-        fig, AX = draw_figure(params, data)    
+                                              with_visual_stim=True)
+        fig, AX, metadata = draw_figure(params, data)    
 
         plt.show()
 
         # replace params in strings
-        string_params=string_params.replace("[10,100]", str(args['tlim']))
-        string_params=string_params.replace("range(5)", str(args['ROIs']))
-        string_params=string_params.replace("[0,1]", str(args['zoomROIs']))
-        string_params=string_params.replace('"-"', '"%s"'%args['datafile'])
+        string_params=string_params.replace("[10,100]", 
+                                            str(args['tlim']))
+        string_params=string_params.replace("range(5)", 
+                                            str(args['ROIs']))
+        string_params=string_params.replace("[0,1]", 
+                                            str(args['zoomROIs']))
+        string_params=string_params.replace("'-'", 
+                                    '"%s"'%args['datafile'])
 
-        if 'y' in input('\n write ~/Desktop/snapshot.py file ? [N/y]\n   '):
-            with open(os.path.join(os.path.expanduser('~'),
-                                   'Desktop', 'snapshot.py'), 
-                      'w') as f:
-                f.write(string_params)
+        if not args['debug']:
+            if 'y' in input(\
+                    '\n write ~/Desktop/snapshot.py file ? [N/y]\n   '):
+                with open(os.path.join(os.path.expanduser('~'),
+                                       'Desktop', 'snapshot.py'), 
+                          'w') as f:
+                    f.write(string_params)
 
     elif os.path.isfile(args['datafile']):
 

@@ -53,11 +53,11 @@ def plot_scaled_signal(data,
 
     if scale_side=='left':
         tscale, side = shifted_start(tlim), 'right'
-    else:
+    if scale_side=='right':
         tscale, side = shifted_stop(tlim), 'left'
 
     # add scale bar
-    if scale_unit_string!='':
+    if scale_side!='':
         ax.plot(tscale*np.ones(2),
                 ax_fraction_start+scale_bar*np.arange(2)*ax_fraction_extent/scale_range,
                 color=color, lw=1)

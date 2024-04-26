@@ -22,7 +22,7 @@ def add_Photodiode(data, tlim, ax,
     dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 1e-5,
                                 ax_fraction_extent=fig_fraction,
                                 ax_fraction_start=fig_fraction_start,
-                                color=color, scale_unit_string='a.u.')
+                                color=color, scale_unit_string=' a.u.')
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
 
@@ -131,7 +131,7 @@ def add_FaceMotion(data, tlim, ax,
                                 ax_fraction_extent=fig_fraction,
                                 ax_fraction_start=fig_fraction_start,
                                 scale_side=scale_side,
-                                color=color, scale_unit_string='a.u.')
+                                color=color, scale_unit_string=' a.u.')
 
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)

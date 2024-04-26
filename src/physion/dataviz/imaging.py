@@ -18,7 +18,7 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
                         #
                         cmap=plt.cm.binary, 
                         axb=None,
-                        bar_inset_start=-0.08, bar_inset_width=0.01,
+                        bar_inset_start=-0.01, bar_inset_width=0.01,
                         normalization='None', subsampling=1,
                         name=''):
 
@@ -81,10 +81,10 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     ax.annotate('1', (tlim[1], fig_fraction_start), xycoords='data')
     ax.annotate('%i' % raster.shape[0],
                 (tlim[1], fig_fraction_start+fig_fraction), va='top', xycoords='data')
-    ax.annotate('rois', 
+    ax.annotate('ROIs', 
                 (tlim[1], fig_fraction_start+fig_fraction/2.),
                 va='center',
-                # rotation=-90,
+                rotation=-90,
                 xycoords='data',
                 fontsize=8)
 
@@ -92,10 +92,13 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     
 def add_CaImaging(data, tlim, ax,
                   fig_fraction_start=0., fig_fraction=1., color='green',
-                  subquantity='Fluorescence', roiIndices='all', dFoF_args={},
+                  subquantity='Fluorescence', 
+                  roiIndices='all', dFoF_args={},
                   scale_side='left',
-                  vicinity_factor=1, subsampling=1, name='[Ca] imaging',
-                  annotation_side='right'):
+                  vicinity_factor=1, 
+                  subsampling=1, 
+                  name='[Ca] imaging',
+                  annotation_side='left'):
 
     if (subquantity in ['dF/F', 'dFoF']) and (not hasattr(data, 'dFoF')):
         data.build_dFoF(**dFoF_args)
@@ -130,8 +133,11 @@ def add_CaImaging(data, tlim, ax,
                    ax_fraction_start=ypos, color=color,
                    scale_unit_string=('fluo (a.u.)' if (n==0) else ''))
 
-        dv_tools.add_name_annotation(data, ax, 'roi #%i'%(ir+1), tlim, fig_fraction/len(roiIndices), ypos,
-                color=color, side=annotation_side)
+        if annotation_side!='':
+            dv_tools.add_name_annotation(data, ax, 
+                    'roi #%i'%(ir+1), tlim, fig_fraction/len(roiIndices),
+                                         ypos, color=color, 
+                                         side=annotation_side)
         
         
 
