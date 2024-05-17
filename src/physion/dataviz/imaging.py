@@ -124,13 +124,15 @@ def add_CaImaging(data, tlim, ax,
             dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 1.,
                               ax_fraction_extent=fig_fraction/len(roiIndices),
                               ax_fraction_start=ypos,
-                              color=color, scale_side=scale_side,
+                              color=color, 
+                              scale_side=scale_side,
                              scale_unit_string=('%.0f$\Delta$F/F' if (n==0) else ' '))
         else:
             y = data.rawFluo[ir,np.arange(i1,i2)][::subsampling]
             dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1.,
                    ax_fraction_extent=fig_fraction/len(roiIndices),
                    ax_fraction_start=ypos, color=color,
+                   scale_side=scale_side,
                    scale_unit_string=('fluo (a.u.)' if (n==0) else ''))
 
         if annotation_side!='':
@@ -175,17 +177,26 @@ def find_roi_coords(data, roiIndex):
     x, y = find_full_roi_coords(data, roiIndex)
     return np.mean(y), np.mean(x), np.std(y), np.std(x)
 
-def find_roi_extent(data, roiIndex, roi_zoom_factor=10.):
+def find_roi_extent(data, roiIndex, 
+                    force_square=False,
+                    roi_zoom_factor=10.):
 
     mx, my, sx, sy = find_roi_coords(data, roiIndex)
+
+    if force_square:
+        sx = np.mean([sx, sy])
+        sy = sx
 
     return np.array((mx-roi_zoom_factor*sx, mx+roi_zoom_factor*sx,
                      my-roi_zoom_factor*sy, my+roi_zoom_factor*sy), dtype=int)
 
 
-def find_roi_cond(data, roiIndex, roi_zoom_factor=10.):
+def find_roi_cond(data, roiIndex, 
+                  force_square=False,
+                  roi_zoom_factor=10.):
 
-    mx, my, sx, sy = find_roi_coords(data, roiIndex)
+    mx, my, sx, sy = find_roi_coords(data, roiIndex,
+                                     force_square=force_square)
 
     img_shape = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:].shape
 
