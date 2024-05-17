@@ -235,12 +235,21 @@ class Data:
         """
         build distance from mean (x,y) position of pupil
         """
-        self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:]
-        self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time+\
-            np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)/self.nwbfile.acquisition['Running-Speed'].rate
+        if 'Running-Speed' in self.nwbfile.acquisition:
 
-        if specific_time_sampling is not None:
-            return tools.resample(self.t_running_speed, self.running_speed, specific_time_sampling, interpolation=interpolation, verbose=verbose)
+            self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:]
+            self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time+\
+                np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)\
+                                        /self.nwbfile.acquisition['Running-Speed'].rate
+
+            if specific_time_sampling is not None:
+                return tools.resample(self.t_running_speed, 
+                                      self.running_speed, 
+                                      specific_time_sampling, 
+                                      interpolation=interpolation,
+                                      verbose=verbose)
+        else:
+            return None
 
     
     ######################
@@ -262,13 +271,20 @@ class Data:
         """
         build pupil diameter trace, i.e. twice the maximum of the ellipse radius at each time point
         """
-        self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
-        self.pupil_diameter =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:],
-                                         self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:]], axis=0)
+        if 'Pupil' in self.nwbfile.processing:
 
-        if specific_time_sampling is not None:
-            return tools.resample(self.t_pupil, self.pupil_diameter,
-                    specific_time_sampling, interpolation=interpolation, verbose=verbose)
+            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
+            self.pupil_diameter =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:],
+                                             self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:]], axis=0)
+
+            if specific_time_sampling is not None:
+                return tools.resample(self.t_pupil, self.pupil_diameter,
+                                      specific_time_sampling, 
+                                      interpolation=interpolation, 
+                                      verbose=verbose)
+
+        else:
+            return None
 
 
     def build_gaze_movement(self,
@@ -278,13 +294,22 @@ class Data:
         """
         build distance from mean (x,y) position of pupil
         """
-        self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
-        cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:]
-        cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:]
-        self.gaze_movement = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
 
-        if specific_time_sampling is not None:
-            return tools.resample(self.t_pupil, self.gaze_movement, specific_time_sampling, interpolation=interpolation, verbose=verbose)
+        if 'Pupil' in self.nwbfile.processing:
+
+            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
+            cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:]
+            cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:]
+            self.gaze_movement = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
+
+            if specific_time_sampling is not None:
+                return tools.resample(self.t_pupil, self.gaze_movement, 
+                                      specific_time_sampling, 
+                                      interpolation=interpolation, 
+                                      verbose=verbose)
+
+        else:
+            return None
         
 
     #########################
@@ -303,16 +328,24 @@ class Data:
         """
         build facemotion
         """
-        self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps
-        self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:]
 
-        if specific_time_sampling is not None:
-            return tools.resample(self.t_facemotion, self.facemotion, specific_time_sampling, interpolation=interpolation, verbose=verbose)
+        if 'FaceMotion' in self.nwbfile.processing:
+
+            self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps
+            self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:]
+
+            if specific_time_sampling is not None:
+                return tools.resample(self.t_facemotion, self.facemotion, 
+                                      specific_time_sampling, 
+                                      interpolation=interpolation, 
+                                      verbose=verbose)
+
+        else:
+            return None
 
     #############################
     #       Calcium Imaging     #
     #############################
-
 
     def compute_ROI_indices(self,
                             roiIndex=None,
