@@ -40,7 +40,8 @@ def build_suite2p_options(folder,
     ops = ops0.copy()
 
     # acquisition frequency per plane - (bruker framePeriod i already per plane)
-    nplanes = settings_dict['nplanes'] if 'nplanes' in settings_dict else 1 
+    nplanes = settings_dict['nplanes']\
+                        if 'nplanes' in settings_dict else 1 
     ops['fs'] = 1./float(bruker_data['settings']['framePeriod'])/nplanes
 
     # hints for the size of the ROI
