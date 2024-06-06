@@ -50,6 +50,7 @@ def suite2p_preprocessing_UI(self, tab_id=1):
                              'Pyramidal_Cells',
                              'SOMA-only_in_Zoom'])
     self.presetBox.activated.connect(self.change_presets)
+    self.add_side_widget(tab.layout, self.presetBox)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
@@ -183,6 +184,10 @@ def load_TSeries_folder(self):
             i+=1
 
     
+
+def change_presets(self):
+
+    pass
 
 def open_suite2p(self):
     """   """
