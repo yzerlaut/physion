@@ -12,7 +12,7 @@ def resample(x, y, new_time_sampling,
         return func(new_time_sampling)
     except ValueError:
         if verbose:
-            print(' /!\ ValueError: A value in x_new is above the interpolation range /!\ ' )
+            print(' /!\\ ValueError: A value in x_new is above the interpolation range /!\\ ' )
             print('   -->  interpolated at boundaries with mean value ' )
         func = interp1d(x, y,
                         kind=interpolation,

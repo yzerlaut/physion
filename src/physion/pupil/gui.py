@@ -305,6 +305,7 @@ def open_pupil_data(self):
                                                             t0=0, verbose=True)
             self.p1.setRange(xRange=(0,self.nframes))
         else:
+            self.Lx, self.Ly = 1, 1
             self.times, self.imgfolder = None, None
             self.nframes, self.FILES = None, None
             print(' /!\ no raw FaceCamera data found ...')

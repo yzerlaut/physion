@@ -105,7 +105,7 @@ class visual_stim:
                    int(-self.screen['resolution'][1]/2.+\
                            self.screen['monitoring_square']['size']/2.)]
         else:
-            print(30*'-'+'\n /!\ monitoring square location not recognized !!')
+            print(30*'-'+'\n /!\\ monitoring square location not recognized !!')
 
         self.on = visual.GratingStim(win=self.win,
                                      size=self.screen['monitoring_square']['size'],
@@ -530,8 +530,8 @@ class visual_stim:
             t0 = np.load(NIstart)[0]
         except (AttributeError, FileNotFoundError):
             print(' ------------------------------------------ ')
-            print('\n  /!\ ', str(datafolder.get()),\
-                        'NIdaq.start.npy', 'not found ! /!\ \n')
+            print('\n  /!\\ ', str(datafolder.get()),\
+                        'NIdaq.start.npy', 'not found ! /!\\ \n')
             print('  THIS RECORDING WILL NOT BE SYNCHRONIZED ONLINE !!! ')
             print(' ------------------------------------------ ')
             t0 = time.time()
@@ -814,7 +814,7 @@ class multiprotocol(visual_stim):
                              'protocols']+protocol['Protocol-%i'%i].split('/')
                 Ppath = os.path.join(*path_list)
                 if not os.path.isfile(Ppath):
-                    print(' /!\ "%s" not found in Protocol folder /!\  ' %\
+                    print(' /!\\ "%s" not found in Protocol folder /!\\  ' %\
                                             protocol['Protocol-%i'%i])
                 with open(Ppath, 'r') as fp:
                     subprotocol = json.load(fp)

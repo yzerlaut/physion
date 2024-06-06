@@ -282,8 +282,8 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.facemotion()
             # self.pupil()
             # self.transfer_gui()
-            # self.suite2p_preprocessing_UI()
-            self.build_NWB_UI()
+            self.suite2p_preprocessing_UI()
+            # self.build_NWB_UI()
             # self.add_imaging()
             # self.intrinsic()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
