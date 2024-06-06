@@ -33,6 +33,7 @@ python_path_suite2p_env = check_path('suite2p')
 
 FOLDERS = {}
 for key, val in zip(['~/DATA',
+                     'C:\\DATA',
                      '~/UNPROCESSED',
                      '~/ASSEMBLE',
                      '~/DATA/TADDY',
@@ -43,6 +44,7 @@ for key, val in zip(['~/DATA',
                      '~/UNPROCESSED/JOANA',
                      '~/CURATED'],
                     [os.path.join(os.path.expanduser('~'), 'DATA'),
+                     "C:\\DATA",
                      os.path.join(os.path.expanduser('~'), 'UNPROCESSED'),
                      os.path.join(os.path.expanduser('~'), 'ASSEMBLE'),
                      os.path.join(os.path.expanduser('~'), 'DATA', 'TADDY'),
@@ -54,10 +56,6 @@ for key, val in zip(['~/DATA',
                      os.path.join(os.path.expanduser('~'), 'CURATED')]):
     if os.path.isdir(val):
         FOLDERS[key] = val
-
-############# some exceptions ##############
-if 'logusr' in os.path.expanduser('~'):
-    FOLDERS['~/DATA'] = 'C:\\DATA'
 
 for key, val in zip(['D:/', 'E:/', 'F:/', 'G:/', 'H:/'],
                     ['D:\\', 'E:\\', 'F:\\', 'G:\\', 'H:\\']):
