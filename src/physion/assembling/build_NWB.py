@@ -1,4 +1,4 @@
-import os, sys, pathlib, shutil, time, datetime, tempfile
+import os, sys, pathlib, shutil, time, datetime, tempfile, json
 from PIL import Image
 import numpy as np
 
@@ -29,9 +29,15 @@ def build_NWB_func(args):
     #################################################
     ####            BASIC metadata            #######
     #################################################
-    metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
-                       allow_pickle=True).item()
+
+    # (deprecated, loading from metadata.npy)
+    # metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
+                       # allow_pickle=True).item()
     
+    with open(os.path.join(args.datafolder, 'metadata.json'),
+              'r', encoding='utf-8') as f:
+        metadata = json.load(f)
+
     # replace by day and time in metadata !!
     if os.path.sep in args.datafolder:
         sep = os.path.sep
@@ -142,11 +148,14 @@ def build_NWB_func(args):
 
         VisualStim = np.load(os.path.join(args.datafolder,
                         'visual-stim.npy'), allow_pickle=True).item()
+
         # using the photodiod signal for the realignement
         if args.verbose:
             print('=> Performing realignement from photodiode for "%s" [...]  ' % args.datafolder)
+
         if 'time_duration' not in VisualStim:
             VisualStim['time_duration'] = np.array(VisualStim['time_stop'])-np.array(VisualStim['time_start'])
+
         for key in ['time_start', 'time_stop', 'time_duration']:
             metadata[key] = VisualStim[key]
             
@@ -155,17 +164,26 @@ def build_NWB_func(args):
             indices_forced=args.indices_forced
             times_forced=args.times_forced
             durations_forced=args.durations_forced
+
         else:
             indices_forced=(metadata['realignement_indices_forced'] if ('realignement_indices_forced' in metadata) else []),
             times_forced=(metadata['realignement_times_forced'] if ('realignement_times_forced' in metadata) else []),
             durations_forced=(metadata['realignement_durations_forced'] if ('realignement_durations_forced' in metadata) else []),
-        success, metadata = realign_from_photodiode(Psignal, metadata,
-                                                    max_episode=args.max_episode,
-                                                    sampling_rate=(args.photodiode_sampling if args.photodiode_sampling>0 else None),
-                                                    indices_forced=indices_forced,
-                                                    times_forced=times_forced,
-                                                    durations_forced=durations_forced,
-                                                    verbose=args.verbose)
+
+        if not args.force_to_visualStimTimestamps:
+            # we do the re-alignement
+            success, metadata = realign_from_photodiode(Psignal, metadata,
+                                                        max_episode=args.max_episode,
+                                                        sampling_rate=(args.photodiode_sampling if args.photodiode_sampling>0 else None),
+                                                        indices_forced=indices_forced,
+                                                        times_forced=times_forced,
+                                                        durations_forced=durations_forced,
+                                                        verbose=args.verbose)
+        else:
+            # we just take the original timestamps
+           success = True
+           for key in ['time_start', 'time_stop']:
+               metadata['%s_realigned' % key] = np.array(metadata['%s' % key], dtype=float)
 
         if success:
             timestamps = metadata['time_start_realigned']
@@ -496,12 +514,15 @@ def build_NWB_func(args):
 
 
 def build_cmd(datafolder,
-              modalities=['Locomotion', 'VisualStim']):
+              modalities=['Locomotion', 'VisualStim'],
+              force_to_visualStimTimestamps=False):
     cmd = '%s -m physion.assembling.build_NWB -df %s -M ' % (python_path,
                                                              datafolder)
     cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src')
     for m in modalities:
         cmd += '%s '%m
+    if force_to_visualStimTimestamps:
+        cmd += '--force_to_visualStimTimestamps'
     return cmd, cwd
 
 
@@ -525,6 +546,7 @@ if __name__=='__main__':
     parser.add_argument("--indices_forced", nargs='*', type=int)
     parser.add_argument("--times_forced", nargs='*', type=float)
     parser.add_argument("--durations_forced", nargs='*', type=float)
+    parser.add_argument("--force_to_visualStimTimestamps", action="store_true")
 
     parser.add_argument('-rs', "--running_sampling", default=50., type=float)
     parser.add_argument('-ps', "--photodiode_sampling", default=1000., type=float)

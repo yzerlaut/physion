@@ -52,27 +52,10 @@ def raw_data_plot(self, tzoom,
 
     ## -------- FaceCamera, Face motion and Pupil-Size --------- ##
     
-    if 'FaceCamera' in self.data.nwbfile.acquisition and self.imgSelect.isChecked():
-        
-        i0 = convert_time_to_index(self.time, self.data.nwbfile.acquisition['FaceCamera'])
-        self.pFaceimg.setImage(self.data.nwbfile.acquisition['FaceCamera'].data[i0].T)
-        
-        if hasattr(self, 'FaceCameraFrameLevel'):
-            self.plot.removeItem(self.FaceCameraFrameLevel)
-        self.FaceCameraFrameLevel = self.plot.plot(self.data.nwbfile.acquisition['FaceCamera'].timestamps[i0]*np.ones(2),
-                                                   [0, y.max()], pen=pg.mkPen(color=settings['colors']['FaceMotion']), linewidth=0.5)
 
-
-    if 'FaceMotion' in self.data.nwbfile.acquisition and self.imgSelect.isChecked():
-        
+    if 'FaceMotion' in self.data.nwbfile.acquisition:
         i0 = convert_time_to_index(self.time, self.data.nwbfile.acquisition['FaceMotion'])
-        self.pFacemotionimg.setImage(self.data.nwbfile.acquisition['FaceMotion'].data[i0].T)
-        if hasattr(self, 'FacemotionFrameLevel'):
-            self.plot.removeItem(self.FacemotionFrameLevel)
-        self.FacemotionFrameLevel = self.plot.plot(self.data.nwbfile.acquisition['FaceMotion'].timestamps[i0]*np.ones(2),
-                                                   [0, y.max()], pen=pg.mkPen(color=settings['colors']['FaceMotion']), linewidth=0.5)
         t_facemotion_frame = self.data.nwbfile.acquisition['FaceMotion'].timestamps[i0]
-        
     else:
         t_facemotion_frame = None
 
@@ -95,17 +78,17 @@ def raw_data_plot(self, tzoom,
         # self.facemotionROI        
 
 
-    if 'Pupil' in self.data.nwbfile.acquisition and self.imgSelect.isChecked():
+    if 'Pupil' in self.data.nwbfile.acquisition:
         
         i0 = convert_time_to_index(self.time, self.data.nwbfile.acquisition['Pupil'])
-        img = self.data.nwbfile.acquisition['Pupil'].data[i0].T
-        img = (img-img.min())/(img.max()-img.min())
-        self.pPupilimg.setImage(255*(1-np.exp(-img/0.2)))
-        if hasattr(self, 'PupilFrameLevel'):
-            self.plot.removeItem(self.PupilFrameLevel)
-        self.PupilFrameLevel = self.plot.plot(self.data.nwbfile.acquisition['Pupil'].timestamps[i0]*np.ones(2),
-                                              [0, y.max()], pen=pg.mkPen(color=settings['colors']['Pupil']), linewidth=0.5)
         t_pupil_frame = self.data.nwbfile.acquisition['Pupil'].timestamps[i0]
+        # img = self.data.nwbfile.acquisition['Pupil'].data[i0].T
+        # img = (img-img.min())/(img.max()-img.min())
+        # self.pPupilimg.setImage(255*(1-np.exp(-img/0.2)))
+        # if hasattr(self, 'PupilFrameLevel'):
+            # self.plot.removeItem(self.PupilFrameLevel)
+        # self.PupilFrameLevel = self.plot.plot(self.data.nwbfile.acquisition['Pupil'].timestamps[i0]*np.ones(2),
+                                              # [0, y.max()], pen=pg.mkPen(color=settings['colors']['Pupil']), linewidth=0.5)
     else:
         t_pupil_frame = None
         
@@ -138,6 +121,7 @@ def raw_data_plot(self, tzoom,
                                    symbolPen=pg.mkPen(color=settings['colors']['Pupil'], width=0),                                      
                                    symbolBrush=pg.mkBrush(0, 0, 255, 255), symbolSize=7)
 
+        """
         # plotting a circle for the pupil fit
         coords = []
         if t_pupil_frame is not None:
@@ -150,6 +134,7 @@ def raw_data_plot(self, tzoom,
                 coords.append(0)
 
             self.pupilContour.setData(*process.ellipse_coords(*coords, transpose=True), size=3, brush=pg.mkBrush(255,0,0))
+        """
             
 
     # ## -------- Electrophy --------- ##
@@ -203,22 +188,24 @@ def raw_data_plot(self, tzoom,
 
         try:
             iHeight = int(str(self.ophysSettings.text()).split('h:')[1].split(',')[0].split('}')[0])
+            iStart = int(str(self.ophysSettings.text()).split('i:')[1].split(',')[0].split('}')[0])
             nROIs = int(str(self.ophysSettings.text()).split('n:')[1].split(',')[0].split('}')[0])
         except BaseException as be:
             print(be)
             print(' ophys options not recognized ! setting defaults ')
-            iHeight, nROIs = 3, 10 
+            iHeight, iStart, nROIs = 3, -1, 10 
 
-        # FIND A GOOD WAY TO CHANGE ROIs
-        # if hasattr(self, 'roiIndices'):
-            # roiIndices = self.roiIndices
-        # else:
-            # roiIndices = np.random.choice(np.arange(self.data.nROIs), np.min([nROIs, self.data.nROIs]), replace=False)
-        roiIndices = np.random.choice(np.arange(self.data.nROIs), np.min([nROIs, self.data.nROIs]), replace=False)
+        if iStart==-1:
+            # random pick
+            roiIndices = np.sort(\
+                    np.random.choice(np.arange(self.data.nROIs),
+                                          np.min([nROIs, self.data.nROIs]),
+                                     replace=False))[::-1]
+        else:
+            # ordered
+            roiIndices = np.arange(iStart,
+                            np.min([iStart+nROIs, self.data.nROIs]))[::-1]
 
-        if self.imgSelect.isChecked():
-            self.pCaimg.setImage(self.data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:]**.25) # plotting the mean image
-        
     if 'CaImaging-TimeSeries' in self.data.nwbfile.acquisition and self.ophysSelect.isChecked():
         i0 = convert_time_to_index(self.time, self.data.nwbfile.acquisition['CaImaging-TimeSeries'])
         # self.pCaimg.setImage(self.data.nwbfile.acquisition['CaImaging-TimeSeries'].data[i0,:,:]) # REMOVE NOW, MAYBE REINTRODUCE
@@ -292,10 +279,11 @@ def raw_data_plot(self, tzoom,
                 self.plot.plot(tt,
                         loc+1.3*width*(F[ir,:]-F[ir,:].min())/(F[ir,:].max()-F[ir,:].min())/len(roiIndices),
                         pen=pg.mkPen(color), linewidth=1)
-                if self.annotSelect.isChecked():
-                    roiAnnot = pg.TextItem(str(ir), color=(200, 250, 200))
-                    roiAnnot.setPos(tt[0], loc+width/len(roiIndices)/2.)
-                    self.plot.addItem(roiAnnot)
+
+                # roi number annotation
+                roiAnnot = pg.TextItem(str(ir), color=(200, 250, 200))
+                roiAnnot.setPos(tt[0], loc+width/len(roiIndices)/2.)
+                self.plot.addItem(roiAnnot)
 
 
     # ## -------- Visual Stimulation --------- ##
@@ -305,6 +293,7 @@ def raw_data_plot(self, tzoom,
         icond = np.argwhere((self.data.nwbfile.stimulus['time_start_realigned'].data[:]<=self.time) & \
                             (self.data.nwbfile.stimulus['time_stop_realigned'].data[:]>=self.time)).flatten()
 
+        """
         if self.imgSelect.isChecked():
             try:
                 if len(icond)>1:
@@ -319,8 +308,9 @@ def raw_data_plot(self, tzoom,
             except BaseException as be:
                 print(be)
                 print('pb with image')
-            
             self.pScreenimg.setLevels([0,255])
+        """
+            
 
     if self.visualStimSelect.isChecked() and ('time_start_realigned' in self.data.nwbfile.stimulus) and ('time_stop_realigned' in self.data.nwbfile.stimulus):
         # if visual-stim we highlight the stim periods

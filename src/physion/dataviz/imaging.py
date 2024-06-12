@@ -7,11 +7,18 @@ from physion.dataviz import tools as dv_tools
 import physion.utils.plot_tools as pt
 
 def add_CaImagingRaster(data, tlim, ax, raster=None,
-                        fig_fraction_start=0., fig_fraction=1., color='green',
-                        subquantity='Fluorescence', roiIndices='all', subquantity_args={},
+                        #
+                        fig_fraction_start=0., 
+                        fig_fraction=1., 
+                        color='green',
+                        # 
+                        subquantity='Fluorescence', 
+                        roiIndices='all', 
+                        subquantity_args={},
+                        #
                         cmap=plt.cm.binary, 
                         axb=None,
-                        bar_inset_start=-0.08, bar_inset_width=0.01,
+                        bar_inset_start=-0.01, bar_inset_width=0.01,
                         normalization='None', subsampling=1,
                         name=''):
 
@@ -74,10 +81,10 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     ax.annotate('1', (tlim[1], fig_fraction_start), xycoords='data')
     ax.annotate('%i' % raster.shape[0],
                 (tlim[1], fig_fraction_start+fig_fraction), va='top', xycoords='data')
-    ax.annotate('rois', 
+    ax.annotate('ROIs', 
                 (tlim[1], fig_fraction_start+fig_fraction/2.),
                 va='center',
-                # rotation=-90,
+                rotation=-90,
                 xycoords='data',
                 fontsize=8)
 
@@ -85,10 +92,13 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     
 def add_CaImaging(data, tlim, ax,
                   fig_fraction_start=0., fig_fraction=1., color='green',
-                  subquantity='Fluorescence', roiIndices='all', dFoF_args={},
+                  subquantity='Fluorescence', 
+                  roiIndices='all', dFoF_args={},
                   scale_side='left',
-                  vicinity_factor=1, subsampling=1, name='[Ca] imaging',
-                  annotation_side='right'):
+                  vicinity_factor=1, 
+                  subsampling=1, 
+                  name='[Ca] imaging',
+                  annotation_side='left'):
 
     if (subquantity in ['dF/F', 'dFoF']) and (not hasattr(data, 'dFoF')):
         data.build_dFoF(**dFoF_args)
@@ -114,17 +124,22 @@ def add_CaImaging(data, tlim, ax,
             dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 1.,
                               ax_fraction_extent=fig_fraction/len(roiIndices),
                               ax_fraction_start=ypos,
-                              color=color, scale_side=scale_side,
+                              color=color, 
+                              scale_side=scale_side,
                              scale_unit_string=('%.0f$\Delta$F/F' if (n==0) else ' '))
         else:
             y = data.rawFluo[ir,np.arange(i1,i2)][::subsampling]
             dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1.,
                    ax_fraction_extent=fig_fraction/len(roiIndices),
                    ax_fraction_start=ypos, color=color,
+                   scale_side=scale_side,
                    scale_unit_string=('fluo (a.u.)' if (n==0) else ''))
 
-        dv_tools.add_name_annotation(data, ax, 'roi #%i'%(ir+1), tlim, fig_fraction/len(roiIndices), ypos,
-                color=color, side=annotation_side)
+        if annotation_side!='':
+            dv_tools.add_name_annotation(data, ax, 
+                    'roi #%i'%(ir+1), tlim, fig_fraction/len(roiIndices),
+                                         ypos, color=color, 
+                                         side=annotation_side)
         
         
 
@@ -162,17 +177,26 @@ def find_roi_coords(data, roiIndex):
     x, y = find_full_roi_coords(data, roiIndex)
     return np.mean(y), np.mean(x), np.std(y), np.std(x)
 
-def find_roi_extent(data, roiIndex, roi_zoom_factor=10.):
+def find_roi_extent(data, roiIndex, 
+                    force_square=False,
+                    roi_zoom_factor=10.):
 
     mx, my, sx, sy = find_roi_coords(data, roiIndex)
+
+    if force_square:
+        sx = np.mean([sx, sy])
+        sy = sx
 
     return np.array((mx-roi_zoom_factor*sx, mx+roi_zoom_factor*sx,
                      my-roi_zoom_factor*sy, my+roi_zoom_factor*sy), dtype=int)
 
 
-def find_roi_cond(data, roiIndex, roi_zoom_factor=10.):
+def find_roi_cond(data, roiIndex, 
+                  force_square=False,
+                  roi_zoom_factor=10.):
 
-    mx, my, sx, sy = find_roi_coords(data, roiIndex)
+    mx, my, sx, sy = find_roi_coords(data, roiIndex,
+                                     force_square=force_square)
 
     img_shape = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:].shape
 
@@ -193,7 +217,11 @@ def add_roi_ellipse(data, roiIndex, ax,
     ellipse = plt.Circle((mx, my), size_factor*(sy+sx), edgecolor='lightgray', facecolor='none', lw=roi_lw)
     ax.add_patch(ellipse)
 
-def show_CaImaging_FOV(data, key='meanImg', NL=1, cmap='viridis', ax=None,
+def show_CaImaging_FOV(data, 
+                       key='meanImg', 
+                       NL=1, 
+                       cmap=pt.get_linear_colormap('k', 'g'), 
+                       ax=None,
                        roiIndex=None, roiIndices=[],
                        roi_zoom_factor=10,
                        roi_lw=3,

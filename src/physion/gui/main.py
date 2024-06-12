@@ -15,7 +15,8 @@ class MainWindow(QtWidgets.QMainWindow):
     
     # "parts" to build the GUI 
     from physion.gui.parts import open_NWB,\
-            open_file, open_folder, choose_root_folder,\
+            open_file, open_folder, open_NWB_folder,\
+            choose_root_folder,\
             add_keyboard_shortcuts, set_status_bar,\
             max_view, min_view, change_window_size,\
             add_side_widget, cleanup_tab, refresh_tab,\
@@ -36,7 +37,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # -- Data Visualization
     if not Acquisition:
         from physion.dataviz.gui import visualization, update_frame,\
-            select_visualStim, select_imgDisplay
+            select_visualStim, snapshot, movie
         from physion.dataviz.plots import raw_data_plot
         from physion.dataviz.FOV import FOV, select_ROI_FOV,\
             next_ROI_FOV, prev_ROI_FOV, toggle_FOV, draw_image_FOV
@@ -124,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # -- Suite2P Preprocesssing
     if not Acquisition:
         from physion.imaging.gui import suite2p_preprocessing_UI,\
-                load_TSeries_folder, run_TSeries_analysis 
+                load_TSeries_folder, run_TSeries_analysis, change_presets
     else:
         from physion.gui.parts import inactivated as suite2p_preprocessing_UI
 
@@ -276,25 +277,24 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
-            self.SS_intrinsic()
+            # ---- DEBUG interface ---- #
+            # self.SS_intrinsic()
             # self.facemotion()
             # self.pupil()
             # self.transfer_gui()
-            # self.suite2p_preprocessing_UI()
+            self.suite2p_preprocessing_UI()
             # self.build_NWB_UI()
             # self.add_imaging()
             # self.intrinsic()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()
-            # DEBUG
-            # import physion
-            # self.datafile = '/home/yann.zerlaut/ASSEMBLE/2022_12_02-11-39-37.nwb'
-            # self.data = physion.analysis.read_NWB.Data(self.datafile)
-            # self.data.build_rawFluo()
-            # print(self.data.t_rawFluo.shape, self.data.rawFluo.shape)
+            # ---- DEBUG analysis ---- #
+            # self.datafile = '/Users/yann/UNPROCESSED/DEMO-PYR/2023_12_20-15-14-20.nwb'
+            # from physion.analysis import read_NWB
+            # self.data = read_NWB.Data(self.datafile)
+            # self.visualization()
             # self.trial_averaging()
-            # # # self.visualization()
             # self.FOV()
             # self.multimodal()
 

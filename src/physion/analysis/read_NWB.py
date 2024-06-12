@@ -8,7 +8,8 @@ from physion.visual_stim.build import build_stim
 from physion.analysis import tools
 from physion.imaging.Calcium import compute_dFoF,\
         ROI_TO_NEUROPIL_INCLUSION_FACTOR, METHOD,\
-        T_SLIDING_MIN, PERCENTILE_SLIDING_MIN, NEUROPIL_CORRECTION_FACTOR
+        T_SLIDING, PERCENTILE, NEUROPIL_CORRECTION_FACTOR
+from physion.imaging.dcnv import oasis
 
 class Data:
     
@@ -62,13 +63,16 @@ class Data:
 
     def read_metadata(self):
         
-        self.df_name = self.nwbfile.session_start_time.strftime("%Y/%m/%d -- %H:%M:%S")+\
-                ' ---- '+self.nwbfile.experiment_description
+        self.df_name = self.nwbfile.session_start_time.strftime(\
+                                    "%Y/%m/%d -- %H:%M:%S")+\
+                        ' ---- '+self.nwbfile.experiment_description
         
-        self.metadata = ast.literal_eval(self.nwbfile.session_description)
+        self.metadata = ast.literal_eval(\
+                self.nwbfile.session_description)
 
         space = '        '
-        self.description = '\n - Subject: %s %s \n' % (space, self.metadata['subject_ID'])
+        self.description = '\n - Subject: %s %s \n' % (space,
+                                        self.metadata['subject_ID'])
 
         if self.metadata['protocol']=='None':
             self.description += '\n - Spont. Act. (no visual stim.)\n'
@@ -76,7 +80,8 @@ class Data:
             self.description += '\n - Visual-Stim: \n %s' % space
 
         # deal with multi-protocols
-        if ('Presentation' in self.metadata) and (self.metadata['Presentation']=='multiprotocol'):
+        if ('Presentation' in self.metadata) and\
+                (self.metadata['Presentation']=='multiprotocol'):
             self.protocols, ii = [], 1
             while ('Protocol-%i' % ii) in self.metadata:
                 self.protocols.append(self.metadata['Protocol-%i' % ii].split('/')[-1].replace('.json','').replace('-many',''))
@@ -153,34 +158,71 @@ class Data:
     #       CALCIUM IMAGING DATA (from suite2p output)      #
     #########################################################
     
-    def read_and_format_ophys_data(self):
-        
-        ### ROI activity ###
-        self.Fluorescence = self.nwbfile.processing['ophys'].data_interfaces['Fluorescence'].roi_response_series['Fluorescence']
-        self.Neuropil = self.nwbfile.processing['ophys'].data_interfaces['Neuropil'].roi_response_series['Neuropil']
-        self.CaImaging_dt = (self.Neuropil.timestamps[1]-self.Neuropil.timestamps[0])
+    def initialize_ROIs(self, 
+                        valid_roiIndices=None):
 
-        ### ROI properties ###
-        self.Segmentation = self.nwbfile.processing['ophys'].data_interfaces['ImageSegmentation'].plane_segmentations['PlaneSegmentation']
-        self.pixel_masks_index = self.Segmentation.columns[0].data[:]
-        self.pixel_masks = self.Segmentation.columns[1].data[:]
-        # other ROI properties --- by default:
-
-        self.nROIs = self.Segmentation.columns[0].data.shape[0]
+        if valid_roiIndices is None:
+            self.nROIs = self.Segmentation.columns[0].data.shape[0]
+            self.valid_roiIndices = np.arange(self.nROIs)
+            # ---------------------------------------------------------
+            # only when they were no previous roi validation
+            #         -> we read the table properties
+            # ---------------------------------------------------------
+            # looping over the table properties (0,1 -> rois locs)
+            #      for the ROIS to overwrite the defaults:
+            for i in range(2, len(self.Segmentation.columns)):
+                if self.Segmentation.columns[i].name=='iscell': # DEPRECATED
+                    self.valid_roiIndices = self.valid_roiIndices[\
+                            self.Segmentation.columns[i].data[:,0].astype(bool)]
+                if self.Segmentation.columns[i].name=='plane':
+                    self.planeID = self.valid_roiIndices[\
+                            self.Segmentation.columns[i].data[:].astype(int)]
+                if self.Segmentation.columns[i].name=='redcell':
+                    self.redcell = self.valid_roiIndices[\
+                            self.Segmentation.columns[i].data[:,0].astype(bool)]
+        else:
+            self.nROIs = len(valid_roiIndices)
+            self.valid_roiIndices = valid_roiIndices
+            if hasattr(self, 'planeID'):
+                self.planeID = self.planeID[self.valid_roiIndices]
+            if hasattr(self, 'redcell'):
+                self.redcell= self.redcell[self.valid_roiIndices]
+            
         # initialize rois properties to default values
         self.iscell = np.ones(self.nROIs, dtype=bool) # deprecated
-        self.valid_roiIndices = np.arange(self.nROIs) # POTENTIALLY UPDATED AT THE dF/F calculus point (because of the positive F0 criterion) 
         self.planeID = np.zeros(self.nROIs, dtype=int)
         self.redcell = np.zeros(self.nROIs, dtype=bool) 
-        # looping over the table properties (0,1 -> rois locs) for the ROIS to overwrite the defaults:
-        for i in range(2, len(self.Segmentation.columns)):
-            if self.Segmentation.columns[i].name=='iscell': # DEPRECATED
-                self.iscell = self.Segmentation.columns[i].data[:,0].astype(bool)
-                self.valid_roiIndices = np.arange(self.nROIs)[self.iscell]
-            if self.Segmentation.columns[i].name=='plane':
-                self.planeID = self.Segmentation.columns[i].data[:].astype(int)
-            if self.Segmentation.columns[i].name=='redcell':
-                self.redcell = self.Segmentation.columns[2].data[:,0].astype(bool)
+
+
+    def read_and_format_ophys_data(self):
+       
+        self.TSeries_folder = self.nwbfile.acquisition[\
+                'CaImaging-TimeSeries'].comments.split('**')[-1]
+
+        ### ROI activity ###
+        self.Fluorescence = \
+                getattr(\
+                    getattr(self.nwbfile.processing['ophys'],
+                        'data_interfaces')['Fluorescence'],
+                            'roi_response_series')['Fluorescence']
+        self.Neuropil = \
+                getattr(\
+                    getattr(self.nwbfile.processing['ophys'],
+                        'data_interfaces')['Neuropil'],
+                            'roi_response_series')['Neuropil']
+        self.CaImaging_dt = (self.Neuropil.timestamps[1]-\
+                                    self.Neuropil.timestamps[0])
+
+        ### ROI properties ###
+        self.Segmentation = \
+                getattr(\
+                    getattr(self.nwbfile.processing['ophys'],
+                        'data_interfaces')['ImageSegmentation'],
+                            'plane_segmentations')['PlaneSegmentation']
+        self.pixel_masks_index = self.Segmentation.columns[0].data[:]
+        self.pixel_masks = self.Segmentation.columns[1].data[:]
+
+        self.initialize_ROIs(valid_roiIndices=None)
                 
         
     ######################
@@ -193,12 +235,21 @@ class Data:
         """
         build distance from mean (x,y) position of pupil
         """
-        self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:]
-        self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time+\
-            np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)/self.nwbfile.acquisition['Running-Speed'].rate
+        if 'Running-Speed' in self.nwbfile.acquisition:
 
-        if specific_time_sampling is not None:
-            return tools.resample(self.t_running_speed, self.running_speed, specific_time_sampling, interpolation=interpolation, verbose=verbose)
+            self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:]
+            self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time+\
+                np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)\
+                                        /self.nwbfile.acquisition['Running-Speed'].rate
+
+            if specific_time_sampling is not None:
+                return tools.resample(self.t_running_speed, 
+                                      self.running_speed, 
+                                      specific_time_sampling, 
+                                      interpolation=interpolation,
+                                      verbose=verbose)
+        else:
+            return None
 
     
     ######################
@@ -220,13 +271,20 @@ class Data:
         """
         build pupil diameter trace, i.e. twice the maximum of the ellipse radius at each time point
         """
-        self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
-        self.pupil_diameter =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:],
-                                         self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:]], axis=0)
+        if 'Pupil' in self.nwbfile.processing:
 
-        if specific_time_sampling is not None:
-            return tools.resample(self.t_pupil, self.pupil_diameter,
-                    specific_time_sampling, interpolation=interpolation, verbose=verbose)
+            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
+            self.pupil_diameter =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:],
+                                             self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:]], axis=0)
+
+            if specific_time_sampling is not None:
+                return tools.resample(self.t_pupil, self.pupil_diameter,
+                                      specific_time_sampling, 
+                                      interpolation=interpolation, 
+                                      verbose=verbose)
+
+        else:
+            return None
 
 
     def build_gaze_movement(self,
@@ -236,13 +294,22 @@ class Data:
         """
         build distance from mean (x,y) position of pupil
         """
-        self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
-        cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:]
-        cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:]
-        self.gaze_movement = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
 
-        if specific_time_sampling is not None:
-            return tools.resample(self.t_pupil, self.gaze_movement, specific_time_sampling, interpolation=interpolation, verbose=verbose)
+        if 'Pupil' in self.nwbfile.processing:
+
+            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
+            cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:]
+            cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:]
+            self.gaze_movement = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
+
+            if specific_time_sampling is not None:
+                return tools.resample(self.t_pupil, self.gaze_movement, 
+                                      specific_time_sampling, 
+                                      interpolation=interpolation, 
+                                      verbose=verbose)
+
+        else:
+            return None
         
 
     #########################
@@ -261,41 +328,51 @@ class Data:
         """
         build facemotion
         """
-        self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps
-        self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:]
 
-        if specific_time_sampling is not None:
-            return tools.resample(self.t_facemotion, self.facemotion, specific_time_sampling, interpolation=interpolation, verbose=verbose)
+        if 'FaceMotion' in self.nwbfile.processing:
+
+            self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps
+            self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:]
+
+            if specific_time_sampling is not None:
+                return tools.resample(self.t_facemotion, self.facemotion, 
+                                      specific_time_sampling, 
+                                      interpolation=interpolation, 
+                                      verbose=verbose)
+
+        else:
+            return None
 
     #############################
     #       Calcium Imaging     #
     #############################
 
     def compute_ROI_indices(self,
-                            roiIndex=None, roiIndices='all',
+                            roiIndex=None,
+                            roiIndices='all',
                             verbose=True):
-
-        # we remove this warning
-        # if not hasattr(self, 'dFoF') and verbose:
-            # print(' /!\ ROIs did not go through the "positive F0" criterion /!\ \n       --> need to call "data.build_dFoF()" first !  ')
 
         if roiIndex is not None:
             return roiIndex
         elif roiIndices=='all':
             return np.array(self.valid_roiIndices, dtype=int)
         else:
-            return np.array(self.valid_roiIndices[np.array(roiIndices)], dtype=int)
+            return np.array(self.valid_roiIndices[np.array(roiIndices)],\
+                    dtype=int)
         
         
     def build_dFoF(self,
                    roiIndex=None, roiIndices='all',
-                   roi_to_neuropil_fluo_inclusion_factor=ROI_TO_NEUROPIL_INCLUSION_FACTOR,
-                   neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
+                   roi_to_neuropil_fluo_inclusion_factor=\
+                           ROI_TO_NEUROPIL_INCLUSION_FACTOR,
+                   neuropil_correction_factor=\
+                           NEUROPIL_CORRECTION_FACTOR,
                    method_for_F0=METHOD,
-                   percentile=PERCENTILE_SLIDING_MIN,
-                   sliding_window=T_SLIDING_MIN,
+                   percentile=PERCENTILE,
+                   sliding_window=T_SLIDING,
                    with_correctedFluo_and_F0=False,
                    specific_time_sampling=None,
+                   smoothing=None,
                    interpolation='linear',
                    verbose=True):
         """
@@ -303,26 +380,32 @@ class Data:
         """
 
         if not hasattr(self, 'rawFluo'):
-            self.build_rawFluo(roiIndex=roiIndex, roiIndices='all',
+            self.build_rawFluo(roiIndex=roiIndex, 
+                               roiIndices='all',
                                specific_time_sampling=specific_time_sampling,
                                interpolation=interpolation,
                                verbose=verbose)
         self.t_dFoF = self.t_rawFluo
 
         if not hasattr(self, 'neuropil'):
-            self.build_neuropil(roiIndex=roiIndex, roiIndices='all',
+            self.build_neuropil(roiIndex=roiIndex, 
+                                roiIndices='all',
                                 specific_time_sampling=specific_time_sampling,
                                 interpolation=interpolation,
                                 verbose=verbose)
 
         return compute_dFoF(self,
-                    roi_to_neuropil_fluo_inclusion_factor=roi_to_neuropil_fluo_inclusion_factor,
-                    neuropil_correction_factor=neuropil_correction_factor,
-                    method_for_F0=method_for_F0,
-                    percentile=percentile,
-                    sliding_window=sliding_window,
-                    with_correctedFluo_and_F0=with_correctedFluo_and_F0,
-                    verbose=verbose)
+                            roi_to_neuropil_fluo_inclusion_factor=\
+                                    roi_to_neuropil_fluo_inclusion_factor,
+                            neuropil_correction_factor=\
+                                    neuropil_correction_factor,
+                            method_for_F0=method_for_F0,
+                            percentile=percentile,
+                            sliding_window=sliding_window,
+                            with_correctedFluo_and_F0=\
+                                    with_correctedFluo_and_F0,
+                            smoothing=smoothing,
+                            verbose=verbose)
 
     def build_Zscore_dFoF(self, verbose=True):
         """
@@ -332,6 +415,15 @@ class Data:
             self.build_dFoF(verbose=verbose)
         setattr(self, 'Zscore_dFoF', (self.dFoF-self.dFoF.mean(axis=0).reshape(1, self.dFoF.shape[1]))/self.dFoF.std(axis=0).reshape(1, self.dFoF.shape[1]))
 
+    def build_Deconvolved(self, Tau=1.3):
+        if not hasattr(self, 'dFoF'):
+            print('\n deconvolution not possible \n --> need to build_dFoF(**options) first !! ')
+        else:
+            setattr(self, 'Deconvolved',
+                    oasis(self.dFoF, 
+                          self.dFoF.shape[0], # batch size
+                              Tau, 1./self.CaImaging_dt))
+
 
     def build_neuropil(self,
                        roiIndex=None, roiIndices='all',
@@ -340,13 +432,21 @@ class Data:
                        verbose=True):
         """
         we build the neuropil matrix in the form (nROIs, time_samples)
-            we need to deal with the fact that matrix orientation was changed because of pynwb complains
+            we need to deal with the fact that matrix orientation 
+            was changed because of pynwb complains
         """
         if self.nROIs==self.Neuropil.data.shape[0]:
-            self.neuropil = self.Neuropil.data[self.compute_ROI_indices(roiIndex=roiIndex, roiIndices=roiIndices, verbose=verbose),:]
+            self.neuropil = self.Neuropil.data[\
+                    self.compute_ROI_indices(roiIndex=roiIndex,\
+                                             roiIndices=roiIndices,\
+                                             verbose=verbose),:]
         else:
             # data badly oriented --> transpose in that case
-            self.neuropil = np.array(self.Neuropil.data).T[self.compute_ROI_indices(roiIndex=roiIndex, roiIndices=roiIndices, verbose=verbose),:]
+            self.neuropil = np.array(self.Neuropil.data).T[\
+                                            self.compute_ROI_indices(\
+                                                    roiIndex=roiIndex,
+                                                    roiIndices=roiIndices,
+                                                    verbose=verbose),:]
 
         if not hasattr(self, 't_neuropil'):
             self.t_neuropil = self.Neuropil.timestamps[:]
@@ -412,7 +512,7 @@ class Data:
         if len(cond)==1:
             return cond[0]
         else:
-            print(' /!\ protocol "%s" not found in data with protocols:' % protocol_name)
+            print(' /!\\ protocol "%s" not found in data with protocols:' % protocol_name)
             print(self.protocols)
             return None
 
@@ -532,7 +632,7 @@ def scan_folder_for_NWBfiles(folder,
             SUBJECTS.append('N/A')
             if verbose:
                 print(be)
-                print('\n /!\ Pb with "%s" \n' % f)
+                print('\n /!\\ Pb with "%s" \n' % f)
         
     if verbose:
         print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES), (time.time()-t0)))

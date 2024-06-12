@@ -20,7 +20,7 @@
   "N-spatial-freq": 0,
   "radius-1": 4.0,
   "radius-2": 100.0,
-  "N-log-radius": 10,
+  "N-log-radius": 8,
   "x-center-1": 0.0,
   "x-center-2": 0.0,
   "N-x-center": 0,

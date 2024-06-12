@@ -30,35 +30,24 @@ def open_NWB(self):
     return filename
 
 def open_folder(self):
-    # self.lastBox.setChecked(False)
 
     folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
                                     "Choose datafolder",
                                     self.choose_root_folder())
     return folder
-    # if float(sys.version[:3])<=3.7:
-        # folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
-                                        # "Choose datafolder",
-                                        # self.choose_root_folder())
-        # return folder
-    # else:
-        # self.statusBar.showMessage(' /!\ QFileDialog broken in python >3.7 /!\     ---> use the calendar interface to load data ! ')
-        # print(' /!\ QFileDialog broken in python >3.7 ')
+
+def open_NWB_folder(self):
+
+    folder = self.open_folder()
+    self.calendar()
+    self.scan_folder(folder=folder)
+
+
+    return folder
 
 def open_file(self,
               folder=False):
 
-    # if float(sys.version[:3])<=3.7:
-        # filename = self.open_NWB()
-        # if filename!='':
-            # self.filename = filename
-            # self.data = physion.analysis.read_NWB.Data(self.filename)
-            # self.visualization()
-        # else:
-            # print('file not loaded ...')
-    # else:
-        # self.statusBar.showMessage(' /!\ QFileDialog broken in python >3.7 /!\     ---> use the calendar interface to load data ! ')
-        # print(' /!\ QFileDialog broken in python >3.7 ')
     filename = self.open_NWB()
     if filename!='':
         self.filename = filename

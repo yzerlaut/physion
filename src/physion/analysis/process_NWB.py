@@ -168,6 +168,13 @@ class EpisodeData:
                 QUANTITY_TIMES.append(full_data.t_running_speed)
                 QUANTITIES.append('running_speed')
 
+            elif quantity in ['Deconvolved']:
+                if not hasattr(full_data, 'Deconvolved'):
+                    full_data.build_Deconvolved(**quantity_args)
+                QUANTITY_VALUES.append(full_data.Deconvolved)
+                QUANTITY_TIMES.append(full_data.t_dFoF)
+                QUANTITIES.append('Deconvolved')
+
             elif quantity in ['dFoF', 'dF/F']:
                 if not hasattr(full_data, 'dFoF'):
                     full_data.build_dFoF(**quantity_args)

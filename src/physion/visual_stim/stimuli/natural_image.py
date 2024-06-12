@@ -34,7 +34,7 @@ def get_NaturalImages_as_array(screen):
             NIarray.append(2*img_after_hist_normalization(new_img)-1.)
         return NIarray
     else:
-        print(' /!\  Natural Images folder not found !!! /!\  ')
+        print(' /!\\  Natural Images folder not found !!! /!\\  ')
         return [np.ones((10,10))*0.5 for i in range(5)]
 
 class stim(visual_stim):

@@ -21,7 +21,7 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     # ========================================================
     #------------------- SIDE PANELS FIRST -------------------
     self.add_side_widget(tab.layout, 
-            QtWidgets.QLabel(' _-* Suite2p Preprocessing *-_ '))
+            QtWidgets.QLabel(' _-* Suite2p PREPROCESSING *-_ '))
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
@@ -41,6 +41,18 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     # self.lastBox= QtWidgets.QCheckBox('last', self)
     # self.lastBox.setChecked(True)
     # self.add_side_widget(tab.layout, self.lastBox, 'small-right')
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' -- * Presets * --  '))
+    self.presetBox = QtWidgets.QComboBox()
+    self.presetBox.addItems(['',
+                             'Interneurons',
+                             'Pyramidal_Cells',
+                             'SOMA-only_in_Zoom'])
+    self.presetBox.activated.connect(self.change_presets)
+    self.add_side_widget(tab.layout, self.presetBox)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
@@ -172,6 +184,10 @@ def load_TSeries_folder(self):
             i+=1
 
     
+
+def change_presets(self):
+
+    pass
 
 def open_suite2p(self):
     """   """

@@ -111,7 +111,7 @@ def multimodal(self,
 
     # ========================================================
     #------------------- THEN MAIN PANEL   -------------------
-    ip, width = 0, 3
+    ip, width = 0, 4
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Config **', self),
                          ip, self.side_wdgt_length, 
@@ -137,22 +137,22 @@ def multimodal(self,
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
+    # # -
+    # tab.layout.addWidget(\
+        # QtWidgets.QLabel(40*' '+'** Screen **', self),
+                         # ip, self.side_wdgt_length, 
+                         # 1, width)
+    # ip+=1
+    # # -
+    # self.screenBox = QtWidgets.QComboBox(self)
+    # self.screenBox.addItems(['']+list(SCREENS.keys()))
+    # tab.layout.addWidget(self.screenBox,\
+                         # ip, self.side_wdgt_length+1, 
+                         # 1, width)
+    # ip+=1
     # -
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Screen **', self),
-                         ip, self.side_wdgt_length, 
-                         1, width)
-    ip+=1
-    # -
-    self.screenBox = QtWidgets.QComboBox(self)
-    self.screenBox.addItems(['']+list(SCREENS.keys()))
-    tab.layout.addWidget(self.screenBox,\
-                         ip, self.side_wdgt_length+1, 
-                         1, width)
-    ip+=1
-    # -
-    tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Visual Protocol **', self),
+        QtWidgets.QLabel(40*' '+'** Visual Protocol **'+40*' ', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
@@ -164,13 +164,13 @@ def multimodal(self,
     ip+=1
     # -
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Intervention **', self),
+        QtWidgets.QLabel(40*' '+'** Rec. Settings **'+40*' ', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
     # -
-    self.interventionBox = QtWidgets.QComboBox(self)
-    tab.layout.addWidget(self.interventionBox,\
+    self.recordingBox = QtWidgets.QComboBox(self)
+    tab.layout.addWidget(self.recordingBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1

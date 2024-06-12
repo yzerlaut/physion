@@ -7,6 +7,7 @@ from physion.utils.files import generate_filename_path,\
         get_latest_file
 from physion.acquisition.tools import base_path,\
         check_gui_to_init_metadata, NIdaq_metadata_init
+from physion.acquisition import recordings
 
 try:
     from physion.visual_stim.main import launch_VisualStim
@@ -23,14 +24,18 @@ except ModuleNotFoundError:
     # print(' /!\ Problem with the NIdaq module /!\ ')
 
 try:
-    from physion.hardware.FLIRcamera.main import launch_Camera as launch_FlirCamera
+    from physion.hardware.FLIRcamera.main\
+            import launch_Camera as launch_FlirCamera
 except ModuleNotFoundError:
-    from physion.hardware.Dummy.camera import launch_Camera as launch_FlirCamera
+    from physion.hardware.Dummy.camera\
+            import launch_Camera as launch_FlirCamera
 
 try:
-    from physion.hardware.LogitechWebcam.main import launch_Camera as launch_WebCam
+    from physion.hardware.LogitechWebcam.main\
+            import launch_Camera as launch_WebCam
 except ModuleNotFoundError:
-    from physion.hardware.Dummy.camera import launch_Camera as launch_WebCam
+    from physion.hardware.Dummy.camera\
+            import launch_Camera as launch_WebCam
 
 
 def init_visual_stim(self):
@@ -44,7 +49,8 @@ def init_visual_stim(self):
         os.path.join(base_path, 'protocols', 'binaries',\
         self.metadata['protocol'])
 
-    self.protocol['screen'] = self.metadata['Screen']
+    self.protocol['screen'] = self.config['Screen']
+    self.protocol['Rig'] = self.config['Rig']
 
     if self.onlyDemoButton.isChecked():
         self.protocol['demo'] = True
@@ -88,14 +94,15 @@ def initialize(self):
                     with_RigCamera_frames_folder=self.metadata['RigCamera'])
         self.datafolder.set(str(os.path.dirname(self.filename)))
 
-        self.max_time = 0.3*60*60 # 2 hours by default, so should be stopped manually
+        self.max_time = 30*60 # 2 hours by default, so should be stopped manually
 
         if self.metadata['VisualStim']:
             self.statusBar.showMessage(\
                     '[...] initializing acquisition & stimulation')
             # ---- INIT VISUAL STIM ---- #
             init_visual_stim(self)
-            visual_stim_file = os.path.join(str(self.datafolder.get()), 'visual-stim.npy')
+            visual_stim_file = os.path.join(str(self.datafolder.get()),
+                                            'visual-stim.npy')
             while not os.path.isfile(visual_stim_file):
                 time.sleep(0.25)
                 # print('waiting for the visual stim data to be written')
@@ -109,11 +116,14 @@ def initialize(self):
         print('max_time of NIdaq recording: %.2dh:%.2dm:%.2ds' %\
                 (self.max_time/3600, (self.max_time%3600)/60, (self.max_time%60)))
 
-        output_steps = []
+        output_funcs= []
         if self.metadata['CaImaging']:
-            output_steps.append(self.config['STEP_FOR_CA_IMAGING_TRIGGER'])
-        if self.metadata['intervention']=='Photostimulation':
-            output_steps += self.config['STEPS_FOR_PHOTOSTIMULATION']
+            output_funcs.append(recordings.trigger2P)
+        if self.metadata['recording']!='':
+            other_funcs = \
+                getattr(recordings, self.metadata['recording']).output_funcs
+            for func in other_funcs:
+                output_funcs.append(func)
 
         NIdaq_metadata_init(self)
 
@@ -124,7 +134,7 @@ def initialize(self):
                     Nchannel_analog_in=self.metadata['NIdaq-analog-input-channels'],
                     Nchannel_digital_in=self.metadata['NIdaq-digital-input-channels'],
                     max_time=self.max_time,
-                    output_steps=output_steps,
+                    output_funcs=output_funcs,
                     filename= self.filename.replace('metadata', 'NIdaq'))
             except BaseException as e:
                 print(e)
@@ -282,13 +292,15 @@ def stop(self):
 
 
 def send_CaImaging_Stop_signal(self):
-    self.statusBar.showMessage('sending stop signal for 2-Photon acq.')
+    self.statusBar.showMessage(\
+            'sending stop signal for 2-Photon acq.')
     acq = Acquisition(sampling_rate=1000, # 1kHz
-                      Nchannel_analog_in=1, Nchannel_digital_in=0,
-                      max_time=1.1,
+                      Nchannel_analog_in=1, 
+                      Nchannel_digital_in=0,
+                      max_time=0.7,
                       buffer_time=0.1,
-                      output_steps= [self.config['STEP_FOR_CA_IMAGING_TRIGGER']],
+                      output_funcs= [recordings.trigger2P],
                       filename=None)
     acq.launch()
-    time.sleep(1.1)
+    time.sleep(0.7)
     acq.close()

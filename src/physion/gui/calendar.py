@@ -7,9 +7,9 @@ from physion.utils.files import get_files_with_extension
 from physion.analysis.read_NWB import Data
 
 def calendar(self,
-                  tab_id=0,
-                  nCalendarRow=10,
-                  min_date=(2020, 8, 1)):
+             tab_id=0,
+             nCalendarRow=10,
+             min_date=(2020, 8, 1)):
 
     tab = self.tabs[tab_id]
 
@@ -165,18 +165,23 @@ def reinit_calendar(self, min_date=(2020, 8, 1), max_date=None):
         self.cal.setSelectedDate(datetime.date.today())
         
     
-def scan_folder(self):
+def scan_folder(self, 
+                folder=None):
     """
     Looping over all files in a root folder recursively 
 
     """
-    print('inspecting the folder "%s" [...]' %\
-            FOLDERS[self.folderBox.currentText()])
+    if os.path.isdir(folder):
+        self.folder = folder
+    else:
+        self.folder = FOLDERS[self.folderBox.currentText()]
+
+    print('inspecting the folder "%s" [...]' % self.folder)
 
     # FILES0 = physion.utils.files.get_files_with_extension(\
-    FILES0 = get_files_with_extension(\
-                            FOLDERS[self.folderBox.currentText()],
-                            extension='.nwb', recursive=True)
+    FILES0 = get_files_with_extension(self.folder, 
+                                      extension='.nwb',
+                                      recursive=True)
 
     TIMES, DATES, FILES = [], [], []
     for f in FILES0:
@@ -193,18 +198,18 @@ def scan_folder(self):
     self.FILES_PER_DAY = {}
     
     self.reinit_calendar(min_date= tuple(int(dd)\
-                                    for dd in DATES[np.argmin(NDATES)].split('_')),
+                        for dd in DATES[np.argmin(NDATES)].split('_')),
                          max_date= tuple(int(dd)\
-                                    for dd in DATES[np.argmax(NDATES)].split('_')))
+                        for dd in DATES[np.argmax(NDATES)].split('_')))
     for d in np.unique(DATES):
         try:
             self.cal.setDateTextFormat(\
-                    QtCore.QDate(datetime.date(*[int(dd) for dd in d.split('_')])),
-                                       self.highlight_format)
+            QtCore.QDate(datetime.date(*[int(dd) for dd in d.split('_')])),
+                self.highlight_format)
             day_cond = (DATES==d)
             time_sorted = np.argsort(TIMES[day_cond])
-            self.FILES_PER_DAY[d] = [os.path.join(FOLDERS[self.folderBox.currentText()], f)\
-                                     for f in np.array(FILES)[day_cond][time_sorted]]
+            self.FILES_PER_DAY[d] = [os.path.join(self.folder, f)\
+                          for f in np.array(FILES)[day_cond][time_sorted]]
         except BaseException as be:
             print(be)
             print('error for date %s' % d)
@@ -247,7 +252,7 @@ def pick_date(self):
 def compute_subjects(self):
 
     print(' computing subjects [...]')
-    FILES = get_files_with_extension(FOLDERS[self.folderBox.currentText()],
+    FILES = get_files_with_extension(self.folder,
                                      extension='.nwb', recursive=True)
 
     print(' looping over n=%i datafiles to fetch "subjects" metadata [...]' % len(FILES))

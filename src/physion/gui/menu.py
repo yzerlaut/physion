@@ -6,8 +6,10 @@ def build_menu(self):
 
     ##### ------------- File  -----------------------
     self.fileMenu = self.mainMenu.addMenu('  * &Open ')
-    self.fileMenu.addAction('&File [O]',
+    self.fileMenu.addAction('&NWB File [O]',
                             self.open_file)
+    self.fileMenu.addAction('&Folder',
+                            self.open_NWB_folder)
     self.fileMenu.addAction('&Calendar',
                             self.calendar)
     self.fileMenu.addAction('&Quit', self.quit)
