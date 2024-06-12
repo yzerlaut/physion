@@ -2,6 +2,8 @@
 From the documentatoin for the suite2p processing options:
 https://suite2p.readthedocs.io/en/latest/settings.html
 """
+from physion.imaging.suite2p.default_ops import default_ops
+
 
 ops0 = {
     # -------------
@@ -85,3 +87,6 @@ ops0 = {
     'neucoeff': 0.7,
     'mask_threshold':0.5
 }
+
+if __name__=='__main__':
+    print('ok')
