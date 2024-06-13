@@ -5,22 +5,18 @@ from physion.utils.paths import python_path_suite2p_env
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.default_ops import default_ops
-from physion.imaging.suite2p.presets import ops0
+from physion.imaging.suite2p.presets import presets
 
-defaults={'do_registration':1,
-          'roidetect':True,
-          'cell_diameter':20, # in um
-          'tau':1.3,
-          'nchannels':1,
-          'functional_chan':1,
-          'align_by_chan':1,
-          'sparse_mode':False,
-          'connected':True,
-          'nonrigid':1,
-          'batch_size': 500,
-          'threshold_scaling':0.5,
-          'mask_threshold':0.3,
-          'neucoeff': 0.7}
+from physion.imaging.suite2p.default_ops import default_ops
+
+
+def ovverride_suite2p_defaults(ops):
+    # we override some of suite2p defaults (see default_ops)
+    ops['bruker'] = True
+    ops['spikedetect'] = False # no need of deconvolution yet
+    ops['functional_chan'] = 1
+    ops['align_by_chan'] = 1
+    ops['batch_size'] = 500
 
 
 def build_db(folder):
@@ -39,6 +35,7 @@ def build_suite2p_options(folder,
 
     bruker_data = bruker_xml_parser(xml_file)
     ops = default_ops()
+    override_suite2p_defaults(ops)
 
     # acquisition frequency per plane - (bruker framePeriod i already per plane)
     nplanes = settings_dict['nplanes']\
