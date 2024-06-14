@@ -2,7 +2,7 @@
 
 ## Raw data transfer and conversion to tiff files
 
-- use `ssh` to transfer the raw data
+- use `rsync` to transfer the raw data via `ssh`
 
 - use the image block ripping utility from Bruker to convert the raw data to tiff files. Download the program from your Prairie version, see [https://pvupdate.blogspot.com/](https://pvupdate.blogspot.com/) (e.g. Prairie 5.5 at the [following link](https://www.brukersupport.com/File/?id=61188&folderid=44665)).
   
@@ -13,26 +13,26 @@ The pipeline relies on [Suite2P](https://github.com/MouseLand/suite2p). Read the
 A minimal interface allow to launch the [Suite2P](https://github.com/MouseLand/suite2p) in the background with presets:
 
 <p align="center">
-  <img src="../../docs/CaImaging-screen.jpg"/>
+  <img src="../../docs/imaging/preprocessing.png"/>
 </p>
 
-Those settings are set by modifying the default options (see `ops0` in  [process_xml.py file](./process_xml.py)) in the [suite2p/presets.py file](./suite2p/presets.py), we modify the keys with a dictionary of the form:
+Those settings are set by modifying the default options of suite2p using:
+1) the properties of the acquisition metadata (extracted from the Bruker `xml` file with [xml_parser.py file](./bruker/xml_parser.py)) 
+2) a set of presets defined in the in the [suite2p/presets.py file](./suite2p/presets.py) where we modify the suite2p options with a dictionary of the form:
+    ```
+    presets = {
+        'GCamp6f_1plane':{'cell_diameter':20, # in um
+                          'sparse_mode':False,
+                          'connected':True,
+                          'threshold_scaling':0.8},
+        'Interneurons':{'cell_diameter':20, # in um
+                        'anatomical_only':3,
+                        'flow_threshold':0.1},
+    }
+    ```
+    Each entry will be a default settings appearing in the GUI.
 
-```
-presets = {
-    'GCamp6f_1plane':{'cell_diameter':20, # in um
-                      'sparse_mode':False,
-                      'connected':True,
-                      'threshold_scaling':0.8},
-    'NDNF+_1plane':{'cell_diameter':20, # in um
-                    'sparse_mode':True,
-                    'connected':True,
-                    'threshold_scaling':0.8},
-}
-```
-Each entry will be a default settings appearing in the GUI.
-
-N.B. we extract the available information form the `xml` Bruker file, see here [an example file](./Bruker_xml/TSeries-190620-250-00-002.xml).
+N.B. we extract the available information form the `xml` Bruker file, see here [an example file](./bruker/TSeries-190620-250-00-002.xml).
 
 ## Testing preprocessing settings
 
