@@ -76,7 +76,7 @@ def run_preprocessing(args):
 
     print('running "%s" \n ' % cmd)
     p = subprocess.Popen(cmd,
-                         cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src'),
+                         # cwd = os.path.join(pathlib.Path(__file__).resolve().parents[2], 'src'),
                          shell=True)
     
 

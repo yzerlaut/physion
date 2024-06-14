@@ -16,10 +16,10 @@ A minimal interface allow to launch the [Suite2P](https://github.com/MouseLand/s
   <img src="../../docs/CaImaging-screen.jpg"/>
 </p>
 
-Those settings are set by modifying the default options (see `ops0` in  [process_xml.py file](./process_xml.py)) in the [preprocessing.py file](./preprocessing.py), we modify the keys with a dictionary of the form:
+Those settings are set by modifying the default options (see `ops0` in  [process_xml.py file](./process_xml.py)) in the [suite2p/presets.py file](./suite2p/presets.py), we modify the keys with a dictionary of the form:
 
 ```
-PREPROCESSING_SETTINGS = {
+presets = {
     'GCamp6f_1plane':{'cell_diameter':20, # in um
                       'sparse_mode':False,
                       'connected':True,
@@ -34,12 +34,24 @@ Each entry will be a default settings appearing in the GUI.
 
 N.B. we extract the available information form the `xml` Bruker file, see here [an example file](./Bruker_xml/TSeries-190620-250-00-002.xml).
 
+## Testing preprocessing settings
+
+To run/test a given preprocessing setting (e.g. `Interneurons` here) in a `TSeries-folder`, run:
+```
+python -m physion.imaging.suite2p.preprocessing -cf path-to/TSeries-folder -setting_key Interneurons # --remove_previous
+```
+
+You can view the available settings and script options with:
+```
+python -m physion.imaging.suite2p.preprocessing --help
+```
+
+
 ## Notes on `suite2p`
 
 - pay attention to `batch_size` for the registration process, it can easily saturate the memory of our computers
 - doing simultaneous registration saturates the memory, delay them by some time...
 - [15/01/2023] rigid-registration as a bug, only non-rigid works
-- [15/01/2023] the nwb-export as a bug
 
 ## Preprocessing and analysis
 
