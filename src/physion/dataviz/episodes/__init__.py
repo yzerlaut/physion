@@ -1,1 +1,1 @@
-from . import trial_average
+from . import trial_average, behavior, evoked_raster
