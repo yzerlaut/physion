@@ -1,8 +1,10 @@
-import datetime, os, pynwb, pathlib
+import datetime, os, pynwb, pathlib, shutil
 from dateutil.tz import tzlocal
 
 import numpy as np
 from pynwb import NWBHDF5IO, NWBFile
+
+import physion
 
 
 def prepare_dataset(args):
@@ -44,14 +46,12 @@ def prepare_dataset(args):
 
 def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
 
+    data = physion.analysis.read_NWB.Data(os.path.join(args.datafolder, old_NWBfile))
+
     # read old NWB
     old_io = pynwb.NWBHDF5IO(os.path.join(args.datafolder, old_NWBfile), 'r')
     old_nwb= old_io.read()
     
-    # read old NWB
-    # old_io = pynwb.NWBHDF5IO(os.path.join(args.datafolder, old_NWBfile), 'r')
-    # old_nwb = old_io.read()
-
     metadata = eval(str(old_nwb.session_description))
 
 
@@ -78,18 +78,164 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
                             source_script_file_name=str(pathlib.Path(__file__).resolve()),
                             file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
 
+    old_nwb.generate_new_id()
+
     for mod in old_nwb.acquisition:
+        
+        old_acq = old_nwb.acquisition[mod]
 
-        print(mod)
+        if (type(old_acq)==pynwb.base.TimeSeries):
+
+            new_acq = pynwb.TimeSeries(name=old_acq.name,
+                                       data = np.transpose(old_acq.data) if args.transpose else old_acq.data,
+                                       starting_time=old_acq.starting_time,
+                                       unit=old_acq.unit,
+                                       timestamps=old_acq.timestamps,
+                                       rate=old_acq.rate)
+            new_nwb.add_acquisition(new_acq)
+            # print(' - ', new_acq.name)
+
+        elif (type(old_acq)==pynwb.ophys.TwoPhotonSeries):
+
+            device = new_nwb.create_device(
+                name='Microscope', 
+                description='2P@ICM',
+                manufacturer='Bruker')
+            optical_channel = pynwb.ophys.OpticalChannel(
+                                name='OpticalChannel', 
+                                description='an optical channel', 
+                                emission_lambda=500.)
+            imaging_plane = new_nwb.create_imaging_plane(
+                    name=old_acq.imaging_plane.name,
+                    optical_channel=optical_channel,
+                    imaging_rate=old_acq.imaging_plane.imaging_rate,
+                    description=old_acq.imaging_plane.description,
+                    device=device,
+                    excitation_lambda=old_acq.imaging_plane.excitation_lambda,
+                    indicator=old_acq.imaging_plane.indicator,
+                    location=old_acq.imaging_plane.location,
+                    grid_spacing=old_acq.imaging_plane.grid_spacing,
+                    grid_spacing_unit='microns')
+
+            
+            max_proj = np.array(old_nwb.processing['ophys'].data_interfaces['Backgrounds_0'].images['max_proj'])
+            image_series = pynwb.ophys.TwoPhotonSeries(name=old_acq.name,
+                                                       dimension=[2], 
+                                                       data=np.array([max_proj]),
+                                                       imaging_plane=imaging_plane, 
+                                                       unit='s', 
+                                                       timestamps=[0],
+                                                       comments=old_acq.comments)
+    
+            new_nwb.add_acquisition(image_series)
+
+        else:
+            print(' X ', mod, '   / !! \\ ')
+
+            # new_nwb.add_acquisition(old_acq)
+
+
+    for param in old_nwb.stimulus:
+
+        print(param)
+        VisualStimProp = pynwb.TimeSeries(name=param,
+                    data = np.transpose(old_nwb.stimulus[param].data[:]),
+                    unit='seconds',
+                    timestamps=old_nwb.stimulus[param].timestamps[:])
+
+        new_nwb.add_stimulus(VisualStimProp)
+
+
     for mod in old_nwb.processing:
-        print(mod)
+        
+        old_proc = old_nwb.processing[mod]
 
+        new_proc = new_nwb.create_processing_module(name=old_proc.name,
+                                                    description=old_proc.description)
+        print(' - ', new_proc.name)
+
+        if mod=='ophys':
+
+            # we create the image segmentation
+            img_seg = pynwb.ophys.ImageSegmentation()
+            ps = img_seg.create_plane_segmentation(
+                name='PlaneSegmentation',
+                description='suite2p output',
+                imaging_plane=imaging_plane,
+                reference_images=image_series)
+            new_proc.add(img_seg)
+            
+            ncells = old_nwb.processing['ophys'].data_interfaces['Fluorescence']['Fluorescence'].data.shape[1]
+        
+            for n in np.arange(ncells):
+                ps.add_roi(\
+                        pixel_mask=\
+                            tuple(old_nwb.processing['ophys'].data_interfaces['ImageSegmentation']['PlaneSegmentation']['pixel_mask'][n]))
+
+            rt_region = ps.create_roi_table_region(
+                region=list(np.arange(0, ncells)),
+                description='all ROIs')
+
+            ps.add_column('plane', 'one column - plane ID',
+                old_nwb.processing['ophys'].data_interfaces['ImageSegmentation']['PlaneSegmentation']['plane'].data[:])
+
+        for key in old_proc.data_interfaces:
+
+            print(' - ', mod, ', ', key)
+
+            if mod=='ophys' and (key in ['Fluorescence', 'Neuropil']):
+
+                old_RRS = old_proc.data_interfaces[key]
+                roi_resp_series = pynwb.ophys.RoiResponseSeries(
+                    name=old_RRS.name,
+                    data=np.array(old_RRS[key].data),
+                    rois=rt_region,
+                    timestamps=old_RRS[key].timestamps[:]+args.shift_CaImaging,
+                    unit='lumens')
+                fl = pynwb.ophys.Fluorescence(roi_response_series=roi_resp_series,
+                                              name=key)
+                new_proc.add(fl)
+
+            elif 'Background' in key:
+
+                images = pynwb.base.Images(key)
+                for image in old_proc.data_interfaces[key].images:
+                    images.add_image(pynwb.image.GrayscaleImage(name=image,
+                                                    data=old_proc.data_interfaces[key].images[image].data[:]))
+                new_proc.add(images)
+
+            elif mod!='ophys':
+                if args.transpose and\
+                        hasattr(old_proc.data_interfaces[key], 'timestamps'):
+                    old_TS = old_proc.data_interfaces[key]
+                    new_TS = pynwb.TimeSeries(name=old_TS.name,
+                                          data = np.transpose(old_TS.data) if args.transpose else np.array(old_TS.data),
+                                          starting_time=old_TS.starting_time,
+                                          unit=old_TS.unit,
+                                              timestamps=old_TS.timestamps[:],
+                                          rate=old_TS.rate)
+                    new_proc.add(new_TS)
+                else:
+                    new_proc.add(old_proc.data_interfaces[key])
+
+    print(10*'\n')
+    print(old_nwb)
+    print(10*'\n')
+    print(new_nwb)
+    filename = os.path.join(args.datafolder, 'curated_NWBs', new_NWBfile)
+    io = pynwb.NWBHDF5IO(filename, mode='w')
+    print("""
+    ---> Creating the NWB file: "%s"
+    """ % filename)
+    new_nwb.generate_new_id()
+    io.write(new_nwb, link_data=False)
+    io.close()
      
 def build_new_dataset(Dataset, args):
 
     # remove folder if already existing
     if os.path.isdir(os.path.join(args.datafolder, 'curated_NWBs')):
-        os.rmdir(os.path.join(args.datafolder, 'curated_NWBs'))
+        shutil.rmtree(os.path.join(args.datafolder, 'curated_NWBs'))
     # create folder for curated NWBs 
     os.mkdir(os.path.join(args.datafolder, 'curated_NWBs'))
 
@@ -121,6 +267,10 @@ if __name__=='__main__':
     parser.add_argument("--transpose", 
                         help="transpose all arrays to have time as the first dimension (for data <06/2024)", 
                         action="store_true")
+
+    parser.add_argument("--shift_CaImaging", type=float,
+                        help="add the shift that was forgotten in realignement (for data <06/2024)", 
+                        default=0.)
 
     args = parser.parse_args()
 
