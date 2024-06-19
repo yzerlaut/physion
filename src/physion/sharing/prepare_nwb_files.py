@@ -82,6 +82,7 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
 
     for mod in old_nwb.acquisition:
         
+        print('* ', mod)
         old_acq = old_nwb.acquisition[mod]
 
         if (type(old_acq)==pynwb.base.TimeSeries):
@@ -93,7 +94,18 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
                                        timestamps=old_acq.timestamps,
                                        rate=old_acq.rate)
             new_nwb.add_acquisition(new_acq)
-            # print(' - ', new_acq.name)
+            print(' [ok] ', new_acq.name)
+
+        elif (type(old_acq)==pynwb.image.ImageSeries):
+
+            new_acq = pynwb.image.ImageSeries(name=old_acq.name,
+                                        data = np.transpose(old_acq.data) if args.transpose else old_acq.data,
+                                       starting_time=old_acq.starting_time,
+                                       unit=old_acq.unit,
+                                       timestamps=old_acq.timestamps,
+                                       rate=old_acq.rate)
+            new_nwb.add_acquisition(new_acq)
+            print(' [ok] ', new_acq.name)
 
         elif (type(old_acq)==pynwb.ophys.TwoPhotonSeries):
 
@@ -131,13 +143,11 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
 
         else:
             print(' X ', mod, '   / !! \\ ')
-
-            # new_nwb.add_acquisition(old_acq)
+            print(old_acq)
 
 
     for param in old_nwb.stimulus:
 
-        print(param)
         VisualStimProp = pynwb.TimeSeries(name=param,
                     data = np.transpose(old_nwb.stimulus[param].data[:]),
                     unit='seconds',
@@ -218,10 +228,12 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
                 else:
                     new_proc.add(old_proc.data_interfaces[key])
 
-    print(10*'\n')
-    print(old_nwb)
-    print(10*'\n')
-    print(new_nwb)
+    if args.verbose:
+        print(10*'\n')
+        print(old_nwb)
+        print(10*'\n')
+        print(new_nwb)
+
     filename = os.path.join(args.datafolder, 'curated_NWBs', new_NWBfile)
     io = pynwb.NWBHDF5IO(filename, mode='w')
     print("""
