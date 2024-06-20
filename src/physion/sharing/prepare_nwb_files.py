@@ -29,15 +29,16 @@ def prepare_dataset(args):
             Dataset['files'].append(fn)
 
     for s, subject in enumerate(np.unique(Dataset['subjects'])):
-        print('sub-%.2i/                                       (from: %s)' % (s+1, subject))
+        print('sub-%.2i/                                       (from: %s)' % (args.subject_ID_start+s, subject))
         subCond = np.array(Dataset['subjects'])==subject
         for session, fn in enumerate(np.array(Dataset['files'])[subCond]):
-            new_filename = 'sub-%.2i_ses-%.2i_%s.nwb' % (s+1, session+1,
-                                                         args.suffix)
+            new_filename = os.path.join('sub-%.2i' % (args.subject_ID_start+s),
+                                        'sub-%.2i_ses-%.2i_%s.nwb' % (args.subject_ID_start+s, session+1,
+                                                                      args.suffix))
             print('    %s          (from: %s)' % (new_filename, fn))
             Dataset['old_filename'].append(fn)
             Dataset['new_filename'].append(new_filename)
-            Dataset['new_subject'].append('sub-%.2i' % (s+1))
+            Dataset['new_subject'].append('sub-%.2i' % (args.subject_ID_start+s))
 
     print('Dataset: N=%i mice, N=%i sessions' % (\
             len(np.unique(Dataset['subjects'])), len(Dataset['files'])))
@@ -46,7 +47,8 @@ def prepare_dataset(args):
 
 def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
 
-    data = physion.analysis.read_NWB.Data(os.path.join(args.datafolder, old_NWBfile))
+    data = physion.analysis.read_NWB.Data(os.path.join(args.datafolder, old_NWBfile),
+                                          with_visual_stim=True)
 
     # read old NWB
     old_io = pynwb.NWBHDF5IO(os.path.join(args.datafolder, old_NWBfile), 'r')
@@ -258,6 +260,11 @@ def build_new_dataset(Dataset, args):
 
     for iNWB, old_NWB in enumerate(Dataset['old_filename'][:args.Nmax]):
 
+        df = os.path.dirname(os.path.join(args.datafolder, 'curated_NWBs',
+                                Dataset['new_filename'][iNWB]))
+        # create folder
+        pathlib.Path(df).mkdir(parents=True, exist_ok=True)
+
         create_new_NWB(old_NWB, 
                        Dataset['new_filename'][iNWB],
                        Dataset['new_subject'][iNWB],
@@ -274,6 +281,7 @@ if __name__=='__main__':
                         help='limit the number of processed files, for debugging',
                         default=1000000)
 
+    parser.add_argument("--subject_ID_start", type=int, default=1)
     parser.add_argument("--suffix", type=str, default='exp')
     parser.add_argument("--genotype", type=str, default='')
     parser.add_argument("--species", type=str, default='')
