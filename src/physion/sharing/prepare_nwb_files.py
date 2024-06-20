@@ -99,7 +99,8 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
         elif (type(old_acq)==pynwb.image.ImageSeries):
 
             new_acq = pynwb.image.ImageSeries(name=old_acq.name,
-                                        data = np.transpose(old_acq.data) if args.transpose else old_acq.data,
+                                        data = old_acq.data,
+                                        # data = np.transpose(old_acq.data) if args.transpose else old_acq.data,
                                        starting_time=old_acq.starting_time,
                                        unit=old_acq.unit,
                                        timestamps=old_acq.timestamps,
@@ -147,12 +148,16 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
 
 
     for param in old_nwb.stimulus:
-
+        nt = len(old_nwb.stimulus[param].timestamps[:])
+        if old_nwb.stimulus[param].data[:].shape[0]==1:
+            array = np.ones((nt,1))*old_nwb.stimulus[param].data[0]
+        else:
+            array = np.reshape(old_nwb.stimulus[param].data[:nt],
+                              (nt,1))
         VisualStimProp = pynwb.TimeSeries(name=param,
-                    data = np.transpose(old_nwb.stimulus[param].data[:]),
+                    data = array,
                     unit='seconds',
                     timestamps=old_nwb.stimulus[param].timestamps[:])
-
         new_nwb.add_stimulus(VisualStimProp)
 
 
