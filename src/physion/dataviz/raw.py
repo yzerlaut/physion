@@ -151,15 +151,15 @@ def add_VisualStim(data, tlim, ax,
     # cond = (data.nwbfile.stimulus['time_start_realigned'].data[:]>tlim[0]) &\
         # (data.nwbfile.stimulus['time_stop_realigned'].data[:]<tlim[1])
 
-    cond = (data.nwbfile.stimulus['time_start_realigned'].data[:]<tlim[1]) &\
-        (data.nwbfile.stimulus['time_stop_realigned'].data[:]>tlim[0])
+    cond = (data.nwbfile.stimulus['time_start_realigned'].data[:,0]<tlim[1]) &\
+        (data.nwbfile.stimulus['time_stop_realigned'].data[:,0]>tlim[0])
 
     ylevel = fig_fraction_start+fig_fraction/2.
 
     for i in np.arange(data.nwbfile.stimulus['time_start_realigned'].num_samples)[cond]:
 
-        tstart = data.nwbfile.stimulus['time_start_realigned'].data[i]
-        tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i]
+        tstart = data.nwbfile.stimulus['time_start_realigned'].data[i,0]
+        tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i,0]
         # ax.plot([tstart, tstop], [ylevel, ylevel], color=color)
         ax.fill_between([tstart, tstop], [0,0], np.zeros(2)+ylevel,
                         lw=0, alpha=0.05, color=color)
@@ -188,7 +188,7 @@ def show_VisualStim(data, tlim,
 
     for i, ti in enumerate(np.linspace(*tlim, Npanels)):
         iEp = data.find_episode_from_time(ti)
-        tEp = data.nwbfile.stimulus['time_start_realigned'].data[iEp]
+        tEp = data.nwbfile.stimulus['time_start_realigned'].data[iEp,0]
         if iEp>=0:
             data.visual_stim.show_frame(iEp, ax=AX[i],
                                         time_from_episode_start=ti-tEp,
