@@ -10,8 +10,8 @@ KEYS = ['meanImg', 'max_proj', 'meanImgE',
         'meanImg_chan2', 'meanImgE_chan2',
         'meanImg_chan2-X*meanImg']
 
-def FOV(self,
-       tab_id=3):
+def FOV(self, useless=0,
+        tab_id=3):
 
     self.windows[tab_id] = 'FOV'
 
@@ -155,6 +155,7 @@ def FOV(self,
     self.rois_hl = pg.ScatterPlotItem()
 
     self.refresh_tab(tab)
+    self.draw_image_FOV()
      
 def prev_ROI_FOV(self):
     self.prev_ROI()

@@ -121,6 +121,7 @@ def red_channel_labelling(self,
     self.rois_hl = pg.ScatterPlotItem()
 
     self.refresh_tab(tab)
+    self.draw_image_RCL()
 
 
 def reset_all_to_green(self):
