@@ -165,7 +165,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # -- File Transfer
     if not Acquisition:
-        from physion.transfer.gui import transfer_gui,\
+        from physion.utils.transfer.gui import transfer_gui,\
                 set_source_folder, set_destination_folder,\
                 run_transfer
                 
