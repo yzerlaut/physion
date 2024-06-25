@@ -8,6 +8,9 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 
+# import the 2P trigger delay from the acquisition module !
+from physion.acquisition.recordings.Scan1Plane_Screen342V import 2P_trigger_delay
+
 from physion.assembling.IO.binary import BinaryFile
 from physion.assembling.IO.bruker_xml_parser import bruker_xml_parser
 from physion.utils.files import get_files_with_extension, get_TSeries_folders
@@ -395,7 +398,8 @@ def add_ophys(nwbfile, args,
     """ 
     image_series = pynwb.ophys.TwoPhotonSeries(name='CaImaging-TimeSeries',
                                                dimension=[2], data=np.ones((2,2,2)),
-                                               imaging_plane=imaging_plane, unit='s', timestamps=1.*np.arange(2),
+                                               imaging_plane=imaging_plane, unit='s', 
+                                               timestamps=1.*np.arange(2),
                                                comments='raw-data-folder=%s' % args.imaging.replace('/', '**')) # TEMPORARY
     
     nwbfile.add_acquisition(image_series)
@@ -404,6 +408,7 @@ def add_ophys(nwbfile, args,
         print('=> Adding the suite2p processing [...]')
         add_ophys_processing_from_suite2p(os.path.join(args.imaging, 'suite2p'),
                                           nwbfile, xml,
+                                          2P_trigger_delay=2P_trigger_delay,
                                           device=device,
                                           optical_channel=optical_channel,
                                           imaging_plane=imaging_plane,

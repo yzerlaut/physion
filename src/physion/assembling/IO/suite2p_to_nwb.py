@@ -14,6 +14,7 @@ from pynwb.ophys import Fluorescence
 from pynwb import NWBHDF5IO
 
 def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml, 
+                                      2P_trigger_delay=0., 
                                       device=None,
                                       optical_channel=None,
                                       imaging_plane=None,
@@ -36,6 +37,13 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
     functional_chan = ('Ch1' if len(xml['Ch1']['relativeTime'])>1 else 'Ch2') # functional channel is one of the two !!
     CaImaging_timestamps = xml[functional_chan]['relativeTime']+float(xml['settings']['framePeriod'])/2.
     print('- timestamps :', len(CaImaging_timestamps), len(CaImaging_timestamps)/5)
+
+    # /!\ Add the 2P trigger delay
+    if 2P_trigger_delay>0:
+        CaImaging_timestamps += 2P_trigger_delay
+    else:
+        print("\n / ! \  no delay from 2P trigger ... check !   / ! \ \n")
+
 
     ops = np.load(os.path.join(pData_folder, 'ops.npy'), allow_pickle=True).item() 
     
@@ -138,7 +146,7 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             print(' n=%i suite2p frames, n=%i Bruker timestamps) ' % (len(traces[i]), len(timestamps)))
         roi_resp_series = RoiResponseSeries(
             name=nstr,
-            data=traces[i][:len(timestamps)], # 
+            data=np.reshape(traces[i][:len(timestamps)], (len(timestamps),1)), # 
             rois=rt_region,
             unit='lumens',
             timestamps=timestamps)

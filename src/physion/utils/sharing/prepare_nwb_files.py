@@ -6,6 +6,8 @@ from pynwb import NWBHDF5IO, NWBFile
 
 import physion
 
+from physion.acquisition.recordings.Scan1Plane_Screen342V import 2P_trigger_delay
+
 
 def prepare_dataset(args):
 
@@ -203,11 +205,18 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
             if mod=='ophys' and (key in ['Fluorescence', 'Neuropil']):
 
                 old_RRS = old_proc.data_interfaces[key]
+                    
+                if old_RRS[key].timestamps[0]<2P_trigger_delay:
+                    print(" \n / ! \ the 2P-trigger-delay was ommited, adding it ! / ! \ \n ")
+                    new_timestamps = old_RRS[key].timestamps[:]+2P_trigger_delay
+                else:
+                    new_timestamps = old_RRS[key].timestamps[:]
+
                 roi_resp_series = pynwb.ophys.RoiResponseSeries(
                     name=old_RRS.name,
                     data=np.array(old_RRS[key].data),
                     rois=rt_region,
-                    timestamps=old_RRS[key].timestamps[:]+args.shift_CaImaging,
+                    timestamps=new_timestamps,
                     unit='lumens')
                 fl = pynwb.ophys.Fluorescence(roi_response_series=roi_resp_series,
                                               name=key)
@@ -292,10 +301,6 @@ if __name__=='__main__':
     parser.add_argument("--transpose", 
                         help="transpose all arrays to have time as the first dimension (for data <06/2024)", 
                         action="store_true")
-
-    parser.add_argument("--shift_CaImaging", type=float,
-                        help="add the shift that was forgotten in realignement (for data <06/2024)", 
-                        default=0.)
 
     args = parser.parse_args()
 

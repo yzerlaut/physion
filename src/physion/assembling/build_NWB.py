@@ -189,7 +189,7 @@ def build_NWB_func(args):
             timestamps = metadata['time_start_realigned']
             for key in ['time_start_realigned', 'time_stop_realigned']:
                 VisualStimProp = pynwb.TimeSeries(name=key,
-                                                  data = metadata[key],
+                                                  data = np.reshape(metadata[key],(len(timestamps),1)),
                                                   unit='seconds',
                                                   timestamps=timestamps)
                 nwbfile.add_stimulus(VisualStimProp)
@@ -208,7 +208,7 @@ def build_NWB_func(args):
                 else:
                     array = VisualStim[key]
                 VisualStimProp = pynwb.TimeSeries(name=key,
-                                                  data = array,
+                                                  data = np.reshape(array, (len(timestamps),1)),
                                                   unit='NA',
                                                   timestamps=timestamps)
                 nwbfile.add_stimulus(VisualStimProp)
@@ -220,7 +220,7 @@ def build_NWB_func(args):
             print('=> Storing the photodiode signal for "%s" [...]' % args.datafolder)
 
         photodiode = pynwb.TimeSeries(name='Photodiode-Signal',
-                                      data = Psignal,
+                                      data = np.reshape(Psignal, (len(Psignal),1)),
                                       starting_time=0.,
                                       unit='[current]',
                                       rate=args.photodiode_sampling)
@@ -334,7 +334,7 @@ def build_NWB_func(args):
                 for key, scale in zip(['cx', 'cy', 'sx', 'sy', 'angle', 'blinking'], [pix_to_mm for i in range(4)]+[1,1]):
                     if type(dataP[key]) is np.ndarray:
                         PupilProp = pynwb.TimeSeries(name=key,
-                                                     data = dataP[key]*scale,
+                                                     data = np.reshape(dataP[key]*scale, (len(FC_times[dataP['frame']]),1)),
                                                      unit='seconds',
                                                      timestamps=FC_times[dataP['frame']])
                         pupil_module.add(PupilProp)
@@ -391,14 +391,14 @@ def build_NWB_func(args):
                                                                      ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n' % (dataF['ROI'][0],dataF['ROI'][1],
                                                                                                                          dataF['ROI'][2],dataF['ROI'][3]))
                 FaceMotionProp = pynwb.TimeSeries(name='face-motion',
-                                                  data = dataF['motion'],
+                                                  data = np.reshape(dataF['motion'], (len(FC_times[dataF['frame']]),1)),
                                                   unit='seconds',
                                                   timestamps=FC_times[dataF['frame']])
                 faceMotion_module.add(FaceMotionProp)
 
                 if 'grooming' in dataF:
                     GroomingProp = pynwb.TimeSeries(name='grooming',
-                                                    data = dataF['grooming'],
+                                                    data = np.reshape(dataF['grooming'], (len(FC_times[dataF['frame']]),1)),
                                                     unit='seconds',
                                                     timestamps=FC_times[dataF['frame']])
                     faceMotion_module.add(GroomingProp)
@@ -467,7 +467,8 @@ def build_NWB_func(args):
             
         lfp = pynwb.TimeSeries(name='LFP-Signal',
                                description='gain 100 on Multiclamp',
-                               data = NIdaq_data['analog'][iElectrophy],
+                               data = np.reshape(NIdaq_data['analog'][iElectrophy],
+                                                 (len(NIdaq_data['analog'][iElectrophy]),1)),
                                starting_time=0.,
                                unit='mV',
                                rate=float(metadata['NIdaq-acquisition-frequency']))
