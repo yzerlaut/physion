@@ -14,7 +14,7 @@ from pynwb.ophys import Fluorescence
 from pynwb import NWBHDF5IO
 
 def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml, 
-                                      2P_trigger_delay=0., 
+                                      TwoP_trigger_delay=0., 
                                       device=None,
                                       optical_channel=None,
                                       imaging_plane=None,
@@ -39,8 +39,8 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
     print('- timestamps :', len(CaImaging_timestamps), len(CaImaging_timestamps)/5)
 
     # /!\ Add the 2P trigger delay
-    if 2P_trigger_delay>0:
-        CaImaging_timestamps += 2P_trigger_delay
+    if TwoP_trigger_delay>0:
+        CaImaging_timestamps += TwoP_trigger_delay
     else:
         print("\n / ! \  no delay from 2P trigger ... check !   / ! \ \n")
 
