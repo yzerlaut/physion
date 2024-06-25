@@ -330,7 +330,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggle(self):
         tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='red_channel_labelling':
+        if self.windows[tab_id] =='FOV':
+            self.toggle_FOV()
+        elif self.windows[tab_id] =='red_channel_labelling':
             self.toggle_RCL()
         else:
             print('no shortcut')
