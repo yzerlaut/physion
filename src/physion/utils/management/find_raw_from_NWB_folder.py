@@ -12,19 +12,18 @@ def find_folder_infos(args):
 
         Description = str(data.nwbfile.processing['ophys'].description)
         # print('     * %s' % Description)
-        Tseries.append('TSeries-'+Description.split('TSeries-')[2].split('/')[0])
-        print('     * TSeries-folder: %s' % Tseries)
-        DayFolder = str(data.nwbfile.identifier)[:10]
-        TimeFolder = str(data.nwbfile.identifier)[11:]
-        print('     * Day-folder: %s' % DayFolder)
-        print('     * Time-folder: %s' % TimeFolder)
-
-        script += 'move_to_keep %s %s %s \n' % (Tseries, DayFolder, TimeFolder)
+        TSeries.append('TSeries-'+Description.split('TSeries-')[2].split('/')[0])
+        print('     * TSeries-folder: %s' % TSeries[-1])
+        DayFolders.append(str(data.nwbfile.identifier)[:10])
+        TimeFolders.append(str(data.nwbfile.identifier)[11:])
+        print('     * Day-folder: %s' % DayFolders[-1])
+        print('     * Time-folder: %s' % TimeFolders[-1])
 
     return TSeries, DayFolders, TimeFolders
 
-def build_bash_script(args):
 
+
+def build_bash_script(args):
 
     script = """
 
