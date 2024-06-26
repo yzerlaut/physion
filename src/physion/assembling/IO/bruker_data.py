@@ -26,7 +26,7 @@ def StartTime_to_day_seconds(StartTime):
     Hour = int(StartTime[0:2])
     Min = int(StartTime[3:5])
     Seconds = float(StartTime[6:])
-    print(Hour, Min, Seconds)
+    # print(Hour, Min, Seconds)
     return 60*60*Hour+60*Min+Seconds
 
 def build_Ca_filelist(folder):

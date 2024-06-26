@@ -67,6 +67,7 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
                                     weight=old_nwb.subject.weight,
                                     date_of_birth=old_nwb.subject.date_of_birth)
 
+
     new_nwb = pynwb.NWBFile(identifier=old_nwb.identifier,
                             session_description=old_nwb.session_description,
                             experiment_description=old_nwb.experiment_description,
@@ -81,6 +82,7 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
                             source_script=str(pathlib.Path(__file__).resolve()),
                             source_script_file_name=str(pathlib.Path(__file__).resolve()),
                             file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
+
 
     old_nwb.generate_new_id()
 
@@ -264,6 +266,7 @@ def build_new_dataset(Dataset, args):
     # remove folder if already existing
     if os.path.isdir(os.path.join(args.datafolder, 'curated_NWBs')):
         shutil.rmtree(os.path.join(args.datafolder, 'curated_NWBs'))
+
     # create folder for curated NWBs 
     os.mkdir(os.path.join(args.datafolder, 'curated_NWBs'))
 
@@ -271,6 +274,7 @@ def build_new_dataset(Dataset, args):
 
         df = os.path.dirname(os.path.join(args.datafolder, 'curated_NWBs',
                                 Dataset['new_filename'][iNWB]))
+
         # create folder
         pathlib.Path(df).mkdir(parents=True, exist_ok=True)
 

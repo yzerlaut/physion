@@ -14,7 +14,7 @@ ALL_MODALITIES = ['VisualStim',
 defaults = [True,
             True,
             True, True,
-            False,
+            True,
             True, True]
 
 def build_NWB_UI(self, tab_id=1):
@@ -107,6 +107,9 @@ def load_NWB_folder(self):
         if (len(folder.split(os.path.sep)[-1].split('-'))<2) and (len(folder.split(os.path.sep)[-1].split('_'))>2):
             print('"%s" is recognized as a day folder' % folder)
             self.folders = [os.path.join(folder, f) for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f, 'metadata.json'))]
+        elif os.path.isfile(os.path.join(folder, 'metadata.json')) and os.path.isfile(os.path.join(folder, 'NIdaq.npy')):
+            print('"%s" is a valid recording folder' % folder)
+            self.folders = [folder]
         elif os.path.isfile(os.path.join(folder, 'metadata.npy')) and os.path.isfile(os.path.join(folder, 'NIdaq.npy')):
             print('"%s" is a valid recording folder' % folder)
             self.folders = [folder]
@@ -115,7 +118,6 @@ def load_NWB_folder(self):
             print('  --> nothing to assemble !')
 
     # now loop over folders and look for the ISI maps
-
     self.ISImaps = []
     for i, folder in enumerate(self.folders):
         self.ISImaps.append(look_for_ISI_maps(self, folder))     
@@ -133,8 +135,7 @@ def runBuildNWB(self):
                              force_to_visualStimTimestamps=\
                                 self.alignFromStimCheckBox.isChecked())
         print('\n launching the command \n :  %s \n ' % cmd)
-        p = subprocess.Popen(cmd,
-                             cwd=cwd,
+        p = subprocess.Popen(cmd, cwd=cwd,
                              shell=True)
 
 def look_for_ISI_maps(self, folder):

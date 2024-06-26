@@ -31,7 +31,7 @@ def raw_data_plot(self, tzoom,
             isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
 
         t = convert_index_to_time(isampling, self.data.nwbfile.acquisition['Photodiode-Signal'])
-        y = scale_and_position(self,self.data.nwbfile.acquisition['Photodiode-Signal'].data[list(isampling)])
+        y = scale_and_position(self,self.data.nwbfile.acquisition['Photodiode-Signal'].data[list(isampling),0])
         self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['Screen']))
 
     ## -------- Locomotion --------- ##
@@ -46,7 +46,7 @@ def raw_data_plot(self, tzoom,
             isampling = np.unique(np.linspace(i1+1, i2-1, settings['Npoints'], dtype=int))
 
         t = convert_index_to_time(isampling, self.data.nwbfile.acquisition['Running-Speed'])
-        y = scale_and_position(self,self.data.nwbfile.acquisition['Running-Speed'].data[list(isampling)])
+        y = scale_and_position(self,self.data.nwbfile.acquisition['Running-Speed'].data[list(isampling),0])
         self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['Locomotion']))
             
 
@@ -64,12 +64,12 @@ def raw_data_plot(self, tzoom,
 
         i1, i2 = convert_times_to_indices(*tzoom, self.data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'])
         t = self.data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps[i1:i2]
-        y = scale_and_position(self, self.data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[i1:i2])
+        y = scale_and_position(self, self.data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[i1:i2,0])
         self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['FaceMotion']))
 
         # adding grooming flag (dots at the bottom)
         if 'grooming' in self.data.nwbfile.processing['FaceMotion'].data_interfaces:
-            cond = (self.data.nwbfile.processing['FaceMotion'].data_interfaces['grooming'].data[i1:i2]==1) & np.isfinite(y)
+            cond = (self.data.nwbfile.processing['FaceMotion'].data_interfaces['grooming'].data[i1:i2,0]==1) & np.isfinite(y)
             if np.sum(cond):
                 self.plot.plot(t[cond],y[cond].min()+0*t[cond], pen=None, symbol='o',
                                symbolPen=pg.mkPen(color=settings['colors']['FaceMotion'], width=0),                                      
@@ -101,21 +101,21 @@ def raw_data_plot(self, tzoom,
         if self.gazeSelect.isChecked():
 
             y = scale_and_position(self,
-                                   np.sqrt((self.data.nwbfile.processing['Pupil'].data_interfaces['cx'].data[i1:i2]-self.gaze_center[0])**2+\
-                                           (self.data.nwbfile.processing['Pupil'].data_interfaces['cy'].data[i1:i2]-self.gaze_center[1])**2))
+                        np.sqrt((self.data.nwbfile.processing['Pupil'].data_interfaces['cx'].data[i1:i2,0]-self.gaze_center[0])**2+\
+                                (self.data.nwbfile.processing['Pupil'].data_interfaces['cy'].data[i1:i2,0]-self.gaze_center[1])**2))
             self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['Gaze']))
             
         if self.pupilSelect.isChecked():
             
             y = scale_and_position(self,
-                  self.data.nwbfile.processing['Pupil'].data_interfaces['sx'].data[i1:i2]*\
-                   self.data.nwbfile.processing['Pupil'].data_interfaces['sy'].data[i1:i2])
+                  self.data.nwbfile.processing['Pupil'].data_interfaces['sx'].data[i1:i2,0]*\
+                   self.data.nwbfile.processing['Pupil'].data_interfaces['sy'].data[i1:i2,0])
 
             self.plot.plot(t, y, pen=pg.mkPen(color=settings['colors']['Pupil']))
 
             # adding blinking flag (dots at the bottom)
             if 'blinking' in self.data.nwbfile.processing['Pupil'].data_interfaces:
-                cond = (self.data.nwbfile.processing['Pupil'].data_interfaces['blinking'].data[i1:i2]==1) & np.isfinite(y)
+                cond = (self.data.nwbfile.processing['Pupil'].data_interfaces['blinking'].data[i1:i2,0]==1) & np.isfinite(y)
                 if np.sum(cond):
                     self.plot.plot(t[cond],y[cond].min()+0*t[cond], pen=None, symbol='o',
                                    symbolPen=pg.mkPen(color=settings['colors']['Pupil'], width=0),                                      
@@ -150,7 +150,7 @@ def raw_data_plot(self, tzoom,
             isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
 
         self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Electrophysiological-Signal']), 
-                       scale_and_position(self,self.data.nwbfile.acquisition['Electrophysiological-Signal'].data[list(isampling)]),
+                       scale_and_position(self,self.data.nwbfile.acquisition['Electrophysiological-Signal'].data[list(isampling),0]),
                        pen=pg.mkPen(color=settings['colors']['Electrophy']))
 
     if ('LFP' in self.data.nwbfile.acquisition) and self.ephysSelect.isChecked():
@@ -163,7 +163,7 @@ def raw_data_plot(self, tzoom,
             isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
 
         self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['LFP']),
-                       scale_and_position(self,self.data.nwbfile.acquisition['LFP'].data[list(isampling)]),
+                       scale_and_position(self,self.data.nwbfile.acquisition['LFP'].data[list(isampling),0]),
                        pen=pg.mkPen(color=settings['colors']['LFP']))
 
 
@@ -177,7 +177,7 @@ def raw_data_plot(self, tzoom,
             isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
 
         self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Vm']),
-                       scale_and_position(self,self.data.nwbfile.acquisition['Vm'].data[list(isampling)]),
+                       scale_and_position(self,self.data.nwbfile.acquisition['Vm'].data[list(isampling),0]),
                        pen=pg.mkPen(color=settings['colors']['Vm']))
 
         

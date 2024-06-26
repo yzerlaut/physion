@@ -165,9 +165,9 @@ def check_ordered(self):
 # ------------------------------------------------ # 
 
 def build_cmd(nwb, imaging):
-    process_script = str(pathlib.Path(__file__).resolve())
-    return '%s %s --nwb %s --imaging %s' % (python_path,
-                                            process_script,
+    # process_script = str(pathlib.Path(__file__).resolve())
+    return '%s -m physion.assembling.add_ophys --nwb %s --imaging %s' % (\
+                                            python_path,
                                             nwb,
                                             imaging)
 
@@ -253,7 +253,8 @@ def append_to_NWB(args):
     if (not hasattr(args, 'datafolder')) or (args.datafolder==''):
         args.datafolder=os.path.dirname(args.nwb)
         
-    add_ophys(nwbfile, args, with_raw_CaImaging=args.with_raw_CaImaging)
+    add_ophys(nwbfile, args, 
+              with_raw_CaImaging=args.with_raw_CaImaging)
 
     if not args.silent:
         print('=> writing "%s" [...]' % args.nwb)

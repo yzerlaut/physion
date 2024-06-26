@@ -21,22 +21,25 @@ ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   'Locomotion', 'Pupil', 'FaceMotion',
                   'EphysLFP', 'EphysVm']
 
+
 def build_NWB_func(args):
     
     if args.verbose:
-        print('Initializing NWB file for "%s" [...]' % args.datafolder)
+        print('- Initializing NWB file for "%s" [...]' % args.datafolder)
 
     #################################################
     ####            BASIC metadata            #######
     #################################################
 
-    # (deprecated, loading from metadata.npy)
-    # metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
-                       # allow_pickle=True).item()
     
-    with open(os.path.join(args.datafolder, 'metadata.json'),
-              'r', encoding='utf-8') as f:
-        metadata = json.load(f)
+    if os.path.isfile(os.path.join(args.datafolder, 'metadata.json')):
+        with open(os.path.join(args.datafolder, 'metadata.json'),
+                  'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+    else:
+        # (deprecated, loading from metadata.npy)
+        metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
+                           allow_pickle=True).item()
 
     # replace by day and time in metadata !!
     if os.path.sep in args.datafolder:
@@ -63,7 +66,6 @@ def build_NWB_func(args):
     # NIdaq tstart
     if os.path.isfile(os.path.join(args.datafolder, 'NIdaq.start.npy')):
         metadata['NIdaq_Tstart'] = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
-
 
     subject = pynwb.file.Subject(description=(subject_props['description'] if ('description' in subject_props) else 'Unknown'),
                                  sex=(subject_props['sex'] if ('sex' in subject_props) else 'Unknown'),
@@ -128,7 +130,7 @@ def build_NWB_func(args):
                                    new_freq=args.running_sampling,
                                    pre_smoothing=2./args.running_sampling)
         running = pynwb.TimeSeries(name='Running-Speed',
-                                   data = speed,
+                                   data = np.reshape(speed, (len(speed),1)),
                                    starting_time=0.,
                                    unit='cm/s',
                                    rate=args.running_sampling)
@@ -199,7 +201,7 @@ def build_NWB_func(args):
                 if key in ['protocol_id', 'index']:
                     array = np.array(VisualStim[key])
                 elif key in ['protocol-name']:
-                    array = np.array([0])
+                    array = np.zeros(len(VisualStim['index']))
                 elif (type(VisualStim[key]) in [list, np.ndarray, np.array]) and (np.sum(None_cond)>0):
                     # need to remove the None elements
                     for i in np.arange(len(VisualStim[key]))[None_cond]:
@@ -327,9 +329,10 @@ def build_NWB_func(args):
                     pix_to_mm = 1
                     
                 pupil_module = nwbfile.create_processing_module(name='Pupil', 
-                                                                description='processed quantities of Pupil dynamics,\n'+\
-                                                                ' pupil ROI: (xmin,xmax,ymin,ymax)=(%i,%i,%i,%i)\n' % (dataP['xmin'], dataP['xmax'], dataP['ymin'], dataP['ymax'])+\
-                                                                ' pix_to_mm=%.3f' % pix_to_mm)
+                            description='processed quantities of Pupil dynamics,\n'+\
+                    ' pupil ROI: (xmin,xmax,ymin,ymax)=(%i,%i,%i,%i)\n' % (\
+                            dataP['xmin'], dataP['xmax'], dataP['ymin'], dataP['ymax'])+\
+                    ' pix_to_mm=%.3f' % pix_to_mm)
                 
                 for key, scale in zip(['cx', 'cy', 'sx', 'sy', 'angle', 'blinking'], [pix_to_mm for i in range(4)]+[1,1]):
                     if type(dataP[key]) is np.ndarray:
@@ -517,6 +520,7 @@ def build_NWB_func(args):
 def build_cmd(datafolder,
               modalities=['Locomotion', 'VisualStim'],
               force_to_visualStimTimestamps=False):
+
     cmd = '%s -m physion.assembling.build_NWB -df %s -M ' % (python_path,
                                                              datafolder)
     cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src')
