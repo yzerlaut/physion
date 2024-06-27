@@ -6,5 +6,11 @@
 
 See the [dedicated notebook](Find-Raw-Data-from-Folders-of-NWB-files.ipynb)
 
+## User `rsync` to transfer only `.xml` and processed files from `suite2p`
+
+```
+rsync -avhP --include='*.xml' --include='*.npy' --include='*/' --exclude='*' SOURCE DEST
+```
+
 
 
