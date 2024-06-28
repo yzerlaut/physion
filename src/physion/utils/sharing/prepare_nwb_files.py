@@ -35,7 +35,8 @@ def prepare_dataset(args):
         subCond = np.array(Dataset['subjects'])==subject
         for session, fn in enumerate(np.array(Dataset['files'])[subCond]):
             new_filename = os.path.join('sub-%.2i' % (args.subject_ID_start+s),
-                                        'sub-%.2i_ses-%.2i_%s.nwb' % (args.subject_ID_start+s, session+1,
+                                        'sub-%.2i_ses-%.2i_%s.nwb' % (args.subject_ID_start+s,
+                                                                      session+1,
                                                                       args.suffix))
             print('    %s          (from: %s)' % (new_filename, fn))
             Dataset['old_filename'].append(fn)

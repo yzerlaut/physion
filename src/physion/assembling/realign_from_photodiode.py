@@ -80,6 +80,7 @@ def realign_from_photodiode(signal,
         
 
         if success and debug and ((i>=istart_debug) and (i<istart_debug+n_vis)):
+            import matplotlib.pylab as plt
             # plot alignment for debugging !
             cond = (t[:-1]>=tstart+shift_time-5) & (t[:-1]<=tstart+tshift+10)
             fig, ax = plt.subplots()

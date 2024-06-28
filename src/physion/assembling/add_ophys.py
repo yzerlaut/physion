@@ -250,9 +250,6 @@ def append_to_NWB(args):
     io = pynwb.NWBHDF5IO(args.nwb, mode='a')
     nwbfile = io.read()
 
-    if (not hasattr(args, 'datafolder')) or (args.datafolder==''):
-        args.datafolder=os.path.dirname(args.nwb)
-        
     add_ophys(nwbfile, args, 
               with_raw_CaImaging=args.with_raw_CaImaging)
 
@@ -279,7 +276,7 @@ def add_ophys(nwbfile, args,
         CaFn = get_files_with_extension(args.imaging, extension='.xml')[0]# get Tseries metadata
     except BaseException as be:
         print(be)
-        print('\n /!\  Problem with the CA-IMAGING data in %s  /!\ ' % args.datafolder)
+        print('\n /!\  Problem with the CA-IMAGING data in %s  /!\ ' % args.imaging)
         raise Exception
         
     xml = bruker_xml_parser(CaFn) # metadata
@@ -441,5 +438,6 @@ if __name__=='__main__':
     if not args.silent:
         args.verbose = True
 
-    append_to_NWB(args)
-    print('--> done')
+    if args.nwb!='':
+        append_to_NWB(args)
+        print('--> done')

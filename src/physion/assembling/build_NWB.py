@@ -67,30 +67,49 @@ def build_NWB_func(args):
     if os.path.isfile(os.path.join(args.datafolder, 'NIdaq.start.npy')):
         metadata['NIdaq_Tstart'] = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
 
-    subject = pynwb.file.Subject(description=(subject_props['description'] if ('description' in subject_props) else 'Unknown'),
+    # override a few properties (when curating/rebuilding datafiles)
+    if hasattr(args, 'subject_id') and ('subject_id' in subject_props):
+        # means we're over-writing the subject_id, we keep the old one in the description
+        subject_props['description'] = 'original-subject_id=%s' % subject_props['subject_id']+\
+            subject_props['description'] if ('description' in subject_props) else ''
+    if hasattr(args, 'subject_id') and ('subject_id' in subject_props):
+        subject_props['subject_id'] = args.subject_id
+    if hasattr(args, 'genotype'):
+        subject_props['genotype'] = args.genotype
+    if hasattr(args, 'species'):
+        subject_props['species'] = args.species
+
+    subject = pynwb.file.Subject(description=(subject_props['description'] if ('description' in subject_props) else ''),
+                                 subject_id=(subject_props['subject_id'] if ('subject_id' in subject_props) else 'Unknown'),
                                  sex=(subject_props['sex'] if ('sex' in subject_props) else 'Unknown'),
                                  genotype=(subject_props['genotype'] if ('genotype' in subject_props) else 'Unknown'),
                                  species=(subject_props['species'] if ('species' in subject_props) else 'Unknown'),
-                                 subject_id=(subject_props['subject_id'] if ('subject_id' in subject_props) else 'Unknown'),
                                  weight=(subject_props['weight'] if ('weight' in subject_props) else 'Unknown'),
                                  date_of_birth=datetime.datetime(int(dob[0]),int(dob[1]),int(dob[2]),tzinfo=tzlocal()))
                                  
-    nwbfile = pynwb.NWBFile(identifier=identifier,
-                            session_description=str(metadata),
-                            experiment_description=metadata['protocol'],
-                            experimenter=(metadata['experimenter'] if ('experimenter' in metadata) else 'Unknown'),
-                            lab=(metadata['lab'] if ('lab' in metadata) else 'Unknown'),
-                            institution=(metadata['institution'] if ('institution' in metadata) else 'Unknown'),
-                            notes=(metadata['notes'] if ('notes' in metadata) else 'Unknown'),
-                            virus=(subject_props['virus'] if ('virus' in subject_props) else 'Unknown'),
-                            surgery=(subject_props['surgery'] if ('surgery' in subject_props) else 'Unknown'),
-                            session_start_time=start_time,
-                            subject=subject,
-                            source_script=str(pathlib.Path(__file__).resolve()),
-                            source_script_file_name=str(pathlib.Path(__file__).resolve()),
-                            file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
-    
-    filename = os.path.join(pathlib.Path(args.datafolder).parent, '%s.nwb' % identifier)
+    if hasattr(args, 'virus'):
+        metadata['species'] = args.virus
+    if hasattr(args, 'surgery'):
+        metadata['surgery'] = args.surgery
+
+    nwbfile = pynwb.NWBFile(\
+                identifier=identifier,
+                session_description=str(metadata),
+                experiment_description=metadata['protocol'],
+                experimenter=(metadata['experimenter'] if ('experimenter' in metadata) else 'Unknown'),
+                lab=(metadata['lab'] if ('lab' in metadata) else 'Unknown'),
+                institution=(metadata['institution'] if ('institution' in metadata) else 'Unknown'),
+                notes=(metadata['notes'] if ('notes' in metadata) else ''),
+                virus=(subject_props['virus'] if ('virus' in subject_props) else 'Unknown'),
+                surgery=(subject_props['surgery'] if ('surgery' in subject_props) else 'Unknown'),
+                session_start_time=start_time,
+                subject=subject,
+                source_script=str(pathlib.Path(__file__).resolve()),
+                source_script_file_name=str(pathlib.Path(__file__).resolve()),
+                file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
+
+    if not hasattr(args, 'filename'):
+        args.filename = os.path.join(pathlib.Path(args.datafolder).parent, '%s.nwb' % identifier)
     
     manager = pynwb.get_manager() # we need a manager to link raw and processed data
     
@@ -191,9 +210,10 @@ def build_NWB_func(args):
             timestamps = metadata['time_start_realigned']
             for key in ['time_start_realigned', 'time_stop_realigned']:
                 VisualStimProp = pynwb.TimeSeries(name=key,
-                                                  data = np.reshape(metadata[key],(len(timestamps),1)),
-                                                  unit='seconds',
-                                                  timestamps=timestamps)
+                        data = np.reshape(metadata[key][:len(timestamps)],
+                                            (len(timestamps),1)),
+                                  unit='seconds',
+                                  timestamps=timestamps)
                 nwbfile.add_stimulus(VisualStimProp)
                 
             for key in VisualStim:
@@ -210,9 +230,10 @@ def build_NWB_func(args):
                 else:
                     array = VisualStim[key]
                 VisualStimProp = pynwb.TimeSeries(name=key,
-                                                  data = np.reshape(array, (len(timestamps),1)),
-                                                  unit='NA',
-                                                  timestamps=timestamps)
+                        data = np.reshape(array[:len(timestamps)], 
+                                            (len(timestamps),1)),
+                                  unit='NA',
+                                  timestamps=timestamps)
                 nwbfile.add_stimulus(VisualStimProp)
                 
         else:
@@ -493,19 +514,19 @@ def build_NWB_func(args):
     ####         Writing NWB file             #######
     #################################################
 
-    if os.path.isfile(filename):
+    if os.path.isfile(args.filename):
         temp = str(tempfile.NamedTemporaryFile().name)+'.nwb'
         print("""
         "%s" already exists
         ---> moving the file to the temporary file directory as: "%s" [...]
-        """ % (filename, temp))
-        shutil.move(filename, temp)
+        """ % (args.filename, temp))
+        shutil.move(args.filename, temp)
         print('---> done !')
 
-    io = pynwb.NWBHDF5IO(filename, mode='w', manager=manager)
+    io = pynwb.NWBHDF5IO(args.filename, mode='w', manager=manager)
     print("""
     ---> Creating the NWB file: "%s"
-    """ % filename)
+    """ % args.filename)
     io.write(nwbfile, link_data=False)
     io.close()
     print('---> done !')
@@ -513,7 +534,7 @@ def build_NWB_func(args):
     if Ca_data is not None:
         Ca_data.close() # can be closed only after having written
 
-    return filename
+    return args.filename
 
 
 
