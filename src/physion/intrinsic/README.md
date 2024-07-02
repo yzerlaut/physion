@@ -27,7 +27,7 @@ The code comes from from [a script from Jun Zhuang](https://github.com/zhuangjun
 ## Predicted Output
 
 <p align="center">
-  <img src="../../docs/intrinsic/drawing.svg" width="100%" />
+  <img src="../../../docs/intrinsic/drawing.svg" width="100%" />
 </p>
 
 
