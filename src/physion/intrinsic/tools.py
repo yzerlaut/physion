@@ -31,14 +31,13 @@ default_segmentation_params={'phaseMapFilterSigma': 2.,
 def load_maps(datafolder, Nsubsampling=4):
 
     if os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
-        print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
         metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
                        allow_pickle=True).item()
         if 'Nsubsampling' in metadata:
             Nsubsampling = metadata['Nsubsampling']
     else:
-        metadata = None
-    
+        metadata = {}
+
     if os.path.isfile(os.path.join(datafolder, 'raw-maps.npy')):
         print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
         maps = np.load(os.path.join(datafolder, 'raw-maps.npy'),
@@ -46,6 +45,7 @@ def load_maps(datafolder, Nsubsampling=4):
     else:
         maps = {}
 
+    """
     if os.path.isfile(os.path.join(datafolder, 'vasculature-%s.tif' %metadata['subject'])):
         maps['vasculature'] = np.array(Image.open(os.path.join(datafolder,\
                 'vasculature-%s.tif' %metadata['subject'])))
@@ -67,8 +67,12 @@ def load_maps(datafolder, Nsubsampling=4):
         maps['fluorescence'] = maps['fluorescence'][::Nsubsampling,::Nsubsampling]
     elif os.path.isfile(os.path.join(datafolder, 'fluorescence.npy')):
         maps['fluorescence'] = np.load(os.path.join(datafolder, 'fluorescence.npy'))
+    """
 
-
+    maps['datafolder'] = datafolder
+    if 'subject' in metadata:
+        maps['subject'] = metadata['subject']
+    
     return maps
 
 
@@ -97,6 +101,27 @@ def resample_img(img, Nsubsampling):
     else:
         return img
 
+def load_and_resample_hq(key, datafolder, subject, 
+                         shape=None):
+    """
+    from a tiff like:
+        vasculature-Mouse1Ax3D-HQ.tiff
+    """
+    if os.path.isfile(os.path.join(datafolder, '%s-%s-HQ.tif' % (key, subject))):
+        img = np.array(Image.open(os.path.join(datafolder,\
+                                '%s-%s-HQ.tif' % (key, subject)))).astype('float')
+        img = (img-np.min(img))/(img.max()-img.min())
+        if shape is None:
+            return img
+        else:
+            Nsubsampling = int(img.shape[0]/shape[0])
+            return resample_img(img, Nsubsampling)
+
+    elif shape is not None:
+        return np.ones(shape)
+
+    else:
+        return np.ones((10,10))
 
 def load_single_datafile(datafile):
     """
@@ -183,12 +208,6 @@ def compute_phase_power_maps(datafolder, direction,
     if (p is None) or (t is None) or (data is None):
         p, (t, data) = load_raw_data(datafolder, direction, run_id=run_id)
 
-    if 'vasculature' not in maps:
-        if os.path.isfile(os.path.join(datafolder, 'vasculature.npy')):
-            maps['vasculature'] = np.load(os.path.join(datafolder, 'vasculature.npy'))
-        else:
-            maps['vasculature'] = np.zeros((data.shape[1], data.shape[2]))
-
 
     # FFT and write maps
     maps['%s-power' % direction],\
@@ -238,10 +257,10 @@ def compute_retinotopic_maps(datafolder, map_type,
         print('- computing "%s" retinotopic maps [...] ' % map_type)
 
     if map_type=='altitude':
-        directions = ['up', 'down']
+        directions = ['down', 'up']
         phase_to_angle_func = get_phase_to_angle_func(datafolder, 'up')
     else:
-        directions = ['right', 'left']
+        directions = ['left', 'right']
         phase_to_angle_func = get_phase_to_angle_func(datafolder, 'right')
 
     for direction in directions:
@@ -282,6 +301,9 @@ def build_trial_data(maps,
               'comments':comments,
               'dateRecorded':dateRecorded}
 
+    maps['vasculature'] = load_and_resample_hq('vasculature', maps['datafolder'], 
+                                               subject, 
+                                               shape=maps['up-power'].shape)
     for key1, key2 in zip(\
             ['vasculature', 'altitude-retinotopy', 'azimuth-retinotopy',\
                             'altitude-power', 'azimuth-power'],
@@ -405,8 +427,7 @@ def plot_phase_power_maps(maps, direction,
     return fig
 
 def plot_retinotopic_maps(maps, map_type='altitude',
-                          max_retinotopic_angle=80,
-                          ge=ge_screen):
+                          max_retinotopic_angle=80):
     
     if map_type=='altitude':
         plus, minus = 'up', 'down'

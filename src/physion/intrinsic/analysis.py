@@ -310,7 +310,7 @@ def moved_pixels(self):
 
 def update_img(self, img, imgButton):
 
-    if imgButton.currentText() in self.IMAGES:
+    if imgButton.currentText() in [k for k in self.IMAGES if k not in ['datafolder', 'subject']]:
 
         img.setImage(self.IMAGES[imgButton.currentText()].T)
 
