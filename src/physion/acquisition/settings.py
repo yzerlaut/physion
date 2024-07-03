@@ -44,7 +44,7 @@ def update_config(self):
             self.protocolBox.addItems(['None']+self.protocol_list)
 
         # now update subjects
-        self.subject_list = [ff.replace('.csv','')\
+        self.subject_list = [ff.replace('.xlsx','')\
                                 for ff in os.listdir(\
                                     os.path.join(base_path,
                                                 'subjects',
