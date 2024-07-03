@@ -26,6 +26,7 @@ dependencies = [
     "pyqtdarktheme",
     "opencv-python-headless",
     "pyqt5",
+    "openpyxl",
 ]
 
 [tool.setuptools.packages.find]

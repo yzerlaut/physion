@@ -44,9 +44,11 @@ def update_config(self):
             self.protocolBox.addItems(['None']+self.protocol_list)
 
         # now update subjects
-        subjects = pandas.read_csv(os.path.join(base_path,
-                                'subjects',self.config['subjects_file']))
-        self.subject_list = list(subjects['Subject-ID'])
+        self.subject_list = [ff.replace('.csv','')\
+                                for ff in os.listdir(\
+                                    os.path.join(base_path,
+                                                'subjects',
+                                                 self.config['subjects_folder']))]
         self.subjectBox.clear()
         self.subjectBox.addItems(self.subject_list)
 

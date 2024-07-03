@@ -16,7 +16,7 @@
     "rotating-disk":{"radius-position-on-disk-cm":9.0,
 		     "roto-encoder-value-per-rotation": -25300.0},
     "root_datafolder":"DATA",
-    "subjects_file":"mice_taddy.csv",
+    "subjects_folder":"Taddy",
     "experimenter":"Dhanasak Dhanasobhon",
     "lab":"Rebola and Bacci labs",
     "institution":"Institut du Cerveau et de la Moelle, Paris",

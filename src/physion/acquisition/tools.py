@@ -36,14 +36,19 @@ def save_experiment(self, metadata):
 
 def get_subject_props(self):
 
-    subjects = pandas.read_csv(os.path.join(base_path,
-                         'subjects',self.config['subjects_file']))
-    iS = np.flatnonzero(\
-            np.array(subjects['Subject-ID'])==self.subjectBox.currentText())
+    table = pandas.read_csv(os.path.join(base_path,
+                                            'subjects',
+                                            self.config['subjects_folder'],
+                                            '%s.csv' % \
+                                                self.subjectBox.currentText()))
+    print(table)
+
+    # iS = np.flatnonzero(\
+            # np.array(subjects['Subject-ID'])==self.subjectBox.currentText())
 
     subject_props = {}
-    for key in subjects.keys():
-        subject_props[key] = str(subjects[key].values[iS][0])
+    # for key in subjects.keys():
+        # subject_props[key] = str(subjects[key].values[iS][0])
 
     return subject_props
 
