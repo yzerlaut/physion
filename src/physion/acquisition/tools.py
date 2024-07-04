@@ -1,4 +1,4 @@
-import json, os, pathlib, pandas
+import json, os, shutil, pathlib, pandas
 import numpy as np
 
 base_path = str(pathlib.Path(__file__).resolve().parents[0])
@@ -9,29 +9,39 @@ from physion.utils.paths import FOLDERS
 def set_filename_and_folder(self):
     self.filename = generate_filename_path(self.root_datafolder,
                                 filename='metadata',
-                        extension='.npy',
+                        extension='.json',
                 with_FaceCamera_frames_folder=self.metadata['FaceCamera'])
     self.datafolder.set(os.path.dirname(self.filename))
 
 
 def save_experiment(self, metadata):
 
-    # SAVING THE METADATA FILES
-    metadata['filename'] = str(self.datafolder.get())
-    for key in self.protocol:
-        metadata[key] = self.protocol[key]
-
-    # saving as npy (REMOVED)
-    # np.save(os.path.join(str(self.datafolder.get()), 'metadata.npy'), metadata)
-
-    # (NOW only) saving as a json file
-    json_file = os.path.join(str(self.datafolder.get()), 'metadata.json')
-    with open(json_file, 'w', encoding='utf-8') as f:
+    # SAVING THE METADATA FILE
+    filename = os.path.join(str(self.datafolder.get()), 'metadata.json')
+    with open(filename, 'w', encoding='utf-8') as f:
         json.dump(metadata, f,
                   ensure_ascii=False, indent=4)
 
-    print('[ok] Metadata data saved as: %s ' % json_file)
-    self.statusBar.showMessage('Metadata saved as: "%s" ' % json_file)
+    print('[ok] Metadata data saved as: %s ' % filename)
+    self.statusBar.showMessage('Metadata saved as: "%s" ' % filename)
+
+    # SAVING THE Subject FILE
+    shutil.copy(\
+            os.path.join(base_path, 'subjects',
+                         self.config['subjects_folder'],
+                         '%s.xlsx' % self.subjectBox.currentText()),
+                filename.replace('metadata.json',
+                         '%s.xlsx' % self.subjectBox.currentText()))
+    print('[ok] Subject data saved as: %s.xlsx' % self.subjectBox.currentText())
+
+    # SAVING THE PROTOCOL FILE
+    if self.protocolBox.currentText()!='':
+        shutil.copy(os.path.join(base_path, 'protocols',
+                                 self.protocolBox.currentText()+'.json'),
+                    filename.replace('metadata', 'protocol'))
+
+        print('[ok] Protocol data saved as: protocol.json ')
+
 
 
 def get_subject_props(self):
