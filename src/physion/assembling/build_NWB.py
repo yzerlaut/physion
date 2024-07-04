@@ -7,6 +7,7 @@ from hdmf.data_utils import DataChunkIterator
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 from dateutil.tz import tzlocal
 
+from physion.acquisition.tools import get_subject_props
 from physion.assembling.IO.bruker_data import StartTime_to_day_seconds
 from physion.assembling.realign_from_photodiode import realign_from_photodiode
 from physion.behavior.locomotion import compute_speed

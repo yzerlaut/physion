@@ -30,11 +30,12 @@ default_segmentation_params={'phaseMapFilterSigma': 2.,
 
 def load_maps(datafolder, Nsubsampling=4):
 
-    if os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
-        metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
-                       allow_pickle=True).item()
+    if os.path.isfile(os.path.join(datafolder, 'metadata.json')):
+        metadata= json.load(os.path.join(datafolder, 'metadata.json'))
+        # metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
+                       # allow_pickle=True).item()
         if 'Nsubsampling' in metadata:
-            Nsubsampling = metadata['Nsubsampling']
+            Nsubsampling = int(metadata['Nsubsampling'])
     else:
         metadata = {}
 
@@ -140,8 +141,9 @@ def load_single_datafile(datafile):
 def load_raw_data(datafolder, protocol,
                   run_id='sum'):
 
-    params = np.load(os.path.join(datafolder, 'metadata.npy'),
-                     allow_pickle=True).item()
+    params = json.load(os.path.join(datafolder, 'metadata.json'))
+    # params = np.load(os.path.join(datafolder, 'metadata.npy'),
+                     # allow_pickle=True).item()
 
     if run_id=='sum':
         Data, n = None, 0
@@ -489,8 +491,8 @@ def add_patches(trial, ax):
     rawPatchMap = trial.rawPatchMap
     
     patchMapDilated = RetinotopicMapping.dilationPatches2(rawPatchMap,\
-            dilationIter=trial.params['dilationIter'],
-            borderWidth=trial.params['borderWidth'])
+            dilationIter=float(trial.params['dilationIter']),
+            borderWidth=float(trial.params['borderWidth']))
 
     rawPatches = RetinotopicMapping.labelPatches(patchMapDilated, signMapf)
 

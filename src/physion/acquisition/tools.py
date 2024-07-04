@@ -44,13 +44,16 @@ def save_experiment(self, metadata):
 
 
 
-def get_subject_props(self):
+def get_subject_props(self, filename=None):
 
-    table = pandas.read_excel(os.path.join(base_path,
-                                            'subjects',
-                                            self.config['subjects_folder'],
-                                            '%s.xlsx' % \
-                                                self.subjectBox.currentText()))
+    if (filename is None) and hasattr(self, 'subjectBox'):
+        filename = os.path.join(base_path,
+                                'subjects',
+                                self.config['subjects_folder'],
+                                '%s.xlsx' % \
+                                    self.subjectBox.currentText())
+        
+    table = pandas.read_excel(filename)
 
     subject_props = {}
 
