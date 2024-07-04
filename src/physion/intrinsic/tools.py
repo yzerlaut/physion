@@ -1,4 +1,4 @@
-import os, sys, pathlib, pynwb, itertools, skimage
+import os, sys, pathlib, json, pynwb, itertools, skimage
 from scipy.ndimage.filters import gaussian_filter1d
 import numpy as np
 import matplotlib.pylab as plt
@@ -31,7 +31,8 @@ default_segmentation_params={'phaseMapFilterSigma': 2.,
 def load_maps(datafolder, Nsubsampling=4):
 
     if os.path.isfile(os.path.join(datafolder, 'metadata.json')):
-        metadata= json.load(os.path.join(datafolder, 'metadata.json'))
+        with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
+            metadata= json.load(f)
         # metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
                        # allow_pickle=True).item()
         if 'Nsubsampling' in metadata:
@@ -141,9 +142,8 @@ def load_single_datafile(datafile):
 def load_raw_data(datafolder, protocol,
                   run_id='sum'):
 
-    params = json.load(os.path.join(datafolder, 'metadata.json'))
-    # params = np.load(os.path.join(datafolder, 'metadata.npy'),
-                     # allow_pickle=True).item()
+    with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
+        params = json.load(f)
 
     if run_id=='sum':
         Data, n = None, 0
