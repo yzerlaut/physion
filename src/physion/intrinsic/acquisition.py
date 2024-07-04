@@ -39,7 +39,7 @@ if CameraInterface is None:
 
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
-from physion.acquisition.settings import get_config_list, get_subject_props
+from physion.acquisition.settings import get_config_list
 from physion.visual_stim.main import visual_stim, visual
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path

@@ -60,7 +60,10 @@ def get_subject_props(self, filename=None):
     for i in range(len(table.keys())):
         key = str(table.get(table.keys()[i])[0])
         if key.replace(' ', '')!='':
-            subject_props[key] = str(table.get(table.keys()[i])[1])
+            try:
+                subject_props[key] = str(table.get(table.keys()[i])[1])
+            except BaseException as be:
+                print(' pb with key: %s', key)
 
     return subject_props
 

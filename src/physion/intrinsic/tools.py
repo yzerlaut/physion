@@ -14,8 +14,8 @@ from physion.utils import plot_tools as pt
 ge_screen = None
 
 default_segmentation_params={'phaseMapFilterSigma': 2.,
-                             'signMapFilterSigma': 9.,
-                             'signMapThr': 0.35,
+                             'signMapFilterSigma': 3.,
+                             'signMapThr': 0.5,
                              'eccMapFilterSigma': 10.,
                              'splitLocalMinCutStep': 5.,
                              'mergeOverlapThr': 0.1,
