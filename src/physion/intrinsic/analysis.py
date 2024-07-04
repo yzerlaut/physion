@@ -1,4 +1,4 @@
-import sys, os, shutil, glob, time, subprocess, pathlib, json, tempfile, datetime
+import sys, os, glob, time, subprocess, pathlib, json, tempfile, datetime
 import numpy as np
 import pynwb, PIL, pandas
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -255,12 +255,13 @@ def open_intrinsic_folder(self):
 
     self.datafolder = self.open_folder()
 
-    if os.path.isfile(os.path.join(self.datafolder, 'metadata.npy')):
+    if os.path.isfile(os.path.join(self.datafolder, 'metadata.json')):
 
         self.IMAGES = {}
 
-        metadata = np.load(os.path.join(self.datafolder, 'metadata.npy'),
-                           allow_pickle=True).item()
+        with open(os.path.join(self.datafolder, 'metadata.json'),
+                  'r', encoding='utf-8') as f:
+            metadata = json.load(f)
 
         # set subject and timestamip
         self.subject = metadata['subject']

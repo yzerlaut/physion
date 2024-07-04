@@ -31,7 +31,6 @@ def build_NWB_func(args):
     ####            BASIC metadata            #######
     #################################################
 
-    
     if os.path.isfile(os.path.join(args.datafolder, 'metadata.json')):
         with open(os.path.join(args.datafolder, 'metadata.json'),
                   'r', encoding='utf-8') as f:

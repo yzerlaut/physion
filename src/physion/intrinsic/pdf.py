@@ -15,8 +15,8 @@ def metadata_fig(datafolder, angle_from_axis=None):
 
     if angle_from_axis is not None:
         metadata['angle'] = angle_from_axis
-    elif 'subject_props' in metadata:
-        metadata['angle'] = metadata['subject_props']['headplate_angle_from_rig_axis_for_recording'] 
+    elif 'headplate_angle_from_rig_axis_for_recording' in metadata:
+        metadata['angle'] = metadata['headplate_angle_from_rig_axis_for_recording'] 
     else:
         metadata['angle'] = '' 
     

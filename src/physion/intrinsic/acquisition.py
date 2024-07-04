@@ -254,15 +254,12 @@ def take_fluorescence_picture(self):
             self.cam.arm(2)
             self.cam.issue_software_trigger()
 
-        for fn, HQ in zip([filename.replace('.tif', '-HQ.tif'), filename],
-                          [True, False]):
-            # save first HQ and then subsampled version
-            img = get_frame(self, force_HQ=HQ)
-            im = PIL.Image.fromarray(img)
-            im.save(fn)
-
-        np.save(filename.replace('.tif', '.npy'), img)
+        img = get_frame(self, force_HQ=True)
+        im = PIL.Image.fromarray(img)
+        im.save(filename)
+        # np.save(filename.replace('.tif', '.npy'), img)
         print('fluorescence image, saved as: %s ' % filename)
+
         # then keep a version to store with imaging:
         self.fluorescence_img = img
         self.imgPlot.setImage(self.fluorescence_img.T) # show on display
@@ -288,15 +285,12 @@ def take_vasculature_picture(self):
             self.cam.arm(2)
             self.cam.issue_software_trigger()
 
-        for fn, HQ in zip([filename.replace('.tif', '-HQ.tif'), filename],
-                          [True, False]):
-            # save first HQ and then subsampled version
-            img = get_frame(self, force_HQ=HQ)
-            im = PIL.Image.fromarray(img)
-            im.save(fn)
-
-        np.save(filename.replace('.tif', '.npy'), img)
+        img = get_frame(self, force_HQ=True)
+        im = PIL.Image.fromarray(img)
+        im.save(filename)
+        # np.save(filename.replace('.tif', '.npy'), img)
         print('vasculature image, saved as: %s' % filename)
+
         # then keep a version to store with imaging:
         self.vasculature_img = img
         self.imgPlot.setImage(self.vasculature_img.T) # show on displayn
@@ -308,7 +302,6 @@ def take_vasculature_picture(self):
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
 
     
-
 def get_patterns(self, protocol, angle, size,
                  Npatch=30):
 
@@ -495,36 +488,38 @@ def write_data(self):
 
 def save_intrinsic_metadata(self):
     
-    filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                                      filename='metadata', extension='.npy')
+    filename = generate_filename_path(\
+            FOLDERS[self.folderBox.currentText()],
+            filename='metadata', extension='.json')
 
-    subjects = pandas.read_csv(os.path.join(base_path,
-                               'subjects',self.config['subjects_file']))
-    subject = get_subject_props(self)
-        
+    # subject information copied to the recording folder
+    shutil.copy(\
+            os.path.join(base_path, 'subjects',
+                         self.config['subjects_folder'],
+                         '%s.xlsx' % self.subjectBox.currentText()),
+                filename.replace('metadata.json',
+                         '%s.xlsx' % self.subjectBox.currentText()))
+
     metadata = {'subject':str(self.subjectBox.currentText()),
-                'exposure':self.exposure,
-                'bar-size':float(self.barBox.text()),
-                'acq-freq':float(self.freqBox.text()),
-                'period':float(self.periodBox.text()),
+                'exposure':str(self.exposure),
+                'bar-size':str(self.barBox.text()),
+                'acq-freq':str(self.freqBox.text()),
+                'period':str(self.periodBox.text()),
                 'Nsubsampling':int(self.spatialBox.text()),
                 'Nrepeat':int(self.repeatBox.text()),
-                'imgsize':self.imgsize,
-                'headplate-angle-from-rig-axis':subject['headplate-angle-from-rig-axis'],
+                'imgsize':str(self.imgsize),
+                'headplate-angle-from-rig-axis':'15.0',
                 'Height-of-Microscope-Camera-Image-in-mm':\
-                        self.config['Height-of-Microscope-Camera-Image-in-mm'],
-                'STIM':self.STIM}
-    
-    np.save(filename, metadata)
+            str(self.config['Height-of-Microscope-Camera-Image-in-mm'])}
 
-    if self.vasculature_img is not None:
-        np.save(filename.replace('metadata', 'vasculature'),
-                self.vasculature_img)
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f,
+                  ensure_ascii=False, indent=4)
 
-    if self.fluorescence_img is not None:
-        np.save(filename.replace('metadata', 'fluorescence'),
-                self.fluorescence_img)
-        
+    # saving visual stim protocol
+    np.save(filename.replace('metadata.json', 'visual-stim.npy'),
+            self.STIM)
+
     self.datafolder = os.path.dirname(filename)
 
     

@@ -45,17 +45,16 @@ def update_config(self):
 
         # now update subjects
         self.subject_list = [ff.replace('.xlsx','')\
-                                for ff in os.listdir(\
-                                    os.path.join(base_path,
-                                                'subjects',
-                                                 self.config['subjects_folder']))]
+                    for ff in os.listdir(\
+                        os.path.join(base_path,
+                                    'subjects',
+                                     self.config['subjects_folder']))]
         self.subjectBox.clear()
         self.subjectBox.addItems(self.subject_list)
 
         # now update screen 
         # if 'Screen' in self.config:
             # self.screenBox.setCurrentText(self.config['Screen'])
-
 
 
 def update_subject(self):

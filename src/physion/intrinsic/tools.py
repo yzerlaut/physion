@@ -221,18 +221,18 @@ def get_phase_to_angle_func(datafolder, direction):
     converti stimulus phase to visual angle
     """
 
-    p= np.load(os.path.join(datafolder, 'metadata.npy'),
-                     allow_pickle=True).item()
+    stim = np.load(os.path.join(datafolder, 'visual-stim.npy'),
+                   allow_pickle=True).item()
 
     # phase to angle conversion
     if direction=='up':
-        bounds = [p['STIM']['zmin'], p['STIM']['zmax']]
+        bounds = [stim['zmin'], stim['zmax']]
     elif direction=='right':
-        bounds = [p['STIM']['xmin'], p['STIM']['xmax']]
+        bounds = [stim['xmin'], stim['xmax']]
     elif direction=='down':
-        bounds = [p['STIM']['zmax'], p['STIM']['zmin']]
+        bounds = [stim['zmax'], stim['zmin']]
     else:
-        bounds = [p['STIM']['xmax'], p['STIM']['xmin']]
+        bounds = [stim['xmax'], stim['xmin']]
 
     # keep phase to angle relathionship    /!\ [-PI/2, 3*PI/2] interval /!\
     phase_to_angle_func = lambda x: bounds[0]+\
