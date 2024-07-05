@@ -3,10 +3,11 @@ import numpy as np
 import multiprocessing
 from PyQt5 import QtCore
 
-from physion.utils.files import generate_filename_path,\
+from physion.utils.files import get_time, get_date, generate_datafolders,\
         get_latest_file
 from physion.acquisition.tools import base_path,\
-        check_gui_to_init_metadata, NIdaq_metadata_init
+        check_gui_to_init_metadata, NIdaq_metadata_init,\
+        set_filename_and_folder
 from physion.acquisition import recordings
 
 try:
@@ -84,17 +85,19 @@ def initialize(self):
 
         self.readyEvent.clear() # off, the init procedure should turn it on
         self.runEvent.clear() # off, the run command should turn it on
+
+        # SET DATAFOLDER AND SUB-FOLDERS: acquisition/tools.py
+        #     (creates FaceCamera-imgs, ... if necessary )
+        set_filename_and_folder(self)
+        self.datafolder.set(self.date_time_folder)
+
         self.metadata = check_gui_to_init_metadata(self)
+        self.metadata['datafolder'] = self.date_time_folder
+        self.filename = os.path.join(self.date_time_folder,
+                                     'metadata.npy')
 
-        # SET FILENAME AND FOLDER
-        self.filename = generate_filename_path(self.metadata['root-data-folder'],
-                                               filename='metadata',
-                                               extension='.npy',
-                    with_FaceCamera_frames_folder=self.metadata['FaceCamera'],
-                    with_RigCamera_frames_folder=self.metadata['RigCamera'])
-        self.datafolder.set(str(os.path.dirname(self.filename)))
-
-        self.max_time = 30*60 # 2 hours by default, so should be stopped manually
+        self.max_time = 30*60 
+        # ... 30min by default, so should be stopped manually
 
         if self.metadata['VisualStim']:
             self.statusBar.showMessage(\
@@ -114,14 +117,17 @@ def initialize(self):
             self.statusBar.showMessage('[...] initializing acquisition')
 
         print('max_time of NIdaq recording: %.2dh:%.2dm:%.2ds' %\
-                (self.max_time/3600, (self.max_time%3600)/60, (self.max_time%60)))
+                (self.max_time/3600, 
+                  (self.max_time%3600)/60,
+                    (self.max_time%60)))
 
         output_funcs= []
         if self.metadata['CaImaging']:
             output_funcs.append(recordings.trigger2P)
         if self.metadata['recording']!='':
             other_funcs = \
-                getattr(recordings, self.metadata['recording']).output_funcs
+                getattr(recordings, 
+                        self.metadata['recording']).output_funcs
             for func in other_funcs:
                 output_funcs.append(func)
 
@@ -130,9 +136,12 @@ def initialize(self):
         if not self.onlyDemoButton.isChecked():
             try:
                 self.acq = Acquisition(\
-                    sampling_rate=self.metadata['NIdaq-acquisition-frequency'],
-                    Nchannel_analog_in=self.metadata['NIdaq-analog-input-channels'],
-                    Nchannel_digital_in=self.metadata['NIdaq-digital-input-channels'],
+                    sampling_rate=\
+                        self.metadata['NIdaq-acquisition-frequency'],
+                    Nchannel_analog_in=\
+                            self.metadata['NIdaq-analog-input-channels'],
+                    Nchannel_digital_in=\
+                            self.metadata['NIdaq-digital-input-channels'],
                     max_time=self.max_time,
                     output_funcs=output_funcs,
                     filename= self.filename.replace('metadata', 'NIdaq'))
@@ -157,24 +166,35 @@ def initialize(self):
             self.stopButton.setEnabled(True)
 
     elif at_least_one_modality:
-        self.statusBar.showMessage(' no config selected -> pick a config first !')
+        self.statusBar.showMessage(\
+                ' no config selected -> pick a config first !')
 
 
 def toggle_FaceCamera_process(self):
 
     if self.config is None:
-        self.statusBar.showMessage(' no config selected -> pick a config first !')
-    elif self.FaceCameraButton.isChecked() and (self.FaceCamera_process is None):
+        self.statusBar.showMessage(\
+                ' no config selected -> pick a config first !')
+    elif self.FaceCameraButton.isChecked() and\
+                        (self.FaceCamera_process is None):
         # need to launch it
-        self.statusBar.showMessage('  starting FaceCamera stream [...] ')
+        self.statusBar.showMessage(\
+                '  starting FaceCamera stream [...] ')
         self.show()
-        self.FaceCamera_process = multiprocessing.Process(target=launch_FlirCamera,
-                        args=(self.runEvent, self.quitEvent, self.datafolder,
-                              'FaceCamera', 0, {'frame_rate':self.config['FaceCamera-frame-rate']}))
+        self.FaceCamera_process =\
+                multiprocessing.Process(target=launch_FlirCamera,
+                        args=(self.runEvent, 
+                              self.quitEvent,
+                              self.datafolder,
+                              'FaceCamera', 0, 
+                              {'frame_rate':\
+                                self.config['FaceCamera-frame-rate']}))
         self.FaceCamera_process.start()
-        self.statusBar.showMessage('[ok] FaceCamera initialized ! (in 5-6s) ')
+        self.statusBar.showMessage(\
+                '[ok] FaceCamera initialized ! (in 5-6s) ')
         
-    elif (not self.FaceCameraButton.isChecked()) and (self.FaceCamera_process is not None):
+    elif (not self.FaceCameraButton.isChecked()) and\
+            (self.FaceCamera_process is not None):
         # need to shut it down
         self.statusBar.showMessage(' FaceCamera stream interupted !')
         self.FaceCamera_process.terminate()

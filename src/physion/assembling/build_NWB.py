@@ -47,9 +47,9 @@ def build_NWB_func(args):
     else:
         sep = '/' # a weird behavior on Windows
 
-    day = metadata['filename'].split('\\')[-2].split('_')
-    Time = metadata['filename'].split('\\')[-1].split('-')
-    identifier = metadata['filename'].split('\\')[-2]+'-'+metadata['filename'].split('\\')[-1]
+    day = metadata['date'].split('_')
+    Time = metadata['time'].split('-')
+    identifier = metadata['date']+'-'+metadata['time']
     start_time = datetime.datetime(int(day[0]),int(day[1]),int(day[2]),
                 int(Time[0]),int(Time[1]),int(Time[2]),tzinfo=tzlocal())
 

@@ -3,15 +3,30 @@ import numpy as np
 
 base_path = str(pathlib.Path(__file__).resolve().parents[0])
 
-from physion.utils.files import generate_filename_path
+from physion.utils.files import generate_filename_path,\
+        get_date, get_time, generate_datafolders
 from physion.utils.paths import FOLDERS
 
 def set_filename_and_folder(self):
-    self.filename = generate_filename_path(self.root_datafolder,
-                                filename='metadata',
-                        extension='.json',
-                with_FaceCamera_frames_folder=self.metadata['FaceCamera'])
-    self.datafolder.set(os.path.dirname(self.filename))
+
+    self.date, self.time = get_date(), get_time()
+    if hasattr(self, 'folderBox'):
+        self.root_data_folder = FOLDERS[self.folderBox.currentText()]
+    else:
+        self.root_data_folder = os.path.join(\
+                            os.path.expanduser('~'), 'DATA')
+
+    self.date_time_folder = generate_datafolders(\
+                                    self.root_data_folder,
+                                    self.date,
+                                    self.time,
+            with_FaceCamera_frames_folder=\
+              self.FaceCameraButton.isChecked() if hasattr(\
+                            self, 'FaceCameraButton') else False,
+            with_RigCamera_frames_folder=\
+              self.RigCameraButton.isChecked() if hasattr(\
+                            self, 'RigCameraButton') else False)
+    self.datafolder.set(self.date_time_folder)
 
 
 def save_experiment(self, metadata):
@@ -72,15 +87,14 @@ def check_gui_to_init_metadata(self):
     
     ### set up all metadata based on GUI infos
     metadata = {'config':self.configBox.currentText(),
-                'root-data-folder':FOLDERS[self.folderBox.currentText()],
-                # 'Screen':self.screenBox.currentText(),
+                'date':self.date,
+                'time':self.time,
                 'protocol':self.protocolBox.currentText(),
                 'VisualStim':self.protocolBox.currentText()!='None',
                 'recording':self.recordingBox.currentText(),
                 'notes':self.qmNotes.toPlainText(),
                 'FOV':self.fovPick.currentText(),
-                'subject_ID':self.subjectBox.currentText(),
-                'subject_props':get_subject_props(self)}
+                'subject_ID':self.subjectBox.currentText()}
 
     if self.protocolBox.currentText()!='None':
         fn = os.path.join(base_path, 'protocols',
@@ -90,10 +104,9 @@ def check_gui_to_init_metadata(self):
     else:
         self.protocol = {}
 
-    for d in [self.config, self.protocol]:
-        if d is not None:
-            for key in d:
-                metadata[key] = d[key]
+    if self.config is not None:
+        for key in self.config:
+            metadata[key] = self.config[key]
     
     for k in self.MODALITIES:
         metadata[k] = bool(getattr(self, k+'Button').isChecked())
