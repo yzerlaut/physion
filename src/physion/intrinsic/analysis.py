@@ -575,7 +575,7 @@ def get_datafolder(self):
 def pdf_intrinsic(self):
 
     cmd = '%s -m physion.intrinsic.pdf %s' % (python_path, self.datafolder)
-    cmd += ' --output %s' % os.path.join(FOLDERS[self.folderBox.currentText()], self.subject+'.pdf')
+    #cmd += ' --output %s' % os.path.join(FOLDERS[self.folderBox.currentText()], self.subject+'.pdf')
     cmd += ' --image_height %.1f ' % self.scaleButton.value()
     cmd += ' --angle_from_rig %.1f ' % self.angleButton.value()
 

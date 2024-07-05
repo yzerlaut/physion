@@ -78,7 +78,8 @@ def get_subject_props(self, filename=None):
             try:
                 subject_props[key] = str(table.get(table.keys()[i])[1])
             except BaseException as be:
-                print(' pb with key: %s', key)
+                # print(' pb with key: %s', key)
+                pass
 
     return subject_props
 

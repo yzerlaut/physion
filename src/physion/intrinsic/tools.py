@@ -107,11 +107,11 @@ def load_and_resample_hq(key, datafolder, subject,
                          shape=None):
     """
     from a tiff like:
-        vasculature-Mouse1Ax3D-HQ.tiff
+        vasculature-Mouse1Ax3D.tiff
     """
-    if os.path.isfile(os.path.join(datafolder, '%s-%s-HQ.tif' % (key, subject))):
+    if os.path.isfile(os.path.join(datafolder, '%s-%s.tif' % (key, subject))):
         img = np.array(Image.open(os.path.join(datafolder,\
-                                '%s-%s-HQ.tif' % (key, subject)))).astype('float')
+                                '%s-%s.tif' % (key, subject)))).astype('float')
         img = (img-np.min(img))/(img.max()-img.min())
         if shape is None:
             return img

@@ -1,4 +1,4 @@
-import os, sys, pathlib
+import os, sys, pathlib, json
 import numpy as np
 from PIL import Image
 import matplotlib.pylab as plt
@@ -8,7 +8,7 @@ from physion.intrinsic import RetinotopicMapping
 
 def metadata_fig(datafolder, angle_from_axis=None):
 
-    with open(os.path.join(datafolder, 'metadata.json'), 'w') as f:
+    with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
         metadata = json.load(f)
 
     if 'time' not in metadata:
@@ -94,6 +94,9 @@ def metadata_fig(datafolder, angle_from_axis=None):
 def build_pdf(args, 
               angle=10,
               image_height=2.7):
+
+    if args.output=='':
+        args.output = os.path.join(args.datafolder, 'VisualAreas_Segmentation.pdf')
 
     width, height = int(8.27 * 300), int(11.7 * 300) # A4 at 300dpi
     page = Image.new('RGB', (width, height), 'white')
@@ -236,7 +239,7 @@ if __name__=='__main__':
     parser.add_argument("--angle_from_rig", type=float,default=0) # mm
     parser.add_argument("--image_height", type=float,default=2.70) # mm
     parser.add_argument("--pixel", type=int, nargs=2, default=(150,150)) 
-    parser.add_argument('-o', "--output", default='fig.pdf')
+    parser.add_argument('-o', "--output", default='')
     parser.add_argument('-v', "--verbose", action="store_true")
     
     args = parser.parse_args()
