@@ -4,7 +4,7 @@
   "Screen": "Dell-2020",
   "movie_refresh_freq":20,
   "presentation-duration": 3.0,
-  "presentation-blank-screen-color": 0,
+  "presentation-blank-screen-color": 0.5,
   "presentation-prestim-period": 4.0,
   "presentation-poststim-period": 4.0,
   "presentation-interstim-period": 4.0,

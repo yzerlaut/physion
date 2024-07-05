@@ -1,4 +1,4 @@
-import json, os, shutil, pathlib, pandas, get_subject_props
+import json, os, shutil, pathlib, pandas
 import numpy as np
 
 base_path = str(pathlib.Path(__file__).resolve().parents[0])
