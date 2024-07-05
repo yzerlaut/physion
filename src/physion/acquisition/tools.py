@@ -127,5 +127,3 @@ def NIdaq_metadata_init(self):
         self.metadata['NIdaq-analog-input-channels'] = 2 # AI1 for LFP 
     elif self.metadata['EphysVm']:
         self.metadata['NIdaq-analog-input-channels'] = 2 # AI1 for Vm
-
-
