@@ -8,10 +8,13 @@ from physion.intrinsic import RetinotopicMapping
 
 def metadata_fig(datafolder, angle_from_axis=None):
 
-    metadata = dict(np.load(os.path.join(datafolder, 'metadata.npy'),
-                    allow_pickle=True).item())
+    with open(os.path.join(datafolder, 'metadata.json'), 'w') as f:
+        metadata = json.load(f)
 
-    metadata['recording-time'] = datafolder.split(os.path.sep)[-2:]
+    if 'time' not in metadata:
+        metadata['time'] = datafolder.split(os.path.sep)[-2:]
+    if 'date' not in metadata:
+        metadata['date'] = ''
 
     if angle_from_axis is not None:
         metadata['angle'] = angle_from_axis
@@ -25,9 +28,9 @@ def metadata_fig(datafolder, angle_from_axis=None):
     string = """
     Mouse ID: "%(subject)s"
 
-    Recorded @ %(recording-time)s
+    Recorded @ %(date)s %(time)s
 
-    headplate angle from rig/experimenter axis: %(angle)s
+    headplate angle axis: %(angle)s
     """ % metadata
 
     ax.annotate(string, (0,0), size='small', xycoords='axes fraction')
