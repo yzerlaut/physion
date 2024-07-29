@@ -125,7 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # -- Suite2P Preprocesssing
     if not Acquisition:
         from physion.imaging.gui import suite2p_preprocessing_UI,\
-                load_TSeries_folder, run_TSeries_analysis 
+                load_TSeries_folder, run_TSeries_analysis, change_presets
     else:
         from physion.gui.parts import inactivated as suite2p_preprocessing_UI
 
@@ -165,7 +165,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # -- File Transfer
     if not Acquisition:
-        from physion.transfer.gui import transfer_gui,\
+        from physion.utils.transfer.gui import transfer_gui,\
                 set_source_folder, set_destination_folder,\
                 run_transfer
                 
@@ -330,7 +330,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggle(self):
         tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='red_channel_labelling':
+        if self.windows[tab_id] =='FOV':
+            self.toggle_FOV()
+        elif self.windows[tab_id] =='red_channel_labelling':
             self.toggle_RCL()
         else:
             print('no shortcut')

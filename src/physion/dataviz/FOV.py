@@ -10,8 +10,8 @@ KEYS = ['meanImg', 'max_proj', 'meanImgE',
         'meanImg_chan2', 'meanImgE_chan2',
         'meanImg_chan2-X*meanImg']
 
-def FOV(self,
-       tab_id=3):
+def FOV(self, useless=0,
+        tab_id=3):
 
     self.windows[tab_id] = 'FOV'
 
@@ -19,55 +19,15 @@ def FOV(self,
 
     self.cleanup_tab(tab)
 
-    # self.winFOV = pg.GraphicsLayoutWidget()
-    # self.pFOV=self.winFOV.addViewBox(lockAspect=True,
-                                     # invertY=True, border=[1, 1, 1])
-    # self.pFOVimg = pg.ImageItem(np.ones((50,50))*100)
-
-    # tab.layout.addWidget(self.winFOV,
-                # 0, self.side_wdgt_length,
-                # self.nWidgetRow, self.nWidgetCol-self.side_wdgt_length)
-
-    # self.FOVchannelBox = QtWidgets.QComboBox(self)
-    # self.FOVchannelBox.addItem(' [pick channel]')
-    # self.FOVchannelBox.setCurrentIndex(0)
-    # self.add_side_widget(tab.layout, self.FOVchannelBox)
-
-    # # self.add_side_widget(self.tabs[3].layout, QtWidgets.QLabel(' '))
-
-    # self.FOVimageBox = QtWidgets.QComboBox(self)
-    # self.FOVimageBox.addItem(' [pick image]')
-    # self.FOVimageBox.setCurrentIndex(0)
-    # self.add_side_widget(tab.layout, self.FOVimageBox)
-
-    # while self.i_wdgt<self.nWidgetRow:
-        # self.add_side_widget(tab.layout,
-                             # QtWidgets.QLabel(' '))
-
-    # self.refresh_tab(tab)
-
     ##########################################################
     ####### GUI settings
     ##########################################################
 
-    # ========================================================
-    #------------------- SIDE PANELS FIRST -------------------
-    # folder box
-    self.add_side_widget(tab.layout,
-            QtWidgets.QLabel('data folder:'))
-    self.folderBox = QtWidgets.QComboBox(self)
-    self.folder_default_key = '  [root datafolder]'
-    self.folderBox.addItem(self.folder_default_key)
-    for folder in FOLDERS.keys():
-        self.folderBox.addItem(folder)
-    self.folderBox.setCurrentIndex(1)
-    self.add_side_widget(tab.layout, self.folderBox)
+    self.showRoisB= QtWidgets.QCheckBox('show ROIs [T]')
+    self.add_side_widget(tab.layout, self.showRoisB)
 
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-
-    self.load = QtWidgets.QPushButton('  load data [O]  \u2b07')
-    self.load.clicked.connect(self.open)
-    self.add_side_widget(tab.layout, self.load)
+    # self.roiIdB= QtWidgets.QCheckBox('with ID #')
+    # self.add_side_widget(tab.layout, self.roiIdB)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
@@ -109,11 +69,11 @@ def FOV(self,
     self.roiPickFOV.returnPressed.connect(self.select_ROI_FOV)
     self.add_side_widget(tab.layout, self.roiPickFOV)
 
-    self.prevFOV = QtWidgets.QPushButton('[N]ext ROI')
+    self.prevFOV = QtWidgets.QPushButton('[P]rev')
     self.prevFOV.clicked.connect(self.prev_ROI_FOV)
     self.add_side_widget(tab.layout, self.prevFOV, 'small-left')
 
-    self.nextFOV = QtWidgets.QPushButton('[P]rev')
+    self.nextFOV = QtWidgets.QPushButton('[N]ext ROI')
     self.nextFOV.clicked.connect(self.next_ROI_FOV)
     self.add_side_widget(tab.layout, self.nextFOV, 'large-right')
 
@@ -155,6 +115,7 @@ def FOV(self,
     self.rois_hl = pg.ScatterPlotItem()
 
     self.refresh_tab(tab)
+    self.draw_image_FOV()
      
 def prev_ROI_FOV(self):
     self.prev_ROI()
@@ -187,7 +148,7 @@ def draw_image_FOV(self):
         print(be)
         self.expT.setValue(0.25)
         exponent = 0.25
-    print(self.data.nwbfile.processing['ophys'])
+
     try:
         img = np.array(self.data.nwbfile.processing['ophys']['Backgrounds_0'][self.imgB.currentText()]).T
         img = (img-img.min())/(img.max()-img.min())
@@ -200,8 +161,12 @@ def draw_image_FOV(self):
 
 
 def toggle_FOV(self):
-    pass
-
+    if self.showRoisB.isChecked():
+        self.showRoisB.setChecked(False)
+    else:
+        self.showRoisB.setChecked(True)
+    self.draw_image_FOV()
+    
 
 def draw_rois(self,
               t=np.arange(20)):
@@ -209,8 +174,14 @@ def draw_rois(self,
     self.x_green, self.y_green = [], []
     self.x_red, self.y_red = [], []
     self.x_hl, self.y_hl= [], []
+
+    if not hasattr(self.data, 'nROIs'):
+        self.data.initialize_ROIs()
+
+    if not hasattr(self, 'roiIndices'):
+        self.next_ROI_FOV()
     
-    for ir in np.arange(self.data.nROIs):
+    for ir in np.arange(self.data.nROIs if self.showRoisB.isChecked() else 0):
 
         indices = np.arange((self.data.pixel_masks_index[ir-1] if ir>0 else 0),
                             (self.data.pixel_masks_index[ir] if ir<len(self.data.valid_roiIndices) else len(self.data.pixel_masks_index)))

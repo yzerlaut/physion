@@ -1,21 +1,25 @@
-import os, sys, pathlib
+import os, sys, pathlib, json
 import numpy as np
 from PIL import Image
 import matplotlib.pylab as plt
 
-import physion
+from physion.intrinsic import tools
+from physion.intrinsic import RetinotopicMapping
 
 def metadata_fig(datafolder, angle_from_axis=None):
 
-    metadata = dict(np.load(os.path.join(datafolder, 'metadata.npy'),
-                    allow_pickle=True).item())
+    with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
+        metadata = json.load(f)
 
-    metadata['recording-time'] = datafolder.split(os.path.sep)[-2:]
+    if 'time' not in metadata:
+        metadata['time'] = datafolder.split(os.path.sep)[-2:]
+    if 'date' not in metadata:
+        metadata['date'] = ''
 
     if angle_from_axis is not None:
         metadata['angle'] = angle_from_axis
-    elif 'subject_props' in metadata:
-        metadata['angle'] = metadata['subject_props']['headplate_angle_from_rig_axis_for_recording'] 
+    elif 'headplate_angle_from_rig_axis_for_recording' in metadata:
+        metadata['angle'] = metadata['headplate_angle_from_rig_axis_for_recording'] 
     else:
         metadata['angle'] = '' 
     
@@ -24,9 +28,9 @@ def metadata_fig(datafolder, angle_from_axis=None):
     string = """
     Mouse ID: "%(subject)s"
 
-    Recorded @ %(recording-time)s
+    Recorded @ %(date)s %(time)s
 
-    headplate angle from rig/experimenter axis: %(angle)s
+    headplate angle axis: %(angle)s
     """ % metadata
 
     ax.annotate(string, (0,0), size='small', xycoords='axes fraction')
@@ -91,39 +95,43 @@ def build_pdf(args,
               angle=10,
               image_height=2.7):
 
+    if args.output=='':
+        args.output = os.path.join(args.datafolder, 'VisualAreas_Segmentation.pdf')
+
     width, height = int(8.27 * 300), int(11.7 * 300) # A4 at 300dpi
     page = Image.new('RGB', (width, height), 'white')
 
     fig_metadata, ax = metadata_fig(args.datafolder)
     fig_metadata.savefig('/tmp/fig_metadata.png', dpi=300)
     fig = Image.open('/tmp/fig_metadata.png')
-    page.paste(fig, box=(200, 160))
+    page.paste(fig, box=(50, 160))
     fig.close()
 
-    maps = physion.intrinsic.tools.load_maps(args.datafolder)
+    maps = tools.load_maps(args.datafolder)
+
+    maps['vasculature'] = tools.load_and_resample_hq('vasculature', 
+                                         args.datafolder, maps['subject'])
+    maps['fluorescence'] = tools.load_and_resample_hq('fluorescence', 
+                                           args.datafolder, maps['subject'])
 
     # # vasculature and fluorescence image
     fig, AX = plt.subplots(1, 2, figsize=(4.5,2.6))
 
     if 'vasculature' in maps:
-        maps['vasculature'] = (maps['vasculature']-\
-                np.min(maps['vasculature']))/(np.max(maps['vasculature'])-np.min(maps['vasculature']))
         maps['vasculature'] = maps['vasculature']**args.vasc_exponent
         AX[0].imshow(maps['vasculature'], cmap='gray', vmin=0, vmax=1)
         AX[0].set_title('vasculature')
 
 
     if 'fluorescence' in maps:
-        maps['fluorescence'] = (maps['fluorescence']-\
-           np.min(maps['fluorescence']))/(np.max(maps['fluorescence'])-np.min(maps['fluorescence']))
         maps['fluorescence'] = maps['fluorescence']**args.fluo_exponent
         AX[1].imshow(maps['fluorescence'], cmap='gray', vmin=0, vmax=1)
         AX[1].set_title('fluorescence')
 
-    physion.intrinsic.tools.add_arrow(AX[0], angle=args.angle_from_rig)
-    physion.intrinsic.tools.add_scale_bar(AX[0], height=args.image_height)
-    physion.intrinsic.tools.add_arrow(AX[1], angle=args.angle_from_rig)
-    physion.intrinsic.tools.add_scale_bar(AX[1], height=args.image_height)
+    tools.add_arrow(AX[0], angle=args.angle_from_rig)
+    tools.add_scale_bar(AX[0], height=args.image_height)
+    tools.add_arrow(AX[1], angle=args.angle_from_rig)
+    tools.add_scale_bar(AX[1], height=args.image_height)
 
     AX[0].axis('off')
     AX[1].axis('off')
@@ -133,10 +141,10 @@ def build_pdf(args,
     page.paste(fig, box=(int(3.4*300), int(0.1*300)))
     fig.close()
 
-    fig_alt = physion.intrinsic.tools.plot_retinotopic_maps(maps, 'altitude')
+    fig_alt = tools.plot_retinotopic_maps(maps, 'altitude')
     fig_alt.savefig('/tmp/fig_alt.png', dpi=300)
 
-    fig_azi = physion.intrinsic.tools.plot_retinotopic_maps(maps, 'azimuth')
+    fig_azi = tools.plot_retinotopic_maps(maps, 'azimuth')
     fig_azi.savefig('/tmp/fig_azi.png', dpi=300)
 
     start, space = int(0.4*300), int(2.4*300)
@@ -147,7 +155,7 @@ def build_pdf(args,
         start += fig.getbbox()[2]-fig.getbbox()[0]
         fig.close()
 
-    # params, (t, data) = physion.intrinsic.tools.load_raw_data(args.datafolder, 'up')
+    # params, (t, data) = tools.load_raw_data(args.datafolder, 'up')
 
     # fig = show_raw_data(t, data, params, maps, pixel=args.pixel)
     # fig.suptitle('example protocol: "up" ', fontsize=8)
@@ -157,10 +165,10 @@ def build_pdf(args,
     # fig.close()
 
 
-    # trial_data = physion.intrinsic.tools.build_trial_data(maps)
+    # trial_data = tools.build_trial_data(maps)
     trial_data = np.load(os.path.join(args.datafolder, 'RetinotopicMappingData.npy'),
                          allow_pickle=True).item()
-    trial = physion.intrinsic.RetinotopicMapping.RetinotopicMappingTrial(**trial_data)
+    trial = RetinotopicMapping.RetinotopicMappingTrial(**trial_data)
     trial.processTrial(isPlot=False)
 
     for key, loc, alpha in zip(['vasculature', 'fluorescence'], [6.5, 8.9], [0.3,0.1]):
@@ -170,8 +178,13 @@ def build_pdf(args,
 
         fig.supylabel(key)
 
+        maps[key] = tools.load_and_resample_hq(key, args.datafolder, 
+                                               maps['subject'], 
+                                               shape=maps['up-power'].shape)
+
         if key in maps:
             AX[0].imshow(maps[key], cmap='gray', vmin=0, vmax=1)
+
         mean_power = maps['up-power']+maps['down-power']+maps['right-power']+maps['left-power']
         im = AX[0].imshow(mean_power, cmap=plt.cm.cool, alpha=alpha)
         AX[0].axis('off')
@@ -206,7 +219,9 @@ def build_pdf(args,
 
         fig.savefig('/tmp/fig.png', dpi=300)
         fig = Image.open('/tmp/fig.png')
-        page.paste(fig, box=(int(0.2*300), int(loc*300)))
+        page.paste(fig,
+                   box=(int(0.2*300),
+                        int(loc*300)))
         fig.close()
 
     page.save(args.output)
@@ -224,7 +239,7 @@ if __name__=='__main__':
     parser.add_argument("--angle_from_rig", type=float,default=0) # mm
     parser.add_argument("--image_height", type=float,default=2.70) # mm
     parser.add_argument("--pixel", type=int, nargs=2, default=(150,150)) 
-    parser.add_argument('-o', "--output", default='fig.pdf')
+    parser.add_argument('-o', "--output", default='')
     parser.add_argument('-v', "--verbose", action="store_true")
     
     args = parser.parse_args()

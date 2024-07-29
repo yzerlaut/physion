@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtCore
 import sys, time, os, pathlib, json, tempfile
 import numpy as np
-import multiprocessing # different processes (cameras, visual stim, ...) are sent on different threads...
+import multiprocessing # different processes (cameras, visual stim, ...) are sent on different threads...)
 from ctypes import c_char_p
 import pyqtgraph as pg
 import subprocess

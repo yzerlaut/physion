@@ -58,7 +58,8 @@ The different modules of the software are documented in the following links:
 - [Hardware control](src/physion/hardware/README.md)
 - [Visualization](src/physion/dataviz/README.md)
 - [Analysis](src/physion/analysis/README.md)
-- [Sharing](src/physion/sharing/README.md)
+- [Data Management](src/physion/utils/management/README.md)
+- [Data Sharing](src/physion/utils/sharing/README.md)
 
 ## Troubleshooting / Issues
 

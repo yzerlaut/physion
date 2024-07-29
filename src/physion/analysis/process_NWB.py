@@ -128,7 +128,7 @@ class EpisodeData:
                            'time_start_realigned', 'time_stop',
                            'time_stop_realigned', 'interstim',
                            'protocol-name']:
-                unique = np.sort(np.unique(full_data.nwbfile.stimulus[key].data[self.protocol_cond_in_full_data]))
+                unique = np.sort(np.unique(full_data.nwbfile.stimulus[key].data[self.protocol_cond_in_full_data,0]))
                 if len(unique)>1:
                     self.varied_parameters[key] = unique
                 elif len(unique)==1:
@@ -136,13 +136,13 @@ class EpisodeData:
 
         # new sampling, a window arround stimulus presentation
         if (prestim_duration is None) and ('interstim' in full_data.nwbfile.stimulus):
-            prestim_duration = np.min(full_data.nwbfile.stimulus['interstim'].data[:])/2. # half the stim duration
+            prestim_duration = np.min(full_data.nwbfile.stimulus['interstim'].data[:,0])/2. # half the stim duration
         if (prestim_duration is None) or (prestim_duration<1):
             prestim_duration = 1 # still 1s is a minimum
         ipre = int(prestim_duration/dt_sampling*1e3)
 
-        duration = full_data.nwbfile.stimulus['time_stop'].data[self.protocol_cond_in_full_data][0]-\
-                full_data.nwbfile.stimulus['time_start'].data[self.protocol_cond_in_full_data][0]
+        duration = full_data.nwbfile.stimulus['time_stop'].data[self.protocol_cond_in_full_data,0][0]-\
+                full_data.nwbfile.stimulus['time_start'].data[self.protocol_cond_in_full_data,0][0]
         idur = int(duration/dt_sampling/1e-3)
         # -> time array:
         self.t = np.arange(-ipre+1, idur+ipre-1)*dt_sampling*1e-3
@@ -247,8 +247,8 @@ class EpisodeData:
 
         for iEp in np.arange(full_data.nwbfile.stimulus['time_start'].num_samples)[self.protocol_cond_in_full_data]:
 
-            tstart = full_data.nwbfile.stimulus['time_start_realigned'].data[iEp]
-            tstop = full_data.nwbfile.stimulus['time_stop_realigned'].data[iEp]
+            tstart = full_data.nwbfile.stimulus['time_start_realigned'].data[iEp,0]
+            tstop = full_data.nwbfile.stimulus['time_stop_realigned'].data[iEp,0]
 
             # print(iEp, tstart, tstop)
             # print(full_data.nwbfile.stimulus['patch-delay'].data[iEp])
@@ -291,7 +291,7 @@ class EpisodeData:
                     getattr(self, quantity).append(response)
                 for key in full_data.nwbfile.stimulus.keys():
                     try:
-                        getattr(self, key).append(full_data.nwbfile.stimulus[key].data[iEp])
+                        getattr(self, key).append(full_data.nwbfile.stimulus[key].data[iEp,0])
                     except BaseException as be:
                         pass # we skip thise variable
 
@@ -467,7 +467,10 @@ class EpisodeData:
                 if stats.r!=0:
                     summary_data['value'].append(np.mean(stats.y-stats.x))
                     summary_data['std-value'].append(np.std(stats.y-stats.x))
-                    summary_data['relative_value'].append(np.mean((stats.y-stats.x)/stats.x))
+                    if np.sum(stats.x==0)==0:
+                        summary_data['relative_value'].append(np.mean((stats.y-stats.x)/stats.x))
+                    else:
+                        summary_data['relative_value'].append(np.nan) # if one of them is 0, all to Nan so that it's unusable
                     summary_data['significant'].append(stats.significant(threshold=response_significance_threshold))
                 else:
                     for kk in ['value', 'std-value', 'significant', 'relative_value']:

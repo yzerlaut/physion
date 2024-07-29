@@ -225,6 +225,7 @@ def show_CaImaging_FOV(data,
                        roiIndex=None, roiIndices=[],
                        roi_zoom_factor=10,
                        roi_lw=3,
+                       with_ROI_annotation=False,
                        with_annotation=True,
                        with_roi_zoom=False,):
     
@@ -265,6 +266,10 @@ def show_CaImaging_FOV(data,
                 color=plt.cm.autumn(np.random.uniform(0,1)),
                 alpha=0.5,
                 ms=0.1)
+
+        if with_ROI_annotation:
+            ax.annotate('%i' % (roiIndex+1), (np.mean(x), np.mean(y)), 
+                        color='w', fontsize=7)
 
     if with_annotation:
         ax.annotate('%i ROIs' % np.sum(data.iscell), (0, 0), xycoords='axes fraction', rotation=90, ha='right')
@@ -336,18 +341,26 @@ if __name__=='__main__':
 
     parser=argparse.ArgumentParser()
     parser.add_argument("datafile", type=str)
-    parser.add_argument('-o', "--ops", default='raw', help='')
-    parser.add_argument("--tlim", type=float, nargs='*', default=[10, 50], help='')
+    parser.add_argument('-o', "--ops", 
+                        default='raw', help='')
+    parser.add_argument("--tlim", type=float, nargs='*', 
+                        default=[10, 50], help='')
     parser.add_argument('-e', "--episode", type=int, default=0)
     parser.add_argument('-nmax', "--Nmax", type=int, default=20)
     parser.add_argument("--Npanels", type=int, default=8)
     parser.add_argument('-roi', "--roiIndex", type=int, default=0)
-    parser.add_argument('-pid', "--protocol_id", type=int, default=0)
-    parser.add_argument('-q', "--quantity", type=str, default='dFoF')
-    parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+    parser.add_argument('-pid', "--protocol_id", 
+                        type=int, default=0)
+    parser.add_argument('-q', "--quantity", 
+                        type=str, default='dFoF')
+    parser.add_argument("-v", "--verbose", 
+                        help="increase output verbosity", 
+                        action="store_true")
 
     args = parser.parse_args()
     
+    import physion
+
     if args.ops=='raw':
 
         data = MultimodalData(args.datafile)
@@ -433,27 +446,24 @@ if __name__=='__main__':
         
     elif args.ops=='visual-stim':
 
-        data = MultimodalData(args.datafile)
-        fig, AX = data.show_VisualStim(args.tlim, Npanels=args.Npanels)
+        data = physion.analysis.read_NWB.Data(args.datafile)
+        fig, AX = data.show_VisualStim(args.tlim, 
+                                       Npanels=args.Npanels)
         fig2 = data.visual_stim.plot_stim_picture(args.episode)
-        print('interval [%.1f, %.1f] ' % (data.nwbfile.stimulus['time_start_realigned'].data[args.episode],
-                                          data.nwbfile.stimulus['time_stop_realigned'].data[args.episode]))
+        print('interval [%.1f, %.1f] ' % (\
+         data.nwbfile.stimulus['time_start_realigned'].data[args.episode],
+         data.nwbfile.stimulus['time_stop_realigned'].data[args.episode]))
         
     elif args.ops=='FOV':
 
-        data = MultimodalData(args.datafile)
-        fig, ax = ge.figure(figsize=(2,4), left=0.1, bottom=0.1)
-        data.show_CaImaging_FOV('meanImg', NL=3,
-                cmap=ge.get_linear_colormap('k', 'lightgreen'), 
-                roiIndices='all',
-                ax=ax)
-        ge.save_on_desktop(fig, 'fig.png', dpi=400)
+        data = physion.analysis.read_NWB.Data(args.datafile)
+        fig, ax = plt.subplots(1, figsize=(5,4))
+        show_CaImaging_FOV(data, 'meanImg', NL=3,
+                           roiIndices='all',
+                           with_ROI_annotation=True,
+                           ax=ax)
 
     else:
         print(' option not recognized !')
-        
-    ge.show()
-
-
-
-
+       
+    plt.show()

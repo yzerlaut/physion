@@ -1,4 +1,4 @@
-import os, sys, pathlib, pynwb, itertools, skimage
+import os, sys, pathlib, json, pynwb, itertools, skimage
 from scipy.ndimage.filters import gaussian_filter1d
 import numpy as np
 import matplotlib.pylab as plt
@@ -14,8 +14,8 @@ from physion.utils import plot_tools as pt
 ge_screen = None
 
 default_segmentation_params={'phaseMapFilterSigma': 2.,
-                             'signMapFilterSigma': 9.,
-                             'signMapThr': 0.35,
+                             'signMapFilterSigma': 3.,
+                             'signMapThr': 0.5,
                              'eccMapFilterSigma': 10.,
                              'splitLocalMinCutStep': 5.,
                              'mergeOverlapThr': 0.1,
@@ -30,15 +30,16 @@ default_segmentation_params={'phaseMapFilterSigma': 2.,
 
 def load_maps(datafolder, Nsubsampling=4):
 
-    if os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
-        print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
-        metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
-                       allow_pickle=True).item()
+    if os.path.isfile(os.path.join(datafolder, 'metadata.json')):
+        with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
+            metadata= json.load(f)
+        # metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
+                       # allow_pickle=True).item()
         if 'Nsubsampling' in metadata:
-            Nsubsampling = metadata['Nsubsampling']
+            Nsubsampling = int(metadata['Nsubsampling'])
     else:
-        metadata = None
-    
+        metadata = {}
+
     if os.path.isfile(os.path.join(datafolder, 'raw-maps.npy')):
         print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
         maps = np.load(os.path.join(datafolder, 'raw-maps.npy'),
@@ -46,6 +47,7 @@ def load_maps(datafolder, Nsubsampling=4):
     else:
         maps = {}
 
+    """
     if os.path.isfile(os.path.join(datafolder, 'vasculature-%s.tif' %metadata['subject'])):
         maps['vasculature'] = np.array(Image.open(os.path.join(datafolder,\
                 'vasculature-%s.tif' %metadata['subject'])))
@@ -67,8 +69,12 @@ def load_maps(datafolder, Nsubsampling=4):
         maps['fluorescence'] = maps['fluorescence'][::Nsubsampling,::Nsubsampling]
     elif os.path.isfile(os.path.join(datafolder, 'fluorescence.npy')):
         maps['fluorescence'] = np.load(os.path.join(datafolder, 'fluorescence.npy'))
+    """
 
-
+    maps['datafolder'] = datafolder
+    if 'subject' in metadata:
+        maps['subject'] = metadata['subject']
+    
     return maps
 
 
@@ -97,6 +103,27 @@ def resample_img(img, Nsubsampling):
     else:
         return img
 
+def load_and_resample_hq(key, datafolder, subject, 
+                         shape=None):
+    """
+    from a tiff like:
+        vasculature-Mouse1Ax3D.tiff
+    """
+    if os.path.isfile(os.path.join(datafolder, '%s-%s.tif' % (key, subject))):
+        img = np.array(Image.open(os.path.join(datafolder,\
+                                '%s-%s.tif' % (key, subject)))).astype('float')
+        img = (img-np.min(img))/(img.max()-img.min())
+        if shape is None:
+            return img
+        else:
+            Nsubsampling = int(img.shape[0]/shape[0])
+            return resample_img(img, Nsubsampling)
+
+    elif shape is not None:
+        return np.ones(shape)
+
+    else:
+        return np.ones((10,10))
 
 def load_single_datafile(datafile):
     """
@@ -115,8 +142,8 @@ def load_single_datafile(datafile):
 def load_raw_data(datafolder, protocol,
                   run_id='sum'):
 
-    params = np.load(os.path.join(datafolder, 'metadata.npy'),
-                     allow_pickle=True).item()
+    with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
+        params = json.load(f)
 
     if run_id=='sum':
         Data, n = None, 0
@@ -183,12 +210,6 @@ def compute_phase_power_maps(datafolder, direction,
     if (p is None) or (t is None) or (data is None):
         p, (t, data) = load_raw_data(datafolder, direction, run_id=run_id)
 
-    if 'vasculature' not in maps:
-        if os.path.isfile(os.path.join(datafolder, 'vasculature.npy')):
-            maps['vasculature'] = np.load(os.path.join(datafolder, 'vasculature.npy'))
-        else:
-            maps['vasculature'] = np.zeros((data.shape[1], data.shape[2]))
-
 
     # FFT and write maps
     maps['%s-power' % direction],\
@@ -202,18 +223,18 @@ def get_phase_to_angle_func(datafolder, direction):
     converti stimulus phase to visual angle
     """
 
-    p= np.load(os.path.join(datafolder, 'metadata.npy'),
-                     allow_pickle=True).item()
+    stim = np.load(os.path.join(datafolder, 'visual-stim.npy'),
+                   allow_pickle=True).item()
 
     # phase to angle conversion
     if direction=='up':
-        bounds = [p['STIM']['zmin'], p['STIM']['zmax']]
+        bounds = [stim['zmin'], stim['zmax']]
     elif direction=='right':
-        bounds = [p['STIM']['xmin'], p['STIM']['xmax']]
+        bounds = [stim['xmin'], stim['xmax']]
     elif direction=='down':
-        bounds = [p['STIM']['zmax'], p['STIM']['zmin']]
+        bounds = [stim['zmax'], stim['zmin']]
     else:
-        bounds = [p['STIM']['xmax'], p['STIM']['xmin']]
+        bounds = [stim['xmax'], stim['xmin']]
 
     # keep phase to angle relathionship    /!\ [-PI/2, 3*PI/2] interval /!\
     phase_to_angle_func = lambda x: bounds[0]+\
@@ -238,10 +259,10 @@ def compute_retinotopic_maps(datafolder, map_type,
         print('- computing "%s" retinotopic maps [...] ' % map_type)
 
     if map_type=='altitude':
-        directions = ['up', 'down']
+        directions = ['down', 'up']
         phase_to_angle_func = get_phase_to_angle_func(datafolder, 'up')
     else:
-        directions = ['right', 'left']
+        directions = ['left', 'right']
         phase_to_angle_func = get_phase_to_angle_func(datafolder, 'right')
 
     for direction in directions:
@@ -282,6 +303,9 @@ def build_trial_data(maps,
               'comments':comments,
               'dateRecorded':dateRecorded}
 
+    maps['vasculature'] = load_and_resample_hq('vasculature', maps['datafolder'], 
+                                               subject, 
+                                               shape=maps['up-power'].shape)
     for key1, key2 in zip(\
             ['vasculature', 'altitude-retinotopy', 'azimuth-retinotopy',\
                             'altitude-power', 'azimuth-power'],
@@ -405,8 +429,7 @@ def plot_phase_power_maps(maps, direction,
     return fig
 
 def plot_retinotopic_maps(maps, map_type='altitude',
-                          max_retinotopic_angle=80,
-                          ge=ge_screen):
+                          max_retinotopic_angle=80):
     
     if map_type=='altitude':
         plus, minus = 'up', 'down'
@@ -468,8 +491,8 @@ def add_patches(trial, ax):
     rawPatchMap = trial.rawPatchMap
     
     patchMapDilated = RetinotopicMapping.dilationPatches2(rawPatchMap,\
-            dilationIter=trial.params['dilationIter'],
-            borderWidth=trial.params['borderWidth'])
+            dilationIter=float(trial.params['dilationIter']),
+            borderWidth=float(trial.params['borderWidth']))
 
     rawPatches = RetinotopicMapping.labelPatches(patchMapDilated, signMapf)
 

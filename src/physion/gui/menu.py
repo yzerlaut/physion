@@ -37,7 +37,7 @@ def build_menu(self):
                                      self.pupil)
     self.preprocessingMenu.addAction('&Facemotion',
                                      self.facemotion)
-    self.preprocessingMenu.addAction('&Visual Maps',
+    self.preprocessingMenu.addAction('&Visual-Areas Segmentation',
                                      self.intrinsic)
     self.preprocessingMenu.addAction('&Whisker Maps',
                                      self.SS_intrinsic)
@@ -72,8 +72,6 @@ def build_menu(self):
                                 self.trial_averaging)
     self.analysisMenu.addAction('&Behavioral Mod.',
                                 self.in_progress)
-    self.analysisMenu.addAction('&Retinotopic Maps',
-                                self.intrinsic)
 
     ##### ------   Other   -------------
     self.otherMenu = self.mainMenu.addMenu('     Others')

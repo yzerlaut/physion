@@ -1,1 +1,2 @@
-from . import raw, episodes, tools, dataframe
+from . import camera, FOV, imaging, movie, plots, pupil, raw, snapshot,\
+        tools, episodes, dataframe

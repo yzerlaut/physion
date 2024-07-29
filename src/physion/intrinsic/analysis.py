@@ -1,4 +1,4 @@
-import sys, os, shutil, glob, time, subprocess, pathlib, json, tempfile, datetime
+import sys, os, glob, time, subprocess, pathlib, json, tempfile, datetime
 import numpy as np
 import pynwb, PIL, pandas
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -77,7 +77,7 @@ def gui(self,
             tab.layout,QtWidgets.QLabel('  - spatial-subsampling (pix):'),
             spec='large-left')
     self.ssBox = QtWidgets.QLineEdit()
-    self.ssBox.setText('4')
+    self.ssBox.setText('2')
     self.add_side_widget(tab.layout,self.ssBox, spec='small-right')
 
     self.loadButton = QtWidgets.QPushButton(" === load data === ", self)
@@ -255,12 +255,13 @@ def open_intrinsic_folder(self):
 
     self.datafolder = self.open_folder()
 
-    if os.path.isfile(os.path.join(self.datafolder, 'metadata.npy')):
+    if os.path.isfile(os.path.join(self.datafolder, 'metadata.json')):
 
         self.IMAGES = {}
 
-        metadata = np.load(os.path.join(self.datafolder, 'metadata.npy'),
-                           allow_pickle=True).item()
+        with open(os.path.join(self.datafolder, 'metadata.json'),
+                  'r', encoding='utf-8') as f:
+            metadata = json.load(f)
 
         # set subject and timestamip
         self.subject = metadata['subject']
@@ -310,7 +311,7 @@ def moved_pixels(self):
 
 def update_img(self, img, imgButton):
 
-    if imgButton.currentText() in self.IMAGES:
+    if imgButton.currentText() in [k for k in self.IMAGES if k not in ['datafolder', 'subject']]:
 
         img.setImage(self.IMAGES[imgButton.currentText()].T)
 
@@ -381,6 +382,8 @@ def load_intrinsic_data(self):
         self.IMAGES['raw-img-start'] = self.data[0,:,:]
         self.IMAGES['raw-img-mid'] = self.data[int(self.data.shape[0]/2.)-1,:,:]
         self.IMAGES['raw-img-stop'] = self.data[-2,:,:]
+
+        self.IMAGES['datafolder'] = datafolder
        
         update_imgButtons(self)
 
@@ -572,7 +575,7 @@ def get_datafolder(self):
 def pdf_intrinsic(self):
 
     cmd = '%s -m physion.intrinsic.pdf %s' % (python_path, self.datafolder)
-    cmd += ' --output %s' % os.path.join(FOLDERS[self.folderBox.currentText()], self.subject+'.pdf')
+    #cmd += ' --output %s' % os.path.join(FOLDERS[self.folderBox.currentText()], self.subject+'.pdf')
     cmd += ' --image_height %.1f ' % self.scaleButton.value()
     cmd += ' --angle_from_rig %.1f ' % self.angleButton.value()
 

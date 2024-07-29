@@ -108,14 +108,26 @@ def add_keyboard_shortcuts(self,
     ##############################
 
     # adding a few general keyboard shortcut
-    self.tab1Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+1'), self)
-    self.tab1Sc.activated.connect(self.switch_to_tab1)
-    self.tab2Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+2'), self)
-    self.tab2Sc.activated.connect(self.switch_to_tab2)
-    self.tab3Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+3'), self)
-    self.tab3Sc.activated.connect(self.switch_to_tab3)
-    self.tab4Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+4'), self)
-    self.tab4Sc.activated.connect(self.switch_to_tab4)
+    if os.name=='posix':
+        # os-x
+        self.tab1Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+1'), self)
+        self.tab1Sc.activated.connect(self.switch_to_tab1)
+        self.tab2Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+2'), self)
+        self.tab2Sc.activated.connect(self.switch_to_tab2)
+        self.tab3Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+3'), self)
+        self.tab3Sc.activated.connect(self.switch_to_tab3)
+        self.tab4Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+4'), self)
+        self.tab4Sc.activated.connect(self.switch_to_tab4)
+    else:
+        # linux or windows
+        self.tab1Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+1'), self)
+        self.tab1Sc.activated.connect(self.switch_to_tab1)
+        self.tab2Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+2'), self)
+        self.tab2Sc.activated.connect(self.switch_to_tab2)
+        self.tab3Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+3'), self)
+        self.tab3Sc.activated.connect(self.switch_to_tab3)
+        self.tab4Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+4'), self)
+        self.tab4Sc.activated.connect(self.switch_to_tab4)
 
     # adding a few general keyboard shortcut
     self.press1Sc = QtWidgets.QShortcut(QtGui.QKeySequence('1'), self)

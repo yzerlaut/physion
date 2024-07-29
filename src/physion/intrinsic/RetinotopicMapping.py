@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 from itertools import combinations
 from operator import itemgetter
 import skimage.morphology as sm
+from skimage.segmentation import watershed
 import skimage.transform as tsfm
 import cv2
 import matplotlib.colors as col
@@ -2858,7 +2859,7 @@ class Patch(object):
 
         connectivity = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
 
-        newLabel = sm.watershed(eccMap, minMarker, connectivity=connectivity, mask=self.array)
+        newLabel = watershed(eccMap, minMarker, connectivity=connectivity, mask=self.array)
 
         border = ni.binary_dilation(self.array).astype(np.int8) - self.array
 

@@ -8,6 +8,9 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 
+# import the 2P trigger delay from the acquisition module !
+from physion.acquisition.recordings.Scan1Plane_Screen342V import TwoP_trigger_delay
+
 from physion.assembling.IO.binary import BinaryFile
 from physion.assembling.IO.bruker_xml_parser import bruker_xml_parser
 from physion.utils.files import get_files_with_extension, get_TSeries_folders
@@ -162,9 +165,9 @@ def check_ordered(self):
 # ------------------------------------------------ # 
 
 def build_cmd(nwb, imaging):
-    process_script = str(pathlib.Path(__file__).resolve())
-    return '%s %s --nwb %s --imaging %s' % (python_path,
-                                            process_script,
+    # process_script = str(pathlib.Path(__file__).resolve())
+    return '%s -m physion.assembling.add_ophys --nwb %s --imaging %s' % (\
+                                            python_path,
                                             nwb,
                                             imaging)
 
@@ -247,10 +250,8 @@ def append_to_NWB(args):
     io = pynwb.NWBHDF5IO(args.nwb, mode='a')
     nwbfile = io.read()
 
-    if (not hasattr(args, 'datafolder')) or (args.datafolder==''):
-        args.datafolder=os.path.dirname(args.nwb)
-        
-    add_ophys(nwbfile, args, with_raw_CaImaging=args.with_raw_CaImaging)
+    add_ophys(nwbfile, args, 
+              with_raw_CaImaging=args.with_raw_CaImaging)
 
     if not args.silent:
         print('=> writing "%s" [...]' % args.nwb)
@@ -275,7 +276,7 @@ def add_ophys(nwbfile, args,
         CaFn = get_files_with_extension(args.imaging, extension='.xml')[0]# get Tseries metadata
     except BaseException as be:
         print(be)
-        print('\n /!\  Problem with the CA-IMAGING data in %s  /!\ ' % args.datafolder)
+        print('\n /!\  Problem with the CA-IMAGING data in %s  /!\ ' % args.imaging)
         raise Exception
         
     xml = bruker_xml_parser(CaFn) # metadata
@@ -395,7 +396,8 @@ def add_ophys(nwbfile, args,
     """ 
     image_series = pynwb.ophys.TwoPhotonSeries(name='CaImaging-TimeSeries',
                                                dimension=[2], data=np.ones((2,2,2)),
-                                               imaging_plane=imaging_plane, unit='s', timestamps=1.*np.arange(2),
+                                               imaging_plane=imaging_plane, unit='s', 
+                                               timestamps=1.*np.arange(2),
                                                comments='raw-data-folder=%s' % args.imaging.replace('/', '**')) # TEMPORARY
     
     nwbfile.add_acquisition(image_series)
@@ -404,6 +406,7 @@ def add_ophys(nwbfile, args,
         print('=> Adding the suite2p processing [...]')
         add_ophys_processing_from_suite2p(os.path.join(args.imaging, 'suite2p'),
                                           nwbfile, xml,
+                                          TwoP_trigger_delay=TwoP_trigger_delay,
                                           device=device,
                                           optical_channel=optical_channel,
                                           imaging_plane=imaging_plane,
@@ -435,5 +438,6 @@ if __name__=='__main__':
     if not args.silent:
         args.verbose = True
 
-    append_to_NWB(args)
-    print('--> done')
+    if args.nwb!='':
+        append_to_NWB(args)
+        print('--> done')

@@ -50,13 +50,22 @@ class CameraAcquisition:
 
         while not quit_flag.is_set():
            
-            image, Time = self.cam.get_array().astype(np.uint8), time.time()
+            Time = time.time()
 
-            if debug:
-                toc = time.time()
-                if (toc-tic)>10:
-                    print(' %s seemingly working fine, current image:', (self.name, image[:5,:5]))
-                    tic = time.time()
+            try:
+                image= self.cam.get_array().astype(np.uint8)
+
+                if debug:
+                    toc = time.time()
+                    if (toc-tic)>10:
+                        print(' %s seemingly working fine, current image:', (self.name, image[:5,:5]))
+                        tic = time.time()
+
+            except BaseException as be:
+                # print(be)
+                print('[X] problem FETCHING image', os.path.join(self.imgs_folder, '%s.npy' % Time), ' -> not saved ! ')
+                image = None
+
 
             if not self.running and run_flag.is_set() : # not running and need to start  !
 
@@ -73,10 +82,12 @@ class CameraAcquisition:
                 
 
             # after the update
-            if self.running:
-
-                np.save(os.path.join(self.imgs_folder, '%s.npy' % Time), image)
-                self.times.append(Time)
+            if self.running and image is not None:
+                try:
+                    np.save(os.path.join(self.imgs_folder, '%s.npy' % Time), image)
+                except BaseException as be:
+                    # print(be)
+                    print('[X] problem SAVING image', os.path.join(self.imgs_folder, '%s.npy' % Time), ' -> not saved ! ')
 
         if len(self.times)>0:
             print('%s -- effective sampling frequency: %.1f Hz ' % (\

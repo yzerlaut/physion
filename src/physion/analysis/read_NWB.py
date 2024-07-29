@@ -526,13 +526,13 @@ class Data:
         """
 
         if (protocol_name is not None) and (('protocol_id' in self.nwbfile.stimulus) and\
-                (len(np.unique(self.nwbfile.stimulus['protocol_id'].data[:]))>1)):
+                (len(np.unique(self.nwbfile.stimulus['protocol_id'].data[:,0]))>1)):
             protocol_id = self.get_protocol_id(protocol_name)
-            Pcond = (self.nwbfile.stimulus['protocol_id'].data[:]==protocol_id)
+            Pcond = (self.nwbfile.stimulus['protocol_id'].data[:,0]==protocol_id)
 
         elif (protocol_id is not None) and (('protocol_id' in self.nwbfile.stimulus) and\
-                (len(np.unique(self.nwbfile.stimulus['protocol_id'].data[:]))>1)):
-            Pcond = (self.nwbfile.stimulus['protocol_id'].data[:]==protocol_id)
+                (len(np.unique(self.nwbfile.stimulus['protocol_id'].data[:,0]))>1)):
+            Pcond = (self.nwbfile.stimulus['protocol_id'].data[:,0]==protocol_id)
 
         else:
             # print('no protocol ID')
@@ -556,7 +556,7 @@ class Data:
             for i in range(len(XK[0].flatten())): # looping over joint conditions
                 cond = np.ones(np.sum(Pcond), dtype=bool)
                 for k, xk in zip(K, XK):
-                    cond = cond & (self.nwbfile.stimulus[k].data[Pcond]==xk.flatten()[i])
+                    cond = cond & (self.nwbfile.stimulus[k].data[Pcond,0]==xk.flatten()[i])
                 CONDS.append(cond)
             return CONDS
         else:
@@ -573,7 +573,7 @@ class Data:
         else:
             start_key, stop_key = 'time_start', 'time_stop'
 
-        cond = (time>=self.nwbfile.stimulus[start_key].data[:]) & (time<=self.nwbfile.stimulus[stop_key].data[:])
+        cond = (time>=self.nwbfile.stimulus[start_key].data[:,0]) & (time<=self.nwbfile.stimulus[stop_key].data[:,0])
 
         if np.sum(cond)>0:
             return np.arange(self.nwbfile.stimulus[start_key].num_samples)[cond][0]

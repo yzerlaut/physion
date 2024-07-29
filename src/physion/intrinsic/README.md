@@ -24,6 +24,13 @@ phase_map = -np.angle(spectrum)[Nrepeat,:,:] % (2.*np.pi)
 
 The code comes from from [a script from Jun Zhuang](https://github.com/zhuangjun1981/NeuroAnalysisTools/blob/master/NeuroAnalysisTools/RetinotopicMapping.py).
 
+## Predicted Output
+
+<p align="center">
+  <img src="../../../docs/intrinsic/drawing.svg" width="100%" />
+</p>
+
+
 ## Material and Methods
 
 [...]

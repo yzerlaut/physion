@@ -100,7 +100,7 @@ def calendar(self,
 
     self.fovButton = QtWidgets.QPushButton(' FOV/window', self)
     # self.fovButton.setEnabled(False)
-    # self.fovButton.clicked.connect(self.visualization)
+    self.fovButton.clicked.connect(self.FOV)
     tab.layout.addWidget(self.fovButton,
                          nCalendarRow+2, self.nWidgetCol-2, 1, 2)
 
@@ -178,19 +178,24 @@ def scan_folder(self,
 
     print('inspecting the folder "%s" [...]' % self.folder)
 
-    # FILES0 = physion.utils.files.get_files_with_extension(\
     FILES0 = get_files_with_extension(self.folder, 
                                       extension='.nwb',
                                       recursive=True)
 
     TIMES, DATES, FILES = [], [], []
-    for f in FILES0:
-        Time = f.split(os.path.sep)[-1].replace('.nwb', '').split('-')
-        if len(Time)>=4:
-            TIMES.append(3600*int(Time[0])+60*int(Time[1])+int(Time[2]))
-            DATES.append(f.split(os.path.sep)[-1].split('-')[0])
-            FILES.append(f)
-            
+    for ii, f in enumerate(FILES0):
+        if ('sub' in f) and ('ses' in f):
+            # not a date-time filename, today by default
+            Time = ['00', '00', '%.2i' % ii]
+            date = datetime.datetime.today().strftime('%Y_%m_%d')
+        else:
+            Time = f.split(os.path.sep)[-1].replace('.nwb', '').split('-')
+            date = f.split(os.path.sep)[-1].split('-')[0]
+
+        TIMES.append(3600*int(Time[0])+60*int(Time[1])+int(Time[2]))
+        DATES.append(date)
+        FILES.append(f)
+
     TIMES, DATES, FILES = np.array(TIMES), np.array(DATES), np.array(FILES)
     NDATES = np.array([datetime.date(*[int(dd)\
                             for dd in date.split('_')]).toordinal()\

@@ -4,23 +4,20 @@ import numpy as np
 from physion.utils.paths import python_path_suite2p_env
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
-from physion.imaging.suite2p.presets import ops0
+from physion.imaging.suite2p.default_ops import default_ops
+from physion.imaging.suite2p.presets import presets
 
-defaults={'do_registration':1,
-          'roidetect':True,
-          'cell_diameter':20, # in um
-          'tau':1.3,
-          'nchannels':1,
-          'functional_chan':1,
-          'align_by_chan':1,
-          'sparse_mode':False,
-          'connected':True,
-          'nonrigid':1,
-          'batch_size': 500,
-          'threshold_scaling':0.5,
-          'mask_threshold':0.3,
-          'neucoeff': 0.7}
+from physion.imaging.suite2p.default_ops import default_ops
 
+
+# we override some of suite2p defaults (see default_ops)
+def override_suite2p_defaults(ops):
+    ops['bruker']=True
+    # no need of deconvolution yet
+    ops['spikedetect']=False
+    ops['functional_chan']= 2
+    ops['align_by_chan'] = 2
+    ops['batch_size'] = 500
 
 def build_db(folder):
     db = {'data_path':[folder],
@@ -37,7 +34,8 @@ def build_suite2p_options(folder,
     xml_file = get_files_with_extension(folder, extension='.xml')[0]
 
     bruker_data = bruker_xml_parser(xml_file)
-    ops = ops0.copy()
+    ops = default_ops()
+    override_suite2p_defaults(ops)
 
     # acquisition frequency per plane - (bruker framePeriod i already per plane)
     nplanes = settings_dict['nplanes']\
@@ -64,34 +62,48 @@ def build_suite2p_options(folder,
 
 
 def run_preprocessing(args):
-    #if args.remove_previous and (os.path.isdir(os.path.join(args.CaImaging_folder, 'suite2p'))):
-    #    shutil.rmtree(os.path.join(args.CaImaging_folder, 'suite2p'))
-    build_suite2p_options(args.CaImaging_folder, PREPROCESSING_SETTINGS[args.setting_key])
+
+    if args.remove_previous and\
+        (os.path.isdir(os.path.join(args.CaImaging_folder, 'suite2p'))):
+       shutil.rmtree(os.path.join(args.CaImaging_folder, 'suite2p'))
+
+    build_suite2p_options(args.CaImaging_folder, 
+                          presets[args.setting_key])
+
     cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
                                      os.path.join(args.CaImaging_folder,'db.npy'),
                                      os.path.join(args.CaImaging_folder,'ops.npy'))
+
     print('running "%s" \n ' % cmd)
-    subprocess.run(cmd, shell=True)
+    p = subprocess.Popen(cmd,
+                         # cwd = os.path.join(pathlib.Path(__file__).resolve().parents[2], 'src'),
+                         shell=True)
     
 
 if __name__=='__main__':
 
     import argparse, os
-    parser=argparse.ArgumentParser(description=""" Launch preprocessing of Ca-Imaging data with Suite2P
+    parser=argparse.ArgumentParser(
+    description=""" 
+    Launch preprocessing of Ca-Imaging data with Suite2P
     """,formatter_class=argparse.RawTextHelpFormatter)
     # main
-    parser.add_argument('-cf', "--CaImaging_folder", type=str, default='./')
+    parser.add_argument('-cf', "--CaImaging_folder", 
+                        type=str, default='./')
     descr = 'Available keys :\n'
-    for s in PREPROCESSING_SETTINGS.keys():
+    for s in presets:
         descr += ' - %s \n' % s
-    parser.add_argument('-sk', "--setting_key", type=str, default='', help=descr)
+    parser.add_argument('-sk', "--setting_key", 
+                        type=str, default='', help=descr)
+    parser.add_argument("--remove_previous", action="store_true")
     parser.add_argument('-v', "--verbose", action="store_true")
     parser.add_argument("--silent", action="store_true")
     args = parser.parse_args()
 
-    if os.path.isdir(str(args.CaImaging_folder)) and ('TSeries' in str(args.CaImaging_folder)):
+    if os.path.isdir(str(args.CaImaging_folder)) and\
+            ('TSeries' in str(args.CaImaging_folder)):
         run_preprocessing(args)
-        # print('--> preprocessing of "%s" done !' % args.CaImaging_folder)
+        print('--> preprocessing of "%s" done !' % args.CaImaging_folder)
     elif os.path.isdir(str(args.CaImaging_folder)):
         folders = [os.path.join(args.CaImaging_folder, f) for f in os.listdir(args.CaImaging_folder) if ('TSeries' in f)]
         for args.CaImaging_folder in folders:
