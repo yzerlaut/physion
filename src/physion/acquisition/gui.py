@@ -158,6 +158,7 @@ def multimodal(self,
     ip+=1
     # -
     self.protocolBox= QtWidgets.QComboBox(self)
+    self.protocolBox.activated.connect(self.update_visualStim)
     tab.layout.addWidget(self.protocolBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
@@ -199,7 +200,7 @@ def multimodal(self,
     self.initButton.clicked.connect(self.initialize)
     tab.layout.addWidget(self.initButton,
                          ip, 10, 1, width)
-    ip+=2
+    ip+=1
     self.runButton = QtWidgets.QPushButton(' * RUN *')
     self.runButton.clicked.connect(self.run)
     tab.layout.addWidget(self.runButton,
@@ -210,8 +211,15 @@ def multimodal(self,
     self.stopButton.clicked.connect(self.stop)
     tab.layout.addWidget(self.stopButton,
                          ip, 10, 1, width)
+    ip+=2
+    self.bufferButton = QtWidgets.QPushButton(' * buffer Stim. *')
+    self.bufferButton.clicked.connect(self.buffer)
+    tab.layout.addWidget(self.bufferButton,
+                         ip, 10, 1, width)
+    self.bufferButton.setEnabled(False)
 
-    for button in [self.initButton, self.runButton, self.stopButton]:
+    for button in [self.initButton, self.runButton, 
+                   self.stopButton, self.bufferButton]:
         button.setStyleSheet("font-weight: bold")
 
     ip+=2

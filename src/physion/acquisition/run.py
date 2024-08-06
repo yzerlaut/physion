@@ -12,6 +12,7 @@ from physion.acquisition import recordings
 
 try:
     from physion.visual_stim.main import launch_VisualStim
+    from physion.visual_stim.main import build_stim as build_VisualStim
 except (ImportError, ModuleNotFoundError):
     def launch_VisualStim(**args):
         return None
@@ -42,13 +43,14 @@ except ModuleNotFoundError:
 def init_visual_stim(self):
 
     with open(os.path.join(base_path,
-              'protocols', 'binaries', self.metadata['protocol'],
+              'protocols', 'binaries', 
+               self.protocolBox.currentText(),
               'protocol.json'), 'r') as fp:
         self.protocol = json.load(fp)
 
     binary_folder = \
         os.path.join(base_path, 'protocols', 'binaries',\
-        self.metadata['protocol'])
+               self.protocolBox.currentText())
 
     self.protocol['screen'] = self.config['Screen']
     self.protocol['Rig'] = self.config['Rig']
@@ -58,32 +60,59 @@ def init_visual_stim(self):
     else:
         self.protocol['demo'] = False
 
+    """
+    the visual stimulation is launched as a background process
+    waiting to be launched with the "runEvent" flag
+    it should be launched only after the "readyEvent" is turned on
+    """
+    self.readyEvent.clear() # off, the init procedure should turn it on
     self.VisualStim_process = multiprocessing.Process(\
             target=launch_VisualStim,\
             args=(self.protocol,
                   self.runEvent, self.readyEvent,
                   self.datafolder, binary_folder))
     self.VisualStim_process.start()
-    time.sleep(5) # need to wait that the stim data are written
+
+    self.statusBar.showMessage(\
+        'buffering visualStim [...]'+20*' '+'(see advancement in terminal)')
     
+    self.initButton.setEnabled(True)
+    self.bufferButton.setEnabled(False)
 
 def initialize(self):
 
-    # INSURING THAT AT LEAST ONE MODALITY IS SELECTED
-    at_least_one_modality = False
+    init_ok = False
+
+    # 1) INSURING THAT AT LEAST ONE MODALITY IS SELECTED
     for i, k in enumerate(self.MODALITIES):
         if getattr(self,k+'Button').isChecked():
-            at_least_one_modality = True
-    if not at_least_one_modality:
+            init_ok = True
+    if not init_ok:
         print('------------------------------------------------')
         print('-- /!\ Need to pick at least one modality /!\ --')
         print('------------------------------------------------')
-        self.statusBar.showMessage(' /!\ Need to pick at least one modality /!\ ')
+        self.statusBar.showMessage(\
+                ' /!\ Need to pick at least one modality /!\ ')
+
+    # 2) INSURING THAT A CONFIG IS SELECTED
+    if self.config is None:
+        init_ok = False
+        print('------------------------------------------------')
+        print('-- /!\ Need to select a configuration first /!\ --')
+        print('------------------------------------------------')
+        self.statusBar.showMessage(\
+                ' /!\ Need to select a configuration first /!\ ')
+
+    # 3) INSURING THAT THE BUFFERING IS OVER FOR THE VISUAL STIM
+    if not self.readyEvent.is_set():
+        init_ok = False
+        self.statusBar.showMessage(\
+            ' ---- /!\ Need to wait that the buffering ends /!\ ---- ')
+        print(' ---- /!\ Need to wait that the buffering ends /!\ ---- ')
 
 
-    if at_least_one_modality and (self.config is not None):
+    if init_ok:
 
-        self.readyEvent.clear() # off, the init procedure should turn it on
         self.runEvent.clear() # off, the run command should turn it on
 
         # SET DATAFOLDER AND SUB-FOLDERS: acquisition/tools.py
@@ -102,16 +131,14 @@ def initialize(self):
         if self.metadata['VisualStim']:
             self.statusBar.showMessage(\
                     '[...] initializing acquisition & stimulation')
-            # ---- INIT VISUAL STIM ---- #
-            init_visual_stim(self)
-            visual_stim_file = os.path.join(str(self.datafolder.get()),
-                                            'visual-stim.npy')
-            while not os.path.isfile(visual_stim_file):
-                time.sleep(0.25)
-                # print('waiting for the visual stim data to be written')
-            # --- use the time stop as the new max time
-            stim = np.load(visual_stim_file, allow_pickle=True).item()
-            self.max_time = stim['time_stop'][-1]+stim['time_start'][0]
+            # ---- storing visual stim  ---- #
+            stim = build_VisualStim(self.protocol)
+            np.save(os.path.join(self.date_time_folder,
+                    'visual-stim.npy'), stim.experiment)
+            print('[ok] Visual-stimulation data saved as "%s"' %\
+                    os.path.join(self.date_time_folder, 'visual-stim.npy'))
+            self.max_time = stim.experiment['time_stop'][-1]+\
+                    stim.experiment['time_start'][0]
         else:
             self.readyEvent.set()
             self.statusBar.showMessage('[...] initializing acquisition')
@@ -161,13 +188,9 @@ def initialize(self):
             self.statusBar.showMessage('Acquisition ready !')
 
         if self.animate_buttons:
-            self.initButton.setEnabled(False)
+            self.initButton.setEnabled(True)
             self.runButton.setEnabled(True)
-            self.stopButton.setEnabled(True)
-
-    elif at_least_one_modality:
-        self.statusBar.showMessage(\
-                ' no config selected -> pick a config first !')
+            self.stopButton.setEnabled(False)
 
 
 def toggle_FaceCamera_process(self):
@@ -175,6 +198,7 @@ def toggle_FaceCamera_process(self):
     if self.config is None:
         self.statusBar.showMessage(\
                 ' no config selected -> pick a config first !')
+
     elif self.FaceCameraButton.isChecked() and\
                         (self.FaceCamera_process is None):
         # need to launch it
@@ -210,7 +234,8 @@ def toggle_RigCamera_process(self):
         self.show()
         self.RigCamera_process = multiprocessing.Process(target=launch_WebCam,
                         args=(self.runEvent, self.quitEvent, self.datafolder,
-                              'RigCamera', 2, {'frame_rate':self.config['RigCamera-frame-rate']}))
+                              'RigCamera', 2,\
+                            {'frame_rate':self.config['RigCamera-frame-rate']}))
         self.RigCamera_process.start()
         self.statusBar.showMessage('[ok] RigCamera initialized ! (in 5-6s) ')
         
@@ -221,13 +246,12 @@ def toggle_RigCamera_process(self):
         self.RigCamera_process = None
 
 
+def buffer(self):
+    init_visual_stim(self) 
 
 def run(self):
 
-    if not self.readyEvent.is_set():
-        self.statusBar.showMessage(\
-            ' ---- /!\ Need to wait that the buffering ends /!\ ---- ')
-    elif not self.init:
+    if not self.init:
         self.statusBar.showMessage('Need to initialize the stimulation !')
     else:
 
