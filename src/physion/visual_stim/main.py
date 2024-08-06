@@ -943,11 +943,13 @@ def launch_VisualStim(protocol,
                       use_prebuffering=True,
                       speed=1.):
 
+    """
     stim = build_stim(protocol)
     np.save(os.path.join(str(datafolder.get()),
             'visual-stim.npy'), stim.experiment)
     print('[ok] Visual-stimulation data saved as "%s"' %\
             os.path.join(str(datafolder.get()), 'visual-stim.npy'))
+    """
     stim.run_and_check(runEvent, readyEvent,
                        datafolder, binary_folder,
                        use_prebuffering=use_prebuffering,
