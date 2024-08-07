@@ -425,6 +425,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.quit_event.set()
         if self.acq is not None:
             self.acq.close()
+        if hasattr(self, 'close_stim'):
+            self.close_stim()
         if self.stim is not None:
             self.stim.quit()
         if self.bridge is not None:

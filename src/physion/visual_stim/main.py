@@ -598,7 +598,7 @@ class visual_stim:
                 #now we update the counter
                 current_index = self.next_index_table[iT]
 
-                print(' - t=%.2dh:%.2dm:%.2fs' % (t/3600, (t%3600)/60, (t%60)),
+                print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (t/3600, (t%3600)/60, (t%60),100*((t%60)-int(t%60))),
                       '- Running protocol of index %i/%i' %\
                             (current_index+1, len(self.experiment['index'])),
                       'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))

@@ -216,16 +216,18 @@ class Acquisition:
         success = False
         try:
             self.device = find_x_series_devices()[0]
-            print('X-series card found:', self.device)
+            print('[ok] X-series card found:', self.device)
             success = True
         except BaseException: 
-            print('no X-series card found')
+            # print('no X-series card found')
+            pass
         try:
             self.device = find_m_series_devices()[0]
-            print('M-series card found:', self.device)
+            print('[ok] M-series card found:', self.device)
             success = True
         except BaseException:
-            print('no M-series card found')
+            # print('no M-series card found')
+            pass
         if not success:
             print('Neither M-series nor X-series NI DAQ card found')
 

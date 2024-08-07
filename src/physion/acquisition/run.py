@@ -199,6 +199,7 @@ def toggle_FaceCamera_process(self):
     if self.config is None:
         self.statusBar.showMessage(\
                 ' no config selected -> pick a config first !')
+        self.FaceCameraButton.setChecked(False)
 
     elif self.FaceCameraButton.isChecked() and\
                         (self.FaceCamera_process is None):
@@ -229,6 +230,7 @@ def toggle_RigCamera_process(self):
 
     if self.config is None:
         self.statusBar.showMessage(' no config selected -> pick a config first !')
+        self.RigCameraButton.setChecked(False)
     elif self.RigCameraButton.isChecked() and (self.RigCamera_process is None):
         # need to launch it
         self.statusBar.showMessage('  starting RigCamera stream [...] ')
