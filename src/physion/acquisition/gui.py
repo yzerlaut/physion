@@ -13,6 +13,8 @@ from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import load_settings
 from physion.assembling.gui import build_cmd
 
+from physion.acquisition import MODALITIES
+
 def multimodal(self,
                tab_id=0):
 
@@ -23,13 +25,7 @@ def multimodal(self,
 
     self.config = None
     self.subject, self.protocol = None, {}
-    self.MODALITIES = ['Locomotion',
-                       'FaceCamera',
-                       'RigCamera',
-                       'EphysLFP',
-                       'EphysVm',
-                       'CaImaging',
-                       'onlyDemo']
+    self.MODALITIES = MODALITIES
 
     ##########################################
     ######## Multiprocessing quantities  #####
@@ -195,7 +191,7 @@ def multimodal(self,
     self.pFace.addItem(self.pCamImg)
 
     # NOW MENU INTERACTION BUTTONS
-    ip, width = 1, 5
+    ip, width = 0, 5
     self.initButton = QtWidgets.QPushButton(' * Initialize * ')
     self.initButton.clicked.connect(self.initialize)
     tab.layout.addWidget(self.initButton,
@@ -217,12 +213,18 @@ def multimodal(self,
     tab.layout.addWidget(self.bufferButton,
                          ip, 10, 1, width)
     self.bufferButton.setEnabled(False)
+    ip+=1
+    self.closeButton = QtWidgets.QPushButton(' * close Stim. *')
+    self.closeButton.clicked.connect(self.close_stim)
+    tab.layout.addWidget(self.closeButton,
+                         ip, 10, 1, width)
+    self.closeButton.setEnabled(False)
 
-    for button in [self.initButton, self.runButton, 
+    for button in [self.initButton, self.runButton, self.closeButton,
                    self.stopButton, self.bufferButton]:
         button.setStyleSheet("font-weight: bold")
 
-    ip+=2
+    ip+=1
     tab.layout.addWidget(QtWidgets.QLabel(' FOV: '),
                          ip, 10, 1, 4)
     ip+=1

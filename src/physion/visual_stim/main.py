@@ -372,6 +372,10 @@ class visual_stim:
 
     # the close function
     def close(self):
+        print('\n')
+        print('----------------------------------------')
+        print('       CLOSING THE VISUAL STIMULATION   ')
+        print('----------------------------------------')
         self.win.close()
         core.quit()
 
@@ -501,12 +505,21 @@ class visual_stim:
 
         # showing the blank screen during initialisation
         self.blank_screen()
-        self.prepare_stimProps_tables(dt, verbose=verbose)
-        if use_prebuffering:
-            self.buffer_all_stims(binary_folder, readyEvent)
+
+        if not readyEvent.is_set():
+            # if no previous buffering:
+            self.prepare_stimProps_tables(dt, verbose=verbose)
+            if use_prebuffering:
+                self.buffer_all_stims(binary_folder, 
+                                      readyEvent)
 
         # waiting for the external trigger [...]
         while not runEvent.is_set():
+
+            # we have the ability to close the visual stim here
+            if not readyEvent.is_set():
+                self.close()
+
             if verbose:
                 print('waiting for the external trigger [...]')
             time.sleep(0.2)
@@ -514,7 +527,7 @@ class visual_stim:
 
         ##########################################
         # --> from here external trigger launched  (now runEvent=True)
-        
+
         ##########################################################
         ###           initialize the stimulation              ####
         ##########################################################
@@ -595,14 +608,21 @@ class visual_stim:
                 self.blank_screen()
 
             else:
-                print('condition should never occur')
+                print('condition should never occur: /!\ Pb /!\ ')
             
         print('\n')
         print('--------------------------------------')
         print('       STOPING PROTOCOL               ')
-        print(' --> closing the VisualStim process !')
         print('--------------------------------------\n')
-        self.close()
+        print('\n')
+
+        # we re-launch a run_and_check
+        self.run_and_check(runEvent, readyEvent,
+                           datafolder, binary_folder,
+                           use_prebuffering=use_prebuffering,
+                           speed=speed, dt=dt,
+                           verbose=verbose)
+
 
     #################################################
     #############    DRAWING STIMULI   ##############
@@ -943,17 +963,12 @@ def launch_VisualStim(protocol,
                       use_prebuffering=True,
                       speed=1.):
 
-    """
+    demo = ('demo' in protocol) and protocol['demo']
     stim = build_stim(protocol)
-    np.save(os.path.join(str(datafolder.get()),
-            'visual-stim.npy'), stim.experiment)
-    print('[ok] Visual-stimulation data saved as "%s"' %\
-            os.path.join(str(datafolder.get()), 'visual-stim.npy'))
-    """
     stim.run_and_check(runEvent, readyEvent,
                        datafolder, binary_folder,
                        use_prebuffering=use_prebuffering,
-                       speed=speed)
+                       speed=4. if demo else 1.)
 
 
 if __name__=='__main__':

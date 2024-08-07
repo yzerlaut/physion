@@ -76,8 +76,6 @@ def init_visual_stim(self):
     self.statusBar.showMessage(\
         'buffering visualStim [...]'+20*' '+'(see advancement in terminal)')
     
-    self.initButton.setEnabled(True)
-    self.bufferButton.setEnabled(False)
 
 def initialize(self):
 
@@ -104,7 +102,7 @@ def initialize(self):
                 ' /!\ Need to select a configuration first /!\ ')
 
     # 3) INSURING THAT THE BUFFERING IS OVER FOR THE VISUAL STIM
-    if not self.readyEvent.is_set():
+    if init_ok and (self.protocolBox.currentText()!='None') and not self.readyEvent.is_set():
         init_ok = False
         self.statusBar.showMessage(\
             ' ---- /!\ Need to wait that the buffering ends /!\ ---- ')
@@ -113,6 +111,7 @@ def initialize(self):
 
     if init_ok:
 
+        print('')
         self.runEvent.clear() # off, the run command should turn it on
 
         # SET DATAFOLDER AND SUB-FOLDERS: acquisition/tools.py
@@ -132,7 +131,9 @@ def initialize(self):
             self.statusBar.showMessage(\
                     '[...] initializing acquisition & stimulation')
             # ---- storing visual stim  ---- #
-            stim = build_VisualStim(self.protocol)
+            p = self.protocol.copy() # a copy of the protocol data for saving
+            p['no-window'] = True
+            stim = build_VisualStim(p)
             np.save(os.path.join(self.date_time_folder,
                     'visual-stim.npy'), stim.experiment)
             print('[ok] Visual-stimulation data saved as "%s"' %\
@@ -143,7 +144,7 @@ def initialize(self):
             self.readyEvent.set()
             self.statusBar.showMessage('[...] initializing acquisition')
 
-        print('max_time of NIdaq recording: %.2dh:%.2dm:%.2ds' %\
+        print('[ok] max_time of NIdaq recording set to: %.2dh:%.2dm:%.2ds' %\
                 (self.max_time/3600, 
                   (self.max_time%3600)/60,
                     (self.max_time%60)))
@@ -247,14 +248,34 @@ def toggle_RigCamera_process(self):
 
 
 def buffer(self):
+
     init_visual_stim(self) 
+
+    if self.animate_buttons:
+        self.initButton.setEnabled(True)
+        self.bufferButton.setEnabled(False)
+        self.closeButton.setEnabled(True)
+
+def close_stim(self):
+
+    self.stop() # we stop the acquisition in case
+    self.readyEvent.clear()
+    # we delete the visual stim process
+    self.VisualStim_process = None
+
+    if self.animate_buttons:
+        self.bufferButton.setEnabled(True)
+        self.initButton.setEnabled(False)
+        self.closeButton.setEnabled(False)
+
 
 def run(self):
 
     if not self.init:
-        self.statusBar.showMessage('Need to initialize the stimulation !')
-    else:
 
+        self.statusBar.showMessage('Need to initialize the stimulation !')
+
+    else:
 
         # -------------------------------------------- #
         #    start the run flag for the subprocesses !
@@ -305,33 +326,24 @@ def run_update(self):
 
 def stop(self):
 
-    if not self.readyEvent.is_set():
-        self.statusBar.showMessage(\
-            ' ---- /!\ Need to wait that the buffering ends /!\ ---- ')
-    else: 
-        if self.init:
-            # means only initializes, not run...
-            # means the visual stim was launched, need to start/stop it
-            self.runEvent.set()
-            time.sleep(0.5)
-            self.runEvent.clear()
-            self.init = False
-        else:
-            # means that a recording was running
-            self.runEvent.clear() # this will stop all subprocesses
-            if self.acq is not None:
-                self.acq.close()
-            if self.metadata['CaImaging']:
-                # stop the Ca imaging recording
-                self.send_CaImaging_Stop_signal()
-            self.statusBar.showMessage('stimulation stopped !')
-            print(100*'-', '\n', 50*'=')
+    # stop the display of visual stimulation (not the underlying process)
+    self.runEvent.clear()
 
-        self.VisualStim_process = None
-        if self.animate_buttons:
-            self.initButton.setEnabled(True)
-            self.runButton.setEnabled(False)
-            self.stopButton.setEnabled(False)
+    if self.acq is not None:
+        self.acq.close()
+
+    if self.CaImagingButton.isChecked():
+        # stop the Ca imaging recording
+        self.send_CaImaging_Stop_signal()
+
+    self.statusBar.showMessage('stimulation stopped !')
+    # print('')
+    # print(' -> acquisition stopped !  ------------------')
+    # print('---------------------------------------------')
+
+    if self.animate_buttons:
+        self.initButton.setEnabled(True)
+        self.runButton.setEnabled(False)
 
 
 

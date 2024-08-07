@@ -1,6 +1,7 @@
 import json, os, shutil, pathlib, pandas
 import numpy as np
 
+# path to reach the 'physion/acquisition' folder:
 base_path = str(pathlib.Path(__file__).resolve().parents[0])
 
 from physion.utils.files import generate_filename_path,\

@@ -58,6 +58,8 @@ def update_config(self):
 
 def update_visualStim(self):
 
+    self.close_stim()
+
     if self.protocolBox.currentText()!='None':
         self.bufferButton.setEnabled(True)
         self.initButton.setEnabled(False)

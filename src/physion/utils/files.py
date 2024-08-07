@@ -31,11 +31,11 @@ def generate_datafolders(root_folder, date, time,
     date_time_folder = os.path.join(root_folder, date, time)
     
     if not os.path.exists(Day_folder):
-        print('creating the folder "%s"' % Day_folder)
+        print('[ok] creating the folder "%s"' % Day_folder)
         pathlib.Path(Day_folder).mkdir(parents=True, exist_ok=True)
     
     if not os.path.exists(date_time_folder):
-        print('creating the folder "%s"' % date_time_folder)
+        print('[ok] creating the folder "%s"' % date_time_folder)
         pathlib.Path(date_time_folder).mkdir(parents=True, exist_ok=True)
 
     if with_screen_frames_folder:
