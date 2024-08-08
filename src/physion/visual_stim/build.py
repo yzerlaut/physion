@@ -1,4 +1,5 @@
 import sys
+import cv2
 import numpy as np
 
 import physion
@@ -73,45 +74,84 @@ def write_binary(stim, index, protocol_id):
 
 if __name__=='__main__':
 
-    import os, pathlib, shutil, json
+    import argparse, os, pathlib, shutil, json
 
-    protocol_file = sys.argv[1]
+    import argparse
+    parser=argparse.ArgumentParser()
+    parser.add_argument("protocol", 
+                        help="protocol a json file", 
+                        default='')
+    parser.add_argument("--fps", type=int,
+                        help="Frame Per Seconds in the mp4 movie",
+                        default=30)
+    args = parser.parse_args()
 
-    if os.path.isfile(protocol_file) and protocol_file.endswith('.json'):
+    if os.path.isfile(args.protocol) and args.protocol.endswith('.json'):
 
-        # create the associated protocol folder in the binary folder
-        protocol_folder = \
-            os.path.join(os.path.dirname(protocol_file),
-                'binaries',
-                os.path.basename(protocol_file.replace('.json','')))
-
-        if os.path.isfile(os.path.join(protocol_folder, 'protocol.json')):
-            # remove the previous content for security
-            shutil.rmtree(protocol_folder)
-
-        # re-create an empty one
-        pathlib.Path(protocol_folder).mkdir(\
-                                parents=True, exist_ok=True)
-
-        #  copy the protocol infos
-        shutil.copyfile(protocol_file,
-                        os.path.join(protocol_folder, 'protocol.json'))
-
-        # build the protocol
-        with open(protocol_file, 'r') as f:
-            protocol = json.load(f)
-
-        protocol['no-window'] = True
-
-        Stim = build_stim(protocol)
-
-        if protocol['Presentation']=='multiprotocol':
-            for iProtocol, stim in enumerate(Stim.STIM):
-                for index in np.unique(stim.experiment['index']):
-                    write_binary(stim, index, iProtocol)
+        movie_filename = os.path.join(os.path.dirname(args.protocol),
+                                'movies',
+                        os.path.basename(args.protocol.replace('.json','.mp4')))
+        ok = False
+        if os.path.isfile(movie_filename):
+            if (input(' /!\  "%s" already exists\n       replace ? [no]/yes   ' % movie_filename) in ['y', 'yes']):
+                os.remove(movie_filename)
+                ok = True
         else:
-            for index in np.unique(Stim.experiment['index']):
-                write_binary(Stim, index, 0)
+            ok = True
+
+        if ok:
+
+            # build the protocol
+            with open(args.protocol, 'r') as f:
+                protocol = json.load(f)
+
+            protocol['no-window'] = True
+
+            Stim = build_stim(protocol)
+
+            def update(Stim, index):
+                if index<len(Stim.experiment['index']):
+                    print(' - episode %i/%i ' % (\
+                            index+1, len(Stim.experiment['index'])))
+                    tstart = Stim.experiment['time_start'][index]
+                    tstop= Stim.experiment['time_stop'][index]
+                    return tstart, tstop
+                else:
+                    return np.inf, np.inf
+
+            # prepare video file
+            out = cv2.VideoWriter(movie_filename,
+                                  cv2.VideoWriter_fourcc(*'mp4v'), 
+                                  args.fps, 
+                                  Stim.screen['resolution'],
+                                  False)
+
+            # prepare the loop
+            t, tend = 0, Stim.experiment['time_stop'][-1]+\
+                    Stim.experiment['interstim'][-1]
+            index = 0
+            tstart, tstop = update(Stim, index)
+            print('')
+
+            # LOOP over time to build the movie
+            while t<tend:
+
+                if t>=tstop:
+                    index += 1
+                    tstart, tstop = update(Stim, index)
+
+                if (t>=tstart) and (t<tstop):
+                    data = (Stim.get_image(index, t-tstart)+1.)/2.
+                else:
+                    data = (Stim.blank_color*np.ones(\
+                                Stim.screen['resolution'])+1.)/2.
+
+                out.write(np.array(256*np.rot90(data, k=1), 
+                                   dtype='uint8'))
+                t+= 1./args.fps
+
+            print('\n [ok] video file saved as: "%s" \n ' % movie_filename)
+            out.release()
 
     else:
         print('\nERROR: need to provide a valid json file as argument\n')
