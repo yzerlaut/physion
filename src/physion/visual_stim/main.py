@@ -33,20 +33,19 @@ class visual_stim:
         """
         """
         self.protocol = protocol
-        self.screen = SCREENS[self.protocol['Screen']]
-        self.blank_color = 0
 
-        self.protocol['movie_refresh_freq'] = \
-            protocol['movie_refresh_freq']\
-            if 'movie_refresh_freq' in protocol else 10.
+        # initialize screen parameters
+        self.screen = SCREENS[self.protocol['Screen']]
+        self.k = self.screen['gamma_correction']['k']
+        self.gamma = self.screen['gamma_correction']['gamma']
+        self.blank_color=self.gamma_corrected_lum(\
+                2*self.protocol['presentation-blank-screen-color']-1)
 
         if demo or (('demo' in self.protocol) and self.protocol['demo']):
             # --------------------- #
             #  ---- DEMO MODE ---- ##    we override the parameters
             # --------------------- #
             sr0, sr1 = self.screen['resolution']
-            self.screen['monitoring_square']['size'] = \
-                int(600*self.screen['monitoring_square']['size']/sr0)
             self.screen['resolution'] = (800, int(800*sr1/sr0))
             self.screen['screen_id'] = 0
             self.screen['fullscreen'] = False
@@ -61,16 +60,12 @@ class visual_stim:
         if not (self.protocol['Presentation']=='multiprotocol'):
             self.init_experiment(protocol, keys)
 
+
     ################################################
-    ###                                         ####
+    ###  Initialize the PsychoPy window         ####
     ################################################
 
     def init_screen_presentation(self):
-        self.k = self.screen['gamma_correction']['k']
-        self.gamma = self.screen['gamma_correction']['gamma']
-
-        blank_color=self.gamma_corrected_lum(\
-                2*self.protocol['presentation-blank-screen-color']-1)
 
         self.win = visual.Window(self.screen['resolution'],
                                  fullscr=self.screen['fullscreen'],
@@ -78,45 +73,7 @@ class visual_stim:
                                  screen=1 if (('Rig' in self.protocol) and\
                                          ('A1' in self.protocol['Rig'])) else 2,
                                  checkTiming=(os.name=='posix'), # for os x
-                                 color=blank_color)
-
-        # ---- blank screen ----
-        self.blank = visual.ImageStim(\
-                win=self.win,
-                image=np.ones(self.screen['resolution'])*blank_color,
-                units='pix',
-                size=self.screen['resolution'])
-
-        # ---- monitoring square properties ----
-        if self.screen['monitoring_square']['location']=='top-right':
-            pos = [int(x/2.-self.screen['monitoring_square']['size']/2.)\
-                    for x in self.screen['resolution']]
-        elif self.screen['monitoring_square']['location']=='bottom-left':
-            pos = [int(-x/2.+self.screen['monitoring_square']['size']/2.)\
-                    for x in self.screen['resolution']]
-        elif self.screen['monitoring_square']['location']=='top-left':
-            pos = [int(-self.screen['resolution'][0]/2.+\
-                    self.screen['monitoring_square']['size']/2.),
-                   int(self.screen['resolution'][1]/2.-\
-                           self.screen['monitoring_square']['size']/2.)]
-        elif self.screen['monitoring_square']['location']=='bottom-right':
-            pos = [int(self.screen['resolution'][0]/2.-\
-                    self.screen['monitoring_square']['size']/2.),
-                   int(-self.screen['resolution'][1]/2.+\
-                           self.screen['monitoring_square']['size']/2.)]
-        else:
-            print(30*'-'+'\n /!\\ monitoring square location not recognized !!')
-
-        self.on = visual.GratingStim(win=self.win,
-                                     size=self.screen['monitoring_square']['size'],
-                                     pos=pos, sf=0,
-                                     color=1,
-                                     units='pix')
-        self.off = visual.GratingStim(win=self.win,
-                                      size=self.screen['monitoring_square']['size'],
-                                      pos=pos, sf=0,
-                                      color=-1,
-                                      units='pix')
+                                 color=self.blank_color)
 
 
     ################################
@@ -167,46 +124,6 @@ class visual_stim:
     def compute_grating(self, xrot,
                         spatial_freq=0.1, contrast=1, time_phase=0.):
         return contrast*(1+np.cos(np.pi/2.+2*np.pi*(spatial_freq*xrot-time_phase)))/2.
-
-    def get_frames_sequence(self, index):
-        """
-        we build a sequence of frames by successive calls to "self.get_image"
-
-        here we use self.refresh_freq, not cls.refresh_freq
-         """
-        time_indices, times, FRAMES = init_times_frames(self, index,\
-                                                        self.refresh_freq)
-
-        order = self.compute_frame_order(times, index) # shuffling inside if randomize !!
-
-        for iframe, t in enumerate(times):
-            new_t = order[iframe]/self.refresh_freq
-
-            img = self.get_image(index, new_t)
-
-            FRAMES.append(self.image_to_frame(img))
-
-        return time_indices, FRAMES, self.refresh_freq
-
-
-    def compute_frame_order(self, times, index):
-        """
-        function to handle the randomization of frames across time
-        """
-
-        order = np.arange(len(times))
-
-        if ('randomize' in self.protocol) and (self.protocol['randomize']=="True"):
-            # we randomize the order of the time sequence here !!
-            if ('randomize-per-trial' in self.protocol) and\
-                    (self.protocol['randomize-per-trial']=="True"):
-                np.random.seed(int(self.experiment['seed'][index]+1000*index))
-            else:
-                np.random.seed(int(self.experiment['seed'][index]))
-            np.random.shuffle(order) # shuffling
-
-        return order
-
 
     ################################
     #  ---  Draw Stimuli       --- #
@@ -378,25 +295,6 @@ class visual_stim:
         print('----------------------------------------')
         self.win.close()
         core.quit()
-
-    # BLANK SCREEN
-    def blank_screen(self):
-        self.blank.draw()
-        self.off.draw()
-        try:
-            self.win.flip()
-        except AttributeError:
-            pass
-
-    # blinking in one corner
-    def add_monitoring_signal(self, dt):
-        """ Pulses of length 0.15s at the times : [0, 0.5, 1, 2, 3, 4, ...] """
-        if (dt<0.15) or ((dt>=0.5) and (dt<0.65)):
-            self.on.draw()
-        elif int(1000*dt)%1000<150:
-            self.on.draw()
-        else:
-            self.off.draw()
 
 
     ##########################################################
