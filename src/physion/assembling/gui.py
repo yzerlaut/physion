@@ -11,6 +11,7 @@ ALL_MODALITIES = ['VisualStim',
                   'Pupil', 'FaceMotion',
                   'raw_FaceCamera', 
                   'EphysLFP', 'EphysVm']
+
 defaults = [True,
             True,
             True, True,
