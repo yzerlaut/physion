@@ -56,18 +56,6 @@ def update_config(self):
         # if 'Screen' in self.config:
             # self.screenBox.setCurrentText(self.config['Screen'])
 
-def update_visualStim(self):
-
-    self.close_stim()
-
-    if self.protocolBox.currentText()!='None':
-        self.bufferButton.setEnabled(True)
-        self.initButton.setEnabled(False)
-    else:
-        self.bufferButton.setEnabled(False)
-        self.initButton.setEnabled(True)
-
-
 def update_subject(self):
 
     subject = get_subject_props(self)

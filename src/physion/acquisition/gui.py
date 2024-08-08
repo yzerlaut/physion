@@ -154,7 +154,7 @@ def multimodal(self,
     ip+=1
     # -
     self.protocolBox= QtWidgets.QComboBox(self)
-    self.protocolBox.activated.connect(self.update_visualStim)
+    # self.protocolBox.activated.connect(self.update_visualStim)
     tab.layout.addWidget(self.protocolBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
@@ -191,7 +191,7 @@ def multimodal(self,
     self.pFace.addItem(self.pCamImg)
 
     # NOW MENU INTERACTION BUTTONS
-    ip, width = 0, 5
+    ip, width = 3, 5
     self.initButton = QtWidgets.QPushButton(' * Initialize * ')
     self.initButton.clicked.connect(self.initialize)
     tab.layout.addWidget(self.initButton,
@@ -207,24 +207,11 @@ def multimodal(self,
     self.stopButton.clicked.connect(self.stop)
     tab.layout.addWidget(self.stopButton,
                          ip, 10, 1, width)
-    ip+=2
-    self.bufferButton = QtWidgets.QPushButton(' * buffer Stim. *')
-    self.bufferButton.clicked.connect(self.buffer)
-    tab.layout.addWidget(self.bufferButton,
-                         ip, 10, 1, width)
-    self.bufferButton.setEnabled(False)
-    ip+=1
-    self.closeButton = QtWidgets.QPushButton(' * close Stim. *')
-    self.closeButton.clicked.connect(self.close_stim)
-    tab.layout.addWidget(self.closeButton,
-                         ip, 10, 1, width)
-    self.closeButton.setEnabled(False)
 
-    for button in [self.initButton, self.runButton, self.closeButton,
-                   self.stopButton, self.bufferButton]:
+    for button in [self.initButton, self.runButton, self.stopButton]:
         button.setStyleSheet("font-weight: bold")
 
-    ip+=1
+    ip+=2
     tab.layout.addWidget(QtWidgets.QLabel(' FOV: '),
                          ip, 10, 1, 4)
     ip+=1

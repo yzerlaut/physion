@@ -180,9 +180,9 @@ class visual_stim:
         image[cond] = color
 
 
-    ################################
-    #  ---     Experiment      --- #
-    ################################
+    ########################################################
+    #  ---     Experiment (time course) properties     --- #
+    ########################################################
 
     def init_experiment(self, protocol, keys):
 
@@ -301,115 +301,27 @@ class visual_stim:
     #############      PRESENTING STIMULI    #################
     ##########################################################
 
-    def prepare_stimProps_tables(self, dt, verbose=True):
-        if verbose:
-            tic = time.time()
-        # build time axis
-        t = np.arange(int((2+self.tstop)/dt))*dt # add 2 seconds at the end for the end-stim flag
-        # array for the interstim flag
-        self.is_interstim = np.ones(len(t), dtype=bool) # default to True
-        self.next_index_table = np.zeros(len(t), dtype=int)
-        # array for the time start
-        self.time_start_table = np.zeros(len(t), dtype=float)
-        # -- loop over episode
-        for i in range(len(self.experiment['index'])):
-            tCond = (t>=self.experiment['time_start'][i]) &\
-                        (t<self.experiment['time_stop'][i])
-            self.is_interstim[tCond] = False
-            self.time_start_table[tCond] = self.experiment['time_start'][i]
-            self.next_index_table[t>=self.experiment['time_start'][i]] = i+1
-        # flag for end of stimulus
-        self.next_index_table[t>=self.experiment['time_stop'][-1]] = -1
-        if verbose:
-            print('tables initialisation took: %.2f' % (\
-                    time.time()-tic))
+    def run(self, 
+            runEvent, readyEvent,
+            datafolder, movie_folder,
+            dt=10e-3,
+            verbose=False):
+        """
+        we launched the run function
+        Once everything is initialized here, it toggles the 'readyEvent' flag
+        Then it waits for the 'runEvent' flag to turn on in the interface
 
+        in between the two, stop it by turning off 'readyEvent'
+        """
 
-    def buffer_stim(self, 
-                    binary_folder, 
-                    protocol_id, 
-                    stim_index):
-        """
-        BUFFERING numpy array into psychopy
-        """
-        tic = time.time()
-        # get metadata
-        props = np.load(
-                os.path.join(\
-                    binary_folder,\
-                    'protocol-%i_index-%i.npy' % (\
-                        protocol_id, stim_index)), allow_pickle=True).item()
-        # get stim array
-        array = np.fromfile(
-                os.path.join(\
-                    binary_folder,\
-                    'protocol-%i_index-%i.bin' % (\
-                        protocol_id, stim_index)),
-                    dtype=np.uint8).reshape(props['binary_shape'])
-        # buffer images in psychopy
-        buffer = []
-        for i in range(array.shape[0]):
-            image=self.gamma_corrected_lum(\
-                         2.*array[i,:,:].T/255.-1.)
-            buffer.append(\
-                visual.ImageStim(\
-                    win=self.win,
-                    image=image,
-                    units='pix', 
-                    size=self.screen['resolution']))
-        print(' - buffering stim #%i of protocol #%i (took %.2fs)' % (\
-                stim_index+1, protocol_id+1, time.time()-tic))
-        return buffer, props['time_indices'], props['refresh_freq']
+        # We prepare the stimulation
+        stim = visual.MovieStim(self.win, 
+                                os.path.join(movie_folder,
+                                             'movie.mp4'),
+                                size=self.screen['resolution'],
+                                units='pix')
 
-    def buffer_all_stims(self, binary_folder, readyEvent):
-        """
-        loop over all available binary files and buffer them
-        """
-        self.BUFFERS, self.TIME_INDICES, self.REFRESH_FREQS = [], [], []
-        def binary_file(iProtocol, iStim):
-            return os.path.join(binary_folder, 
-                    'protocol-%i_index-%i.bin' % (\
-                            iProtocol, iStim))
-        print('--------------------------------------')
-        print(' starting buffering [...]')
-        print('--------------------------------------')
-        iProtocol, iStim = 0, 0
-        while os.path.isfile(binary_file(iProtocol, iStim)):
-            self.BUFFERS.append([])
-            self.TIME_INDICES.append([])
-            self.REFRESH_FREQS.append([])
-            while os.path.isfile(binary_file(iProtocol, iStim)):
-                buffer, time_indices, refresh_freq = \
-                        self.buffer_stim(binary_folder,
-                                         iProtocol, iStim)
-                self.BUFFERS[iProtocol].append(buffer)
-                self.TIME_INDICES[iProtocol].append(time_indices)
-                self.REFRESH_FREQS[iProtocol].append(refresh_freq)
-                iStim += 1
-            iProtocol += 1
-            iStim = 0
-        print('--------------------------------------')
-        print(' [ok] buffering of all stims done !   ')
-        print('--------------------------------------')
         readyEvent.set()
-
-    def run_and_check(self, 
-                      runEvent, readyEvent,
-                      datafolder, binary_folder,
-                      use_prebuffering=True,
-                      speed=1.,
-                      dt=10e-3,
-                      verbose=False):
-
-        # showing the blank screen during initialisation
-        self.blank_screen()
-
-        if not readyEvent.is_set():
-            # if no previous buffering:
-            self.prepare_stimProps_tables(dt, verbose=verbose)
-            if use_prebuffering:
-                self.buffer_all_stims(binary_folder, 
-                                      readyEvent)
 
         # waiting for the external trigger [...]
         while not runEvent.is_set():
@@ -420,7 +332,7 @@ class visual_stim:
 
             if verbose:
                 print('waiting for the external trigger [...]')
-            time.sleep(0.2)
+            time.sleep(0.1)
 
 
         ##########################################
@@ -429,14 +341,10 @@ class visual_stim:
         ##########################################################
         ###           initialize the stimulation              ####
         ##########################################################
-        current_index, refresh_freq = -1, 30.
+        current_index= -1
 
         # grab the NIdaq starting time (or set one)
         NIstart = os.path.join(str(datafolder.get()), 'NIdaq.start.npy')
-        t0 = time.time()
-        while not os.path.isfile(NIstart) and (time.time()-t0)<3:
-            # waiting 3 seconds max that the NIdaq.start gets written
-            time.sleep(0.05)
         try:
             t0 = np.load(NIstart)[0]
         except (AttributeError, FileNotFoundError):
@@ -454,72 +362,40 @@ class visual_stim:
         print('--------------------------------------')
         print('        RUNNING PROTOCOL              ')
         print('--------------------------------------\n')
+
+        stim.play()
+
         while runEvent.is_set():
 
-            t = (time.time()-t0)*speed # speed factor to speed up things
+            t = (time.time()-t0)
             iT = int(t/dt)
 
-            if self.next_index_table[iT]<0:
-                # we reached the end -> need to stop   (see stim_index_table[t>tstop]=-1 above)
+            stim.draw()
+            self.win.flip()
 
-                self.blank_screen()
-                runEvent.clear() # send the stop signal to all processes
+            # if self.is_interstim[iT] and\
+                    # (current_index<self.next_index_table[iT]):
+                # # -*- need to update the stimulation buffer -*-
 
-                print('--------------------------------------')
-                print(' [ok] protocol terminated successfully')
-                print('--------------------------------------')
+                # protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
+                # stim_index = self.experiment['index'][self.next_index_table[iT]]
 
-            elif not self.is_interstim[iT]:
-                # we need to show the stimulus
+                # #now we update the counter
+                # current_index = self.next_index_table[iT]
 
-                iFrame = min([int((t-self.time_start_table[iT])*self.refresh_freq),#
-                              len(self.time_indices)-1])
-                self.buffer[self.time_indices[iFrame]].draw()
-                self.add_monitoring_signal(speed*(t-self.time_start_table[iT]))
-                self.win.flip()
+                # print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (t/3600, (t%3600)/60, (t%60),100*((t%60)-int(t%60))),
+                      # '- Running protocol of index %i/%i' %\
+                            # (current_index+1, len(self.experiment['index'])),
+                      # 'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
 
-            elif self.is_interstim[iT] and\
-                    (current_index<self.next_index_table[iT]):
-                # -*- need to update the stimulation buffer -*-
+        runEvent.clear() # send the stop signal to all processes
 
-                protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
-                stim_index = self.experiment['index'][self.next_index_table[iT]]
-                if use_prebuffering:
-                    self.buffer = self.BUFFERS[protocol_id][stim_index]
-                    self.time_indices = self.TIME_INDICES[protocol_id][stim_index]
-                    self.refresh_freq = self.REFRESH_FREQS[protocol_id][stim_index]
-                else:
-                    self.buffer, self.time_indices, self.refresh_freq =\
-                            self.buffer_stim(binary_folder,
-                                             protocol_id, stim_index)
-
-                #now we update the counter
-                current_index = self.next_index_table[iT]
-
-                print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (t/3600, (t%3600)/60, (t%60),100*((t%60)-int(t%60))),
-                      '- Running protocol of index %i/%i' %\
-                            (current_index+1, len(self.experiment['index'])),
-                      'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
-
-            elif self.is_interstim[iT]:
-                # nothing to do, already buffered, just wait the end of interstim
-                self.blank_screen()
-
-            else:
-                print('condition should never occur: /!\ Pb /!\ ')
-            
-        print('\n')
         print('--------------------------------------')
-        print('       STOPING PROTOCOL               ')
-        print('--------------------------------------\n')
-        print('\n')
+        print(' [ok] protocol terminated successfully')
+        print('--------------------------------------')
+        self.close()
 
-        # we re-launch a run_and_check
-        self.run_and_check(runEvent, readyEvent,
-                           datafolder, binary_folder,
-                           use_prebuffering=use_prebuffering,
-                           speed=speed, dt=dt,
-                           verbose=verbose)
+
 
 
     #################################################
@@ -634,7 +510,8 @@ class visual_stim:
             L, shift = nx/(self.x[-1][-1]-self.x[0][0])*label['degree'], label['shift_factor']*nx
             ax.plot([-shift, -shift], [-shift,L-shift], 'k-', lw=label['lw'])
             ax.plot([-shift, L-shift], [-shift,-shift], 'k-', lw=label['lw'])
-            ax.annotate('%.0f$^o$ ' % label['degree'], (-shift, -shift), fontsize=label['fontsize'], ha='right', va='bottom')
+            ax.annotate('%.0f$^o$ ' % label['degree'], (-shift, -shift), 
+                        fontsize=label['fontsize'], ha='right', va='bottom')
 
         if return_img:
             return img
@@ -857,16 +734,12 @@ def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
 
 def launch_VisualStim(protocol, 
                       runEvent, readyEvent,
-                      datafolder, binary_folder,
-                      use_prebuffering=True,
-                      speed=1.):
+                      datafolder, movie_folder):
 
     demo = ('demo' in protocol) and protocol['demo']
     stim = build_stim(protocol)
-    stim.run_and_check(runEvent, readyEvent,
-                       datafolder, binary_folder,
-                       use_prebuffering=use_prebuffering,
-                       speed=4. if demo else 1.)
+    stim.run(runEvent, readyEvent,
+             datafolder, movie_folder)
 
 
 if __name__=='__main__':
@@ -910,16 +783,15 @@ if __name__=='__main__':
         protocol = json.load(fp)
     protocol['demo'] = True
 
-    binary_folder = \
-        os.path.join(os.path.dirname(args.protocol), 'binaries',
+    movie_folder = \
+        os.path.join(os.path.dirname(args.protocol), 'movies',
             os.path.basename(args.protocol.replace('.json','')))
 
     use_pre_buffering = True
     VisualStim_process = multiprocessing.Process(target=launch_VisualStim,\
             args=(protocol,
                   runEvent, readyEvent,
-                  datafolder, binary_folder,
-                  use_pre_buffering, args.speed))
+                  datafolder, movie_folder))
     VisualStim_process.start()
 
     # -- with use_prebuffering=True
