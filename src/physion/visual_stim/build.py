@@ -55,21 +55,51 @@ def get_default_params(protocol_name):
         print('\n /!\ Protocol not recognized ! /!\ \n ')
         return None
 
-def write_binary(stim, index, protocol_id):
+class MonitoringSquare:
+    """
+    Used to draw a flickering square on a corner of the screen
+    to monitor stimulus presentation during the experiment
+    """
 
-    time_indices, frames, refresh_freq = stim.get_frames_sequence(index)
-    print('writing: protocol-%i_index-%i.bin' % (protocol_id, index))
-    Frames = np.array([255*(1.+f.T)/2. for f in frames], dtype=np.uint8)
-    # write as binary
-    Frames.tofile(os.path.join(protocol_folder,\
-                    'protocol-%i_index-%i.bin' % (protocol_id, index)))
-    # write as npy 
-    np.save(os.path.join(\
-                protocol_folder,\
-                'protocol-%i_index-%i.npy' % (protocol_id, index)),
-                {'refresh_freq':refresh_freq,
-                 'time_indices':time_indices,
-                 'binary_shape': Frames.shape})
+    def __init__(self, Stim):
+
+        self.find_mask(Stim)
+
+    def draw(self, image, t, tstart, tstop):
+        """
+        't' is the time from stimulus start !
+        """
+        image[self.mask] = -1. # black by default
+        if (t<tstop) & (t>=tstart):
+            iT = int(1000*(t-tstart))
+            if (iT%1000)<150:
+                image[self.mask] = 1.
+            elif (iT>=500) & (iT<650):
+                image[self.mask] = 1.
+        return image
+
+    def find_mask(self, Stim):
+        """ find the position of the square """
+
+        self.mask = np.zeros(Stim.screen['resolution'],
+                             dtype=bool)
+
+        S = int(Stim.screen['monitoring_square']['size'])
+        X, Y = Stim.screen['resolution'] # x,y sizes
+
+        if Stim.screen['monitoring_square']['location']=='top-right':
+            self.mask[X-S:,Y-S:] = True
+        elif Stim.screen['monitoring_square']['location']=='top-left':
+            self.mask[X-S:,:S] = True
+        elif Stim.screen['monitoring_square']['location']=='bottom-right':
+            self.mask[X-S:,:S] = True
+        elif Stim.screen['monitoring_square']['location']=='bottom-left':
+            self.mask[:S,:S] = True
+        else:
+            print(30*'-'+'\n /!\\ monitoring square location not recognized !!')
+            print('        --> (0,0) by default \n')
+            self.mask[:S,:S] = True
+        
 
 
 if __name__=='__main__':
@@ -84,22 +114,31 @@ if __name__=='__main__':
     parser.add_argument("--fps", type=int,
                         help="Frame Per Seconds in the mp4 movie",
                         default=30)
+    parser.add_argument('-f', "--force", type=int,
+                        help="Frame Per Seconds in the mp4 movie",
+                        default=30)
     args = parser.parse_args()
 
     if os.path.isfile(args.protocol) and args.protocol.endswith('.json'):
 
-        movie_filename = os.path.join(os.path.dirname(args.protocol),
-                                'movies',
-                        os.path.basename(args.protocol.replace('.json','.mp4')))
-        ok = False
-        if os.path.isfile(movie_filename):
-            if (input(' /!\  "%s" already exists\n       replace ? [no]/yes   ' % movie_filename) in ['y', 'yes']):
-                os.remove(movie_filename)
-                ok = True
-        else:
-            ok = True
+            # create the associated protocol folder in the binary folder
+            protocol_folder = \
+                os.path.join(os.path.dirname(args.protocol),
+                    'movies',
+                    os.path.basename(args.protocol.replace('.json','')))
 
-        if ok:
+            if os.path.isfile(os.path.join(protocol_folder, 'protocol.json')):
+                # remove the previous content for security
+                shutil.rmtree(protocol_folder)
+
+            # re-create an empty one
+            pathlib.Path(protocol_folder).mkdir(\
+                                    parents=True, exist_ok=True)
+
+            #  copy the protocol infos
+            shutil.copyfile(args.protocol,
+                            os.path.join(protocol_folder, 'protocol.json'))
+
 
             # build the protocol
             with open(args.protocol, 'r') as f:
@@ -119,8 +158,11 @@ if __name__=='__main__':
                 else:
                     return np.inf, np.inf
 
+            # prepare the monitoring square properties
+            square = MonitoringSquare(Stim)
+
             # prepare video file
-            out = cv2.VideoWriter(movie_filename,
+            out = cv2.VideoWriter(os.path.join(protocol_folder, 'movie.mp4'),
                                   cv2.VideoWriter_fourcc(*'mp4v'), 
                                   args.fps, 
                                   Stim.screen['resolution'],
@@ -131,7 +173,6 @@ if __name__=='__main__':
                     Stim.experiment['interstim'][-1]
             index = 0
             tstart, tstop = update(Stim, index)
-            print('')
 
             # LOOP over time to build the movie
             while t<tend:
@@ -140,17 +181,21 @@ if __name__=='__main__':
                     index += 1
                     tstart, tstop = update(Stim, index)
 
+                # data in [0,1]
                 if (t>=tstart) and (t<tstop):
                     data = (Stim.get_image(index, t-tstart)+1.)/2.
                 else:
                     data = (Stim.blank_color*np.ones(\
                                 Stim.screen['resolution'])+1.)/2.
 
-                out.write(np.array(256*np.rot90(data, k=1), 
+                # put the monitoring square
+                data = square.draw(data, t, tstart, tstop)
+
+                out.write(np.array(255*np.rot90(data, k=1),
                                    dtype='uint8'))
                 t+= 1./args.fps
 
-            print('\n [ok] video file saved as: "%s" \n ' % movie_filename)
+            print('\n [ok] video file saved in: "%s" \n ' % protocol_folder)
             out.release()
 
     else:
