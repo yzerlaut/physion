@@ -43,13 +43,13 @@ except ModuleNotFoundError:
 def init_visual_stim(self):
 
     with open(os.path.join(base_path,
-              'protocols', 'binaries', 
+              'protocols', 'movies', 
                self.protocolBox.currentText(),
               'protocol.json'), 'r') as fp:
         self.protocol = json.load(fp)
 
-    binary_folder = \
-        os.path.join(base_path, 'protocols', 'binaries',\
+    movie_folder = \
+        os.path.join(base_path, 'protocols', 'movies',\
                self.protocolBox.currentText())
 
     self.protocol['screen'] = self.config['Screen']
@@ -70,7 +70,7 @@ def init_visual_stim(self):
             target=launch_VisualStim,\
             args=(self.protocol,
                   self.runEvent, self.readyEvent,
-                  self.datafolder, binary_folder))
+                  self.datafolder, movie_folder))
     self.VisualStim_process.start()
 
     self.statusBar.showMessage(\
@@ -100,13 +100,6 @@ def initialize(self):
         print('------------------------------------------------')
         self.statusBar.showMessage(\
                 ' /!\ Need to select a configuration first /!\ ')
-
-    # 3) INSURING THAT THE BUFFERING IS OVER FOR THE VISUAL STIM
-    if init_ok and (self.protocolBox.currentText()!='None') and not self.readyEvent.is_set():
-        init_ok = False
-        self.statusBar.showMessage(\
-            ' ---- /!\ Need to wait that the buffering ends /!\ ---- ')
-        print(' ---- /!\ Need to wait that the buffering ends /!\ ---- ')
 
 
     if init_ok:
@@ -161,6 +154,8 @@ def initialize(self):
 
         NIdaq_metadata_init(self)
 
+        init_visual_stim(self) 
+
         if not self.onlyDemoButton.isChecked():
             try:
                 self.acq = Acquisition(\
@@ -189,9 +184,9 @@ def initialize(self):
             self.statusBar.showMessage('Acquisition ready !')
 
         if self.animate_buttons:
-            self.initButton.setEnabled(True)
+            self.initButton.setEnabled(False)
             self.runButton.setEnabled(True)
-            self.stopButton.setEnabled(False)
+            self.stopButton.setEnabled(True)
 
 
 def toggle_FaceCamera_process(self):
@@ -247,28 +242,6 @@ def toggle_RigCamera_process(self):
         self.statusBar.showMessage(' RigCamera stream interupted !')
         self.RigCamera_process.terminate()
         self.RigCamera_process = None
-
-
-def buffer(self):
-
-    init_visual_stim(self) 
-
-    if self.animate_buttons:
-        self.initButton.setEnabled(True)
-        self.bufferButton.setEnabled(False)
-        self.closeButton.setEnabled(True)
-
-def close_stim(self):
-
-    self.stop() # we stop the acquisition in case
-    self.readyEvent.clear()
-    # we delete the visual stim process
-    self.VisualStim_process = None
-
-    if self.animate_buttons:
-        self.bufferButton.setEnabled(True)
-        self.initButton.setEnabled(False)
-        self.closeButton.setEnabled(False)
 
 
 def run(self):
@@ -329,6 +302,7 @@ def run_update(self):
 def stop(self):
 
     # stop the display of visual stimulation (not the underlying process)
+    self.readyEvent.clear()
     self.runEvent.clear()
 
     if self.acq is not None:
@@ -338,14 +312,15 @@ def stop(self):
         # stop the Ca imaging recording
         self.send_CaImaging_Stop_signal()
 
-    self.statusBar.showMessage('stimulation stopped !')
-    # print('')
-    # print(' -> acquisition stopped !  ------------------')
-    # print('---------------------------------------------')
+    self.statusBar.showMessage('acquisition/stimulation stopped !')
+    print('')
+    print(' -> acquisition stopped !  ------------------')
+    print('---------------------------------------------')
 
     if self.animate_buttons:
         self.initButton.setEnabled(True)
         self.runButton.setEnabled(False)
+        self.stopButton.setEnabled(False)
 
 
 

@@ -2,24 +2,35 @@ import os, sys
 from psychopy import visual, core, event #import some libraries from PsychoPy
 import numpy as np
 
-SCREEN = [int(1280/2), int(720/2)]
-#create a window
-mywin = visual.Window(SCREEN,
-                      units="pix",
-                      checkTiming=(os.name=='posix'),
-                      fullscr=False)
 
 if '.mp4' in sys.argv[-1]:
 
     # we play a mp4 movie
 
+    SCREEN = [1280/2, 720/2]
+    mywin = visual.Window(checkTiming=(os.name=='posix'),
+                          units='pix',
+                          fullscr=False)
     stim = visual.MovieStim(mywin, 
                             sys.argv[-1],
-                            units='pix',
-                            colorSpace='rgb255')
+                            size=mywin.size/2,
+                            units='pix')
     stim.play()
 
+    while True: #this creates a never-ending loop
+        stim.draw()
+        mywin.flip()
+        if len(event.getKeys())>0:
+            break
+        event.clearEvents()
 else:
+
+    SCREEN = [int(1280/2), int(720/2)]
+    #create a window
+    mywin = visual.Window(SCREEN,
+                          units="pix",
+                          checkTiming=(os.name=='posix'),
+                          fullscr=False)
 
     X, Z = np.meshgrid(np.linspace(-1, 1, SCREEN[0]),
                        np.linspace(-1, 1, SCREEN[1]))
