@@ -36,8 +36,9 @@ def update_config(self):
         if hasattr(self, 'protocolBox'):
             # now update protocols
             if self.config['protocols']=='all':
-                self.protocol_list = os.listdir(os.path.join(base_path,
-                                                'protocols', 'binaries'))
+                self.protocol_list = [f for f in os.listdir(os.path.join(base_path,
+                                        'protocols', 'movies')) if\
+                                            ((f!='_') and not ('DS' in f))]
             else:
                 self.protocol_list = self.config['protocols']
             self.protocolBox.clear()
