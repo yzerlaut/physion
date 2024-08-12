@@ -8,7 +8,7 @@
   "presentation-prestim-period": 2,
   "presentation-poststim-period": 2,
   "presentation-interstim-period": 2,
-  "N-repeat": 1,
+  "N-repeat": 30,
   "starting-index": 0,
   "angle-1": 0,
   "angle-2": 0,
