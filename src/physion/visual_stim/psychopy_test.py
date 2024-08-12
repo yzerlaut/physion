@@ -23,6 +23,7 @@ if '.mp4' in sys.argv[-1]:
         if len(event.getKeys())>0:
             break
         event.clearEvents()
+
 else:
 
     SCREEN = [int(1280/2), int(720/2)]

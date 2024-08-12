@@ -25,8 +25,6 @@ class stim(visual_stim):
 
         super().__init__(protocol,
                          keys=['bg-color'])
-        self.refresh_freq = protocol['movie_refresh_freq']
-
 
     def get_image(self, index,
                   time_from_episode_start=0,

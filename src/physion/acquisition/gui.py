@@ -191,7 +191,7 @@ def multimodal(self,
     self.pFace.addItem(self.pCamImg)
 
     # NOW MENU INTERACTION BUTTONS
-    ip, width = 3, 5
+    ip, width = 2, 5
     self.initButton = QtWidgets.QPushButton(' * Initialize * ')
     self.initButton.clicked.connect(self.initialize)
     tab.layout.addWidget(self.initButton,
@@ -211,7 +211,7 @@ def multimodal(self,
     for button in [self.initButton, self.runButton, self.stopButton]:
         button.setStyleSheet("font-weight: bold")
 
-    ip+=2
+    ip+=1
     tab.layout.addWidget(QtWidgets.QLabel(' FOV: '),
                          ip, 10, 1, 4)
     ip+=1
@@ -233,7 +233,7 @@ def multimodal(self,
 def build_NWB_for_last():
     # last folder
     folder = last_datafolder_in_dayfolder(day_folder(FOLDERS['~/DATA']))
-    print(folder)
+    print('[ ] build NWB file for recording: ', folder)
     if os.path.isdir(folder):
         cmd, cwd = build_cmd(folder)
         print('\n launching the command \n :  %s \n ' % cmd)

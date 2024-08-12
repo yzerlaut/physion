@@ -46,8 +46,6 @@ class stim(visual_stim):
         super().__init__(protocol,
                          keys=['Image-ID'])
 
-        self.refresh_freq = protocol['movie_refresh_freq']
-
         # initializing set of NI
         self.NIarray = get_NaturalImages_as_array(self.screen)
 

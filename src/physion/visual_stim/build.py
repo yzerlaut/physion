@@ -42,7 +42,7 @@ def get_default_params(protocol_name):
         params['N-seed'] = 1
         params['N-repeat'] = 1
 
-        params['presentation-blank-screen-color'] = 0
+        params['presentation-blank-screen-color'] = 0.5
 
         params['presentation-prestim-period'] = 0.5
         params['presentation-interstim-period'] = 0.5
