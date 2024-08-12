@@ -339,31 +339,17 @@ class visual_stim:
         # --> from here external trigger launched  (now runEvent=True)
 
         ##########################################################
-        ###           initialize the stimulation              ####
-        ##########################################################
-        current_index= -1
-
-        # grab the NIdaq starting time (or set one)
-        NIstart = os.path.join(str(datafolder.get()), 'NIdaq.start.npy')
-        try:
-            t0 = np.load(NIstart)[0]
-        except (AttributeError, FileNotFoundError):
-            print(' ------------------------------------------ ')
-            print('\n  /!\\ ', str(datafolder.get()),\
-                        'NIdaq.start.npy', 'not found ! /!\\ \n')
-            print('  THIS RECORDING WILL NOT BE SYNCHRONIZED ONLINE !!! ')
-            print(' ------------------------------------------ ')
-            t0 = time.time()
-
-        ##########################################################
         ###               RUN (while) LOOP                    ####
         ##########################################################
+
+        current_index= -1 # initialize the stimulation index
         print('\n')
         print('--------------------------------------')
         print('        RUNNING PROTOCOL              ')
         print('--------------------------------------\n')
 
         stim.play()
+        t0 = time.time()
 
         while runEvent.is_set():
 
