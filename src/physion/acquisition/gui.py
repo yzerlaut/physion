@@ -192,12 +192,12 @@ def multimodal(self,
 
     # NOW MENU INTERACTION BUTTONS
     ip, width = 2, 5
-    self.initButton = QtWidgets.QPushButton(' * Initialize * ')
+    self.initButton = QtWidgets.QPushButton(' * START * ')
     self.initButton.clicked.connect(self.initialize)
     tab.layout.addWidget(self.initButton,
                          ip, 10, 1, width)
     ip+=1
-    self.runButton = QtWidgets.QPushButton(' * RUN *')
+    self.runButton = QtWidgets.QPushButton(' * - *')
     self.runButton.clicked.connect(self.run)
     tab.layout.addWidget(self.runButton,
                          ip, 10, 1, width)

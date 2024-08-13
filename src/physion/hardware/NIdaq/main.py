@@ -156,7 +156,8 @@ class Acquisition:
         if self.filename is not None:
             self.t0 = time.time()
             # saving the time stamp of the start !
-            np.save(self.filename.replace('.npy', '.start.npy'), self.t0*np.ones(1))
+            np.save(self.filename.replace('.npy', '.start.npy'), 
+                    self.t0*np.ones(1))
 
         self.running, self.data_saved = True, False
         
