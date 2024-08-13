@@ -30,7 +30,7 @@ def get_NaturalImages_as_array(screen):
     if NI_directory is not None:
         for filename in np.sort(os.listdir(NI_directory)):
             img = load(os.path.join(NI_directory, filename))
-            new_img = adapt_to_screen_resolution(img, screen)
+            new_img = np.rot90(adapt_to_screen_resolution(img, screen), k=3)
             NIarray.append(2*img_after_hist_normalization(new_img)-1.)
         return NIarray
     else:
@@ -47,6 +47,7 @@ class stim(visual_stim):
                          keys=['Image-ID'])
 
         # initializing set of NI
+        print(self.screen)
         self.NIarray = get_NaturalImages_as_array(self.screen)
 
     def get_image(self, index,
