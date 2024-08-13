@@ -231,7 +231,7 @@ class EpisodeData:
                     QUANTITIES.append(full_data.nwbfile.acquisition[quantity].name.replace('-', '').replace('_', ''))
                 elif quantity in full_data.nwbfile.processing:
                     QUANTITY_TIMES.append(np.arange(full_data.nwbfile.processing[quantity].data.shape[0])/full_data.nwbfile.processing[quantity].rate)
-                    QUANTITY_VALUES.append(full_data.nwbfile.processing[quantity].data[:])
+                    QUANTITY_VALUES.append(full_data.nwbfile.processing[quantity].data[:,0])
                     QUANTITIES.append(full_data.nwbfile.processing[quantity].name.replace('-', '').replace('_', ''))
                 else:
                     print(30*'-')
