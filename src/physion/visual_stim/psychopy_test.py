@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, time
 from psychopy import visual, core, event #import some libraries from PsychoPy
 import numpy as np
 
@@ -15,7 +15,10 @@ if '.mp4' in sys.argv[-1]:
                             sys.argv[-1],
                             size=mywin.size/2,
                             units='pix')
+    tic = time.time()
     stim.play()
+    print(time.time()-tic)
+    tic = time.time()
 
     while True: #this creates a never-ending loop
         stim.draw()
@@ -23,6 +26,8 @@ if '.mp4' in sys.argv[-1]:
         if len(event.getKeys())>0:
             break
         event.clearEvents()
+        print(time.time()-tic)
+        tic = time.time()
 
 else:
 

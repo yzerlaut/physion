@@ -65,7 +65,6 @@ def init_visual_stim(self):
     waiting to be launched with the "runEvent" flag
     it should be launched only after the "readyEvent" is turned on
     """
-    self.readyEvent.clear() # off, the init procedure should turn it on
     self.VisualStim_process = multiprocessing.Process(\
             target=launch_VisualStim,\
             args=(self.protocol,
@@ -106,6 +105,7 @@ def initialize(self):
 
         print('')
         self.runEvent.clear() # off, the run command should turn it on
+        self.readyEvent.clear() # off
 
         # SET DATAFOLDER AND SUB-FOLDERS: acquisition/tools.py
         #     (creates FaceCamera-imgs, ... if necessary )
@@ -147,12 +147,17 @@ def initialize(self):
         output_funcs= []
         if self.metadata['CaImaging']:
             output_funcs.append(recordings.trigger2P)
+
         if self.metadata['recording']!='':
             other_funcs = \
                 getattr(recordings, 
                         self.metadata['recording']).output_funcs
             for func in other_funcs:
                 output_funcs.append(func)
+
+        ## QUICK FIX: need to put something, otherwise the empty channel bugs
+        if len(output_funcs)==0:
+            output_funcs.append(recordings.trigger2P)
 
         NIdaq_metadata_init(self)
 
@@ -183,9 +188,11 @@ def initialize(self):
         else:
             self.statusBar.showMessage('Acquisition ready !')
 
+        self.run()
+
         if self.animate_buttons:
             self.initButton.setEnabled(False)
-            self.runButton.setEnabled(True)
+            # self.runButton.setEnabled(True)
             self.stopButton.setEnabled(True)
 
 
@@ -253,18 +260,26 @@ def run(self):
 
     else:
 
+        # in case of visual stimulation, we wait for its initialization
+        while not self.readyEvent.is_set():
+            time.sleep(0.1)
+
         # -------------------------------------------- #
         #    start the run flag for the subprocesses !
         # -------------------------------------------- #
-        self.runEvent.set() 
+        self.runEvent.set()  # this launches the visual-stim
         self.init = False # turn off init with acquisition
 
         if self.animate_buttons:
             self.initButton.setEnabled(False)
-            self.runButton.setEnabled(False)
             self.stopButton.setEnabled(True)
 
-        # Ni-Daq first
+
+        # we wait for the visual-stim trigger start
+        while not self.readyEvent.is_set():
+            time.sleep(0.01)
+
+        # Ni-Daq next
         if self.acq is not None:
             self.acq.launch()
             self.t0 = self.acq.t0
@@ -278,7 +293,7 @@ def run(self):
         # ========================
         print('')
         print('---------------------------------------------')
-        print(' -> acquisition launched !  ------------------')
+        print(' -> acquisition launched !  -----------------')
         print('')
         print('                 running [...]')
         print('')
@@ -309,7 +324,7 @@ def run_update(self):
 def stop(self):
 
     # stop the display of visual stimulation (not the underlying process)
-    self.readyEvent.clear()
+    self.readyEvent.clear() # this will close the visStim, if initialized
     self.runEvent.clear()
 
     if self.acq is not None:

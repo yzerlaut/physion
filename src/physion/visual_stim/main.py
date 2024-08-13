@@ -348,20 +348,16 @@ class visual_stim:
                                 units='pix')
 
         self.prepare_stimProps_tables(dt)
-
         readyEvent.set()
 
         # waiting for the external trigger [...]
         while not runEvent.is_set():
 
-            # we have the ability to close the visual stim here
-            if not readyEvent.is_set():
-                self.close()
-
             if verbose:
                 print('waiting for the external trigger [...]')
             time.sleep(0.1)
 
+        readyEvent.clear()
 
         ##########################################
         # --> from here external trigger launched  (now runEvent=True)
@@ -373,23 +369,38 @@ class visual_stim:
         current_index= -1 # initialize the stimulation index
         print('\n')
         print('--------------------------------------')
-        print('        RUNNING PROTOCOL              ')
+        print('     RUNNING VISUAL-STIM PROTOCOL              ')
         print('--------------------------------------\n')
 
+        # we can start the NIdaq recording
+        readyEvent.set()
+
+        while not os.path.isfile(\
+                os.path.join(datafolder.get(), 'NIdaq.start.npy')):
+            if verbose:
+                print('waiting for the NIdaq start [...]')
+            time.sleep(0.01)
+        t0 = np.load(os.path.join(datafolder.get(), 'NIdaq.start.npy'))[0]
         stim.play()
-        t0 = time.time()
 
         while runEvent.is_set():
 
-            t = (time.time()-t0)
-            iT = int(t/dt)
 
             stim.draw()
             self.win.flip()
 
+            t = (time.time()-t0)
+            iT = int(t/dt)
+
             if self.is_interstim[iT] and\
                     (current_index<self.next_index_table[iT]):
-                # -*- need to update the stimulation buffer -*-
+
+                # at each interstim, we re-align the stimulus presentation
+                stim.pause()
+                stim.seek(t)
+                stim.play()
+
+                # -*- now we update the stimulation display in the terminal -*-
 
                 protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
                 stim_index = self.experiment['index'][self.next_index_table[iT]]
