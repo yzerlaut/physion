@@ -287,7 +287,33 @@ class visual_stim:
         self.tstop = self.experiment['time_stop'][-1]+\
                             protocol['presentation-poststim-period']
 
-    # the close function
+
+    def prepare_stimProps_tables(self, dt, verbose=True):
+            if verbose:
+                tic = time.time()
+            # build time axis
+            t = np.arange(int((2+self.tstop)/dt))*dt # add 2 seconds at the end for the end-stim flag
+            # array for the interstim flag
+            self.is_interstim = np.ones(len(t), dtype=bool) # default to True
+            self.next_index_table = np.zeros(len(t), dtype=int)
+            # array for the time start
+            self.time_start_table = np.zeros(len(t), dtype=float)
+            # -- loop over episode
+            for i in range(len(self.experiment['index'])):
+                tCond = (t>=self.experiment['time_start'][i]) &\
+                            (t<self.experiment['time_stop'][i])
+                self.is_interstim[tCond] = False
+                self.time_start_table[tCond] = self.experiment['time_start'][i]
+                self.next_index_table[t>=self.experiment['time_start'][i]] = i+1
+            # flag for end of stimulus
+            self.next_index_table[t>=self.experiment['time_stop'][-1]] = -1
+            if verbose:
+                print('tables initialisation took: %.2f' % (\
+                        time.time()-tic)) 
+
+    ##########################################################
+    #############          CLOSING           #################
+    ##########################################################
     def close(self):
         print('\n')
         print('----------------------------------------')
@@ -320,6 +346,8 @@ class visual_stim:
                                              'movie.mp4'),
                                 size=self.screen['resolution'],
                                 units='pix')
+
+        self.prepare_stimProps_tables(dt)
 
         readyEvent.set()
 
@@ -359,20 +387,21 @@ class visual_stim:
             stim.draw()
             self.win.flip()
 
-            # if self.is_interstim[iT] and\
-                    # (current_index<self.next_index_table[iT]):
-                # # -*- need to update the stimulation buffer -*-
+            if self.is_interstim[iT] and\
+                    (current_index<self.next_index_table[iT]):
+                # -*- need to update the stimulation buffer -*-
 
-                # protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
-                # stim_index = self.experiment['index'][self.next_index_table[iT]]
+                protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
+                stim_index = self.experiment['index'][self.next_index_table[iT]]
 
-                # #now we update the counter
-                # current_index = self.next_index_table[iT]
+                # now we update the counter
+                current_index = self.next_index_table[iT]
 
-                # print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (t/3600, (t%3600)/60, (t%60),100*((t%60)-int(t%60))),
-                      # '- Running protocol of index %i/%i' %\
-                            # (current_index+1, len(self.experiment['index'])),
-                      # 'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
+                print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (t/3600, (t%3600)/60, 
+                                                       (t%60), 100*((t%60)-int(t%60))),
+                      '- Running protocol of index %i/%i' %\
+                            (current_index+1, len(self.experiment['index'])),
+                      'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
 
         runEvent.clear() # send the stop signal to all processes
 

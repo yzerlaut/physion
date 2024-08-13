@@ -151,7 +151,9 @@ if __name__=='__main__':
             def update(Stim, index):
                 if index<len(Stim.experiment['index']):
                     print(' - episode %i/%i ' % (\
-                            index+1, len(Stim.experiment['index'])))
+                            index+1, len(Stim.experiment['index'])),
+                          '   protocol-id : ', 
+                          Stim.experiment['protocol_id'][index])
                     tstart = Stim.experiment['time_start'][index]
                     tstop= Stim.experiment['time_stop'][index]
                     return tstart, tstop
@@ -180,7 +182,7 @@ if __name__=='__main__':
                 if t>=tstop:
                     index += 1
                     tstart, tstop = update(Stim, index)
-
+                    
                 # data in [0,1]
                 if (t>=tstart) and (t<tstop):
                     data = (Stim.get_image(index, t-tstart)+1.)/2.
