@@ -245,7 +245,7 @@ def multimodal(self,
 
 def build_NWB_for_last():
     # last folder
-    folder = last_datafolder_in_dayfolder(day_folder(FOLDERS['~/DATA']))
+    folder = last_datafolder_in_dayfolder(day_folder(FOLDERS[list(FOLDERS.keys())[0]]))
     print(folder)
     if os.path.isdir(folder):
         cmd, cwd = build_cmd(folder)
