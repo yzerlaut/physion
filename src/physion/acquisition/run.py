@@ -120,9 +120,11 @@ def initialize(self):
         self.max_time = 30*60 
         # ... 30min by default, so should be stopped manually
 
-        if self.metadata['VisualStim']:
+        if self.protocolBox.currentText()!='None':
             self.statusBar.showMessage(\
                     '[...] initializing acquisition & stimulation')
+            # ---- init visual stim ---- #
+            init_visual_stim(self) 
             # ---- storing visual stim  ---- #
             p = self.protocol.copy() # a copy of the protocol data for saving
             p['no-window'] = True
@@ -153,8 +155,6 @@ def initialize(self):
                 output_funcs.append(func)
 
         NIdaq_metadata_init(self)
-
-        init_visual_stim(self) 
 
         if not self.onlyDemoButton.isChecked():
             try:
@@ -221,6 +221,7 @@ def toggle_FaceCamera_process(self):
         self.FaceCamera_process.terminate()
         self.FaceCamera_process = None
 
+
 def toggle_RigCamera_process(self):
 
     if self.config is None:
@@ -275,6 +276,12 @@ def run(self):
         # ========================
         # ---- HERE IT RUNS [...]
         # ========================
+        print('')
+        print('---------------------------------------------')
+        print(' -> acquisition launched !  ------------------')
+        print('')
+        print('                 running [...]')
+        print('')
         self.run_update() # while loop
 
 
