@@ -227,7 +227,7 @@ class EpisodeData:
             else:
                 if quantity in full_data.nwbfile.acquisition:
                     QUANTITY_TIMES.append(np.arange(full_data.nwbfile.acquisition[quantity].data.shape[0])/full_data.nwbfile.acquisition[quantity].rate)
-                    QUANTITY_VALUES.append(full_data.nwbfile.acquisition[quantity].data[:])
+                    QUANTITY_VALUES.append(full_data.nwbfile.acquisition[quantity].data[:,0])
                     QUANTITIES.append(full_data.nwbfile.acquisition[quantity].name.replace('-', '').replace('_', ''))
                 elif quantity in full_data.nwbfile.processing:
                     QUANTITY_TIMES.append(np.arange(full_data.nwbfile.processing[quantity].data.shape[0])/full_data.nwbfile.processing[quantity].rate)
@@ -281,6 +281,7 @@ class EpisodeData:
                         print('----')
                         print(be)
                         # print(tfull[ep_cond][0]-tstart, tfull[ep_cond][-1]-tstart, tstop-tstart)
+                        print(quantity)
                         print('Problem with episode %i between (%.2f, %.2f)s' % (iEp, tstart, tstop))
 
 
