@@ -4,19 +4,11 @@ import numpy as np
 
 from physion.utils.paths import FOLDERS
 from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders
-from physion.assembling.build_NWB import build_cmd
+from physion.assembling.nwb import build_cmd, ALL_MODALITIES
 
-ALL_MODALITIES = ['VisualStim',
-                  'Locomotion',
-                  'Pupil', 'FaceMotion',
-                  'raw_FaceCamera', 
-                  'EphysLFP', 'EphysVm']
 
-defaults = [True,
-            True,
-            True, True,
-            True,
-            True, True]
+defaults = [True for m in ALL_MODALITIES]
+
 
 def build_NWB_UI(self, tab_id=1):
 

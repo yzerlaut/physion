@@ -272,6 +272,7 @@ def add_ophys(nwbfile, args,
     #########################################
     if metadata is None:
         metadata = ast.literal_eval(nwbfile.session_description)
+
     try:
         CaFn = get_files_with_extension(args.imaging, extension='.xml')[0]# get Tseries metadata
     except BaseException as be:
@@ -299,122 +300,73 @@ def add_ophys(nwbfile, args,
     ##################################################
 
 
-    device = pynwb.ophys.Device('Imaging device with settings: \n %s' % str(xml['settings'])) # TO BE FILLED
+    device = pynwb.ophys.Device(\
+        'Imaging device with settings: \n %s' %\
+                    str(xml['settings'])) # TO BE FILLED
     nwbfile.add_device(device)
-    optical_channel = pynwb.ophys.OpticalChannel('excitation_channel 1',
-                                                 laser_key,
-                                                 float(xml['settings']['laserWavelength'][laser_key]))
+    optical_channel = pynwb.ophys.OpticalChannel(\
+            'excitation_channel 1',
+             laser_key,
+             float(xml['settings']['laserWavelength'][laser_key]))
 
     multiplane = (True if len(np.unique(xml['depth_shift']))>1 else False)
     
     if not multiplane:
         corrected_depth =(float(metadata['Z-sign-correction-for-rig'])*Depth if ('Z-sign-correction-for-rig' in metadata) else Depth) 
-        imaging_plane = nwbfile.create_imaging_plane('my_imgpln', optical_channel,
-                                                     description='Depth=%.1f[um]' % corrected_depth,
-                                                     device=device,
-                                                     excitation_lambda=float(xml['settings']['laserWavelength'][laser_key]),
-                                                     imaging_rate=1./float(xml['settings']['framePeriod']),
-                                                     indicator='GCamp',
-                                                     location='V1', # ADD METADATA HERE
-                                                     # reference_frame='A frame to refer to',
-                                                     grid_spacing=(float(xml['settings']['micronsPerPixel']['YAxis']),
-                                                                   float(xml['settings']['micronsPerPixel']['XAxis'])))
+        imaging_plane = nwbfile.create_imaging_plane(\
+                'my_imgpln', optical_channel,
+                 description='Depth=%.1f[um]' % corrected_depth,
+                 device=device,
+                 excitation_lambda=float(xml['settings']['laserWavelength'][laser_key]),
+                 imaging_rate=1./float(xml['settings']['framePeriod']),
+                 indicator='GCamp',
+                 location='V1', # ADD METADATA HERE
+                 # reference_frame='A frame to refer to',
+                 grid_spacing=(\
+                         float(xml['settings']['micronsPerPixel']['YAxis']),
+                         float(xml['settings']['micronsPerPixel']['XAxis'])))
     else:
         # DESCRIBE THE MULTIPLANES HERE !!!!
-        imaging_plane = nwbfile.create_imaging_plane('my_imgpln', optical_channel,
-                                                     description='Depth=%.1f[um]' % (float(metadata['Z-sign-correction-for-rig'])*Depth),
-                                                     device=device,
-                                                     excitation_lambda=float(xml['settings']['laserWavelength'][laser_key]),
-                                                     imaging_rate=1./float(xml['settings']['framePeriod']),
-                                                     indicator='GCamp',
-                                                     location='V1', # ADD METADATA HERE
-                                                     # reference_frame='A frame to refer to',
-                                                     grid_spacing=(float(xml['settings']['micronsPerPixel']['YAxis']),
-                                                                   float(xml['settings']['micronsPerPixel']['XAxis'])))
-        
+        imaging_plane = nwbfile.create_imaging_plane(\
+            'my_imgpln', optical_channel,
+             description='MULTIPLANE, Depth=%.1f[um]' % (\
+                     float(metadata['Z-sign-correction-for-rig'])*Depth),
+             device=device,
+             excitation_lambda=float(xml['settings']['laserWavelength'][laser_key]),
+             imaging_rate=1./float(xml['settings']['framePeriod']),
+             indicator='GCamp',
+             location='V1', # ADD METADATA HERE
+             # reference_frame='A frame to refer to',
+             grid_spacing=(float(xml['settings']['micronsPerPixel']['YAxis']),
+                           float(xml['settings']['micronsPerPixel']['XAxis'])))
 
-    ########################################
-    ##### --- DEPRECATED to be fixed ...  ##
-    ########################################
-    Ca_data=None
-    # if with_raw_CaImaging:
-            
-    #     if args.verbose:
-    #         print('=> Storing Calcium Imaging data [...]')
 
-    #     Ca_data = BinaryFile(Ly=int(xml['settings']['linesPerFrame']),
-    #                          Lx=int(xml['settings']['pixelsPerLine']),
-    #                          read_filename=os.path.join(args.CaImaging_folder,
-    #                                     'suite2p', 'plane%i' % Ca_Imaging_options['plane'],
-    #                                                     Ca_Imaging_options['Suite2P-binary-filename']))
-
-    #     CA_SUBSAMPLING = build_subsampling_from_freq(\
-    #                     subsampled_freq=args.CaImaging_frame_sampling,
-    #                     original_freq=1./float(xml['settings']['framePeriod']),
-    #                     N=Ca_data.shape[0], Nmin=3)
-
-    #     if args.CaImaging_frame_sampling>0:
-    #         dI = int(1./args.CaImaging_frame_sampling/float(xml['settings']['framePeriod']))
-    #     else:
-    #         dI = 1
-        
-    #     def Ca_frame_generator():
-    #         for i in CA_SUBSAMPLING:
-    #             yield Ca_data.data[i:i+dI, :, :].mean(axis=0).astype(np.uint8)
-
-    #     Ca_dataI = DataChunkIterator(data=Ca_frame_generator(),
-    #                                  maxshape=(None, Ca_data.shape[1], Ca_data.shape[2]),
-    #                                  dtype=np.dtype(np.uint8))
-    #     if args.compression>0:
-    #         Ca_dataC = H5DataIO(data=Ca_dataI, # with COMPRESSION
-    #                             compression='gzip',
-    #                             compression_opts=args.compression)
-    #         image_series = pynwb.ophys.TwoPhotonSeries(name='CaImaging-TimeSeries',
-    #                                                    dimension=[2],
-    #                                                    data = Ca_dataC,
-    #                                                    imaging_plane=imaging_plane,
-    #                                                    unit='s',
-    #                                                    timestamps = CaImaging_timestamps[CA_SUBSAMPLING])
-    #     else:
-    #         image_series = pynwb.ophys.TwoPhotonSeries(name='CaImaging-TimeSeries',
-    #                                                    dimension=[2],
-    #                                                    data = Ca_dataI,
-    #                                                    # data = Ca_data.data[:].astype(np.uint8),
-    #                                                    imaging_plane=imaging_plane,
-    #                                                    unit='s',
-    #                                                    timestamps = CaImaging_timestamps[CA_SUBSAMPLING])
-    # else:
-    #     image_series = pynwb.ophys.TwoPhotonSeries(name='CaImaging-TimeSeries',
-    #                                                dimension=[2],
-    #                                                data = np.ones((2,2,2)),
-    #                                                imaging_plane=imaging_plane,
-    #                                                unit='s',
-    #                                                timestamps = 1.*np.arange(2))
     # just a dummy version for now
     """
-    HERE JUST ADD READING THE TIFF FILES AND PUT A STACK OF A FEW FRAMES
+    HERE JUST ADD WRITING A STACK OF A FEW FRAMES
     """ 
-    image_series = pynwb.ophys.TwoPhotonSeries(name='CaImaging-TimeSeries',
-                                               dimension=[2], data=np.ones((2,2,2)),
-                                               imaging_plane=imaging_plane, unit='s', 
-                                               timestamps=1.*np.arange(2),
-                                               comments='raw-data-folder=%s' % args.imaging.replace('/', '**')) # TEMPORARY
+    image_series = pynwb.ophys.TwoPhotonSeries(\
+           name='CaImaging-TimeSeries',
+           dimension=[2], 
+           data=np.ones((2,2,2)),
+           imaging_plane=imaging_plane, 
+           unit='s', 
+           timestamps=1.*np.arange(2), # ADD UPDATE OF starting_time
+           comments='raw-data-folder=%s' % args.imaging.replace('/', '**')) # TEMPORARY
     
     nwbfile.add_acquisition(image_series)
 
-    if with_processed_CaImaging and os.path.isdir(os.path.join(args.imaging, 'suite2p')):
-        print('=> Adding the suite2p processing [...]')
+    if os.path.isdir(os.path.join(args.imaging, 'suite2p')):
+        print('=> Adding the suite2p processing for "%s" [...]' % args.imaging)
         add_ophys_processing_from_suite2p(os.path.join(args.imaging, 'suite2p'),
                                           nwbfile, xml,
                                           TwoP_trigger_delay=TwoP_trigger_delay,
                                           device=device,
                                           optical_channel=optical_channel,
                                           imaging_plane=imaging_plane,
-                                          image_series=image_series) # ADD UPDATE OF starting_time
-    elif with_processed_CaImaging:
+                                          image_series=image_series) 
+    else:
         print('\n /!\  no "suite2p" folder found in "%s"  /!\ ' % args.imaging)
-
-    return Ca_data
 
     
 if __name__=='__main__':
