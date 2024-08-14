@@ -192,23 +192,17 @@ def multimodal(self,
 
     # NOW MENU INTERACTION BUTTONS
     ip, width = 2, 5
-    self.initButton = QtWidgets.QPushButton(' * START * ')
-    self.initButton.clicked.connect(self.initialize)
-    tab.layout.addWidget(self.initButton,
-                         ip, 10, 1, width)
-    ip+=1
-    self.runButton = QtWidgets.QPushButton(' * - *')
+    self.runButton = QtWidgets.QPushButton(' * START *')
     self.runButton.clicked.connect(self.run)
     tab.layout.addWidget(self.runButton,
                          ip, 10, 1, width)
-    self.runButton.setEnabled(False)
     ip+=1
     self.stopButton = QtWidgets.QPushButton(' * Stop *')
     self.stopButton.clicked.connect(self.stop)
     tab.layout.addWidget(self.stopButton,
                          ip, 10, 1, width)
 
-    for button in [self.initButton, self.runButton, self.stopButton]:
+    for button in [self.runButton, self.stopButton]:
         button.setStyleSheet("font-weight: bold")
 
     ip+=1
@@ -226,8 +220,7 @@ def multimodal(self,
     load_settings(self)
 
     if self.animate_buttons:
-        self.initButton.setEnabled(True)
-        self.runButton.setEnabled(False)
+        self.runButton.setEnabled(True)
         self.stopButton.setEnabled(False)
 
 def build_NWB_for_last():
