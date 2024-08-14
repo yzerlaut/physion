@@ -60,11 +60,25 @@ def init_visual_stim(self):
     else:
         self.protocol['demo'] = False
 
+    # ---- storing visual stim  ---- #
+
+    p = self.protocol.copy() # a copy of the protocol data for saving
+    p['no-window'] = True
+    stim = build_VisualStim(p)
+    np.save(os.path.join(self.date_time_folder,
+            'visual-stim.npy'), stim.experiment)
+    print('[ok] Visual-stimulation data saved as "%s"' %\
+            os.path.join(self.date_time_folder, 'visual-stim.npy'))
+
+    self.max_time = stim.experiment['time_stop'][-1]+\
+            stim.experiment['time_start'][0]
+
     """
     the visual stimulation is launched as a background process
     waiting to be launched with the "runEvent" flag
     it should be launched only after the "readyEvent" is turned on
     """
+    print(self.datafolder.get())
     self.VisualStim_process = multiprocessing.Process(\
             target=launch_VisualStim,\
             args=(self.protocol,
@@ -72,11 +86,8 @@ def init_visual_stim(self):
                   self.datafolder, movie_folder))
     self.VisualStim_process.start()
 
-    self.statusBar.showMessage(\
-        'buffering visualStim [...]'+20*' '+'(see advancement in terminal)')
-    
 
-def initialize(self):
+def run(self):
 
     init_ok = False
 
@@ -124,17 +135,8 @@ def initialize(self):
             self.statusBar.showMessage(\
                     '[...] initializing acquisition & stimulation')
             # ---- init visual stim ---- #
-            init_visual_stim(self) 
-            # ---- storing visual stim  ---- #
-            p = self.protocol.copy() # a copy of the protocol data for saving
-            p['no-window'] = True
-            stim = build_VisualStim(p)
-            np.save(os.path.join(self.date_time_folder,
-                    'visual-stim.npy'), stim.experiment)
-            print('[ok] Visual-stimulation data saved as "%s"' %\
-                    os.path.join(self.date_time_folder, 'visual-stim.npy'))
-            self.max_time = stim.experiment['time_stop'][-1]+\
-                    stim.experiment['time_start'][0]
+            init_visual_stim(self) #        (this also sets "self.max_time")
+            # "readyEvent" will be turned on there
         else:
             self.readyEvent.set()
             self.statusBar.showMessage('[...] initializing acquisition')
@@ -178,8 +180,6 @@ def initialize(self):
                 print('\n /!\ PB WITH NI-DAQ /!\ \n')
                 self.acq = None
 
-        self.init = True
-
         # saving all metadata after full initialization:
         self.save_experiment(self.metadata) 
 
@@ -188,11 +188,39 @@ def initialize(self):
         else:
             self.statusBar.showMessage('Acquisition ready !')
 
-        self.run()
+        # in case of visual stimulation, we wait for its initialization
+        while not self.readyEvent.is_set():
+            time.sleep(0.1)
+
+        # this launches the visual-stim preparation:
+        self.runEvent.set()  
+
+        # we wait for the visual-stim preparation:
+        while not self.readyEvent.is_set():
+            time.sleep(0.01)
+
+        # next NI-daq 
+        if self.acq is not None:
+            self.acq.launch()
+            self.t0 = self.acq.t0
+            self.statusBar.showMessage('Stimulation & Acquisition running [...]')
+        else:
+            self.statusBar.showMessage('Stimulation running [...]')
+            self.t0 = time.time()
+
+        # ========================
+        # ---- HERE IT RUNS [...]
+        # ========================
+        print('')
+        print('---------------------------------------------')
+        print(' -> acquisition launched !  -----------------')
+        print('')
+        print('                 running [...]')
+        print('')
+        self.run_update() # while loop
 
         if self.animate_buttons:
-            self.initButton.setEnabled(False)
-            # self.runButton.setEnabled(True)
+            self.runButton.setEnabled(False)
             self.stopButton.setEnabled(True)
 
 
@@ -252,54 +280,6 @@ def toggle_RigCamera_process(self):
         self.RigCamera_process = None
 
 
-def run(self):
-
-    if not self.init:
-
-        self.statusBar.showMessage('Need to initialize the stimulation !')
-
-    else:
-
-        # in case of visual stimulation, we wait for its initialization
-        while not self.readyEvent.is_set():
-            time.sleep(0.1)
-
-        # -------------------------------------------- #
-        #    start the run flag for the subprocesses !
-        # -------------------------------------------- #
-        self.runEvent.set()  # this launches the visual-stim
-        self.init = False # turn off init with acquisition
-
-        if self.animate_buttons:
-            self.initButton.setEnabled(False)
-            self.stopButton.setEnabled(True)
-
-
-        # we wait for the visual-stim trigger start
-        while not self.readyEvent.is_set():
-            time.sleep(0.01)
-
-        # Ni-Daq next
-        if self.acq is not None:
-            self.acq.launch()
-            self.t0 = self.acq.t0
-            self.statusBar.showMessage('Stimulation & Acquisition running [...]')
-        else:
-            self.statusBar.showMessage('Stimulation running [...]')
-            self.t0 = time.time()
-
-        # ========================
-        # ---- HERE IT RUNS [...]
-        # ========================
-        print('')
-        print('---------------------------------------------')
-        print(' -> acquisition launched !  -----------------')
-        print('')
-        print('                 running [...]')
-        print('')
-        self.run_update() # while loop
-
-
 def run_update(self):
 
     # ----- online visualization here -----
@@ -335,13 +315,11 @@ def stop(self):
         self.send_CaImaging_Stop_signal()
 
     self.statusBar.showMessage('acquisition/stimulation stopped !')
-    print('')
     print(' -> acquisition stopped !  ------------------')
     print('---------------------------------------------')
 
     if self.animate_buttons:
-        self.initButton.setEnabled(True)
-        self.runButton.setEnabled(False)
+        self.runButton.setEnabled(True)
         self.stopButton.setEnabled(False)
 
 

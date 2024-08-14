@@ -288,11 +288,13 @@ class visual_stim:
                             protocol['presentation-poststim-period']
 
 
-    def prepare_stimProps_tables(self, dt, verbose=True):
+    def prepare_stimProps_tables(self, dt, 
+                                 verbose=True):
             if verbose:
                 tic = time.time()
             # build time axis
-            t = np.arange(int((2+self.tstop)/dt))*dt # add 2 seconds at the end for the end-stim flag
+            #               add 2 seconds at the end for the end-stim flag
+            t = np.arange(int((2+self.tstop)/dt))*dt 
             # array for the interstim flag
             self.is_interstim = np.ones(len(t), dtype=bool) # default to True
             self.next_index_table = np.zeros(len(t), dtype=int)
@@ -308,7 +310,7 @@ class visual_stim:
             # flag for end of stimulus
             self.next_index_table[t>=self.experiment['time_stop'][-1]] = -1
             if verbose:
-                print('tables initialisation took: %.2f' % (\
+                print(' [ok] stim tables initialisation took: %.2f' % (\
                         time.time()-tic)) 
 
     ##########################################################
@@ -357,8 +359,6 @@ class visual_stim:
                 print('waiting for the external trigger [...]')
             time.sleep(0.1)
 
-        readyEvent.clear()
-
         ##########################################
         # --> from here external trigger launched  (now runEvent=True)
 
@@ -372,16 +372,22 @@ class visual_stim:
         print('     RUNNING VISUAL-STIM PROTOCOL              ')
         print('--------------------------------------\n')
 
+
+        # self.datafolder = datafolder.get()
+        # print(self.datafolder)
+        # while not os.path.isfile(\
+                # os.path.join(self.datafolder, 'NIdaq.start.npy')):
+            # if verbose:
+                # print('waiting for the NIdaq start [...]')
+            # time.sleep(0.01)
+
+        stim.play(log=verbose)
+        t0 = time.time()
+        np.save(os.path.join(datafolder.get(), 'visual-stim.start.npy'),
+                np.ones(1)*t0)
+
         # we can start the NIdaq recording
         readyEvent.set()
-
-        while not os.path.isfile(\
-                os.path.join(datafolder.get(), 'NIdaq.start.npy')):
-            if verbose:
-                print('waiting for the NIdaq start [...]')
-            time.sleep(0.01)
-        t0 = np.load(os.path.join(datafolder.get(), 'NIdaq.start.npy'))[0]
-        stim.play()
 
         while runEvent.is_set():
 
@@ -396,9 +402,9 @@ class visual_stim:
                     (current_index<self.next_index_table[iT]):
 
                 # at each interstim, we re-align the stimulus presentation
-                stim.pause()
-                stim.seek(t)
-                stim.play()
+                # stim.pause(log=verbose)
+                # stim.seek(t)
+                # stim.play(log=verbose)
 
                 # -*- now we update the stimulation display in the terminal -*-
 
