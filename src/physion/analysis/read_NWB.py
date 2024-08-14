@@ -237,7 +237,7 @@ class Data:
         """
         if 'Running-Speed' in self.nwbfile.acquisition:
 
-            self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:]
+            self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:,0]
             self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time+\
                 np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)\
                                         /self.nwbfile.acquisition['Running-Speed'].rate

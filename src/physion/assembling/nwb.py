@@ -113,7 +113,11 @@ def build_NWB_func(args):
                 file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
 
     if not hasattr(args, 'filename'):
-        args.filename = os.path.join(pathlib.Path(args.datafolder).parent, '%s.nwb' % identifier)
+        if args.destination_folder=='':
+            args.filename = os.path.join(pathlib.Path(args.datafolder).parent, '%s.nwb' % identifier)
+        else:
+            args.filename = os.path.join(args.destination_folder, '%s.nwb' % identifier)
+
     
     manager = pynwb.get_manager() # we need a manager to link raw and processed data
     
@@ -560,7 +564,8 @@ def build_NWB_func(args):
 
 def build_cmd(datafolder,
               modalities=['Locomotion', 'VisualStim'],
-              force_to_visualStimTimestamps=False):
+              force_to_visualStimTimestamps=False,
+              dest_folder=''):
 
     cmd = '%s -m physion.assembling.nwb %s -M ' % (python_path,
                                                    datafolder)
@@ -568,7 +573,10 @@ def build_cmd(datafolder,
     for m in modalities:
         cmd += '%s '%m
     if force_to_visualStimTimestamps:
-        cmd += '--force_to_visualStimTimestamps'
+        cmd += '--force_to_visualStimTimestamps '
+    if dest_folder!='':
+        cmd += '--destination_folder %s' % dest_folder
+
     return cmd, cwd
 
 
@@ -600,6 +608,8 @@ if __name__=='__main__':
     parser.add_argument('-fcfs', "--FaceCamera_frame_sampling", default=0.001, type=float)
     parser.add_argument('-pfs', "--Pupil_frame_sampling", default=0.01, type=float)
     parser.add_argument('-sfs', "--FaceMotion_frame_sampling", default=0.005, type=float)
+
+    parser.add_argument("--destination_folder", type=str, default='')
 
     parser.add_argument("--silent", action="store_true")
     parser.add_argument('-v', "--verbose", action="store_true")

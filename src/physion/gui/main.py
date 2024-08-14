@@ -134,8 +134,8 @@ class MainWindow(QtWidgets.QMainWindow):
     if not Acquisition:
         from physion.assembling.gui import build_NWB_UI, runBuildNWB,\
                 load_NWB_folder
-        from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
-            loadNWBfolder, loadCafolder, runAddOphys, check_ordered
+        # from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
+            # loadNWBfolder, loadCafolder, runAddOphys, check_ordered
         from physion.assembling.FOV_coordinates import gui as FOV_coords_UI,\
                 load_intrinsic_maps_FOV
     else:

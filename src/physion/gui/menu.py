@@ -51,8 +51,8 @@ def build_menu(self):
     # --
     self.assemblingMenu.addAction('Build NWB',
                                   self.build_NWB_UI)
-    self.assemblingMenu.addAction('Add Imaging',
-                                  self.add_imaging)
+    # self.assemblingMenu.addAction('Add Imaging',
+                                  # self.add_imaging)
     self.assemblingMenu.addAction('FOV coordinates',
                                   self.FOV_coords_UI)
 
