@@ -42,6 +42,8 @@ def build_NWB_func(args):
         # (deprecated, loading from metadata.npy)
         metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
                            allow_pickle=True).item()
+
+    if 'date' not in metadata:
         metadata['date'] = metadata['filename'][-19:-9]
         metadata['time'] = metadata['filename'][-8:]
 
