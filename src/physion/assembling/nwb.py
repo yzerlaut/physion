@@ -114,7 +114,7 @@ def build_NWB_func(args):
                 source_script_file_name=str(pathlib.Path(__file__).resolve()),
                 file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
 
-    if not hasattr(args, 'filename'):
+    if not hasattr(args, 'filename') or args.filename=='':
         if args.destination_folder=='':
             args.filename = os.path.join(pathlib.Path(args.datafolder).parent, '%s.nwb' % identifier)
         else:
@@ -641,4 +641,5 @@ if __name__=='__main__':
                     (len(dateFolder.split('_'))==3):
                 print(' processing "%s" [...] ' % f)
                 args.datafolder = f
+                args.filename = ''
                 build_NWB_func(args)
