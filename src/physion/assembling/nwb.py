@@ -613,6 +613,7 @@ if __name__=='__main__':
 
     parser.add_argument("--silent", action="store_true")
     parser.add_argument('-v', "--verbose", action="store_true")
+    parser.add_argument('-R', "--recursive", action="store_true")
 
     args = parser.parse_args()
 
@@ -623,9 +624,19 @@ if __name__=='__main__':
     args.FaceMotion_frame_sampling = 0
     args.FaceCamera_frame_sampling = 0
 
-    if os.path.isdir(args.datafolder):
+    if os.path.isdir(args.datafolder) and ('NIdaq.npy' in os.listdir(args.datafolder)):
         if (args.datafolder[-1]==os.path.sep) or (args.datafolder[-1]=='/'):
             args.datafolder = args.datafolder[:-1]
         build_NWB_func(args)
     else:
         print('"%s" not a valid datafolder' % args.datafolder)
+
+    if args.recursive:
+        for f, _, __ in os.walk(args.datafolder):
+            timeFolder = f.split(os.path.sep)[-1]
+            dateFolder = f.split(os.path.sep)[-2]
+            if (len(timeFolder.split('-'))==3) and \
+                    (len(dateFolder.split('_'))==3):
+                print(' processing "%s" [...] ' % f)
+                args.datafolder = f
+                build_NWB_func(args)
