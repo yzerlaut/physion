@@ -153,6 +153,7 @@ class Acquisition:
             self.write_task.start()
             
         self.sample_clk_task.start()
+
         if self.filename is not None:
             self.t0 = time.time()
             # saving the time stamp of the start !

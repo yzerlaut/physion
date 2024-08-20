@@ -357,7 +357,7 @@ class visual_stim:
 
             if verbose:
                 print('waiting for the external trigger [...]')
-            time.sleep(0.1)
+            time.sleep(0.05)
 
         ##########################################
         # --> from here external trigger launched  (now runEvent=True)
@@ -372,22 +372,23 @@ class visual_stim:
         print('     RUNNING VISUAL-STIM PROTOCOL              ')
         print('--------------------------------------\n')
 
-
-        # self.datafolder = datafolder.get()
-        # print(self.datafolder)
-        # while not os.path.isfile(\
-                # os.path.join(self.datafolder, 'NIdaq.start.npy')):
-            # if verbose:
-                # print('waiting for the NIdaq start [...]')
-            # time.sleep(0.01)
-
-        stim.play(log=verbose)
-        t0 = time.time()
-        np.save(os.path.join(datafolder.get(), 'visual-stim.start.npy'),
-                np.ones(1)*t0)
-
         # we can start the NIdaq recording
         readyEvent.set()
+
+        t0 = time.time()
+        stim.play(log=verbose)
+
+        while not os.path.isfile(os.path.join(datafolder.get(), 'NIdaq.start.npy'))\
+                and ((time.time()-t0)<3.):
+            # we wait for the NIdaq initialisation to be done
+            time.sleep(0.05)
+
+        if os.path.isfile(os.path.join(datafolder.get(), 'NIdaq.start.npy')):
+            t0 = np.load(os.path.join(datafolder.get(), 'NIdaq.start.npy'))[0]
+        else:
+            # otherwise 
+            t0 = time.time()
+
 
         while runEvent.is_set():
 
@@ -402,12 +403,9 @@ class visual_stim:
                     (current_index<self.next_index_table[iT]):
 
                 # at each interstim, we re-align the stimulus presentation
-                # stim.pause(log=verbose)
-                # stim.seek(t)
-                # stim.play(log=verbose)
+                stim.seek(t+0.15) # it takes ~150ms to shift the movie
 
                 # -*- now we update the stimulation display in the terminal -*-
-
                 protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
                 stim_index = self.experiment['index'][self.next_index_table[iT]]
 

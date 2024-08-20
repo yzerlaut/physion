@@ -490,6 +490,7 @@ def build_NWB_func(args):
     ####    Electrophysiological Recording    #######
     #################################################
 
+    """
     iElectrophy = 1 # start on channel 1
     
     if metadata['EphysVm'] and ('EphysVm' in args.modalities):
@@ -519,7 +520,8 @@ def build_NWB_func(args):
                                unit='mV',
                                rate=float(metadata['NIdaq-acquisition-frequency']))
         nwbfile.add_acquisition(lfp)
-        
+    """
+
     #################################################
     ####         Calcium Imaging              #######
     #################################################
@@ -532,7 +534,7 @@ def build_NWB_func(args):
         add_ophys(nwbfile, args,
                   metadata=metadata)
     else:
-        print('\n /!\  Problem with the TSeries folders (either None or multiples) in "%s"  /!\ ' % args.imaging)
+        print('\n[X] /!\  Problem with the TSeries folders (either None or multiples) in "%s"  /!\ ' % args.datafolder)
     
     #################################################
     ####    add Intrinsic Imaging MAPS         ######
