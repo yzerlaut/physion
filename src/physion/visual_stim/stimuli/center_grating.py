@@ -12,9 +12,8 @@ params = {"movie_refresh_freq":10,
           # stimulus parameters (add parenthesis with units):
           "x-center (deg)":0.,
           "y-center (deg)":0.,
-          "size (deg)":4.,
           "angle (deg)":0,
-          "radius (deg)":10,
+          "radius (deg)":30,
           "spatial-freq (cycle/deg)":0.04,
           "contrast (lum.)":1.0,
           "bg-color (lum.)":0.5}
@@ -57,3 +56,17 @@ class stim(visual_stim):
                                  'color':'red'}):
 
         return self.show_frame(episode, ax=ax, label=label)
+
+
+if __name__=='__main__':
+
+    import physion.utils.plot_tools as pt
+    from physion.visual_stim.build import get_default_params
+
+    params = get_default_params('center-grating')
+    params['no-window'] = True
+
+    Stim = stim(params)
+
+    Stim.plot_stim_picture(0)
+    pt.plt.show()

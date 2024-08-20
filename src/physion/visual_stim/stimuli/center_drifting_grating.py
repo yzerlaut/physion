@@ -62,8 +62,8 @@ class stim(visual_stim):
                                  'width_factor':0.05,
                                  'color':'red'}):
 
-        ax = self.show_frame(episode, ax=ax, label=label,
-                             parent=parent)
+        ax = self.show_frame(episode, ax=ax, label=label)
+
         arrow['direction'] = self.experiment['angle'][episode]
         arrow['center'] = [self.experiment['x-center'][episode],
                            self.experiment['y-center'][episode]]
@@ -92,3 +92,18 @@ class stim(visual_stim):
         # ax = self.show_frame(episode, tcenter, ax=ax,
                              # parent=parent,
                              # label=label)
+
+
+if __name__=='__main__':
+
+    import physion.utils.plot_tools as pt
+    from physion.visual_stim.build import get_default_params
+
+    params = get_default_params('center-drifting-grating')
+    params['no-window'] = True
+
+    Stim = stim(params)
+
+    Stim.plot_stim_picture(0)
+    pt.plt.show()
+

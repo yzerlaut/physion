@@ -591,20 +591,6 @@ class visual_stim:
 
 
 #####################################################
-##  ----      MOVIE STIMULATION REPLAY      --- #####
-#####################################################
-
-class movie_replay(visual_stim):
-    """ TO BE IMPLEMENTED """
-
-    def __init__(self, protocol):
-
-        super().__init__(protocol)
-
-    def run(self, parent):
-        pass
-
-#####################################################
 ##  ----         MULTI-PROTOCOLS            --- #####
 #####################################################
 
