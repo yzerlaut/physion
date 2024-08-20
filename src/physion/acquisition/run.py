@@ -211,8 +211,7 @@ def run(self):
         # ---- HERE IT RUNS [...]
         # ========================
         print('')
-        print('---------------------------------------------')
-        print(' -> acquisition launched !  -----------------')
+        print(' -> acquisition launched !  ')
         print('')
         print('                 running [...]')
         print('')
