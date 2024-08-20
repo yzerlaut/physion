@@ -78,7 +78,6 @@ def init_visual_stim(self):
     waiting to be launched with the "runEvent" flag
     it should be launched only after the "readyEvent" is turned on
     """
-    print(self.datafolder.get())
     self.VisualStim_process = multiprocessing.Process(\
             target=launch_VisualStim,\
             args=(self.protocol,

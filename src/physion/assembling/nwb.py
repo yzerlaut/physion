@@ -69,10 +69,6 @@ def build_NWB_func(args):
         subject_props = {}
         print('subject properties not in metadata ...')
 
-    # NIdaq tstart
-    if os.path.isfile(os.path.join(args.datafolder, 'NIdaq.start.npy')):
-        metadata['NIdaq_Tstart'] = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
-
     # override a few properties (when curating/rebuilding datafiles)
     if hasattr(args, 'subject_id') and ('subject_id' in subject_props):
         # means we're over-writing the subject_id, we keep the old one in the description
@@ -136,9 +132,7 @@ def build_NWB_func(args):
         print('   -----> Not able to build NWB file for "%s"' % args.datafolder)
         raise BaseException
 
-    
-    true_tstart0 = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
-    st = datetime.datetime.fromtimestamp(true_tstart0).strftime('%H:%M:%S.%f')
+    st = datetime.datetime.fromtimestamp(NIdaq_Tstart).strftime('%H:%M:%S.%f')
     true_tstart = StartTime_to_day_seconds(st)
     
     # #################################################
@@ -490,6 +484,7 @@ def build_NWB_func(args):
     ####    Electrophysiological Recording    #######
     #################################################
 
+    """
     iElectrophy = 1 # start on channel 1
     
     if metadata['EphysVm'] and ('EphysVm' in args.modalities):
@@ -520,6 +515,7 @@ def build_NWB_func(args):
                                rate=float(metadata['NIdaq-acquisition-frequency']))
         nwbfile.add_acquisition(lfp)
         
+    """
     #################################################
     ####         Calcium Imaging              #######
     #################################################
@@ -532,7 +528,7 @@ def build_NWB_func(args):
         add_ophys(nwbfile, args,
                   metadata=metadata)
     else:
-        print('\n /!\  Problem with the TSeries folders (either None or multiples) in "%s"  /!\ ' % args.imaging)
+        print('\n /!\  Problem with the TSeries folders (either None or multiples) in "%s"  /!\ ' % args.datafolder)
     
     #################################################
     ####    add Intrinsic Imaging MAPS         ######
