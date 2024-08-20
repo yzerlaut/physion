@@ -102,13 +102,21 @@ class visual_stim:
         # we linearize the arctan function #
         """
 
-        altitudeMax = np.arctan(self.screen['height']/self.screen['distance_from_eye'])
-        azimuthMax = np.arctan(self.screen['width']/self.screen['distance_from_eye'])
-
+        widths = np.linspace(-self.screen['width']/2., 
+                             self.screen['width']/2., 
+                             self.screen['resolution'][0])
+        heights = np.linspace(-self.screen['height']/2., 
+                              self.screen['height']/2., 
+                              self.screen['resolution'][1])
+        # altitudeMax = np.arctan(self.screen['height']/2./self.screen['distance_from_eye'])*180/np.pi
+        # azimuthMax = np.arctan(self.screen['width']/2./self.screen['distance_from_eye'])*180/np.pi
+        # self.screen['resolution'] = (self.screen['resolution'][0],self.screen['resolution'][0])
         x, z = np.meshgrid(
-            np.linspace(-azimuthMax, azimuthMax, self.screen['resolution'][0],
-            np.linspace(-altitudeMax, altitudeMax, self.screen['resolution'][1],
+            np.arctan(widths/self.screen['distance_from_eye'])*180/np.pi,
+            np.arctan(heights/self.screen['distance_from_eye'])*180/np.pi,
                            indexing='xy')
+        print(np.min(x), np.max(x))
+        print(np.min(z), np.max(z))
         self.x, self.z = x.T, z.T
 
     def angle_to_pix(self, angle):
@@ -533,6 +541,7 @@ class visual_stim:
                 self.add_vse(ax, self.vse)
 
         ax.axis('off')
+        ax.axis('equal')
 
         if label is not None:
             nz, nx = self.x.shape
