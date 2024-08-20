@@ -101,14 +101,13 @@ class visual_stim:
         #  ------- for simplicity -------  #
         # we linearize the arctan function #
         """
-        dAngle_per_pix = self.pix_to_angle(1.)
 
-        x, z = np.meshgrid(dAngle_per_pix*(\
-                np.arange(self.screen['resolution'][0])-\
-                    self.screen['resolution'][0]/2.),
-                           dAngle_per_pix*(\
-                np.arange(self.screen['resolution'][1])-\
-                    self.screen['resolution'][1]/2.),
+        altitudeMax = np.arctan(self.screen['height']/self.screen['distance_from_eye'])
+        azimuthMax = np.arctan(self.screen['width']/self.screen['distance_from_eye'])
+
+        x, z = np.meshgrid(
+            np.linspace(-azimuthMax, azimuthMax, self.screen['resolution'][0],
+            np.linspace(-altitudeMax, altitudeMax, self.screen['resolution'][1],
                            indexing='xy')
         self.x, self.z = x.T, z.T
 
