@@ -274,8 +274,8 @@ class Data:
         if 'Pupil' in self.nwbfile.processing:
 
             self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
-            self.pupil_diameter =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:],
-                                             self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:]], axis=0)
+            self.pupil_diameter =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:,0],
+                                             self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:,0]], axis=0)
 
             if specific_time_sampling is not None:
                 return tools.resample(self.t_pupil, self.pupil_diameter,
@@ -298,8 +298,8 @@ class Data:
         if 'Pupil' in self.nwbfile.processing:
 
             self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
-            cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:]
-            cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:]
+            cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:,0]
+            cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:,0]
             self.gaze_movement = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
 
             if specific_time_sampling is not None:
@@ -332,7 +332,7 @@ class Data:
         if 'FaceMotion' in self.nwbfile.processing:
 
             self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps
-            self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:]
+            self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:,0]
 
             if specific_time_sampling is not None:
                 return tools.resample(self.t_facemotion, self.facemotion, 
