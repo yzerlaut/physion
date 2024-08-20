@@ -528,11 +528,7 @@ def build_NWB_func(args):
         add_ophys(nwbfile, args,
                   metadata=metadata)
     else:
-<<<<<<< HEAD
-        print('\n /!\  Problem with the TSeries folders (either None or multiples) in "%s"  /!\ ' % args.datafolder)
-=======
         print('\n[X] /!\  Problem with the TSeries folders (either None or multiples) in "%s"  /!\ ' % args.datafolder)
->>>>>>> dev
     
     #################################################
     ####    add Intrinsic Imaging MAPS         ######
