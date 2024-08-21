@@ -1,5 +1,5 @@
 import os, sys, time
-from psychopy import visual, core, event #import some libraries from PsychoPy
+from psychopy import visual, core, event, monitors #import some libraries from PsychoPy
 import numpy as np
 
 
@@ -29,6 +29,37 @@ if '.mp4' in sys.argv[-1]:
         print(time.time()-tic)
         tic = time.time()
 
+elif sys.argv[-1]=='grating':
+
+    monitor = monitors.Monitor('Test', 
+                               distance=15., width=60.)
+    SCREEN = [int(1280/2), int(720/2)]
+    monitor.setSizePix(SCREEN)
+    #create a window
+    mywin = visual.Window(SCREEN,
+                          monitor=monitor,
+                          checkTiming=(os.name=='posix'),
+                          units='pix',
+                          fullscr=False)
+
+    stim = visual.GratingStim(win=mywin,
+                              units='deg',
+                              # mask='circle',
+                              sf=0.04,
+                              # ori=45,
+                              size=(300,20))
+
+    #draw the stimuli and update the window
+    i=0
+    while True: #this creates a never-ending loop
+
+        stim.draw()
+        mywin.flip()
+        i+=1
+
+        if len(event.getKeys())>0:
+            break
+        event.clearEvents()
 else:
 
     SCREEN = [int(1280/2), int(720/2)]
@@ -44,6 +75,7 @@ else:
     #draw the stimuli and update the window
     i=0
     while True: #this creates a never-ending loop
+
         stim = visual.ImageStim(win=mywin,
                                 image=np.clip(np.random.randn(*X.shape)+\
                                               np.sin(8*np.pi*X+i/10.),

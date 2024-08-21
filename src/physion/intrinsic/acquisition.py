@@ -348,7 +348,7 @@ def run(self):
                              keys=['null'],
                              demo=self.demoBox.isChecked())
 
-    self.stim.blank_screen()
+    # self.stim.blank_screen()
 
     xmin, xmax = 1.15*np.min(self.stim.x), 1.15*np.max(self.stim.x)
     zmin, zmax = 1.2*np.min(self.stim.z), 1.2*np.max(self.stim.z)

@@ -44,7 +44,8 @@ class stim(visual_stim):
         self.refresh_freq = protocol['movie_refresh_freq']
 
 
-    def get_image(self, episode, time_from_episode_start=0):
+    def get_image(self, episode, 
+                  time_from_episode_start=0):
         img = init_bg_image(self, episode)
         self.add_grating_patch(img,
                        angle=self.experiment['angle'][episode],
@@ -53,7 +54,7 @@ class stim(visual_stim):
                        contrast=self.experiment['contrast'][episode],
                        xcenter=self.experiment['x-center'][episode],
                        zcenter=self.experiment['y-center'][episode],
-                       time_phase=self.experiment['speed'][episode]*time_from_episode_start)
+                       phase=self.experiment['speed'][episode]*time_from_episode_start)
         return img
 
     def plot_stim_picture(self, episode,
@@ -69,30 +70,6 @@ class stim(visual_stim):
                            self.experiment['y-center'][episode]]
         self.add_arrow(arrow, ax)
         return ax
-
-    ### HERE YOU CAN OVERWRITE THE DEFAULT plot_stim_picture FUNCTION
-
-    # def plot_stim_picture(self, episode, ax,
-                          # parent=None, 
-                          # label={'degree':20,
-                                 # 'shift_factor':0.02,
-                                 # 'lw':1, 'fontsize':10},
-                          # vse=False,
-                          # arrow={'length':20,
-                                 # 'width_factor':0.05,
-                                 # 'color':'red'}):
-
-        # """
-        # """
-        # cls = (parent if parent is not None else self)
-
-        # tcenter = .5*(cls.experiment['time_stop'][episode]-\
-                      # cls.experiment['time_start'][episode])
-        
-        # ax = self.show_frame(episode, tcenter, ax=ax,
-                             # parent=parent,
-                             # label=label)
-
 
 if __name__=='__main__':
 

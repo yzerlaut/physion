@@ -29,6 +29,7 @@ class visual_stim:
     def __init__(self,
                  protocol,
                  keys=[], # need to pass the varied parameters
+                 units='deg', # degree vs cm, cm -> to show on the screen !
                  demo=False):
         """
         """
@@ -40,6 +41,7 @@ class visual_stim:
         self.gamma = self.screen['gamma_correction']['gamma']
         self.blank_color=self.gamma_corrected_lum(\
                 2*self.protocol['presentation-blank-screen-color']-1)
+        self.units = units
 
         if demo or (('demo' in self.protocol) and self.protocol['demo']):
             # --------------------- #
@@ -98,30 +100,78 @@ class visual_stim:
 
     def set_angle_meshgrid(self):
         """
-        #  ------- for simplicity -------  #
-        # we linearize the arctan function #
         """
 
-        widths = np.linspace(-self.screen['width']/2., 
-                             self.screen['width']/2., 
-                             self.screen['resolution'][0])
-        heights = np.linspace(-self.screen['height']/2., 
-                              self.screen['height']/2., 
-                              self.screen['resolution'][1])
-        # altitudeMax = np.arctan(self.screen['height']/2./self.screen['distance_from_eye'])*180/np.pi
-        # azimuthMax = np.arctan(self.screen['width']/2./self.screen['distance_from_eye'])*180/np.pi
-        # self.screen['resolution'] = (self.screen['resolution'][0],self.screen['resolution'][0])
-        x, z = np.meshgrid(
-            np.arctan(widths/self.screen['distance_from_eye'])*180/np.pi,
-            np.arctan(heights/self.screen['distance_from_eye'])*180/np.pi,
-                           indexing='xy')
-        print(np.min(x), np.max(x))
-        print(np.min(z), np.max(z))
-        self.x, self.z = x.T, z.T
 
-    def angle_to_pix(self, angle):
-        # using the above linear approx, the relationship is just the inverse:
-        return angle/self.pix_to_angle(1.)
+
+        if self.units=='cm':
+
+            # we start from the real pixel Cartesian coordinates on the screen
+            widths, heights = np.meshgrid(\
+                                 np.linspace(-self.screen['width']/2., 
+                                             self.screen['width']/2., 
+                                             self.screen['resolution'][0]),
+                                 np.linspace(-self.screen['height']/2., 
+                                              self.screen['height']/2., 
+                                              self.screen['resolution'][1]),
+                                          indexing='xy')
+            # we transpose given our coordinate system:
+            self.widths, self.heights = widths.T, heights.T
+
+            # we convert to angles in the x and z directions
+            self.x = np.arctan(self.widths/\
+                        self.screen['distance_from_eye'])
+            self.z = 180./np.pi*np.arctan(self.heights*np.cos(self.x)/\
+                                        self.screen['distance_from_eye'])
+            self.x = 180./np.pi*self.x
+
+            self.mask = np.ones(self.x.shape, dtype=bool)
+
+        elif self.units=='deg':
+
+            altitudeMax = np.arctan(self.screen['height']/2./self.screen['distance_from_eye'])*180/np.pi
+            azimuthMax = np.arctan(self.screen['width']/2./self.screen['distance_from_eye'])*180/np.pi
+
+            # need to update the resolution
+            self.screen['resolution'] = (\
+                    int(azimuthMax/altitudeMax*self.screen['resolution'][1]),
+                    self.screen['resolution'][1])
+
+            x, z = np.meshgrid(\
+                         np.linspace(-azimuthMax, azimuthMax,
+                                     self.screen['resolution'][0]),
+                         np.linspace(-altitudeMax, altitudeMax,
+                                      self.screen['resolution'][1]),
+                                  indexing='xy')
+            self.x, self.z = x.T, z.T
+
+            self.widths = self.screen['distance_from_eye']*\
+                                            np.tan(self.x/180.*np.pi)
+            self.heights = self.screen['distance_from_eye']*\
+                        np.tan(self.z/180.*np.pi)/np.cos(self.x/180.*np.pi)
+
+            self.mask = (np.abs(self.widths)<self.screen['width']/2.) & \
+                            (np.abs(self.heights)<self.screen['height']/2.)
+
+        elif self.units=='lin-deg':
+
+            # OLD STRATEGY --> deprecated >08/2024
+            # we linearize the angle
+            dAngle_per_pix = 80./np.pi*np.arctan(
+                    1./self.screen['resolution'][0]*self.screen['width']\
+                    /self.screen['distance_from_eye'])
+            x, z = np.meshgrid(dAngle_per_pix*(\
+                            np.arange(self.screen['resolution'][0])-\
+                                self.screen['resolution'][0]/2.),
+                                       dAngle_per_pix*(\
+                            np.arange(self.screen['resolution'][1])-\
+                                self.screen['resolution'][1]/2.),
+                                       indexing='xy')
+            self.x, self.z = x.T, z.T
+
+        self.angles = 180./np.pi*np.arctan(\
+            np.sqrt(self.widths**2+self.heights**2)/\
+                            self.screen['distance_from_eye'])
 
     # some general grating functions
     def compute_rotated_coords(self, angle,
@@ -129,8 +179,9 @@ class visual_stim:
         return (self.x-xcenter)*np.cos(angle/180.*np.pi)+(self.z-zcenter)*np.sin(angle/180.*np.pi)
 
     def compute_grating(self, xrot,
-                        spatial_freq=0.1, contrast=1, time_phase=0.):
-        return contrast*(1+np.cos(np.pi/2.+2*np.pi*(spatial_freq*xrot-time_phase)))/2.
+                        spatial_freq=0.1, 
+                        phase=0.):
+        return (1+np.cos(np.pi/2.+2*np.pi*(spatial_freq*xrot-phase)))/2.
 
     ################################
     #  ---  Draw Stimuli       --- #
@@ -141,7 +192,7 @@ class visual_stim:
                           radius=10,
                           spatial_freq=0.1,
                           contrast=1.,
-                          time_phase=0.,
+                          phase=0.,
                           xcenter=0,
                           zcenter=0):
         """ add a grating patch, drifting when varying the time phase"""
@@ -149,12 +200,23 @@ class visual_stim:
                                            xcenter=xcenter,
                                            zcenter=zcenter)
 
+        """
+        # spatial coords form center
+        widths = self.widths-np.tan(xcenter*np.pi/180.)*\
+                                self.screen['distance_from_eye']
+        heights = self.heights-np.tan(zcenter*np.pi/180.)*\
+                                self.screen['distance_from_eye']
+        # now angles from center:
+        angles = 180./np.pi*np.arctan(np.sqrt(widths**2+heights**2)/\
+                                self.screen['distance_from_eye'])
+        cond = angles**2<radius**2
+        """
+
         cond = ((self.x-xcenter)**2+(self.z-zcenter)**2)<radius**2
 
         full_grating = self.compute_grating(xrot,
                                             spatial_freq=spatial_freq,
-                                            contrast=1,
-                                            time_phase=time_phase)-0.5
+                                            phase=phase)-0.5
 
         image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
 
@@ -445,16 +507,6 @@ class visual_stim:
         """
         return 0*self.x+0.5
 
-    def plot_stim_picture(self, episode,
-                          ax=None, label=None, vse=False):
-
-        ax = self.show_frame(episode,
-                             ax=ax,
-                             label=label,
-                             vse=vse)
-
-        return ax
-
     def get_prestim_image(self):
         if 'presentation-prestim-screen' in self.protocol:
             return (1+self.protocol['presentation-prestim-screen'])/2.+\
@@ -494,19 +546,20 @@ class visual_stim:
 
     def show_frame(self, episode,
                    time_from_episode_start=0,
-                   label={'degree':10,
+                   label={'size':10, 'label':'10$^o$ ',
                           'shift_factor':0.02,
                           'lw':2, 'fontsize':12},
                    arrow=None,
                    vse=False,
                    ax=None,
+                   with_mask=False,
                    return_img=False):
         """
 
         display the visual stimulus at a given time in a given episode of a stimulation pattern
 
         --> optional with angular label (switch to None to remove)
-                   label={'degree':5,
+                   label={'size':5,label='5deg',
                           'shift_factor':0.02,
                           'lw':2, 'fontsize':12},
         --> optional with arrow for direction propagation (switch to None to remove)
@@ -521,12 +574,16 @@ class visual_stim:
         if ax==None:
             import matplotlib.pylab as plt
             fig, ax = plt.subplots(1,
-                                   figsize=(4,
-                                            4*self.screen['resolution'][1]/self.screen['resolution'][0]))
+                       figsize=(4,
+                                4*self.screen['resolution'][1]/self.screen['resolution'][0]))
 
-        img = ax.imshow(self.image_to_frame(self.get_image(episode,
-                                                time_from_episode_start=\
-                                                        time_from_episode_start),
+        image = self.get_image(episode,
+                                  time_from_episode_start=\
+                                           time_from_episode_start)
+        if with_mask:
+            image[~self.mask] = 1.0
+
+        img = ax.imshow(self.image_to_frame(image,
                                             psychopy_to_numpy=True),
                         extent=(0, self.screen['resolution'][0],
                                 0, self.screen['resolution'][1]),
@@ -534,6 +591,7 @@ class visual_stim:
                         vmin=0, vmax=1,
                         origin='lower',
                         aspect='equal')
+
 
         if vse:
             self.vse = self.get_vse(episode)
@@ -545,10 +603,10 @@ class visual_stim:
 
         if label is not None:
             nz, nx = self.x.shape
-            L, shift = nx/(self.x[-1][-1]-self.x[0][0])*label['degree'], label['shift_factor']*nx
+            L, shift = nx/(self.z.max()-self.z.min())*label['size'], label['shift_factor']*nx
             ax.plot([-shift, -shift], [-shift,L-shift], 'k-', lw=label['lw'])
             ax.plot([-shift, L-shift], [-shift,-shift], 'k-', lw=label['lw'])
-            ax.annotate('%.0f$^o$ ' % label['degree'], (-shift, -shift), 
+            ax.annotate(label['label'], (-shift, -shift), 
                         fontsize=label['fontsize'], ha='right', va='bottom')
 
         if return_img:
@@ -556,22 +614,34 @@ class visual_stim:
         else:
             return ax
 
-    def plot_stim_picture(self, episode, ax,
-                          label={'degree':20,
-                                 'shift_factor':0.02,
-                                 'lw':1, 'fontsize':10},
+    def plot_stim_picture(self, episode, 
+                          ax=None,
                           vse=False,
                           arrow={'length':20,
                                  'width_factor':0.05,
-                                 'color':'red'}):
+                                 'color':'red'},
+                          with_mask=False):
 
         """
         """
         tcenter = .5*(self.experiment['time_stop'][episode]-\
                       self.experiment['time_start'][episode])
 
-        ax = self.show_frame(episode, tcenter, ax=ax,
-                             label=label)
+        
+        if self.units=='cm':
+            label={'size':10/self.widths.max()*self.x.max(),
+                   'label':'10cm ',
+                   'shift_factor':0.02,
+                   'lw':1, 'fontsize':10}
+        else:
+            label={'size':20,'label':'20$^o$  ',
+                   'shift_factor':0.02,
+                   'lw':1, 'fontsize':10}
+
+        ax = self.show_frame(episode, tcenter, 
+                             ax=ax,
+                             label=label,
+                             with_mask=with_mask)
 
 
     def update_frame(self, episode, img,

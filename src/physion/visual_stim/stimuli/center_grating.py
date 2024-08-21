@@ -7,13 +7,16 @@ from physion.visual_stim.main import visual_stim,\
 ##  ----    CENTER GRATING --- #####
 ####################################
 
-params = {"movie_refresh_freq":10,
-          "presentation-duration":3,
+  # default param values:
+params = {"presentation-duration":3,
           # stimulus parameters (add parenthesis with units):
-          "x-center (deg)":-20.,
-          "y-center (deg)":-20.,
-          "angle (deg)":45,
-          "radius (deg)":30,
+          # "x-center (deg)":0.,
+          # "y-center (deg)":0.,
+          "x-center (deg)":-25.,
+          "y-center (deg)":-15.,
+          "angle (deg)":90,
+          "radius (deg)":20,
+          "phase (deg)":0.,
           "spatial-freq (cycle/deg)":0.04,
           "contrast (lum.)":1.0,
           "bg-color (lum.)":0.5}
@@ -27,15 +30,15 @@ class stim(visual_stim):
     multiprotocol holding this protocol
     """
 
-    def __init__(self, protocol):
+    def __init__(self, protocol,
+                 units='deg'):
 
         super().__init__(protocol,
                          keys=['bg-color',
                                'x-center', 'y-center',
                                'radius','spatial-freq',
-                               'angle', 'contrast'])
-
-        self.refresh_freq = protocol['movie_refresh_freq']
+                               'angle', 'phase', 'contrast'],
+                         units=units)
 
 
     def get_image(self, episode, time_from_episode_start=0):
@@ -43,19 +46,14 @@ class stim(visual_stim):
         self.add_grating_patch(img,
                        angle=self.experiment['angle'][episode],
                        radius=self.experiment['radius'][episode],
+                       phase=self.experiment['phase'][episode]\
+                               if 'phase' in self.experiment else 90.,
                        spatial_freq=self.experiment['spatial-freq'][episode],
                        contrast=self.experiment['contrast'][episode],
                        xcenter=self.experiment['x-center'][episode],
                        zcenter=self.experiment['y-center'][episode])
         return img
 
-    def plot_stim_picture(self, episode,
-                          ax=None, label=None, vse=False,
-                          arrow={'length':10,
-                                 'width_factor':0.05,
-                                 'color':'red'}):
-
-        return self.show_frame(episode, ax=ax, label=label)
 
 
 if __name__=='__main__':
@@ -67,7 +65,17 @@ if __name__=='__main__':
     params['no-window'] = True
 
     params['demo'] = False
-    Stim = stim(params)
 
-    Stim.plot_stim_picture(0)
+    Stim = stim(params, units='deg')
+    Stim2 = stim(params, units='cm')
+
+    fig, AX = pt.figure(axes=(2,1), 
+            figsize=(1.8,2), wspace=0, left=0, right=0, bottom=0.1, top=0.5)
+
+    AX[0].set_title('angular space')
+    AX[1].set_title('on screen')
+
+    Stim.plot_stim_picture(0, ax=AX[0], with_mask=True)
+    Stim2.plot_stim_picture(0, ax=AX[1])
+
     pt.plt.show()
