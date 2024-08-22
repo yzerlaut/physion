@@ -170,8 +170,10 @@ class visual_stim:
 
     def compute_grating(self, xrot,
                         spatial_freq=0.1, 
-                        phase=0.):
-        return (1+np.cos(np.pi/2.+2*np.pi*(spatial_freq*xrot-phase)))/2.
+                        time_phase=0.,
+                        phase_shift_Deg=90.):
+        return (1+np.cos(phase_shift_Deg*np.pi/180.+\
+                            2*np.pi*(spatial_freq*xrot-time_phase)))/2.
 
     ################################
     #  ---  Draw Stimuli       --- #
@@ -190,23 +192,12 @@ class visual_stim:
                                            xcenter=xcenter,
                                            zcenter=zcenter)
 
-        """
-        # spatial coords form center
-        widths = self.widths-np.tan(xcenter*np.pi/180.)*\
-                                self.screen['distance_from_eye']
-        heights = self.heights-np.tan(zcenter*np.pi/180.)*\
-                                self.screen['distance_from_eye']
-        # now angles from center:
-        angles = 180./np.pi*np.arctan(np.sqrt(widths**2+heights**2)/\
-                                self.screen['distance_from_eye'])
-        cond = angles**2<radius**2
-        """
-
         cond = ((self.x-xcenter)**2+(self.z-zcenter)**2)<radius**2
 
+        print(phase)
         full_grating = self.compute_grating(xrot,
                                             spatial_freq=spatial_freq,
-                                            phase=phase)-0.5
+                                            phase_shift_Deg=phase)-0.5
 
         image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
 

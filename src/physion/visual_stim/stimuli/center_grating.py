@@ -9,13 +9,10 @@ from physion.visual_stim.main import visual_stim,\
 
   # default param values:
 params = {"presentation-duration":3,
-          # stimulus parameters (add parenthesis with units):
-          # "x-center (deg)":0.,
-          # "y-center (deg)":0.,
-          "x-center (deg)":-25.,
-          "y-center (deg)":-15.,
+          "x-center (deg)":0.,
+          "y-center (deg)":0.,
           "angle (deg)":90,
-          "radius (deg)":20,
+          "radius (deg)":220,
           "phase (deg)":0.,
           "spatial-freq (cycle/deg)":0.04,
           "contrast (lum.)":1.0,
