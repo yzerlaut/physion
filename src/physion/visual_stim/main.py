@@ -102,40 +102,31 @@ class visual_stim:
         """
         """
 
+        # we start from the real pixel Cartesian coordinates on the screen
+        widths, heights = np.meshgrid(\
+                             np.linspace(-self.screen['width']/2., 
+                                         self.screen['width']/2., 
+                                         self.screen['resolution'][0]),
+                             np.linspace(-self.screen['height']/2., 
+                                          self.screen['height']/2., 
+                                          self.screen['resolution'][1]),
+                                      indexing='xy')
+        # we transpose given our coordinate system:
+        self.widths, self.heights = widths.T, heights.T
 
+        self.mask = np.ones(self.widths.shape, dtype=bool) # stim mask, True by default
 
         if self.units=='cm':
 
-            # we start from the real pixel Cartesian coordinates on the screen
-            widths, heights = np.meshgrid(\
-                                 np.linspace(-self.screen['width']/2., 
-                                             self.screen['width']/2., 
-                                             self.screen['resolution'][0]),
-                                 np.linspace(-self.screen['height']/2., 
-                                              self.screen['height']/2., 
-                                              self.screen['resolution'][1]),
-                                          indexing='xy')
-            # we transpose given our coordinate system:
-            self.widths, self.heights = widths.T, heights.T
-
             # we convert to angles in the x and z directions
-            self.x = np.arctan(self.widths/\
-                        self.screen['distance_from_eye'])
-            self.z = 180./np.pi*np.arctan(self.heights*np.cos(self.x)/\
-                                        self.screen['distance_from_eye'])
-            self.x = 180./np.pi*self.x
-
-            self.mask = np.ones(self.x.shape, dtype=bool)
+            self.x = np.arctan(self.widths/self.screen['distance_from_eye'])
+            self.z = np.arctan(self.heights*np.cos(self.x)/self.screen['distance_from_eye'])
 
         elif self.units=='deg':
 
-            altitudeMax = np.arctan(self.screen['height']/2./self.screen['distance_from_eye'])*180/np.pi
-            azimuthMax = np.arctan(self.screen['width']/2./self.screen['distance_from_eye'])*180/np.pi
-
-            # need to update the resolution
-            self.screen['resolution'] = (\
-                    int(azimuthMax/altitudeMax*self.screen['resolution'][1]),
-                    self.screen['resolution'][1])
+            altitudeMax = np.arctan(self.screen['height']/2./self.screen['distance_from_eye'])
+            azimuthMax = self.screen['resolution'][0]\
+                                /self.screen['resolution'][1]*altitudeMax
 
             x, z = np.meshgrid(\
                          np.linspace(-azimuthMax, azimuthMax,
@@ -145,33 +136,32 @@ class visual_stim:
                                   indexing='xy')
             self.x, self.z = x.T, z.T
 
-            self.widths = self.screen['distance_from_eye']*\
-                                            np.tan(self.x/180.*np.pi)
-            self.heights = self.screen['distance_from_eye']*\
-                        np.tan(self.z/180.*np.pi)/np.cos(self.x/180.*np.pi)
+            self.widths = self.screen['distance_from_eye']*np.tan(self.x)
+            self.heights = self.screen['distance_from_eye']*np.tan(self.z)/np.cos(self.x)
 
-            self.mask = (np.abs(self.widths)<self.screen['width']/2.) & \
-                            (np.abs(self.heights)<self.screen['height']/2.)
+            self.mask = (np.abs(self.widths)<=self.screen['width']/2.) &\
+                            (np.abs(self.heights)<=self.screen['height']/2.)
 
         elif self.units=='lin-deg':
 
             # OLD STRATEGY --> deprecated >08/2024
             # we linearize the angle
-            dAngle_per_pix = 80./np.pi*np.arctan(
+            dAngle_per_pix = np.arctan(
                     1./self.screen['resolution'][0]*self.screen['width']\
                     /self.screen['distance_from_eye'])
             x, z = np.meshgrid(dAngle_per_pix*(\
-                            np.arange(self.screen['resolution'][0])-\
-                                self.screen['resolution'][0]/2.),
-                                       dAngle_per_pix*(\
-                            np.arange(self.screen['resolution'][1])-\
-                                self.screen['resolution'][1]/2.),
+                                    np.arange(self.screen['resolution'][0])-\
+                                        self.screen['resolution'][0]/2.),
+                               dAngle_per_pix*(\
+                                    np.arange(self.screen['resolution'][1])-\
+                                        self.screen['resolution'][1]/2.),
                                        indexing='xy')
             self.x, self.z = x.T, z.T
 
-        self.angles = 180./np.pi*np.arctan(\
-            np.sqrt(self.widths**2+self.heights**2)/\
-                            self.screen['distance_from_eye'])
+
+        # convert back to angles in degrees
+        self.x *= 180./np.pi
+        self.z *= 180./np.pi
 
     # some general grating functions
     def compute_rotated_coords(self, angle,
@@ -551,8 +541,8 @@ class visual_stim:
                           'lw':2, 'fontsize':12},
                    arrow=None,
                    vse=False,
-                   ax=None,
                    with_mask=False,
+                   ax=None,
                    return_img=False):
         """
 
@@ -580,8 +570,9 @@ class visual_stim:
         image = self.get_image(episode,
                                   time_from_episode_start=\
                                            time_from_episode_start)
+
         if with_mask:
-            image[~self.mask] = 1.0
+            image[~self.mask] = 1
 
         img = ax.imshow(self.image_to_frame(image,
                                             psychopy_to_numpy=True),
@@ -628,8 +619,8 @@ class visual_stim:
                       self.experiment['time_start'][episode])
 
         
-        if self.units=='cm':
-            label={'size':10/self.widths.max()*self.x.max(),
+        if self.units in ['cm', 'lin-deg']:
+            label={'size':10/self.heights.max()*self.z.max(),
                    'label':'10cm ',
                    'shift_factor':0.02,
                    'lw':1, 'fontsize':10}
