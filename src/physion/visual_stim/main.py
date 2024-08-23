@@ -9,14 +9,10 @@ N.B. Psychopy has colors between -1 (black) and +1 (white)
 import numpy as np
 import itertools
 import os
+import cv2
 import pathlib
 import time
 import json
-
-try:
-    from psychopy import visual, core
-except ModuleNotFoundError:
-    pass # should be able to use it without psychopy
 
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
