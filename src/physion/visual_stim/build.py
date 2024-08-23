@@ -1,5 +1,5 @@
 import sys
-import cv2
+import cv2 as cv
 import numpy as np
 
 import physion
@@ -164,8 +164,8 @@ if __name__=='__main__':
             square = MonitoringSquare(Stim)
 
             # prepare video file
-            out = cv2.VideoWriter(os.path.join(protocol_folder, 'movie.mp4'),
-                                  cv2.VideoWriter_fourcc(*'mp4v'), 
+            out = cv.VideoWriter(os.path.join(protocol_folder, 'movie.mp4'),
+                                  cv.VideoWriter_fourcc(*'mp4v'), 
                                   args.fps, 
                                   Stim.screen['resolution'],
                                   False)

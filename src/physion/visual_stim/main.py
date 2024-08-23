@@ -9,7 +9,7 @@ N.B. Psychopy has colors between -1 (black) and +1 (white)
 import numpy as np
 import itertools
 import os
-import cv2
+import cv2 as cv
 import pathlib
 import time
 import json
@@ -40,12 +40,6 @@ class visual_stim:
         self.units = units
 
         if demo or (('demo' in self.protocol) and self.protocol['demo']):
-            # --------------------- #
-            #  ---- DEMO MODE ---- ##    we override the parameters
-            # --------------------- #
-            sr0, sr1 = self.screen['resolution']
-            self.screen['resolution'] = (800, int(800*sr1/sr0))
-            self.screen['screen_id'] = 0
             self.screen['fullscreen'] = False
 
         # then we can initialize the angle
@@ -65,13 +59,12 @@ class visual_stim:
 
     def init_screen_presentation(self):
 
-        self.win = visual.Window(self.screen['resolution'],
-                                 fullscr=self.screen['fullscreen'],
-                                 units='pix',
-                                 screen=1 if (('Rig' in self.protocol) and\
-                                         ('A1' in self.protocol['Rig'])) else 2,
-                                 checkTiming=(os.name=='posix'), # for os x
-                                 color=self.blank_color)
+        cv.namedWindow('cv-display', cv.WINDOW_NORMAL)
+        # cv.moveWindow('cv-display', 0, -700)
+        cv.resizeWindow('cv-display', 1280, 720)
+
+        if 'fullscreen' in self.screen and not self.screen['fullscreen']:
+            cv.setWindowProperty('cv-display', cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
 
 
     ################################
@@ -190,7 +183,6 @@ class visual_stim:
 
         cond = ((self.x-xcenter)**2+(self.z-zcenter)**2)<radius**2
 
-        print(phase)
         full_grating = self.compute_grating(xrot,
                                             spatial_freq=spatial_freq,
                                             phase_shift_Deg=phase)-0.5
@@ -367,8 +359,8 @@ class visual_stim:
         print('----------------------------------------')
         print('       CLOSING THE VISUAL STIMULATION   ')
         print('----------------------------------------')
-        self.win.close()
-        core.quit()
+        # Closes all the frames
+        cv.destroyAllWindows()
 
 
     ##########################################################
@@ -389,11 +381,9 @@ class visual_stim:
         """
 
         # We prepare the stimulation
-        stim = visual.MovieStim(self.win, 
-                                os.path.join(movie_folder,
-                                             'movie.mp4'),
-                                size=self.screen['resolution'],
-                                units='pix')
+
+        movie = cv.VideoCapture(os.path.join(movie_folder,
+                                             'movie.mp4'))
 
         self.prepare_stimProps_tables(dt)
         readyEvent.set()
@@ -422,7 +412,11 @@ class visual_stim:
         readyEvent.set()
 
         t0 = time.time()
-        stim.play(log=verbose)
+
+
+        cv.namedWindow('cv-display', cv.WINDOW_NORMAL)
+        # cv.moveWindow('cv-display', 0, -700)
+        # cv.resizeWindow('cv-display', 1280, 720)
 
         while not os.path.isfile(os.path.join(datafolder.get(), 'NIdaq.start.npy'))\
                 and ((time.time()-t0)<3.):
@@ -432,15 +426,18 @@ class visual_stim:
         if os.path.isfile(os.path.join(datafolder.get(), 'NIdaq.start.npy')):
             t0 = np.load(os.path.join(datafolder.get(), 'NIdaq.start.npy'))[0]
         else:
+            print('demo mode, waited 3s to get the t0')
             # otherwise 
             t0 = time.time()
 
 
         while runEvent.is_set():
 
-
-            stim.draw()
-            self.win.flip()
+            ret, frame = movie.read()
+            if ret == True:
+                cv.imshow('cv-display', frame)
+            else:
+                print('pb in getting the frame')
 
             t = (time.time()-t0)
             iT = int(t/dt)
@@ -449,7 +446,7 @@ class visual_stim:
                     (current_index<self.next_index_table[iT]):
 
                 # at each interstim, we re-align the stimulus presentation
-                stim.seek(t+0.15) # it takes ~150ms to shift the movie
+                # stim.seek(t+0.15) # it takes ~150ms to shift the movie
 
                 # -*- now we update the stimulation display in the terminal -*-
                 protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
@@ -465,6 +462,7 @@ class visual_stim:
                       'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
 
         runEvent.clear() # send the stop signal to all processes
+        movie.release()
 
         print('--------------------------------------')
         print(' [ok] protocol terminated successfully')
@@ -859,11 +857,10 @@ if __name__=='__main__':
         os.path.join(os.path.dirname(args.protocol), 'movies',
             os.path.basename(args.protocol.replace('.json','')))
 
-    use_pre_buffering = True
     VisualStim_process = multiprocessing.Process(target=launch_VisualStim,\
-            args=(protocol,
-                  runEvent, readyEvent,
-                  datafolder, movie_folder))
+                        args=(protocol,
+                              runEvent, readyEvent,
+                              datafolder, movie_folder))
     VisualStim_process.start()
 
     # -- with use_prebuffering=True
