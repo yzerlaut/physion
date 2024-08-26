@@ -1,4 +1,4 @@
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QLabel, \
     QSlider, QStyle, QSizePolicy, QFileDialog
 import sys, os, time
@@ -7,35 +7,32 @@ from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtGui import QIcon, QPalette
 from PyQt5.QtCore import Qt, QUrl
 
+is_running = False
+
 class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self, app, 
-                 movie_file):
+                 movie):
 
-        self.app = app
-        self.movie_file = movie_file
+        self.movie= movie
         super(MainWindow, self).__init__()
         self.setGeometry(100, 100, 100, 40)
 
         self.runBtn = QPushButton('Start/Stop')
         self.runBtn.clicked.connect(self.run)
-
-        hboxLayout = QHBoxLayout()
-        hboxLayout.setContentsMargins(0,0,0,0)
-
         self.setCentralWidget(self.runBtn)
 
         self.show()
-        self.is_running = False
         
     def run(self):
-        if not self.is_running:
-            self.win = Window(self.movie_file)
+        global is_running
+        if not is_running:
+            self.win = Window(self.movie)
+            is_running = True
             self.win.play()
-            self.is_running = True
         else:
             self.win.close()
-            self.is_running = False
+            is_running = False
 
         
 # Create a QWidget-based class to represent the application window
@@ -46,9 +43,8 @@ class Window(QWidget):
         super().__init__()
 
         # Set window properties such as title, size, and icon
-        self.setWindowTitle("PyQt5 Media Player")
-        self.setGeometry(200, -400, 400, 250)
-        self.showFullScreen()
+        self.setGeometry(200, 400, 400, 250)
+        # self.showFullScreen()
 
         # Create a QMediaPlayer object
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
@@ -57,6 +53,7 @@ class Window(QWidget):
         videowidget = QVideoWidget()
 
         vboxLayout = QVBoxLayout()
+        vboxLayout.setContentsMargins(0,0,0,0)
         vboxLayout.addWidget(videowidget)
 
         # Set the layout of the window
@@ -73,9 +70,21 @@ class Window(QWidget):
 
     def play(self):
         self.mediaPlayer.play()
+        # launch event loop
+        self.t0 = time.time()
+        self.update_dt()
+
+    def update_dt(self):
+        global is_running
+        if is_running:
+            if (time.time()-self.t0)>3.:
+                self.mediaPlayer.setPosition(9000)
+                self.t0 = time.time()
+            QtCore.QTimer.singleShot(1, self.update_dt)
 
     def load_file(self, filename):
-            self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(filename)))
+            self.mediaPlayer.setMedia(\
+                    QMediaContent(QUrl.fromLocalFile(filename)))
 
 
 # Create the application instance

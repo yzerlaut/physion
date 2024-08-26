@@ -4,18 +4,135 @@ class for the visual stimulation
 - test with :
 python -m physion.visual_stim.main physion/acquisition/protocols/drifting-gratings.json
 
-N.B. Psychopy has colors between -1 (black) and +1 (white)
 """
 import numpy as np
 import itertools
 import os
-import cv2 as cv
 import pathlib
 import time
 import json
 
+from PyQt5 import QtWidgets, QtCore, QtMultimedia, QtMultimediaWidgets
+
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
+
+class StimWindow(QtWidgets.QWidget):
+    
+    def __init__(self, stim, movie,
+                 dt=10e-3,
+                 demo=False):
+
+        super(StimWindow, self).__init__()
+
+        self.stim = stim
+        # we prepare the stimulus table
+        self.dt = dt
+        self.stim.prepare_stimProps_tables(self.dt)
+
+        # Set window properties such as title, size, and icon
+        self.setGeometry(200, 400, 400, int(9./16*400))
+
+        if ('fullscreen' in self.stim.screen) and self.stim.screen['fullscreen']:
+            self.showFullScreen()
+
+        # Create a QMediaPlayer object
+        self.mediaPlayer = QtMultimedia.QMediaPlayer(None, 
+                                    QtMultimedia.QMediaPlayer.VideoSurface)
+
+        # Create a QVideoWidget object to display video
+        self.videowidget = QtMultimediaWidgets.QVideoWidget()
+
+        vboxLayout = QtWidgets.QVBoxLayout()
+        vboxLayout.setContentsMargins(0,0,0,0)
+        vboxLayout.addWidget(self.videowidget)
+
+        # Set the layout of the window
+        self.setLayout(vboxLayout)
+
+        # Set the video output for the media player
+        self.mediaPlayer.setVideoOutput(self.videowidget)
+
+        # load the movie
+        self.mediaPlayer.setMedia(\
+                QtMultimedia.QMediaContent(\
+                        QtCore.QUrl.fromLocalFile(os.path.abspath(movie))))
+
+        self.show()
+
+    ##########################################################
+    #############          CLOSING           #################
+    ##########################################################
+    def close(self):
+        print('\n')
+        print('----------------------------------------')
+        print('       CLOSING THE VISUAL STIMULATION   ')
+        print('----------------------------------------')
+        # Closes all the frames
+        super().close()
+
+
+    ##########################################################
+    #############      PRESENTING STIMULI    #################
+    ##########################################################
+
+        
+    def play(self, t0,
+            verbose=False):
+        """
+        """
+        self.mediaPlayer.play()
+        self.t0 = t0
+        self.tmax = self.stim.experiment['time_stop'][-1]+\
+                self.stim.experiment['interstim'][-1]
+
+
+        self.current_index= -1 # initialize the stimulation index
+        print('\n')
+        print('--------------------------------------')
+        print('     RUNNING VISUAL-STIM PROTOCOL              ')
+        print('--------------------------------------\n')
+        self.update_dt()
+
+    def update_dt(self):
+
+        global is_running
+
+        if is_running:
+
+            t = (time.time()-self.t0)
+            iT = int(t/self.dt)
+
+            if not self.stim.is_interstim[iT] and\
+                    (self.current_index<self.stim.next_index_table[iT]):
+
+                # at each interstim, we re-align the stimulus presentation
+                ##### FIX #######
+                # iNext = self.stim.next_index_table[iT]
+                # self.mediaPlayer.setPosition(int(self.time_start_next[iNext]/self.dt))
+
+                # -*- now we update the stimulation display in the terminal -*-
+                protocol_id = self.stim.experiment['protocol_id'][self.stim.next_index_table[iT]]
+                stim_index = self.stim.experiment['index'][self.stim.next_index_table[iT]]
+
+                # now we update the counter
+                self.current_index = self.stim.next_index_table[iT]
+
+                print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (t/3600, (t%3600)/60, 
+                                                       (t%60), 100*((t%60)-int(t%60))),
+                      '- Running protocol of index %i/%i' %\
+                            (self.current_index+1, len(self.stim.experiment['index'])),
+                      'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
+
+            if t<self.tmax:
+                QtCore.QTimer.singleShot(1, self.update_dt)
+            else:
+                print('--------------------------------------')
+                print(' [ok] protocol terminated successfully')
+                print('--------------------------------------')
+                is_running = False
+                self.close()
+
 
 
 class visual_stim:
@@ -29,6 +146,7 @@ class visual_stim:
                  demo=False):
         """
         """
+
         self.protocol = protocol
 
         # initialize screen parameters
@@ -44,27 +162,10 @@ class visual_stim:
 
         # then we can initialize the angle
         self.set_angle_meshgrid()
-        # and the screen presentation if need
-        if not ('no-window' in self.protocol):
-            self.init_screen_presentation()
 
         ### INITIALIZE EXP ###
         if not (self.protocol['Presentation']=='multiprotocol'):
             self.init_experiment(protocol, keys)
-
-
-    ################################################
-    ###  Initialize the PsychoPy window         ####
-    ################################################
-
-    def init_screen_presentation(self):
-
-        cv.namedWindow('cv-display', cv.WINDOW_NORMAL)
-        # cv.moveWindow('cv-display', 0, -700)
-        cv.resizeWindow('cv-display', 1280, 720)
-
-        if 'fullscreen' in self.screen and not self.screen['fullscreen']:
-            cv.setWindowProperty('cv-display', cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
 
 
     ################################
@@ -80,12 +181,6 @@ class visual_stim:
     ################################
     #  ---       Geometry      --- #
     ################################
-
-    def cm_to_angle(self, value):
-        return 180./np.pi*np.arctan(value/self.screen['distance_from_eye'])
-
-    def pix_to_angle(self, value):
-        return self.cm_to_angle(value/self.screen['resolution'][0]*self.screen['width'])
 
     def set_angle_meshgrid(self):
         """
@@ -350,125 +445,6 @@ class visual_stim:
             if verbose:
                 print(' [ok] stim tables initialisation took: %.2f' % (\
                         time.time()-tic)) 
-
-    ##########################################################
-    #############          CLOSING           #################
-    ##########################################################
-    def close(self):
-        print('\n')
-        print('----------------------------------------')
-        print('       CLOSING THE VISUAL STIMULATION   ')
-        print('----------------------------------------')
-        # Closes all the frames
-        cv.destroyAllWindows()
-
-
-    ##########################################################
-    #############      PRESENTING STIMULI    #################
-    ##########################################################
-
-    def run(self, 
-            runEvent, readyEvent,
-            datafolder, movie_folder,
-            dt=10e-3,
-            verbose=False):
-        """
-        we launched the run function
-        Once everything is initialized here, it toggles the 'readyEvent' flag
-        Then it waits for the 'runEvent' flag to turn on in the interface
-
-        in between the two, stop it by turning off 'readyEvent'
-        """
-
-        # We prepare the stimulation
-
-        movie = cv.VideoCapture(os.path.join(movie_folder,
-                                             'movie.mp4'))
-
-        self.prepare_stimProps_tables(dt)
-        readyEvent.set()
-
-        # waiting for the external trigger [...]
-        while not runEvent.is_set():
-
-            if verbose:
-                print('waiting for the external trigger [...]')
-            time.sleep(0.05)
-
-        ##########################################
-        # --> from here external trigger launched  (now runEvent=True)
-
-        ##########################################################
-        ###               RUN (while) LOOP                    ####
-        ##########################################################
-
-        current_index= -1 # initialize the stimulation index
-        print('\n')
-        print('--------------------------------------')
-        print('     RUNNING VISUAL-STIM PROTOCOL              ')
-        print('--------------------------------------\n')
-
-        # we can start the NIdaq recording
-        readyEvent.set()
-
-        t0 = time.time()
-
-
-        cv.namedWindow('cv-display', cv.WINDOW_NORMAL)
-        # cv.moveWindow('cv-display', 0, -700)
-        # cv.resizeWindow('cv-display', 1280, 720)
-
-        while not os.path.isfile(os.path.join(datafolder.get(), 'NIdaq.start.npy'))\
-                and ((time.time()-t0)<3.):
-            # we wait for the NIdaq initialisation to be done
-            time.sleep(0.05)
-
-        if os.path.isfile(os.path.join(datafolder.get(), 'NIdaq.start.npy')):
-            t0 = np.load(os.path.join(datafolder.get(), 'NIdaq.start.npy'))[0]
-        else:
-            print('demo mode, waited 3s to get the t0')
-            # otherwise 
-            t0 = time.time()
-
-
-        while runEvent.is_set():
-
-            ret, frame = movie.read()
-            if ret == True:
-                cv.imshow('cv-display', frame)
-            else:
-                print('pb in getting the frame')
-
-            t = (time.time()-t0)
-            iT = int(t/dt)
-
-            if self.is_interstim[iT] and\
-                    (current_index<self.next_index_table[iT]):
-
-                # at each interstim, we re-align the stimulus presentation
-                # stim.seek(t+0.15) # it takes ~150ms to shift the movie
-
-                # -*- now we update the stimulation display in the terminal -*-
-                protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
-                stim_index = self.experiment['index'][self.next_index_table[iT]]
-
-                # now we update the counter
-                current_index = self.next_index_table[iT]
-
-                print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (t/3600, (t%3600)/60, 
-                                                       (t%60), 100*((t%60)-int(t%60))),
-                      '- Running protocol of index %i/%i' %\
-                            (current_index+1, len(self.experiment['index'])),
-                      'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
-
-        runEvent.clear() # send the stop signal to all processes
-        movie.release()
-
-        print('--------------------------------------')
-        print(' [ok] protocol terminated successfully')
-        print('--------------------------------------')
-        self.close()
-
 
 
 
@@ -798,19 +774,6 @@ def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
     itend = np.max([1, int(security_factor*interval*refresh_freq)])
     return np.arange(itend), np.arange(itend)/refresh_freq, []
 
-##############################################
-## to be used by the multiprocessing module ##
-##############################################
-
-def launch_VisualStim(protocol, 
-                      runEvent, readyEvent,
-                      datafolder, movie_folder):
-
-    demo = ('demo' in protocol) and protocol['demo']
-    stim = build_stim(protocol)
-    stim.run(runEvent, readyEvent,
-             datafolder, movie_folder)
-
 
 if __name__=='__main__':
 
@@ -821,7 +784,11 @@ if __name__=='__main__':
     import argparse
     parser=argparse.ArgumentParser()
     parser.add_argument("protocol", 
-                        help="protocol a json file", 
+                        help="""
+                                a folder containing: 
+                                    - protocol.json 
+                                    - movie.mp4
+                             """, 
                         default='')
     parser.add_argument('-s', "--speed", type=float,
                         help="speed to visualize the stimulus (1. by default)", 
@@ -837,41 +804,56 @@ if __name__=='__main__':
     ####     test as a subprocess   ######
     ######################################
 
-    import json, multiprocessing, tempfile
-    from ctypes import c_char_p
-    from physion.acquisition.tools import base_path
-    from physion.visual_stim.build import build_stim
 
-    manager = multiprocessing.Manager() # to share a str across processes
-    datafolder = manager.Value(c_char_p, tempfile.gettempdir())
-    runEvent = multiprocessing.Event()
-    runEvent.clear()
-    readyEvent = multiprocessing.Event()
-    readyEvent.clear()
+    valid = False
 
-    with open(args.protocol, 'r') as fp:
-        protocol = json.load(fp)
-    protocol['demo'] = True
+    if os.path.isfile(os.path.join(args.protocol, 'movie.mp4')) and\
+        os.path.isfile(os.path.join(args.protocol, 'protocol.json')):
+        valid = True
+        
+    if not valid:
+        print('')
+        print(' /!\ protocol folder not valid /!\ ')
+        print('         it does not contain the protocol.json and movie.mp4 files')
+        print('')
 
-    movie_folder = \
-        os.path.join(os.path.dirname(args.protocol), 'movies',
-            os.path.basename(args.protocol.replace('.json','')))
+    else:
 
-    VisualStim_process = multiprocessing.Process(target=launch_VisualStim,\
-                        args=(protocol,
-                              runEvent, readyEvent,
-                              datafolder, movie_folder))
-    VisualStim_process.start()
+        from physion.visual_stim.build import build_stim
+        from PyQt5 import QtWidgets
+        import json, sys
 
-    # -- with use_prebuffering=True
-    while not readyEvent.is_set():
-        time.sleep(0.1)
-    print('\n buffering ready... --> launching stim ! ')
-    time.sleep(2)
-    runEvent.set()
-    time.sleep(args.tstop)
-    print(' stoping stim ')
-    runEvent.clear()
-    
+        with open(os.path.join(args.protocol, 'protocol.json'), 'r') as fp:
+            protocol = json.load(fp)
+        protocol['demo'] = True
 
+        stim = build_stim(protocol)
+        movie_folder = os.path.join(args.protocol, 'movie.mp4')
+
+        is_running = False # global flag
+        # A minimal GUI to display the stim window 
+        class MainWindow(QtWidgets.QMainWindow):
+
+            def __init__(self, app, 
+                         movie):
+                super(MainWindow, self).__init__()
+                self.setGeometry(100, 100, 400, 40)
+                self.runBtn = QtWidgets.QPushButton('Start/Stop')
+                self.runBtn.clicked.connect(self.run)
+                self.setCentralWidget(self.runBtn)
+                self.show()
+                
+            def run(self):
+                global is_running
+                if not is_running:
+                    self.win = StimWindow(stim, movie_folder)
+                    is_running = True
+                    self.win.play(time.time())
+                else:
+                    self.win.close()
+                    is_running = False
+
+        app = QtWidgets.QApplication(sys.argv)
+        win = MainWindow(stim, movie_folder)
+        sys.exit(app.exec_())
 
