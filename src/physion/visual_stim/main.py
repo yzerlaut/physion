@@ -17,93 +17,97 @@ from PyQt5 import QtWidgets, QtCore, QtMultimedia, QtMultimediaWidgets
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
 
+def init_stimWindow(self, 
+                    dt=10e-3,
+                    demo=False):
+    
+    """
+    """
+    self.stimWin = QtWidgets.QWidget()
+    # we prepare the stimulus table
+    self.dt = dt
+    self.stim.prepare_stimProps_tables(self.dt)
+
+    # Set window properties such as title, size, and icon
+    self.stimWin.setGeometry(\
+            200, 400, 400, int(9./16*400))
+
+    if ('fullscreen' in self.stim.screen) and self.stim.screen['fullscreen']:
+        self.stimWin.showFullScreen()
+
+    # Create a QMediaPlayer object
+    self.mediaPlayer = QtMultimedia.QMediaPlayer(None, 
+                QtMultimedia.QMediaPlayer.VideoSurface)
+
+    # Create a QVideoWidget object to display video
+    self.videowidget = QtMultimediaWidgets.QVideoWidget()
+
+    vboxLayout = QtWidgets.QVBoxLayout()
+    vboxLayout.setContentsMargins(0,0,0,0)
+    vboxLayout.addWidget(self.videowidget)
+
+    # Set the layout of the window
+    self.stimWin.setLayout(vboxLayout)
+
+    # Set the video output for the media player
+    self.mediaPlayer.setVideoOutput(self.videowidget)
+
+    # load the movie
+    self.mediaPlayer.setMedia(\
+            QtMultimedia.QMediaContent(\
+                    QtCore.QUrl.fromLocalFile(\
+                        os.path.abspath(self.stim.movie_file))))
+
+    # initialize the stimulation index
+    self.current_index= -1 
+
+    self.mediaPlayer.play()
+    self.mediaPlayer.pause()
+
+    self.stimWin.show()
+
 class StimWindow(QtWidgets.QWidget):
     
-    def __init__(self, stim, movie,
+    def __init__(self, stim,
                  dt=10e-3,
                  demo=False):
 
         super(StimWindow, self).__init__()
-
-        self.stim = stim
-        # we prepare the stimulus table
-        self.dt = dt
-        self.stim.prepare_stimProps_tables(self.dt)
-
-        # Set window properties such as title, size, and icon
-        self.setGeometry(200, 400, 400, int(9./16*400))
-
-        if ('fullscreen' in self.stim.screen) and self.stim.screen['fullscreen']:
-            self.showFullScreen()
-
-        # Create a QMediaPlayer object
-        self.mediaPlayer = QtMultimedia.QMediaPlayer(None, 
-                                    QtMultimedia.QMediaPlayer.VideoSurface)
-
-        # Create a QVideoWidget object to display video
-        self.videowidget = QtMultimediaWidgets.QVideoWidget()
-
-        vboxLayout = QtWidgets.QVBoxLayout()
-        vboxLayout.setContentsMargins(0,0,0,0)
-        vboxLayout.addWidget(self.videowidget)
-
-        # Set the layout of the window
-        self.setLayout(vboxLayout)
-
-        # Set the video output for the media player
-        self.mediaPlayer.setVideoOutput(self.videowidget)
-
-        # load the movie
-        self.mediaPlayer.setMedia(\
-                QtMultimedia.QMediaContent(\
-                        QtCore.QUrl.fromLocalFile(os.path.abspath(movie))))
-
-        self.show()
+        init_win(self, stim, dt=dt, demo=demo)
 
     ##########################################################
     #############          CLOSING           #################
     ##########################################################
     def close(self):
         print('\n')
-        print('----------------------------------------')
-        print('       CLOSING THE VISUAL STIMULATION   ')
-        print('----------------------------------------')
+        print('--------------------------------------')
+        print('     STOPING VISUAL-STIM PROTOCOL              ')
+        print('--------------------------------------\n')
         # Closes all the frames
         super().close()
 
-
-    ##########################################################
-    #############      PRESENTING STIMULI    #################
-    ##########################################################
-
-        
-    def play(self, t0,
+    def play(self, 
             verbose=False):
         """
         """
-        self.mediaPlayer.play()
-        self.t0 = t0
+        if not hasattr(self, 't0'):
+            self.t0 = time.time()
         self.tmax = self.stim.experiment['time_stop'][-1]+\
                 self.stim.experiment['interstim'][-1]
-
-
-        self.current_index= -1 # initialize the stimulation index
-        print('\n')
-        print('--------------------------------------')
-        print('     RUNNING VISUAL-STIM PROTOCOL              ')
-        print('--------------------------------------\n')
+        # print('\n')
+        # print('--------------------------------------')
+        # print('     RUNNING VISUAL-STIM PROTOCOL              ')
+        # print('--------------------------------------\n')
         self.update_dt()
 
     def update_dt(self):
 
-        global is_running
-
-        if is_running:
+        if self.runEvent.is_set():
 
             t = (time.time()-self.t0)
             iT = int(t/self.dt)
 
-            if not self.stim.is_interstim[iT] and\
+            if self.stim.is_interstim[iT] and\
                     (self.current_index<self.stim.next_index_table[iT]):
 
                 # at each interstim, we re-align the stimulus presentation
@@ -124,13 +128,14 @@ class StimWindow(QtWidgets.QWidget):
                             (self.current_index+1, len(self.stim.experiment['index'])),
                       'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
 
-            if t<self.tmax:
+            if (self.current_index<len(self.stim.experiment['index'])) and\
+                    (t<=self.tmax):
                 QtCore.QTimer.singleShot(1, self.update_dt)
             else:
                 print('--------------------------------------')
                 print(' [ok] protocol terminated successfully')
                 print('--------------------------------------')
-                is_running = False
+                self.runEvent.clear()
                 self.close()
 
 
@@ -443,7 +448,7 @@ class visual_stim:
             # flag for end of stimulus
             self.next_index_table[t>=self.experiment['time_stop'][-1]] = -1
             if verbose:
-                print(' [ok] stim tables initialisation took: %.2f' % (\
+                print('[ok] stim tables initialisation took: %.2f' % (\
                         time.time()-tic)) 
 
 
@@ -821,39 +826,37 @@ if __name__=='__main__':
 
         from physion.visual_stim.build import build_stim
         from PyQt5 import QtWidgets
-        import json, sys
+        import json, sys, multiprocessing
 
         with open(os.path.join(args.protocol, 'protocol.json'), 'r') as fp:
             protocol = json.load(fp)
         protocol['demo'] = True
 
-        stim = build_stim(protocol)
-        movie_folder = os.path.join(args.protocol, 'movie.mp4')
 
-        is_running = False # global flag
         # A minimal GUI to display the stim window 
         class MainWindow(QtWidgets.QMainWindow):
 
-            def __init__(self, app, 
-                         movie):
+            def __init__(self):
                 super(MainWindow, self).__init__()
+                self.stim = build_stim(protocol)
+                self.stim.movie_file = os.path.join(args.protocol, 'movie.mp4')
                 self.setGeometry(100, 100, 400, 40)
                 self.runBtn = QtWidgets.QPushButton('Start/Stop')
                 self.runBtn.clicked.connect(self.run)
                 self.setCentralWidget(self.runBtn)
                 self.show()
+                self.runEvent = multiprocessing.Event() # to turn on/off recordings 
                 
             def run(self):
-                global is_running
-                if not is_running:
-                    self.win = StimWindow(stim, movie_folder)
-                    is_running = True
-                    self.win.play(time.time())
+                if not self.runEvent.is_set():
+                    self.runEvent.set()
+                    init_stimWindow(self)
+                    self.mediaPlayer.play()
                 else:
-                    self.win.close()
-                    is_running = False
+                    self.stimWin.close()
+                    self.runEvent.clear()
 
         app = QtWidgets.QApplication(sys.argv)
-        win = MainWindow(stim, movie_folder)
+        win = MainWindow()
         sys.exit(app.exec_())
 
