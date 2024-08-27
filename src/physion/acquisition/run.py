@@ -10,8 +10,8 @@ from physion.acquisition.tools import base_path,\
         set_filename_and_folder
 from physion.acquisition import recordings
 
-from physion.visual_stim.main import init_stimWindow
 from physion.visual_stim.main import build_stim as build_VisualStim
+from physion.visual_stim.show import init_stimWindow
 
 try:
     from physion.hardware.NIdaq.main import Acquisition
@@ -314,8 +314,7 @@ def stop(self):
         self.send_CaImaging_Stop_signal()
 
     self.statusBar.showMessage('acquisition/stimulation stopped !')
-    print(' -> acquisition stopped !  ------------------')
-    print('---------------------------------------------')
+    print('\n -> acquisition stopped !  \n')
 
     if self.stimWin is not None:
         self.stimWin.close()

@@ -12,132 +12,8 @@ import pathlib
 import time
 import json
 
-from PyQt5 import QtWidgets, QtCore, QtMultimedia, QtMultimediaWidgets
-
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
-
-def init_stimWindow(self, 
-                    dt=10e-3,
-                    demo=False):
-    
-    """
-    """
-    self.stimWin = QtWidgets.QWidget()
-    # we prepare the stimulus table
-    self.dt = dt
-    self.stim.prepare_stimProps_tables(self.dt)
-
-    # Set window properties such as title, size, and icon
-    self.stimWin.setGeometry(\
-            200, 400, 400, int(9./16*400))
-
-    if ('fullscreen' in self.stim.screen) and self.stim.screen['fullscreen']:
-        self.stimWin.showFullScreen()
-
-    # Create a QMediaPlayer object
-    self.mediaPlayer = QtMultimedia.QMediaPlayer(None, 
-                QtMultimedia.QMediaPlayer.VideoSurface)
-
-    # Create a QVideoWidget object to display video
-    self.videowidget = QtMultimediaWidgets.QVideoWidget()
-
-    vboxLayout = QtWidgets.QVBoxLayout()
-    vboxLayout.setContentsMargins(0,0,0,0)
-    vboxLayout.addWidget(self.videowidget)
-
-    # Set the layout of the window
-    self.stimWin.setLayout(vboxLayout)
-
-    # Set the video output for the media player
-    self.mediaPlayer.setVideoOutput(self.videowidget)
-
-    # load the movie
-    self.mediaPlayer.setMedia(\
-            QtMultimedia.QMediaContent(\
-                    QtCore.QUrl.fromLocalFile(\
-                        os.path.abspath(self.stim.movie_file))))
-
-    # initialize the stimulation index
-    self.current_index= -1 
-
-    self.mediaPlayer.play()
-    self.mediaPlayer.pause()
-
-    self.stimWin.show()
-
-class StimWindow(QtWidgets.QWidget):
-    
-    def __init__(self, stim,
-                 dt=10e-3,
-                 demo=False):
-
-        super(StimWindow, self).__init__()
-        init_win(self, stim, dt=dt, demo=demo)
-
-    ##########################################################
-    #############          CLOSING           #################
-    ##########################################################
-    def close(self):
-        print('\n')
-        print('--------------------------------------')
-        print('     STOPING VISUAL-STIM PROTOCOL              ')
-        print('--------------------------------------\n')
-        # Closes all the frames
-        super().close()
-
-    def play(self, 
-            verbose=False):
-        """
-        """
-        if not hasattr(self, 't0'):
-            self.t0 = time.time()
-        self.tmax = self.stim.experiment['time_stop'][-1]+\
-                self.stim.experiment['interstim'][-1]
-        # print('\n')
-        # print('--------------------------------------')
-        # print('     RUNNING VISUAL-STIM PROTOCOL              ')
-        # print('--------------------------------------\n')
-        self.update_dt()
-
-    def update_dt(self):
-
-        if self.runEvent.is_set():
-
-            t = (time.time()-self.t0)
-            iT = int(t/self.dt)
-
-            if self.stim.is_interstim[iT] and\
-                    (self.current_index<self.stim.next_index_table[iT]):
-
-                # at each interstim, we re-align the stimulus presentation
-                ##### FIX #######
-                # iNext = self.stim.next_index_table[iT]
-                # self.mediaPlayer.setPosition(int(self.time_start_next[iNext]/self.dt))
-
-                # -*- now we update the stimulation display in the terminal -*-
-                protocol_id = self.stim.experiment['protocol_id'][self.stim.next_index_table[iT]]
-                stim_index = self.stim.experiment['index'][self.stim.next_index_table[iT]]
-
-                # now we update the counter
-                self.current_index = self.stim.next_index_table[iT]
-
-                print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (t/3600, (t%3600)/60, 
-                                                       (t%60), 100*((t%60)-int(t%60))),
-                      '- Running protocol of index %i/%i' %\
-                            (self.current_index+1, len(self.stim.experiment['index'])),
-                      'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
-
-            if (self.current_index<len(self.stim.experiment['index'])) and\
-                    (t<=self.tmax):
-                QtCore.QTimer.singleShot(1, self.update_dt)
-            else:
-                print('--------------------------------------')
-                print(' [ok] protocol terminated successfully')
-                print('--------------------------------------')
-                self.runEvent.clear()
-                self.close()
-
 
 
 class visual_stim:
@@ -804,11 +680,6 @@ if __name__=='__main__':
                         help="start time", 
                         default=0.)
     args = parser.parse_args()
-
-    ######################################
-    ####     test as a subprocess   ######
-    ######################################
-
 
     valid = False
 
