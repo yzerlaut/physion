@@ -36,6 +36,7 @@ class visual_stim:
         self.gamma = self.screen['gamma_correction']['gamma']
         self.blank_color=self.gamma_corrected_lum(\
                 2*self.protocol['presentation-blank-screen-color']-1)
+        self.movie_refresh_freq = self.protocol['movie_refresh_freq']
         self.units = units
 
         if demo or (('demo' in self.protocol) and self.protocol['demo']):
@@ -302,12 +303,13 @@ class visual_stim:
                             protocol['presentation-poststim-period']
 
 
-    def prepare_stimProps_tables(self, dt, 
+    def prepare_stimProps_tables(self,
                                  verbose=True):
             if verbose:
                 tic = time.time()
             # build time axis
             #               add 2 seconds at the end for the end-stim flag
+            dt = 1./self.movie_refresh_freq
             t = np.arange(int((2+self.tstop)/dt))*dt 
             # array for the interstim flag
             self.is_interstim = np.ones(len(t), dtype=bool) # default to True

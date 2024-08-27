@@ -110,9 +110,6 @@ if __name__=='__main__':
     parser.add_argument("protocol", 
                         help="protocol a json file", 
                         default='')
-    parser.add_argument("--fps", type=int,
-                        help="Frame Per Seconds in the mp4 movie",
-                        default=30)
     parser.add_argument('-f', "--force", type=int,
                         help="Frame Per Seconds in the mp4 movie",
                         default=30)
@@ -163,9 +160,10 @@ if __name__=='__main__':
             square = MonitoringSquare(Stim)
 
             # prepare video file
-            out = cv.VideoWriter(os.path.join(protocol_folder, 'movie.mp4'),
+            Format = 'wmv' if 'win' in sys.platform else 'mp4'
+            out = cv.VideoWriter(os.path.join(protocol_folder, 'movie.%s' % Format),
                                   cv.VideoWriter_fourcc(*'mp4v'), 
-                                  args.fps, 
+                                  Stim.movie_refresh_freq,
                                   Stim.screen['resolution'],
                                   False)
 
@@ -194,7 +192,7 @@ if __name__=='__main__':
 
                 out.write(np.array(255*np.rot90(data, k=1),
                                    dtype='uint8'))
-                t+= 1./args.fps
+                t+= 1./Stim.movie_refresh_freq
 
             print('\n [ok] video file saved in: "%s" \n ' % protocol_folder)
             out.release()

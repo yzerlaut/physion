@@ -2,22 +2,23 @@ import os
 from PyQt5 import QtWidgets, QtCore, QtMultimedia, QtMultimediaWidgets
 
 def init_stimWindow(self, 
-                    dt=10e-3,
                     demo=False):
     
     """
     """
     self.stimWin = QtWidgets.QWidget()
     # we prepare the stimulus table
-    self.dt = dt
-    self.stim.prepare_stimProps_tables(self.dt)
-
+    self.stim.prepare_stimProps_tables()
+    
     # Set window properties such as title, size, and icon
-    self.stimWin.setGeometry(\
-            200, 400, 400, int(9./16*400))
-
     if ('fullscreen' in self.stim.screen) and self.stim.screen['fullscreen']:
-        self.stimWin.showFullScreen()
+        if 'Bacci-2P' in self.config['Rig']:
+            self.stimWin.setGeometry(-400, 400, 600, int(9./16*600))
+            self.stimWin.showFullScreen()
+    else:
+        self.stimWin.setGeometry(\
+                200, 400, 600, int(9./16*600))
+
 
     # Create a QMediaPlayer object
     self.mediaPlayer = QtMultimedia.QMediaPlayer(None, 
@@ -81,18 +82,18 @@ if __name__=='__main__':
 
     valid = False
 
-    if os.path.isfile(os.path.join(args.protocol, 'movie.mp4')) and\
+    Format = 'wmv' if 'win' in sys.platform else 'mp4'
+    if os.path.isfile(os.path.join(args.protocol, 'movie.%s' % Format)) and\
         os.path.isfile(os.path.join(args.protocol, 'protocol.json')):
         valid = True
         
     if not valid:
         print('')
         print(' /!\ protocol folder not valid /!\ ')
-        print('         it does not contain the protocol.json and movie.mp4 files')
+        print('         it does not contain the protocol.json and movie.%sfiles' % Format)
         print('')
 
     else:
-
 
         with open(os.path.join(args.protocol, 'protocol.json'), 'r') as fp:
             protocol = json.load(fp)
@@ -104,7 +105,7 @@ if __name__=='__main__':
             def __init__(self):
                 super(MainWindow, self).__init__()
                 self.stim = build_stim(protocol)
-                self.stim.movie_file = os.path.join(args.protocol, 'movie.mp4')
+                self.stim.movie_file = os.path.join(args.protocol, 'movie.%s' % Format)
                 self.setGeometry(100, 100, 400, 40)
                 self.runBtn = QtWidgets.QPushButton('Start/Stop')
                 self.runBtn.clicked.connect(self.run)

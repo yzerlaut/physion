@@ -1,4 +1,4 @@
-import os, json, time
+import os, json, time, sys
 import numpy as np
 import multiprocessing
 from PyQt5 import QtCore
@@ -67,7 +67,8 @@ def init_VisualStim(self):
     self.max_time = stim.experiment['time_stop'][-1]+\
             stim.experiment['time_start'][0]
 
-    stim.movie_file = os.path.join(movie_folder, 'movie.mp4')
+    Format = 'wmv' if 'win' in sys.platform else 'mp4'
+    stim.movie_file = os.path.join(movie_folder, 'movie.%s' % Format)
 
     return stim
 
@@ -255,25 +256,26 @@ def toggle_RigCamera_process(self):
 def run_update(self):
 
     if self.protocolBox.currentText()!='None':
+
         t = (time.time()-self.t0)
-        iT = int(t/self.dt)
+        iT = int(t*self.stim.movie_refresh_freq)
 
         if self.stim.is_interstim[iT] and\
                 (self.current_index<self.stim.next_index_table[iT]):
 
+            # we update the counter
+            self.current_index = self.stim.next_index_table[iT]
+
             # at each interstim, we re-align the stimulus presentation
-            ##### FIX #######
-            # iNext = self.stim.next_index_table[iT]
-            # self.mediaPlayer.setPosition(int(self.time_start_next[iNext]/self.dt))
+            self.mediaPlayer.pause()
+            self.mediaPlayer.setPosition(int(1e3*t))
+            self.mediaPlayer.play()
 
             # -*- now we update the stimulation display in the terminal -*-
             protocol_id = self.stim.experiment['protocol_id'][\
                                             self.stim.next_index_table[iT]]
             stim_index = self.stim.experiment['index'][\
                                             self.stim.next_index_table[iT]]
-
-            # now we update the counter
-            self.current_index = self.stim.next_index_table[iT]
 
             print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (\
                     t/3600, (t%3600)/60, (t%60), 100*((t%60)-int(t%60))),
@@ -282,6 +284,7 @@ def run_update(self):
                          len(self.stim.experiment['index'])),
                   'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
 
+    """
     # ----- online visualization here -----
     if (self.FaceCamera_process is not None) and\
                     (self.imgButton.currentText()=='FaceCamera'):
@@ -293,7 +296,8 @@ def run_update(self):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'RigCamera-imgs')))
         self.pCamImg.setImage(image.T)
-    
+    """
+
     # ----- while loop with qttimer object ----- #
     if self.runEvent.is_set() and ((time.time()-self.t0)<self.max_time):
         QtCore.QTimer.singleShot(1, self.run_update)
