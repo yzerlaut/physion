@@ -1,10 +1,7 @@
 """
 class for the visual stimulation
-
-- test with :
-python -m physion.visual_stim.main physion/acquisition/protocols/drifting-gratings.json
-
 """
+
 import numpy as np
 import itertools
 import os
@@ -652,12 +649,7 @@ class multiprotocol(visual_stim):
 
 def init_bg_image(cls, index):
     """ initializing an empty image"""
-    return 2*cls.experiment['bg-color'][index]-1.+0.*cls.x
+    return cls.experiment['bg-color'][index]+0.*cls.x
 
-def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
-    """ we use this function for each protocol initialisation"""
-    interval = cls.experiment['time_stop'][index]-cls.experiment['time_start'][index]
-    itend = np.max([1, int(security_factor*interval*refresh_freq)])
-    return np.arange(itend), np.arange(itend)/refresh_freq, []
 
 

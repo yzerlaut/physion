@@ -1,38 +1,27 @@
 import sys, pathlib
 import numpy as np
 
-from physion.visual_stim.main import visual_stim, init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 
 ####################################################
 ##  ----    SCATTERED MOVING DOTS          --- #####
 ####################################################
 
-  # default param values:
-params = {"movie_refresh_freq":5,
+params = {"movie_refresh_freq":30.,
           "presentation-duration":3,
           "speed (deg/s)":60.,
           "size (deg)":4.,
-          "spacing (deg)":10.,
+          "spacing (deg)":12.,
           "direction (deg)":270.,
-          "ndots (#)":8,
+          "ndots (#)":9,
           "dotcolor (lum.)":-1,
-          "bg-color (lum.)":0.5,
-          # now we set the range of possible values:
-          "speed-1": 0.01, "speed-2": 200.0, "N-speed": 0,
-          "size-1": 5, "size-2": 20, "N-size": 0,
-          "spacing-1": 0.001, "spacing-2": 20, "N-spacing": 0,
-          "direction-1": 0, "direction-2": 270, "N-direction": 0,
-          "ndots-1": 1, "ndots-2": 20, "N-ndots": 0,
-          "bg-color-1": 0., "bg-color-2": 1., "N-bg-color": 0,
-          "dotcolor-1": -1, "dotcolor-2": 1, "N-dotcolor": 0}
-    
+          "bg-color (lum.)":0.5}
 
 def get_starting_point_and_direction_mv_dots(line,
                                              interval,
                                              direction,
                                              speed,
                                              ndots):
-
     X0, Y0 = [], []
 
     if direction==0:
@@ -81,8 +70,6 @@ class stim(visual_stim):
                          keys=['speed', 'bg-color', 'ndots', 'spacing',
                                'direction', 'size', 'dotcolor', 'seed'])
 
-        self.refresh_freq = protocol['movie_refresh_freq']
-
 
     def get_image(self, index,
                   time_from_episode_start=0,
@@ -108,7 +95,6 @@ class stim(visual_stim):
 
             new_position = (x0+dx_per_time*time_from_episode_start,
                             y0+dy_per_time*time_from_episode_start)
-            print(new_position)
             self.add_dot(img, new_position,
                          self.experiment['size'][index],
                          self.experiment['dotcolor'][index])
@@ -147,14 +133,18 @@ class stim(visual_stim):
 
 if __name__=='__main__':
 
-    import physion.utils.plot_tools as pt
     from physion.visual_stim.build import get_default_params
 
     params = get_default_params('line-moving-dots')
-    params['no-window'] = True
 
-    params['demo'] = False
+    import time
+    import cv2 as cv
+
     Stim = stim(params)
 
-    Stim.plot_stim_picture(0)
-    pt.plt.show()
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break

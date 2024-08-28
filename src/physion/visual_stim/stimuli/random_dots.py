@@ -1,15 +1,15 @@
 import numpy as np
 
-from physion.visual_stim.main import visual_stim,\
-        init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 
 ####################################
 ##  ----    RANDOM DOTS    --- #####
 ####################################
 
-params = {"movie_refresh_freq":2,
+params = {"movie_refresh_freq":30.,
           # default param values:
           "presentation-duration":3,
+          "refresh (Hz)":2.,
           "size (deg)":4.,
           "ndots (#)":7,
           "seed (#)":1,
@@ -17,8 +17,10 @@ params = {"movie_refresh_freq":2,
           "bg-color (lum.)":0.5}
     
 def compute_new_image_with_dots(cls, index,
+                                seed=0,
                                 away_from_edges_factor=4):
 
+    np.random.seed(seed)
     dot_size_pix = int(np.round(cls.angle_to_pix(cls.experiment['size'][index]),0))
     Nx = int(cls.x.shape[0]/dot_size_pix)
     Nz = int(cls.x.shape[1]/dot_size_pix)
@@ -38,9 +40,12 @@ class stim(visual_stim):
     def __init__(self, protocol):
 
         super().__init__(protocol,
-                         keys=['bg-color', 'ndots', 'size', 'dotcolor', 'seed'])
-
-        self.refresh_freq = protocol['movie_refresh_freq']
+                         keys=['bg-color', 
+                               'ndots', 
+                               'size', 
+                               'refresh', 
+                               'dotcolor', 
+                               'seed'])
 
 
     def get_image(self, index,
@@ -49,18 +54,25 @@ class stim(visual_stim):
         """ 
         return the frame at a given time point
         """
-        return compute_new_image_with_dots(self, index)
+        new_seed = (1+self.experiment['seed'][index])**2+\
+            int(time_from_episode_start*self.experiment['refresh'][index])
 
-    def get_frames_sequence(self, index, parent=None):
-        """
-        get frame seq
-        """
+        return compute_new_image_with_dots(self, index, seed=new_seed)
 
-        time_indices, times, FRAMES = init_times_frames(self, index, self.refresh_freq)
+if __name__=='__main__':
 
-        np.random.seed(int(self.experiment['seed'][index]+3*index)) # changing seed at each realization
-        for iframe, t in enumerate(times):
-            img = compute_new_image_with_dots(self, index)
-            FRAMES.append(self.image_to_frame(img))
+    from physion.visual_stim.build import get_default_params
 
-        return time_indices, FRAMES, self.refresh_freq
+    params = get_default_params('random-dots')
+
+    import time
+    import cv2 as cv
+
+    Stim = stim(params)
+
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break

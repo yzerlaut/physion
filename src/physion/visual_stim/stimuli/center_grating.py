@@ -1,7 +1,6 @@
 import numpy as np
 
-from physion.visual_stim.main import visual_stim,\
-        init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 
 ####################################
 ##  ----    CENTER GRATING --- #####

@@ -1,7 +1,6 @@
 import numpy as np
 
-from physion.visual_stim.main import visual_stim,\
-        init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim , init_bg_image
 
 ##############################################
 ##  ----    CENTER DRIFTING GRATINGS --- #####
@@ -70,7 +69,6 @@ class stim(visual_stim):
 
 if __name__=='__main__':
 
-    # import physion.utils.plot_tools as pt
     from physion.visual_stim.build import get_default_params
 
     params = get_default_params('center-drifting-grating')
