@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="125.1804mm"
-   height="129.9409mm"
-   viewBox="0 0 125.1804 129.9409"
+   width="194.73816mm"
+   height="164.24733mm"
+   viewBox="0 0 194.73817 164.24733"
    version="1.1"
    id="svg1"
    inkscape:version="1.3.1 (91b66b0, 2023-11-16)"
@@ -26,17 +26,23 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="0.37466309"
-     inkscape:cx="164.14747"
-     inkscape:cy="280.25178"
-     inkscape:window-width="1416"
+     inkscape:zoom="0.42553869"
+     inkscape:cx="159.79745"
+     inkscape:cy="397.14367"
+     inkscape:window-width="1424"
      inkscape:window-height="765"
      inkscape:window-x="0"
-     inkscape:window-y="38"
+     inkscape:window-y="25"
      inkscape:window-maximized="0"
      inkscape:current-layer="layer1" />
   <defs
      id="defs1">
+    <rect
+       x="-374.67148"
+       y="470.55896"
+       width="213.08331"
+       height="97.663185"
+       id="rect7" />
     <rect
        x="584.87238"
        y="143.44431"
@@ -177,16 +183,24 @@
        width="156.12447"
        height="76.080963"
        id="rect46" />
+    <rect
+       x="-374.67148"
+       y="470.55896"
+       width="213.08331"
+       height="97.663185"
+       id="rect22" />
+    <rect
+       x="-374.67148"
+       y="470.55896"
+       width="213.08331"
+       height="97.663185"
+       id="rect23" />
   </defs>
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
      transform="translate(-43.262264,5.8657674)">
-    <path
-       style="fill:#666666;stroke:#666666;stroke-width:0.6;stroke-linejoin:bevel;stroke-dasharray:none;marker-end:url(#DartArrow);paint-order:markers fill stroke"
-       d="M 80.254397,101.55414 H 164.69267"
-       id="path1" />
     <path
        style="fill:#666666;stroke:#666666;stroke-width:0.6;stroke-linejoin:bevel;stroke-dasharray:none;marker-end:url(#DartArrow);paint-order:markers fill stroke"
        d="M 80.254397,101.55414 46.620088,118.27788"
@@ -204,9 +218,9 @@
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect3);display:inline;fill:#666666;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="138.34863"
          y="354.4261"
-         id="tspan2"><tspan
+         id="tspan5"><tspan
            style="font-style:italic"
-           id="tspan1">x</tspan></tspan></text>
+           id="tspan4">x</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.97944692,0,0,0.97944692,12.074014,-249.20412)"
@@ -214,9 +228,9 @@
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect5);display:inline;fill:#666666;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="138.34863"
          y="354.4261"
-         id="tspan6"><tspan
+         id="tspan23"><tspan
            style="font-style:italic"
-           id="tspan3">y</tspan></tspan></text>
+           id="tspan21">y</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.97944692,0,0,0.97944692,-64.844186,-329.55334)"
@@ -224,9 +238,9 @@
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect6);display:inline;fill:#666666;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="138.34863"
          y="354.4261"
-         id="tspan8"><tspan
+         id="tspan25"><tspan
            style="font-style:italic"
-           id="tspan7">z</tspan></tspan></text>
+           id="tspan24">z</tspan></tspan></text>
     <path
        style="fill:#1a1a1a;stroke:#666666;stroke-width:0.4;stroke-linejoin:bevel;stroke-dasharray:0.8, 0.4;stroke-dashoffset:0;paint-order:markers fill stroke"
        d="M 118.34393,26.731444 V 114.36933"
@@ -264,9 +278,9 @@
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect14);display:inline;fill:#800000;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="139.35059"
          y="354.4261"
-         id="tspan10"><tspan
+         id="tspan27"><tspan
            style="font-style:italic"
-           id="tspan9">r</tspan></tspan></text>
+           id="tspan26">r</tspan></tspan></text>
     <path
        style="fill:#1a1a1a;stroke:#666666;stroke-width:0.4;stroke-linejoin:bevel;stroke-dasharray:0.8, 0.4;stroke-dashoffset:0;paint-order:markers fill stroke"
        d="m 80.440369,101.13344 64.338001,22.06421"
@@ -295,11 +309,11 @@
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect20);display:inline;fill:#800000;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="136.14375"
          y="354.4261"
-         id="tspan13"><tspan
+         id="tspan30"><tspan
            style="font-style:italic"
-           id="tspan11">θ</tspan><tspan
+           id="tspan28">θ</tspan><tspan
            style="font-size:65%;baseline-shift:sub"
-           id="tspan12">z</tspan></tspan></text>
+           id="tspan29">z</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.97944692,0,0,0.97944692,15.436315,-225.41709)"
@@ -307,11 +321,11 @@
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect21);display:inline;fill:#800000;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="136.14375"
          y="354.4261"
-         id="tspan16"><tspan
+         id="tspan33"><tspan
            style="font-style:italic"
-           id="tspan14">θ</tspan><tspan
+           id="tspan31">θ</tspan><tspan
            style="font-size:65%;baseline-shift:sub"
-           id="tspan15">x</tspan></tspan></text>
+           id="tspan32">x</tspan></tspan></text>
     <path
        style="fill:#800000;fill-opacity:0;stroke:#800000;stroke-width:0.600001;stroke-linejoin:bevel;stroke-dasharray:none;stroke-dashoffset:0;marker-end:url(#marker19);paint-order:markers fill stroke"
        d="m 149.45184,102.77663 c 0.73599,7.3558 -2.33982,11.5667 -6.5061,14.25223"
@@ -324,13 +338,47 @@
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect24);display:inline;fill:#0000ff;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="138.01172"
          y="354.4261"
-         id="tspan18"><tspan
+         id="tspan35"><tspan
            style="font-style:italic"
-           id="tspan17">a</tspan></tspan></text>
+           id="tspan34">a</tspan></tspan></text>
     <path
        style="fill:none;stroke:#666666;stroke-width:0.4;stroke-linejoin:bevel;stroke-dasharray:0.8, 0.4;stroke-dashoffset:0;paint-order:markers fill stroke"
        d="M 80.932201,15.872706 115.5549,25.04673"
        id="path27"
        sodipodi:nodetypes="cc" />
+    <path
+       style="fill:#cccccc;fill-opacity:0.701058;stroke:#4d4d4d;stroke-width:2.10922;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"
+       d="m 180.16197,100.70999 51.18497,56.96672 5.60248,-67.6194 -51.28058,-55.618389 z"
+       id="path4"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       style="fill:#666666;stroke:#666666;stroke-width:0.6;stroke-linejoin:bevel;stroke-dasharray:none;marker-end:url(#DartArrow);paint-order:markers fill stroke"
+       d="M 80.254397,101.55414 H 207.026"
+       id="path5"
+       sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       transform="matrix(0.9704582,0,0,0.9704582,325.56505,-370.85108)"
+       id="text6"
+       style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect7);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
+         x="-277.80371"
+         y="481.3968"
+         id="tspan36">eye</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.84237993,0.72748184,-0.72748184,0.84237993,780.61385,-135.02721)"
+       id="text22"
+       style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect22);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
+         x="-286.13867"
+         y="481.3968"
+         id="tspan37">screen</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.69712502,0,0,0.69712502,252.17354,-250.06219)"
+       id="text23"
+       style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect23);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
+         x="-285.4707"
+         y="481.3968"
+         id="tspan38">(0,0,0)</tspan></text>
   </g>
 </svg>

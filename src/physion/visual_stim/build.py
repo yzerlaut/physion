@@ -48,6 +48,9 @@ def get_default_params(protocol_name):
         params['presentation-interstim-period'] = 0.5
         params['presentation-poststim-period'] = 0.5
 
+        params['movie_refresh_freq'] = 30.
+        params['units'] = 'cm'
+
         return params
 
     except ModuleNotFoundError:
@@ -139,8 +142,6 @@ if __name__=='__main__':
             # build the protocol
             with open(args.protocol, 'r') as f:
                 protocol = json.load(f)
-
-            protocol['no-window'] = True
 
             Stim = build_stim(protocol)
 

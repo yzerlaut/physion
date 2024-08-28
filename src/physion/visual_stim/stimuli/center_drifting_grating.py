@@ -13,10 +13,11 @@ params = {"movie_refresh_freq":10,
           "x-center (deg)":0.,
           "y-center (deg)":0.,
           "size (deg)":4.,
-          "angle (deg)":0,
-          "radius (deg)":40.,
+          "angle (deg)":90,
+          "radius (deg)":80.,
           "speed (cycle/s)":1,
           "spatial-freq (cycle/deg)":0.04,
+          "phase (deg)":0.,
           "contrast (lum.)":1.0,
           "bg-color (lum.)":0.5}
     
@@ -35,14 +36,7 @@ class stim(visual_stim):
                          keys=['bg-color', 'speed',
                                'x-center', 'y-center',
                                'radius','spatial-freq',
-                               'angle', 'contrast'])
-
-        ## /!\ inside here always use self.refresh_freq 
-        ##        not the parent cls.refresh_freq 
-        # when the parent multiprotocol will have ~10Hz refresh rate,
-        ##                this can remain 2-3Hz
-        self.refresh_freq = protocol['movie_refresh_freq']
-
+                               'angle', 'phase', 'contrast'])
 
     def get_image(self, episode, 
                   time_from_episode_start=0):
@@ -54,9 +48,12 @@ class stim(visual_stim):
                        contrast=self.experiment['contrast'][episode],
                        xcenter=self.experiment['x-center'][episode],
                        zcenter=self.experiment['y-center'][episode],
-                       phase=self.experiment['speed'][episode]*time_from_episode_start)
+                       phase_shift_Deg=self.experiment['phase'][episode]\
+                               if 'phase' in self.experiment else 90.,
+                       time_phase=self.experiment['speed'][episode]*time_from_episode_start)
         return img
 
+    """
     def plot_stim_picture(self, episode,
                           ax=None, parent=None, label=None, vse=False,
                           arrow={'length':10,
@@ -70,17 +67,23 @@ class stim(visual_stim):
                            self.experiment['y-center'][episode]]
         self.add_arrow(arrow, ax)
         return ax
+    """
 
 if __name__=='__main__':
 
-    import physion.utils.plot_tools as pt
+    # import physion.utils.plot_tools as pt
     from physion.visual_stim.build import get_default_params
 
     params = get_default_params('center-drifting-grating')
-    params['no-window'] = True
+
+    import time
+    import cv2 as cv
 
     Stim = stim(params)
 
-    Stim.plot_stim_picture(0)
-    pt.plt.show()
-
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break

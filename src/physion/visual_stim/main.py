@@ -23,7 +23,7 @@ class visual_stim:
     def __init__(self,
                  protocol,
                  keys=[], # need to pass the varied parameters
-                 units='deg', # degree vs cm, cm -> to show on the screen !
+                 units=None, # degree vs cm -> to show on the screen !
                  demo=False):
         """
         """
@@ -37,7 +37,12 @@ class visual_stim:
         self.blank_color=self.gamma_corrected_lum(\
                 2*self.protocol['presentation-blank-screen-color']-1)
         self.movie_refresh_freq = self.protocol['movie_refresh_freq']
-        self.units = units
+
+        # fix the unit system
+        if 'units' in self.protocol:
+            self.units = self.protocol['units']
+        else:
+            self.units = 'lin-deg' # convention < 08/2024
 
         if demo or (('demo' in self.protocol) and self.protocol['demo']):
             self.screen['fullscreen'] = False
@@ -150,7 +155,8 @@ class visual_stim:
                           radius=10,
                           spatial_freq=0.1,
                           contrast=1.,
-                          phase=0.,
+                          phase_shift_Deg=0.,
+                          time_phase=0.,
                           xcenter=0,
                           zcenter=0):
         """ add a grating patch, drifting when varying the time phase"""
@@ -162,10 +168,10 @@ class visual_stim:
 
         full_grating = self.compute_grating(xrot,
                                             spatial_freq=spatial_freq,
-                                            phase_shift_Deg=phase)-0.5
+                                            time_phase=time_phase,
+                                            phase_shift_Deg=phase_shift_Deg)-0.5
 
         image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
-
 
 
     def add_gaussian(self, image,
@@ -303,13 +309,12 @@ class visual_stim:
                             protocol['presentation-poststim-period']
 
 
-    def prepare_stimProps_tables(self,
+    def prepare_stimProps_tables(self, dt, 
                                  verbose=True):
             if verbose:
                 tic = time.time()
             # build time axis
             #               add 2 seconds at the end for the end-stim flag
-            dt = 1./self.movie_refresh_freq
             t = np.arange(int((2+self.tstop)/dt))*dt 
             # array for the interstim flag
             self.is_interstim = np.ones(len(t), dtype=bool) # default to True
@@ -521,9 +526,7 @@ class multiprotocol(visual_stim):
             # we load a previously saved multiprotocol
             while 'Protocol-%i'%i in protocol:
                 subprotocol = {'Screen':protocol['Screen'],
-                               'Presentation':'',
-                               'demo':(('demo' in protocol) and protocol['demo']),
-                               'no-window':True}
+                               'Presentation':''}
                 for key in protocol:
                     if ('Protocol-%i-'%i in key):
                         nKey = key.replace('Protocol-%i-'%i, '')
@@ -542,9 +545,9 @@ class multiprotocol(visual_stim):
                                             protocol['Protocol-%i'%i])
                 with open(Ppath, 'r') as fp:
                     subprotocol = json.load(fp)
-                    subprotocol['Screen'] = protocol['Screen']
-                    subprotocol['no-window'] = True
-                    subprotocol['demo'] = (('demo' in protocol) and protocol['demo'])
+                    # properties inherited form the parent protocol:
+                    for key in ['Screen', 'units', 'movie_refresh_freq']:
+                        subprotocol[key] = protocol[key]
                     self.STIM.append(build_stim(subprotocol))
                     for key, val in subprotocol.items():
                         protocol['Protocol-%i-%s'%(i,key)] = val
@@ -657,79 +660,4 @@ def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
     itend = np.max([1, int(security_factor*interval*refresh_freq)])
     return np.arange(itend), np.arange(itend)/refresh_freq, []
 
-
-if __name__=='__main__':
-
-    ######################################
-    ####  visualize the stimulation   ####
-    ######################################
-
-    import argparse
-    parser=argparse.ArgumentParser()
-    parser.add_argument("protocol", 
-                        help="""
-                                a folder containing: 
-                                    - protocol.json 
-                                    - movie.mp4
-                             """, 
-                        default='')
-    parser.add_argument('-s', "--speed", type=float,
-                        help="speed to visualize the stimulus (1. by default)", 
-                        default=1.)
-    parser.add_argument('-t', "--tstop", 
-                        type=float, default=15.)
-    parser.add_argument("--t0", 
-                        help="start time", 
-                        default=0.)
-    args = parser.parse_args()
-
-    valid = False
-
-    if os.path.isfile(os.path.join(args.protocol, 'movie.mp4')) and\
-        os.path.isfile(os.path.join(args.protocol, 'protocol.json')):
-        valid = True
-        
-    if not valid:
-        print('')
-        print(' /!\ protocol folder not valid /!\ ')
-        print('         it does not contain the protocol.json and movie.mp4 files')
-        print('')
-
-    else:
-
-        from physion.visual_stim.build import build_stim
-        from PyQt5 import QtWidgets
-        import json, sys, multiprocessing
-
-        with open(os.path.join(args.protocol, 'protocol.json'), 'r') as fp:
-            protocol = json.load(fp)
-        protocol['demo'] = True
-
-
-        # A minimal GUI to display the stim window 
-        class MainWindow(QtWidgets.QMainWindow):
-
-            def __init__(self):
-                super(MainWindow, self).__init__()
-                self.stim = build_stim(protocol)
-                self.stim.movie_file = os.path.join(args.protocol, 'movie.mp4')
-                self.setGeometry(100, 100, 400, 40)
-                self.runBtn = QtWidgets.QPushButton('Start/Stop')
-                self.runBtn.clicked.connect(self.run)
-                self.setCentralWidget(self.runBtn)
-                self.show()
-                self.runEvent = multiprocessing.Event() # to turn on/off recordings 
-                
-            def run(self):
-                if not self.runEvent.is_set():
-                    self.runEvent.set()
-                    init_stimWindow(self)
-                    self.mediaPlayer.play()
-                else:
-                    self.stimWin.close()
-                    self.runEvent.clear()
-
-        app = QtWidgets.QApplication(sys.argv)
-        win = MainWindow()
-        sys.exit(app.exec_())
 
