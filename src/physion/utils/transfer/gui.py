@@ -116,12 +116,69 @@ def synch_folders(self):
     
 def run_transfer(self):
 
-    if self.destination_folder=='':
-        self.destination_folder = FOLDERS[self.destBox.currentText()]
-
     if self.source_folder=='':
         self.source_folder = FOLDERS[self.sourceBox.currentText()]
                                           
+    if self.destination_folder=='':
+        self.destination_folder = FOLDERS[self.destBox.currentText()]
+
+    if ('stim.+behav.' in self.typeBox.currentText()):
+
+        def do_not_include(Dir, f):
+            return ('FaceCamera' in Dir) or ('RigCamera' in Dir)
+
+        def ignore_files(dir, files):
+            return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\
+                    do_not_include(dir, f))]
+
+        for f in [F for F in os.listdir(self.source_folder)\
+                    if os.path.isdir(os.path.join(self.source_folder, F))]:
+
+            dest = os.path.join(self.destination_folder, f)
+            print('copying (overwriting !) to : ', dest, '[...]')
+            shutil.copytree(os.path.join(self.source_folder, f), dest,
+                            dirs_exist_ok=True,
+                            ignore=ignore_files)
+            print(' [ok] copy finished !')
+
+    elif 'Imaging (processed)'==self.typeBox.currentText():
+
+        def do_not_include(Dir, f):
+            return ('.tiff' in f) and ('TSeries' in f)
+
+        def ignore_files(dir, files):
+            return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\
+                    do_not_include(dir, f))]
+
+        for f in [F for F in os.listdir(self.source_folder)\
+                    if os.path.isdir(os.path.join(self.source_folder, F))]:
+
+            dest = os.path.join(self.destination_folder, f)
+            print('copying (overwriting !) to : ', dest, '[...]')
+            shutil.copytree(os.path.join(self.source_folder, f), dest,
+                            dirs_exist_ok=True,
+                            ignore=ignore_files)
+            print(' [ok] copy finished !')
+
+    elif self.typeBox.currentText() in ['nwb', 'npy']:
+
+        def ignore_files(dir, files):
+            return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\
+                    ('.%s'%self.typeBox.currentText() not in f))]
+
+        for f in [F for F in os.listdir(self.source_folder)\
+                    if os.path.isdir(os.path.join(self.source_folder, F))]:
+
+            dest = os.path.join(self.destination_folder, f)
+            print('copying (overwriting !) to : ', dest, '[...]')
+            shutil.copytree(os.path.join(self.source_folder, f), dest,
+                            dirs_exist_ok=True,
+                            ignore=ignore_files)
+            print(' [ok] copy finished !')
+    else:
+        print(' not implemented ! ')
+
+    """
     if '10.0.0.' in self.destination_folder:
         print('writing a bash script to be executed as: "bash temp.sh" ')
         F = open('temp.sh', 'w')
@@ -228,42 +285,16 @@ def run_transfer(self):
                 #         print('In: "%s" ' % os.path.isfile(os.path.join(Fsuite2p, 'plane%i' % iplane)))
                 #         print(' /!\ Problem no "binary file" found !! /!\  ')
 
-    elif ('stim.+behav.' in self.typeBox.currentText()):
-
-        ##############################################
-        #############      Imaging         ##########
-        ##############################################
-        folders = list_dayfolder(self.source_folder)
-        print('processing: ', folders)
-
-        FILES = ['metadata.npy', 'metadata.json',
-                 'pupil.npy', 'facemotion.npy', 
-                 'NIdaq.npy', 'NIdaq.start.npy', 
-                 'visual-stim.npy', 
-                 'FaceCamera-summary.npy']
-
-        for f in folders:
-
-            new_folder = os.path.join(self.destination_folder,
-                                      f.split(os.path.sep)[-1]) 
-            pathlib.Path(new_folder).mkdir(parents=True, exist_ok=True)
-            for ff in FILES:
-                print(new_folder)
-                cmd = file_copy_command(self, os.path.join(f, ff), new_folder+os.path.sep)
-                print(cmd)
-                p = subprocess.Popen(cmd, shell=True)
-
+    """
 
 if __name__=='__main__':
 
-    FILES = ['metadata.npy', 'metadata.json',
-             'pupil.npy', 'facemotion.npy', 
-             'NIdaq.npy', 'NIdaq.start.npy', 
-             'visual-stim.npy', 
-             'FaceCamera-summary.npy']
+    def do_not_include(Dir, f):
+        return ('FaceCamera' in Dir) or ('RigCamera' in Dir)
 
     def ignore_files(dir, files):
-        return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and ('FaceCamera' in dir))]
+        return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\
+                do_not_include(dir, f))]
 
     source_folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED', '2024_01_25')
     destination_folder = os.path.join(os.path.expanduser('~'), 'ASSEMBLE')
