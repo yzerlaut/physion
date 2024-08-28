@@ -2,6 +2,8 @@
   "Presentation": "multiprotocol",
   "shuffling" :"full",
   "shuffling-seed" :34,
+  "movie_refresh_freq":30.0,
+  "units":"cm",
   "Protocol-1": "subprotocols/contrast-curves/ff-drifting-gratings-4orientation-5contrasts-log-spaced-10repeats.json",
   "Protocol-2": "subprotocols/blank/grey-5min.json",
   "Protocol-3": "subprotocols/blank/black-5min.json",

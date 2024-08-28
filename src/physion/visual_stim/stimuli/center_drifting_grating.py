@@ -7,8 +7,7 @@ from physion.visual_stim.main import visual_stim,\
 ##  ----    CENTER DRIFTING GRATINGS --- #####
 ##############################################
 
-params = {"movie_refresh_freq":10,
-          "presentation-duration":3,
+params = {"presentation-duration":3,
           # default param values:
           "x-center (deg)":0.,
           "y-center (deg)":0.,
