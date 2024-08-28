@@ -1,4 +1,4 @@
-import sys, time, os, pathlib, subprocess
+import sys, time, os, pathlib, subprocess, shutil
 from PyQt5 import QtGui, QtWidgets, QtCore
 
 from physion.utils.files import get_files_with_extension,\
@@ -236,7 +236,8 @@ def run_transfer(self):
         folders = list_dayfolder(self.source_folder)
         print('processing: ', folders)
 
-        FILES = ['metadata.npy', 'pupil.npy', 'facemotion.npy', 
+        FILES = ['metadata.npy', 'metadata.json',
+                 'pupil.npy', 'facemotion.npy', 
                  'NIdaq.npy', 'NIdaq.start.npy', 
                  'visual-stim.npy', 
                  'FaceCamera-summary.npy']
@@ -251,3 +252,23 @@ def run_transfer(self):
                 cmd = file_copy_command(self, os.path.join(f, ff), new_folder+os.path.sep)
                 print(cmd)
                 p = subprocess.Popen(cmd, shell=True)
+
+
+if __name__=='__main__':
+
+    FILES = ['metadata.npy', 'metadata.json',
+             'pupil.npy', 'facemotion.npy', 
+             'NIdaq.npy', 'NIdaq.start.npy', 
+             'visual-stim.npy', 
+             'FaceCamera-summary.npy']
+
+    def ignore_files(dir, files):
+        return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and ('FaceCamera' in dir))]
+
+    source_folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED', '2024_01_25')
+    destination_folder = os.path.join(os.path.expanduser('~'), 'ASSEMBLE')
+
+    shutil.copytree(source_folder,
+                    os.path.join(destination_folder, 'copy'), 
+                    ignore=ignore_files)
+
