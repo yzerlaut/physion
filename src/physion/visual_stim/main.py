@@ -1,5 +1,7 @@
 """
 class for the visual stimulation
+
+color in grayscale in range [0,1]
 """
 
 import numpy as np
@@ -30,8 +32,8 @@ class visual_stim:
         self.screen = SCREENS[self.protocol['Screen']]
         self.k = self.screen['gamma_correction']['k']
         self.gamma = self.screen['gamma_correction']['gamma']
-        self.blank_color=self.gamma_corrected_lum(\
-                2*self.protocol['presentation-blank-screen-color']-1)
+        self.blank_color=self.gamma_correction(\
+                self.protocol['presentation-blank-screen-color'])
         self.movie_refresh_freq = self.protocol['movie_refresh_freq']
 
         # fix the unit system
@@ -55,11 +57,8 @@ class visual_stim:
     #  ---   Gamma correction  --- #
     ################################
 
-    def gamma_corrected_lum(self, level):
-        return 2*np.power(((level+1.)/2./self.k), 1./self.gamma)-1.
-
-    def gamma_corrected_contrast(self, contrast):
-        return np.power(contrast/self.k, 1./self.gamma)
+    def gamma_correction(self, lum):
+        return np.power(lum/self.k, 1./self.gamma)
 
     ################################
     #  ---       Geometry      --- #
@@ -139,8 +138,8 @@ class visual_stim:
                         spatial_freq=0.1, 
                         time_phase=0.,
                         phase_shift_Deg=90.):
-        return (1+np.cos(phase_shift_Deg*np.pi/180.+\
-                            2*np.pi*(spatial_freq*xrot-time_phase)))/2.
+        return np.cos(phase_shift_Deg*np.pi/180.+\
+                        2*np.pi*(spatial_freq*xrot-time_phase))
 
     ################################
     #  ---  Draw Stimuli       --- #
@@ -167,7 +166,7 @@ class visual_stim:
                                             time_phase=time_phase,
                                             phase_shift_Deg=phase_shift_Deg)-0.5
 
-        image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
+        image[cond] = 0.5+contrast*full_grating[cond]/2. # /!\ "=" for the patch
 
 
     def add_gaussian(self, image,

@@ -91,13 +91,13 @@ class MonitoringSquare:
         X, Y = Stim.screen['resolution'] # x,y sizes
 
         if Stim.screen['monitoring_square']['location']=='top-right':
-            self.mask[X-S:,Y-S:] = True
+            self.mask[X-S:,:S] = True
         elif Stim.screen['monitoring_square']['location']=='top-left':
-            self.mask[X-S:,:S] = True
+            self.mask[X-S:,Y-S:] = True
         elif Stim.screen['monitoring_square']['location']=='bottom-right':
-            self.mask[X-S:,:S] = True
-        elif Stim.screen['monitoring_square']['location']=='bottom-left':
             self.mask[:S,:S] = True
+        elif Stim.screen['monitoring_square']['location']=='bottom-left':
+            self.mask[X-S:,:S] = True
         else:
             print(30*'-'+'\n /!\\ monitoring square location not recognized !!')
             print('        --> (0,0) by default \n')
@@ -183,15 +183,17 @@ if __name__=='__main__':
                     
                 # data in [0,1]
                 if (t>=tstart) and (t<tstop):
-                    data = (Stim.get_image(index, t-tstart)+1.)/2.
+                    data = Stim.gamma_correction(\
+                            Stim.get_image(index, t-tstart))
                 else:
-                    data = (Stim.blank_color*np.ones(\
-                                Stim.screen['resolution'])+1.)/2.
+                    data = Stim.blank_color*\
+                            np.ones(Stim.screen['resolution'])
 
                 # put the monitoring square
                 data = square.draw(data, t, tstart, tstop)
 
-                out.write(np.array(255*np.rot90(data, k=1),
+                # out.write(np.array(255*np.rot90(data, k=1),
+                out.write(np.array(255*data.T,
                                    dtype='uint8'))
                 t+= 1./Stim.movie_refresh_freq
 
