@@ -20,7 +20,6 @@ class visual_stim:
     def __init__(self,
                  protocol,
                  keys=[], # need to pass the varied parameters
-                 units=None, # degree vs cm -> to show on the screen !
                  demo=False):
         """
         """

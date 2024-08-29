@@ -7,10 +7,9 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 ####################################
 
 params = {"movie_refresh_freq":30.,
-          # default param values:
           "presentation-duration":3,
-          "refresh (Hz)":2.,
-          "size (deg)":4.,
+          "refresh (Hz)":1.,
+          "size (deg)":5.,
           "ndots (#)":7,
           "seed (#)":1,
           "dotcolor (lum.)":-1,
@@ -18,19 +17,28 @@ params = {"movie_refresh_freq":30.,
     
 def compute_new_image_with_dots(cls, index,
                                 seed=0,
-                                away_from_edges_factor=4):
+                                away_from_edges_factor=2):
 
     np.random.seed(seed)
-    dot_size_pix = int(np.round(cls.angle_to_pix(cls.experiment['size'][index]),0))
-    Nx = int(cls.x.shape[0]/dot_size_pix)
-    Nz = int(cls.x.shape[1]/dot_size_pix)
+    dot_size= cls.experiment['size'][index]
+    Nx = int(cls.x.max()/dot_size)
+    Nz = int(cls.z.max()/dot_size)
+
+    # dot center positions
+    X = np.random.choice(np.arange(-Nx+away_from_edges_factor, 
+                                   Nx+1-away_from_edges_factor)[::2],
+                         cls.experiment['ndots'][index], replace=False)
+    Z = np.random.choice(np.arange(-Nz+away_from_edges_factor, 
+                                   Nz+1-away_from_edges_factor)[::2],
+                         cls.experiment['ndots'][index], replace=False)
 
     img = init_bg_image(cls, index)
-    for n in range(cls.experiment['ndots'][index]):
-        ix, iz = (np.random.choice(np.arange(away_from_edges_factor, Nx-away_from_edges_factor)[::2],1, replace=False)[0],
-                np.random.choice(np.arange(away_from_edges_factor,Nz-away_from_edges_factor)[::2],1, replace=False)[0])
-        img[dot_size_pix*ix:dot_size_pix*(ix+1),
-            dot_size_pix*iz:dot_size_pix*(iz+1)] = cls.experiment['dotcolor'][index]
+    for x, z in zip(X, Z):
+
+        cls.add_dot(img, (x*dot_size, z*dot_size),
+                    cls.experiment['size'][index],
+                    cls.experiment['dotcolor'][index])
+
     return img
 
 class stim(visual_stim):
