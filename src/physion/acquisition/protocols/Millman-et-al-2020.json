@@ -32,6 +32,9 @@
   "N-contrast": 6,
   "bg-color-1": 0.5,
   "bg-color-2": 0.5,
-  "N-bg-color": 0,
+  "N-bg-color": 0
+  "phase-1": 90.0,
+  "phase-2": 90.0,
+  "N-phase": 0,
   "N-repeat": 10
 }

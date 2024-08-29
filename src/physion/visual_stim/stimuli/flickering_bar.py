@@ -8,7 +8,6 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 
   # default param values:
 params = {"presentation-duration":3,
-          # stimulus parameters (add parenthesis with units):
           "flicker-size (deg)":10.,
           "flicker-freq (Hz)":10.,
           "bar-size (deg)":10.,
@@ -31,9 +30,7 @@ class stim(visual_stim):
                          keys=['bg-color',
                                'bar-size',
                                'flicker-size', 'flicker-freq',
-                               'direction', 'contrast'],
-                         units=units)
-
+                               'direction', 'contrast'])
 
     def get_image(self, episode, 
                   time_from_episode_start=0):
@@ -50,23 +47,18 @@ class stim(visual_stim):
 
 if __name__=='__main__':
 
-    import physion.utils.plot_tools as pt
     from physion.visual_stim.build import get_default_params
 
-    params = get_default_params('flickering-bar')
-    params['no-window'] = True
-    params['demo'] = False
+    params = get_default_params('flickering_bar')
 
-    Stim = stim(params, units='deg')
-    Stim2 = stim(params, units='cm')
+    import time
+    import cv2 as cv
 
-    fig, AX = pt.figure(axes=(2,1), 
-            figsize=(1.8,2), wspace=0, left=0, right=0, bottom=0.1, top=0.5)
+    Stim = stim(params)
 
-    AX[0].set_title('angular space')
-    AX[1].set_title('on screen')
-
-    Stim.plot_stim_picture(0, ax=AX[0], with_mask=True)
-    Stim2.plot_stim_picture(0, ax=AX[1])
-
-    pt.plt.show()
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break

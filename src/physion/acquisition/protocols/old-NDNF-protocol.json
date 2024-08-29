@@ -2,7 +2,7 @@
   "Presentation": "multiprotocol",	
   "Screen": "Dell-2020",
   "movie_refresh_freq":30.0,
-  "units":"cm",
+  "units":"lin-deg",
   "shuffling" :"full",
   "shuffling-seed" :23,
   "Protocol-1": "subprotocols/NDNF/moving-dots.json",
