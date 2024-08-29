@@ -50,7 +50,8 @@ class stim(visual_stim):
     def get_image(self, index,
                   time_from_episode_start=0,
                   parent=None):
-        return self.NIarray[int(self.experiment['Image-ID'][index])]
+        return np.rot90(self.NIarray[int(self.experiment['Image-ID'][index])], 
+                        k=2)
 
     def plot_stim_picture(self, episode, parent=None, 
                           vse=True, ax=None, label=None,
@@ -78,6 +79,7 @@ if __name__=='__main__':
     from physion.visual_stim.build import get_default_params
 
     params = get_default_params('natural-image')
+    print(params)
 
     import time
     import cv2 as cv

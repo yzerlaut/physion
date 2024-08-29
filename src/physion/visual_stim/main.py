@@ -132,14 +132,15 @@ class visual_stim:
     # some general grating functions
     def compute_rotated_coords(self, angle,
                                xcenter=0, zcenter=0):
-        return (self.x-xcenter)*np.cos(angle/180.*np.pi)+(self.z-zcenter)*np.sin(angle/180.*np.pi)
+        return (self.x-xcenter)*np.cos(angle/180.*np.pi)+\
+                    (self.z-zcenter)*np.sin(angle/180.*np.pi)
 
     def compute_grating(self, xrot,
                         spatial_freq=0.1, 
                         time_phase=0.,
                         phase_shift_Deg=90.):
-        return np.cos(phase_shift_Deg*np.pi/180.+\
-                        2*np.pi*(spatial_freq*xrot-time_phase))
+        return 0.5+np.cos(phase_shift_Deg*np.pi/180.+\
+                        2*np.pi*(spatial_freq*xrot-time_phase))/2.
 
     ################################
     #  ---  Draw Stimuli       --- #
@@ -166,7 +167,7 @@ class visual_stim:
                                             time_phase=time_phase,
                                             phase_shift_Deg=phase_shift_Deg)-0.5
 
-        image[cond] = 0.5+contrast*full_grating[cond]/2. # /!\ "=" for the patch
+        image[cond] += contrast*full_grating[cond] 
 
 
     def add_gaussian(self, image,
