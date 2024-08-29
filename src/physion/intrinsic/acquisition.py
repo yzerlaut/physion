@@ -269,7 +269,8 @@ def take_fluorescence_picture(self):
 
     else:
 
-        self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
+        self.statusBar.showMessage(\
+                '  /!\ Need to pick a folder and a subject first ! /!\ ')
 
 
 def take_vasculature_picture(self):
