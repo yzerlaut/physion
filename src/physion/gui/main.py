@@ -427,8 +427,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.acq.close()
         if hasattr(self, 'close_stim'):
             self.close_stim()
-        if self.stim is not None:
-            self.stim.quit()
         if self.bridge is not None:
             self.bridge.close()
         if hasattr(self, 'cam') and self.cam is not None:

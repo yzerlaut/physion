@@ -6,12 +6,8 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 ##  ----    UNIFORM BACKGROUND   --- #####
 ##########################################
 
-params = {"movie_refresh_freq":0.1,
-          "presentation-duration":2,
-          "bg-color (lum.)":0.5,
-          # now we set the range of possible values:
-          "bg-color-1": 0., "bg-color-2": 1., "N-bg-color": 0}
-    
+params = {"presentation-duration":2,
+          "bg-color (lum.)":0.5}
 
 class stim(visual_stim):
     """

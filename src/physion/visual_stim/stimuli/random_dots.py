@@ -1,34 +1,48 @@
 import numpy as np
 
-from physion.visual_stim.main import visual_stim,\
-        init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 
 ####################################
 ##  ----    RANDOM DOTS    --- #####
 ####################################
 
-params = {"movie_refresh_freq":2,
-          # default param values:
+params = {"movie_refresh_freq":30.,
           "presentation-duration":3,
-          "size (deg)":4.,
+          "refresh (Hz)":1.,
+          "size (deg)":5.,
           "ndots (#)":7,
           "seed (#)":1,
           "dotcolor (lum.)":-1,
           "bg-color (lum.)":0.5}
     
 def compute_new_image_with_dots(cls, index,
-                                away_from_edges_factor=4):
+                                seed=0,
+                                away_from_edges_factor=3):
 
-    dot_size_pix = int(np.round(cls.angle_to_pix(cls.experiment['size'][index]),0))
-    Nx = int(cls.x.shape[0]/dot_size_pix)
-    Nz = int(cls.x.shape[1]/dot_size_pix)
+    np.random.seed(seed)
+    dot_size= int(cls.experiment['size'][index])
+    Nx = int(cls.x.max()/dot_size)
+    Nz = int(cls.z.max()/dot_size)
+
+    # dot center positions
+    xx, zz = np.meshgrid(np.arange(-Nx+away_from_edges_factor, 
+                                   Nx+1-away_from_edges_factor)[::2],
+                         np.arange(-Nz+away_from_edges_factor, 
+                                   Nz+1-away_from_edges_factor)[::2],
+                         indexing='ij')
+
+    ii = np.random.choice(np.arange(len(xx.flatten())),
+                         int(cls.experiment['ndots'][index]), replace=False)
+    X = xx.flatten()[ii]
+    Z = zz.flatten()[ii]
 
     img = init_bg_image(cls, index)
-    for n in range(cls.experiment['ndots'][index]):
-        ix, iz = (np.random.choice(np.arange(away_from_edges_factor, Nx-away_from_edges_factor)[::2],1, replace=False)[0],
-                np.random.choice(np.arange(away_from_edges_factor,Nz-away_from_edges_factor)[::2],1, replace=False)[0])
-        img[dot_size_pix*ix:dot_size_pix*(ix+1),
-            dot_size_pix*iz:dot_size_pix*(iz+1)] = cls.experiment['dotcolor'][index]
+    for x, z in zip(X, Z):
+
+        cls.add_dot(img, (x*dot_size, z*dot_size),
+                    cls.experiment['size'][index],
+                    cls.experiment['dotcolor'][index])
+
     return img
 
 class stim(visual_stim):
@@ -38,9 +52,12 @@ class stim(visual_stim):
     def __init__(self, protocol):
 
         super().__init__(protocol,
-                         keys=['bg-color', 'ndots', 'size', 'dotcolor', 'seed'])
-
-        self.refresh_freq = protocol['movie_refresh_freq']
+                         keys=['bg-color', 
+                               'ndots', 
+                               'size', 
+                               'refresh', 
+                               'dotcolor', 
+                               'seed'])
 
 
     def get_image(self, index,
@@ -49,18 +66,25 @@ class stim(visual_stim):
         """ 
         return the frame at a given time point
         """
-        return compute_new_image_with_dots(self, index)
+        new_seed = (1+self.experiment['seed'][index])**2+\
+            int(time_from_episode_start*self.experiment['refresh'][index])
 
-    def get_frames_sequence(self, index, parent=None):
-        """
-        get frame seq
-        """
+        return compute_new_image_with_dots(self, index, seed=int(new_seed))
 
-        time_indices, times, FRAMES = init_times_frames(self, index, self.refresh_freq)
+if __name__=='__main__':
 
-        np.random.seed(int(self.experiment['seed'][index]+3*index)) # changing seed at each realization
-        for iframe, t in enumerate(times):
-            img = compute_new_image_with_dots(self, index)
-            FRAMES.append(self.image_to_frame(img))
+    from physion.visual_stim.build import get_default_params
 
-        return time_indices, FRAMES, self.refresh_freq
+    params = get_default_params('random-dots')
+
+    import time
+    import cv2 as cv
+
+    Stim = stim(params)
+
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break

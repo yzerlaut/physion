@@ -1,5 +1,5 @@
 import sys
-import cv2
+import cv2 as cv
 import numpy as np
 
 import physion
@@ -47,6 +47,9 @@ def get_default_params(protocol_name):
         params['presentation-prestim-period'] = 0.5
         params['presentation-interstim-period'] = 0.5
         params['presentation-poststim-period'] = 0.5
+
+        params['movie_refresh_freq'] = 30.
+        params['units'] = 'cm'
 
         return params
 
@@ -106,14 +109,10 @@ if __name__=='__main__':
 
     import argparse, os, pathlib, shutil, json
 
-    import argparse
     parser=argparse.ArgumentParser()
     parser.add_argument("protocol", 
                         help="protocol a json file", 
                         default='')
-    parser.add_argument("--fps", type=int,
-                        help="Frame Per Seconds in the mp4 movie",
-                        default=30)
     parser.add_argument('-f', "--force", type=int,
                         help="Frame Per Seconds in the mp4 movie",
                         default=30)
@@ -144,8 +143,6 @@ if __name__=='__main__':
             with open(args.protocol, 'r') as f:
                 protocol = json.load(f)
 
-            protocol['no-window'] = True
-
             Stim = build_stim(protocol)
 
             def update(Stim, index):
@@ -164,9 +161,10 @@ if __name__=='__main__':
             square = MonitoringSquare(Stim)
 
             # prepare video file
-            out = cv2.VideoWriter(os.path.join(protocol_folder, 'movie.mp4'),
-                                  cv2.VideoWriter_fourcc(*'mp4v'), 
-                                  args.fps, 
+            Format = 'wmv' if 'win' in sys.platform else 'mp4'
+            out = cv.VideoWriter(os.path.join(protocol_folder, 'movie.%s' % Format),
+                                  cv.VideoWriter_fourcc(*'mp4v'), 
+                                  Stim.movie_refresh_freq,
                                   Stim.screen['resolution'],
                                   False)
 
@@ -195,7 +193,7 @@ if __name__=='__main__':
 
                 out.write(np.array(255*np.rot90(data, k=1),
                                    dtype='uint8'))
-                t+= 1./args.fps
+                t+= 1./Stim.movie_refresh_freq
 
             print('\n [ok] video file saved in: "%s" \n ' % protocol_folder)
             out.release()

@@ -24,7 +24,8 @@ dependencies = [
     "pyqt5.sip",
     "pyqtgraph",
     "pyqtdarktheme",
-    "opencv-python-headless",
+    "opencv-python",
+    "opencv-contrib-python",
     "pyqt5",
     "openpyxl",
 ]

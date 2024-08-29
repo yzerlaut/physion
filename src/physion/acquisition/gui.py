@@ -33,8 +33,6 @@ def multimodal(self,
     # to be used through multiprocessing.Process:
     self.runEvent = multiprocessing.Event() # to turn on/off recordings 
     self.runEvent.clear()
-    self.readyEvent = multiprocessing.Event() # to tell of buffering finished
-    self.readyEvent.clear()
     self.quitEvent = multiprocessing.Event()
     self.quitEvent.clear()
     self.manager = multiprocessing.Manager() # to share a str across processes
@@ -48,7 +46,6 @@ def multimodal(self,
     self.screen, self.stop_flag = None, False
     self.FaceCamera_process = None
     self.RigCamera_process = None
-    self.VisualStim_process = None
     self.RigView_process = None
     self.params_window = None
 
@@ -220,7 +217,7 @@ def multimodal(self,
     load_settings(self)
 
     if self.animate_buttons:
-        self.runButton.setEnabled(True)
+        self.runButton.setEnabled(False)
         self.stopButton.setEnabled(False)
 
 def build_NWB_for_last():

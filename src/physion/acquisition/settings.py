@@ -53,7 +53,10 @@ def update_config(self):
         self.subjectBox.clear()
         self.subjectBox.addItems(self.subject_list)
 
-        # now update screen 
+        if not self.stopButton.isEnabled():
+            self.runButton.setEnabled(True)
+
+     # now update screen 
         # if 'Screen' in self.config:
             # self.screenBox.setCurrentText(self.config['Screen'])
 

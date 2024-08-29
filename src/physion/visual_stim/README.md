@@ -1,6 +1,6 @@
 # Visual stimulation
 
-The stimulus presentation relies on the [PsychoPy module](https://www.psychopy.org) to buffer images on the graphics card.
+The stimulus presentation relies on `PyQt5` (QMultimedia module) for the display on the screen.
 
 The custom code for the set of stimuli lies in the ["main.py" script](./main.py) and in the ["stimuli/" folder](./stimuli).
 
@@ -21,13 +21,13 @@ The syntax for a single stimulus with parameter variations is the following:
   "Presentation": "Stimuli-Sequence",
   "Stimulus": "center-drifting-grating",
   "Screen": "Dell-2020",
-  "movie_refresh_freq":20,
-  "presentation-duration": 3.0,
-  "presentation-blank-screen-color": 0,
+  "movie_refresh_freq":30,
+  "units":"cm",
+  "presentation-blank-screen-color": 0.5,
   "presentation-prestim-period": 6.0,
   "presentation-poststim-period": 6.0,
   "presentation-interstim-period": 6.0,
-  "starting-index": 0,
+  "presentation-duration": 3.0,
   "angle-1": 0.0,
   "angle-2": 270.0,
   "N-angle": 4,
@@ -72,7 +72,9 @@ Multiprotocols are built as a list of single protocols with the following syntax
   "presentation-prestim-period": 3,
   "presentation-poststim-period": 3,
   "presentation-interstim-period": 3,
-  "Screen": "Dell-2020"
+  "Screen": "Dell-2020",
+  "movie_refresh_freq":30,
+  "units":"cm"
 }
 ```
 
@@ -85,10 +87,8 @@ This is achieved via the following command:
 python -m physion.visual_stim.build physion/acquisition/protocols/drifting-gratings.json
 ```
 
-One can then test the display of the protocol with the following command: 
-```
-python -m physion.visual_stim.main physion/acquisition/protocols/drifting-gratings.json --speed 1 --tstop 30
-```
+The generated movie (either `movie.mp4` or `movie.wmv` depending on the platform) is available at the location `physion/acquisition/protocols/movies/drifting-gratings/movie.wmv`.
+
 
 ## Mouse visual field and screen position
 
@@ -98,6 +98,12 @@ The setup corresponds to the following setting:
   <img src="../../../docs/visual_stim/visual-field.svg" width="60%" />
 </p>
 
+The calculation using the spherical coordinates of angular view:
+<p align="center">
+  <img src="../../../docs/visual_stim/coordinates.svg" width="60%" />
+</p>
+
+into screen positions is available on the [VisualStim-design notebook](../../../notebooks/visual_stim/Visual-Stim-Design.ipynb).
 
 ## Gamma correction
 

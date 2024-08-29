@@ -1,22 +1,13 @@
 """
 class for the visual stimulation
-
-- test with :
-python -m physion.visual_stim.main physion/acquisition/protocols/drifting-gratings.json
-
-N.B. Psychopy has colors between -1 (black) and +1 (white)
 """
+
 import numpy as np
 import itertools
 import os
 import pathlib
 import time
 import json
-
-try:
-    from psychopy import visual, core
-except ModuleNotFoundError:
-    pass # should be able to use it without psychopy
 
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
@@ -32,6 +23,7 @@ class visual_stim:
                  demo=False):
         """
         """
+
         self.protocol = protocol
 
         # initialize screen parameters
@@ -40,40 +32,23 @@ class visual_stim:
         self.gamma = self.screen['gamma_correction']['gamma']
         self.blank_color=self.gamma_corrected_lum(\
                 2*self.protocol['presentation-blank-screen-color']-1)
+        self.movie_refresh_freq = self.protocol['movie_refresh_freq']
+
+        # fix the unit system
+        if 'units' in self.protocol:
+            self.units = self.protocol['units']
+        else:
+            self.units = 'lin-deg' # convention < 08/2024
 
         if demo or (('demo' in self.protocol) and self.protocol['demo']):
-            # --------------------- #
-            #  ---- DEMO MODE ---- ##    we override the parameters
-            # --------------------- #
-            sr0, sr1 = self.screen['resolution']
-            self.screen['resolution'] = (800, int(800*sr1/sr0))
-            self.screen['screen_id'] = 0
             self.screen['fullscreen'] = False
 
         # then we can initialize the angle
         self.set_angle_meshgrid()
-        # and the screen presentation if need
-        if not ('no-window' in self.protocol):
-            self.init_screen_presentation()
 
         ### INITIALIZE EXP ###
         if not (self.protocol['Presentation']=='multiprotocol'):
             self.init_experiment(protocol, keys)
-
-
-    ################################################
-    ###  Initialize the PsychoPy window         ####
-    ################################################
-
-    def init_screen_presentation(self):
-
-        self.win = visual.Window(self.screen['resolution'],
-                                 fullscr=self.screen['fullscreen'],
-                                 units='pix',
-                                 screen=1 if (('Rig' in self.protocol) and\
-                                         ('A1' in self.protocol['Rig'])) else 2,
-                                 checkTiming=(os.name=='posix'), # for os x
-                                 color=self.blank_color)
 
 
     ################################
@@ -90,31 +65,70 @@ class visual_stim:
     #  ---       Geometry      --- #
     ################################
 
-    def cm_to_angle(self, value):
-        return 180./np.pi*np.arctan(value/self.screen['distance_from_eye'])
-
-    def pix_to_angle(self, value):
-        return self.cm_to_angle(value/self.screen['resolution'][0]*self.screen['width'])
-
     def set_angle_meshgrid(self):
         """
-        #  ------- for simplicity -------  #
-        # we linearize the arctan function #
         """
-        dAngle_per_pix = self.pix_to_angle(1.)
 
-        x, z = np.meshgrid(dAngle_per_pix*(\
-                np.arange(self.screen['resolution'][0])-\
-                    self.screen['resolution'][0]/2.),
-                           dAngle_per_pix*(\
-                np.arange(self.screen['resolution'][1])-\
-                    self.screen['resolution'][1]/2.),
-                           indexing='xy')
-        self.x, self.z = x.T, z.T
+        # we start from the real pixel Cartesian coordinates on the screen
+        widths, heights = np.meshgrid(\
+                             np.linspace(-self.screen['width']/2., 
+                                         self.screen['width']/2., 
+                                         self.screen['resolution'][0]),
+                             np.linspace(-self.screen['height']/2., 
+                                          self.screen['height']/2., 
+                                          self.screen['resolution'][1]),
+                                      indexing='xy')
+        # we transpose given our coordinate system:
+        self.widths, self.heights = widths.T, heights.T
 
-    def angle_to_pix(self, angle):
-        # using the above linear approx, the relationship is just the inverse:
-        return angle/self.pix_to_angle(1.)
+        self.mask = np.ones(self.widths.shape, dtype=bool) # stim mask, True by default
+
+        if self.units=='cm':
+
+            # we convert to angles in the x and z directions
+            self.x = np.arctan(self.widths/self.screen['distance_from_eye'])
+            self.z = np.arctan(self.heights*np.cos(self.x)/self.screen['distance_from_eye'])
+
+        elif self.units=='deg':
+
+            altitudeMax = np.arctan(self.screen['height']/2./self.screen['distance_from_eye'])
+            azimuthMax = self.screen['resolution'][0]\
+                                /self.screen['resolution'][1]*altitudeMax
+
+            x, z = np.meshgrid(\
+                         np.linspace(-azimuthMax, azimuthMax,
+                                     self.screen['resolution'][0]),
+                         np.linspace(-altitudeMax, altitudeMax,
+                                      self.screen['resolution'][1]),
+                                  indexing='xy')
+            self.x, self.z = x.T, z.T
+
+            self.widths = self.screen['distance_from_eye']*np.tan(self.x)
+            self.heights = self.screen['distance_from_eye']*np.tan(self.z)/np.cos(self.x)
+
+            self.mask = (np.abs(self.widths)<=self.screen['width']/2.) &\
+                            (np.abs(self.heights)<=self.screen['height']/2.)
+
+        elif self.units=='lin-deg':
+
+            # OLD STRATEGY --> deprecated >08/2024
+            # we linearize the angle
+            dAngle_per_pix = np.arctan(
+                    1./self.screen['resolution'][0]*self.screen['width']\
+                    /self.screen['distance_from_eye'])
+            x, z = np.meshgrid(dAngle_per_pix*(\
+                                    np.arange(self.screen['resolution'][0])-\
+                                        self.screen['resolution'][0]/2.),
+                               dAngle_per_pix*(\
+                                    np.arange(self.screen['resolution'][1])-\
+                                        self.screen['resolution'][1]/2.),
+                                       indexing='xy')
+            self.x, self.z = x.T, z.T
+
+
+        # convert back to angles in degrees
+        self.x *= 180./np.pi
+        self.z *= 180./np.pi
 
     # some general grating functions
     def compute_rotated_coords(self, angle,
@@ -122,8 +136,11 @@ class visual_stim:
         return (self.x-xcenter)*np.cos(angle/180.*np.pi)+(self.z-zcenter)*np.sin(angle/180.*np.pi)
 
     def compute_grating(self, xrot,
-                        spatial_freq=0.1, contrast=1, time_phase=0.):
-        return contrast*(1+np.cos(np.pi/2.+2*np.pi*(spatial_freq*xrot-time_phase)))/2.
+                        spatial_freq=0.1, 
+                        time_phase=0.,
+                        phase_shift_Deg=90.):
+        return (1+np.cos(phase_shift_Deg*np.pi/180.+\
+                            2*np.pi*(spatial_freq*xrot-time_phase)))/2.
 
     ################################
     #  ---  Draw Stimuli       --- #
@@ -134,6 +151,7 @@ class visual_stim:
                           radius=10,
                           spatial_freq=0.1,
                           contrast=1.,
+                          phase_shift_Deg=0.,
                           time_phase=0.,
                           xcenter=0,
                           zcenter=0):
@@ -146,11 +164,10 @@ class visual_stim:
 
         full_grating = self.compute_grating(xrot,
                                             spatial_freq=spatial_freq,
-                                            contrast=1,
-                                            time_phase=time_phase)-0.5
+                                            time_phase=time_phase,
+                                            phase_shift_Deg=phase_shift_Deg)-0.5
 
         image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
-
 
 
     def add_gaussian(self, image,
@@ -288,10 +305,12 @@ class visual_stim:
                             protocol['presentation-poststim-period']
 
 
-    def prepare_stimProps_tables(self, dt, 
+    def prepare_stimProps_tables(self,
                                  verbose=True):
             if verbose:
                 tic = time.time()
+
+            dt = 1./self.movie_refresh_freq
             # build time axis
             #               add 2 seconds at the end for the end-stim flag
             t = np.arange(int((2+self.tstop)/dt))*dt 
@@ -310,121 +329,8 @@ class visual_stim:
             # flag for end of stimulus
             self.next_index_table[t>=self.experiment['time_stop'][-1]] = -1
             if verbose:
-                print(' [ok] stim tables initialisation took: %.2f' % (\
+                print('[ok] stim tables initialisation took: %.2f' % (\
                         time.time()-tic)) 
-
-    ##########################################################
-    #############          CLOSING           #################
-    ##########################################################
-    def close(self):
-        print('\n')
-        print('----------------------------------------')
-        print('       CLOSING THE VISUAL STIMULATION   ')
-        print('----------------------------------------')
-        self.win.close()
-        core.quit()
-
-
-    ##########################################################
-    #############      PRESENTING STIMULI    #################
-    ##########################################################
-
-    def run(self, 
-            runEvent, readyEvent,
-            datafolder, movie_folder,
-            dt=10e-3,
-            verbose=False):
-        """
-        we launched the run function
-        Once everything is initialized here, it toggles the 'readyEvent' flag
-        Then it waits for the 'runEvent' flag to turn on in the interface
-
-        in between the two, stop it by turning off 'readyEvent'
-        """
-
-        # We prepare the stimulation
-        stim = visual.MovieStim(self.win, 
-                                os.path.join(movie_folder,
-                                             'movie.mp4'),
-                                size=self.screen['resolution'],
-                                units='pix')
-
-        self.prepare_stimProps_tables(dt)
-        readyEvent.set()
-
-        # waiting for the external trigger [...]
-        while not runEvent.is_set():
-
-            if verbose:
-                print('waiting for the external trigger [...]')
-            time.sleep(0.05)
-
-        ##########################################
-        # --> from here external trigger launched  (now runEvent=True)
-
-        ##########################################################
-        ###               RUN (while) LOOP                    ####
-        ##########################################################
-
-        current_index= -1 # initialize the stimulation index
-        print('\n')
-        print('--------------------------------------')
-        print('     RUNNING VISUAL-STIM PROTOCOL              ')
-        print('--------------------------------------\n')
-
-        # we can start the NIdaq recording
-        readyEvent.set()
-
-        t0 = time.time()
-        stim.play(log=verbose)
-
-        while not os.path.isfile(os.path.join(datafolder.get(), 'NIdaq.start.npy'))\
-                and ((time.time()-t0)<3.):
-            # we wait for the NIdaq initialisation to be done
-            time.sleep(0.05)
-
-        if os.path.isfile(os.path.join(datafolder.get(), 'NIdaq.start.npy')):
-            t0 = np.load(os.path.join(datafolder.get(), 'NIdaq.start.npy'))[0]
-        else:
-            # otherwise 
-            t0 = time.time()
-
-
-        while runEvent.is_set():
-
-
-            stim.draw()
-            self.win.flip()
-
-            t = (time.time()-t0)
-            iT = int(t/dt)
-
-            if self.is_interstim[iT] and\
-                    (current_index<self.next_index_table[iT]):
-
-                # at each interstim, we re-align the stimulus presentation
-                stim.seek(t+0.15) # it takes ~150ms to shift the movie
-
-                # -*- now we update the stimulation display in the terminal -*-
-                protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
-                stim_index = self.experiment['index'][self.next_index_table[iT]]
-
-                # now we update the counter
-                current_index = self.next_index_table[iT]
-
-                print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (t/3600, (t%3600)/60, 
-                                                       (t%60), 100*((t%60)-int(t%60))),
-                      '- Running protocol of index %i/%i' %\
-                            (current_index+1, len(self.experiment['index'])),
-                      'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
-
-        runEvent.clear() # send the stop signal to all processes
-
-        print('--------------------------------------')
-        print(' [ok] protocol terminated successfully')
-        print('--------------------------------------')
-        self.close()
-
 
 
 
@@ -437,16 +343,6 @@ class visual_stim:
         print('to be implemented in child class')
         """
         return 0*self.x+0.5
-
-    def plot_stim_picture(self, episode,
-                          ax=None, label=None, vse=False):
-
-        ax = self.show_frame(episode,
-                             ax=ax,
-                             label=label,
-                             vse=vse)
-
-        return ax
 
     def get_prestim_image(self):
         if 'presentation-prestim-screen' in self.protocol:
@@ -487,11 +383,12 @@ class visual_stim:
 
     def show_frame(self, episode,
                    time_from_episode_start=0,
-                   label={'degree':10,
+                   label={'size':10, 'label':'10$^o$ ',
                           'shift_factor':0.02,
                           'lw':2, 'fontsize':12},
                    arrow=None,
                    vse=False,
+                   with_mask=False,
                    ax=None,
                    return_img=False):
         """
@@ -499,7 +396,7 @@ class visual_stim:
         display the visual stimulus at a given time in a given episode of a stimulation pattern
 
         --> optional with angular label (switch to None to remove)
-                   label={'degree':5,
+                   label={'size':5,label='5deg',
                           'shift_factor':0.02,
                           'lw':2, 'fontsize':12},
         --> optional with arrow for direction propagation (switch to None to remove)
@@ -514,12 +411,17 @@ class visual_stim:
         if ax==None:
             import matplotlib.pylab as plt
             fig, ax = plt.subplots(1,
-                                   figsize=(4,
-                                            4*self.screen['resolution'][1]/self.screen['resolution'][0]))
+                       figsize=(4,
+                                4*self.screen['resolution'][1]/self.screen['resolution'][0]))
 
-        img = ax.imshow(self.image_to_frame(self.get_image(episode,
-                                                time_from_episode_start=\
-                                                        time_from_episode_start),
+        image = self.get_image(episode,
+                                  time_from_episode_start=\
+                                           time_from_episode_start)
+
+        if with_mask:
+            image[~self.mask] = 1
+
+        img = ax.imshow(self.image_to_frame(image,
                                             psychopy_to_numpy=True),
                         extent=(0, self.screen['resolution'][0],
                                 0, self.screen['resolution'][1]),
@@ -528,19 +430,21 @@ class visual_stim:
                         origin='lower',
                         aspect='equal')
 
+
         if vse:
             self.vse = self.get_vse(episode)
             if self.vse is not None:
                 self.add_vse(ax, self.vse)
 
         ax.axis('off')
+        ax.axis('equal')
 
         if label is not None:
             nz, nx = self.x.shape
-            L, shift = nx/(self.x[-1][-1]-self.x[0][0])*label['degree'], label['shift_factor']*nx
+            L, shift = nx/(self.z.max()-self.z.min())*label['size'], label['shift_factor']*nx
             ax.plot([-shift, -shift], [-shift,L-shift], 'k-', lw=label['lw'])
             ax.plot([-shift, L-shift], [-shift,-shift], 'k-', lw=label['lw'])
-            ax.annotate('%.0f$^o$ ' % label['degree'], (-shift, -shift), 
+            ax.annotate(label['label'], (-shift, -shift), 
                         fontsize=label['fontsize'], ha='right', va='bottom')
 
         if return_img:
@@ -548,22 +452,34 @@ class visual_stim:
         else:
             return ax
 
-    def plot_stim_picture(self, episode, ax,
-                          label={'degree':20,
-                                 'shift_factor':0.02,
-                                 'lw':1, 'fontsize':10},
+    def plot_stim_picture(self, episode, 
+                          ax=None,
                           vse=False,
                           arrow={'length':20,
                                  'width_factor':0.05,
-                                 'color':'red'}):
+                                 'color':'red'},
+                          with_mask=False):
 
         """
         """
         tcenter = .5*(self.experiment['time_stop'][episode]-\
                       self.experiment['time_start'][episode])
 
-        ax = self.show_frame(episode, tcenter, ax=ax,
-                             label=label)
+        
+        if self.units in ['cm', 'lin-deg']:
+            label={'size':10/self.heights.max()*self.z.max(),
+                   'label':'10cm ',
+                   'shift_factor':0.02,
+                   'lw':1, 'fontsize':10}
+        else:
+            label={'size':20,'label':'20$^o$  ',
+                   'shift_factor':0.02,
+                   'lw':1, 'fontsize':10}
+
+        ax = self.show_frame(episode, tcenter, 
+                             ax=ax,
+                             label=label,
+                             with_mask=with_mask)
 
 
     def update_frame(self, episode, img,
@@ -591,20 +507,6 @@ class visual_stim:
 
 
 #####################################################
-##  ----      MOVIE STIMULATION REPLAY      --- #####
-#####################################################
-
-class movie_replay(visual_stim):
-    """ TO BE IMPLEMENTED """
-
-    def __init__(self, protocol):
-
-        super().__init__(protocol)
-
-    def run(self, parent):
-        pass
-
-#####################################################
 ##  ----         MULTI-PROTOCOLS            --- #####
 #####################################################
 
@@ -622,9 +524,7 @@ class multiprotocol(visual_stim):
             # we load a previously saved multiprotocol
             while 'Protocol-%i'%i in protocol:
                 subprotocol = {'Screen':protocol['Screen'],
-                               'Presentation':'',
-                               'demo':(('demo' in protocol) and protocol['demo']),
-                               'no-window':True}
+                               'Presentation':''}
                 for key in protocol:
                     if ('Protocol-%i-'%i in key):
                         nKey = key.replace('Protocol-%i-'%i, '')
@@ -643,9 +543,9 @@ class multiprotocol(visual_stim):
                                             protocol['Protocol-%i'%i])
                 with open(Ppath, 'r') as fp:
                     subprotocol = json.load(fp)
-                    subprotocol['Screen'] = protocol['Screen']
-                    subprotocol['no-window'] = True
-                    subprotocol['demo'] = (('demo' in protocol) and protocol['demo'])
+                    # properties inherited form the parent protocol:
+                    for key in ['Screen', 'units', 'movie_refresh_freq']:
+                        subprotocol[key] = protocol[key]
                     self.STIM.append(build_stim(subprotocol))
                     for key, val in subprotocol.items():
                         protocol['Protocol-%i-%s'%(i,key)] = val
@@ -750,89 +650,7 @@ class multiprotocol(visual_stim):
 
 def init_bg_image(cls, index):
     """ initializing an empty image"""
-    return 2*cls.experiment['bg-color'][index]-1.+0.*cls.x
+    return cls.experiment['bg-color'][index]+0.*cls.x
 
-def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
-    """ we use this function for each protocol initialisation"""
-    interval = cls.experiment['time_stop'][index]-cls.experiment['time_start'][index]
-    itend = np.max([1, int(security_factor*interval*refresh_freq)])
-    return np.arange(itend), np.arange(itend)/refresh_freq, []
-
-##############################################
-## to be used by the multiprocessing module ##
-##############################################
-
-def launch_VisualStim(protocol, 
-                      runEvent, readyEvent,
-                      datafolder, movie_folder):
-
-    demo = ('demo' in protocol) and protocol['demo']
-    stim = build_stim(protocol)
-    stim.run(runEvent, readyEvent,
-             datafolder, movie_folder)
-
-
-if __name__=='__main__':
-
-    ######################################
-    ####  visualize the stimulation   ####
-    ######################################
-
-    import argparse
-    parser=argparse.ArgumentParser()
-    parser.add_argument("protocol", 
-                        help="protocol a json file", 
-                        default='')
-    parser.add_argument('-s', "--speed", type=float,
-                        help="speed to visualize the stimulus (1. by default)", 
-                        default=1.)
-    parser.add_argument('-t', "--tstop", 
-                        type=float, default=15.)
-    parser.add_argument("--t0", 
-                        help="start time", 
-                        default=0.)
-    args = parser.parse_args()
-
-    ######################################
-    ####     test as a subprocess   ######
-    ######################################
-
-    import json, multiprocessing, tempfile
-    from ctypes import c_char_p
-    from physion.acquisition.tools import base_path
-    from physion.visual_stim.build import build_stim
-
-    manager = multiprocessing.Manager() # to share a str across processes
-    datafolder = manager.Value(c_char_p, tempfile.gettempdir())
-    runEvent = multiprocessing.Event()
-    runEvent.clear()
-    readyEvent = multiprocessing.Event()
-    readyEvent.clear()
-
-    with open(args.protocol, 'r') as fp:
-        protocol = json.load(fp)
-    protocol['demo'] = True
-
-    movie_folder = \
-        os.path.join(os.path.dirname(args.protocol), 'movies',
-            os.path.basename(args.protocol.replace('.json','')))
-
-    use_pre_buffering = True
-    VisualStim_process = multiprocessing.Process(target=launch_VisualStim,\
-            args=(protocol,
-                  runEvent, readyEvent,
-                  datafolder, movie_folder))
-    VisualStim_process.start()
-
-    # -- with use_prebuffering=True
-    while not readyEvent.is_set():
-        time.sleep(0.1)
-    print('\n buffering ready... --> launching stim ! ')
-    time.sleep(2)
-    runEvent.set()
-    time.sleep(args.tstop)
-    print(' stoping stim ')
-    runEvent.clear()
-    
 
 

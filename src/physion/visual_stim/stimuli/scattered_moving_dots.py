@@ -1,16 +1,13 @@
 import sys, pathlib
 import numpy as np
 
-from physion.visual_stim.main import visual_stim,\
-        init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 
 ####################################################
 ##  ----    SCATTERED MOVING DOTS          --- #####
 ####################################################
 
-params = {"movie_refresh_freq":5,
-          "presentation-duration":3,
-          # default param values:
+params = {"presentation-duration":3,
           "speed (deg/s)":60.,
           "size (deg)":4.,
           "spacing (deg)":10.,
@@ -148,3 +145,21 @@ class stim(visual_stim):
                                shift*np.cos(np.pi/180.*direction)*self.x.max()/3.]
 
             self.add_arrow(arrow, ax)
+
+if __name__=='__main__':
+
+    from physion.visual_stim.build import get_default_params
+
+    params = get_default_params('scattered-moving-dots')
+
+    import time
+    import cv2 as cv
+
+    Stim = stim(params)
+
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break

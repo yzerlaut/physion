@@ -1,4 +1,4 @@
-import os, json, time
+import os, json, time, sys
 import numpy as np
 import multiprocessing
 from PyQt5 import QtCore
@@ -10,13 +10,8 @@ from physion.acquisition.tools import base_path,\
         set_filename_and_folder
 from physion.acquisition import recordings
 
-try:
-    from physion.visual_stim.main import launch_VisualStim
-    from physion.visual_stim.main import build_stim as build_VisualStim
-except (ImportError, ModuleNotFoundError):
-    def launch_VisualStim(**args):
-        return None
-    # print(' /!\ Problem with the Visual-Stimulation module /!\ ')
+from physion.visual_stim.main import build_stim as build_VisualStim
+from physion.visual_stim.show import init_stimWindow
 
 try:
     from physion.hardware.NIdaq.main import Acquisition
@@ -39,8 +34,7 @@ except ModuleNotFoundError:
     from physion.hardware.Dummy.camera\
             import launch_Camera as launch_WebCam
 
-
-def init_visual_stim(self):
+def init_VisualStim(self):
 
     with open(os.path.join(base_path,
               'protocols', 'movies', 
@@ -73,17 +67,10 @@ def init_visual_stim(self):
     self.max_time = stim.experiment['time_stop'][-1]+\
             stim.experiment['time_start'][0]
 
-    """
-    the visual stimulation is launched as a background process
-    waiting to be launched with the "runEvent" flag
-    it should be launched only after the "readyEvent" is turned on
-    """
-    self.VisualStim_process = multiprocessing.Process(\
-            target=launch_VisualStim,\
-            args=(self.protocol,
-                  self.runEvent, self.readyEvent,
-                  self.datafolder, movie_folder))
-    self.VisualStim_process.start()
+    Format = 'wmv' if 'win' in sys.platform else 'mp4'
+    stim.movie_file = os.path.join(movie_folder, 'movie.%s' % Format)
+
+    return stim
 
 
 def run(self):
@@ -115,7 +102,6 @@ def run(self):
 
         print('')
         self.runEvent.clear() # off, the run command should turn it on
-        self.readyEvent.clear() # off
 
         # SET DATAFOLDER AND SUB-FOLDERS: acquisition/tools.py
         #     (creates FaceCamera-imgs, ... if necessary )
@@ -134,10 +120,10 @@ def run(self):
             self.statusBar.showMessage(\
                     '[...] initializing acquisition & stimulation')
             # ---- init visual stim ---- #
-            init_visual_stim(self) #        (this also sets "self.max_time")
-            # "readyEvent" will be turned on there
+            self.stim = init_VisualStim(self) # (this also sets "self.max_time")
+            init_stimWindow(self) # creates self.stimWin -> for stim display !
         else:
-            self.readyEvent.set()
+            self.stimWin = None
             self.statusBar.showMessage('[...] initializing acquisition')
 
         print('[ok] max_time of NIdaq recording set to: %.2dh:%.2dm:%.2ds' %\
@@ -182,23 +168,7 @@ def run(self):
         # saving all metadata after full initialization:
         self.save_experiment(self.metadata) 
 
-        if self.metadata['VisualStim']:
-            self.statusBar.showMessage('Acquisition & Stimulation ready !')
-        else:
-            self.statusBar.showMessage('Acquisition ready !')
-
-        # in case of visual stimulation, we wait for its initialization
-        while not self.readyEvent.is_set():
-            time.sleep(0.1)
-
-        # this launches the visual-stim preparation:
-        self.runEvent.set()  
-
-        # we wait for the visual-stim preparation:
-        while not self.readyEvent.is_set():
-            time.sleep(0.01)
-
-        # next NI-daq 
+        # next launching NI-daq 
         if self.acq is not None:
             self.acq.launch()
             self.t0 = self.acq.t0
@@ -207,15 +177,19 @@ def run(self):
             self.statusBar.showMessage('Stimulation running [...]')
             self.t0 = time.time()
 
-        # ========================
-        # ---- HERE IT RUNS [...]
-        # ========================
+        self.runEvent.set()
+        if self.stimWin is not None:
+            self.mediaPlayer.play()
+
         print('')
         print(' -> acquisition launched !  ')
         print('')
         print('                 running [...]')
         print('')
         self.run_update() # while loop
+        # ========================
+        # ---- HERE IT RUNS [...]
+        # ========================
 
         if self.animate_buttons:
             self.runButton.setEnabled(False)
@@ -280,6 +254,35 @@ def toggle_RigCamera_process(self):
 
 def run_update(self):
 
+    if self.protocolBox.currentText()!='None':
+
+        t = (time.time()-self.t0)
+        iT = int(t*self.stim.movie_refresh_freq)
+
+        if self.stim.is_interstim[iT] and\
+                (self.current_index<self.stim.next_index_table[iT]):
+
+            # we update the counter
+            self.current_index = self.stim.next_index_table[iT]
+
+            # at each interstim, we re-align the stimulus presentation
+            #self.mediaPlayer.pause()
+            self.mediaPlayer.setPosition(int(1e3*t))
+            #self.mediaPlayer.play()
+
+            # -*- now we update the stimulation display in the terminal -*-
+            protocol_id = self.stim.experiment['protocol_id'][\
+                                            self.stim.next_index_table[iT]]
+            stim_index = self.stim.experiment['index'][\
+                                            self.stim.next_index_table[iT]]
+
+            print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (\
+                    t/3600, (t%3600)/60, (t%60), 100*((t%60)-int(t%60))),
+                  '- Running protocol of index %i/%i' %\
+                        (self.current_index+1, 
+                         len(self.stim.experiment['index'])),
+                  'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
+
     # ----- online visualization here -----
     if (self.FaceCamera_process is not None) and\
                     (self.imgButton.currentText()=='FaceCamera'):
@@ -291,7 +294,7 @@ def run_update(self):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'RigCamera-imgs')))
         self.pCamImg.setImage(image.T)
-    
+
     # ----- while loop with qttimer object ----- #
     if self.runEvent.is_set() and ((time.time()-self.t0)<self.max_time):
         QtCore.QTimer.singleShot(1, self.run_update)
@@ -302,7 +305,6 @@ def run_update(self):
 def stop(self):
 
     # stop the display of visual stimulation (not the underlying process)
-    self.readyEvent.clear() # this will close the visStim, if initialized
     self.runEvent.clear()
 
     if self.acq is not None:
@@ -313,8 +315,10 @@ def stop(self):
         self.send_CaImaging_Stop_signal()
 
     self.statusBar.showMessage('acquisition/stimulation stopped !')
-    print(' -> acquisition stopped !  ------------------')
-    print('---------------------------------------------')
+    print('\n -> acquisition stopped !  \n')
+
+    if self.stimWin is not None:
+        self.stimWin.close()
 
     if self.animate_buttons:
         self.runButton.setEnabled(True)
