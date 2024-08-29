@@ -40,7 +40,7 @@ if CameraInterface is None:
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import get_config_list
-from physion.visual_stim.main import visual_stim, visual
+from physion.visual_stim.show import init_StimWindow
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path
@@ -162,8 +162,8 @@ def gui(self,
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - stim. period (s):'),
                     spec='large-left')
-    self.periodBox = QtWidgets.QLineEdit()
-    self.periodBox.setText('12')
+    self.periodBox = QtWidgets.QComboBox()
+    self.periodBox.addItems(['12', '6'])
     self.add_side_widget(tab.layout, self.periodBox, spec='small-right')
     
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - bar size (degree):'),
@@ -331,25 +331,23 @@ def get_patterns(self, protocol, angle, size,
 
 def run(self):
 
-    self.flip = False
-    
     self.Nrepeat = int(self.repeatBox.text()) #
-    self.period = float(self.periodBox.text()) # degree / second
-    self.bar_size = float(self.barBox.text()) # degree / second
-    self.dt = 1./float(self.freqBox.text())
-    self.flip_index=0
 
-    self.stim = visual_stim({"Screen": "Dell-2020",
+    # dummy stimulus
+    self.stim = visual_stim({"Screen": self.config['Screen'],
                              "Presentation": "Single-Stimulus",
                              "null (None)": 0,
+                             "fullscreen":self.demoBox.isChecked(),
                              "presentation-prestim-period":0,
                              "presentation-poststim-period":0,
                              "presentation-duration":self.period*self.Nrepeat,
                              "presentation-blank-screen-color": -1}, 
                              keys=['null'],
-                             demo=self.demoBox.isChecked())
 
-    # self.stim.blank_screen()
+    self.stim.movie_file = 
+
+    init_stimWindow(self)
+
 
     xmin, xmax = 1.15*np.min(self.stim.x), 1.15*np.max(self.stim.x)
     zmin, zmax = 1.2*np.min(self.stim.z), 1.2*np.max(self.stim.z)
