@@ -53,7 +53,8 @@ def update_config(self):
         self.subjectBox.clear()
         self.subjectBox.addItems(self.subject_list)
 
-        if not self.stopButton.isEnabled():
+        if hasattr(self, 'runButton') and hasattr(self, 'stopButton')\
+                and not self.stopButton.isEnabled():
             self.runButton.setEnabled(True)
 
      # now update screen 

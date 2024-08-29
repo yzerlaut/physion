@@ -39,8 +39,9 @@ if CameraInterface is None:
 
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
-from physion.acquisition.settings import get_config_list
-from physion.visual_stim.show import init_StimWindow
+from physion.acquisition.settings import get_config_list, update_config
+from physion.visual_stim.main import visual_stim
+from physion.visual_stim.show import init_stimWindow
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path
@@ -119,12 +120,6 @@ def gui(self,
     self.subjectBox = QtWidgets.QComboBox(self)
     self.subjectBox.activated.connect(self.update_subject)
     self.add_side_widget(tab.layout, self.subjectBox, spec='large-right')
-    # screen box
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('screen:'),
-                         spec='small-left')
-    self.screenBox = QtWidgets.QComboBox(self)
-    self.screenBox.addItems(list(SCREENS.keys()))
-    self.add_side_widget(tab.layout, self.screenBox, spec='large-right')
     
     get_config_list(self)
 
@@ -166,12 +161,6 @@ def gui(self,
     self.periodBox.addItems(['12', '6'])
     self.add_side_widget(tab.layout, self.periodBox, spec='small-right')
     
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - bar size (degree):'),
-                    spec='large-left')
-    self.barBox = QtWidgets.QLineEdit()
-    self.barBox.setText('10')
-    self.add_side_widget(tab.layout, self.barBox, spec='small-right')
-
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - spatial sub-sampling (px):'),
                     spec='large-left')
     self.spatialBox = QtWidgets.QLineEdit()
@@ -202,12 +191,15 @@ def gui(self,
     self.add_side_widget(tab.layout, self.liveButton)
     
     # ---  launching acquisition ---
-    self.acqButton = QtWidgets.QPushButton("-- RUN PROTOCOL -- ", self)
-    self.acqButton.clicked.connect(self.launch_intrinsic)
-    self.add_side_widget(tab.layout, self.acqButton, spec='large-left')
+    self.runButton = QtWidgets.QPushButton("-- RUN PROTOCOL -- ", self)
+    self.runButton.clicked.connect(self.launch_intrinsic)
+    self.add_side_widget(tab.layout, self.runButton, spec='large-left')
+    self.runButton.setEnabled(False)
     self.stopButton = QtWidgets.QPushButton(" STOP ", self)
     self.stopButton.clicked.connect(self.stop_intrinsic)
     self.add_side_widget(tab.layout, self.stopButton, spec='small-right')
+    self.runButton.setEnabled(False)
+    self.stopButton.setEnabled(False)
 
     # ========================================================
     #------------------- THEN MAIN PANEL   -------------------
@@ -303,54 +295,28 @@ def take_vasculature_picture(self):
         self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
 
     
-def get_patterns(self, protocol, angle, size,
-                 Npatch=30):
-
-    patterns = []
-
-    if protocol in ['left', 'right']:
-        z = np.linspace(-self.stim.screen['resolution'][1], self.stim.screen['resolution'][1], Npatch)
-        for i in np.arange(len(z)-1)[(1 if self.flip else 0)::2]:
-            patterns.append(visual.Rect(win=self.stim.win,
-                                        size=(self.stim.angle_to_pix(size),
-                                              z[1]-z[0]),
-                                        pos=(self.stim.angle_to_pix(angle), z[i]),
-                                        units='pix', fillColor=1))
-
-    if protocol in ['up', 'down']:
-        x = np.linspace(-self.stim.screen['resolution'][0], self.stim.screen['resolution'][0], Npatch)
-        for i in np.arange(len(x)-1)[(1 if self.flip else 0)::2]:
-            patterns.append(visual.Rect(win=self.stim.win,
-                                        size=(x[1]-x[0],
-                                              self.stim.angle_to_pix(size)),
-                                        pos=(x[i], self.stim.angle_to_pix(angle)),
-                                        units='pix', fillColor=1))
-
-    return patterns
-
-
 def run(self):
 
+    update_config(self)
     self.Nrepeat = int(self.repeatBox.text()) #
+    self.dt = 1./float(self.freqBox.text()) #
 
     # dummy stimulus
     self.stim = visual_stim({"Screen": self.config['Screen'],
                              "Presentation": "Single-Stimulus",
+                             "movie_refresh_freq": 30.0,
                              "null (None)": 0,
-                             "fullscreen":self.demoBox.isChecked(),
+                             "demo":self.demoBox.isChecked(),
+                             "fullscreen":~(self.demoBox.isChecked()),
                              "presentation-prestim-period":0,
                              "presentation-poststim-period":0,
                              "presentation-duration":self.period*self.Nrepeat,
                              "presentation-blank-screen-color": -1}, 
-                             keys=['null'],
-
-    self.stim.movie_file = 
-
-    init_stimWindow(self)
+                             keys=['null'])
 
 
-    xmin, xmax = 1.15*np.min(self.stim.x), 1.15*np.max(self.stim.x)
-    zmin, zmax = 1.2*np.min(self.stim.z), 1.2*np.max(self.stim.z)
+    xmin, xmax = np.min(self.stim.x), np.max(self.stim.x)
+    zmin, zmax = np.min(self.stim.z), np.max(self.stim.z)
 
     self.angle_start, self.angle_max, self.protocol, self.label = 0, 0, '', ''
     self.Npoints = int(self.period/self.dt)
@@ -385,14 +351,19 @@ def run(self):
                                                                 self.Npoints)\
                                                                 for n in range(self.Nrepeat)])
 
-    # initialize one episode:
-    self.iEp, self.t0_episode = 0, time.time()
-    self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
-
     save_intrinsic_metadata(self)
+
+    
+    self.iEp = 0
+    initialize_stimWindow(self)
+    
+    self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
+    self.t0_episode = time.time()
+
    
     print('acquisition running [...]')
     
+           
     self.update_dt_intrinsic() # while loop
 
 
@@ -410,29 +381,10 @@ def update_dt_intrinsic(self):
     if self.live_only:
 
         self.imgPlot.setImage(self.FRAMES[-1].T)
-        self.barPlot.setOpts(height=np.log(1+np.histogram(self.FRAMES[-1], bins=self.xbins)[0]))
+        self.barPlot.setOpts(height=np.log(1+np.histogram(self.FRAMES[-1],
+                                                          bins=self.xbins)[0]))
 
     else:
-
-        # update presented stim every X frame
-        self.flip_index += 1
-        if self.flip_index==3:
-
-            # find image time, here %period
-            self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
-
-            angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'][self.iTime]
-            patterns = get_patterns(self, self.STIM['label'][self.iEp%len(self.STIM['label'])],
-                                          angle, self.bar_size)
-            for pattern in patterns:
-                pattern.draw()
-            try:
-                self.stim.win.flip()
-            except BaseException:
-                pass
-            self.flip_index=0
-
-        self.flip = (False if self.flip else True) # flip the flag at each frame
 
         # in demo mode, we show the image
         if self.demoBox.isChecked():
@@ -442,16 +394,34 @@ def update_dt_intrinsic(self):
         if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
             if self.camBox.isChecked():
                 write_data(self) # writing data when over
-            self.t0_episode = time.time()
-            self.flip_index=0
+
             self.FRAMES, self.TIMES = [], [] # re init data
             self.iEp += 1
-            
+            initialize_stimWindow(self)
+            self.t0_episode = time.time()
 
     # continuing ?
     if self.running:
         QtCore.QTimer.singleShot(1, self.update_dt_intrinsic)
 
+def initialize_stimWindow(self):
+
+    if hasattr(self, 'stimWindow'):
+        # deleting the previous one
+        self.stimWindow.close()
+        
+    # re-initializing
+    protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
+    self.stim.movie_file = os.path.join(os.path.expanduser('~'),
+                                        'work', 'physion', 'src',
+                            'physion', 'acquisition', 'protocols',
+        'movies', 'flickering-bars-period%ss' % self.periodBox.currentText(),
+            '%s.wmv' % protocol)
+    print(self.stim.movie_file)
+
+    init_stimWindow(self)
+
+    self.mediaPlayer.play()
 
 def write_data(self):
 
@@ -501,9 +471,8 @@ def save_intrinsic_metadata(self):
 
     metadata = {'subject':str(self.subjectBox.currentText()),
                 'exposure':str(self.exposure),
-                'bar-size':str(self.barBox.text()),
                 'acq-freq':str(self.freqBox.text()),
-                'period':str(self.periodBox.text()),
+                'period':str(self.periodBox.currentText()),
                 'Nsubsampling':int(self.spatialBox.text()),
                 'Nrepeat':int(self.repeatBox.text()),
                 'imgsize':str(self.imgsize),
@@ -536,7 +505,7 @@ def launch_intrinsic(self, live_only=False):
         self.running = True
 
         # initialization of data
-        self.FRAMES, self.TIMES, self.flip_index = [], [], 0
+        self.FRAMES, self.TIMES = [], []
         self.img = get_frame(self)
         self.imgsize = self.img.shape
         self.imgPlot.setImage(self.img.T)
@@ -548,6 +517,8 @@ def launch_intrinsic(self, live_only=False):
             self.iEp, self.t0_episode = 0, time.time()
             self.update_dt_intrinsic() # while loop
 
+        self.runButton.setEnabled(False)
+        self.stopButton.setEnabled(True)
         
     else:
 
@@ -564,10 +535,13 @@ def stop_intrinsic(self):
         if (self.cam is not None) and not self.demoBox.isChecked():
             self.cam.disarm()
         self.running = False
-        if self.stim is not None:
-            self.stim.close()
+        if hasattr(self, 'stimWindow'):
+            self.stimWindow.close()
         if len(self.TIMES)>5:
-            print('average frame rate: %.1f FPS' % (1./np.mean(np.diff(self.TIMES))))
+            print('average frame rate: %.1f FPS' % (\
+                                1./np.mean(np.diff(self.TIMES))))
+        self.runButton.setEnabled(True)
+        self.stopButton.setEnabled(False)
     else:
         print('acquisition not launched')
 
@@ -577,7 +551,7 @@ def get_frame(self, force_HQ=False):
 
         self.core.snap_image()
         tagged_image = self.core.get_tagged_image()
-        #pixels by default come out as a 1D array. We can reshape them into an image
+        # pixels by default come out as a 1D array. We can reshape them into an image
         img = np.reshape(tagged_image.pix,
                          newshape=[tagged_image.tags['Height'],
                                    tagged_image.tags['Width']])
