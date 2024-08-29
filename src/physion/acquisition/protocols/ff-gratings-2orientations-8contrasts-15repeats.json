@@ -3,7 +3,7 @@
   "Stimulus": "center-grating",
   "Screen": "Dell-2020",
   "shuffling-seed": 1,
-  "movie_refresh_freq":30.,
+  "movie_refresh_freq":30.0,
   "units":"lin-deg",
   "presentation-duration": 2,
   "presentation-prestim-period": 4,

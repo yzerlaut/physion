@@ -183,10 +183,11 @@ if __name__=='__main__':
                     
                 # data in [0,1]
                 if (t>=tstart) and (t<tstop):
-                    data = (Stim.get_image(index, t-tstart)+1.)/2.
+                    data = Stim.gamma_correction(\
+                            Stim.get_image(index, t-tstart))
                 else:
-                    data = (Stim.blank_color*np.ones(\
-                                Stim.screen['resolution'])+1.)/2.
+                    data = Stim.blank_color*\
+                            np.ones(Stim.screen['resolution'])
 
                 # put the monitoring square
                 data = square.draw(data, t, tstart, tstop)
