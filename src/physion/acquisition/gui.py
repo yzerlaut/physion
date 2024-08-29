@@ -106,7 +106,7 @@ def multimodal(self,
     #------------------- THEN MAIN PANEL   -------------------
     ip, width = 0, 4
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Config **', self),
+        QtWidgets.QLabel(40*' '+'** Configuration **', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
@@ -188,7 +188,7 @@ def multimodal(self,
     self.pFace.addItem(self.pCamImg)
 
     # NOW MENU INTERACTION BUTTONS
-    ip, width = 2, 5
+    ip, width = 1, 5
     self.runButton = QtWidgets.QPushButton(' * START *')
     self.runButton.clicked.connect(self.run)
     tab.layout.addWidget(self.runButton,
@@ -202,7 +202,7 @@ def multimodal(self,
     for button in [self.runButton, self.stopButton]:
         button.setStyleSheet("font-weight: bold")
 
-    ip+=1
+    ip+=2
     tab.layout.addWidget(QtWidgets.QLabel(' FOV: '),
                          ip, 10, 1, 4)
     ip+=1
