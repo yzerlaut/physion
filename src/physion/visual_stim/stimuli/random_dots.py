@@ -17,20 +17,24 @@ params = {"movie_refresh_freq":30.,
     
 def compute_new_image_with_dots(cls, index,
                                 seed=0,
-                                away_from_edges_factor=2):
+                                away_from_edges_factor=3):
 
     np.random.seed(seed)
-    dot_size= cls.experiment['size'][index]
+    dot_size= int(cls.experiment['size'][index])
     Nx = int(cls.x.max()/dot_size)
     Nz = int(cls.z.max()/dot_size)
 
     # dot center positions
-    X = np.random.choice(np.arange(-Nx+away_from_edges_factor, 
+    xx, zz = np.meshgrid(np.arange(-Nx+away_from_edges_factor, 
                                    Nx+1-away_from_edges_factor)[::2],
-                         cls.experiment['ndots'][index], replace=False)
-    Z = np.random.choice(np.arange(-Nz+away_from_edges_factor, 
+                         np.arange(-Nz+away_from_edges_factor, 
                                    Nz+1-away_from_edges_factor)[::2],
-                         cls.experiment['ndots'][index], replace=False)
+                         indexing='ij')
+
+    ii = np.random.choice(np.arange(len(xx.flatten())),
+                         int(cls.experiment['ndots'][index]), replace=False)
+    X = xx.flatten()[ii]
+    Z = zz.flatten()[ii]
 
     img = init_bg_image(cls, index)
     for x, z in zip(X, Z):
@@ -65,7 +69,7 @@ class stim(visual_stim):
         new_seed = (1+self.experiment['seed'][index])**2+\
             int(time_from_episode_start*self.experiment['refresh'][index])
 
-        return compute_new_image_with_dots(self, index, seed=new_seed)
+        return compute_new_image_with_dots(self, index, seed=int(new_seed))
 
 if __name__=='__main__':
 
