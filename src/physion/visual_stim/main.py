@@ -305,10 +305,12 @@ class visual_stim:
                             protocol['presentation-poststim-period']
 
 
-    def prepare_stimProps_tables(self, dt, 
+    def prepare_stimProps_tables(self,
                                  verbose=True):
             if verbose:
                 tic = time.time()
+
+            dt = 1./self.movie_refresh_freq
             # build time axis
             #               add 2 seconds at the end for the end-stim flag
             t = np.arange(int((2+self.tstop)/dt))*dt 

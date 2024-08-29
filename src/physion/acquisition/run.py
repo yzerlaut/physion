@@ -102,7 +102,6 @@ def run(self):
 
         print('')
         self.runEvent.clear() # off, the run command should turn it on
-        self.readyEvent.clear() # off
 
         # SET DATAFOLDER AND SUB-FOLDERS: acquisition/tools.py
         #     (creates FaceCamera-imgs, ... if necessary )
@@ -267,9 +266,9 @@ def run_update(self):
             self.current_index = self.stim.next_index_table[iT]
 
             # at each interstim, we re-align the stimulus presentation
-            self.mediaPlayer.pause()
+            #self.mediaPlayer.pause()
             self.mediaPlayer.setPosition(int(1e3*t))
-            self.mediaPlayer.play()
+            #self.mediaPlayer.play()
 
             # -*- now we update the stimulation display in the terminal -*-
             protocol_id = self.stim.experiment['protocol_id'][\
@@ -284,7 +283,6 @@ def run_update(self):
                          len(self.stim.experiment['index'])),
                   'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
 
-    """
     # ----- online visualization here -----
     if (self.FaceCamera_process is not None) and\
                     (self.imgButton.currentText()=='FaceCamera'):
@@ -296,7 +294,6 @@ def run_update(self):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'RigCamera-imgs')))
         self.pCamImg.setImage(image.T)
-    """
 
     # ----- while loop with qttimer object ----- #
     if self.runEvent.is_set() and ((time.time()-self.t0)<self.max_time):
