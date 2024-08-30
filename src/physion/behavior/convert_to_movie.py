@@ -35,7 +35,7 @@ def transform_to_movie(folder,
 
     out.release()
 
-    np.save(os.path.join(folder, '%s-movie-report.npy' % subfolder),
+    np.save(os.path.join(folder, '%s-summary.npy' % subfolder),
             {'times':times,
              'FILES':FILES,
              'nframes':nframes,
