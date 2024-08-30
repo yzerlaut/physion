@@ -163,13 +163,16 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as red_channel_labelling
 
 
-    # -- File Transfer
     if not Acquisition:
+        # -- File Transfer
         from physion.utils.transfer.gui import transfer_gui,\
                 set_source_folder, set_destination_folder,\
                 run_transfer
-                
+        # -- Behavior to Movie Files conversion
+        from physion.behavior.convert_to_movie import behav_to_movie_gui,\
+                run_behav_to_movie
     else:
+        from physion.gui.parts import inactivated as behav_to_movie_gui
         from physion.gui.parts import inactivated as transfer_gui 
 
 

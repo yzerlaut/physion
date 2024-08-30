@@ -78,4 +78,6 @@ def build_menu(self):
     # --
     self.otherMenu.addAction('&Transfer Data',
                               self.transfer_gui)
+    self.otherMenu.addAction('&Convert Behavior to Movies',
+                              self.behav_to_movie_gui)
 
