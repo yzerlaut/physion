@@ -299,7 +299,8 @@ def run(self):
 
     update_config(self)
     self.Nrepeat = int(self.repeatBox.text()) #
-    self.dt = 1./float(self.freqBox.text()) #
+    self.period = int(self.periodBox.currentText()) # in s
+    self.dt = 1./float(self.freqBox.text()) # in s
 
     # dummy stimulus
     self.stim = visual_stim({"Screen": self.config['Screen'],
@@ -352,17 +353,14 @@ def run(self):
                                                                 for n in range(self.Nrepeat)])
 
     save_intrinsic_metadata(self)
-
     
     self.iEp = 0
     initialize_stimWindow(self)
     
     self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
     self.t0_episode = time.time()
-
    
     print('acquisition running [...]')
-    
            
     self.update_dt_intrinsic() # while loop
 
@@ -377,21 +375,26 @@ def update_dt_intrinsic(self):
         self.TIMES.append(time.time()-self.t0_episode)
         self.FRAMES.append(get_frame(self))
 
-
     if self.live_only:
 
         self.imgPlot.setImage(self.FRAMES[-1].T)
         self.barPlot.setOpts(height=np.log(1+np.histogram(self.FRAMES[-1],
                                                           bins=self.xbins)[0]))
-
     else:
+
+        tt = int(1e3*(self.t-self.t0_episode)) % int(1e3*self.period)
+        self.mediaPlayer.setPosition(tt)
+        if tt>int(1e3*self.period):
+            self.mediaPlayer.pause()
+            time.sleep(2*self.dt)
+            self.mediaPlayer.play()
 
         # in demo mode, we show the image
         if self.demoBox.isChecked():
             self.imgPlot.setImage(self.FRAMES[-1].T)
 
         # checking if not episode over
-        if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
+        if (self.t-self.t0_episode)>(self.period*self.Nrepeat):
             if self.camBox.isChecked():
                 write_data(self) # writing data when over
 
@@ -408,7 +411,7 @@ def initialize_stimWindow(self):
 
     if hasattr(self, 'stimWindow'):
         # deleting the previous one
-        self.stimWindow.close()
+        self.stimWin.close()
         
     # re-initializing
     protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
@@ -532,11 +535,11 @@ def live_intrinsic(self):
 
 def stop_intrinsic(self):
     if self.running:
+        self.running = False
+        if hasattr(self, 'stimWin'):
+            self.stimWin.close()
         if (self.cam is not None) and not self.demoBox.isChecked():
             self.cam.disarm()
-        self.running = False
-        if hasattr(self, 'stimWindow'):
-            self.stimWindow.close()
         if len(self.TIMES)>5:
             print('average frame rate: %.1f FPS' % (\
                                 1./np.mean(np.diff(self.TIMES))))
