@@ -113,9 +113,9 @@ if __name__=='__main__':
     parser.add_argument("protocol", 
                         help="protocol a json file", 
                         default='')
-    parser.add_argument('-f', "--force", type=int,
-                        help="Frame Per Seconds in the mp4 movie",
-                        default=30)
+    parser.add_argument("--wmv", 
+                        help="protocol a json file", 
+                        action="store_true")
     args = parser.parse_args()
 
     if os.path.isfile(args.protocol) and args.protocol.endswith('.json'):
@@ -161,7 +161,7 @@ if __name__=='__main__':
             square = MonitoringSquare(Stim)
 
             # prepare video file
-            Format = 'wmv' if 'win' in sys.platform else 'mp4'
+            Format = 'wmv' if (('win32' in sys.platform) or args.wmv) else 'mp4'
             out = cv.VideoWriter(os.path.join(protocol_folder, 'movie.%s' % Format),
                                   cv.VideoWriter_fourcc(*'mp4v'), 
                                   Stim.movie_refresh_freq,

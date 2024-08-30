@@ -85,7 +85,7 @@ if __name__=='__main__':
 
     valid = False
 
-    Format = 'wmv' if 'win' in sys.platform else 'mp4'
+    Format = 'wmv' if 'win32' in sys.platform else 'mp4'
     if os.path.isfile(os.path.join(args.protocol, 'movie.%s' % Format)) and\
         os.path.isfile(os.path.join(args.protocol, 'protocol.json')):
         valid = True
@@ -93,7 +93,7 @@ if __name__=='__main__':
     if not valid:
         print('')
         print(' /!\ protocol folder not valid /!\ ')
-        print('         it does not contain the protocol.json and movie.%sfiles' % Format)
+        print('         it does not contain the protocol.json and movie.%s files' % Format)
         print('')
 
     else:
