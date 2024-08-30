@@ -8,7 +8,7 @@ def init_stimWindow(self,
     """
     self.stimWin = QtWidgets.QWidget()
     # we prepare the stimulus table
-    self.stim.prepare_stimProps_tables()
+    self.stim.prepare_stimProps_tables(verbose=False)
     
     # Set window properties such as title, size, and icon
     if ('fullscreen' in self.stim.screen) and self.stim.screen['fullscreen']:

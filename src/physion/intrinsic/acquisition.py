@@ -48,6 +48,19 @@ from physion.acquisition.tools import base_path
 
 camera_depth = 12
 
+def init_thorlab_cam(self):
+    self.sdk = TLCameraSDK()
+    self.cam = self.sdk.open_camera(self.sdk.discover_available_cameras()[0])
+    # for software trigger
+    self.cam.frames_per_trigger_zero_for_unlimited = 0
+    self.cam.operation_mode = 0
+    print('\n [ok] Thorlabs Camera successfully initialized ! \n')
+    self.demo = False
+
+def close_thorlab_cam(self):
+    self.cam.dispose()
+    self.sdk.dispose()
+
 def gui(self,
         box_width=250,
         tab_id=0):
@@ -73,13 +86,7 @@ def gui(self,
     ### now trying the camera
     try:
         if CameraInterface=='ThorCam':
-            self.sdk = TLCameraSDK()
-            self.cam = self.sdk.open_camera(self.sdk.discover_available_cameras()[0])
-            # for software trigger
-            self.cam.frames_per_trigger_zero_for_unlimited = 0
-            self.cam.operation_mode = 0
-            print('\n [ok] Thorlabs Camera successfully initialized ! \n')
-            self.demo = False
+            init_thorlab_cam(self)
         if CameraInterface=='MicroManager':
             # we initialize the camera
             self.core = Core()
@@ -354,7 +361,7 @@ def run(self):
 
     save_intrinsic_metadata(self)
     
-    self.iEp = 0
+    self.iEp, self.iRepeat = 0, 0
     initialize_stimWindow(self)
     
     self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
@@ -367,12 +374,12 @@ def run(self):
 
 def update_dt_intrinsic(self):
 
-    self.t = time.time()
+    self.t = time.time()-self.t0_episode
 
     # fetch camera frame
     if self.camBox.isChecked():
 
-        self.TIMES.append(time.time()-self.t0_episode)
+        self.TIMES.append(self.t)
         self.FRAMES.append(get_frame(self))
 
     if self.live_only:
@@ -382,19 +389,23 @@ def update_dt_intrinsic(self):
                                                           bins=self.xbins)[0]))
     else:
 
-        tt = int(1e3*(self.t-self.t0_episode)) % int(1e3*self.period)
-        self.mediaPlayer.setPosition(tt)
-        if tt>int(1e3*self.period):
-            self.mediaPlayer.pause()
-            time.sleep(2*self.dt)
+        if int(1e3*self.t)/int(1e3*self.period) > self.iRepeat:
+            self.mediaPlayer.stop()
             self.mediaPlayer.play()
+            self.iRepeat += 1
+
+        tt = int(1e3*self.t) % int(1e3*self.period)
+        #print(tt/1e3, self.mediaPlayer.mediaStatus(), self.mediaPlayer.state(), )
+
+        self.mediaPlayer.setPosition(tt)
 
         # in demo mode, we show the image
         if self.demoBox.isChecked():
             self.imgPlot.setImage(self.FRAMES[-1].T)
 
         # checking if not episode over
-        if (self.t-self.t0_episode)>(self.period*self.Nrepeat):
+        if self.t>(self.period*self.Nrepeat):
+            self.stimWin.close()
             if self.camBox.isChecked():
                 write_data(self) # writing data when over
 
@@ -420,7 +431,6 @@ def initialize_stimWindow(self):
                             'physion', 'acquisition', 'protocols',
         'movies', 'flickering-bars-period%ss' % self.periodBox.currentText(),
             '%s.wmv' % protocol)
-    print(self.stim.movie_file)
 
     init_stimWindow(self)
 
@@ -536,6 +546,8 @@ def live_intrinsic(self):
 def stop_intrinsic(self):
     if self.running:
         self.running = False
+        if hasattr(self, 'mediaPlayer'):
+            self.mediaPlayer.stop()
         if hasattr(self, 'stimWin'):
             self.stimWin.close()
         if (self.cam is not None) and not self.demoBox.isChecked():
