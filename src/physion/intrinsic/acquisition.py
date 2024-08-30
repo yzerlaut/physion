@@ -429,7 +429,7 @@ def initialize_stimWindow(self):
     self.stim.movie_file = os.path.join(os.path.expanduser('~'),
                                         'work', 'physion', 'src',
                             'physion', 'acquisition', 'protocols',
-        'movies', 'flickering-bars-period%ss' % self.periodBox.currentText(),
+        'movies', 'intrinsic', 'flickering-bars-period%ss' % self.periodBox.currentText(),
             '%s.wmv' % protocol)
 
     init_stimWindow(self)

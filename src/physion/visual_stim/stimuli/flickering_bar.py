@@ -30,6 +30,7 @@ class stim(visual_stim):
                          keys=['bar-size',
                                'flicker-size', 
                                'flicker-freq',
+                               'bg-color',
                                'direction'])
 
     def get_image(self, episode, 
