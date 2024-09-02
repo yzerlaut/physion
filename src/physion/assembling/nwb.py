@@ -170,7 +170,9 @@ def build_NWB_func(args):
                                      original_freq=float(metadata['NIdaq-acquisition-frequency']),
                                      pre_smoothing=2./float(metadata['NIdaq-acquisition-frequency']),
                                      new_freq=args.photodiode_sampling)
-
+        if 'A1-2P' in metadata['Rig']:
+            Psignal *=-1 # reversing sign on the setup
+	
         VisualStim = np.load(os.path.join(args.datafolder,
                         'visual-stim.npy'), allow_pickle=True).item()
 
