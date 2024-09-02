@@ -382,6 +382,10 @@ def update_dt_intrinsic(self):
         self.TIMES.append(self.t)
         self.FRAMES.append(get_frame(self))
 
+    else:
+
+        time.sleep(0.05)
+
     if self.live_only:
 
         self.imgPlot.setImage(self.FRAMES[-1].T)
@@ -393,11 +397,10 @@ def update_dt_intrinsic(self):
             self.mediaPlayer.stop()
             self.mediaPlayer.play()
             self.iRepeat += 1
-
-        tt = int(1e3*self.t) % int(1e3*self.period)
-        #print(tt/1e3, self.mediaPlayer.mediaStatus(), self.mediaPlayer.state(), )
-
-        self.mediaPlayer.setPosition(tt)
+        else:
+            tt = int(1e3*self.t) % int(1e3*self.period)
+            print(tt/1e3, self.mediaPlayer.mediaStatus(), self.mediaPlayer.state(), )
+            self.mediaPlayer.setPosition(tt)
 
         # in demo mode, we show the image
         if self.demoBox.isChecked():
@@ -441,6 +444,8 @@ def write_data(self):
     filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])],\
                                                  int(self.iEp/len(self.STIM['label']))+1)
     
+    print('\n starting to write: "%s" [...] ' % filename)
+
     nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
                             'intrinsic',
                             datetime.datetime.utcnow(),
@@ -462,7 +467,6 @@ def write_data(self):
     
     # Write the data to file
     io = pynwb.NWBHDF5IO(os.path.join(self.datafolder, filename), 'w')
-    print('writing:', filename)
     io.write(nwbfile)
     io.close()
     print(filename, ' saved !')
