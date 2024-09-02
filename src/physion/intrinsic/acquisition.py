@@ -405,7 +405,7 @@ def update_dt_intrinsic(self):
 
         # checking if not episode over
         if self.t>(self.period*self.Nrepeat):
-            self.stimWin.close()
+
             if self.camBox.isChecked():
                 write_data(self) # writing data when over
 
