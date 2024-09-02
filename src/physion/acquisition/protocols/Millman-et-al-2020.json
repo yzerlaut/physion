@@ -8,6 +8,7 @@
   "presentation-prestim-period": 5.0,
   "presentation-poststim-period": 5.0,
   "presentation-interstim-period": 2.0,
+  "units":"cm",
   "starting-index": 0,
   "angle-1": 0.0,
   "angle-2": 315.0,

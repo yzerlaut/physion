@@ -5,7 +5,7 @@
   "movie_refresh_freq":30.0,
   "units":"cm",
   "Protocol-1": "subprotocols/size-tuning/size-tuning-protocol-loc-long.json",
-  "Protocol-2": "subprotocols/size-tuning/size-tuning-protocol-dep-long.json",
+  "Protocol-2": "subprotocols/size-tuning/size-tuning-protocol-log-dep-long.json",
   "presentation-prestim-period": 5.0,
   "presentation-poststim-period": 5.0,
   "presentation-interstim-period": 3.0,

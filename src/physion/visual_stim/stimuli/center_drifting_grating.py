@@ -12,7 +12,7 @@ params = {"presentation-duration":3,
           "y-center (deg)":0.,
           "size (deg)":4.,
           "angle (deg)":90,
-          "radius (deg)":80.,
+          "radius (deg)":5.,
           "speed (cycle/s)":1,
           "spatial-freq (cycle/deg)":0.04,
           "phase (deg)":0.,
@@ -40,15 +40,15 @@ class stim(visual_stim):
                   time_from_episode_start=0):
         img = init_bg_image(self, episode)
         self.add_grating_patch(img,
-                       angle=self.experiment['angle'][episode],
-                       radius=self.experiment['radius'][episode],
-                       spatial_freq=self.experiment['spatial-freq'][episode],
-                       contrast=self.experiment['contrast'][episode],
-                       xcenter=self.experiment['x-center'][episode],
-                       zcenter=self.experiment['y-center'][episode],
-                       phase_shift_Deg=self.experiment['phase'][episode]\
-                               if 'phase' in self.experiment else 90.,
-                       time_phase=self.experiment['speed'][episode]*time_from_episode_start)
+               angle=self.experiment['angle'][episode],
+               radius=self.experiment['radius'][episode],
+               spatial_freq=self.experiment['spatial-freq'][episode],
+               contrast=self.experiment['contrast'][episode],
+               xcenter=self.experiment['x-center'][episode],
+               zcenter=self.experiment['y-center'][episode],
+               phase_shift_Deg=self.experiment['phase'][episode]\
+                       if 'phase' in self.experiment else 90.,
+               time_phase=self.experiment['speed'][episode]*time_from_episode_start)
         return img
 
     """
