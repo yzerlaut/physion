@@ -16,7 +16,7 @@ def init_stimWindow(self,
             self.stimWin.setGeometry(-400, 400, 600, int(9./16*600))
             self.stimWin.showFullScreen()
         elif 'A1-2P' in self.config['Rig']:
-            self.stimWin.setGeometry(1600, 400, 600, int(9./16*600))
+            self.stimWin.setGeometry(2000, 400, 600, int(9./16*600))
             self.stimWin.showFullScreen()
     else:
         self.stimWin.setGeometry(\
