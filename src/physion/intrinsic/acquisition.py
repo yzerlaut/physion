@@ -428,7 +428,7 @@ def initialize_stimWindow(self):
     protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
     self.stim.movie_file = os.path.join(os.path.expanduser('~'),
                                         'work', 'physion', 'src',
-                            'physion', 'acquisition', 'protocols',
+         	                  'physion', 'acquisition', 'protocols',
         'movies', 'intrinsic', 'flickering-bars-period%ss' % self.periodBox.currentText(),
             '%s.wmv' % protocol)
 

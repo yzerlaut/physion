@@ -55,14 +55,14 @@ bg_color = 0.2
 for period in [6, 12]:
     for direction in ['up', 'down', 'left', 'right']:
         # create the directory
-        if not os.path.isdir('physion/acquisition/protocols/movies/intrinsic/flickering_bars-period%is' % period):
-            os.mkdir('physion/acquisition/protocols/movies/intrinsic/flickering_bars-period%is' % period)
+        if not os.path.isdir('physion/acquisition/protocols/movies/intrinsic/flickering-bars-period%is' % period):
+            os.mkdir('physion/acquisition/protocols/movies/intrinsic/flickering-bars-period%is' % period)
         # write the json
         with open('temp.json', 'w') as f:
             f.write(build_json(direction, period=period, bg_color=bg_color))
         # build the movie
         os.system('python -m physion.visual_stim.build temp.json --wmv')
-        os.rename('movies/temp/movie.wmv', 'physion/acquisition/protocols/movies/intrinsic/flickering_bars-period%is/%s.wmv' % (period, direction))
+        os.rename('movies/temp/movie.wmv', 'physion/acquisition/protocols/movies/intrinsic/flickering-bars-period%is/%s.wmv' % (period, direction))
 
     os.remove('temp.json')
 shutil.rmtree('movies')
