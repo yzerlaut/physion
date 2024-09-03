@@ -3,6 +3,7 @@ import numpy as np
 import pandas, pynwb, PIL
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
+from dateutil.tz import tzlocal
 
 #################################################
 ###        Select the Camera Interface    #######
@@ -454,8 +455,8 @@ def write_data(self):
 
     nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
                             'intrinsic',
-                            datetime.datetime.utcnow(),
-                            file_create_date=datetime.datetime.utcnow())
+                            datetime.datetime.utcnow().replace(tzinfo=tzlocal()),
+                            file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
 
     # Create our time series
     angles = pynwb.TimeSeries(name='angle_timeseries',
