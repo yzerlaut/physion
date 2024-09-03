@@ -257,7 +257,7 @@ def take_fluorescence_picture(self):
         im = PIL.Image.fromarray(img)
         im.save(filename)
         # np.save(filename.replace('.tif', '.npy'), img)
-        print('fluorescence image, saved as: %s ' % filename)
+        print(' [ok] fluorescence image, saved as: %s ' % filename)
 
         # then keep a version to store with imaging:
         self.fluorescence_img = img
@@ -289,7 +289,7 @@ def take_vasculature_picture(self):
         im = PIL.Image.fromarray(img)
         im.save(filename)
         # np.save(filename.replace('.tif', '.npy'), img)
-        print('vasculature image, saved as: %s' % filename)
+        print(' [ok] vasculature image, saved as: %s' % filename)
 
         # then keep a version to store with imaging:
         self.vasculature_img = img
@@ -367,7 +367,7 @@ def run(self):
     self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
     self.t0_episode = time.time()
    
-    print('acquisition running [...]')
+    print('\n   -> acquisition running [...]')
            
     self.update_dt_intrinsic() # while loop
 
@@ -389,15 +389,20 @@ def update_dt_intrinsic(self):
                                                           bins=self.xbins)[0]))
     else:
 
-        if int(1e3*self.t)/int(1e3*self.period) > self.iRepeat:
-            self.mediaPlayer.stop()
-            self.mediaPlayer.play()
-            self.iRepeat += 1
-
         tt = int(1e3*self.t) % int(1e3*self.period)
         #print(tt/1e3, self.mediaPlayer.mediaStatus(), self.mediaPlayer.state(), )
 
-        self.mediaPlayer.setPosition(tt)
+        if int(1e3*self.t)/int(1e3*self.period) > self.iRepeat:
+            #print('re-init stim')
+            self.mediaPlayer.stop()
+            self.mediaPlayer.setPosition(0)
+            self.mediaPlayer.play()
+            self.iRepeat += 1
+
+        if (self.mediaPlayer.mediaStatus()!=6) and (self.t<(self.period*self.Nrepeat)):
+            # print(' relaunching ! ')
+            self.mediaPlayer.setPosition(tt) 
+            self.mediaPlayer.play()
 
         # in demo mode, we show the image
         if self.demoBox.isChecked():
@@ -438,6 +443,7 @@ def initialize_stimWindow(self):
 
 def write_data(self):
 
+    print('\n   starting to write "%s" [...]' % filename)
     filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])],\
                                                  int(self.iEp/len(self.STIM['label']))+1)
     
@@ -457,15 +463,13 @@ def write_data(self):
                                      data=np.array(self.FRAMES, dtype=np.uint16),
                                      unit='a.u.',
                                      timestamps=np.array(self.TIMES, dtype=np.float64))
-
     nwbfile.add_acquisition(images)
     
     # Write the data to file
     io = pynwb.NWBHDF5IO(os.path.join(self.datafolder, filename), 'w')
-    print('writing:', filename)
     io.write(nwbfile)
     io.close()
-    print(filename, ' saved !')
+    print(' [ok] ', filename, ' saved !\n')
     
 
 def save_intrinsic_metadata(self):
