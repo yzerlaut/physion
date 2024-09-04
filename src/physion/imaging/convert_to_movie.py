@@ -154,19 +154,10 @@ def reconvert_to_tiffs(TS_folder):
 
         nframes = len(summary['Frames_succesfully_in_movie'])
         for i, success in enumerate(\
-                summary['Frames_succesfully_in_movie'][:10]):
+                summary['Frames_succesfully_in_movie']):
 
             if success:
                 ret, frame = cap.read()
-                """
-                frame = np.exp(frame*np.log(2**16)/2**8)/2**16
-                plt.imsave(os.path.join(TS_folder,
-                                     xml[chan]['tifFile'][i]),
-                           frame,
-                           cmap=plt.cm.gray,
-                           format='tiff',
-                           vmin=0, vmax=1.)
-                """
                 frame = np.exp(frame*np.log(2**16)/2**8)
                 frame = np.array(frame[:,:,0], dtype='uint16')
                 im = Image.fromarray(frame)
