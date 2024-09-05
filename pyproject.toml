@@ -26,6 +26,7 @@ dependencies = [
     "pyqtdarktheme",
     "opencv-python",
     "opencv-contrib-python",
+    "ffmpeg-python",
     "pyqt5",
     "openpyxl",
 ]
@@ -36,7 +37,7 @@ where = ["src"]
 "physion.acquisition.protocols" = ["*.json"]
 "physion.acquisition.configs" = ["*.json"]
 "physion.acquisition.interventions" = ["*.json"]
-"physion.acquisition.subjects" = ["*.csv"]
+"physion.acquisition.subjects" = ["*.xlsx"]
 
 [project.urls]
 "Homepage" = "https://github.com/yzerlaut/physion"

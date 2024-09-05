@@ -1,12 +1,17 @@
 """
-convert to 8-bit mp4
+Two compression options:
 
-log the data to have a good resolution at low fluorescence
+    - 1) lossless 16-bit, using ffmpeg
+
+    - 2) convert to 8-bit mp4
+        log the data to have a good resolution at low fluorescence
+
 """
 import sys, shutil, os, pathlib
 import cv2 as cv
 from PIL import Image
 import numpy as np
+import ffmpeg
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 
@@ -63,28 +68,36 @@ def run_imaging_to_movie(self):
                            delete_raw=self.rm.isChecked())
 
 
-def loop_over_dayfolder(day_folder):
+def convert_to_16bit_avi(TS_folder,
+                    delete_raw=False):
 
-    for folder in [f for f in os.listdir(day_folder) \
-                        if (os.path.isdir(os.path.join(day_folder, f)) and
-                            len(f.split('-'))==3)]:
+    xml_file = get_files_with_extension(TS_folder, extension='.xml')[0]
+    xml = bruker_xml_parser(xml_file)
 
-        f = os.path.join(day_folder, folder)
+    Ly, Lx = int(xml['settings']['linesPerFrame']),\
+                    int(xml['settings']['pixelsPerLine'])
 
-        if os.path.isdir(os.path.join(f, 'FaceCamera-imgs')):
-            transform_to_movie(f, 'FaceCamera')
+    print('\n Analyzing: "%s" ' % TS_folder)
 
-        if os.path.isdir(os.path.join(f, 'RigCamera-imgs')):
-            transform_to_movie(f, 'RigCamera')
+    for chan in xml['channels']:
+   
+        print('    --> Channel: ', chan)
+
+        vid_name = os.path.join(TS_folder, '%s.avi' % chan.replace(' ','-'))
+
+        cmd  = 'ffmpeg -i %s' % os.path.join(TS_folder,\
+                    xml[chan]['tifFile'][0].replace('000001', '%06d'))+\
+                    ' -c:v ffv1 '+vid_name
+        print('\nBuilding the video: "%s" ' % vid_name)
+        print(cmd)
+        # os.system(cmd)
+
+        if delete_raw:
+            for i, f in enumerate(FILES):
+                img = os.remove(os.path.join(TS_folder, f))
 
 
-def find_subfolders(folder, cam='FaceCamera'):
-    return [f[0].replace('%s-imgs' % cam, '')\
-                for f in os.walk(folder)\
-                    if f[0].split(os.path.sep)[-1]=='%s-imgs' % cam]
-
-def convert_imaging(TS_folder,
-                    subfolder='FaceCamera',
+def convert_to_log8bit_mp4(TS_folder,
                     delete_raw=False):
 
     Format = 'wmv' if ('win32' in sys.platform) else 'mp4'
@@ -140,18 +153,16 @@ def convert_imaging(TS_folder,
         print(' [ok] done !')
 
 
-def reconvert_to_tiffs(TS_folder):
+def reconvert_to_tiffs_from_log8bit(vid_name):
 
-    Format = 'wmv' if ('win32' in sys.platform) else 'mp4'
-
-    xml_file = get_files_with_extension(TS_folder, extension='.xml')[0]
+    xml_file = get_files_with_extension(os.path.dirname(vid_name),
+                                        extension='.xml')[0]
     xml = bruker_xml_parser(xml_file)
 
     for chan in xml['channels']:
 
-        vid_name = os.path.join(TS_folder, 'LOG-%s.%s' %\
-                                (chan.replace(' ','-'), Format))
-        summary = np.load(vid_name.replace('.%s'%Format, '-summary.npy'),
+        summary = np.load(\
+          vid_name.replace('.mp4','-summary.npy').replace('.wmv','-summary.npy'),
                           allow_pickle=True).item()
 
         cap = cv.VideoCapture(vid_name)
@@ -167,11 +178,51 @@ def reconvert_to_tiffs(TS_folder):
                 # convert to 16-bit
                 frame = np.array(frame[:,:,0], dtype='uint16')
                 im = Image.fromarray(frame)
-                im.save(os.path.join(TS_folder,
+                # write as 16bit tiff
+                im.save(os.path.join(os.path.dirname(vid_name),
                                      xml[chan]['tifFile'][i]),
                                      format='TIFF')
                 printProgressBar(i, nframes)
+
+###########################
+
+
+def reconvert_to_tiffs_from_16bit(vid_name):
+
+    xml_file = get_files_with_extension(os.path.dirname(vid_name),
+                                        extension='.xml')[0]
+    xml = bruker_xml_parser(xml_file)
+
+    Ly, Lx = int(xml['settings']['linesPerFrame']),\
+                    int(xml['settings']['pixelsPerLine'])
+
+    # function to extract frame:
+    def extract_frame(input_vid, frame_num):
+       out, _ = (
+           ffmpeg
+           .input(input_vid)
+           .filter_('select', 'gte(n,{})'.format(frame_num))
+           .output('pipe:', format='rawvideo', pix_fmt='gray16le', vframes=1)
+           .run(capture_stdout=True, capture_stderr=True)
+       )
+       return np.frombuffer(out, np.uint16).reshape([Lx, Ly])
+
+    for chan in xml['channels']:
+
+        nframes = len(xml[chan]['tifFile'])
+
+        for i in range(nframes):
+            frame = extract_frame(vid_name, i)
+            im = Image.fromarray(frame)
+            im.save(os.path.join(os.path.dirname(vid_name),
+                                 xml[chan]['tifFile'][i]),
+                                 format='TIFF')
+            printProgressBar(i, nframes)
             
+
+def find_subfolders(folder, cam='FaceCamera'):
+    return [f[0] for f in os.walk(folder)\
+                    if 'TSeries' in f[0].split(os.path.sep)[-1]]
 
 if __name__=='__main__':
 
@@ -185,6 +236,8 @@ if __name__=='__main__':
                         action="store_true")
     parser.add_argument("--convert", 
                         action="store_true")
+    parser.add_argument("--lossless", 
+                        action="store_true")
     parser.add_argument("--restore", 
                         action="store_true")
     parser.add_argument('-d', "--delete_raw", 
@@ -192,16 +245,45 @@ if __name__=='__main__':
                         action="store_true")
     args = parser.parse_args()
 
-    if args.convert:
-        convert_imaging(args.folder,
-                        delete_raw=args.delete_raw)
-    elif args.restore:
-        reconvert_to_tiffs(args.folder)
-    else:
-        print('')
-        print(' /!\ need to choose either the "--convert" or the "--restore" option')
-        print('')
+    print('')
+    for folder in find_subfolders(args.folder):
 
-    # loop_over_dayfolder(args.folder)
+        print(' - processing', folder, ' [...]')
 
-    
+        if args.convert:
+            if args.lossless:
+                convert_to_16bit_avi(folder,
+                                delete_raw=args.delete_raw)
+            else:
+                convert_to_log8bit_mp4(folder,
+                                delete_raw=args.delete_raw)
+        elif args.restore:
+
+            xml_file = get_files_with_extension(folder,
+                                                extension='.xml')[0]
+            xml = bruker_xml_parser(xml_file)
+
+            for chan in xml['channels']:
+                if os.path.isfile(\
+                        os.path.join(folder,
+                                     'LOG-%s.mp4'%(chan.replace(' ','-')))):
+                    reconvert_to_tiffs_from_log8bit(os.path.join(folder,
+                                         'LOG-%s.mp4'%(chan.replace(' ','-'))))
+                elif os.path.isfile(\
+                        os.path.join(folder,
+                                     'LOG-%s.wmv'%(chan.replace(' ','-')))):
+                    reconvert_to_tiffs_from_log8bit(os.path.join(folder,
+                                         'LOG-%s.wmv'%(chan.replace(' ','-'))))
+                elif os.path.isfile(\
+                        os.path.join(folder,
+                                     '%s.avi'%(chan.replace(' ','-')))):
+                    reconvert_to_tiffs_from_16bit(os.path.join(folder,
+                                         '%s.avi'%(chan.replace(' ','-'))))
+                else:
+                    print('\n no video file to restore was found ! \n ')
+
+        else:
+            print('')
+            print(10*' '+\
+    ' /!\ need to choose either the "--convert" or the "--restore" option')
+            print('')
