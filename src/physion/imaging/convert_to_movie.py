@@ -161,8 +161,10 @@ def reconvert_to_tiffs(TS_folder):
                 summary['Frames_succesfully_in_movie']):
 
             if success:
+                # load the 8-bit frame
                 ret, frame = cap.read()
                 frame = np.exp(frame*np.log(2**16)/2**8)
+                # convert to 16-bit
                 frame = np.array(frame[:,:,0], dtype='uint16')
                 im = Image.fromarray(frame)
                 im.save(os.path.join(TS_folder,
