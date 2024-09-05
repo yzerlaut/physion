@@ -144,7 +144,7 @@ def run_transfer(self):
     elif 'Imaging (processed)'==self.typeBox.currentText():
 
         def do_not_include(Dir, f):
-            return ('.tiff' in f) and ('TSeries' in f)
+            return ('.tif' in f) and ('TSeries' in f)
 
         def ignore_files(dir, files):
             return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\

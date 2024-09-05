@@ -6,7 +6,6 @@ log the data to have a good resolution at low fluorescence
 import sys, shutil, os, pathlib
 import cv2 as cv
 from PIL import Image
-import matplotlib.pylab as plt
 import numpy as np
 
 from PyQt5 import QtGui, QtWidgets, QtCore
@@ -96,6 +95,7 @@ def convert_imaging(TS_folder,
     Ly, Lx = int(xml['settings']['linesPerFrame']),\
                     int(xml['settings']['pixelsPerLine'])
 
+    print('\n Analyzing: "%s" ' % TS_folder)
     for chan in xml['channels']:
     
         print('    --> Channel: ', chan)
@@ -111,14 +111,18 @@ def convert_imaging(TS_folder,
                               (Lx, Ly),
                               False)
 
-        print('\nBuilding the video: "%s" ' % (TS_folder, vid_name))
+        print('\nBuilding the video: "%s" ' % vid_name)
 
         success = np.zeros(len(FILES), dtype=bool)
         for i, f in enumerate(FILES):
             try:
-                img = plt.imread(os.path.join(TS_folder, f))
+                # load 16-bit image
+                img = np.array(Image.open(os.path.join(TS_folder, f)),
+                               dtype='uint16')
+                # log and convert to 8-bit
                 img = np.array(np.log(img+1.)/np.log(2**16)*2**8, 
                                dtype='uint8')
+                # write in movie
                 out.write(img)
                 printProgressBar(i, nframes)
                 success[i] = True
@@ -163,7 +167,7 @@ def reconvert_to_tiffs(TS_folder):
                 im = Image.fromarray(frame)
                 im.save(os.path.join(TS_folder,
                                      xml[chan]['tifFile'][i]),
-                                     compression="tiff_adobe_deflate")
+                                     format='TIFF')
                 printProgressBar(i, nframes)
             
 
@@ -177,16 +181,25 @@ if __name__=='__main__':
     parser.add_argument("--wmv", 
                         help="protocol a json file", 
                         action="store_true")
+    parser.add_argument("--convert", 
+                        action="store_true")
+    parser.add_argument("--restore", 
+                        action="store_true")
     parser.add_argument('-d', "--delete_raw", 
                         help="protocol a json file", 
                         action="store_true")
     args = parser.parse_args()
 
-    if 'TSeries' in args.folder:
-        # convert_imaging(args.folder,
-                        # delete_raw=args.delete_raw)
+    if args.convert:
+        convert_imaging(args.folder,
+                        delete_raw=args.delete_raw)
+    elif args.restore:
         reconvert_to_tiffs(args.folder)
-    # transform_to_movie(args.folder)
+    else:
+        print('')
+        print(' /!\ need to choose either the "--convert" or the "--restore" option')
+        print('')
+
     # loop_over_dayfolder(args.folder)
 
     
