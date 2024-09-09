@@ -236,7 +236,7 @@ def get_phase_to_angle_func(datafolder, direction):
     else:
         bounds = [stim['xmax'], stim['xmin']]
 
-    # keep phase to angle relathionship    /!\ [-PI/2, 3*PI/2] interval /!\
+    # keep phase to angle relathionship    [!!] [-PI/2, 3*PI/2] interval [!!]
     phase_to_angle_func = lambda x: bounds[0]+\
                     (x+np.pi/2)/(2*np.pi)*(bounds[1]-bounds[0])
 

@@ -308,7 +308,7 @@ def open_pupil_data(self):
             self.Lx, self.Ly = 1, 1
             self.times, self.imgfolder = None, None
             self.nframes, self.FILES = None, None
-            print(' /!\ no raw FaceCamera data found ...')
+            print(' [!!] no raw FaceCamera data found ...')
 
         if os.path.isfile(os.path.join(self.datafolder, 'pupil.npy')):
             
@@ -396,7 +396,7 @@ def load_last_gui_settings_pupil(self):
             
         self.jump_to_frame()
     except FileNotFoundError:
-        print('\n /!\ last GUI settings not found ... \n')
+        print('\n [!!] last GUI settings not found ... \n')
 
         
 def reset_pupil(self):

@@ -19,7 +19,7 @@ def add_pupil_fit(metadata, ax, index):
     cy -= (metadata['PupilZoom'][0]-metadata['pupil_ymin'])
     cx -= (metadata['PupilZoom'][1]-metadata['pupil_xmin'])
 
-    # /!\ weird why this works...
+    # [!!] weird why this works...
     coords = [cy, cx, sx, sy]
     pupil_fit = process.ellipse_coords(*coords, transpose=True)
     return ax.plot(pupil_fit[0], pupil_fit[1], '.', 

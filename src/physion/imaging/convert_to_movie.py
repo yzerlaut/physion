@@ -285,5 +285,5 @@ if __name__=='__main__':
         else:
             print('')
             print(10*' '+\
-    ' /!\ need to choose either the "--convert" or the "--restore" option')
+    ' [!!] need to choose either the "--convert" or the "--restore" option')
             print('')

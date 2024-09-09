@@ -5,7 +5,7 @@
 
 copy this and rename to the desired script name
 
-/!\ need to add the new script to the "stimuli/__init__.py" 
+[!!] need to add the new script to the "stimuli/__init__.py" 
 """
 import numpy as np
 

@@ -277,7 +277,7 @@ def add_ophys(nwbfile, args,
         CaFn = get_files_with_extension(args.imaging, extension='.xml')[0]# get Tseries metadata
     except BaseException as be:
         print(be)
-        print('\n /!\  Problem with the CA-IMAGING data in %s  /!\ ' % args.imaging)
+        print('\n [!!]  Problem with the CA-IMAGING data in %s  [!!] ' % args.imaging)
         raise Exception
         
     xml = bruker_xml_parser(CaFn) # metadata
@@ -366,7 +366,7 @@ def add_ophys(nwbfile, args,
                                           imaging_plane=imaging_plane,
                                           image_series=image_series) 
     else:
-        print('\n /!\  no "suite2p" folder found in "%s"  /!\ ' % args.imaging)
+        print('\n [!!]  no "suite2p" folder found in "%s"  [!!] ' % args.imaging)
 
     
 if __name__=='__main__':

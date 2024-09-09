@@ -97,7 +97,7 @@ def gui(self,
     except BaseException as be:
         print(be)
         print('')
-        print(' /!\ Problem with the Camera /!\ ')
+        print(' [!!] Problem with the Camera [!!] ')
         print('        --> no camera found ')
         print('')
 
@@ -270,7 +270,7 @@ def take_fluorescence_picture(self):
     else:
 
         self.statusBar.showMessage(\
-                '  /!\ Need to pick a folder and a subject first ! /!\ ')
+                '  [!!] Need to pick a folder and a subject first ! [!!] ')
 
 
 def take_vasculature_picture(self):
@@ -300,7 +300,7 @@ def take_vasculature_picture(self):
             self.cam.disarm()
 
     else:
-        self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
+        self.statusBar.showMessage('  [!!] Need to pick a folder and a subject first ! [!!] ')
 
     
 def run(self):
@@ -545,7 +545,7 @@ def launch_intrinsic(self, live_only=False):
         
     else:
 
-        print(' /!\  --> pb in launching acquisition (either already running or missing camera)')
+        print(' [!!]  --> pb in launching acquisition (either already running or missing camera)')
 
 
 def live_intrinsic(self):

@@ -36,7 +36,7 @@ def plot_evoked_pattern(self,
 
     
     if with_stim_inset and (self.visual_stim is None):
-        print('\n /!\ visual stim of episodes was not initialized  /!\  ')
+        print('\n [!!] visual stim of episodes was not initialized  [!!]  ')
         print('    --> screen_inset display desactivated ' )
         with_screen_inset = False
    

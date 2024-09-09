@@ -239,7 +239,7 @@ def run_transfer(self):
                     print(' copying "%s" [...]' % xml[0])
                     subprocess.Popen(file_copy_command(self, xml[0], new_folder), shell=True)
             else:
-                print(' /!\ Problem no "xml" found !! /!\  ')
+                print(' [!!] Problem no "xml" found !! [!!]  ')
             # XML metadata file
             Fsuite2p = os.path.join(f, 'suite2p')
 
@@ -283,7 +283,7 @@ def run_transfer(self):
                 #             subprocess.Popen(self.file_copy_command(os.path.join(Fsuite2p, 'plane%i' % iplane, 'data.bin'), inewfolder), shell=True)
                 #     else:
                 #         print('In: "%s" ' % os.path.isfile(os.path.join(Fsuite2p, 'plane%i' % iplane)))
-                #         print(' /!\ Problem no "binary file" found !! /!\  ')
+                #         print(' [!!] Problem no "binary file" found !! [!!]  ')
 
     """
 

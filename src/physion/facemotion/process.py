@@ -155,4 +155,4 @@ if __name__=='__main__':
             np.save(os.path.join(args.datafolder, 'facemotion.npy'), args.data)
             print('Data successfully saved as "%s"' % os.path.join(args.datafolder, 'facemotion.npy'))
         else:
-            print('  /!\ "facemotion.npy" file found, create one with the GUI  /!\ ')
+            print('  [!!] "facemotion.npy" file found, create one with the GUI  [!!] ')

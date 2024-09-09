@@ -128,7 +128,7 @@ def build_NWB_func(args):
         NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), allow_pickle=True).item()
         NIdaq_Tstart = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
     except FileNotFoundError:
-        print(' /!\ No NI-DAQ data found /!\ ')
+        print(' [!!] No NI-DAQ data found [!!] ')
         print('   -----> Not able to build NWB file for "%s"' % args.datafolder)
         raise BaseException
 
@@ -243,7 +243,7 @@ def build_NWB_func(args):
                 nwbfile.add_stimulus(VisualStimProp)
                 
         else:
-            print(' /!\ No VisualStim metadata found /!\ ')
+            print(' [!!] No VisualStim metadata found [!!] ')
     
         if args.verbose:
             print('=> Storing the photodiode signal for "%s" [...]' % args.datafolder)
@@ -335,7 +335,7 @@ def build_NWB_func(args):
 
         except BaseException as be:
             print(be)
-            print(' /!\ Problems with FaceCamera data for "%s" /!\ ' % args.datafolder)
+            print(' [!!] Problems with FaceCamera data for "%s" [!!] ' % args.datafolder)
             
 
         #################################################
@@ -403,7 +403,7 @@ def build_NWB_func(args):
                     nwbfile.add_acquisition(Pupil_frames)
                         
             else:
-                print(' /!\ No processed pupil data found for "%s" /!\ ' % args.datafolder)
+                print(' [!!] No processed pupil data found for "%s" [!!] ' % args.datafolder)
 
                 
     
@@ -479,7 +479,7 @@ def build_NWB_func(args):
                     nwbfile.add_acquisition(FaceMotion_frames)
                         
             else:
-                print(' /!\ No processed facemotion data found for "%s" /!\ ' % args.datafolder)
+                print(' [!!] No processed facemotion data found for "%s" [!!] ' % args.datafolder)
                 
 
     #################################################
@@ -530,7 +530,7 @@ def build_NWB_func(args):
         add_ophys(nwbfile, args,
                   metadata=metadata)
     else:
-        print('\n[X] /!\  Problem with the TSeries folders (either None or multiples) in "%s"  /!\ ' % args.datafolder)
+        print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
     
     #################################################
     ####    add Intrinsic Imaging MAPS         ######

@@ -102,7 +102,7 @@ def load_NWB_folder(self):
                 self.folders.append(os.path.join(self.folder, subfolder))
 
         if len(self.folders)==0:
-            print(' ---------   /!\ no data-folder recognized /!\ -----------')
+            print(' ---------   [!!] no data-folder recognized [!!] -----------')
             print('           missing either "metadata" or "NIdaq" datafiles ')
             print('                 --> nothing to assemble !')
 

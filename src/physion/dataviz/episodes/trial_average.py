@@ -52,7 +52,7 @@ def plot(episodes,
     response_args = dict(roiIndex=roiIndex, roiIndices=roiIndices, average_over_rois=False)
 
     if with_screen_inset and (episodes.visual_stim is None):
-        print('\n /!\ visual stim of episodes was not initialized  /!\  ')
+        print('\n [!!] visual stim of episodes was not initialized  [!!]  ')
         print('    --> screen_inset display desactivated ' )
         with_screen_inset = False
 

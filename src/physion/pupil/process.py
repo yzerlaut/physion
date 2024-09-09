@@ -256,7 +256,7 @@ def preprocess(cls, with_reinit=True,
             img = np.load(os.path.join(cls.imgfolder,
                           cls.FILES[cls.cframe])).T
         except ValueError:
-            print(' /!\ Problem with frame #%i: %s' % (cls.cframe,
+            print(' [!!] Problem with frame #%i: %s' % (cls.cframe,
                                                        cls.FILES[cls.cframe]))
             print(' replaced with #%i ' % (cls.cframe-1))
             img = np.load(os.path.join(cls.imgfolder, cls.FILES[cls.cframe-1])).T
@@ -438,4 +438,4 @@ if __name__=='__main__':
             np.save(os.path.join(args.datafolder, 'pupil.npy'), args.data)
             print('Data successfully saved as "%s"' % os.path.join(args.datafolder, 'pupil.npy'))
         else:
-            print('  /!\ "pupil.npy" file found, create one with the GUI  /!\ ')
+            print('  [!!] "pupil.npy" file found, create one with the GUI  [!!] ')

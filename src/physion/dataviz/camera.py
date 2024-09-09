@@ -92,9 +92,9 @@ def load_NIdaq_start(metadata, raw_folder):
         metadata['NIdaq_Tstart'] = np.load(start)[0]
     else:
         print('')
-        print('---------  /!\ ------------------')
+        print('---------  [!!] ------------------')
         print(' NIdaq.start.npy file not found -')
-        print('  -------  /!\ ------------------')
+        print('  -------  [!!] ------------------')
         print('')
         print('need to deal with this [...]')
 

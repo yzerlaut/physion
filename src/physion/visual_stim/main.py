@@ -243,7 +243,7 @@ class visual_stim:
                                             protocol[key+'-2'],
                                             protocol['N-'+key]))
                 else:
-                    #  /!\ we pick the SECOND VALUE as the constant one 
+                    #  [!!]  we pick the SECOND VALUE as the constant one 
                     #         (so remember to fill this right in GUI)
                     VECS.append(np.array([protocol[key+'-2']])) 
 
@@ -539,7 +539,7 @@ class multiprotocol(visual_stim):
                              'protocols']+protocol['Protocol-%i'%i].split('/')
                 Ppath = os.path.join(*path_list)
                 if not os.path.isfile(Ppath):
-                    print(' /!\\ "%s" not found in Protocol folder /!\\  ' %\
+                    print(' [!!] "%s" not found in Protocol folder [!!]   ' %\
                                             protocol['Protocol-%i'%i])
                 with open(Ppath, 'r') as fp:
                     subprotocol = json.load(fp)

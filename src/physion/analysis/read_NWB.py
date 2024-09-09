@@ -53,7 +53,7 @@ class Data:
         #     print('-----------------------------------------')
         #     print(be)
         #     print('-----------------------------------------')
-        #     print(' /!\ Pb with datafile: "%s"' % filename)
+        #     print(' [!!] Pb with datafile: "%s"' % filename)
         #     print('-----------------------------------------')
         #     print('')
             
@@ -409,7 +409,7 @@ class Data:
 
     def build_Zscore_dFoF(self, verbose=True):
         """
-        /!\ do not deal with specific time sampling /!\ 
+        [!!] do not deal with specific time sampling [!!] 
         """
         if not hasattr(self, 'dFoF'):
             self.build_dFoF(verbose=verbose)
@@ -512,7 +512,7 @@ class Data:
         if len(cond)==1:
             return cond[0]
         else:
-            print(' /!\\ protocol "%s" not found in data with protocols:' % protocol_name)
+            print(' [!!] protocol "%s" not found in data with protocols:' % protocol_name)
             print(self.protocols)
             return None
 
@@ -632,7 +632,7 @@ def scan_folder_for_NWBfiles(folder,
             SUBJECTS.append('N/A')
             if verbose:
                 print(be)
-                print('\n /!\\ Pb with "%s" \n' % f)
+                print('\n [!!] Pb with "%s" \n' % f)
         
     if verbose:
         print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES), (time.time()-t0)))

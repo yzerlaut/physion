@@ -176,7 +176,7 @@ def select_ROI_TA(self):
         except BaseException:
             self.roiIndices = [0]
             self.roiPickTA.setText('0')
-            self.statusBar.showMessage('/!\ ROI string not recognized /!\ --> ROI set to [0]')
+            self.statusBar.showMessage('[!!] ROI string not recognized [!!] --> ROI set to [0]')
 
 def compute_episodes(self):
     self.select_ROI_TA()
@@ -191,7 +191,7 @@ def compute_episodes(self):
                                     verbose=True)
         self.cQ = self.cQ.replace('-','').replace('_','') # CURRENT QUANTITY
     else:
-        print(' /!\ Pick a protocol an a quantity')
+        print(' [!!] Pick a protocol an a quantity')
 
 
 def refresh_TA(self):
@@ -260,7 +260,7 @@ def plot_row_column_of_quantity(self):
                         ylim[1] = np.max([np.max(my), ylim[1]])
                     self.AX[irow][icol].plot(self.EPISODES.t, my, pen = pen)
                 else:
-                    print(' /!\ Problem with episode (%i, %i, %i)' % (irow, icol, icolor))
+                    print(' [!!] Problem with episode (%i, %i, %i)' % (irow, icol, icolor))
             if icol>0:
                 self.AX[irow][icol].hideAxis('left')
             if irow<(len(ROW_CONDS)-1):

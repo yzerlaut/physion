@@ -364,7 +364,7 @@ if __name__=='__main__':
             generate_pdf(args)
 
     else:
-        print('/!\ Need to provide a NWB datafile as argument ')
+        print('[!!] Need to provide a NWB datafile as argument ')
 
 
 

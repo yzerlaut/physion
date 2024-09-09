@@ -18,7 +18,7 @@ try:
 except ModuleNotFoundError:
     def Acquisition(**args):
         return None
-    # print(' /!\ Problem with the NIdaq module /!\ ')
+    # print(' [!!] Problem with the NIdaq module [!!] ')
 
 try:
     from physion.hardware.FLIRcamera.main\
@@ -83,19 +83,19 @@ def run(self):
             init_ok = True
     if not init_ok:
         print('------------------------------------------------')
-        print('-- /!\ Need to pick at least one modality /!\ --')
+        print('-- [!!] Need to pick at least one modality [!!] --')
         print('------------------------------------------------')
         self.statusBar.showMessage(\
-                ' /!\ Need to pick at least one modality /!\ ')
+                ' [!!] Need to pick at least one modality [!!] ')
 
     # 2) INSURING THAT A CONFIG IS SELECTED
     if self.config is None:
         init_ok = False
         print('------------------------------------------------')
-        print('-- /!\ Need to select a configuration first /!\ --')
+        print('-- [!!] Need to select a configuration first [!!] --')
         print('------------------------------------------------')
         self.statusBar.showMessage(\
-                ' /!\ Need to select a configuration first /!\ ')
+                ' [!!] Need to select a configuration first [!!] ')
 
 
     if init_ok:
@@ -162,7 +162,7 @@ def run(self):
                     filename= self.filename.replace('metadata', 'NIdaq'))
             except BaseException as e:
                 print(e)
-                print('\n /!\ PB WITH NI-DAQ /!\ \n')
+                print('\n [!!] PB WITH NI-DAQ [!!] \n')
                 self.acq = None
 
         # saving all metadata after full initialization:

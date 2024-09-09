@@ -66,7 +66,7 @@ class EpisodeData:
             self.protocol_name = protocol_name
 
         else:
-            print(' /!\ need to pass either a protocol_id or a protocol_name /!\ \n')
+            print(' [!!] need to pass either a protocol_id or a protocol_name [!!] \n')
 
         # VISUAL STIM
         if with_visual_stim:
@@ -94,7 +94,7 @@ class EpisodeData:
         if (protocol_id is None) and (protocol_name is None):
             protocol_id = 0
             print('protocols:', full_data.protocols)
-            print(' /!\ need to explicit the "protocol_id" or "protocol_name" /!\ ')
+            print(' [!!] need to explicit the "protocol_id" or "protocol_name" [!!] ')
             print('         ---->   set to protocol_id=0 by default \n ')
         elif (protocol_name is not None):
             protocol_id = full_data.get_protocol_id(protocol_name)

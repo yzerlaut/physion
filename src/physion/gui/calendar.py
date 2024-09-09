@@ -307,7 +307,7 @@ def pick_subject(self):
                                        self.highlight_format)
             self.FILES_PER_DAY[d] = [f for f in np.array(self.SUBJECTS[self.subjectBox.currentText()]['datafiles'])[self.SUBJECTS[self.subjectBox.currentText()]['dates']==d]]
     else:
-        print(' /!\ subject not recognized /!\  ')
+        print(' [!!] subject not recognized [!!]  ')
     pass
 
 def pick_datafile(self):

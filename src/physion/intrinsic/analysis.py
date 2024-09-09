@@ -467,7 +467,7 @@ def compute_retinotopic_maps(self):
                                                         'altitude')
     else:
         fig1 = None
-        print(' /!\ need both "up" and "down" maps to compute the altitude map !! /!\   ')
+        print(' [!!] need both "up" and "down" maps to compute the altitude map !! [!!]   ')
         
     if ('right-phase' in self.IMAGES) and ('left-phase' in self.IMAGES):
         print('- computing azimuth map [...]')
@@ -484,7 +484,7 @@ def compute_retinotopic_maps(self):
                                                         'azimuth')
     else:
         fig2 = None
-        print(' /!\ need both "right" and "left" maps to compute the altitude map !! /!\   ')
+        print(' [!!] need both "right" and "left" maps to compute the altitude map !! [!!]   ')
 
     if (fig1 is not None) or (fig2 is not None):
         intrinsic_analysis.plt.show()

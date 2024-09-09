@@ -16,7 +16,7 @@ def build_stim(protocol):
             return getattr(getattr(physion.visual_stim.stimuli,\
                                 protocol_name), 'stim')(protocol)
         except ModuleNotFoundError:
-            print('\n /!\ Protocol not recognized ! /!\ \n ')
+            print('\n [!!] Protocol not recognized ! [!!] \n ')
             return None
 
 def get_default_params(protocol_name):
@@ -55,7 +55,7 @@ def get_default_params(protocol_name):
 
     except ModuleNotFoundError:
 
-        print('\n /!\ Protocol not recognized ! /!\ \n ')
+        print('\n [!!] Protocol not recognized ! [!!] \n ')
         return None
 
 class MonitoringSquare:
@@ -99,7 +99,7 @@ class MonitoringSquare:
         elif Stim.screen['monitoring_square']['location']=='bottom-left':
             self.mask[:S,:S] = True
         else:
-            print(30*'-'+'\n /!\\ monitoring square location not recognized !!')
+            print(30*'-'+'\n [!!]  monitoring square location not recognized !!')
             print('        --> (0,0) by default \n')
             self.mask[:S,:S] = True
         
