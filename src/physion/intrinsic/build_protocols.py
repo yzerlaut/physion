@@ -11,8 +11,8 @@ def to_num(direction):
         return 3
 
 
-
 def build_json(direction='Up', 
+               screen='Mouse-Goggles',
                bg_color=0.2,
                period=12):
 
@@ -21,7 +21,7 @@ def build_json(direction='Up',
 {
     "Presentation": "Stimuli-Sequence",
     "Stimulus": "flickering-bar",
-    "Screen": "Dell-2020",
+    "Screen": "%(screen)s",
     "units":"cm",
     "movie_refresh_freq":30.0,
     "presentation-duration": %(period)s,
@@ -48,11 +48,14 @@ def build_json(direction='Up',
     } 
 """ % {'direction':to_num(direction),
        'period':period,
-       'bg_color':bg_color}
+       'bg_color':bg_color,
+       'screen':screen}
 
 bg_color = 0.2
 
 for period in [6, 12]:
+    if not os.path.isdir('physion/acquisition/protocols/movies/intrinsic/'):
+        os.mkdir('physion/acquisition/protocols/movies/intrinsic')
     for direction in ['up', 'down', 'left', 'right']:
         # create the directory
         if not os.path.isdir('physion/acquisition/protocols/movies/intrinsic/flickering-bars-period%is' % period):

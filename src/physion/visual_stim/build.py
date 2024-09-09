@@ -158,7 +158,8 @@ if __name__=='__main__':
                     return np.inf, np.inf
 
             # prepare the monitoring square properties
-            square = MonitoringSquare(Stim)
+            if 'monitoring-square' in Stim.screen:
+                square = MonitoringSquare(Stim)
 
             # prepare video file
             Format = 'wmv' if (('win32' in sys.platform) or args.wmv) else 'mp4'
@@ -190,7 +191,8 @@ if __name__=='__main__':
                             np.ones(Stim.screen['resolution'])
 
                 # put the monitoring square
-                data = square.draw(data, t, tstart, tstop)
+                if 'monitoring-square' in Stim.screen:
+                    data = square.draw(data, t, tstart, tstop)
 
                 out.write(np.array(255*np.rot90(data, k=1),
                                    dtype='uint8'))

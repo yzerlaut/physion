@@ -5,12 +5,13 @@ import numpy as np
 class Movie:
 
     def __init__(self,
-                 movie_file):
+                 movie_file,
+                 loc=(255,150)):
 
         self.movie = cv.VideoCapture(movie_file)
 
         cv.namedWindow('frame', cv.WINDOW_NORMAL)
-        # cv.moveWindow('frame', 0, -700)
+        cv.moveWindow('frame', *loc)
         # cv.resizeWindow('frame', 1280, 720)
 
         # cv.setWindowProperty('frame', cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
@@ -43,6 +44,11 @@ class Movie:
                 # Press Q on keyboard to  exit
                 if cv.waitKey(25) & 0xFF == ord('q'):
                     break
+
+            else:
+                self.movie.set(cv.CAP_PROP_POS_FRAMES, 0)
+                continue
+
         self.stop()
 
     def stop(self):
@@ -52,11 +58,13 @@ class Movie:
         cv.destroyAllWindows()
         print(1e3*np.mean(self.times))
 
+if len(sys.argv)>1:
+    movie = sys.argv[-1]
+else:
+    movie = os.path.join(os.path.expanduser('~'), 'work', 'physion',
+                        'src', 'physion', 'acquisition', 'protocols',
+                        'movies', 'quick-spatial-mapping', 'movie.mp4')
 
-
-movie = os.path.join(os.path.expanduser('~'), 'work', 'physion',
-                    'src', 'physion', 'acquisition', 'protocols',
-                    'movies', 'quick-spatial-mapping', 'movie.mp4')
 
 m = Movie(movie)
 m.play()
