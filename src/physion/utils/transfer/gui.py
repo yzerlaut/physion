@@ -127,9 +127,9 @@ def run_transfer(self):
         def do_not_include(Dir, f):
             return ('FaceCamera' in Dir) or ('RigCamera' in Dir)
 
-        def ignore_files(dir, files):
-            return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\
-                    do_not_include(dir, f))]
+        def ignore_files(Dir, files):
+            return [f for f in files if (os.path.isfile(os.path.join(Dir, f)) and\
+                    do_not_include(Dir, f))]
 
         for f in [F for F in os.listdir(self.source_folder)\
                     if os.path.isdir(os.path.join(self.source_folder, F))]:
