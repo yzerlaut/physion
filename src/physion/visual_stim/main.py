@@ -237,15 +237,18 @@ class visual_stim:
                     VECS.append(np.logspace(np.log10(protocol[key+'-1']),
                                             np.log10(protocol[key+'-2']),
                                             protocol['N-log-'+key]))
-                elif protocol['N-'+key]>1:
+                elif ('N-'+key in protocol) and (protocol['N-'+key]>1):
                     # LIN-SPACED parameters
                     VECS.append(np.linspace(protocol[key+'-1'],
                                             protocol[key+'-2'],
                                             protocol['N-'+key]))
-                else:
+                elif (key+'-2' in protocol):
                     #  [!!]  we pick the SECOND VALUE as the constant one 
                     #         (so remember to fill this right in GUI)
                     VECS.append(np.array([protocol[key+'-2']])) 
+                else:
+                    # just a 0 vector
+                    VECS.append(np.zeros(1))
 
             for vec in itertools.product(*VECS):
                 for i, key in enumerate(keys):
