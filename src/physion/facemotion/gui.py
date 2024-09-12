@@ -202,7 +202,7 @@ def open_facemotion_data(self):
             
         else:
             self.times, self.imgfolder, self.nframes, self.FILES = None, None, None, None
-            print(' /!\ no raw FaceCamera data found ...')
+            print(' [!!] no raw FaceCamera data found ...')
 
         if os.path.isfile(os.path.join(self.datafolder, 'facemotion.npy')):
             
@@ -262,7 +262,7 @@ def load_last_facemotion_gui_settings(self):
                                pos=settings['ROI'])
         self.groomingBox.setText(str(int(settings['grooming_threshold'])))
     except FileNotFoundError:
-        print('\n /!\ last GUI settings not found ... \n')
+        print('\n [!!] last GUI settings not found ... \n')
     
 
 def save_facemotion_data(self):
@@ -401,7 +401,7 @@ def process_grooming(self):
 
         plot_motion_trace(self)
     else:
-        print('\n /!\ Need to process data first ! \n')
+        print('\n [!!] Need to process data first ! \n')
 
 
 def update_line(self):

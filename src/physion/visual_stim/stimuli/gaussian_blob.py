@@ -1,14 +1,13 @@
 import numpy as np
 
-from physion.visual_stim.main import visual_stim,\
-        init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 
 
 ##############################################################
 ##  ----  Gaussian Blob Appearance (spatio-temporal) --- #####
 ##############################################################
 
-params = {"movie_refresh_freq":20,
+params = {"movie_refresh_freq":30,
           "presentation-duration":4,
           # default param values:
           "radius (deg)":5,
@@ -30,10 +29,6 @@ class stim(visual_stim):
     
     def __init__(self, protocol):
 
-        if 'movie_refresh_freq' not in protocol:
-            protocol['movie_refresh_freq'] = 5.
-        self.refresh_freq = protocol['movie_refresh_freq']
-
         super().__init__(protocol,
                          ['x-center', 'y-center', 'radius',
                           'center-time', 'extent-time',
@@ -51,6 +46,7 @@ class stim(visual_stim):
                           sT=self.experiment['extent-time'][index])
         return img    
 
+    """
     def plot_stim_picture(self, episode,
                           ax=None, parent=None,
                           label=None, vse=False):
@@ -60,5 +56,22 @@ class stim(visual_stim):
                              ax=ax, parent=parent)
 
         return ax
+    """
 
+if __name__=='__main__':
 
+    from physion.visual_stim.build import get_default_params
+
+    params = get_default_params('gaussian-blob')
+
+    import time
+    import cv2 as cv
+
+    Stim = stim(params)
+
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break

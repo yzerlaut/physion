@@ -1,4 +1,4 @@
-import os, sys, pathlib
+import os, sys, pathlib, json
 import numpy as np
 from PIL import Image
 import matplotlib.pylab as plt
@@ -8,15 +8,18 @@ from physion.intrinsic import RetinotopicMapping
 
 def metadata_fig(datafolder, angle_from_axis=None):
 
-    metadata = dict(np.load(os.path.join(datafolder, 'metadata.npy'),
-                    allow_pickle=True).item())
+    with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
+        metadata = json.load(f)
 
-    metadata['recording-time'] = datafolder.split(os.path.sep)[-2:]
+    if 'time' not in metadata:
+        metadata['time'] = datafolder.split(os.path.sep)[-2:]
+    if 'date' not in metadata:
+        metadata['date'] = ''
 
     if angle_from_axis is not None:
         metadata['angle'] = angle_from_axis
-    elif 'subject_props' in metadata:
-        metadata['angle'] = metadata['subject_props']['headplate_angle_from_rig_axis_for_recording'] 
+    elif 'headplate_angle_from_rig_axis_for_recording' in metadata:
+        metadata['angle'] = metadata['headplate_angle_from_rig_axis_for_recording'] 
     else:
         metadata['angle'] = '' 
     
@@ -25,9 +28,9 @@ def metadata_fig(datafolder, angle_from_axis=None):
     string = """
     Mouse ID: "%(subject)s"
 
-    Recorded @ %(recording-time)s
+    Recorded @ %(date)s %(time)s
 
-    headplate angle from rig/experimenter axis: %(angle)s
+    headplate angle axis: %(angle)s
     """ % metadata
 
     ax.annotate(string, (0,0), size='small', xycoords='axes fraction')
@@ -91,6 +94,9 @@ def metadata_fig(datafolder, angle_from_axis=None):
 def build_pdf(args, 
               angle=10,
               image_height=2.7):
+
+    if args.output=='':
+        args.output = os.path.join(args.datafolder, 'VisualAreas_Segmentation.pdf')
 
     width, height = int(8.27 * 300), int(11.7 * 300) # A4 at 300dpi
     page = Image.new('RGB', (width, height), 'white')
@@ -233,7 +239,7 @@ if __name__=='__main__':
     parser.add_argument("--angle_from_rig", type=float,default=0) # mm
     parser.add_argument("--image_height", type=float,default=2.70) # mm
     parser.add_argument("--pixel", type=int, nargs=2, default=(150,150)) 
-    parser.add_argument('-o', "--output", default='fig.pdf')
+    parser.add_argument('-o', "--output", default='')
     parser.add_argument('-v', "--verbose", action="store_true")
     
     args = parser.parse_args()

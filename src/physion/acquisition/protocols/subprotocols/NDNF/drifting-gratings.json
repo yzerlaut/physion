@@ -33,5 +33,8 @@
   "bg-color-1": 0.5,
   "bg-color-2": 0.5,
   "N-bg-color": 0,
+  "phase-1": 0,
+  "phase-2": 0,
+  "N-phase": 0,
   "N-repeat": 10
 }

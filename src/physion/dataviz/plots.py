@@ -290,8 +290,8 @@ def raw_data_plot(self, tzoom,
 
     if self.visualStimSelect.isChecked() and ('time_start_realigned' in self.data.nwbfile.stimulus):
 
-        icond = np.argwhere((self.data.nwbfile.stimulus['time_start_realigned'].data[:]<=self.time) & \
-                            (self.data.nwbfile.stimulus['time_stop_realigned'].data[:]>=self.time)).flatten()
+        icond = np.argwhere((self.data.nwbfile.stimulus['time_start_realigned'].data[:,0]<=self.time) & \
+                            (self.data.nwbfile.stimulus['time_stop_realigned'].data[:,0]>=self.time)).flatten()
 
         """
         if self.imgSelect.isChecked():
@@ -312,10 +312,12 @@ def raw_data_plot(self, tzoom,
         """
             
 
-    if self.visualStimSelect.isChecked() and ('time_start_realigned' in self.data.nwbfile.stimulus) and ('time_stop_realigned' in self.data.nwbfile.stimulus):
+    if self.visualStimSelect.isChecked() and\
+            ('time_start_realigned' in self.data.nwbfile.stimulus) and\
+            ('time_stop_realigned' in self.data.nwbfile.stimulus):
         # if visual-stim we highlight the stim periods
-        icond = np.argwhere((self.data.nwbfile.stimulus['time_start_realigned'].data[:]>tzoom[0]-10) & \
-                            (self.data.nwbfile.stimulus['time_stop_realigned'].data[:]<tzoom[1]+10)).flatten()
+        icond = np.argwhere((self.data.nwbfile.stimulus['time_start_realigned'].data[:,0]>tzoom[0]-10) & \
+                            (self.data.nwbfile.stimulus['time_stop_realigned'].data[:,0]<tzoom[1]+10)).flatten()
 
         if hasattr(self, 'StimFill') and (self.StimFill is not None):
             for x in self.StimFill:
@@ -333,8 +335,8 @@ def raw_data_plot(self, tzoom,
             for i in range(max([0,icond[0]-1]),
                            min([icond[-1]+1,self.data.nwbfile.stimulus['time_stop_realigned'].data.shape[0]])):
                 
-                t0 = self.data.nwbfile.stimulus['time_start_realigned'].data[i]
-                t1 = self.data.nwbfile.stimulus['time_stop_realigned'].data[i]
+                t0 = self.data.nwbfile.stimulus['time_start_realigned'].data[i,0]
+                t1 = self.data.nwbfile.stimulus['time_stop_realigned'].data[i,0]
 
                 # stimulus area shaded
                 self.StimFill.append(self.plot.plot([t0, t1], [0, 0],
@@ -347,10 +349,10 @@ def raw_data_plot(self, tzoom,
                     for key in self.data.nwbfile.stimulus.keys(): # 666 means None
                         if (key not in ['time_start', 'time_start_realigned',
                                'time_stop', 'time_stop_realigned', 'protocol-name']) and \
-                                       (self.data.nwbfile.stimulus[key].data[i]!=666):
-                            text+='%s : %s\n' % (key, str(self.data.nwbfile.stimulus[key].data[i]))
+                                       (self.data.nwbfile.stimulus[key].data[i,0]!=666):
+                            text+='%s : %s\n' % (key, str(self.data.nwbfile.stimulus[key].data[i,0]))
                     if 'protocol_id' in self.data.nwbfile.stimulus:
-                        text += '\n* %s *\n' % self.data.protocols[self.data.nwbfile.stimulus['protocol_id'].data[i]][:20]
+                        text += '\n* %s *\n' % self.data.protocols[self.data.nwbfile.stimulus['protocol_id'].data[i,0]][:20]
                     self.StimAnnots[-1].setPlainText(text)                    
                     self.StimAnnots[-1].setPos(t0, 0.95*y.max())
                     self.plot.addItem(self.StimAnnots[-1])

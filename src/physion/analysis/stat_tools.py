@@ -56,7 +56,7 @@ class StatTest:
         elif (self.pvalue is not None):
             return False
         else:
-            print(' /!\ no valid p-value for significance test !! /!\ ')
+            print(' [!!] no valid p-value for significance test !! [!!] ')
             return False
 
     def pval_annot(self, size=5):

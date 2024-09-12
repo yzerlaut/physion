@@ -50,9 +50,9 @@ class MainWindow(QtWidgets.QMainWindow):
     # -- Multimodal Acquisition 
     if Acquisition:
         from physion.acquisition.gui import multimodal 
-        from physion.acquisition.run import initialize, run_update,\
-           run, stop,send_CaImaging_Stop_signal, toggle_FaceCamera_process,\
-           toggle_RigCamera_process
+        from physion.acquisition.run import run_update, run, stop,\
+                send_CaImaging_Stop_signal,\
+                toggle_FaceCamera_process, toggle_RigCamera_process
     else:
         from physion.gui.parts import inactivated as multimodal
 
@@ -134,8 +134,8 @@ class MainWindow(QtWidgets.QMainWindow):
     if not Acquisition:
         from physion.assembling.gui import build_NWB_UI, runBuildNWB,\
                 load_NWB_folder
-        from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
-            loadNWBfolder, loadCafolder, runAddOphys, check_ordered
+        # from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
+            # loadNWBfolder, loadCafolder, runAddOphys, check_ordered
         from physion.assembling.FOV_coordinates import gui as FOV_coords_UI,\
                 load_intrinsic_maps_FOV
     else:
@@ -163,13 +163,16 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as red_channel_labelling
 
 
-    # -- File Transfer
     if not Acquisition:
+        # -- File Transfer
         from physion.utils.transfer.gui import transfer_gui,\
                 set_source_folder, set_destination_folder,\
                 run_transfer
-                
+        # -- Behavior to Movie Files conversion
+        from physion.behavior.convert_to_movie import behav_to_movie_gui,\
+                run_behav_to_movie
     else:
+        from physion.gui.parts import inactivated as behav_to_movie_gui
         from physion.gui.parts import inactivated as transfer_gui 
 
 
@@ -425,8 +428,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.quit_event.set()
         if self.acq is not None:
             self.acq.close()
-        if self.stim is not None:
-            self.stim.quit()
+        if hasattr(self, 'close_stim'):
+            self.close_stim()
         if self.bridge is not None:
             self.bridge.close()
         if hasattr(self, 'cam') and self.cam is not None:

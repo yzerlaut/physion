@@ -1,8 +1,7 @@
 import os, pathlib
 import numpy as np
 
-from physion.visual_stim.main import visual_stim,\
-        init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 from physion.visual_stim.preprocess_NI import load,\
         img_after_hist_normalization, adapt_to_screen_resolution
 
@@ -10,10 +9,9 @@ from physion.visual_stim.preprocess_NI import load,\
 ##  ----    NATURAL IMAGES    --- #####
 #######################################
 
-params = {"movie_refresh_freq":0.01,
-          # default param values:
+params = {"movie_refresh_freq":30.,
           "presentation-duration":3,
-          "Image-ID (#)":0}
+          "Image-ID (#)":1}
 
 def get_NaturalImages_as_array(screen):
     
@@ -29,12 +27,12 @@ def get_NaturalImages_as_array(screen):
 
     if NI_directory is not None:
         for filename in np.sort(os.listdir(NI_directory)):
-            img = load(os.path.join(NI_directory, filename))
-            new_img = adapt_to_screen_resolution(img, screen)
-            NIarray.append(2*img_after_hist_normalization(new_img)-1.)
+            img = load(os.path.join(NI_directory, filename)).T
+            new_img = np.rot90(adapt_to_screen_resolution(img, screen), k=3)
+            NIarray.append(img_after_hist_normalization(new_img))
         return NIarray
     else:
-        print(' /!\\  Natural Images folder not found !!! /!\\  ')
+        print(' [!!]  Natural Images folder not found !!! [!!]  ')
         return [np.ones((10,10))*0.5 for i in range(5)]
 
 class stim(visual_stim):
@@ -46,15 +44,14 @@ class stim(visual_stim):
         super().__init__(protocol,
                          keys=['Image-ID'])
 
-        self.refresh_freq = protocol['movie_refresh_freq']
-
         # initializing set of NI
         self.NIarray = get_NaturalImages_as_array(self.screen)
 
     def get_image(self, index,
                   time_from_episode_start=0,
                   parent=None):
-        return self.NIarray[int(self.experiment['Image-ID'][index])]
+        return np.rot90(self.NIarray[int(self.experiment['Image-ID'][index])], 
+                        k=2)
 
     def plot_stim_picture(self, episode, parent=None, 
                           vse=True, ax=None, label=None,
@@ -77,3 +74,21 @@ class stim(visual_stim):
 
         return ax
 
+if __name__=='__main__':
+
+    from physion.visual_stim.build import get_default_params
+
+    params = get_default_params('natural-image')
+    print(params)
+
+    import time
+    import cv2 as cv
+
+    Stim = stim(params)
+
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break

@@ -38,7 +38,7 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
     CaImaging_timestamps = xml[functional_chan]['relativeTime']+float(xml['settings']['framePeriod'])/2.
     print('- timestamps :', len(CaImaging_timestamps), len(CaImaging_timestamps)/5)
 
-    # /!\ Add the 2P trigger delay
+    # [!!] Add the 2P trigger delay
     if TwoP_trigger_delay>0:
         CaImaging_timestamps += TwoP_trigger_delay
     else:
@@ -108,8 +108,8 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             redcell = np.load(os.path.join(pData_folder, 'redcell_manual.npy'))[iscell[:,0], :]
         else:
             print('\n'+30*'--')
-            print(' /!\ no file found for the manual labelling of red cells (generate it with the red-cell labelling GUI) /!\ ')
-            print(' /!\ taking the raw suit2p output with the classifier settings /!\ ')
+            print(' [!!] no file found for the manual labelling of red cells (generate it with the red-cell labelling GUI) [!!] ')
+            print(' [!!] taking the raw suit2p output with the classifier settings [!!] ')
             print('\n'+30*'--')
             redcell = np.load(os.path.join(pData_folder, 'redcell.npy'))[iscell[:,0], :]
             
@@ -137,14 +137,14 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
         region=list(np.arange(0, ncells)),
         description='all ROIs')
 
-    # FLUORESCENCE (all are required) /!\ YANN: removed spks.npy
+    # FLUORESCENCE (all are required) [!!] YANN: removed spks.npy
     file_strs = ['F.npy', 'Fneu.npy']
     name_strs = ['Fluorescence', 'Neuropil']
 
     for i, (fstr,nstr) in enumerate(zip(file_strs, name_strs)):
         timestamps=CaImaging_timestamps[plane_ID[i]::ops['nplanes']] # shifted for each ROI depending on the plane !!
         if len(traces[i])!=len(timestamps):
-            print(' /!\ be careful, the Bruker-xml timestamps and the suite2p frame number do not match ! /!\ ')
+            print(' [!!] be careful, the Bruker-xml timestamps and the suite2p frame number do not match ! [!!] ')
             print(' n=%i suite2p frames, n=%i Bruker timestamps) ' % (len(traces[i]), len(timestamps)))
         # print(len(timestamps), traces[i].shape)
         roi_resp_series = RoiResponseSeries(

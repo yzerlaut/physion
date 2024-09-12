@@ -7,7 +7,7 @@ import numpy as np
 def save_dict(filename, data):
 
     if '.npz' not in filename:
-        print('/!\\ The filename need to have the "npz" extension')
+        print('[!!] The filename need to have the "npz" extension')
         print('        ------- renamed to:', filename+'.npz')
         np.savez(filename+'.npz', **data)
     else:

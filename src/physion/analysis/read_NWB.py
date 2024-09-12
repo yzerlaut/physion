@@ -53,7 +53,7 @@ class Data:
         #     print('-----------------------------------------')
         #     print(be)
         #     print('-----------------------------------------')
-        #     print(' /!\ Pb with datafile: "%s"' % filename)
+        #     print(' [!!] Pb with datafile: "%s"' % filename)
         #     print('-----------------------------------------')
         #     print('')
             
@@ -237,7 +237,7 @@ class Data:
         """
         if 'Running-Speed' in self.nwbfile.acquisition:
 
-            self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:]
+            self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:,0]
             self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time+\
                 np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)\
                                         /self.nwbfile.acquisition['Running-Speed'].rate
@@ -274,8 +274,8 @@ class Data:
         if 'Pupil' in self.nwbfile.processing:
 
             self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
-            self.pupil_diameter =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:],
-                                             self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:]], axis=0)
+            self.pupil_diameter =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:,0],
+                                             self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:,0]], axis=0)
 
             if specific_time_sampling is not None:
                 return tools.resample(self.t_pupil, self.pupil_diameter,
@@ -298,8 +298,8 @@ class Data:
         if 'Pupil' in self.nwbfile.processing:
 
             self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
-            cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:]
-            cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:]
+            cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:,0]
+            cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:,0]
             self.gaze_movement = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
 
             if specific_time_sampling is not None:
@@ -332,7 +332,7 @@ class Data:
         if 'FaceMotion' in self.nwbfile.processing:
 
             self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps
-            self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:]
+            self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:,0]
 
             if specific_time_sampling is not None:
                 return tools.resample(self.t_facemotion, self.facemotion, 
@@ -409,7 +409,7 @@ class Data:
 
     def build_Zscore_dFoF(self, verbose=True):
         """
-        /!\ do not deal with specific time sampling /!\ 
+        [!!] do not deal with specific time sampling [!!] 
         """
         if not hasattr(self, 'dFoF'):
             self.build_dFoF(verbose=verbose)
@@ -512,7 +512,7 @@ class Data:
         if len(cond)==1:
             return cond[0]
         else:
-            print(' /!\\ protocol "%s" not found in data with protocols:' % protocol_name)
+            print(' [!!] protocol "%s" not found in data with protocols:' % protocol_name)
             print(self.protocols)
             return None
 
@@ -632,7 +632,7 @@ def scan_folder_for_NWBfiles(folder,
             SUBJECTS.append('N/A')
             if verbose:
                 print(be)
-                print('\n /!\\ Pb with "%s" \n' % f)
+                print('\n [!!] Pb with "%s" \n' % f)
         
     if verbose:
         print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES), (time.time()-t0)))

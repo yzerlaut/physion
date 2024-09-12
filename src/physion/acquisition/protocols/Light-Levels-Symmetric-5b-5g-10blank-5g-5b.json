@@ -1,6 +1,8 @@
 {
   "Presentation": "multiprotocol",
-  "shuffling" :"none",
+  "shuffling" :"none",  
+  "movie_refresh_freq":30.0,
+  "units":"cm",
   "Protocol-1": "subprotocols/blank/black-5min.json",
   "Protocol-2": "subprotocols/blank/grey-5min.json",
   "Protocol-3": "subprotocols/blank/black-10min.json",

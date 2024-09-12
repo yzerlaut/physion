@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtCore
 import sys, time, os, pathlib, json, tempfile
 import numpy as np
-import multiprocessing # different processes (cameras, visual stim, ...) are sent on different threads...
+import multiprocessing # different processes (cameras, visual stim, ...) are sent on different threads...)
 from ctypes import c_char_p
 import pyqtgraph as pg
 import subprocess
@@ -13,6 +13,8 @@ from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import load_settings
 from physion.assembling.gui import build_cmd
 
+from physion.acquisition import MODALITIES
+
 def multimodal(self,
                tab_id=0):
 
@@ -23,13 +25,7 @@ def multimodal(self,
 
     self.config = None
     self.subject, self.protocol = None, {}
-    self.MODALITIES = ['Locomotion',
-                       'FaceCamera',
-                       'RigCamera',
-                       'EphysLFP',
-                       'EphysVm',
-                       'CaImaging',
-                       'onlyDemo']
+    self.MODALITIES = MODALITIES
 
     ##########################################
     ######## Multiprocessing quantities  #####
@@ -37,8 +33,6 @@ def multimodal(self,
     # to be used through multiprocessing.Process:
     self.runEvent = multiprocessing.Event() # to turn on/off recordings 
     self.runEvent.clear()
-    self.readyEvent = multiprocessing.Event() # to tell of buffering finished
-    self.readyEvent.clear()
     self.quitEvent = multiprocessing.Event()
     self.quitEvent.clear()
     self.manager = multiprocessing.Manager() # to share a str across processes
@@ -52,7 +46,6 @@ def multimodal(self,
     self.screen, self.stop_flag = None, False
     self.FaceCamera_process = None
     self.RigCamera_process = None
-    self.VisualStim_process = None
     self.RigView_process = None
     self.params_window = None
 
@@ -113,7 +106,7 @@ def multimodal(self,
     #------------------- THEN MAIN PANEL   -------------------
     ip, width = 0, 4
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Config **', self),
+        QtWidgets.QLabel(40*' '+'** Configuration **', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
@@ -158,6 +151,7 @@ def multimodal(self,
     ip+=1
     # -
     self.protocolBox= QtWidgets.QComboBox(self)
+    # self.protocolBox.activated.connect(self.update_visualStim)
     tab.layout.addWidget(self.protocolBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
@@ -195,23 +189,17 @@ def multimodal(self,
 
     # NOW MENU INTERACTION BUTTONS
     ip, width = 1, 5
-    self.initButton = QtWidgets.QPushButton(' * Initialize * ')
-    self.initButton.clicked.connect(self.initialize)
-    tab.layout.addWidget(self.initButton,
-                         ip, 10, 1, width)
-    ip+=2
-    self.runButton = QtWidgets.QPushButton(' * RUN *')
+    self.runButton = QtWidgets.QPushButton(' * START *')
     self.runButton.clicked.connect(self.run)
     tab.layout.addWidget(self.runButton,
                          ip, 10, 1, width)
-    self.runButton.setEnabled(False)
     ip+=1
     self.stopButton = QtWidgets.QPushButton(' * Stop *')
     self.stopButton.clicked.connect(self.stop)
     tab.layout.addWidget(self.stopButton,
                          ip, 10, 1, width)
 
-    for button in [self.initButton, self.runButton, self.stopButton]:
+    for button in [self.runButton, self.stopButton]:
         button.setStyleSheet("font-weight: bold")
 
     ip+=2
@@ -229,14 +217,13 @@ def multimodal(self,
     load_settings(self)
 
     if self.animate_buttons:
-        self.initButton.setEnabled(True)
         self.runButton.setEnabled(False)
         self.stopButton.setEnabled(False)
 
 def build_NWB_for_last():
     # last folder
-    folder = last_datafolder_in_dayfolder(day_folder(FOLDERS['~/DATA']))
-    print(folder)
+    folder = last_datafolder_in_dayfolder(day_folder(FOLDERS[list(FOLDERS.keys())[0]]))
+    print('[ ] build NWB file for recording: ', folder)
     if os.path.isdir(folder):
         cmd, cwd = build_cmd(folder)
         print('\n launching the command \n :  %s \n ' % cmd)

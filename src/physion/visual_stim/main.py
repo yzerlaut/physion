@@ -1,22 +1,15 @@
 """
 class for the visual stimulation
 
-- test with :
-python -m physion.visual_stim.main physion/acquisition/protocols/drifting-gratings.json
-
-N.B. Psychopy has colors between -1 (black) and +1 (white)
+color in grayscale in range [0,1]
 """
+
 import numpy as np
 import itertools
 import os
 import pathlib
 import time
 import json
-
-try:
-    from psychopy import visual, core
-except ModuleNotFoundError:
-    pass # should be able to use it without psychopy
 
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
@@ -32,181 +25,122 @@ class visual_stim:
                  demo=False):
         """
         """
-        self.protocol = protocol
-        self.screen = SCREENS[self.protocol['Screen']]
-        self.blank_color = 0
 
-        self.protocol['movie_refresh_freq'] = \
-            protocol['movie_refresh_freq']\
-            if 'movie_refresh_freq' in protocol else 10.
+        self.protocol = protocol
+
+        # initialize screen parameters
+        self.screen = SCREENS[self.protocol['Screen']]
+        self.k = self.screen['gamma_correction']['k']
+        self.gamma = self.screen['gamma_correction']['gamma']
+        self.blank_color=self.gamma_correction(\
+                self.protocol['presentation-blank-screen-color'])
+        self.movie_refresh_freq = self.protocol['movie_refresh_freq']
+
+        # fix the unit system
+        if 'units' in self.protocol:
+            self.units = self.protocol['units']
+        else:
+            self.units = 'lin-deg' # convention < 08/2024
 
         if demo or (('demo' in self.protocol) and self.protocol['demo']):
-            # --------------------- #
-            #  ---- DEMO MODE ---- ##    we override the parameters
-            # --------------------- #
-            sr0, sr1 = self.screen['resolution']
-            self.screen['monitoring_square']['size'] = \
-                int(600*self.screen['monitoring_square']['size']/sr0)
-            self.screen['resolution'] = (800, int(800*sr1/sr0))
-            self.screen['screen_id'] = 0
             self.screen['fullscreen'] = False
 
         # then we can initialize the angle
         self.set_angle_meshgrid()
-        # and the screen presentation if need
-        if not ('no-window' in self.protocol):
-            self.init_screen_presentation()
 
         ### INITIALIZE EXP ###
         if not (self.protocol['Presentation']=='multiprotocol'):
             self.init_experiment(protocol, keys)
-
-    ################################################
-    ###                                         ####
-    ################################################
-
-    def init_screen_presentation(self):
-        self.k = self.screen['gamma_correction']['k']
-        self.gamma = self.screen['gamma_correction']['gamma']
-
-        blank_color=self.gamma_corrected_lum(\
-                2*self.protocol['presentation-blank-screen-color']-1)
-
-        self.win = visual.Window(self.screen['resolution'],
-                                 fullscr=self.screen['fullscreen'],
-                                 units='pix',
-                                 screen=1 if (('Rig' in self.protocol) and\
-                                         ('A1' in self.protocol['Rig'])) else 2,
-                                 checkTiming=(os.name=='posix'), # for os x
-                                 color=blank_color)
-
-        # ---- blank screen ----
-        self.blank = visual.ImageStim(\
-                win=self.win,
-                image=np.ones(self.screen['resolution'])*blank_color,
-                units='pix',
-                size=self.screen['resolution'])
-
-        # ---- monitoring square properties ----
-        if self.screen['monitoring_square']['location']=='top-right':
-            pos = [int(x/2.-self.screen['monitoring_square']['size']/2.)\
-                    for x in self.screen['resolution']]
-        elif self.screen['monitoring_square']['location']=='bottom-left':
-            pos = [int(-x/2.+self.screen['monitoring_square']['size']/2.)\
-                    for x in self.screen['resolution']]
-        elif self.screen['monitoring_square']['location']=='top-left':
-            pos = [int(-self.screen['resolution'][0]/2.+\
-                    self.screen['monitoring_square']['size']/2.),
-                   int(self.screen['resolution'][1]/2.-\
-                           self.screen['monitoring_square']['size']/2.)]
-        elif self.screen['monitoring_square']['location']=='bottom-right':
-            pos = [int(self.screen['resolution'][0]/2.-\
-                    self.screen['monitoring_square']['size']/2.),
-                   int(-self.screen['resolution'][1]/2.+\
-                           self.screen['monitoring_square']['size']/2.)]
-        else:
-            print(30*'-'+'\n /!\\ monitoring square location not recognized !!')
-
-        self.on = visual.GratingStim(win=self.win,
-                                     size=self.screen['monitoring_square']['size'],
-                                     pos=pos, sf=0,
-                                     color=1,
-                                     units='pix')
-        self.off = visual.GratingStim(win=self.win,
-                                      size=self.screen['monitoring_square']['size'],
-                                      pos=pos, sf=0,
-                                      color=-1,
-                                      units='pix')
 
 
     ################################
     #  ---   Gamma correction  --- #
     ################################
 
-    def gamma_corrected_lum(self, level):
-        return 2*np.power(((level+1.)/2./self.k), 1./self.gamma)-1.
-
-    def gamma_corrected_contrast(self, contrast):
-        return np.power(contrast/self.k, 1./self.gamma)
+    def gamma_correction(self, lum):
+        return np.power(lum/self.k, 1./self.gamma)
 
     ################################
     #  ---       Geometry      --- #
     ################################
 
-    def cm_to_angle(self, value):
-        return 180./np.pi*np.arctan(value/self.screen['distance_from_eye'])
-
-    def pix_to_angle(self, value):
-        return self.cm_to_angle(value/self.screen['resolution'][0]*self.screen['width'])
-
     def set_angle_meshgrid(self):
         """
-        #  ------- for simplicity -------  #
-        # we linearize the arctan function #
         """
-        dAngle_per_pix = self.pix_to_angle(1.)
 
-        x, z = np.meshgrid(dAngle_per_pix*(\
-                np.arange(self.screen['resolution'][0])-\
-                    self.screen['resolution'][0]/2.),
-                           dAngle_per_pix*(\
-                np.arange(self.screen['resolution'][1])-\
-                    self.screen['resolution'][1]/2.),
-                           indexing='xy')
-        self.x, self.z = x.T, z.T
+        # we start from the real pixel Cartesian coordinates on the screen
+        widths, heights = np.meshgrid(\
+                             np.linspace(-self.screen['width']/2., 
+                                         self.screen['width']/2., 
+                                         self.screen['resolution'][0]),
+                             np.linspace(-self.screen['height']/2., 
+                                          self.screen['height']/2., 
+                                          self.screen['resolution'][1]),
+                                      indexing='xy')
+        # we transpose given our coordinate system:
+        self.widths, self.heights = widths.T, heights.T
 
-    def angle_to_pix(self, angle):
-        # using the above linear approx, the relationship is just the inverse:
-        return angle/self.pix_to_angle(1.)
+        self.mask = np.ones(self.widths.shape, dtype=bool) # stim mask, True by default
+
+        if self.units=='cm':
+
+            # we convert to angles in the x and z directions
+            self.x = np.arctan(self.widths/self.screen['distance_from_eye'])
+            self.z = np.arctan(self.heights*np.cos(self.x)/self.screen['distance_from_eye'])
+
+        elif self.units=='deg':
+
+            altitudeMax = np.arctan(self.screen['height']/2./self.screen['distance_from_eye'])
+            azimuthMax = self.screen['resolution'][0]\
+                                /self.screen['resolution'][1]*altitudeMax
+
+            x, z = np.meshgrid(\
+                         np.linspace(-azimuthMax, azimuthMax,
+                                     self.screen['resolution'][0]),
+                         np.linspace(-altitudeMax, altitudeMax,
+                                      self.screen['resolution'][1]),
+                                  indexing='xy')
+            self.x, self.z = x.T, z.T
+
+            self.widths = self.screen['distance_from_eye']*np.tan(self.x)
+            self.heights = self.screen['distance_from_eye']*np.tan(self.z)/np.cos(self.x)
+
+            self.mask = (np.abs(self.widths)<=self.screen['width']/2.) &\
+                            (np.abs(self.heights)<=self.screen['height']/2.)
+
+        elif self.units=='lin-deg':
+
+            # OLD STRATEGY --> deprecated >08/2024
+            # we linearize the angle
+            dAngle_per_pix = np.arctan(
+                    1./self.screen['resolution'][0]*self.screen['width']\
+                    /self.screen['distance_from_eye'])
+            x, z = np.meshgrid(dAngle_per_pix*(\
+                                    np.arange(self.screen['resolution'][0])-\
+                                        self.screen['resolution'][0]/2.),
+                               dAngle_per_pix*(\
+                                    np.arange(self.screen['resolution'][1])-\
+                                        self.screen['resolution'][1]/2.),
+                                       indexing='xy')
+            self.x, self.z = x.T, z.T
+
+
+        # convert back to angles in degrees
+        self.x *= 180./np.pi
+        self.z *= 180./np.pi
 
     # some general grating functions
     def compute_rotated_coords(self, angle,
                                xcenter=0, zcenter=0):
-        return (self.x-xcenter)*np.cos(angle/180.*np.pi)+(self.z-zcenter)*np.sin(angle/180.*np.pi)
+        return (self.x-xcenter)*np.cos(angle/180.*np.pi)+\
+                    (self.z-zcenter)*np.sin(angle/180.*np.pi)
 
     def compute_grating(self, xrot,
-                        spatial_freq=0.1, contrast=1, time_phase=0.):
-        return contrast*(1+np.cos(np.pi/2.+2*np.pi*(spatial_freq*xrot-time_phase)))/2.
-
-    def get_frames_sequence(self, index):
-        """
-        we build a sequence of frames by successive calls to "self.get_image"
-
-        here we use self.refresh_freq, not cls.refresh_freq
-         """
-        time_indices, times, FRAMES = init_times_frames(self, index,\
-                                                        self.refresh_freq)
-
-        order = self.compute_frame_order(times, index) # shuffling inside if randomize !!
-
-        for iframe, t in enumerate(times):
-            new_t = order[iframe]/self.refresh_freq
-
-            img = self.get_image(index, new_t)
-
-            FRAMES.append(self.image_to_frame(img))
-
-        return time_indices, FRAMES, self.refresh_freq
-
-
-    def compute_frame_order(self, times, index):
-        """
-        function to handle the randomization of frames across time
-        """
-
-        order = np.arange(len(times))
-
-        if ('randomize' in self.protocol) and (self.protocol['randomize']=="True"):
-            # we randomize the order of the time sequence here !!
-            if ('randomize-per-trial' in self.protocol) and\
-                    (self.protocol['randomize-per-trial']=="True"):
-                np.random.seed(int(self.experiment['seed'][index]+1000*index))
-            else:
-                np.random.seed(int(self.experiment['seed'][index]))
-            np.random.shuffle(order) # shuffling
-
-        return order
-
+                        spatial_freq=0.1, 
+                        time_phase=0.,
+                        phase_shift_Deg=90.):
+        return 0.5+np.cos(phase_shift_Deg*np.pi/180.+\
+                        2*np.pi*(spatial_freq*xrot-time_phase))/2.
 
     ################################
     #  ---  Draw Stimuli       --- #
@@ -217,6 +151,7 @@ class visual_stim:
                           radius=10,
                           spatial_freq=0.1,
                           contrast=1.,
+                          phase_shift_Deg=0.,
                           time_phase=0.,
                           xcenter=0,
                           zcenter=0):
@@ -229,11 +164,10 @@ class visual_stim:
 
         full_grating = self.compute_grating(xrot,
                                             spatial_freq=spatial_freq,
-                                            contrast=1,
-                                            time_phase=time_phase)-0.5
+                                            time_phase=time_phase,
+                                            phase_shift_Deg=phase_shift_Deg)-0.5
 
-        image[cond] = 2*contrast*full_grating[cond] # /!\ "=" for the patch
-
+        image[cond] += contrast*full_grating[cond] 
 
 
     def add_gaussian(self, image,
@@ -263,9 +197,9 @@ class visual_stim:
         image[cond] = color
 
 
-    ################################
-    #  ---     Experiment      --- #
-    ################################
+    ########################################################
+    #  ---     Experiment (time course) properties     --- #
+    ########################################################
 
     def init_experiment(self, protocol, keys):
 
@@ -309,7 +243,7 @@ class visual_stim:
                                             protocol[key+'-2'],
                                             protocol['N-'+key]))
                 else:
-                    #  /!\ we pick the SECOND VALUE as the constant one 
+                    #  [!!]  we pick the SECOND VALUE as the constant one 
                     #         (so remember to fill this right in GUI)
                     VECS.append(np.array([protocol[key+'-2']])) 
 
@@ -370,239 +304,35 @@ class visual_stim:
         self.tstop = self.experiment['time_stop'][-1]+\
                             protocol['presentation-poststim-period']
 
-    # the close function
-    def close(self):
-        self.win.close()
-        core.quit()
 
-    # BLANK SCREEN
-    def blank_screen(self):
-        self.blank.draw()
-        self.off.draw()
-        try:
-            self.win.flip()
-        except AttributeError:
-            pass
-
-    # blinking in one corner
-    def add_monitoring_signal(self, dt):
-        """ Pulses of length 0.15s at the times : [0, 0.5, 1, 2, 3, 4, ...] """
-        if (dt<0.15) or ((dt>=0.5) and (dt<0.65)):
-            self.on.draw()
-        elif int(1000*dt)%1000<150:
-            self.on.draw()
-        else:
-            self.off.draw()
-
-
-    ##########################################################
-    #############      PRESENTING STIMULI    #################
-    ##########################################################
-
-    def prepare_stimProps_tables(self, dt, verbose=True):
-        if verbose:
-            tic = time.time()
-        # build time axis
-        t = np.arange(int((2+self.tstop)/dt))*dt # add 2 seconds at the end for the end-stim flag
-        # array for the interstim flag
-        self.is_interstim = np.ones(len(t), dtype=bool) # default to True
-        self.next_index_table = np.zeros(len(t), dtype=int)
-        # array for the time start
-        self.time_start_table = np.zeros(len(t), dtype=float)
-        # -- loop over episode
-        for i in range(len(self.experiment['index'])):
-            tCond = (t>=self.experiment['time_start'][i]) &\
-                        (t<self.experiment['time_stop'][i])
-            self.is_interstim[tCond] = False
-            self.time_start_table[tCond] = self.experiment['time_start'][i]
-            self.next_index_table[t>=self.experiment['time_start'][i]] = i+1
-        # flag for end of stimulus
-        self.next_index_table[t>=self.experiment['time_stop'][-1]] = -1
-        if verbose:
-            print('tables initialisation took: %.2f' % (\
-                    time.time()-tic))
-
-
-    def buffer_stim(self, 
-                    binary_folder, 
-                    protocol_id, 
-                    stim_index):
-        """
-        BUFFERING numpy array into psychopy
-        """
-        tic = time.time()
-        # get metadata
-        props = np.load(
-                os.path.join(\
-                    binary_folder,\
-                    'protocol-%i_index-%i.npy' % (\
-                        protocol_id, stim_index)), allow_pickle=True).item()
-        # get stim array
-        array = np.fromfile(
-                os.path.join(\
-                    binary_folder,\
-                    'protocol-%i_index-%i.bin' % (\
-                        protocol_id, stim_index)),
-                    dtype=np.uint8).reshape(props['binary_shape'])
-        # buffer images in psychopy
-        buffer = []
-        for i in range(array.shape[0]):
-            image=self.gamma_corrected_lum(\
-                         2.*array[i,:,:].T/255.-1.)
-            buffer.append(\
-                visual.ImageStim(\
-                    win=self.win,
-                    image=image,
-                    units='pix', 
-                    size=self.screen['resolution']))
-        print(' - buffering stim #%i of protocol #%i (took %.2fs)' % (\
-                stim_index+1, protocol_id+1, time.time()-tic))
-        return buffer, props['time_indices'], props['refresh_freq']
-
-    def buffer_all_stims(self, binary_folder, readyEvent):
-        """
-        loop over all available binary files and buffer them
-        """
-        self.BUFFERS, self.TIME_INDICES, self.REFRESH_FREQS = [], [], []
-        def binary_file(iProtocol, iStim):
-            return os.path.join(binary_folder, 
-                    'protocol-%i_index-%i.bin' % (\
-                            iProtocol, iStim))
-        print('--------------------------------------')
-        print(' starting buffering [...]')
-        print('--------------------------------------')
-        iProtocol, iStim = 0, 0
-        while os.path.isfile(binary_file(iProtocol, iStim)):
-            self.BUFFERS.append([])
-            self.TIME_INDICES.append([])
-            self.REFRESH_FREQS.append([])
-            while os.path.isfile(binary_file(iProtocol, iStim)):
-                buffer, time_indices, refresh_freq = \
-                        self.buffer_stim(binary_folder,
-                                         iProtocol, iStim)
-                self.BUFFERS[iProtocol].append(buffer)
-                self.TIME_INDICES[iProtocol].append(time_indices)
-                self.REFRESH_FREQS[iProtocol].append(refresh_freq)
-                iStim += 1
-            iProtocol += 1
-            iStim = 0
-        print('--------------------------------------')
-        print(' [ok] buffering of all stims done !   ')
-        print('--------------------------------------')
-        readyEvent.set()
-
-    def run_and_check(self, 
-                      runEvent, readyEvent,
-                      datafolder, binary_folder,
-                      use_prebuffering=True,
-                      speed=1.,
-                      dt=10e-3,
-                      verbose=False):
-
-        # showing the blank screen during initialisation
-        self.blank_screen()
-        self.prepare_stimProps_tables(dt, verbose=verbose)
-        if use_prebuffering:
-            self.buffer_all_stims(binary_folder, readyEvent)
-
-        # waiting for the external trigger [...]
-        while not runEvent.is_set():
+    def prepare_stimProps_tables(self,
+                                 verbose=True):
             if verbose:
-                print('waiting for the external trigger [...]')
-            time.sleep(0.2)
+                tic = time.time()
+
+            dt = 1./self.movie_refresh_freq
+            # build time axis
+            #               add 2 seconds at the end for the end-stim flag
+            t = np.arange(int((2+self.tstop)/dt))*dt 
+            # array for the interstim flag
+            self.is_interstim = np.ones(len(t), dtype=bool) # default to True
+            self.next_index_table = np.zeros(len(t), dtype=int)
+            # array for the time start
+            self.time_start_table = np.zeros(len(t), dtype=float)
+            # -- loop over episode
+            for i in range(len(self.experiment['index'])):
+                tCond = (t>=self.experiment['time_start'][i]) &\
+                            (t<self.experiment['time_stop'][i])
+                self.is_interstim[tCond] = False
+                self.time_start_table[tCond] = self.experiment['time_start'][i]
+                self.next_index_table[t>=self.experiment['time_start'][i]] = i+1
+            # flag for end of stimulus
+            self.next_index_table[t>=self.experiment['time_stop'][-1]] = -1
+            if verbose:
+                print('[ok] stim tables initialisation took: %.2f' % (\
+                        time.time()-tic)) 
 
 
-        ##########################################
-        # --> from here external trigger launched  (now runEvent=True)
-        
-        ##########################################################
-        ###           initialize the stimulation              ####
-        ##########################################################
-        current_index, refresh_freq = -1, 30.
-
-        # grab the NIdaq starting time (or set one)
-        NIstart = os.path.join(str(datafolder.get()), 'NIdaq.start.npy')
-        t0 = time.time()
-        while not os.path.isfile(NIstart) and (time.time()-t0)<3:
-            # waiting 3 seconds max that the NIdaq.start gets written
-            time.sleep(0.05)
-        try:
-            t0 = np.load(NIstart)[0]
-        except (AttributeError, FileNotFoundError):
-            print(' ------------------------------------------ ')
-            print('\n  /!\\ ', str(datafolder.get()),\
-                        'NIdaq.start.npy', 'not found ! /!\\ \n')
-            print('  THIS RECORDING WILL NOT BE SYNCHRONIZED ONLINE !!! ')
-            print(' ------------------------------------------ ')
-            t0 = time.time()
-
-        ##########################################################
-        ###               RUN (while) LOOP                    ####
-        ##########################################################
-        print('\n')
-        print('--------------------------------------')
-        print('        RUNNING PROTOCOL              ')
-        print('--------------------------------------\n')
-        while runEvent.is_set():
-
-            t = (time.time()-t0)*speed # speed factor to speed up things
-            iT = int(t/dt)
-
-            if self.next_index_table[iT]<0:
-                # we reached the end -> need to stop   (see stim_index_table[t>tstop]=-1 above)
-
-                self.blank_screen()
-                runEvent.clear() # send the stop signal to all processes
-
-                print('--------------------------------------')
-                print(' [ok] protocol terminated successfully')
-                print('--------------------------------------')
-
-            elif not self.is_interstim[iT]:
-                # we need to show the stimulus
-
-                iFrame = min([int((t-self.time_start_table[iT])*self.refresh_freq),#
-                              len(self.time_indices)-1])
-                self.buffer[self.time_indices[iFrame]].draw()
-                self.add_monitoring_signal(speed*(t-self.time_start_table[iT]))
-                self.win.flip()
-
-            elif self.is_interstim[iT] and\
-                    (current_index<self.next_index_table[iT]):
-                # -*- need to update the stimulation buffer -*-
-
-                protocol_id = self.experiment['protocol_id'][self.next_index_table[iT]]
-                stim_index = self.experiment['index'][self.next_index_table[iT]]
-                if use_prebuffering:
-                    self.buffer = self.BUFFERS[protocol_id][stim_index]
-                    self.time_indices = self.TIME_INDICES[protocol_id][stim_index]
-                    self.refresh_freq = self.REFRESH_FREQS[protocol_id][stim_index]
-                else:
-                    self.buffer, self.time_indices, self.refresh_freq =\
-                            self.buffer_stim(binary_folder,
-                                             protocol_id, stim_index)
-
-                #now we update the counter
-                current_index = self.next_index_table[iT]
-
-                print(' - t=%.2dh:%.2dm:%.2fs' % (t/3600, (t%3600)/60, (t%60)),
-                      '- Running protocol of index %i/%i' %\
-                            (current_index+1, len(self.experiment['index'])),
-                      'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
-
-            elif self.is_interstim[iT]:
-                # nothing to do, already buffered, just wait the end of interstim
-                self.blank_screen()
-
-            else:
-                print('condition should never occur')
-            
-        print('\n')
-        print('--------------------------------------')
-        print('       STOPING PROTOCOL               ')
-        print(' --> closing the VisualStim process !')
-        print('--------------------------------------\n')
-        self.close()
 
     #################################################
     #############    DRAWING STIMULI   ##############
@@ -613,16 +343,6 @@ class visual_stim:
         print('to be implemented in child class')
         """
         return 0*self.x+0.5
-
-    def plot_stim_picture(self, episode,
-                          ax=None, label=None, vse=False):
-
-        ax = self.show_frame(episode,
-                             ax=ax,
-                             label=label,
-                             vse=vse)
-
-        return ax
 
     def get_prestim_image(self):
         if 'presentation-prestim-screen' in self.protocol:
@@ -663,11 +383,12 @@ class visual_stim:
 
     def show_frame(self, episode,
                    time_from_episode_start=0,
-                   label={'degree':10,
+                   label={'size':10, 'label':'10$^o$ ',
                           'shift_factor':0.02,
                           'lw':2, 'fontsize':12},
                    arrow=None,
                    vse=False,
+                   with_mask=False,
                    ax=None,
                    return_img=False):
         """
@@ -675,7 +396,7 @@ class visual_stim:
         display the visual stimulus at a given time in a given episode of a stimulation pattern
 
         --> optional with angular label (switch to None to remove)
-                   label={'degree':5,
+                   label={'size':5,label='5deg',
                           'shift_factor':0.02,
                           'lw':2, 'fontsize':12},
         --> optional with arrow for direction propagation (switch to None to remove)
@@ -690,12 +411,17 @@ class visual_stim:
         if ax==None:
             import matplotlib.pylab as plt
             fig, ax = plt.subplots(1,
-                                   figsize=(4,
-                                            4*self.screen['resolution'][1]/self.screen['resolution'][0]))
+                       figsize=(4,
+                                4*self.screen['resolution'][1]/self.screen['resolution'][0]))
 
-        img = ax.imshow(self.image_to_frame(self.get_image(episode,
-                                                time_from_episode_start=\
-                                                        time_from_episode_start),
+        image = self.get_image(episode,
+                                  time_from_episode_start=\
+                                           time_from_episode_start)
+
+        if with_mask:
+            image[~self.mask] = 1
+
+        img = ax.imshow(self.image_to_frame(image,
                                             psychopy_to_numpy=True),
                         extent=(0, self.screen['resolution'][0],
                                 0, self.screen['resolution'][1]),
@@ -704,41 +430,56 @@ class visual_stim:
                         origin='lower',
                         aspect='equal')
 
+
         if vse:
             self.vse = self.get_vse(episode)
             if self.vse is not None:
                 self.add_vse(ax, self.vse)
 
         ax.axis('off')
+        ax.axis('equal')
 
         if label is not None:
             nz, nx = self.x.shape
-            L, shift = nx/(self.x[-1][-1]-self.x[0][0])*label['degree'], label['shift_factor']*nx
+            L, shift = nx/(self.z.max()-self.z.min())*label['size'], label['shift_factor']*nx
             ax.plot([-shift, -shift], [-shift,L-shift], 'k-', lw=label['lw'])
             ax.plot([-shift, L-shift], [-shift,-shift], 'k-', lw=label['lw'])
-            ax.annotate('%.0f$^o$ ' % label['degree'], (-shift, -shift), fontsize=label['fontsize'], ha='right', va='bottom')
+            ax.annotate(label['label'], (-shift, -shift), 
+                        fontsize=label['fontsize'], ha='right', va='bottom')
 
         if return_img:
             return img
         else:
             return ax
 
-    def plot_stim_picture(self, episode, ax,
-                          label={'degree':20,
-                                 'shift_factor':0.02,
-                                 'lw':1, 'fontsize':10},
+    def plot_stim_picture(self, episode, 
+                          ax=None,
                           vse=False,
                           arrow={'length':20,
                                  'width_factor':0.05,
-                                 'color':'red'}):
+                                 'color':'red'},
+                          with_mask=False):
 
         """
         """
         tcenter = .5*(self.experiment['time_stop'][episode]-\
                       self.experiment['time_start'][episode])
 
-        ax = self.show_frame(episode, tcenter, ax=ax,
-                             label=label)
+        
+        if self.units in ['cm', 'lin-deg']:
+            label={'size':10/self.heights.max()*self.z.max(),
+                   'label':'10cm ',
+                   'shift_factor':0.02,
+                   'lw':1, 'fontsize':10}
+        else:
+            label={'size':20,'label':'20$^o$  ',
+                   'shift_factor':0.02,
+                   'lw':1, 'fontsize':10}
+
+        ax = self.show_frame(episode, tcenter, 
+                             ax=ax,
+                             label=label,
+                             with_mask=with_mask)
 
 
     def update_frame(self, episode, img,
@@ -766,20 +507,6 @@ class visual_stim:
 
 
 #####################################################
-##  ----      MOVIE STIMULATION REPLAY      --- #####
-#####################################################
-
-class movie_replay(visual_stim):
-    """ TO BE IMPLEMENTED """
-
-    def __init__(self, protocol):
-
-        super().__init__(protocol)
-
-    def run(self, parent):
-        pass
-
-#####################################################
 ##  ----         MULTI-PROTOCOLS            --- #####
 #####################################################
 
@@ -797,9 +524,7 @@ class multiprotocol(visual_stim):
             # we load a previously saved multiprotocol
             while 'Protocol-%i'%i in protocol:
                 subprotocol = {'Screen':protocol['Screen'],
-                               'Presentation':'',
-                               'demo':(('demo' in protocol) and protocol['demo']),
-                               'no-window':True}
+                               'Presentation':''}
                 for key in protocol:
                     if ('Protocol-%i-'%i in key):
                         nKey = key.replace('Protocol-%i-'%i, '')
@@ -814,13 +539,13 @@ class multiprotocol(visual_stim):
                              'protocols']+protocol['Protocol-%i'%i].split('/')
                 Ppath = os.path.join(*path_list)
                 if not os.path.isfile(Ppath):
-                    print(' /!\\ "%s" not found in Protocol folder /!\\  ' %\
+                    print(' [!!] "%s" not found in Protocol folder [!!]   ' %\
                                             protocol['Protocol-%i'%i])
                 with open(Ppath, 'r') as fp:
                     subprotocol = json.load(fp)
-                    subprotocol['Screen'] = protocol['Screen']
-                    subprotocol['no-window'] = True
-                    subprotocol['demo'] = (('demo' in protocol) and protocol['demo'])
+                    # properties inherited form the parent protocol:
+                    for key in ['Screen', 'units', 'movie_refresh_freq']:
+                        subprotocol[key] = protocol[key]
                     self.STIM.append(build_stim(subprotocol))
                     for key, val in subprotocol.items():
                         protocol['Protocol-%i-%s'%(i,key)] = val
@@ -925,97 +650,7 @@ class multiprotocol(visual_stim):
 
 def init_bg_image(cls, index):
     """ initializing an empty image"""
-    return 2*cls.experiment['bg-color'][index]-1.+0.*cls.x
+    return cls.experiment['bg-color'][index]+0.*cls.x
 
-def init_times_frames(cls, index, refresh_freq, security_factor=1.5):
-    """ we use this function for each protocol initialisation"""
-    interval = cls.experiment['time_stop'][index]-cls.experiment['time_start'][index]
-    itend = np.max([1, int(security_factor*interval*refresh_freq)])
-    return np.arange(itend), np.arange(itend)/refresh_freq, []
-
-##############################################
-## to be used by the multiprocessing module ##
-##############################################
-
-def launch_VisualStim(protocol, 
-                      runEvent, readyEvent,
-                      datafolder, binary_folder,
-                      use_prebuffering=True,
-                      speed=1.):
-
-    stim = build_stim(protocol)
-    np.save(os.path.join(str(datafolder.get()),
-            'visual-stim.npy'), stim.experiment)
-    print('[ok] Visual-stimulation data saved as "%s"' %\
-            os.path.join(str(datafolder.get()), 'visual-stim.npy'))
-    stim.run_and_check(runEvent, readyEvent,
-                       datafolder, binary_folder,
-                       use_prebuffering=use_prebuffering,
-                       speed=speed)
-
-
-if __name__=='__main__':
-
-    ######################################
-    ####  visualize the stimulation   ####
-    ######################################
-
-    import argparse
-    parser=argparse.ArgumentParser()
-    parser.add_argument("protocol", 
-                        help="protocol a json file", 
-                        default='')
-    parser.add_argument('-s', "--speed", type=float,
-                        help="speed to visualize the stimulus (1. by default)", 
-                        default=1.)
-    parser.add_argument('-t', "--tstop", 
-                        type=float, default=15.)
-    parser.add_argument("--t0", 
-                        help="start time", 
-                        default=0.)
-    args = parser.parse_args()
-
-    ######################################
-    ####     test as a subprocess   ######
-    ######################################
-
-    import json, multiprocessing, tempfile
-    from ctypes import c_char_p
-    from physion.acquisition.tools import base_path
-    from physion.visual_stim.build import build_stim
-
-    manager = multiprocessing.Manager() # to share a str across processes
-    datafolder = manager.Value(c_char_p, tempfile.gettempdir())
-    runEvent = multiprocessing.Event()
-    runEvent.clear()
-    readyEvent = multiprocessing.Event()
-    readyEvent.clear()
-
-    with open(args.protocol, 'r') as fp:
-        protocol = json.load(fp)
-    protocol['demo'] = True
-
-    binary_folder = \
-        os.path.join(os.path.dirname(args.protocol), 'binaries',
-            os.path.basename(args.protocol.replace('.json','')))
-
-    use_pre_buffering = True
-    VisualStim_process = multiprocessing.Process(target=launch_VisualStim,\
-            args=(protocol,
-                  runEvent, readyEvent,
-                  datafolder, binary_folder,
-                  use_pre_buffering, args.speed))
-    VisualStim_process.start()
-
-    # -- with use_prebuffering=True
-    while not readyEvent.is_set():
-        time.sleep(0.1)
-    print('\n buffering ready... --> launching stim ! ')
-    time.sleep(2)
-    runEvent.set()
-    time.sleep(args.tstop)
-    print(' stoping stim ')
-    runEvent.clear()
-    
 
 

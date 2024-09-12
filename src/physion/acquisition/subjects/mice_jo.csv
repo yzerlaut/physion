@@ -1,8 +1,0 @@
-Subject-ID,Anibio-Number,Date-of-Birth,Tatoo,Sex,Strain,Genotype,Surgery,Surgery-Date,Virus,headplate-angle-from-rig-axis,misc,FOV1,FOV2,FOV3,FOV4,FOV5,FOV6,injection-location,virus-injection
-demo-Mouse,,15/09/2022,,Female,C57B6/J,,headplate+injection,,,10,,"(580,-179)","(-12,570)","(325, 1270)","(1535, 888)","(1000,-470)","(100, -300)","(-4.1,2.8)",2*250nL@20nL/min-5MinWait
-Mouse_E2-NDNF,,15/09/2022,,Female,C57B6/J,NDNF-Cre,headplate+injection,21/11/2022,VR21,10,cut right ear,"(100,-150)","(-287,413)","(-100,950)","(-750,750)","(-970,293)",,"(-4.1,2.8)",2*250nL@20nL/min-5MinWait
-Mouse_F1-NDNF,,22/09/2022,,Female,C57B6/J,NDNF-Cre,headplate+injection,21/11/2022,VR21,10,red-dot-below-headplate,"(180,-440)","(450,-650)","(-860,300)","(700, -100)",,,"(-4.1,2.8)",2*250nL@20nL/min-5MinWait
-Mouse_F2-NDNF,,22/09/2022,,Female,C57B6/J,NDNF-Cre,headplate+injection,21/11/2022,VR21,10,two-dots-on-cement,"(545,-60)","(450,-600)","(470,-360)",,,,"(-4.1,2.8)",2*250nL@20nL/min-5MinWait
-Mouse_F3-NDNF,,22/09/2022,,Female,C57B6/J,NDNF-Cre,headplate+injection,21/11/2022,VR21,10,red-coloring-on-cement,"(-230,425)",,,,,,"(-4.1,2.8)",2*250nL@20nL/min-5MinWait
-Mouse_Marie,,02/02/2023,,Female,C57B6/J,VIP-Cre-SST-Flp,headplate+injection,,,,,,,,,,,,
-VIPcre-demo,,28/08/2022,,Male,C57B6/J,VIP-Cre,headplate+injection,,,,,,,,,,,,

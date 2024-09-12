@@ -26,10 +26,13 @@
   "N-y-center": 0,
   "contrast-1": 1.0,
   "contrast-2": 1.0,
-  "N-contrast": 0,
   "bg-color-1": 0.5,
   "bg-color-2": 0.5,
   "N-bg-color": 0,
+  "N-contrast": 0,
+  "phase-1": 0,
+  "phase-2": 0,
+  "N-phase": 0,
   "starting-index": 0,
   "N-repeat": 10
 }

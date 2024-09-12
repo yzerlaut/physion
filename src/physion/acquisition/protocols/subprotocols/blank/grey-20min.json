@@ -10,6 +10,7 @@
   "presentation-poststim-screen": 0,
   "presentation-interstim-period": 3.0,
   "presentation-interstim-screen": 0,
+  "presentation-blank-screen-color": 0.5,
   "N-repeat": 1,
   "starting-index": 0,
   "bg-color-1": 0.5,

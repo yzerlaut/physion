@@ -7,7 +7,6 @@ from physion.utils.files import get_files_with_extension,\
         list_dayfolder, get_TSeries_folders
 from physion.imaging.suite2p.preprocessing import build_suite2p_options,\
         default_ops
-from physion.assembling.build_NWB import build_cmd
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.presets import presets
 

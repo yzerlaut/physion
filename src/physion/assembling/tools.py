@@ -12,7 +12,7 @@ def build_subsampling_from_freq(subsampled_freq=1.,
 
     """
     if original_freq==0:
-        print('  /!\ problem with original sampling freq /!\ ')
+        print('  [!!] problem with original sampling freq [!!] ')
         
     if subsampled_freq==0:
         SUBSAMPLING = np.linspace(0, N-1, Nmin).astype(np.int16)

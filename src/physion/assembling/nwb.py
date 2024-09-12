@@ -7,19 +7,22 @@ from hdmf.data_utils import DataChunkIterator
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 from dateutil.tz import tzlocal
 
+from physion.acquisition.tools import get_subject_props
 from physion.assembling.IO.bruker_data import StartTime_to_day_seconds
 from physion.assembling.realign_from_photodiode import realign_from_photodiode
 from physion.behavior.locomotion import compute_speed
 from physion.analysis.tools import resample_signal
 from physion.assembling.tools import load_FaceCamera_data
 from physion.assembling.tools import build_subsampling_from_freq
+from physion.assembling.add_ophys import add_ophys
 from physion.utils.paths import python_path
 
 
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
-                  'raw_FaceCamera', 'VisualStim',
-                  'Locomotion', 'Pupil', 'FaceMotion',
-                  'EphysLFP', 'EphysVm']
+                  'raw_FaceCamera', 'Pupil', 'FaceMotion',
+                  # 'EphysLFP', 'EphysVm',
+                  'VisualStim',
+                  'Locomotion'] 
 
 
 def build_NWB_func(args):
@@ -31,7 +34,6 @@ def build_NWB_func(args):
     ####            BASIC metadata            #######
     #################################################
 
-    
     if os.path.isfile(os.path.join(args.datafolder, 'metadata.json')):
         with open(os.path.join(args.datafolder, 'metadata.json'),
                   'r', encoding='utf-8') as f:
@@ -41,15 +43,19 @@ def build_NWB_func(args):
         metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
                            allow_pickle=True).item()
 
+    if 'date' not in metadata:
+        metadata['date'] = metadata['filename'][-19:-9]
+        metadata['time'] = metadata['filename'][-8:]
+
     # replace by day and time in metadata !!
     if os.path.sep in args.datafolder:
         sep = os.path.sep
     else:
         sep = '/' # a weird behavior on Windows
 
-    day = metadata['filename'].split('\\')[-2].split('_')
-    Time = metadata['filename'].split('\\')[-1].split('-')
-    identifier = metadata['filename'].split('\\')[-2]+'-'+metadata['filename'].split('\\')[-1]
+    day = metadata['date'].split('_')
+    Time = metadata['time'].split('-')
+    identifier = metadata['date']+'-'+metadata['time']
     start_time = datetime.datetime(int(day[0]),int(day[1]),int(day[2]),
                 int(Time[0]),int(Time[1]),int(Time[2]),tzinfo=tzlocal())
 
@@ -62,10 +68,6 @@ def build_NWB_func(args):
     else:
         subject_props = {}
         print('subject properties not in metadata ...')
-
-    # NIdaq tstart
-    if os.path.isfile(os.path.join(args.datafolder, 'NIdaq.start.npy')):
-        metadata['NIdaq_Tstart'] = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
 
     # override a few properties (when curating/rebuilding datafiles)
     if hasattr(args, 'subject_id') and ('subject_id' in subject_props):
@@ -108,8 +110,12 @@ def build_NWB_func(args):
                 source_script_file_name=str(pathlib.Path(__file__).resolve()),
                 file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
 
-    if not hasattr(args, 'filename'):
-        args.filename = os.path.join(pathlib.Path(args.datafolder).parent, '%s.nwb' % identifier)
+    if not hasattr(args, 'filename') or args.filename=='':
+        if args.destination_folder=='':
+            args.filename = os.path.join(pathlib.Path(args.datafolder).parent, '%s.nwb' % identifier)
+        else:
+            args.filename = os.path.join(args.destination_folder, '%s.nwb' % identifier)
+
     
     manager = pynwb.get_manager() # we need a manager to link raw and processed data
     
@@ -122,13 +128,11 @@ def build_NWB_func(args):
         NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), allow_pickle=True).item()
         NIdaq_Tstart = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
     except FileNotFoundError:
-        print(' /!\ No NI-DAQ data found /!\ ')
+        print(' [!!] No NI-DAQ data found [!!] ')
         print('   -----> Not able to build NWB file for "%s"' % args.datafolder)
         raise BaseException
 
-    
-    true_tstart0 = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
-    st = datetime.datetime.fromtimestamp(true_tstart0).strftime('%H:%M:%S.%f')
+    st = datetime.datetime.fromtimestamp(NIdaq_Tstart).strftime('%H:%M:%S.%f')
     true_tstart = StartTime_to_day_seconds(st)
     
     # #################################################
@@ -166,7 +170,9 @@ def build_NWB_func(args):
                                      original_freq=float(metadata['NIdaq-acquisition-frequency']),
                                      pre_smoothing=2./float(metadata['NIdaq-acquisition-frequency']),
                                      new_freq=args.photodiode_sampling)
-
+        if 'A1-2P' in metadata['Rig']:
+            Psignal *=-1 # reversing sign on the setup
+	
         VisualStim = np.load(os.path.join(args.datafolder,
                         'visual-stim.npy'), allow_pickle=True).item()
 
@@ -237,7 +243,7 @@ def build_NWB_func(args):
                 nwbfile.add_stimulus(VisualStimProp)
                 
         else:
-            print(' /!\ No VisualStim metadata found /!\ ')
+            print(' [!!] No VisualStim metadata found [!!] ')
     
         if args.verbose:
             print('=> Storing the photodiode signal for "%s" [...]' % args.datafolder)
@@ -284,7 +290,9 @@ def build_NWB_func(args):
                     def FaceCamera_frame_generator():
                         for i in FC_SUBSAMPLING:
                             try:
-                                im = np.load(os.path.join(args.datafolder, 'FaceCamera-imgs', FC_FILES[i])).astype(np.uint8).reshape(imgR.shape)
+                                im = np.load(os.path.join(args.datafolder, 
+                                    'FaceCamera-imgs', 
+                                    FC_FILES[i])).astype(np.uint8).reshape(imgR.shape)
                                 yield im
                             except ValueError:
                                 print('Pb in FaceCamera with frame #', i)
@@ -314,10 +322,12 @@ def build_NWB_func(args):
                                                  maxshape=(None, *imgR.shape),
                                                  dtype=np.dtype(np.uint8))
                     FaceCamera_frames = pynwb.image.ImageSeries(name='FaceCamera',
-                                                                data=FC_dataI,
-                                                                unit='NA',
-                                                                timestamps=FC_times[np.linspace(0, len(FC_times)-1, len(FCS_data['sample_frames']), dtype=int)])
-                                                                # timestamps=FC_times[FCS_data['sample_frames_index']]) # REPLACE THE ABOVE LINE AFTER SEPT 16th !!!
+                        data=FC_dataI,
+                        unit='NA',
+                        timestamps=FC_times[np.linspace(0, len(FC_times)-1, 
+                                                        len(FCS_data['sample_frames']), 
+                                                        dtype=int)])
+                        # timestamps=FC_times[FCS_data['sample_frames_index']]) # REPLACE THE ABOVE LINE AFTER SEPT 16th !!!
                     nwbfile.add_acquisition(FaceCamera_frames)
                     
             else:
@@ -325,7 +335,7 @@ def build_NWB_func(args):
 
         except BaseException as be:
             print(be)
-            print(' /!\ Problems with FaceCamera data for "%s" /!\ ' % args.datafolder)
+            print(' [!!] Problems with FaceCamera data for "%s" [!!] ' % args.datafolder)
             
 
         #################################################
@@ -355,12 +365,13 @@ def build_NWB_func(args):
                             dataP['xmin'], dataP['xmax'], dataP['ymin'], dataP['ymax'])+\
                     ' pix_to_mm=%.3f' % pix_to_mm)
                 
-                for key, scale in zip(['cx', 'cy', 'sx', 'sy', 'angle', 'blinking'], [pix_to_mm for i in range(4)]+[1,1]):
+                for key, scale in zip(['cx', 'cy', 'sx', 'sy', 'angle', 'blinking'],
+                                      [pix_to_mm for i in range(4)]+[1,1]):
                     if type(dataP[key]) is np.ndarray:
                         PupilProp = pynwb.TimeSeries(name=key,
-                                                     data = np.reshape(dataP[key]*scale, (len(FC_times[dataP['frame']]),1)),
-                                                     unit='seconds',
-                                                     timestamps=FC_times[dataP['frame']])
+                                 data = np.reshape(dataP[key]*scale, (len(FC_times[dataP['frame']]),1)),
+                                 unit='seconds',
+                                 timestamps=FC_times[dataP['frame']])
                         pupil_module.add(PupilProp)
 
                 # then add the frames subsampled
@@ -392,7 +403,7 @@ def build_NWB_func(args):
                     nwbfile.add_acquisition(Pupil_frames)
                         
             else:
-                print(' /!\ No processed pupil data found for "%s" /!\ ' % args.datafolder)
+                print(' [!!] No processed pupil data found for "%s" [!!] ' % args.datafolder)
 
                 
     
@@ -410,19 +421,22 @@ def build_NWB_func(args):
                 dataF = np.load(os.path.join(args.datafolder, 'facemotion.npy'),
                                 allow_pickle=True).item()
 
-                faceMotion_module = nwbfile.create_processing_module(name='FaceMotion', 
-                                                                     description='face motion dynamics,\n'+\
-                                                                     ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n' % (dataF['ROI'][0],dataF['ROI'][1],
-                                                                                                                         dataF['ROI'][2],dataF['ROI'][3]))
+                faceMotion_module = nwbfile.create_processing_module(\
+                        name='FaceMotion', 
+                        description='face motion dynamics,\n'+\
+                            ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n' % (dataF['ROI'][0],dataF['ROI'][1],
+                                                                                dataF['ROI'][2],dataF['ROI'][3]))
                 FaceMotionProp = pynwb.TimeSeries(name='face-motion',
-                                                  data = np.reshape(dataF['motion'], (len(FC_times[dataF['frame']]),1)),
+                                                  data = np.reshape(dataF['motion'],
+                                                                    (len(FC_times[dataF['frame']]),1)),
                                                   unit='seconds',
                                                   timestamps=FC_times[dataF['frame']])
                 faceMotion_module.add(FaceMotionProp)
 
                 if 'grooming' in dataF:
                     GroomingProp = pynwb.TimeSeries(name='grooming',
-                                                    data = np.reshape(dataF['grooming'], (len(FC_times[dataF['frame']]),1)),
+                                                    data = np.reshape(dataF['grooming'],
+                                                                      (len(FC_times[dataF['frame']]),1)),
                                                     unit='seconds',
                                                     timestamps=FC_times[dataF['frame']])
                     faceMotion_module.add(GroomingProp)
@@ -444,8 +458,12 @@ def build_NWB_func(args):
                         for i in FACEMOTION_SUBSAMPLING:
                             i0 = np.min([i, len(FC_FILES)-2])
                             try:
-                                imgFM1 = np.load(os.path.join(args.datafolder, 'FaceCamera-imgs', FC_FILES[i0])).astype(np.uint8)[condF].reshape(*new_shapeF)
-                                imgFM2 = np.load(os.path.join(args.datafolder, 'FaceCamera-imgs', FC_FILES[i0+1])).astype(np.uint8)[condF].reshape(*new_shapeF)
+                                imgFM1 = np.load(os.path.join(args.datafolder,
+                                                              'FaceCamera-imgs',
+                                                              FC_FILES[i0])).astype(np.uint8)[condF].reshape(*new_shapeF)
+                                imgFM2 = np.load(os.path.join(args.datafolder,
+                                                              'FaceCamera-imgs',
+                                                              FC_FILES[i0+1])).astype(np.uint8)[condF].reshape(*new_shapeF)
                                 yield imgFM2-imgFM1
                             except BaseException as be:
                                 print(be)
@@ -461,13 +479,14 @@ def build_NWB_func(args):
                     nwbfile.add_acquisition(FaceMotion_frames)
                         
             else:
-                print(' /!\ No processed facemotion data found for "%s" /!\ ' % args.datafolder)
+                print(' [!!] No processed facemotion data found for "%s" [!!] ' % args.datafolder)
                 
 
     #################################################
     ####    Electrophysiological Recording    #######
     #################################################
 
+    """
     iElectrophy = 1 # start on channel 1
     
     if metadata['EphysVm'] and ('EphysVm' in args.modalities):
@@ -497,16 +516,24 @@ def build_NWB_func(args):
                                unit='mV',
                                rate=float(metadata['NIdaq-acquisition-frequency']))
         nwbfile.add_acquisition(lfp)
-        
+    """
+
     #################################################
     ####         Calcium Imaging              #######
     #################################################
     # see: add_ophys.py script
-    Ca_data = None
+    # look for 'TSeries' folder 
+    TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
+    if len(TSeries)==1:
+        args.imaging = os.path.join(args.datafolder, TSeries[0])
 
+        add_ophys(nwbfile, args,
+                  metadata=metadata)
+    else:
+        print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
     
     #################################################
-    ####      Intrinsic Imaging MAPS           #######
+    ####    add Intrinsic Imaging MAPS         ######
     #################################################
     
     
@@ -531,24 +558,25 @@ def build_NWB_func(args):
     io.close()
     print('---> done !')
     
-    if Ca_data is not None:
-        Ca_data.close() # can be closed only after having written
-
     return args.filename
 
 
 
 def build_cmd(datafolder,
               modalities=['Locomotion', 'VisualStim'],
-              force_to_visualStimTimestamps=False):
+              force_to_visualStimTimestamps=False,
+              dest_folder=''):
 
-    cmd = '%s -m physion.assembling.build_NWB -df %s -M ' % (python_path,
-                                                             datafolder)
+    cmd = '%s -m physion.assembling.nwb %s -M ' % (python_path,
+                                                   datafolder)
     cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src')
     for m in modalities:
         cmd += '%s '%m
     if force_to_visualStimTimestamps:
-        cmd += '--force_to_visualStimTimestamps'
+        cmd += '--force_to_visualStimTimestamps '
+    if dest_folder!='':
+        cmd += '--destination_folder %s' % dest_folder
+
     return cmd, cwd
 
 
@@ -560,7 +588,7 @@ if __name__=='__main__':
     Building NWB file from mutlimodal experimental recordings
     """,formatter_class=argparse.RawTextHelpFormatter)
 
-    parser.add_argument('-df', "--datafolder", type=str, default='')
+    parser.add_argument("datafolder", type=str, default='')
 
     parser.add_argument('-M', "--modalities", nargs='*', type=str, default=ALL_MODALITIES)
 
@@ -581,8 +609,11 @@ if __name__=='__main__':
     parser.add_argument('-pfs', "--Pupil_frame_sampling", default=0.01, type=float)
     parser.add_argument('-sfs', "--FaceMotion_frame_sampling", default=0.005, type=float)
 
+    parser.add_argument("--destination_folder", type=str, default='')
+
     parser.add_argument("--silent", action="store_true")
     parser.add_argument('-v', "--verbose", action="store_true")
+    parser.add_argument('-R', "--recursive", action="store_true")
 
     args = parser.parse_args()
 
@@ -593,9 +624,20 @@ if __name__=='__main__':
     args.FaceMotion_frame_sampling = 0
     args.FaceCamera_frame_sampling = 0
 
-    if os.path.isdir(args.datafolder):
+    if os.path.isdir(args.datafolder) and ('NIdaq.npy' in os.listdir(args.datafolder)):
         if (args.datafolder[-1]==os.path.sep) or (args.datafolder[-1]=='/'):
             args.datafolder = args.datafolder[:-1]
         build_NWB_func(args)
     else:
         print('"%s" not a valid datafolder' % args.datafolder)
+
+    if args.recursive:
+        for f, _, __ in os.walk(args.datafolder):
+            timeFolder = f.split(os.path.sep)[-1]
+            dateFolder = f.split(os.path.sep)[-2]
+            if (len(timeFolder.split('-'))==3) and \
+                    (len(dateFolder.split('_'))==3):
+                print(' processing "%s" [...] ' % f)
+                args.datafolder = f
+                args.filename = ''
+                build_NWB_func(args)

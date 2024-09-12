@@ -24,8 +24,11 @@ dependencies = [
     "pyqt5.sip",
     "pyqtgraph",
     "pyqtdarktheme",
-    "opencv-python-headless",
+    "opencv-python",
+    "opencv-contrib-python",
+    "ffmpeg-python",
     "pyqt5",
+    "openpyxl",
 ]
 
 [tool.setuptools.packages.find]
@@ -34,7 +37,7 @@ where = ["src"]
 "physion.acquisition.protocols" = ["*.json"]
 "physion.acquisition.configs" = ["*.json"]
 "physion.acquisition.interventions" = ["*.json"]
-"physion.acquisition.subjects" = ["*.csv"]
+"physion.acquisition.subjects" = ["*.xlsx"]
 
 [project.urls]
 "Homepage" = "https://github.com/yzerlaut/physion"

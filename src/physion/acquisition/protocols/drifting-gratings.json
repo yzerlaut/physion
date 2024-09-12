@@ -2,13 +2,14 @@
   "Presentation": "Stimuli-Sequence",
   "Stimulus": "center-drifting-grating",
   "Screen": "Dell-2020",
-  "movie_refresh_freq":20,
+  "movie_refresh_freq":30.0,
+  "units":"cm",
   "presentation-duration": 3.0,
-  "presentation-blank-screen-color": 0,
+  "presentation-blank-screen-color": 0.5,
   "presentation-prestim-period": 6.0,
   "presentation-poststim-period": 6.0,
   "presentation-interstim-period": 6.0,
-  "starting-index": 0,
+  "N-repeat": 10,
   "angle-1": 0.0,
   "angle-2": 270.0,
   "N-angle": 4,
@@ -33,5 +34,7 @@
   "bg-color-1": 0.5,
   "bg-color-2": 0.5,
   "N-bg-color": 0,
-  "N-repeat": 10
+  "phase-1": 90.0,
+  "phase-2": 90.0,
+  "N-phase": 0
 }

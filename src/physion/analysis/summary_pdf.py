@@ -81,7 +81,7 @@ def generate_pdf(self,
         else:
             cmd = ''
             print('')
-            print(' /!\ no analysis set up for: "%s"  ' % data.metadata['protocol'])
+            print(' [!!] no analysis set up for: "%s"  ' % data.metadata['protocol'])
 
         if cmd!='':
             print(cmd)
@@ -330,7 +330,7 @@ if __name__=='__main__':
                          Nmax=args.Nmax,
                          verbose=args.verbose)
     else:
-        print(' /!\ provide a valid folder or datafile /!\ ')
+        print(' [!!] provide a valid folder or datafile [!!] ')
 
     
 

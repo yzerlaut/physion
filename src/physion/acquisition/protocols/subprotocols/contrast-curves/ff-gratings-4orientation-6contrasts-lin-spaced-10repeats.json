@@ -11,6 +11,7 @@
   "presentation-poststim-screen": 0,
   "presentation-interstim-period": 3,
   "presentation-interstim-screen": 0,
+  "presentation-blank-screen-color": 0.5,
   "angle-1": 0,
   "angle-2": 135,
   "N-angle": 4,

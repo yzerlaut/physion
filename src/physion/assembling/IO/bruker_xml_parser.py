@@ -84,7 +84,7 @@ def bruker_xml_parser(filename):
                 data['depth_shift'] = np.linspace(-1, 1, Ndepth)*(depth_middle_piezo-depth_start_piezo)
             except BaseException as be:
                 print(be)
-                print(' /!\ plane info was not found /!\ ')
+                print(' [!!] plane info was not found [!!] ')
                 data['depth_shift'] = np.arange(1, Ndepth+1)
         else:
             data['Nplanes'] = 1

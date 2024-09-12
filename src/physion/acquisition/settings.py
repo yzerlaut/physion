@@ -36,25 +36,30 @@ def update_config(self):
         if hasattr(self, 'protocolBox'):
             # now update protocols
             if self.config['protocols']=='all':
-                self.protocol_list = os.listdir(os.path.join(base_path,
-                                                'protocols', 'binaries'))
+                self.protocol_list = [f for f in os.listdir(os.path.join(base_path,
+                                        'protocols', 'movies')) if\
+                                            ((f!='_') and not ('DS' in f) and not ('._' in f))]
             else:
                 self.protocol_list = self.config['protocols']
             self.protocolBox.clear()
             self.protocolBox.addItems(['None']+self.protocol_list)
 
         # now update subjects
-        subjects = pandas.read_csv(os.path.join(base_path,
-                                'subjects',self.config['subjects_file']))
-        self.subject_list = list(subjects['Subject-ID'])
+        self.subject_list = [ff.replace('.xlsx','')\
+                    for ff in os.listdir(\
+                        os.path.join(base_path,
+                                    'subjects',
+                                     self.config['subjects_folder']))]
         self.subjectBox.clear()
         self.subjectBox.addItems(self.subject_list)
 
-        # now update screen 
+        if hasattr(self, 'runButton') and hasattr(self, 'stopButton')\
+                and not self.stopButton.isEnabled():
+            self.runButton.setEnabled(True)
+
+     # now update screen 
         # if 'Screen' in self.config:
             # self.screenBox.setCurrentText(self.config['Screen'])
-
-
 
 def update_subject(self):
 

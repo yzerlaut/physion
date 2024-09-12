@@ -66,7 +66,7 @@ class EpisodeData:
             self.protocol_name = protocol_name
 
         else:
-            print(' /!\ need to pass either a protocol_id or a protocol_name /!\ \n')
+            print(' [!!] need to pass either a protocol_id or a protocol_name [!!] \n')
 
         # VISUAL STIM
         if with_visual_stim:
@@ -94,7 +94,7 @@ class EpisodeData:
         if (protocol_id is None) and (protocol_name is None):
             protocol_id = 0
             print('protocols:', full_data.protocols)
-            print(' /!\ need to explicit the "protocol_id" or "protocol_name" /!\ ')
+            print(' [!!] need to explicit the "protocol_id" or "protocol_name" [!!] ')
             print('         ---->   set to protocol_id=0 by default \n ')
         elif (protocol_name is not None):
             protocol_id = full_data.get_protocol_id(protocol_name)
@@ -227,11 +227,11 @@ class EpisodeData:
             else:
                 if quantity in full_data.nwbfile.acquisition:
                     QUANTITY_TIMES.append(np.arange(full_data.nwbfile.acquisition[quantity].data.shape[0])/full_data.nwbfile.acquisition[quantity].rate)
-                    QUANTITY_VALUES.append(full_data.nwbfile.acquisition[quantity].data[:])
+                    QUANTITY_VALUES.append(full_data.nwbfile.acquisition[quantity].data[:,0])
                     QUANTITIES.append(full_data.nwbfile.acquisition[quantity].name.replace('-', '').replace('_', ''))
                 elif quantity in full_data.nwbfile.processing:
                     QUANTITY_TIMES.append(np.arange(full_data.nwbfile.processing[quantity].data.shape[0])/full_data.nwbfile.processing[quantity].rate)
-                    QUANTITY_VALUES.append(full_data.nwbfile.processing[quantity].data[:])
+                    QUANTITY_VALUES.append(full_data.nwbfile.processing[quantity].data[:,0])
                     QUANTITIES.append(full_data.nwbfile.processing[quantity].name.replace('-', '').replace('_', ''))
                 else:
                     print(30*'-')
@@ -281,6 +281,7 @@ class EpisodeData:
                         print('----')
                         print(be)
                         # print(tfull[ep_cond][0]-tstart, tfull[ep_cond][-1]-tstart, tstop-tstart)
+                        print(quantity)
                         print('Problem with episode %i between (%.2f, %.2f)s' % (iEp, tstart, tstop))
 
 
