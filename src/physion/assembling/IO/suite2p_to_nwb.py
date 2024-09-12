@@ -153,7 +153,8 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             rois=rt_region,
             unit='lumens',
             timestamps=timestamps)
-        fl = Fluorescence(roi_response_series=roi_resp_series, name=nstr)
+        fl = Fluorescence(roi_response_series=roi_resp_series, 
+                            name=nstr)
         ophys_module.add(fl)
 
     # BACKGROUNDS
