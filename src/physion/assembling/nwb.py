@@ -609,7 +609,7 @@ if __name__=='__main__':
     parser.add_argument('-pfs', "--Pupil_frame_sampling", default=0.01, type=float)
     parser.add_argument('-sfs', "--FaceMotion_frame_sampling", default=0.005, type=float)
 
-    parser.add_argument("--destination_folder", type=str, default='')
+    parser.add_argument('-df', "--destination_folder", type=str, default='')
 
     parser.add_argument("--silent", action="store_true")
     parser.add_argument('-v', "--verbose", action="store_true")
