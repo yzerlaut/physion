@@ -195,7 +195,7 @@ def perform_fft_analysis(data, nrepeat,
     if phase_range=='-pi:pi':
         phase = np.angle(spectrum)[nrepeat, :, :]
     elif phase_range=='0:2*pi':
-        phase = (np.angle(spectrum)[nrepeat, :, :])%(2.*np.pi)
+        phase = (2.*np.pi+np.angle(spectrum)[nrepeat, :, :])%(2.*np.pi) - np.pi
 
     return rel_power, phase
 
@@ -250,7 +250,7 @@ def compute_retinotopic_maps(datafolder, map_type,
                              run_id='sum',
                              keep_maps=False,
                              verbose=True,
-                             phase_shift=0):
+                             phase_range='-pi:pi'):
     """
     map type is either "altitude" or "azimuth"
     """
@@ -283,6 +283,12 @@ def compute_retinotopic_maps(datafolder, map_type,
 
     maps['%s-phase-diff' % map_type] = (maps['%s-phase' % directions[0]]-
                                         maps['%s-phase' % directions[1]])
+    
+    if phase_range=='0:2*pi':
+        # we shift by two-pi
+        maps['%s-phase-diff' % map_type] = (2*np.pi+maps['%s-phase-diff' % map_type])%(2.*np.pi)-np.pi
+    else:
+        pass
 
     maps['%s-retinotopy' % map_type] = phase_to_angle_func(\
                         maps['%s-phase-diff' % map_type])

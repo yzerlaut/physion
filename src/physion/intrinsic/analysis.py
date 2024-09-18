@@ -409,12 +409,17 @@ def show_raw_data(self):
     self.raw_trace.plot(self.t, new_data)
 
     spectrum = np.fft.fft((new_data-new_data.mean())/new_data.mean())
+
+    power, phase = np.abs(spectrum), np.angle(spectrum)
+
+    """
     power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
 
     if hasattr(self, 'twoPiBox') and self.twoPiBox.isChecked():
-        power, phase = np.abs(spectrum), (np.pi+np.angle(spectrum))%(2.*np.pi)
+        power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
     else:
         power, phase = np.abs(spectrum), np.angle(spectrum)
+    """
 
     x = np.arange(len(power))
     self.spectrum_power.plot(np.log10(x[1:]), np.log10(power[1:]))
@@ -441,8 +446,7 @@ def compute_phase_maps(self):
 
 
     intrinsic_analysis.plot_phase_power_maps(self.IMAGES,
-                                             self.protocolBox.currentText(),
-                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
+                                             self.protocolBox.currentText())
 
     intrinsic_analysis.plt.show()
 
@@ -456,7 +460,8 @@ def compute_retinotopic_maps(self):
         print('- computing altitude map [...]')
         intrinsic_analysis.compute_retinotopic_maps(get_datafolder(self), 'altitude',
                                                     maps=self.IMAGES,
-                                                    keep_maps=True)
+                                                    keep_maps=True,
+                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
         try:
             alt_shift = float(self.phaseMapShiftBox.text().split(',')[1].replace(')',''))
             self.IMAGES['altitude-retinotopy'] += alt_shift
@@ -473,7 +478,8 @@ def compute_retinotopic_maps(self):
         print('- computing azimuth map [...]')
         intrinsic_analysis.compute_retinotopic_maps(get_datafolder(self), 'azimuth',
                                                     maps=self.IMAGES,
-                                                    keep_maps=True)
+                                                    keep_maps=True,
+                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
         try:
             azi_shift = float(self.phaseMapShiftBox.text().split(',')[0].replace('(',''))
             self.IMAGES['azimuth-retinotopy'] += azi_shift
