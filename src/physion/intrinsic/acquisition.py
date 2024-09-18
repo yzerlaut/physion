@@ -15,6 +15,7 @@ try:
     CameraInterface = 'MicroManager'
 except ModuleNotFoundError:
     pass
+
 ### ------------ ThorCam Interface ---------- ###
 if CameraInterface is None:
     try:

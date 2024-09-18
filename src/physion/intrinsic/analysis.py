@@ -412,7 +412,7 @@ def show_raw_data(self):
     power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
 
     if hasattr(self, 'twoPiBox') and self.twoPiBox.isChecked():
-        power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
+        power, phase = np.abs(spectrum), (np.pi+np.angle(spectrum))%(2.*np.pi)
     else:
         power, phase = np.abs(spectrum), np.angle(spectrum)
 
