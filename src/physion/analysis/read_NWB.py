@@ -503,11 +503,9 @@ class Data:
     #       episodes and visual stim protocols     #
     ################################################
     
-    def init_visual_stim(self, verbose=True):
-        self.protocol = ast.literal_eval(\
-                self.nwbfile.trials.stim[0])
-        self.protocol['verbose'] = verbose
-        self.visual_stim = build_stim(self.protocol)
+    def init_visual_stim(self, verbose=False):
+        self.metadata['verbose'] = verbose
+        self.visual_stim = build_stim(self.metadata)
 
         
     def get_protocol_id(self, protocol_name):

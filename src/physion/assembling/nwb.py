@@ -16,7 +16,7 @@ from physion.assembling.tools import load_FaceCamera_data
 from physion.assembling.tools import build_subsampling_from_freq
 from physion.assembling.add_ophys import add_ophys
 from physion.utils.paths import python_path
-
+from physion.visual_stim.build import build_stim as build_visualStim
 
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   'raw_FaceCamera', 'Pupil', 'FaceMotion',
@@ -43,6 +43,23 @@ def build_NWB_func(args):
         metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
                            allow_pickle=True).item()
 
+    # add visual stimulation protocol parameters to the metadata:
+    if os.path.isfile(os.path.join(args.datafolder, 'protocol.json')):
+        with open(os.path.join(args.datafolder, 'protocol.json'),
+                  'r', encoding='utf-8') as f:
+            protocol = json.load(f)
+
+        if protocol['Presentation']=='multiprotocol':
+            # for multi-protocols we rebuild subprotocol parameters for security
+            protocol['no-window'] = True
+            stim = build_visualStim(protocol)
+            protocol = stim.protocol
+
+        # we add all protocol parameters to the metadata:
+        for key in protocol:
+            metadata[key] = protocol[key]
+
+    # some cleanup
     if 'date' not in metadata:
         metadata['date'] = metadata['filename'][-19:-9]
         metadata['time'] = metadata['filename'][-8:]
