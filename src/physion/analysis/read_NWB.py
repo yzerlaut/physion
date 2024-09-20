@@ -53,7 +53,7 @@ class Data:
         #     print('-----------------------------------------')
         #     print(be)
         #     print('-----------------------------------------')
-        #     print(' [!!] Pb with datafile: "%s"' % filename)
+        #     print(' /!\ Pb with datafile: "%s"' % filename)
         #     print('-----------------------------------------')
         #     print('')
             
@@ -409,7 +409,7 @@ class Data:
 
     def build_Zscore_dFoF(self, verbose=True):
         """
-        [!!] do not deal with specific time sampling [!!] 
+        /!\ do not deal with specific time sampling /!\ 
         """
         if not hasattr(self, 'dFoF'):
             self.build_dFoF(verbose=verbose)
@@ -479,6 +479,8 @@ class Data:
         else:
             # data badly oriented --> transpose in that case
             self.rawFluo = np.array(self.Fluorescence.data).T[self.compute_ROI_indices(roiIndex=roiIndex,
+
+
                                                                              roiIndices=roiIndices,
                                                                              verbose=verbose),:]
         if not hasattr(self, 't_rawFluo'):
@@ -502,9 +504,10 @@ class Data:
     ################################################
     
     def init_visual_stim(self, verbose=True):
-        self.metadata['load_from_protocol_data'], self.metadata['no-window'] = False, True
-        self.metadata['verbose'] = verbose
-        self.visual_stim = build_stim(self.metadata)
+        self.protocol = ast.literal_eval(\
+                self.nwbfile.trials.stim[0])
+        self.protocol['verbose'] = verbose
+        self.visual_stim = build_stim(self.protocol)
 
         
     def get_protocol_id(self, protocol_name):
@@ -512,7 +515,7 @@ class Data:
         if len(cond)==1:
             return cond[0]
         else:
-            print(' [!!] protocol "%s" not found in data with protocols:' % protocol_name)
+            print(' /!\\ protocol "%s" not found in data with protocols:' % protocol_name)
             print(self.protocols)
             return None
 
@@ -598,75 +601,44 @@ class Data:
             
         
 def scan_folder_for_NWBfiles(folder, 
-                             for_protocol=None,
-                             for_protocols=[],
                              sorted_by='filename',
                              Nmax=1000000,
                              exclude_intrinsic_imaging_files=True,
                              verbose=True):
     """
-    scan folders for protocols and returns a list of datafiles
+    scan folders for protocols and returns a A
 
-    by default: excludes the intrinsic imaging files
+    by default: exccludes the intrinsic imaging files
     """
     if verbose:
         print('inspecting the folder "%s" [...]' % folder)
         t0 = time.time()
 
-    if (for_protocol is not None) and (len(for_protocols)==0):
-        for_protocols = [for_protocol]
-
-    FILES0 = get_files_with_extension(folder,
+    FILES = get_files_with_extension(folder,
                     extension='.nwb', recursive=True)
     
     if exclude_intrinsic_imaging_files:
-        FILES0 = [f for f in FILES0 if (('left-' not in f) and\
+        FILES = [f for f in FILES if (('left-' not in f) and\
                                       ('down-' not in f) and\
                                       ('right-' not in f) and\
                                       ('up-' not in f))]
 
-    DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES0])
-    FILES, SUBJECTS, PROTOCOLS, PROTOCOL_IDS = [], [], [], []
+    DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES])
+    SUBJECTS, PROTOCOLS = [], []
 
-    for f in FILES0[:Nmax]:
-
+    for f in FILES[:Nmax]:
         try:
             data = Data(f, metadata_only=True, verbose=False)
-
-            if len(for_protocols)>0:
-
-                # we look for specific protocols
-                iProtocols, Protocols = [], []
-                for protocol in for_protocols:
-                    iP = np.flatnonzero(data.protocols==protocol)
-                    if len(iP)==1:
-                        iProtocols.append(iP[0])
-                        Protocols.append(data.protocols[iP[0]])
-
-                if len(Protocols)>0:
-                    # if it has at least one protocol, we include it
-                    FILES.append(f)
-                    PROTOCOLS.append(Protocols)
-                    PROTOCOL_IDS.append(iProtocols)
-                    SUBJECTS.append(data.metadata['subject_ID'])
-
-            else:
-
-                # we include with all protocols
-                FILES.append(f)
-                PROTOCOLS.append(data.protocols)
-                PROTOCOL_IDS.append(range(len(data.protocols)))
-                SUBJECTS.append(data.metadata['subject_ID'])
-
+            PROTOCOLS.append(data.protocols)
+            SUBJECTS.append(data.metadata['subject_ID'])
         except BaseException as be:
             SUBJECTS.append('N/A')
             if verbose:
                 print(be)
-                print('\n [!!] Pb with "%s" \n' % f)
+                print('\n /!\\ Pb with "%s" \n' % f)
         
     if verbose:
-        print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES),
-                                                        (time.time()-t0)))
+        print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES), (time.time()-t0)))
 
     # sorted by filename
 
@@ -683,5 +655,11 @@ def scan_folder_for_NWBfiles(folder,
     return {'files':np.array(FILES)[isorted], 
             'dates':np.array(DATES)[isorted],
             'subjects':np.array(SUBJECTS)[isorted],
-            'protocol_ids':[PROTOCOL_IDS[i] for i in isorted],
             'protocols':[PROTOCOLS[i] for i in isorted]}
+
+
+if __name__=='__main__':
+
+    data = Data(sys.argv[-1])
+    data.init_visual_stim()
+

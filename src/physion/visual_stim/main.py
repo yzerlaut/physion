@@ -54,6 +54,20 @@ class visual_stim:
 
 
     ################################
+    #  ---       input/output  --- #
+    ################################
+    def save(self, folder):
+        with open(os.path.join(folder, 'protocol.json'),
+                               'w', encoding='utf-8') as f:
+            json.dump(self.protocol, f,
+                      ensure_ascii=False, indent=4)
+        print('[ok] visual-stimulation protocol saved as "%s"' %\
+                os.path.join(folder, 'protocol.json'))
+        np.save(os.path.join(folder, 'visual-stim.npy'), self.experiment)
+        print('[ok] visual-stimulation time course saved as "%s"' %\
+                os.path.join(folder, 'visual-stim.npy'))
+
+    ################################
     #  ---   Gamma correction  --- #
     ################################
 
@@ -522,9 +536,10 @@ class multiprotocol(visual_stim):
 
         self.STIM, i = [], 1
 
-        if ('load_from_protocol_data' in protocol) and\
-                            protocol['load_from_protocol_data']:
-            # we load a previously saved multiprotocol
+        if 'Protocol-1-Stimulus' in protocol:
+            print('loading from protocol')
+            # this means the subprotocol parameters were already saved, 
+            #      so we build the protocol from those
             while 'Protocol-%i'%i in protocol:
                 subprotocol = {'Screen':protocol['Screen'],
                                'Presentation':''}

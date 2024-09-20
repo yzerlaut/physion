@@ -163,7 +163,27 @@ def build_NWB_func(args):
     # ####         Visual Stimulation           #######
     # #################################################
     
-    if (metadata['VisualStim'] and ('VisualStim' in args.modalities)) and os.path.isfile(os.path.join(args.datafolder, 'visual-stim.npy')):
+    if (metadata['VisualStim'] and ('VisualStim' in args.modalities))\
+            and os.path.isfile(os.path.join(args.datafolder, 'visual-stim.npy')):
+
+        # using Annotation TimeSeries to store the protocol parameter file
+        if os.path.isfile(os.path.join(args.datafolder, 'protocol.json')):
+            with open(os.path.join(args.datafolder, 'protocol.json'),
+                      'r', encoding='utf-8') as f:
+                protocol = json.load(f)
+            nwbfile.add_trial_column(name="stim", description=str(protocol))
+            nwbfile.add_trial(0., 1., stim=str(protocol))
+
+            if protocol['Presentation']=='multiprotocol':
+                i = 1
+                fns = os.path.join(args.datafolder, 'subprotocols', 'Protocol-%i.json' % i)
+                while os.path.isfile(fns):
+                    with open(fns, 'r', encoding='utf-8') as f:
+                        p = json.load(f)
+                    nwbfile.add_trial(i+0., i+1., stim=str(p))
+                    i+=1
+                    fns = os.path.join(args.datafolder, 'subprotocols', 'Protocol-%i.json' % i)
+
 
         # preprocessing photodiode signal
         _, Psignal = resample_signal(NIdaq_data['analog'][0],
@@ -624,7 +644,8 @@ if __name__=='__main__':
     args.FaceMotion_frame_sampling = 0
     args.FaceCamera_frame_sampling = 0
 
-    if os.path.isdir(args.datafolder) and ('NIdaq.npy' in os.listdir(args.datafolder)):
+    # if os.path.isdir(args.datafolder) and ('NIdaq.npy' in os.listdir(args.datafolder)):
+    if os.path.isdir(args.datafolder):
         if (args.datafolder[-1]==os.path.sep) or (args.datafolder[-1]=='/'):
             args.datafolder = args.datafolder[:-1]
         build_NWB_func(args)

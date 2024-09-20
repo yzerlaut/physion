@@ -59,10 +59,7 @@ def init_VisualStim(self):
     p = self.protocol.copy() # a copy of the protocol data for saving
     p['no-window'] = True
     stim = build_VisualStim(p)
-    np.save(os.path.join(self.date_time_folder,
-            'visual-stim.npy'), stim.experiment)
-    print('[ok] Visual-stimulation data saved as "%s"' %\
-            os.path.join(self.date_time_folder, 'visual-stim.npy'))
+    stim.save(self.date_time_folder) # writes visual-stim.npy & protocol.json
 
     self.max_time = stim.experiment['time_stop'][-1]+\
             stim.experiment['time_start'][0]
@@ -148,7 +145,14 @@ def run(self):
 
         NIdaq_metadata_init(self)
 
-        if not self.onlyDemoButton.isChecked():
+        if self.onlyDemoButton.isChecked():
+            np.save(os.path.join(self.date_time_folder, 'NIdaq.start.npy'),
+                    time.time()*np.ones(1))
+            np.save(os.path.join(self.date_time_folder, 'NIdaq.npy'),
+                    {'analog':np.zeros((1,20000)),
+                     'digital':np.zeros((1,20000)),
+                     'dt':1e-2})
+        else:
             try:
                 self.acq = Acquisition(\
                     sampling_rate=\
@@ -164,6 +168,7 @@ def run(self):
                 print(e)
                 print('\n [!!] PB WITH NI-DAQ [!!] \n')
                 self.acq = None
+        
 
         # saving all metadata after full initialization:
         self.save_experiment(self.metadata) 
