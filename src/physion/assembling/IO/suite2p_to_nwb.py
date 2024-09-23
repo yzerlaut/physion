@@ -35,14 +35,17 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
 
     # find time sampling per plane
     functional_chan = ('Ch1' if len(xml['Ch1']['relativeTime'])>1 else 'Ch2') # functional channel is one of the two !!
-    CaImaging_timestamps = xml[functional_chan]['relativeTime']+float(xml['settings']['framePeriod'])/2.
+    CaImaging_timestamps = xml[functional_chan]['relativeTime']
+    print(functional_chan)
+    print(xml['channels'])
+    print(xml['Nchannels'])
     print('- timestamps :', len(CaImaging_timestamps), len(CaImaging_timestamps)/5)
 
     # [!!] Add the 2P trigger delay
     if TwoP_trigger_delay>0:
         CaImaging_timestamps += TwoP_trigger_delay
     else:
-        print("\n / ! \  no delay from 2P trigger ... check !   / ! \ \n")
+        print("\n / ! \\  no delay from 2P trigger ... check !   / ! \\ \n")
 
 
     ops = np.load(os.path.join(pData_folder, 'ops.npy'), allow_pickle=True).item() 
@@ -64,7 +67,7 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             imaging_rate=ops['fs'],
             description='standard',
             device=device,
-            excitation_lambda=600.,
+            excitation_lambda=920.,
             indicator='GCaMP',
             location='V1',
             grid_spacing=([2,2,30] if multiplane else [2,2]),
