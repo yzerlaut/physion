@@ -662,13 +662,6 @@ if __name__=='__main__':
     args.FaceCamera_frame_sampling = 0
 
     # if os.path.isdir(args.datafolder) and ('NIdaq.npy' in os.listdir(args.datafolder)):
-    if os.path.isdir(args.datafolder):
-        if (args.datafolder[-1]==os.path.sep) or (args.datafolder[-1]=='/'):
-            args.datafolder = args.datafolder[:-1]
-        build_NWB_func(args)
-    else:
-        print('"%s" not a valid datafolder' % args.datafolder)
-
     if args.recursive:
         for f, _, __ in os.walk(args.datafolder):
             timeFolder = f.split(os.path.sep)[-1]
@@ -679,3 +672,14 @@ if __name__=='__main__':
                 args.datafolder = f
                 args.filename = ''
                 build_NWB_func(args)
+
+    elif os.path.isdir(args.datafolder) and (\
+                ('metadata.npy' in os.listdir(args.datafolder)) or
+                       ('metadata.json' in os.listdir(args.datafolder))):
+        if (args.datafolder[-1]==os.path.sep) or (args.datafolder[-1]=='/'):
+            args.datafolder = args.datafolder[:-1]
+        build_NWB_func(args)
+    else:
+        print('"%s" not a valid datafolder' % args.datafolder)
+        print('                 or missing the "--recursive"/"-R" option !!')
+
