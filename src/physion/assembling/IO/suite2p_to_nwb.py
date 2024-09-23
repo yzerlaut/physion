@@ -34,12 +34,19 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
         pData_folder = os.path.join(save_folder, 'plane0') # processed data folder
 
     # find time sampling per plane
-    functional_chan = ('Ch1' if len(xml['Ch1']['relativeTime'])>1 else 'Ch2') # functional channel is one of the two !!
+    if ('Ch1' in xml) and (len(xml['Ch1']['relativeTime'])>1):
+        functional_chan = 'Ch1'
+    elif ('Ch2' in xml) and (len(xml['Ch2']['relativeTime'])>1):
+        functional_chan = 'Ch2'
+    elif ('Green' in xml) and (len(xml['Green']['relativeTime'])>1):
+        functional_chan = 'Green'
+    else:
+        functional_chan = xml['channels'][0]
+
+    print(' - Functional channel set to:', functional_chan)
+
     CaImaging_timestamps = xml[functional_chan]['relativeTime']
-    print(functional_chan)
-    print(xml['channels'])
-    print(xml['Nchannels'])
-    print('- timestamps :', len(CaImaging_timestamps), len(CaImaging_timestamps)/5)
+    # print('- timestamps :', len(CaImaging_timestamps), len(CaImaging_timestamps)/5)
 
     # [!!] Add the 2P trigger delay
     if TwoP_trigger_delay>0:
