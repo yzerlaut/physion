@@ -12,7 +12,7 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 from physion.acquisition.recordings.Scan1Plane_Screen342V import TwoP_trigger_delay
 
 from physion.assembling.IO.binary import BinaryFile
-from physion.assembling.IO.bruker_xml_parser import bruker_xml_parser
+from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.files import get_files_with_extension, get_TSeries_folders
 from physion.assembling.tools import build_subsampling_from_freq
 from physion.assembling.IO.suite2p_to_nwb import add_ophys_processing_from_suite2p
