@@ -451,7 +451,7 @@ def plot_phase_power_maps(maps, direction,
     return fig
 
 def plot_retinotopic_maps(maps, map_type='altitude',
-                          max_retinotopic_angle=80):
+                          max_retinotopic_angle=60):
     
     if map_type=='altitude':
         plus, minus = 'up', 'down'
