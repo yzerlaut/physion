@@ -8,6 +8,7 @@ import physion
 def build_stim(protocol):
     """
     """
+    print(protocol)
     if (protocol['Presentation']=='multiprotocol'):
         return physion.visual_stim.main.multiprotocol(protocol)
     else:

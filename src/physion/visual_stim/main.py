@@ -472,6 +472,7 @@ class visual_stim:
     def plot_stim_picture(self, episode, 
                           ax=None,
                           vse=False,
+                          with_scale=False,
                           arrow={'length':20,
                                  'width_factor':0.05,
                                  'color':'red'},
@@ -483,15 +484,18 @@ class visual_stim:
                       self.experiment['time_start'][episode])
 
         
-        if self.units in ['cm', 'lin-deg']:
-            label={'size':10/self.heights.max()*self.z.max(),
-                   'label':'10cm ',
-                   'shift_factor':0.02,
-                   'lw':1, 'fontsize':10}
+        if with_scale:
+            if self.units in ['cm', 'lin-deg']:
+                label={'size':10/self.heights.max()*self.z.max(),
+                       'label':'10cm ',
+                       'shift_factor':0.02,
+                       'lw':1, 'fontsize':10}
+            else:
+                label={'size':20,'label':'20$^o$  ',
+                       'shift_factor':0.02,
+                       'lw':1, 'fontsize':10}
         else:
-            label={'size':20,'label':'20$^o$  ',
-                   'shift_factor':0.02,
-                   'lw':1, 'fontsize':10}
+            label=None
 
         ax = self.show_frame(episode, tcenter, 
                              ax=ax,

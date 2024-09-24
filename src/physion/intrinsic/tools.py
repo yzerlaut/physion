@@ -30,15 +30,16 @@ default_segmentation_params={'phaseMapFilterSigma': 2.,
 
 def load_maps(datafolder, Nsubsampling=4):
 
+    metadata = {}
     if os.path.isfile(os.path.join(datafolder, 'metadata.json')):
         with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
             metadata= json.load(f)
-        # metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
-                       # allow_pickle=True).item()
-        if 'Nsubsampling' in metadata:
-            Nsubsampling = int(metadata['Nsubsampling'])
-    else:
-        metadata = {}
+    elif os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
+        metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
+                       allow_pickle=True).item()
+
+    if 'Nsubsampling' in metadata:
+        Nsubsampling = int(metadata['Nsubsampling'])
 
     if os.path.isfile(os.path.join(datafolder, 'raw-maps.npy')):
         print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
@@ -142,9 +143,12 @@ def load_single_datafile(datafile):
 def load_raw_data(datafolder, protocol,
                   run_id='sum'):
 
-    with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
-        params = json.load(f)
-
+    if os.path.isfile(os.path.join(datafolder, 'metadata.json')):
+        with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
+            params = json.load(f)
+    elif os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
+        params = np.load(os.path.join(datafolder, 'metadata.npy'),
+                       allow_pickle=True).item()
     if run_id=='sum':
         Data, n = None, 0
         for i in range(1, 15): # no more than 15 repeats...(but some can be removed, hence the "for" loop)
@@ -387,7 +391,7 @@ def plot_phase_map(ax, fig, Map,
                             shrink=0.4,
                             aspect=10,
                             label='phase (Rd)')
-        cbar.ax.set_yticklabels(['-$\pi$', '0', '$\pi$'])
+        cbar.ax.set_yticklabels(['-$\\pi$', '0', '$\\pi$'])
     else:
         im = ax.imshow(Map,
                        cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
@@ -396,7 +400,7 @@ def plot_phase_map(ax, fig, Map,
                             shrink=0.4,
                             aspect=10,
                             label='phase (Rd)')
-        cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
+        cbar.ax.set_yticklabels(['0', '$\\pi$', '2$\\pi$'])
 
 def plot_power_map(ax, fig, Map,
                    bounds=None):
@@ -451,8 +455,8 @@ def plot_retinotopic_maps(maps, map_type='altitude',
     plot_phase_map(AX[0][0], fig, maps['%s-phase' % plus])
     plot_phase_map(AX[0][1], fig, maps['%s-phase' % minus])
 
-    AX[0][0].annotate('$\phi$+', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
-    AX[0][1].annotate('$\phi$-', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
+    AX[0][0].annotate('$\\phi$+', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
+    AX[0][1].annotate('$\\phi$-', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
     AX[0][0].set_title('phase map: "%s"' % plus)
     AX[0][1].set_title('phase map: "%s"' % minus)
 
@@ -472,7 +476,7 @@ def plot_retinotopic_maps(maps, map_type='altitude',
     im = AX[2][0].imshow(maps['%s-delay' % map_type], cmap=plt.cm.twilight,\
                     vmin=-np.pi/2, vmax=3*np.pi/2)
     fig.colorbar(im, ax=AX[2][0])
-    AX[2][0].annotate('$\phi^{+}$+$\phi^{-}$', (0,1),
+    AX[2][0].annotate('$\\phi^{+}$+$\\phi^{-}$', (0,1),
             ha='right', va='top', rotation=90, xycoords='axes fraction')
     AX[2][0].set_title('(hemodynamic)\ndelay map')
 
@@ -480,7 +484,7 @@ def plot_retinotopic_maps(maps, map_type='altitude',
                     vmin=bounds[0], vmax=bounds[1])
     fig.colorbar(im, ax=AX[2][1],
                  label='angle (deg.)\n visual field')
-    AX[2][1].annotate('F[$\phi^{+}$-$\phi^{-}$]', (0,1),
+    AX[2][1].annotate('F[$\\phi^{+}$-$\\phi^{-}$]', (0,1),
             ha='right', va='top', rotation=90, xycoords='axes fraction')
     AX[2][1].set_title('retinotopy map')
 

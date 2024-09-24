@@ -409,7 +409,7 @@ class Data:
 
     def build_Zscore_dFoF(self, verbose=True):
         """
-        /!\ do not deal with specific time sampling /!\ 
+        / ! \\ do not deal with specific time sampling / ! \\ 
         """
         if not hasattr(self, 'dFoF'):
             self.build_dFoF(verbose=verbose)

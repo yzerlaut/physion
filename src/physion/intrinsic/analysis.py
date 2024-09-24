@@ -265,7 +265,8 @@ def open_intrinsic_folder(self):
                       'r', encoding='utf-8') as f:
                 metadata = json.load(f)
         else:
-            metadata = np.load('metadata.npy', allow_pickle=True).item()
+            metadata = np.load(os.path.join(self.datafolder, 'metadata.npy'),
+                                    allow_pickle=True).item()
 
         # set subject and timestamip
         self.subject = metadata['subject']
