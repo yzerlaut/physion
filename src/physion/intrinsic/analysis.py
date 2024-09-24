@@ -255,13 +255,17 @@ def open_intrinsic_folder(self):
 
     self.datafolder = self.open_folder()
 
-    if os.path.isfile(os.path.join(self.datafolder, 'metadata.json')):
+    if os.path.isfile(os.path.join(self.datafolder, 'metadata.json')) or\
+        os.path.isfile(os.path.join(self.datafolder, 'metadata.npy')):
 
         self.IMAGES = {}
 
-        with open(os.path.join(self.datafolder, 'metadata.json'),
-                  'r', encoding='utf-8') as f:
-            metadata = json.load(f)
+        if os.path.isfile(os.path.join(self.datafolder, 'metadata.json')):
+            with open(os.path.join(self.datafolder, 'metadata.json'),
+                      'r', encoding='utf-8') as f:
+                metadata = json.load(f)
+        else:
+            metadata = np.load('metadata.npy', allow_pickle=True).item()
 
         # set subject and timestamip
         self.subject = metadata['subject']
