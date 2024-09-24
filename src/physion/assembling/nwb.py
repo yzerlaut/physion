@@ -77,6 +77,16 @@ def build_NWB_func(args):
                 int(Time[0]),int(Time[1]),int(Time[2]),tzinfo=tzlocal())
 
     # subject info
+    if args.verbose:
+        try:
+            subject_file = [f for f in os.listdir(args.datafolder) if '.xlsx' in f][0]
+            print('- Adding Subject data from the file: "%s" (TO BE DONE)' % subject_file)
+        except BaseException:
+            print('[!!] / ! \\ no Subject .xlsx file found / ! \\ ')
+
+    #################################
+    # Implement READ from CSV here ##
+    #################################
     dob = ['1988', '4', '24'] # non-sense by default
     if 'subject_props' in metadata and (metadata['subject_props'] is not None):
         subject_props = metadata['subject_props']
@@ -84,7 +94,7 @@ def build_NWB_func(args):
             dob = subject_props['Date-of-Birth'].split('/')[::-1]
     else:
         subject_props = {}
-        print('subject properties not in metadata ...')
+        # print('subject properties not in metadata ...')
 
     # override a few properties (when curating/rebuilding datafiles)
     if hasattr(args, 'subject_id') and ('subject_id' in subject_props):
@@ -317,7 +327,8 @@ def build_NWB_func(args):
 
                 FCS_data = np.load(os.path.join(args.datafolder, 'FaceCamera-summary.npy'),
                                    allow_pickle=True).item()
-                FC_times = FCS_data['times']-NIdaq_Tstart
+                FC_times = FCS_data['times']
+                print(FC_times)
 
             if ('raw_FaceCamera' in args.modalities) and (FC_FILES is not None):
                 

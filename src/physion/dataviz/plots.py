@@ -75,7 +75,6 @@ def raw_data_plot(self, tzoom,
                                symbolPen=pg.mkPen(color=settings['colors']['FaceMotion'], width=0),                                      
                                symbolBrush=pg.mkBrush(0, 255, 0, 255), symbolSize=7)
                 
-        # self.facemotionROI        
 
 
     if 'Pupil' in self.data.nwbfile.acquisition:
