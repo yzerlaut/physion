@@ -74,7 +74,7 @@ def gui(self,
                     spec='small-right')
 
     self.add_side_widget(\
-            tab.layout,QtWidgets.QLabel('  - spatial-subsampling (pix):'),
+            tab.layout,QtWidgets.QLabel('  - spatial-smoothing (pix):'),
             spec='large-left')
     self.ssBox = QtWidgets.QLineEdit()
     self.ssBox.setText('2')
@@ -417,15 +417,6 @@ def show_raw_data(self):
 
     power, phase = np.abs(spectrum), np.angle(spectrum)
 
-    """
-    power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
-
-    if hasattr(self, 'twoPiBox') and self.twoPiBox.isChecked():
-        power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
-    else:
-        power, phase = np.abs(spectrum), np.angle(spectrum)
-    """
-
     x = np.arange(len(power))
     self.spectrum_power.plot(np.log10(x[1:]), np.log10(power[1:]))
     self.spectrum_phase.plot(np.log10(x[1:]), phase[1:])
@@ -465,8 +456,8 @@ def compute_retinotopic_maps(self):
         print('- computing altitude map [...]')
         intrinsic_analysis.compute_retinotopic_maps(get_datafolder(self), 'altitude',
                                                     maps=self.IMAGES,
-                                                    keep_maps=True,
-                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
+                                                    keep_maps=True)
+                    # phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
         try:
             alt_shift = float(self.phaseMapShiftBox.text().split(',')[1].replace(')',''))
             self.IMAGES['altitude-retinotopy'] += alt_shift
@@ -483,8 +474,8 @@ def compute_retinotopic_maps(self):
         print('- computing azimuth map [...]')
         intrinsic_analysis.compute_retinotopic_maps(get_datafolder(self), 'azimuth',
                                                     maps=self.IMAGES,
-                                                    keep_maps=True,
-                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
+                                                    keep_maps=True)
+                    # phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
         try:
             azi_shift = float(self.phaseMapShiftBox.text().split(',')[0].replace('(',''))
             self.IMAGES['azimuth-retinotopy'] += azi_shift
@@ -506,11 +497,6 @@ def compute_retinotopic_maps(self):
 
     self.IMAGES['subject'] = self.subject
     self.IMAGES['dateRecorded'] = self.timestamps
-
-    intrinsic_analysis.save_maps(self.IMAGES,
-            os.path.join(self.datafolder, 'raw-maps.npy'))
-    print('         current maps saved as: ', \
-            os.path.join(self.datafolder, 'raw-maps.npy'))
 
 
 def add_gui_shift_to_images(self):
@@ -550,22 +536,21 @@ def perform_area_segmentation(self):
     trial.processTrial(isPlot=True)
     print(' -> area segmentation done ! ')
     
-    np.save(os.path.join(self.datafolder, 'RetinotopicMappingData.npy'),
-            self.data)
-    print('         current maps saved as: ', \
-            os.path.join(self.datafolder, 'RetinotopicMappingData.npy'))
 
 def save_intrinsic(self):
 
+    intrinsic_analysis.save_maps(self.IMAGES,
+            os.path.join(self.datafolder, 'raw-maps.npy'))
+    print('         current maps saved as: ', \
+            os.path.join(self.datafolder, 'raw-maps.npy'))
+
     if self.data is not None:
 
-        np.save(os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject),
+        np.save(os.path.join(self.datafolder, 'RetinotopicMappingData.npy'),
                 self.data)
-        print('\n         current maps saved as: ', \
-           os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject))
+        print('         current Retinotopic-Mapping saved as: ', \
+                os.path.join(self.datafolder, 'RetinotopicMappingData.npy'))
 
-    else:
-        print(' need to perform Area Segmentation first ')
 
 
 def get_datafolder(self):

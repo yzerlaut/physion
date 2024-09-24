@@ -219,6 +219,7 @@ def compute_phase_power_maps(datafolder, direction,
     maps['%s-power' % direction],\
            maps['%s-phase' % direction] = perform_fft_analysis(data, p['Nrepeat'],
                                                     phase_range=phase_range)
+    maps['%s-phase-range' % direction] = phase_range
 
     return maps
 
@@ -227,8 +228,13 @@ def get_phase_to_angle_func(datafolder, direction):
     converti stimulus phase to visual angle
     """
 
-    stim = np.load(os.path.join(datafolder, 'visual-stim.npy'),
-                   allow_pickle=True).item()
+    if os.path.isfile(os.path.join(datafolder, 'visual-stim.npy')):
+        stim = np.load(os.path.join(datafolder, 'visual-stim.npy'),
+                       allow_pickle=True).item()
+    else:
+        print(' "visual-stim.npy" file missing, taking default settings')
+        # default settings
+        stim = {'xmin':-57., 'xmax':57., 'zmin':-40., 'zmax':40.}
 
     # phase to angle conversion
     if direction=='up':
@@ -239,6 +245,7 @@ def get_phase_to_angle_func(datafolder, direction):
         bounds = [stim['zmax'], stim['zmin']]
     else:
         bounds = [stim['xmax'], stim['xmin']]
+
 
     # keep phase to angle relathionship    [!!] [-PI/2, 3*PI/2] interval [!!]
     phase_to_angle_func = lambda x: bounds[0]+\
@@ -265,9 +272,15 @@ def compute_retinotopic_maps(datafolder, map_type,
     if map_type=='altitude':
         directions = ['down', 'up']
         phase_to_angle_func = get_phase_to_angle_func(datafolder, 'up')
+        if ('up-phase-range' in maps) and (maps['up-phase-range']=='0:2*pi'):
+            print(' the altitude map is using the 0:2*pi range')
+            phase_range = '0:2*pi'
     else:
         directions = ['left', 'right']
         phase_to_angle_func = get_phase_to_angle_func(datafolder, 'right')
+        if ('left-phase-range' in maps) and (maps['left-phase-range']=='0:2*pi'):
+            print(' the azimuth map is using the 0:2*pi range')
+            phase_range = '0:2*pi'
 
     for direction in directions:
         if (('%s-power'%direction) not in maps) and not keep_maps:
@@ -289,7 +302,6 @@ def compute_retinotopic_maps(datafolder, map_type,
                                         maps['%s-phase' % directions[1]])
     
     if phase_range=='0:2*pi':
-        # we shift by two-pi
         maps['%s-phase-diff' % map_type] = (2*np.pi+maps['%s-phase-diff' % map_type])%(2.*np.pi)-np.pi
     else:
         pass
