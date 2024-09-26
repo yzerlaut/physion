@@ -53,7 +53,7 @@ class Data:
         #     print('-----------------------------------------')
         #     print(be)
         #     print('-----------------------------------------')
-        #     print(' /!\ Pb with datafile: "%s"' % filename)
+        #     print(' [!!] Pb with datafile: "%s"' % filename)
         #     print('-----------------------------------------')
         #     print('')
             
@@ -409,7 +409,7 @@ class Data:
 
     def build_Zscore_dFoF(self, verbose=True):
         """
-        / ! \\ do not deal with specific time sampling / ! \\ 
+        [!!] do not deal with specific time sampling [!!] 
         """
         if not hasattr(self, 'dFoF'):
             self.build_dFoF(verbose=verbose)
@@ -479,8 +479,6 @@ class Data:
         else:
             # data badly oriented --> transpose in that case
             self.rawFluo = np.array(self.Fluorescence.data).T[self.compute_ROI_indices(roiIndex=roiIndex,
-
-
                                                                              roiIndices=roiIndices,
                                                                              verbose=verbose),:]
         if not hasattr(self, 't_rawFluo'):
@@ -503,7 +501,7 @@ class Data:
     #       episodes and visual stim protocols     #
     ################################################
     
-    def init_visual_stim(self, verbose=False):
+    def init_visual_stim(self, verbose=True):
         self.metadata['verbose'] = verbose
         self.visual_stim = build_stim(self.metadata)
 
@@ -513,7 +511,7 @@ class Data:
         if len(cond)==1:
             return cond[0]
         else:
-            print(' /!\\ protocol "%s" not found in data with protocols:' % protocol_name)
+            print(' [!!] protocol "%s" not found in data with protocols:' % protocol_name)
             print(self.protocols)
             return None
 
@@ -686,9 +684,3 @@ def scan_folder_for_NWBfiles(folder,
             'subjects':np.array(SUBJECTS)[isorted],
             'protocol_ids':[PROTOCOL_IDS[i] for i in isorted],
             'protocols':[PROTOCOLS[i] for i in isorted]}
-
-if __name__=='__main__':
-
-    data = Data(sys.argv[-1])
-    data.init_visual_stim()
-
