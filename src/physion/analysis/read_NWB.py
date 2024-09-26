@@ -599,44 +599,75 @@ class Data:
             
         
 def scan_folder_for_NWBfiles(folder, 
+                             for_protocol=None,
+                             for_protocols=[],
                              sorted_by='filename',
                              Nmax=1000000,
                              exclude_intrinsic_imaging_files=True,
                              verbose=True):
     """
-    scan folders for protocols and returns a A
+    scan folders for protocols and returns a list of datafiles
 
-    by default: exccludes the intrinsic imaging files
+    by default: excludes the intrinsic imaging files
     """
     if verbose:
         print('inspecting the folder "%s" [...]' % folder)
         t0 = time.time()
 
-    FILES = get_files_with_extension(folder,
+    if (for_protocol is not None) and (len(for_protocols)==0):
+        for_protocols = [for_protocol]
+
+    FILES0 = get_files_with_extension(folder,
                     extension='.nwb', recursive=True)
     
     if exclude_intrinsic_imaging_files:
-        FILES = [f for f in FILES if (('left-' not in f) and\
+        FILES0 = [f for f in FILES0 if (('left-' not in f) and\
                                       ('down-' not in f) and\
                                       ('right-' not in f) and\
                                       ('up-' not in f))]
 
-    DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES])
-    SUBJECTS, PROTOCOLS = [], []
+    DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES0])
+    FILES, SUBJECTS, PROTOCOLS, PROTOCOL_IDS = [], [], [], []
 
-    for f in FILES[:Nmax]:
+    for f in FILES0[:Nmax]:
+
         try:
             data = Data(f, metadata_only=True, verbose=False)
-            PROTOCOLS.append(data.protocols)
-            SUBJECTS.append(data.metadata['subject_ID'])
+
+            if len(for_protocols)>0:
+
+                # we look for specific protocols
+                iProtocols, Protocols = [], []
+                for protocol in for_protocols:
+                    iP = np.flatnonzero(data.protocols==protocol)
+                    if len(iP)==1:
+                        iProtocols.append(iP[0])
+                        Protocols.append(data.protocols[iP[0]])
+
+                if len(Protocols)>0:
+                    # if it has at least one protocol, we include it
+                    FILES.append(f)
+                    PROTOCOLS.append(Protocols)
+                    PROTOCOL_IDS.append(iProtocols)
+                    SUBJECTS.append(data.metadata['subject_ID'])
+
+            else:
+
+                # we include with all protocols
+                FILES.append(f)
+                PROTOCOLS.append(data.protocols)
+                PROTOCOL_IDS.append(range(len(data.protocols)))
+                SUBJECTS.append(data.metadata['subject_ID'])
+
         except BaseException as be:
             SUBJECTS.append('N/A')
             if verbose:
                 print(be)
-                print('\n /!\\ Pb with "%s" \n' % f)
+                print('\n [!!] Pb with "%s" \n' % f)
         
     if verbose:
-        print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES), (time.time()-t0)))
+        print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES),
+                                                        (time.time()-t0)))
 
     # sorted by filename
 
@@ -653,8 +684,8 @@ def scan_folder_for_NWBfiles(folder,
     return {'files':np.array(FILES)[isorted], 
             'dates':np.array(DATES)[isorted],
             'subjects':np.array(SUBJECTS)[isorted],
+            'protocol_ids':[PROTOCOL_IDS[i] for i in isorted],
             'protocols':[PROTOCOLS[i] for i in isorted]}
-
 
 if __name__=='__main__':
 
