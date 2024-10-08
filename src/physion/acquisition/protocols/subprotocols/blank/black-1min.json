@@ -3,7 +3,7 @@
   "Stimulus": "uniform-bg",
   "Screen": "Dell-2020",
   "movie_refresh_freq":0.01,
-  "presentation-duration": 120,
+  "presentation-duration": 60,
   "presentation-prestim-period": 3.0,
   "presentation-poststim-period": 3.0,
   "presentation-prestim-screen": 0,

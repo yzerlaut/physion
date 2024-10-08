@@ -12,7 +12,7 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 from physion.acquisition.recordings.Scan1Plane_Screen342V import TwoP_trigger_delay
 
 from physion.assembling.IO.binary import BinaryFile
-from physion.assembling.IO.bruker_xml_parser import bruker_xml_parser
+from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.files import get_files_with_extension, get_TSeries_folders
 from physion.assembling.tools import build_subsampling_from_freq
 from physion.assembling.IO.suite2p_to_nwb import add_ophys_processing_from_suite2p
@@ -277,7 +277,7 @@ def add_ophys(nwbfile, args,
         CaFn = get_files_with_extension(args.imaging, extension='.xml')[0]# get Tseries metadata
     except BaseException as be:
         print(be)
-        print('\n /!\  Problem with the CA-IMAGING data in %s  /!\ ' % args.imaging)
+        print('\n [!!]  Problem with the CA-IMAGING data in %s  [!!] ' % args.imaging)
         raise Exception
         
     xml = bruker_xml_parser(CaFn) # metadata
@@ -366,7 +366,7 @@ def add_ophys(nwbfile, args,
                                           imaging_plane=imaging_plane,
                                           image_series=image_series) 
     else:
-        print('\n /!\  no "suite2p" folder found in "%s"  /!\ ' % args.imaging)
+        print('\n [!!]  no "suite2p" folder found in "%s"  [!!] ' % args.imaging)
 
     
 if __name__=='__main__':

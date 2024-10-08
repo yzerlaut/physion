@@ -9,7 +9,7 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from physion.facemotion import process, roi
 from physion.gui.parts import Slider
 from physion.utils.paths import FOLDERS
-from assembling.tools import load_FaceCamera_data
+from utils.camera import CameraData
 
 def gui(self,
         box_width=250,
@@ -29,7 +29,7 @@ def gui(self,
     #############################
 
     self.ROI, self.data = None, None
-    self.times, self.imgfolder = None, None
+    self.camData = None
     self.nframes, self.cframe, self.FILES= 0, 0, None
     self.grooming_threshold = -1
 
@@ -183,26 +183,30 @@ def add_facemotion_ROI(self):
 def open_facemotion_data(self):
 
     self.cframe = 0
+    self.camData = None
+    self.Lx, self.Ly = 1, 1
     
-    folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
-                                "Choose datafolder",
-                                FOLDERS[self.folderBox.currentText()])
+    # folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
+                                # "Choose datafolder",
+                                # FOLDERS[self.folderBox.currentText()])
+    ## FOR DEBUGGING
+    folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
+                          '2024_09_11', '15-33-02')
 
     if folder!='':
         
         self.datafolder = folder
-        
-        if os.path.isdir(os.path.join(folder, 'FaceCamera-imgs')):
-            
+
+        self.camData = CameraData('FaceCamera', 
+                           folder = folder)
+
+        if self.camData.nFrames>0:
+
             self.reset_facemotion()
 
-            self.imgfolder = os.path.join(self.datafolder, 'FaceCamera-imgs')
-            process.load_folder(self) # in init: self.times, _, self.nframes, ...
-            self.tracePlot.setRange(xRange=(0,self.nframes))
+            self.tracePlot.setRange(xRange=(0,self.camData.nFrames))
+            self.Lx, self.Ly = self.camData.get(0).shape
             
-        else:
-            self.times, self.imgfolder, self.nframes, self.FILES = None, None, None, None
-            print(' /!\ no raw FaceCamera data found ...')
 
         if os.path.isfile(os.path.join(self.datafolder, 'facemotion.npy')):
             
@@ -233,7 +237,7 @@ def open_facemotion_data(self):
         else:
             self.data = None
 
-        if self.times is not None:
+        if self.camData is not None:
             self.refresh_facemotion()
             self.frameSlider.setEnabled(True)
 
@@ -262,7 +266,7 @@ def load_last_facemotion_gui_settings(self):
                                pos=settings['ROI'])
         self.groomingBox.setText(str(int(settings['grooming_threshold'])))
     except FileNotFoundError:
-        print('\n /!\ last GUI settings not found ... \n')
+        print('\n [!!] last GUI settings not found ... \n')
     
 
 def save_facemotion_data(self):
@@ -291,7 +295,7 @@ def save_facemotion_data(self):
 
 def refresh_facemotion(self):
 
-    if self.FILES is not None:
+    if self.camData is not None:
         
         # get frame to display from slider
         i1, i2 = self.xaxis.range
@@ -299,8 +303,7 @@ def refresh_facemotion(self):
                 int(i1+(i2-i1)*float(self.frameSlider.value()/200.))])
 
         # full image 
-        self.fullimg = np.load(os.path.join(self.imgfolder,
-                                            self.FILES[self.cframe])).T
+        self.fullimg = self.camData.get(self.cframe)
         self.fullImg.setImage(self.fullimg)
 
 
@@ -310,8 +313,8 @@ def refresh_facemotion(self):
             process.set_ROI_area(self)
 
             if self.motionCheckBox.isChecked():
-                self.fullimg2 = np.load(os.path.join(self.imgfolder,
-                                                     self.FILES[self.cframe+1])).T
+
+                self.fullimg2 = self.camData.get(self.cframe+1)
                 
                 self.img = self.fullimg2[self.zoom_cond].reshape(self.Nx, self.Ny)-\
                     self.fullimg[self.zoom_cond].reshape(self.Nx, self.Ny)
@@ -336,7 +339,7 @@ def refresh_facemotion(self):
         self.tracePlot.addItem(self.scatter)
         self.tracePlot.show()
 
-        self.currentTime.setText('%.1f s' % (self.data['t'][self.iframe]-self.data['t'][0]))
+        # self.currentTime.setText('%.1f s' % (self.data['t'][self.iframe]-self.data['t'][0]))
 
     self.show()
 
@@ -349,7 +352,7 @@ def process_facemotion(self):
     frames, motion = process.compute_motion(self,
             time_subsampling=int(self.TsamplingBox.text()) if self.temporalBox.isChecked() else 1,
                                     with_ProgressBar=True)
-    self.data = {'frame':frames, 't':self.times[frames],
+    self.data = {'frame':frames, 't':self.camData.times[frames],
                  'motion':motion, 'grooming':0*frames}
     if self.grooming_threshold==-1:
         self.grooming_threshold = int(self.data['motion'].max())+1
@@ -401,7 +404,7 @@ def process_grooming(self):
 
         plot_motion_trace(self)
     else:
-        print('\n /!\ Need to process data first ! \n')
+        print('\n [!!] Need to process data first ! \n')
 
 
 def update_line(self):

@@ -23,9 +23,6 @@ def realign_from_photodiode(signal,
     - onset_shift: possibility to shift the onset time by a fixed quantity
             (N.B. that depends on the smoothing, so onset_shift can be negative to compensate)
     """
-    if verbose:
-        print('---> Realigning data with respect to photodiode signal [...] ')
-
     success = True
 
     if max_episode==-1:
@@ -44,7 +41,7 @@ def realign_from_photodiode(signal,
     metadata['time_start_realigned'] = []
 
     if verbose:
-        print('smoothing photodiode signal [...]')
+        print('     -> smoothing photodiode signal [...]')
 
     # smoothing the signal
     smooth_signal = np.diff(gaussian_filter1d(np.cumsum(signal), 20)) # integral + smooth + derivative
@@ -115,8 +112,9 @@ def realign_from_photodiode(signal,
         metadata['time_stop_realigned'] = metadata['time_stop_realigned'][:-1]
         
     if verbose:
-        print('[ok]          --> succesfully realigned')
-        print('                  found n=%i episodes over the %i of the protocol ' % (len(metadata['time_start_realigned']), len(metadata['time_start'])))
+        print('    [ok]    --> succesfully realigned')
+        print('              found n=%i episodes over the %i of the protocol '\
+                % (len(metadata['time_start_realigned']), len(metadata['time_start'])))
             
     return True, metadata
 

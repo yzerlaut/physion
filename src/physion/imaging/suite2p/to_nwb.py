@@ -99,8 +99,8 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             redcell = np.load(os.path.join(pData_folder, 'redcell_manual.npy'))[iscell[:,0], :]
         else:
             print('\n'+30*'--')
-            print(' /!\ no file found for the manual labelling of red cells (generate it with the red-cell labelling GUI) /!\ ')
-            print(' /!\ taking the raw suit2p output with the classifier settings /!\ ')
+            print(' [!!] no file found for the manual labelling of red cells (generate it with the red-cell labelling GUI) [!!] ')
+            print(' [!!] taking the raw suit2p output with the classifier settings [!!] ')
             print('\n'+30*'--')
             redcell = np.load(os.path.join(pData_folder, 'redcell.npy'))[iscell[:,0], :]
             
@@ -126,7 +126,7 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
         region=list(np.arange(0, ncells)),
         description='all ROIs')
 
-    # FLUORESCENCE (all are required) /!\ YANN: removed spks.npy
+    # FLUORESCENCE (all are required) [!!] YANN: removed spks.npy
     file_strs = ['F.npy', 'Fneu.npy']
     name_strs = ['Fluorescence', 'Neuropil']
 

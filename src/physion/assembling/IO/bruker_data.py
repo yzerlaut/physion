@@ -1,7 +1,7 @@
 import os, sys, pathlib, shutil, time, datetime
 import numpy as np
 
-from physion.assembling.IO.bruker_xml_parser import bruker_xml_parser
+from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders
 
 def stringdatetime_to_date(s):
@@ -125,10 +125,10 @@ def move_CaImaging_files(PAIRS, CA_FILES):
         - Duration: %.1f minutes""" % (CA_FILES['date'][ica], CA_FILES['StartTimeString'][ica],
                (CA_FILES['EndTime'][ica]-CA_FILES['StartTime'][ica])/60.))
         if len(i0)==0:
-            print('      ====> /!\ not matched !')
+            print('      ====> [!!] not matched !')
             resp = input('Need to deal with this datafile [press Enter to continue]\n')
         elif len(i0)>1:
-            print('      ====> /!\ has duplicate matches !!!')
+            print('      ====> [!!] has duplicate matches !!!')
             print('The duplicates are: ')
             for ii in i0:
                 print(PAIRS['DataFolder'][ii])

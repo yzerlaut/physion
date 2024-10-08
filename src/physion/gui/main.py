@@ -282,10 +282,10 @@ class MainWindow(QtWidgets.QMainWindow):
         else:
             # ---- DEBUG interface ---- #
             # self.SS_intrinsic()
-            # self.facemotion()
+            self.facemotion()
             # self.pupil()
             # self.transfer_gui()
-            self.suite2p_preprocessing_UI()
+            # self.suite2p_preprocessing_UI()
             # self.build_NWB_UI()
             # self.add_imaging()
             # self.intrinsic()

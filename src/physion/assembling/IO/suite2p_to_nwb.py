@@ -34,15 +34,25 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
         pData_folder = os.path.join(save_folder, 'plane0') # processed data folder
 
     # find time sampling per plane
-    functional_chan = ('Ch1' if len(xml['Ch1']['relativeTime'])>1 else 'Ch2') # functional channel is one of the two !!
-    CaImaging_timestamps = xml[functional_chan]['relativeTime']+float(xml['settings']['framePeriod'])/2.
-    print('- timestamps :', len(CaImaging_timestamps), len(CaImaging_timestamps)/5)
+    if ('Ch1' in xml) and (len(xml['Ch1']['relativeTime'])>1):
+        functional_chan = 'Ch1'
+    elif ('Ch2' in xml) and (len(xml['Ch2']['relativeTime'])>1):
+        functional_chan = 'Ch2'
+    elif ('Green' in xml) and (len(xml['Green']['relativeTime'])>1):
+        functional_chan = 'Green'
+    else:
+        functional_chan = xml['channels'][0]
 
-    # /!\ Add the 2P trigger delay
+    print(' - Functional channel set to:', functional_chan)
+
+    CaImaging_timestamps = xml[functional_chan]['relativeTime']
+    # print('- timestamps :', len(CaImaging_timestamps), len(CaImaging_timestamps)/5)
+
+    # [!!] Add the 2P trigger delay
     if TwoP_trigger_delay>0:
         CaImaging_timestamps += TwoP_trigger_delay
     else:
-        print("\n / ! \  no delay from 2P trigger ... check !   / ! \ \n")
+        print("\n / ! \\  no delay from 2P trigger ... check !   / ! \\ \n")
 
 
     ops = np.load(os.path.join(pData_folder, 'ops.npy'), allow_pickle=True).item() 
@@ -64,7 +74,7 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             imaging_rate=ops['fs'],
             description='standard',
             device=device,
-            excitation_lambda=600.,
+            excitation_lambda=920.,
             indicator='GCaMP',
             location='V1',
             grid_spacing=([2,2,30] if multiplane else [2,2]),
@@ -108,8 +118,8 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             redcell = np.load(os.path.join(pData_folder, 'redcell_manual.npy'))[iscell[:,0], :]
         else:
             print('\n'+30*'--')
-            print(' /!\ no file found for the manual labelling of red cells (generate it with the red-cell labelling GUI) /!\ ')
-            print(' /!\ taking the raw suit2p output with the classifier settings /!\ ')
+            print(' [!!] no file found for the manual labelling of red cells (generate it with the red-cell labelling GUI) [!!] ')
+            print(' [!!] taking the raw suit2p output with the classifier settings [!!] ')
             print('\n'+30*'--')
             redcell = np.load(os.path.join(pData_folder, 'redcell.npy'))[iscell[:,0], :]
             
@@ -137,14 +147,14 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
         region=list(np.arange(0, ncells)),
         description='all ROIs')
 
-    # FLUORESCENCE (all are required) /!\ YANN: removed spks.npy
+    # FLUORESCENCE (all are required) [!!] YANN: removed spks.npy
     file_strs = ['F.npy', 'Fneu.npy']
     name_strs = ['Fluorescence', 'Neuropil']
 
     for i, (fstr,nstr) in enumerate(zip(file_strs, name_strs)):
         timestamps=CaImaging_timestamps[plane_ID[i]::ops['nplanes']] # shifted for each ROI depending on the plane !!
         if len(traces[i])!=len(timestamps):
-            print(' /!\ be careful, the Bruker-xml timestamps and the suite2p frame number do not match ! /!\ ')
+            print(' [!!] be careful, the Bruker-xml timestamps and the suite2p frame number do not match ! [!!] ')
             print(' n=%i suite2p frames, n=%i Bruker timestamps) ' % (len(traces[i]), len(timestamps)))
         # print(len(timestamps), traces[i].shape)
         roi_resp_series = RoiResponseSeries(
@@ -153,7 +163,8 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             rois=rt_region,
             unit='lumens',
             timestamps=timestamps)
-        fl = Fluorescence(roi_response_series=roi_resp_series, name=nstr)
+        fl = Fluorescence(roi_response_series=roi_resp_series, 
+                          name=nstr)
         ophys_module.add(fl)
 
     # BACKGROUNDS

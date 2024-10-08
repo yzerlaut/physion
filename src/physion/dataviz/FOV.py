@@ -137,7 +137,7 @@ def select_ROI_FOV(self):
         except BaseException:
             self.roiIndices = [0]
             self.roiPickFOV.setText('0')
-            self.statusBar.showMessage('/!\ ROI string not recognized /!\ --> ROI set to [0]')
+            self.statusBar.showMessage('[!!] ROI string not recognized [!!] --> ROI set to [0]')
 
 def draw_image_FOV(self):
 

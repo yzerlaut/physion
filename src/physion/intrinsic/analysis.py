@@ -74,7 +74,7 @@ def gui(self,
                     spec='small-right')
 
     self.add_side_widget(\
-            tab.layout,QtWidgets.QLabel('  - spatial-subsampling (pix):'),
+            tab.layout,QtWidgets.QLabel('  - spatial-smoothing (pix):'),
             spec='large-left')
     self.ssBox = QtWidgets.QLineEdit()
     self.ssBox.setText('2')
@@ -255,13 +255,18 @@ def open_intrinsic_folder(self):
 
     self.datafolder = self.open_folder()
 
-    if os.path.isfile(os.path.join(self.datafolder, 'metadata.json')):
+    if os.path.isfile(os.path.join(self.datafolder, 'metadata.json')) or\
+        os.path.isfile(os.path.join(self.datafolder, 'metadata.npy')):
 
         self.IMAGES = {}
 
-        with open(os.path.join(self.datafolder, 'metadata.json'),
-                  'r', encoding='utf-8') as f:
-            metadata = json.load(f)
+        if os.path.isfile(os.path.join(self.datafolder, 'metadata.json')):
+            with open(os.path.join(self.datafolder, 'metadata.json'),
+                      'r', encoding='utf-8') as f:
+                metadata = json.load(f)
+        else:
+            metadata = np.load(os.path.join(self.datafolder, 'metadata.npy'),
+                                    allow_pickle=True).item()
 
         # set subject and timestamip
         self.subject = metadata['subject']
@@ -409,12 +414,8 @@ def show_raw_data(self):
     self.raw_trace.plot(self.t, new_data)
 
     spectrum = np.fft.fft((new_data-new_data.mean())/new_data.mean())
-    power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
 
-    if hasattr(self, 'twoPiBox') and self.twoPiBox.isChecked():
-        power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
-    else:
-        power, phase = np.abs(spectrum), np.angle(spectrum)
+    power, phase = np.abs(spectrum), np.angle(spectrum)
 
     x = np.arange(len(power))
     self.spectrum_power.plot(np.log10(x[1:]), np.log10(power[1:]))
@@ -441,8 +442,7 @@ def compute_phase_maps(self):
 
 
     intrinsic_analysis.plot_phase_power_maps(self.IMAGES,
-                                             self.protocolBox.currentText(),
-                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
+                                             self.protocolBox.currentText())
 
     intrinsic_analysis.plt.show()
 
@@ -457,6 +457,7 @@ def compute_retinotopic_maps(self):
         intrinsic_analysis.compute_retinotopic_maps(get_datafolder(self), 'altitude',
                                                     maps=self.IMAGES,
                                                     keep_maps=True)
+                    # phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
         try:
             alt_shift = float(self.phaseMapShiftBox.text().split(',')[1].replace(')',''))
             self.IMAGES['altitude-retinotopy'] += alt_shift
@@ -467,13 +468,14 @@ def compute_retinotopic_maps(self):
                                                         'altitude')
     else:
         fig1 = None
-        print(' /!\ need both "up" and "down" maps to compute the altitude map !! /!\   ')
+        print(' [!!] need both "up" and "down" maps to compute the altitude map !! [!!]   ')
         
     if ('right-phase' in self.IMAGES) and ('left-phase' in self.IMAGES):
         print('- computing azimuth map [...]')
         intrinsic_analysis.compute_retinotopic_maps(get_datafolder(self), 'azimuth',
                                                     maps=self.IMAGES,
                                                     keep_maps=True)
+                    # phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
         try:
             azi_shift = float(self.phaseMapShiftBox.text().split(',')[0].replace('(',''))
             self.IMAGES['azimuth-retinotopy'] += azi_shift
@@ -484,7 +486,7 @@ def compute_retinotopic_maps(self):
                                                         'azimuth')
     else:
         fig2 = None
-        print(' /!\ need both "right" and "left" maps to compute the altitude map !! /!\   ')
+        print(' [!!] need both "right" and "left" maps to compute the altitude map !! [!!]   ')
 
     if (fig1 is not None) or (fig2 is not None):
         intrinsic_analysis.plt.show()
@@ -495,11 +497,6 @@ def compute_retinotopic_maps(self):
 
     self.IMAGES['subject'] = self.subject
     self.IMAGES['dateRecorded'] = self.timestamps
-
-    intrinsic_analysis.save_maps(self.IMAGES,
-            os.path.join(self.datafolder, 'raw-maps.npy'))
-    print('         current maps saved as: ', \
-            os.path.join(self.datafolder, 'raw-maps.npy'))
 
 
 def add_gui_shift_to_images(self):
@@ -539,22 +536,21 @@ def perform_area_segmentation(self):
     trial.processTrial(isPlot=True)
     print(' -> area segmentation done ! ')
     
-    np.save(os.path.join(self.datafolder, 'RetinotopicMappingData.npy'),
-            self.data)
-    print('         current maps saved as: ', \
-            os.path.join(self.datafolder, 'RetinotopicMappingData.npy'))
 
 def save_intrinsic(self):
 
+    intrinsic_analysis.save_maps(self.IMAGES,
+            os.path.join(self.datafolder, 'raw-maps.npy'))
+    print('         current maps saved as: ', \
+            os.path.join(self.datafolder, 'raw-maps.npy'))
+
     if self.data is not None:
 
-        np.save(os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject),
+        np.save(os.path.join(self.datafolder, 'RetinotopicMappingData.npy'),
                 self.data)
-        print('\n         current maps saved as: ', \
-           os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject))
+        print('         current Retinotopic-Mapping saved as: ', \
+                os.path.join(self.datafolder, 'RetinotopicMappingData.npy'))
 
-    else:
-        print(' need to perform Area Segmentation first ')
 
 
 def get_datafolder(self):

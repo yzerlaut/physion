@@ -30,15 +30,16 @@ default_segmentation_params={'phaseMapFilterSigma': 2.,
 
 def load_maps(datafolder, Nsubsampling=4):
 
+    metadata = {}
     if os.path.isfile(os.path.join(datafolder, 'metadata.json')):
         with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
             metadata= json.load(f)
-        # metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
-                       # allow_pickle=True).item()
-        if 'Nsubsampling' in metadata:
-            Nsubsampling = int(metadata['Nsubsampling'])
-    else:
-        metadata = {}
+    elif os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
+        metadata= np.load(os.path.join(datafolder, 'metadata.npy'),
+                       allow_pickle=True).item()
+
+    if 'Nsubsampling' in metadata:
+        Nsubsampling = int(metadata['Nsubsampling'])
 
     if os.path.isfile(os.path.join(datafolder, 'raw-maps.npy')):
         print('\n  loading previously calculated maps --> can be overwritten un the UI ! \n ')
@@ -142,9 +143,12 @@ def load_single_datafile(datafile):
 def load_raw_data(datafolder, protocol,
                   run_id='sum'):
 
-    with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
-        params = json.load(f)
-
+    if os.path.isfile(os.path.join(datafolder, 'metadata.json')):
+        with open(os.path.join(datafolder, 'metadata.json'), 'r') as f:
+            params = json.load(f)
+    elif os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
+        params = np.load(os.path.join(datafolder, 'metadata.npy'),
+                       allow_pickle=True).item()
     if run_id=='sum':
         Data, n = None, 0
         for i in range(1, 15): # no more than 15 repeats...(but some can be removed, hence the "for" loop)
@@ -195,7 +199,7 @@ def perform_fft_analysis(data, nrepeat,
     if phase_range=='-pi:pi':
         phase = np.angle(spectrum)[nrepeat, :, :]
     elif phase_range=='0:2*pi':
-        phase = (np.angle(spectrum)[nrepeat, :, :])%(2.*np.pi)
+        phase = (2.*np.pi+np.angle(spectrum)[nrepeat, :, :])%(2.*np.pi) - np.pi
 
     return rel_power, phase
 
@@ -215,6 +219,7 @@ def compute_phase_power_maps(datafolder, direction,
     maps['%s-power' % direction],\
            maps['%s-phase' % direction] = perform_fft_analysis(data, p['Nrepeat'],
                                                     phase_range=phase_range)
+    maps['%s-phase-range' % direction] = phase_range
 
     return maps
 
@@ -223,8 +228,13 @@ def get_phase_to_angle_func(datafolder, direction):
     converti stimulus phase to visual angle
     """
 
-    stim = np.load(os.path.join(datafolder, 'visual-stim.npy'),
-                   allow_pickle=True).item()
+    if os.path.isfile(os.path.join(datafolder, 'visual-stim.npy')):
+        stim = np.load(os.path.join(datafolder, 'visual-stim.npy'),
+                       allow_pickle=True).item()
+    else:
+        print(' "visual-stim.npy" file missing, taking default settings')
+        # default settings
+        stim = {'xmin':-57., 'xmax':57., 'zmin':-40., 'zmax':40.}
 
     # phase to angle conversion
     if direction=='up':
@@ -236,7 +246,8 @@ def get_phase_to_angle_func(datafolder, direction):
     else:
         bounds = [stim['xmax'], stim['xmin']]
 
-    # keep phase to angle relathionship    /!\ [-PI/2, 3*PI/2] interval /!\
+
+    # keep phase to angle relathionship    [!!] [-PI/2, 3*PI/2] interval [!!]
     phase_to_angle_func = lambda x: bounds[0]+\
                     (x+np.pi/2)/(2*np.pi)*(bounds[1]-bounds[0])
 
@@ -250,7 +261,7 @@ def compute_retinotopic_maps(datafolder, map_type,
                              run_id='sum',
                              keep_maps=False,
                              verbose=True,
-                             phase_shift=0):
+                             phase_range='-pi:pi'):
     """
     map type is either "altitude" or "azimuth"
     """
@@ -261,9 +272,15 @@ def compute_retinotopic_maps(datafolder, map_type,
     if map_type=='altitude':
         directions = ['down', 'up']
         phase_to_angle_func = get_phase_to_angle_func(datafolder, 'up')
+        if ('up-phase-range' in maps) and (maps['up-phase-range']=='0:2*pi'):
+            print(' the altitude map is using the 0:2*pi range')
+            phase_range = '0:2*pi'
     else:
         directions = ['left', 'right']
         phase_to_angle_func = get_phase_to_angle_func(datafolder, 'right')
+        if ('left-phase-range' in maps) and (maps['left-phase-range']=='0:2*pi'):
+            print(' the azimuth map is using the 0:2*pi range')
+            phase_range = '0:2*pi'
 
     for direction in directions:
         if (('%s-power'%direction) not in maps) and not keep_maps:
@@ -283,6 +300,11 @@ def compute_retinotopic_maps(datafolder, map_type,
 
     maps['%s-phase-diff' % map_type] = (maps['%s-phase' % directions[0]]-
                                         maps['%s-phase' % directions[1]])
+    
+    if phase_range=='0:2*pi':
+        maps['%s-phase-diff' % map_type] = (2*np.pi+maps['%s-phase-diff' % map_type])%(2.*np.pi)-np.pi
+    else:
+        pass
 
     maps['%s-retinotopy' % map_type] = phase_to_angle_func(\
                         maps['%s-phase-diff' % map_type])
@@ -381,7 +403,7 @@ def plot_phase_map(ax, fig, Map,
                             shrink=0.4,
                             aspect=10,
                             label='phase (Rd)')
-        cbar.ax.set_yticklabels(['-$\pi$', '0', '$\pi$'])
+        cbar.ax.set_yticklabels(['-$\\pi$', '0', '$\\pi$'])
     else:
         im = ax.imshow(Map,
                        cmap=plt.cm.twilight, vmin=0, vmax=2*np.pi)
@@ -390,7 +412,7 @@ def plot_phase_map(ax, fig, Map,
                             shrink=0.4,
                             aspect=10,
                             label='phase (Rd)')
-        cbar.ax.set_yticklabels(['0', '$\pi$', '2$\pi$'])
+        cbar.ax.set_yticklabels(['0', '$\\pi$', '2$\\pi$'])
 
 def plot_power_map(ax, fig, Map,
                    bounds=None):
@@ -429,7 +451,7 @@ def plot_phase_power_maps(maps, direction,
     return fig
 
 def plot_retinotopic_maps(maps, map_type='altitude',
-                          max_retinotopic_angle=80):
+                          max_retinotopic_angle=60):
     
     if map_type=='altitude':
         plus, minus = 'up', 'down'
@@ -445,8 +467,8 @@ def plot_retinotopic_maps(maps, map_type='altitude',
     plot_phase_map(AX[0][0], fig, maps['%s-phase' % plus])
     plot_phase_map(AX[0][1], fig, maps['%s-phase' % minus])
 
-    AX[0][0].annotate('$\phi$+', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
-    AX[0][1].annotate('$\phi$-', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
+    AX[0][0].annotate('$\\phi$+', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
+    AX[0][1].annotate('$\\phi$-', (1,1), ha='right', va='top', color='w', xycoords='axes fraction')
     AX[0][0].set_title('phase map: "%s"' % plus)
     AX[0][1].set_title('phase map: "%s"' % minus)
 
@@ -466,7 +488,7 @@ def plot_retinotopic_maps(maps, map_type='altitude',
     im = AX[2][0].imshow(maps['%s-delay' % map_type], cmap=plt.cm.twilight,\
                     vmin=-np.pi/2, vmax=3*np.pi/2)
     fig.colorbar(im, ax=AX[2][0])
-    AX[2][0].annotate('$\phi^{+}$+$\phi^{-}$', (0,1),
+    AX[2][0].annotate('$\\phi^{+}$+$\\phi^{-}$', (0,1),
             ha='right', va='top', rotation=90, xycoords='axes fraction')
     AX[2][0].set_title('(hemodynamic)\ndelay map')
 
@@ -474,7 +496,7 @@ def plot_retinotopic_maps(maps, map_type='altitude',
                     vmin=bounds[0], vmax=bounds[1])
     fig.colorbar(im, ax=AX[2][1],
                  label='angle (deg.)\n visual field')
-    AX[2][1].annotate('F[$\phi^{+}$-$\phi^{-}$]', (0,1),
+    AX[2][1].annotate('F[$\\phi^{+}$-$\\phi^{-}$]', (0,1),
             ha='right', va='top', rotation=90, xycoords='axes fraction')
     AX[2][1].set_title('retinotopy map')
 

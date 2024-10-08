@@ -92,7 +92,7 @@ if __name__=='__main__':
         
     if not valid:
         print('')
-        print(' /!\ protocol folder not valid /!\ ')
+        print(' [!!] protocol folder not valid [!!] ')
         print('         it does not contain the protocol.json and movie.%s files' % Format)
         print('')
 

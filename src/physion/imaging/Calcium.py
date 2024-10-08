@@ -154,7 +154,7 @@ def compute_dFoF(data,
         print('\ncalculating dF/F with method "%s" [...]' % method_for_F0)
         
     if (neuropil_correction_factor>1) or (neuropil_correction_factor<0):
-        print('/!\ neuropil_correction_factor has to be in the interval [0.,1]')
+        print('[!!] neuropil_correction_factor has to be in the interval [0.,1]')
         print('neuropil_correction_factor set to 0 !')
         neuropil_correction_factor=0.
 

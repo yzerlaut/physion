@@ -54,6 +54,20 @@ class visual_stim:
 
 
     ################################
+    #  ---       input/output  --- #
+    ################################
+    def save(self, folder):
+        with open(os.path.join(folder, 'protocol.json'),
+                               'w', encoding='utf-8') as f:
+            json.dump(self.protocol, f,
+                      ensure_ascii=False, indent=4)
+        print('[ok] visual-stimulation protocol saved as "%s"' %\
+                os.path.join(folder, 'protocol.json'))
+        np.save(os.path.join(folder, 'visual-stim.npy'), self.experiment)
+        print('[ok] visual-stimulation time course saved as "%s"' %\
+                os.path.join(folder, 'visual-stim.npy'))
+
+    ################################
     #  ---   Gamma correction  --- #
     ################################
 
@@ -237,15 +251,18 @@ class visual_stim:
                     VECS.append(np.logspace(np.log10(protocol[key+'-1']),
                                             np.log10(protocol[key+'-2']),
                                             protocol['N-log-'+key]))
-                elif protocol['N-'+key]>1:
+                elif ('N-'+key in protocol) and (protocol['N-'+key]>1):
                     # LIN-SPACED parameters
                     VECS.append(np.linspace(protocol[key+'-1'],
                                             protocol[key+'-2'],
                                             protocol['N-'+key]))
-                else:
-                    #  /!\ we pick the SECOND VALUE as the constant one 
+                elif (key+'-2' in protocol):
+                    #  [!!]  we pick the SECOND VALUE as the constant one 
                     #         (so remember to fill this right in GUI)
                     VECS.append(np.array([protocol[key+'-2']])) 
+                else:
+                    # just a 0 vector
+                    VECS.append(np.zeros(1))
 
             for vec in itertools.product(*VECS):
                 for i, key in enumerate(keys):
@@ -455,6 +472,7 @@ class visual_stim:
     def plot_stim_picture(self, episode, 
                           ax=None,
                           vse=False,
+                          with_scale=False,
                           arrow={'length':20,
                                  'width_factor':0.05,
                                  'color':'red'},
@@ -466,15 +484,18 @@ class visual_stim:
                       self.experiment['time_start'][episode])
 
         
-        if self.units in ['cm', 'lin-deg']:
-            label={'size':10/self.heights.max()*self.z.max(),
-                   'label':'10cm ',
-                   'shift_factor':0.02,
-                   'lw':1, 'fontsize':10}
+        if with_scale:
+            if self.units in ['cm', 'lin-deg']:
+                label={'size':10/self.heights.max()*self.z.max(),
+                       'label':'10cm ',
+                       'shift_factor':0.02,
+                       'lw':1, 'fontsize':10}
+            else:
+                label={'size':20,'label':'20$^o$  ',
+                       'shift_factor':0.02,
+                       'lw':1, 'fontsize':10}
         else:
-            label={'size':20,'label':'20$^o$  ',
-                   'shift_factor':0.02,
-                   'lw':1, 'fontsize':10}
+            label=None
 
         ax = self.show_frame(episode, tcenter, 
                              ax=ax,
@@ -519,9 +540,10 @@ class multiprotocol(visual_stim):
 
         self.STIM, i = [], 1
 
-        if ('load_from_protocol_data' in protocol) and\
-                            protocol['load_from_protocol_data']:
-            # we load a previously saved multiprotocol
+        if 'Protocol-1-Stimulus' in protocol:
+            print('loading from protocol')
+            # this means the subprotocol parameters were already saved, 
+            #      so we build the protocol from those
             while 'Protocol-%i'%i in protocol:
                 subprotocol = {'Screen':protocol['Screen'],
                                'Presentation':''}
@@ -539,7 +561,7 @@ class multiprotocol(visual_stim):
                              'protocols']+protocol['Protocol-%i'%i].split('/')
                 Ppath = os.path.join(*path_list)
                 if not os.path.isfile(Ppath):
-                    print(' /!\\ "%s" not found in Protocol folder /!\\  ' %\
+                    print(' [!!] "%s" not found in Protocol folder [!!]   ' %\
                                             protocol['Protocol-%i'%i])
                 with open(Ppath, 'r') as fp:
                     subprotocol = json.load(fp)

@@ -366,7 +366,7 @@ def select_ROI_from_pick(self, data):
         except BaseException as be:
             print(be)
             roiIndices = [0]
-            self.statusBar.showMessage(' /!\ Problem in setting indices /!\ ')
+            self.statusBar.showMessage(' [!!] Problem in setting indices [!!] ')
             
     return roiIndices
 
@@ -401,7 +401,7 @@ def select_ROI_from_pick(self, data):
     # elif string=='subjects':
         # cls.compute_subjects()
     # else:
-        # self.statusBar.showMessage('  /!\ keyword "%s" not recognized /!\ ' % string)
+        # self.statusBar.showMessage('  [!!] keyword "%s" not recognized [!!] ' % string)
 
             
     # Layout11 = QtWidgets.QVBoxLayout()

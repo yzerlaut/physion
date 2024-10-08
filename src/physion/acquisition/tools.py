@@ -50,14 +50,6 @@ def save_experiment(self, metadata):
                          '%s.xlsx' % self.subjectBox.currentText()))
     print('[ok] Subject data saved as: %s.xlsx' % self.subjectBox.currentText())
 
-    # SAVING THE PROTOCOL FILE
-    if self.protocolBox.currentText()!='None':
-        shutil.copy(os.path.join(base_path, 'protocols',
-                                 self.protocolBox.currentText()+'.json'),
-                    filename.replace('metadata', 'protocol'))
-
-        print('[ok] Protocol data saved as: protocol.json ')
-
 
 
 def get_subject_props(self, filename=None):

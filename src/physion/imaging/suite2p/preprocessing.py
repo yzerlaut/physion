@@ -109,7 +109,7 @@ if __name__=='__main__':
         for args.CaImaging_folder in folders:
             run_preprocessing(args)
     else:
-        print('/!\ Need to provide a valid "TSeries" folder /!\ ')
+        print('[!!] Need to provide a valid "TSeries" folder [!!] ')
         
 
 

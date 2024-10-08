@@ -127,9 +127,9 @@ def run_transfer(self):
         def do_not_include(Dir, f):
             return ('FaceCamera' in Dir) or ('RigCamera' in Dir)
 
-        def ignore_files(dir, files):
-            return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\
-                    do_not_include(dir, f))]
+        def ignore_files(Dir, files):
+            return [f for f in files if (os.path.isfile(os.path.join(Dir, f)) and\
+                    do_not_include(Dir, f))]
 
         for f in [F for F in os.listdir(self.source_folder)\
                     if os.path.isdir(os.path.join(self.source_folder, F))]:
@@ -144,7 +144,7 @@ def run_transfer(self):
     elif 'Imaging (processed)'==self.typeBox.currentText():
 
         def do_not_include(Dir, f):
-            return ('.tiff' in f) and ('TSeries' in f)
+            return ('.tif' in f) and ('TSeries' in f)
 
         def ignore_files(dir, files):
             return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\
@@ -239,7 +239,7 @@ def run_transfer(self):
                     print(' copying "%s" [...]' % xml[0])
                     subprocess.Popen(file_copy_command(self, xml[0], new_folder), shell=True)
             else:
-                print(' /!\ Problem no "xml" found !! /!\  ')
+                print(' [!!] Problem no "xml" found !! [!!]  ')
             # XML metadata file
             Fsuite2p = os.path.join(f, 'suite2p')
 
@@ -283,7 +283,7 @@ def run_transfer(self):
                 #             subprocess.Popen(self.file_copy_command(os.path.join(Fsuite2p, 'plane%i' % iplane, 'data.bin'), inewfolder), shell=True)
                 #     else:
                 #         print('In: "%s" ' % os.path.isfile(os.path.join(Fsuite2p, 'plane%i' % iplane)))
-                #         print(' /!\ Problem no "binary file" found !! /!\  ')
+                #         print(' [!!] Problem no "binary file" found !! [!!]  ')
 
     """
 

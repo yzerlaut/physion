@@ -18,7 +18,7 @@ try:
 except ModuleNotFoundError:
     def Acquisition(**args):
         return None
-    # print(' /!\ Problem with the NIdaq module /!\ ')
+    # print(' [!!] Problem with the NIdaq module [!!] ')
 
 try:
     from physion.hardware.FLIRcamera.main\
@@ -59,10 +59,7 @@ def init_VisualStim(self):
     p = self.protocol.copy() # a copy of the protocol data for saving
     p['no-window'] = True
     stim = build_VisualStim(p)
-    np.save(os.path.join(self.date_time_folder,
-            'visual-stim.npy'), stim.experiment)
-    print('[ok] Visual-stimulation data saved as "%s"' %\
-            os.path.join(self.date_time_folder, 'visual-stim.npy'))
+    stim.save(self.date_time_folder) # writes visual-stim.npy & protocol.json
 
     self.max_time = stim.experiment['time_stop'][-1]+\
             stim.experiment['time_start'][0]
@@ -83,19 +80,19 @@ def run(self):
             init_ok = True
     if not init_ok:
         print('------------------------------------------------')
-        print('-- /!\ Need to pick at least one modality /!\ --')
+        print('-- [!!] Need to pick at least one modality [!!] --')
         print('------------------------------------------------')
         self.statusBar.showMessage(\
-                ' /!\ Need to pick at least one modality /!\ ')
+                ' [!!] Need to pick at least one modality [!!] ')
 
     # 2) INSURING THAT A CONFIG IS SELECTED
     if self.config is None:
         init_ok = False
         print('------------------------------------------------')
-        print('-- /!\ Need to select a configuration first /!\ --')
+        print('-- [!!] Need to select a configuration first [!!] --')
         print('------------------------------------------------')
         self.statusBar.showMessage(\
-                ' /!\ Need to select a configuration first /!\ ')
+                ' [!!] Need to select a configuration first [!!] ')
 
 
     if init_ok:
@@ -148,7 +145,14 @@ def run(self):
 
         NIdaq_metadata_init(self)
 
-        if not self.onlyDemoButton.isChecked():
+        if self.onlyDemoButton.isChecked():
+            np.save(os.path.join(self.date_time_folder, 'NIdaq.start.npy'),
+                    time.time()*np.ones(1))
+            np.save(os.path.join(self.date_time_folder, 'NIdaq.npy'),
+                    {'analog':np.zeros((1,20000)),
+                     'digital':np.zeros((1,20000)),
+                     'dt':1e-2})
+        else:
             try:
                 self.acq = Acquisition(\
                     sampling_rate=\
@@ -162,8 +166,9 @@ def run(self):
                     filename= self.filename.replace('metadata', 'NIdaq'))
             except BaseException as e:
                 print(e)
-                print('\n /!\ PB WITH NI-DAQ /!\ \n')
+                print('\n [!!] PB WITH NI-DAQ [!!] \n')
                 self.acq = None
+        
 
         # saving all metadata after full initialization:
         self.save_experiment(self.metadata) 
