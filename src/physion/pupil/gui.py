@@ -9,7 +9,7 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from physion.pupil import process, roi
 from physion.gui.parts import Slider
 from physion.utils.paths import FOLDERS
-from assembling.tools import load_FaceCamera_data
+from utils.camera import CameraData
 
 
 def gui(self,
@@ -270,7 +270,6 @@ def gui(self,
     # tab.layout.addWidget(ll, istretch+3+k+1,0,1,4)
     updateFrameSlider(self)
     
-    self.nframes = 0
     self.cframe, self.cframe1, self.cframe2, = 0, 0, 0
 
     self.updateTimer = QtCore.QTimer()
@@ -284,30 +283,38 @@ def open_pupil_data(self):
 
     self.cframe = 0
     
-    folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
-                                "Choose datafolder",
-                                FOLDERS[self.folderBox.currentText()])
+    # folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
+                                # "Choose datafolder",
+                                # FOLDERS[self.folderBox.currentText()])
+
     # FOR DEBUGGING
-    # folder = '/home/yann/DATA/DEMO-DATA/NDNF-demo/2023_01_20/15-37-57/'
+    folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
+                          '2024_09_11', '15-33-02')
 
     if folder!='':
         
         self.datafolder = folder
         self.data_before_outliers = None
         
-        if os.path.isdir(os.path.join(folder, 'FaceCamera-imgs')):
+        self.cam = CameraData('FaceCamera', 
+                           path = folder)
+
+        if self.cam.nFrames>0:
 
             if not self.keepCheckBox.isChecked():
                 self.reset()
-            self.imgfolder = os.path.join(self.datafolder, 'FaceCamera-imgs')
-            self.times, self.FILES, self.nframes,\
-                    self.Ly, self.Lx = load_FaceCamera_data(self.imgfolder,
-                                                            t0=0, verbose=True)
-            self.p1.setRange(xRange=(0,self.nframes))
+
+            # self.imgfolder = os.path.join(self.datafolder, 'FaceCamera-imgs')
+            # self.times, self.FILES, self.nframes,\
+                    # self.Ly, self.Lx = load_FaceCamera_data(self.imgfolder,
+                                                            # t0=0, verbose=True)
+            self.p1.setRange(xRange=(0,self.cam.nFrames))
+
         else:
+
             self.Lx, self.Ly = 1, 1
             self.times, self.imgfolder = None, None
-            self.nframes, self.FILES = None, None
+            self.cam.nFrames, self.FILES = None, None
             print(' [!!] no raw FaceCamera data found ...')
 
         if os.path.isfile(os.path.join(self.datafolder, 'pupil.npy')):
@@ -315,8 +322,8 @@ def open_pupil_data(self):
             self.data = np.load(os.path.join(self.datafolder, 'pupil.npy'),
                                 allow_pickle=True).item()
             
-            if self.nframes is None:
-                self.nframes = self.data['frame'].max()
+            if self.cam.nFrames is None:
+                self.cam.nFrames = self.data['frame'].max()
             
             self.smoothBox.setText('%i' % self.data['gaussian_smoothing'])
 
@@ -336,7 +343,7 @@ def open_pupil_data(self):
             self.timeLabel.setEnabled(True)
             self.frameSlider.setEnabled(True)
             updateFrameSlider(self)
-            self.currentTime.setValidator(QtGui.QDoubleValidator(0, self.nframes, 2))
+            self.currentTime.setValidator(QtGui.QDoubleValidator(0, self.cam.nFrames, 2))
             self.movieLabel.setText(folder)
 
 
@@ -715,8 +722,8 @@ def interpolate_data(self):
     for key in ['cx', 'cy', 'sx', 'sy', 'residual', 'angle']:
         func = interp1d(self.data['frame'], self.data[key],
                         kind='linear')
-        self.data[key] = func(np.arange(self.nframes))
-    self.data['frame'] = np.arange(self.nframes)
+        self.data[key] = func(np.arange(self.cam.nFrames))
+    self.data['frame'] = np.arange(self.cam.nFrames)
     self.data['times'] = self.times[self.data['frame']]
 
     plot_pupil_trace(self)
