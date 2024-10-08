@@ -3,6 +3,7 @@ import numpy as np
 import pandas, pynwb, PIL
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
+from dateutil.tz import tzlocal
 
 #################################################
 ###        Select the Camera Interface    #######
@@ -14,6 +15,7 @@ try:
     CameraInterface = 'MicroManager'
 except ModuleNotFoundError:
     pass
+
 ### ------------ ThorCam Interface ---------- ###
 if CameraInterface is None:
     try:
@@ -96,7 +98,7 @@ def gui(self,
     except BaseException as be:
         print(be)
         print('')
-        print(' /!\ Problem with the Camera /!\ ')
+        print(' [!!] Problem with the Camera [!!] ')
         print('        --> no camera found ')
         print('')
 
@@ -269,7 +271,7 @@ def take_fluorescence_picture(self):
     else:
 
         self.statusBar.showMessage(\
-                '  /!\ Need to pick a folder and a subject first ! /!\ ')
+                '  [!!] Need to pick a folder and a subject first ! [!!] ')
 
 
 def take_vasculature_picture(self):
@@ -299,7 +301,7 @@ def take_vasculature_picture(self):
             self.cam.disarm()
 
     else:
-        self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
+        self.statusBar.showMessage('  [!!] Need to pick a folder and a subject first ! [!!] ')
 
     
 def run(self):
@@ -382,6 +384,10 @@ def update_dt_intrinsic(self):
         self.TIMES.append(self.t)
         self.FRAMES.append(get_frame(self))
 
+    else:
+
+        time.sleep(0.05)
+
     if self.live_only:
 
         self.imgPlot.setImage(self.FRAMES[-1].T)
@@ -443,14 +449,15 @@ def initialize_stimWindow(self):
 
 def write_data(self):
 
-    print('\n   starting to write "%s" [...]' % filename)
     filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])],\
                                                  int(self.iEp/len(self.STIM['label']))+1)
     
+    print('\n starting to write: "%s" [...] ' % filename)
+
     nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
                             'intrinsic',
-                            datetime.datetime.utcnow(),
-                            file_create_date=datetime.datetime.utcnow())
+                            datetime.datetime.utcnow().replace(tzinfo=tzlocal()),
+                            file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
 
     # Create our time series
     angles = pynwb.TimeSeries(name='angle_timeseries',
@@ -539,7 +546,7 @@ def launch_intrinsic(self, live_only=False):
         
     else:
 
-        print(' /!\  --> pb in launching acquisition (either already running or missing camera)')
+        print(' [!!]  --> pb in launching acquisition (either already running or missing camera)')
 
 
 def live_intrinsic(self):
