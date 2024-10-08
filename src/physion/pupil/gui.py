@@ -282,7 +282,9 @@ def gui(self,
 def open_pupil_data(self):
 
     self.cframe = 0
-    
+    self.camData = None
+    self.Lx, self.Ly = 1, 1
+
     # folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
                                 # "Choose datafolder",
                                 # FOLDERS[self.folderBox.currentText()])
@@ -296,34 +298,25 @@ def open_pupil_data(self):
         self.datafolder = folder
         self.data_before_outliers = None
         
-        self.cam = CameraData('FaceCamera', 
-                           path = folder)
+        self.camData = CameraData('FaceCamera', 
+                           folder = folder)
 
-        if self.cam.nFrames>0:
+        if self.camData.nFrames>0:
 
             if not self.keepCheckBox.isChecked():
                 self.reset()
 
-            # self.imgfolder = os.path.join(self.datafolder, 'FaceCamera-imgs')
-            # self.times, self.FILES, self.nframes,\
-                    # self.Ly, self.Lx = load_FaceCamera_data(self.imgfolder,
-                                                            # t0=0, verbose=True)
-            self.p1.setRange(xRange=(0,self.cam.nFrames))
+            self.p1.setRange(xRange=(0,self.camData.nFrames))
+            self.Lx, self.Ly = self.camData.get(0).shape
 
-        else:
-
-            self.Lx, self.Ly = 1, 1
-            self.times, self.imgfolder = None, None
-            self.cam.nFrames, self.FILES = None, None
-            print(' [!!] no raw FaceCamera data found ...')
 
         if os.path.isfile(os.path.join(self.datafolder, 'pupil.npy')):
             
             self.data = np.load(os.path.join(self.datafolder, 'pupil.npy'),
                                 allow_pickle=True).item()
             
-            if self.cam.nFrames is None:
-                self.cam.nFrames = self.data['frame'].max()
+            if self.camData.nFrames is None:
+                self.camData.nFrames = self.data['frame'].max()
             
             self.smoothBox.setText('%i' % self.data['gaussian_smoothing'])
 
@@ -338,12 +331,13 @@ def open_pupil_data(self):
             self.data = None
             self.p1.clear()
 
-        if self.times is not None:
+        if self.camData is not None:
             self.jump_to_frame()
             self.timeLabel.setEnabled(True)
             self.frameSlider.setEnabled(True)
             updateFrameSlider(self)
-            self.currentTime.setValidator(QtGui.QDoubleValidator(0, self.cam.nFrames, 2))
+            self.currentTime.setValidator(\
+                    QtGui.QDoubleValidator(0, self.camData.nFrames, 2))
             self.movieLabel.setText(folder)
 
 
@@ -546,11 +540,10 @@ def updateFrameSlider(self):
 
 def jump_to_frame(self):
 
-    if self.FILES is not None:
+    if self.camData is not None:
         
         # full image 
-        self.fullimg = np.load(os.path.join(self.imgfolder,
-                                            self.FILES[self.cframe])).T
+        self.fullimg = self.camData.get(self.cframe)
         self.pimg.setImage(self.fullimg)
 
         # zoomed image
@@ -722,8 +715,8 @@ def interpolate_data(self):
     for key in ['cx', 'cy', 'sx', 'sy', 'residual', 'angle']:
         func = interp1d(self.data['frame'], self.data[key],
                         kind='linear')
-        self.data[key] = func(np.arange(self.cam.nFrames))
-    self.data['frame'] = np.arange(self.cam.nFrames)
+        self.data[key] = func(np.arange(self.camData.nFrames))
+    self.data['frame'] = np.arange(self.camData.nFrames)
     self.data['times'] = self.times[self.data['frame']]
 
     plot_pupil_trace(self)

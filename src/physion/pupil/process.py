@@ -198,7 +198,7 @@ def init_fit_area(cls,
                   blanks=[]):
 
     if fullimg is None:
-        fullimg = np.load(os.path.join(cls.imgfolder,cls.FILES[0])).T
+        fullimg = cls.camData.get(0)
 
     cls.fullx, cls.fully = np.meshgrid(np.arange(fullimg.shape[0]),
                                        np.arange(fullimg.shape[1]),
@@ -253,13 +253,12 @@ def preprocess(cls, with_reinit=True,
 
     if (img is None):
         try:
-            img = np.load(os.path.join(cls.imgfolder,
-                          cls.FILES[cls.cframe])).T
+            img = cls.camData.get(cls.cframe)
         except ValueError:
             print(' [!!] Problem with frame #%i: %s' % (cls.cframe,
                                                        cls.FILES[cls.cframe]))
             print(' replaced with #%i ' % (cls.cframe-1))
-            img = np.load(os.path.join(cls.imgfolder, cls.FILES[cls.cframe-1])).T
+            img = cls.camData.get(cls.cframe-1)
             
     else:
         img = img.copy()
