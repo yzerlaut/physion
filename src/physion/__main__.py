@@ -11,8 +11,8 @@ except ModuleNotFoundError:
     pass
 
 GUI = MainWindow(app,
-                filename=sys.argv[-1] if\
-                        os.path.isfile(sys.argv[-1]) else None)
+    filename=sys.argv[-1] if (('.nwb' in sys.argv[-1]) and \
+                    os.path.isfile(sys.argv[-1])) else None)
 
 sys.exit(app.exec_())
 
