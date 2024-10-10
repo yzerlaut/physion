@@ -7,6 +7,7 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 from physion.assembling.tools import load_FaceCamera_data
 from physion.utils.progressBar import printProgressBar
 from physion.utils.paths import FOLDERS
+from physion.utils.camera import CameraData
 
 def behav_to_movie_gui(self,
                        tab_id=3):
@@ -48,70 +49,28 @@ def behav_to_movie_gui(self,
     self.show()
 
 def run_behav_to_movie(self):
-    Fs = find_subfolders(self.source_folder, 'FaceCamera')
-    print(Fs)
-    for f in Fs:
-        print(f)
-        transform_to_movie(f, subfolder='FaceCamera', 
-                           delete_raw=self.rm.isChecked())
+    for name in ['FaceCamera', 'RigCamera']:
+        Fs = find_subfolders(self.source_folder, name)
+        for f in Fs:
+            print(name, ' :', f)
+            try:
+                camData = CameraData(name, 
+                                     folder=f, 
+                                     force_video=False)
+                camData.convert_to_movie()
 
+                # then remove if asked:
+                if self.rm.isChecked():
+                    shutil.rmtree(os.path.join(f,
+                                               '%s-imgs' % self.name))
+            except BaseException as be:
+                print('')
+                print(be)
+                print('')
+                print('[!!] Problem with recording,', f)
+                print('               ----> impossible to build video')
+                print('')
 
-def transform_to_movie(folder,
-                       subfolder='FaceCamera',
-                       delete_raw=False):
-
-    times, FILES, nframes,\
-        Ly, Lx = load_FaceCamera_data(\
-                os.path.join(folder, '%s-imgs' % subfolder))
-    movie_rate = 1./np.mean(np.diff(times))
-
-    Format = 'wmv' if ('win32' in sys.platform) else 'mp4'
-    out = cv.VideoWriter(os.path.join(folder, '%s.%s' % (subfolder, Format)),
-                          cv.VideoWriter_fourcc(*'mp4v'), 
-                          int(movie_rate),
-                          (Lx, Ly),
-                          False)
-
-    print('\nBuilding the video: "%s" ' %\
-            os.path.join(folder, '%s.%s' % (subfolder, Format)))
-
-    success = np.zeros(len(FILES), dtype=bool)
-    for i, f in enumerate(FILES):
-        try:
-            img = np.load(os.path.join(folder, '%s-imgs' % subfolder, f))
-            out.write(np.array(img, dtype='uint8'))
-            printProgressBar(i, nframes)
-            success[i] = True
-        except BaseException as be:
-            print('problem with frame:', f)
-
-    out.release()
-
-    np.save(os.path.join(folder, '%s-summary.npy' % subfolder),
-            {'times':times,
-             'FILES':FILES,
-             'nframes':nframes,
-             'resolution':(Lx, Ly),
-             'movie_rate':movie_rate,
-             'Frames_succesfully_in_movie':success})
-
-    if delete_raw:
-        shutil.rmtree(os.path.join(folder, '%s-imgs' % subfolder))
-
-
-def loop_over_dayfolder(day_folder):
-
-    for folder in [f for f in os.listdir(day_folder) \
-                        if (os.path.isdir(os.path.join(day_folder, f)) and
-                            len(f.split('-'))==3)]:
-
-        f = os.path.join(day_folder, folder)
-
-        if os.path.isdir(os.path.join(f, 'FaceCamera-imgs')):
-            transform_to_movie(f, 'FaceCamera')
-
-        if os.path.isdir(os.path.join(f, 'RigCamera-imgs')):
-            transform_to_movie(f, 'RigCamera')
 
 
 def find_subfolders(folder, cam='FaceCamera'):
@@ -133,7 +92,5 @@ if __name__=='__main__':
 
     for f in find_subfolders(args.folder, 'FaceCamera'):
         print(f)
-    # transform_to_movie(args.folder)
-    # loop_over_dayfolder(args.folder)
 
     

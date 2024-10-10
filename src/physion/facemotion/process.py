@@ -8,10 +8,6 @@ from physion.assembling.tools import load_FaceCamera_data
 from physion.facemotion import roi
 
 
-def load_folder(cls):
-    """ see assembling/tools.py """
-    cls.times, cls.FILES, cls.nframes, cls.Lx, cls.Ly = load_FaceCamera_data(cls.imgfolder)
-
 
 def set_ROI_area(cls,
                  spatial_subsampling=1,
@@ -23,7 +19,7 @@ def set_ROI_area(cls,
     if roi_coords is not None:
 
         my, mx, sy, sx = roi_coords
-        fullimg = np.load(os.path.join(cls.imgfolder, cls.FILES[0])).T
+        fullimg = cls.camData.get(0)
         
         cls.fullx, cls.fully = np.meshgrid(np.arange(fullimg.shape[0]),
                                            np.arange(fullimg.shape[1]),
@@ -37,9 +33,10 @@ def set_ROI_area(cls,
         cls.zoom_cond = (cls.fullx>=mx) & (cls.fullx<=(mx+sx)) &\
             (cls.fully>=my) & (cls.fully<=my+sy) # & subsampling_mask
 
-        print(fullimg.shape)
-        print(cls.fullx.shape)
-        print(cls.zoom_cond.shape)
+        # print(fullimg.shape)
+        # print(cls.fullx.shape)
+        # print(cls.zoom_cond.shape)
+
         # if cls.ROI is not None:
         #     mx = cls.fullx[cls.zoom_cond].min()
         #     my = cls.fully[cls.zoom_cond].min()
@@ -59,18 +56,17 @@ def load_ROI_data(cls, iframe1=0, iframe2=100,
                   flatten=True):
 
     if flatten:
-        DATA = np.zeros((iframe2-iframe1, cls.Nx*cls.Ny))
+        DATA = np.zeros((int(iframe2-iframe1), cls.Nx*cls.Ny))
     else:
-        DATA = np.zeros((iframe2-iframe1, cls.Nx, cls.Ny))
+        DATA = np.zeros((int(iframe2-iframe1), cls.Nx, cls.Ny))
     
     for frame in np.arange(iframe1, iframe2):
-        fullimg = np.load(os.path.join(cls.imgfolder,
-                                       cls.FILES[frame])).T
+        fullimg = cls.camData.get(frame)
         if flatten:
-            DATA[frame-iframe1,:] = fullimg[cls.zoom_cond]
+            DATA[int(frame-iframe1),:] = fullimg[cls.zoom_cond]
             # spatial subsampling in zoom cond
         else:
-            DATA[frame-iframe1,:,:] = fullimg[cls.zoom_cond].reshape(cls.Nx, cls.Ny)
+            DATA[int(frame-iframe1),:,:] = fullimg[cls.zoom_cond].reshape(cls.Nx, cls.Ny)
     
     return DATA
     
@@ -83,11 +79,11 @@ def compute_motion(cls,
     """
 
     """
-    frames = np.arange(cls.nframes)[::time_subsampling]
+    frames = np.arange(cls.camData.nFrames)[::time_subsampling]
     motion = np.zeros(len(frames)-1)
 
     if with_ProgressBar:
-        printProgressBar(0, cls.nframes)
+        printProgressBar(0, cls.camData.nFrames)
 
     for i, frame in enumerate(frames[:-1]):
         try:
@@ -98,8 +94,13 @@ def compute_motion(cls,
             pass # TO BE REMOVED !!
         
         if with_ProgressBar and (i%20==0):
-            printProgressBar(frame, cls.nframes)
-        
+            printProgressBar(frame, cls.camData.nFrames)
+       
+    # ensure non-zero values, in mp4 movies you can have redundant frames
+    for i in range(1,len(motion)):
+        if motion[i]==0:
+            motion[i]=motion[i-1]
+
     return frames[1:], motion
     
     
