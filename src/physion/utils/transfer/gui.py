@@ -50,7 +50,7 @@ def transfer_gui(self,
     # self.typeBox.activated.connect(self.update_setting)
     self.typeBox.addItems(['Imaging (processed)',
                            'stim.+behav. (processed)',
-                           'nwb', 'npy', 'FULL', 
+                           'nwb', 'npy', 'xml', 'FULL', 
                            'Imaging (+binary)'])
     self.add_side_widget(tab.layout, self.typeBox)
 
@@ -105,7 +105,7 @@ def folder_copy_command(self, source_folder, destination_folder):
         return 'rsync -avhP %s %s &' % (source_folder, destination_folder)
 
 def synch_folders(self):
-    if self.typeBox.currentText() in ['nwb', 'npy']:
+    if self.typeBox.currentText() in ['nwb', 'npy', 'xml']:
         include_string = '--include "/*" --exclude "*" --include "*.%s"' % self.typeBox.currentText()
     else:
         include_string = ''
@@ -144,7 +144,7 @@ def run_transfer(self):
     elif 'Imaging (processed)'==self.typeBox.currentText():
 
         def do_not_include(Dir, f):
-            return ('.tif' in f) and ('TSeries' in f)
+            return (('.tif' in f) and ('TSeries' in f)) or ('.bin' in f)
 
         def ignore_files(dir, files):
             return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\
@@ -160,7 +160,7 @@ def run_transfer(self):
                             ignore=ignore_files)
             print(' [ok] copy finished !')
 
-    elif self.typeBox.currentText() in ['nwb', 'npy']:
+    elif self.typeBox.currentText() in ['nwb', 'npy', 'xml']:
 
         def ignore_files(dir, files):
             return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\

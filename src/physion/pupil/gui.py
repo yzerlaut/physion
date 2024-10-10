@@ -285,13 +285,13 @@ def open_pupil_data(self):
     self.camData = None
     self.Lx, self.Ly = 1, 1
 
-    # folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
-                                # "Choose datafolder",
-                                # FOLDERS[self.folderBox.currentText()])
+    folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
+                                "Choose datafolder",
+                                FOLDERS[self.folderBox.currentText()])
 
     # FOR DEBUGGING
-    folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
-                          '2024_09_11', '15-33-02')
+    # folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
+                          # '2024_09_11', '15-33-02')
 
     if folder!='':
         
