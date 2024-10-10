@@ -149,9 +149,9 @@ def perform_loop(parent,
         temp[key] = []
 
     if with_ProgressBar:
-        printProgressBar(0, parent.nframes)
+        printProgressBar(0, parent.camData.nFrames)
 
-    for parent.cframe in list(range(parent.nframes-1)[::subsampling])+[parent.nframes-1]:
+    for parent.cframe in list(range(parent.camData.nFrames-1)[::subsampling])+[parent.camData.nFrames-1]:
         # preprocess image
         img = preprocess(parent,
                          gaussian_smoothing=gaussian_smoothing,
@@ -166,9 +166,9 @@ def perform_loop(parent,
         for key, val in zip(['cx', 'cy', 'sx', 'sy', 'angle'], coords):
             temp[key].append(val)
         if with_ProgressBar:
-            printProgressBar(parent.cframe, parent.nframes)
+            printProgressBar(parent.cframe, parent.camData.nFrames)
     if with_ProgressBar:
-        printProgressBar(parent.nframes, parent.nframes)
+        printProgressBar(parent.camData.nFrames, parent.camData.nFrames)
         
     print('Pupil size calculation over !')
     

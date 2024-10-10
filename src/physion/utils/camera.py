@@ -85,6 +85,9 @@ class CameraData:
             if nFrames!=self.nFrames:
                 print('movie: ', nFrames, ', raw images:', self.nFrames)
                 print(' [!!] different number of frames in video and raw images')
+                self.FILES = [None for n in range(nFrames)]
+                self.times = np.linspace(self.times[0], self.times[-1], nFrames)
+                self.nFrames = nFrames
 
             if verbose:
                 print('loaded Camera data with %i frames' % self.nFrames)

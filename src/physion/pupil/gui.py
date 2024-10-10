@@ -28,7 +28,7 @@ def gui(self,
 
     self.gaussian_smoothing = 0
     self.subsampling = 1
-    self.ROI, self.pupil, self.times = None, None, None
+    self.ROI, self.pupil, self.camData = None, None, None
     self.data = None
     self.bROI, self.reflectors = [], []
     self.scatter, self.fit= None, None # the pupil size contour
@@ -188,7 +188,7 @@ def gui(self,
     self.smoothLabel = QtWidgets.QCheckBox("px smooth. ?")
     self.smoothBox = QtWidgets.QLineEdit()
     self.smoothBox.setFixedWidth(50)
-    self.smoothBox.setText('5')
+    self.smoothBox.setText('2')
 
     self.addROI = QtWidgets.QPushButton("add Pupil-ROI")
     
@@ -290,8 +290,8 @@ def open_pupil_data(self):
                                 FOLDERS[self.folderBox.currentText()])
 
     # FOR DEBUGGING
-    # folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
-                          # '2024_09_11', '15-33-02')
+    folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
+                          '2024_10_07', '17-18-53')
 
     if folder!='':
         
@@ -550,7 +550,7 @@ def jump_to_frame(self):
         if self.ROI is not None:
             process.init_fit_area(self)
             process.preprocess(self,\
-                               gaussian_smoothing=float(self.smoothBox.text()),
+                               gaussian_smoothing=float(self.smoothBox.text()) if self.smoothLabel.isChecked() else 0,
                                saturation=self.sl.value())
             
             self.pPupilimg.setImage(self.img)
@@ -655,7 +655,7 @@ def process_pupil(self):
 
     for key in temp:
         self.data[key] = temp[key]
-    self.data['times'] = self.times[self.data['frame']]
+    self.data['times'] = self.camData.times[self.data['frame']]
             
     # self.save_gui_settings()
     
@@ -673,7 +673,10 @@ def plot_pupil_trace(self, xrange=None):
         self.p1.plot(self.data['frame'][cond],
                      self.data['sx'][cond], pen=(0,255,0))
         if xrange is None:
-            xrange = (0, self.data['frame'][cond][-1])
+            if self.camData is not None:
+                xrange = (0, self.camData.nFrames)
+            else:
+                xrange = (0, self.data['frame'][cond][-1])
         self.p1.setRange(xRange=xrange,
                          yRange=(self.data['sx'][cond].min()-.1,
                                  self.data['sx'][cond].max()+.1),
@@ -717,7 +720,7 @@ def interpolate_data(self):
                         kind='linear')
         self.data[key] = func(np.arange(self.camData.nFrames))
     self.data['frame'] = np.arange(self.camData.nFrames)
-    self.data['times'] = self.times[self.data['frame']]
+    self.data['times'] = self.camData.times[self.data['frame']]
 
     plot_pupil_trace(self)
     print('[ok] interpolation successfull !')

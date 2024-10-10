@@ -30,7 +30,7 @@ def gui(self,
 
     self.ROI, self.data = None, None
     self.camData = None
-    self.nframes, self.cframe, self.FILES= 0, 0, None
+    self.cframe = 0
     self.grooming_threshold = -1
 
     ########################
@@ -186,12 +186,12 @@ def open_facemotion_data(self):
     self.camData = None
     self.Lx, self.Ly = 1, 1
     
-    # folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
-                                # "Choose datafolder",
-                                # FOLDERS[self.folderBox.currentText()])
+    folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
+                                "Choose datafolder",
+                                FOLDERS[self.folderBox.currentText()])
     ## FOR DEBUGGING
-    folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
-                          '2024_09_11', '15-33-02')
+    # folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
+                          # '2024_10_07', '17-18-53')
 
     if folder!='':
         
@@ -213,9 +213,6 @@ def open_facemotion_data(self):
             self.data = np.load(os.path.join(self.datafolder, 'facemotion.npy'),
                                 allow_pickle=True).item()
             
-            if (self.nframes is None) and ('frame' in self.data):
-                self.nframes = self.data['frame'].max()
-
             if 'ROI' in self.data:
                 self.ROI = roi.faceROI(moveable=True, parent=self,
                                        pos=self.data['ROI'])
@@ -370,7 +367,7 @@ def plot_motion_trace(self, xrange=None):
                  self.data['motion'], pen=(0,0,255))
 
     if xrange is None:
-        xrange = (0, self.nframes)
+        xrange = (0, self.camData.nFrames)
 
     self.line = pg.InfiniteLine(pos=self.grooming_threshold, angle=0, movable=True)
     self.tracePlot.addItem(self.line)

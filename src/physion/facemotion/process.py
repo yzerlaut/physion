@@ -33,9 +33,10 @@ def set_ROI_area(cls,
         cls.zoom_cond = (cls.fullx>=mx) & (cls.fullx<=(mx+sx)) &\
             (cls.fully>=my) & (cls.fully<=my+sy) # & subsampling_mask
 
-        print(fullimg.shape)
-        print(cls.fullx.shape)
-        print(cls.zoom_cond.shape)
+        # print(fullimg.shape)
+        # print(cls.fullx.shape)
+        # print(cls.zoom_cond.shape)
+
         # if cls.ROI is not None:
         #     mx = cls.fullx[cls.zoom_cond].min()
         #     my = cls.fully[cls.zoom_cond].min()
@@ -94,7 +95,12 @@ def compute_motion(cls,
         
         if with_ProgressBar and (i%20==0):
             printProgressBar(frame, cls.camData.nFrames)
-        
+       
+    # ensure non-zero values, in mp4 movies you can have redundant frames
+    for i in range(1,len(motion)):
+        if motion[i]==0:
+            motion[i]=motion[i-1]
+
     return frames[1:], motion
     
     
