@@ -180,6 +180,7 @@ class MainWindow(QtWidgets.QMainWindow):
                  args=None,
                  width=750, height=600,
                  Ntabs=4,
+                 filename=None,
                  button_height = 20):
 
         tic = time.time() # for optimisation tests
@@ -250,6 +251,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.multimodal()
         elif ('intrinsic' in sys.argv):
             self.intrinsic_acq()
+        elif filename is not None:
+            from physion.analysis.read_NWB import Data
+            self.data = Data(filename)
+            self.visualization()
         else:
             self.calendar()
         self.show()

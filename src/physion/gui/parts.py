@@ -13,9 +13,9 @@ smallfont.setPointSize(11)
 
 def choose_root_folder(self):
 
-    if hasattr(self, 'folderBox'):
+    try:
         return (physion.utils.paths.FOLDERS[self.folderBox.currentText()] if self.folderBox.currentText() in physion.utils.paths.FOLDERS else os.path.join(os.path.expanduser('~'), 'DATA'))
-    else:
+    except BaseException as be:
         return os.path.join(os.path.expanduser('~'), 'DATA')
 
 
