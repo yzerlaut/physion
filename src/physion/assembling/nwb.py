@@ -322,12 +322,12 @@ def build_NWB_func(args):
         else:
             FCS_data = None
 
-        check_times(FC_times, NIdaq_Tstart)
+        FC_times = check_times(FC_times, NIdaq_Tstart)
 
         if ('raw_FaceCamera' in args.modalities) and (fcamData is not None):
             
             FC_times = fcamData.times
-            check_times(FC_times, NIdaq_Tstart)
+            FC_times = check_times(FC_times, NIdaq_Tstart)
 
             imgR = fcamData.get(0)
             FC_SUBSAMPLING = build_subsampling_from_freq(args.FaceCamera_frame_sampling,
@@ -616,11 +616,14 @@ def build_cmd(datafolder,
 
 def check_times(times, t0):
     # dealing with the successive substractions of NIdaq_t0
-    # print(times[0], t0)
+    print(times[0], t0)
     if times[0]>1e8:
         times = times-t0
     elif times[0]<-1e8:
         times = times+t0
+    print(times[0])
+    return times
+
 
 
 if __name__=='__main__':
