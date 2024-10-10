@@ -252,8 +252,8 @@ class MainWindow(QtWidgets.QMainWindow):
         elif ('intrinsic' in sys.argv):
             self.intrinsic_acq()
         elif filename is not None:
-            import physion
-            self.data = physion.analysis.read_NWB.Data(filename)
+            from physion.analysis.read_NWB import Data
+            self.data = Data(filename)
             self.visualization()
         else:
             self.calendar()
