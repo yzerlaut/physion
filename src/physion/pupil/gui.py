@@ -290,8 +290,8 @@ def open_pupil_data(self):
                                 FOLDERS[self.folderBox.currentText()])
 
     # FOR DEBUGGING
-    folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
-                          '2024_10_07', '17-18-53')
+    # folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
+    #                      '2024_10_07', '17-18-53')
 
     if folder!='':
         
