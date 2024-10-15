@@ -1,7 +1,8 @@
 import xml.etree.ElementTree as ET
 import numpy as np
 
-def bruker_xml_parser(filename):
+def bruker_xml_parser(filename, 
+                      verbose=False):
     """
     function to parse the xml metadata file produced by the Prairie software
 
@@ -96,8 +97,9 @@ def bruker_xml_parser(filename):
                 depth_middle_piezo = 200 # SHOULD BE ALWAYS CENTER AT 200um
                 data['depth_shift'] = np.linspace(-1, 1, Ndepth)*(depth_middle_piezo-depth_start_piezo)
             except BaseException as be:
-                print(be)
-                print(' [!!] plane info was not found [!!] ')
+                if verbose:
+                    print(be)
+                    print(' [!!] plane info was not found [!!] ')
                 data['depth_shift'] = np.arange(1, Ndepth+1)
         else:
             data['depth_shift'] = np.zeros(1)

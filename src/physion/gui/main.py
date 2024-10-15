@@ -171,8 +171,11 @@ class MainWindow(QtWidgets.QMainWindow):
         # -- Behavior to Movie Files conversion
         from physion.behavior.convert_to_movie import behav_to_movie_gui,\
                 run_behav_to_movie
+        from physion.imaging.convert_to_movie import imaging_to_movie_gui,\
+                run_imaging_to_movie
     else:
         from physion.gui.parts import inactivated as behav_to_movie_gui
+        from physion.gui.parts import inactivated as imaging_to_movie_gui
         from physion.gui.parts import inactivated as transfer_gui 
 
 
@@ -181,6 +184,7 @@ class MainWindow(QtWidgets.QMainWindow):
                  width=750, height=600,
                  Ntabs=4,
                  filename=None,
+                 folder=None,
                  button_height = 20):
 
         tic = time.time() # for optimisation tests
@@ -255,6 +259,9 @@ class MainWindow(QtWidgets.QMainWindow):
             from physion.analysis.read_NWB import Data
             self.data = Data(filename)
             self.visualization()
+        elif folder is not None:
+            self.calendar()
+            self.scan_folder(folder=folder)
         else:
             self.calendar()
         self.show()

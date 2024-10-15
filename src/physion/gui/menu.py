@@ -80,6 +80,6 @@ def build_menu(self):
                               self.transfer_gui)
     self.otherMenu.addAction('&Convert Behavior to Movies',
                               self.behav_to_movie_gui)
-    self.otherMenu.addAction('&Convert Imaging to 8bit-Movies',
-                              self.behav_to_movie_gui)
+    self.otherMenu.addAction('&Convert Imaging to Movies',
+                              self.imaging_to_movie_gui)
 

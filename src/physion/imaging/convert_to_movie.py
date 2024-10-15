@@ -54,6 +54,14 @@ def imaging_to_movie_gui(self,
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
 
+    self.add_side_widget(tab.layout, 
+            QtWidgets.QLabel("Compression / Format : ", self))
+    self.typeBox = QtWidgets.QComboBox()
+    self.typeBox.addItems(['8bit-LOG-mp4', '16bit-avi (lossless)'])
+    self.add_side_widget(tab.layout, self.typeBox)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
+
     self.gen = QtWidgets.QPushButton(' -= RUN =-  ', self)
     self.gen.clicked.connect(self.run_imaging_to_movie)
     self.add_side_widget(tab.layout, self.gen)
@@ -62,14 +70,21 @@ def imaging_to_movie_gui(self,
     self.show()
 
 def run_imaging_to_movie(self):
-    Fs = find_subfolders(self.source_folder, 'FaceCamera')
+    Fs = find_subfolders(self.source_folder)
     for f in Fs:
-        transform_to_movie(f, subfolder='FaceCamera', 
-                           delete_raw=self.rm.isChecked())
+
+        if '16bit' in self.typeBox.currentText():
+            print('')
+            print(' [!!] Not implemented yet [!!] ')
+            print('      use only from command line')
+        elif '8bit-LOG' in self.typeBox.currentText():
+            convert_to_log8bit_mp4(f)
+        else:
+            print(' compression type not recognized')
+        print(f)
 
 
-def convert_to_16bit_avi(TS_folder,
-                    delete_raw=False):
+def convert_to_16bit_avi(TS_folder):
 
     xml_file = get_files_with_extension(TS_folder, extension='.xml')[0]
     xml = bruker_xml_parser(xml_file)
@@ -88,17 +103,11 @@ def convert_to_16bit_avi(TS_folder,
         cmd  = 'ffmpeg -i %s' % os.path.join(TS_folder,\
                     xml[chan]['tifFile'][0].replace('000001', '%06d'))+\
                     ' -c:v ffv1 '+vid_name
-        print('\nBuilding the video: "%s" ' % vid_name)
+        print('\n  [...] Building the video: "%s" ' % vid_name)
         print(cmd)
-        # os.system(cmd)
-
-        if delete_raw:
-            for i, f in enumerate(FILES):
-                img = os.remove(os.path.join(TS_folder, f))
 
 
-def convert_to_log8bit_mp4(TS_folder,
-                    delete_raw=False):
+def convert_to_log8bit_mp4(TS_folder):
 
     Format = 'wmv' if ('win32' in sys.platform) else 'mp4'
 
@@ -113,76 +122,95 @@ def convert_to_log8bit_mp4(TS_folder,
     
         print('    --> Channel: ', chan)
         nframes = len(xml[chan]['tifFile'])
-        FILES = xml[chan]['tifFile']
         movie_rate = 1./float(xml['settings']['framePeriod'])
-
-        vid_name = os.path.join(TS_folder, 'LOG-%s.%s' %\
-                                (chan.replace(' ','-'), Format))
-        out = cv.VideoWriter(vid_name,
-                              cv.VideoWriter_fourcc(*'mp4v'), 
-                              movie_rate,
-                              (Lx, Ly),
-                              False)
-
-        print('\nBuilding the video: "%s" ' % vid_name)
-
-        success = np.zeros(len(FILES), dtype=bool)
-        for i, f in enumerate(FILES):
-            try:
-                # load 16-bit image
-                img = np.array(Image.open(os.path.join(TS_folder, f)),
-                               dtype='uint16')
-                # log and convert to 8-bit
-                img = np.array(np.log(img+1.)/np.log(2**16)*2**8, 
-                               dtype='uint8')
-                # write in movie
-                out.write(img)
-                printProgressBar(i, nframes)
-                success[i] = True
-            except BaseException as be:
-                print('problem with frame:', f)
-
-            if delete_raw:
-                img = os.remove(os.path.join(TS_folder, f))
-
-        out.release()
-
-        np.save(vid_name.replace('.%s'%Format, '-summary.npy'),
-                {'compression':'log+mp4v',
-                 'Frames_succesfully_in_movie':success})
-        print(' [ok] done !')
+        FILES = xml[chan]['tifFile']
 
 
-def reconvert_to_tiffs_from_log8bit(vid_name):
+        DICT = {'compression':'log+mp4v'}
+        
+        for p in np.unique(xml[chan]['depth_index']):
 
-    xml_file = get_files_with_extension(os.path.dirname(vid_name),
+            vid_name = os.path.join(TS_folder, 'LOG-%s-plane%i.%s' %\
+                                    (chan.replace(' ','-'), p, Format))
+            out = cv.VideoWriter(vid_name,
+                                  cv.VideoWriter_fourcc(*'mp4v'), 
+                                  movie_rate,
+                                  (Lx, Ly),
+                                  False)
+
+            print('\n  [...]  Building the video: "%s" ' % vid_name)
+
+            plane_cond = (xml[chan]['depth_index']==p)
+            success = np.zeros(len(FILES[plane_cond]), dtype=bool)
+            for i, f in enumerate(FILES[plane_cond]):
+                try:
+                    # load 16-bit image
+                    img = np.array(Image.open(os.path.join(TS_folder, f)),
+                                   dtype='uint16')
+                    # log and convert to 8-bit
+                    img = np.array(np.log(img+1.)/np.log(2**16)*2**8, 
+                                   dtype='uint8')
+                    # write in movie
+                    out.write(img)
+                    printProgressBar(i, nframes)
+                    success[i] = True
+                except BaseException as be:
+                    print('problem with frame:', f)
+
+            out.release()
+            print(' [ok] "%s" succesfully created !' % vid_name)
+            DICT['Frames_succesfully_in_movie-plane%i'%p]= success
+
+        np.save(os.path.join(TS_folder, 'LOG-%s-summary.npy'%chan.replace(' ','-')),
+                DICT)
+        print(' [ok] Frames-summary.npy succesfully created !')
+
+
+def reconvert_to_tiffs_from_log8bit(TS_folder):
+
+    xml_file = get_files_with_extension(TS_folder,
                                         extension='.xml')[0]
     xml = bruker_xml_parser(xml_file)
+
+    Format = 'wmv' if ('win32' in sys.platform) else 'mp4'
 
     for chan in xml['channels']:
 
         summary = np.load(\
-          vid_name.replace('.mp4','-summary.npy').replace('.wmv','-summary.npy'),
+            os.path.join(TS_folder, 'LOG-%s-summary.npy'%chan.replace(' ','-')),
                           allow_pickle=True).item()
 
-        cap = cv.VideoCapture(vid_name)
+        for p in np.unique(xml[chan]['depth_index']):
 
-        nframes = len(summary['Frames_succesfully_in_movie'])
-        for i, success in enumerate(\
-                summary['Frames_succesfully_in_movie']):
+            plane_cond = (xml[chan]['depth_index']==p)
 
-            if success:
-                # load the 8-bit frame
-                ret, frame = cap.read()
-                frame = np.exp(frame*np.log(2**16)/2**8)
-                # convert to 16-bit
-                frame = np.array(frame[:,:,0], dtype='uint16')
-                im = Image.fromarray(frame)
-                # write as 16bit tiff
-                im.save(os.path.join(os.path.dirname(vid_name),
-                                     xml[chan]['tifFile'][i]),
+            vid_name = os.path.join(TS_folder, 'LOG-%s-plane%i.%s' %\
+                                    (chan.replace(' ','-'), p, Format))
+
+            cap = cv.VideoCapture(vid_name)
+
+            try:
+                successful_frames = summary['Frames_succesfully_in_movie-plane%i'%p]
+            except BaseException as be:
+                # old implementation
+                successful_frames = summary['Frames_succesfully_in_movie']
+
+            nframes = len(successful_frames)
+            for i, success in enumerate(successful_frames):
+
+                if success:
+                    # load the 8-bit frame
+                    ret, frame = cap.read()
+                    frame = np.exp(frame*np.log(2**16)/2**8)
+                    # convert to 16-bit
+                    frame = np.array(frame[:,:,0], dtype='uint16')
+                    im = Image.fromarray(frame)
+                    # write as 16bit tiff
+                    im.save(os.path.join(os.path.dirname(vid_name),
+                                     xml[chan]['tifFile'][plane_cond][i]),
                                      format='TIFF')
-                printProgressBar(i, nframes)
+                    printProgressBar(i, nframes)
+            print(' [ok] restored plane%i of "%s" ' % (p, TS_folder))
 
 ###########################
 
@@ -220,7 +248,7 @@ def reconvert_to_tiffs_from_16bit(vid_name):
             printProgressBar(i, nframes)
             
 
-def find_subfolders(folder, cam='FaceCamera'):
+def find_subfolders(folder):
     return [f[0] for f in os.walk(folder)\
                     if 'TSeries' in f[0].split(os.path.sep)[-1]]
 
@@ -240,9 +268,6 @@ if __name__=='__main__':
                         action="store_true")
     parser.add_argument("--restore", 
                         action="store_true")
-    parser.add_argument('-d', "--delete_raw", 
-                        help="protocol a json file", 
-                        action="store_true")
     args = parser.parse_args()
 
     print('')
@@ -252,11 +277,9 @@ if __name__=='__main__':
 
         if args.convert:
             if args.lossless:
-                convert_to_16bit_avi(folder,
-                                delete_raw=args.delete_raw)
+                convert_to_16bit_avi(folder)
             else:
-                convert_to_log8bit_mp4(folder,
-                                delete_raw=args.delete_raw)
+                convert_to_log8bit_mp4(folder)
         elif args.restore:
 
             xml_file = get_files_with_extension(folder,
@@ -266,19 +289,12 @@ if __name__=='__main__':
             for chan in xml['channels']:
                 if os.path.isfile(\
                         os.path.join(folder,
-                                     'LOG-%s.mp4'%(chan.replace(' ','-')))):
-                    reconvert_to_tiffs_from_log8bit(os.path.join(folder,
-                                         'LOG-%s.mp4'%(chan.replace(' ','-'))))
+                                     'LOG-%s-summary.npy'%(chan.replace(' ','-')))):
+                    reconvert_to_tiffs_from_log8bit(folder)
                 elif os.path.isfile(\
                         os.path.join(folder,
-                                     'LOG-%s.wmv'%(chan.replace(' ','-')))):
-                    reconvert_to_tiffs_from_log8bit(os.path.join(folder,
-                                         'LOG-%s.wmv'%(chan.replace(' ','-'))))
-                elif os.path.isfile(\
-                        os.path.join(folder,
-                                     '%s.avi'%(chan.replace(' ','-')))):
-                    reconvert_to_tiffs_from_16bit(os.path.join(folder,
-                                         '%s.avi'%(chan.replace(' ','-'))))
+                                     '%s-summary.npy'%(chan.replace(' ','-')))):
+                    reconvert_to_tiffs_from_16bit(folder)
                 else:
                     print('\n no video file to restore was found ! \n ')
 
