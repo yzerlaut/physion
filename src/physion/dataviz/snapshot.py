@@ -10,7 +10,7 @@ from physion.utils.files import get_files_with_extension,\
 from physion.assembling.tools import StartTime_to_day_seconds,\
         load_FaceCamera_data
 from physion.dataviz.tools import convert_times_to_indices
-from physion.assembling.IO.binary import BinaryFile
+from physion.utils.binary import BinaryFile
 from physion.dataviz.raw import *
 from physion.dataviz.imaging import *
 from physion.dataviz.camera import *
