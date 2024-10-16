@@ -173,6 +173,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 run_behav_to_movie
         from physion.imaging.convert_to_movie import imaging_to_movie_gui,\
                 run_imaging_to_movie
+        # -- File Deletion
+        from physion.utils.management.delete import deletion_gui, run_deletion
     else:
         from physion.gui.parts import inactivated as behav_to_movie_gui
         from physion.gui.parts import inactivated as imaging_to_movie_gui

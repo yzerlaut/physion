@@ -15,8 +15,8 @@ from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.progressBar import printProgressBar
 from physion.utils.paths import FOLDERS
 
-def delete_gui(self,
-                       tab_id=3):
+def deletion_gui(self,
+               tab_id=3):
 
     self.source_folder = ''
     self.windows[tab_id] = 'delete_data'
