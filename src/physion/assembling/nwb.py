@@ -137,7 +137,7 @@ def build_NWB_func(args):
                 subject=subject,
                 source_script=str(pathlib.Path(__file__).resolve()),
                 source_script_file_name=str(pathlib.Path(__file__).resolve()),
-                file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
+                file_create_date=datetime.datetime.now(datetime.UTC).replace(tzinfo=tzlocal()))
 
     if not hasattr(args, 'filename') or args.filename=='':
         if args.destination_folder=='':
@@ -620,12 +620,12 @@ def build_cmd(datafolder,
 
 def check_times(times, t0):
     # dealing with the successive substractions of NIdaq_t0
-    print(times[0], t0)
+    # print(times[0], t0)
     if times[0]>1e8:
         times = times-t0
     elif times[0]<-1e8:
         times = times+t0
-    print(times[0])
+    # print(times[0])
     return times
 
 
@@ -646,12 +646,12 @@ if __name__=='__main__':
     ##             IN CASE SOMETHING WENT WRONG IN THE RECORDING    ####
     parser.add_argument("--max_episode", type=int, default=-1)
     ######## AND THE POSSIBILITY TO REMOVE SPECIFIC EPISODES
-    parser.add_argument("--ignore_episodes", nargs='*', type=int)
+    parser.add_argument("--ignore_episodes", nargs='*', type=int, default=[])
     ######## ALSO THE ABILITY TO FORCE EPISODE START AND DURATION   ####
     ##  e.g. for the protocols without the photodiode (screen off)  ####
-    parser.add_argument("--indices_forced", nargs='*', type=int)
-    parser.add_argument("--times_forced", nargs='*', type=float)
-    parser.add_argument("--durations_forced", nargs='*', type=float)
+    parser.add_argument("--indices_forced", nargs='*', type=int, default=[])
+    parser.add_argument("--times_forced", nargs='*', type=float, default=[])
+    parser.add_argument("--durations_forced", nargs='*', type=float, default=[])
     # or we just simply force the timestamps to the ones desired by visualStim
     parser.add_argument("--force_to_visualStimTimestamps", action="store_true")
 
