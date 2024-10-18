@@ -6,7 +6,7 @@ from physion.utils.files import get_files_with_extension,\
 from physion.utils.paths import FOLDERS
 
 # include/exclude functions here !
-from physion.utils.transfer.tools import TYPES
+from physion.utils.transfer.types import TYPES
 
 def transfer_gui(self,
                  tab_id=3):
