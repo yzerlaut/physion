@@ -1,5 +1,7 @@
 """
 Script to add/modify the metadata in case of mistakes
+
+[10/2024 --> deprecated]
 """
 import os, tempfile, json, pathlib, shutil
 import numpy as np

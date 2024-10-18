@@ -8,15 +8,16 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 from dateutil.tz import tzlocal
 
 from physion.acquisition.tools import get_subject_props
-from physion.assembling.IO.bruker_data import StartTime_to_day_seconds
+
 from physion.assembling.realign_from_photodiode import realign_from_photodiode
 from physion.behavior.locomotion import compute_speed
 from physion.analysis.tools import resample_signal
-from physion.assembling.tools import load_FaceCamera_data
-from physion.assembling.tools import build_subsampling_from_freq
+from physion.assembling.tools import load_FaceCamera_data,\
+        build_subsampling_from_freq, StartTime_to_day_seconds
 from physion.assembling.add_ophys import add_ophys
 from physion.utils.paths import python_path
 from physion.visual_stim.build import build_stim as build_visualStim
+
 from physion.utils.camera import CameraData
 
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
@@ -247,13 +248,16 @@ def build_NWB_func(args):
 
         if not args.force_to_visualStimTimestamps:
             # we do the re-alignement
-            success, metadata = realign_from_photodiode(Psignal, metadata,
-                                                        max_episode=args.max_episode,
-                                                        sampling_rate=(args.photodiode_sampling if args.photodiode_sampling>0 else None),
-                                                        indices_forced=indices_forced,
-                                                        times_forced=times_forced,
-                                                        durations_forced=durations_forced,
-                                                        verbose=args.verbose)
+            success, metadata = \
+                    realign_from_photodiode(Psignal, metadata,
+                                    max_episode=args.max_episode,
+                                    ignore_episodes=args.ignore_episodes,
+                                    sampling_rate=(args.photodiode_sampling\
+                                            if args.photodiode_sampling>0 else None),
+                                    indices_forced=indices_forced,
+                                    times_forced=times_forced,
+                                    durations_forced=durations_forced,
+                                    verbose=args.verbose)
         else:
             # we just take the original timestamps
            success = True
@@ -641,11 +645,14 @@ if __name__=='__main__':
     ######## INTRODUCING A MAX EPISODE VARIABLE                     ####
     ##             IN CASE SOMETHING WENT WRONG IN THE RECORDING    ####
     parser.add_argument("--max_episode", type=int, default=-1)
+    ######## AND THE POSSIBILITY TO REMOVE SPECIFIC EPISODES
+    parser.add_argument("--ignore_episodes", nargs='*', type=int)
     ######## ALSO THE ABILITY TO FORCE EPISODE START AND DURATION   ####
     ##  e.g. for the protocols without the photodiode (screen off)  ####
     parser.add_argument("--indices_forced", nargs='*', type=int)
     parser.add_argument("--times_forced", nargs='*', type=float)
     parser.add_argument("--durations_forced", nargs='*', type=float)
+    # or we just simply force the timestamps to the ones desired by visualStim
     parser.add_argument("--force_to_visualStimTimestamps", action="store_true")
 
     parser.add_argument('-rs', "--running_sampling", default=50., type=float)

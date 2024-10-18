@@ -5,6 +5,9 @@ from physion.utils.files import get_files_with_extension,\
         get_TSeries_folders, list_dayfolder
 from physion.utils.paths import FOLDERS
 
+# include/exclude functions here !
+from physion.utils.transfer.types import TYPES
+
 def transfer_gui(self,
                  tab_id=3):
 
@@ -48,10 +51,7 @@ def transfer_gui(self,
         QtWidgets.QLabel("=> What ?", self))
     self.typeBox = QtWidgets.QComboBox(self)
     # self.typeBox.activated.connect(self.update_setting)
-    self.typeBox.addItems(['Imaging (processed)',
-                           'stim.+behav. (processed)',
-                           'nwb', 'npy', 'xml', 'FULL', 
-                           'Imaging (+binary)'])
+    self.typeBox.addItems(list(TYPES.keys()))
     self.add_side_widget(tab.layout, self.typeBox)
 
     self.add_side_widget(tab.layout, 
@@ -286,20 +286,3 @@ def run_transfer(self):
                 #         print(' [!!] Problem no "binary file" found !! [!!]  ')
 
     """
-
-if __name__=='__main__':
-
-    def do_not_include(Dir, f):
-        return ('FaceCamera' in Dir) or ('RigCamera' in Dir)
-
-    def ignore_files(dir, files):
-        return [f for f in files if (os.path.isfile(os.path.join(dir, f)) and\
-                do_not_include(dir, f))]
-
-    source_folder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED', '2024_01_25')
-    destination_folder = os.path.join(os.path.expanduser('~'), 'ASSEMBLE')
-
-    shutil.copytree(source_folder,
-                    os.path.join(destination_folder, 'copy'), 
-                    ignore=ignore_files)
-

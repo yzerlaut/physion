@@ -11,11 +11,13 @@ sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 # import the 2P trigger delay from the acquisition module !
 from physion.acquisition.recordings.Scan1Plane_Screen342V import TwoP_trigger_delay
 
-from physion.assembling.IO.binary import BinaryFile
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
+from physion.imaging.suite2p.to_nwb import add_ophys_processing_from_suite2p
+
 from physion.utils.files import get_files_with_extension, get_TSeries_folders
+from physion.utils.binary import BinaryFile
+
 from physion.assembling.tools import build_subsampling_from_freq
-from physion.assembling.IO.suite2p_to_nwb import add_ophys_processing_from_suite2p
 from physion.utils.paths import FOLDERS, python_path
 from physion.analysis.read_NWB import Data
 

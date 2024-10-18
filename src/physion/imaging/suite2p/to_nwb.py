@@ -14,6 +14,7 @@ from pynwb.ophys import Fluorescence
 from pynwb import NWBHDF5IO
 
 def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml, 
+                                      TwoP_trigger_delay=0., 
                                       device=None,
                                       optical_channel=None,
                                       imaging_plane=None,
@@ -33,8 +34,26 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
         pData_folder = os.path.join(save_folder, 'plane0') # processed data folder
 
     # find time sampling per plane
-    functional_chan = ('Ch1' if len(xml['Ch1']['relativeTime'])>1 else 'Ch2') # functional channel is one of the two !!
-    CaImaging_timestamps = xml[functional_chan]['relativeTime']+float(xml['settings']['framePeriod'])/2.
+    if ('Ch1' in xml) and (len(xml['Ch1']['relativeTime'])>1):
+        functional_chan = 'Ch1'
+    elif ('Ch2' in xml) and (len(xml['Ch2']['relativeTime'])>1):
+        functional_chan = 'Ch2'
+    elif ('Green' in xml) and (len(xml['Green']['relativeTime'])>1):
+        functional_chan = 'Green'
+    else:
+        functional_chan = xml['channels'][0]
+
+    print(' - Functional channel set to:', functional_chan)
+
+    CaImaging_timestamps = xml[functional_chan]['relativeTime']
+    # print('- timestamps :', len(CaImaging_timestamps), len(CaImaging_timestamps)/5)
+
+    # [!!] Add the 2P trigger delay
+    if TwoP_trigger_delay>0:
+        CaImaging_timestamps += TwoP_trigger_delay
+    else:
+        print("\n / ! \\  no delay from 2P trigger ... check !   / ! \\ \n")
+
 
     ops = np.load(os.path.join(pData_folder, 'ops.npy'), allow_pickle=True).item() 
     
@@ -55,7 +74,7 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             imaging_rate=ops['fs'],
             description='standard',
             device=device,
-            excitation_lambda=600.,
+            excitation_lambda=920.,
             indicator='GCaMP',
             location='V1',
             grid_spacing=([2,2,30] if multiplane else [2,2]),
@@ -89,7 +108,7 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
     ophys_module.add(img_seg)
 
     # file_strs = ['F_chan2.npy', 'Fneu_chan2.npy', 'spks.npy']
-    file_strs = ['F.npy', 'Fneu.npy', 'spks.npy']
+    file_strs = ['F.npy', 'Fneu.npy']
     traces = []
 
     iscell = np.load(os.path.join(pData_folder, 'iscell.npy')).astype(bool)
@@ -105,14 +124,16 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             redcell = np.load(os.path.join(pData_folder, 'redcell.npy'))[iscell[:,0], :]
             
     for fstr in file_strs:
-        traces.append(np.load(os.path.join(pData_folder, fstr))[iscell[:,0], :].T) # transposing the traces to fill the NWB requirements ! (Ntime_samples, Nrois)
+        # transposing the traces to fill the NWB requirements ! (Ntime_samples, Nrois)
+        traces.append(np.load(os.path.join(pData_folder, fstr))[iscell[:,0], :].T) 
         
     stat = np.load(os.path.join(pData_folder, 'stat.npy'), allow_pickle=True)
 
     ncells = np.sum(iscell[:,0])
-    plane_ID = np.zeros(ncells)
+    plane_ID = np.zeros(ncells, dtype=int)
     for n in np.arange(ncells):
-        pixel_mask = np.array([stat[iscell[:,0]][n]['ypix'], stat[iscell[:,0]][n]['xpix'], 
+        pixel_mask = np.array([stat[iscell[:,0]][n]['ypix'],
+                               stat[iscell[:,0]][n]['xpix'], 
                                stat[iscell[:,0]][n]['lam']])
         ps.add_roi(pixel_mask=pixel_mask.T)
         if 'iplane' in stat[0]:
@@ -131,13 +152,19 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
     name_strs = ['Fluorescence', 'Neuropil']
 
     for i, (fstr,nstr) in enumerate(zip(file_strs, name_strs)):
+        timestamps=CaImaging_timestamps[plane_ID[i]::ops['nplanes']] # shifted for each ROI depending on the plane !!
+        if len(traces[i])!=len(timestamps):
+            print(' [!!] be careful, the Bruker-xml timestamps and the suite2p frame number do not match ! [!!] ')
+            print(' n=%i suite2p frames, n=%i Bruker timestamps) ' % (len(traces[i]), len(timestamps)))
+        # print(len(timestamps), traces[i].shape)
         roi_resp_series = RoiResponseSeries(
             name=nstr,
-            data=traces[i],
+            data=traces[i][:len(timestamps),:],
             rois=rt_region,
             unit='lumens',
-            timestamps=CaImaging_timestamps[::nplanes]) # ideally should be shifted for each ROI depending on the plane...
-        fl = Fluorescence(roi_response_series=roi_resp_series, name=nstr)
+            timestamps=timestamps)
+        fl = Fluorescence(roi_response_series=roi_resp_series, 
+                          name=nstr)
         ophys_module.add(fl)
 
     # BACKGROUNDS
@@ -185,11 +212,3 @@ if __name__=='__main__':
 
     add_ophys_processing_from_suite2p(os.path.join(args.CaImaging_folder, 'suite2p'),
                                       nwbfile, xml) # ADD UPDATE OF starting_time
-
-    
-    
-
-
-
-
-

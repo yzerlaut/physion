@@ -9,6 +9,7 @@ from physion.imaging.suite2p.preprocessing import build_suite2p_options,\
         default_ops
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.presets import presets
+from physion.imaging.convert_to_movie import reconvert_to_tiffs_from_log8bit
 
 def suite2p_preprocessing_UI(self, tab_id=1):
 
@@ -311,6 +312,18 @@ def run_TSeries_analysis(self):
             if self.delBox.isChecked() and os.path.isdir(os.path.join(folder, 'suite2p')):
                 print('  deleting suite2p folder in "%s" [...]' % folder)
                 shutil.rmtree(os.path.join(folder, 'suite2p'))
+
+            if np.sum([('.mp4' in ff) for ff in os.listdir(folder)]):
+                # it means there is the mp4 movie, now are the tiffs missing ?
+                xml_file = get_files_with_extension(folder, 
+                                                    extension='.xml')[0]
+                xml = bruker_xml_parser(xml_file)
+                if not os.path.isfile(os.path.join(folder, 
+                                    xml[xml['channels'][0]]['tifFile'][0])):
+                    # then convert to tiff Files first
+                    print(' - Reconverting to tiff Files: "%s"' % folder)
+                    reconvert_to_tiffs_from_log8bit(folder)
+
 
             settings['nplanes'] = self.Nplanes[i]
             settings['nchannels'] = self.Nchans[i]
