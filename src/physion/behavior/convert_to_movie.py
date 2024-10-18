@@ -90,7 +90,15 @@ if __name__=='__main__':
                         action="store_true")
     args = parser.parse_args()
 
-    for f in find_subfolders(args.folder, 'FaceCamera'):
-        print(f)
+    for name in ['FaceCamera', 'RigCamera']:
+        for f in find_subfolders(args.folder, name):
+            try:
+                camData = CameraData(name, 
+                                     folder=f, 
+                                     force_video=False)
+                camData.convert_to_movie()
+            except BaseException as be:
+                print(' Pb with;', f)
+
 
     
