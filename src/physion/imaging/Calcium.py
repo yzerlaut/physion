@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.ndimage import filters
+from scipy.signal import convolve, windows
 from scipy.interpolate import interp1d
 import time
 
@@ -8,9 +9,9 @@ import time
 #          DEFAULT OPTIONS FOR FLUORESCENCE (dFoF) PROCESSING                # 
 
 ROI_TO_NEUROPIL_INCLUSION_FACTOR = 1.0 # ratio to discard ROIs with weak fluo compared to neuropil
-METHOD = 'percentile' # either 'minimum', 'percentile', 'sliding_minimum', or 'sliding_percentile'
-T_SLIDING = 300. # seconds (used only if METHOD= 'sliding_minimum' | 'sliding_percentile')
-PERCENTILE = 10. # for baseline (used only if METHOD= 'percentile' | 'sliding_percentile')
+METHOD = 'percentile' # either 'minimum', 'percentile', 'sliding_minimum', 'sliding_percentile', 'hamming', 'sliding_minmax'
+T_SLIDING = 300. # seconds (used only if METHOD= 'sliding_minimum' | 'sliding_percentile' | 'hamming' | 'sliding_minmax')
+PERCENTILE = 10. # for baseline (used only if METHOD= 'percentile' | 'sliding_percentile' | 'hamming')
 NEUROPIL_CORRECTION_FACTOR = 0.8 # fraction of neuropil substracted to fluorescence
 
 # -------------------------------------------------------------------------- #
@@ -52,7 +53,6 @@ def sliding_percentile(array, percentile, Window):
 
     return x
     
-
 def compute_sliding_percentile(array, percentile, Window,
                                subsampling_window_factor=0.1,
                                with_smoothing=True):
@@ -81,7 +81,6 @@ def compute_sliding_percentile(array, percentile, Window,
 
     return Flow
 
-
 def compute_sliding_minimum(array, Window,
                             pre_smoothing=0,
                             with_smoothing=False):
@@ -96,6 +95,32 @@ def compute_sliding_minimum(array, Window,
         Flow = filters.gaussian_filter1d(Flow, Window, axis=1)
 
     return Flow
+
+def compute_sliding_minmax(array, Window,
+                           pre_smoothing=0): 
+    if pre_smoothing>0:
+        Flow = filters.gaussian_filter1d(array, [0., pre_smoothing])
+    else:
+        Flow = array
+
+    Flow = filters.minimum_filter1d(Flow, Window, mode='wrap')
+    Flow = filters.maximum_filter1d(Flow, Window, mode='wrap')
+
+    return Flow
+
+def compute_hamming(array, Window, percentile) :
+    Flow = []
+    hamming_window = windows.hamming(Window)
+
+    for i in range(len(array)):
+        F_smooth = convolve(array[i], hamming_window, mode='same') / sum(hamming_window)
+        roi_percentile = np.percentile(F_smooth, percentile)
+        F_below_percentile = np.extract(F_smooth <= roi_percentile, F_smooth)
+        f0 = np.mean(F_below_percentile)
+        f0 = [f0]*len(array[i])
+        Flow.append(f0)
+    
+    return np.array(Flow)
 
 def compute_F0(data, F,
                method=METHOD,
@@ -118,6 +143,12 @@ def compute_F0(data, F,
                                           int(sliding_window/data.CaImaging_dt),
                                           with_smoothing=True)
 
+    elif method=='hamming':
+        return compute_hamming(F, int(sliding_window/data.CaImaging_dt), percentile)
+    
+    elif method=='sliding_minmax':
+        return compute_sliding_minmax(F, int(sliding_window/data.CaImaging_dt), 60)
+    
     else:
         print('\n --- method not recognized --- \n ')
         
