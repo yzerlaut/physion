@@ -112,7 +112,7 @@ if __name__=='__main__':
 
             if success and args.delete:
                 print('')
-                print(' [!!] removing original %s-imgs/ folder' % name)
+                print(' [!!] removing original %s/%s-imgs/ folder' % (f, name))
                 shutil.rmtree(os.path.join(f,
                                            '%s-imgs' % name))
 
