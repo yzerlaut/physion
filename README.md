@@ -23,7 +23,13 @@ The different modules are detailed in the [documentation below](README.md#module
 
 ## Install
 
-Simply:
+Create a `"physion"` environment running `python 3.11`, with:
+
+```
+conda create -n "physion" python=3.11
+```
+
+Then simply:
 ```
 pip install physion
 ```
