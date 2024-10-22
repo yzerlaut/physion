@@ -381,6 +381,7 @@ class Data:
                    specific_time_sampling=None,
                    smoothing=None,
                    interpolation='linear',
+                   with_computed_neuropil_fact=False,
                    verbose=True):
         """
         creates self.dFoF, self.t_dFoF
@@ -408,6 +409,7 @@ class Data:
                             with_correctedFluo_and_F0=\
                                     with_correctedFluo_and_F0,
                             smoothing=smoothing,
+                            with_computed_neuropil_fact=with_computed_neuropil_fact,
                             verbose=verbose)
         
 
