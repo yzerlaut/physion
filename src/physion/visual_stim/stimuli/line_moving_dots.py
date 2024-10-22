@@ -102,6 +102,7 @@ class stim(visual_stim):
         return img
 
 
+    """
     def plot_stim_picture(self, episode, 
                           ax=None,
                           parent=None, 
@@ -111,8 +112,6 @@ class stim(visual_stim):
                                  'width_factor':0.05,
                                  'color':'red'}):
 
-        """
-        """
         tcenter = .45*(self.experiment['time_stop'][episode]-\
                       self.experiment['time_start'][episode])
         
@@ -130,6 +129,7 @@ class stim(visual_stim):
                                shift*np.cos(np.pi/180.*direction)*self.x.max()/3.]
 
             self.add_arrow(arrow, ax)
+    """
 
 if __name__=='__main__':
 

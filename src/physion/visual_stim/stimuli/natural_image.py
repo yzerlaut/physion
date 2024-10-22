@@ -53,6 +53,8 @@ class stim(visual_stim):
         return np.rot90(self.NIarray[int(self.experiment['Image-ID'][index])], 
                         k=2)
 
+    """
+
     def plot_stim_picture(self, episode, parent=None, 
                           vse=True, ax=None, label=None,
                           time_from_episode_start=0):
@@ -73,6 +75,8 @@ class stim(visual_stim):
         ax.axis('off')
 
         return ax
+
+    """
 
 if __name__=='__main__':
 
