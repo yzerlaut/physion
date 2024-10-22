@@ -68,7 +68,7 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
 
         cb = plt.colorbar(ims, cax=axb)
         cb.set_ticks([])
-        axb.set_ylabel('$\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.', fontsize=9)
+        axb.set_ylabel('$\\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.', fontsize=9)
         axb.annotate('max', (0.5,1.1), fontsize=7,
                 xycoords='axes fraction', ha='center')
         axb.annotate('min', (0.5,-0.1), fontsize=7, va='top',
@@ -126,7 +126,7 @@ def add_CaImaging(data, tlim, ax,
                               ax_fraction_start=ypos,
                               color=color, 
                               scale_side=scale_side,
-                             scale_unit_string=('%.0f$\Delta$F/F' if (n==0) else ' '))
+                             scale_unit_string=('%.0f$\\Delta$F/F' if (n==0) else ' '))
         else:
             y = data.rawFluo[ir,np.arange(i1,i2)][::subsampling]
             dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1.,

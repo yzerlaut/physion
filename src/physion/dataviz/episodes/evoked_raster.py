@@ -75,7 +75,7 @@ def plot_evoked_pattern(self,
                   colorbar_inset=dict(rect=[1.1,.1,.04,.8], facecolor=None),
                   colormap=pt.binary,
                   bar_legend_args={},
-                  label='n. $\Delta$F/F',
+                  label='n. $\\Delta$F/F',
                   bounds=None,
                   ticks = None,
                   ticks_labels=None,
@@ -98,7 +98,7 @@ def plot_evoked_pattern(self,
         for iep in range(np.sum(pattern_cond)):
             axT.plot(self.t, ir+roi_resp[iep,:], color=pt.tab10(iep/(np.sum(pattern_cond)-1)), lw=.5)
 
-    pt.annotate(axT, '1$\Delta$F/F', (self.t[-1], 0), xycoords='data',
+    pt.annotate(axT, '1$\\Delta$F/F', (self.t[-1], 0), xycoords='data',
                 rotation=90, size='small')
     pt.set_plot(axT, [], xlim=[self.t[0], self.t[-1]])
     pt.draw_bar_scales(axT, Xbar=Tbar, Xbar_label=str(Tbar)+'s', Ybar=1e-12)
