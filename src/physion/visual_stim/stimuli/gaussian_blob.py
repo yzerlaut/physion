@@ -46,7 +46,7 @@ class stim(visual_stim):
                           sT=self.experiment['extent-time'][index])
         return img    
 
-    """
+"""
     def plot_stim_picture(self, episode,
                           ax=None, parent=None,
                           label=None, vse=False):
@@ -56,7 +56,7 @@ class stim(visual_stim):
                              ax=ax, parent=parent)
 
         return ax
-    """
+"""
 
 if __name__=='__main__':
 

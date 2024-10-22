@@ -51,7 +51,7 @@ class stim(visual_stim):
                time_phase=self.experiment['speed'][episode]*time_from_episode_start)
         return img
 
-    """
+"""
     def plot_stim_picture(self, episode,
                           ax=None, parent=None, label=None, vse=False,
                           arrow={'length':10,
@@ -65,7 +65,7 @@ class stim(visual_stim):
                            self.experiment['y-center'][episode]]
         self.add_arrow(arrow, ax)
         return ax
-    """
+"""
 
 if __name__=='__main__':
 
