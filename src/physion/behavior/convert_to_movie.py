@@ -103,7 +103,12 @@ if __name__=='__main__':
                 camData.convert_to_movie()
                 success = True
             except BaseException as be:
-                print(' Pb with;', f)
+                print('')
+                print(be)
+                print('')
+                print('[!!] Problem with recording,', f)
+                print('               ----> impossible to build video')
+                print('')
 
             if success and args.delete:
                 print('')
