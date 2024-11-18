@@ -589,8 +589,7 @@ class Data:
         
     def list_subquantities(self, quantity):
         if quantity=='CaImaging':
-            return ['rawFluo', 'dFoF', 'neuropil', 'Deconvolved',
-                    'F-0.7*Fneu', 'F-Fneu', 'd(F-Fneu)', 'd(F-0.7*Fneu)']
+            return ['rawFluo', 'neuropil', 'dFoF', 'Deconvolved']
         else:
             return ['']
         

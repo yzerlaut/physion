@@ -471,6 +471,7 @@ class visual_stim:
 
     def plot_stim_picture(self, episode, 
                           ax=None,
+                          label=None,
                           vse=False,
                           with_scale=False,
                           arrow={'length':20,

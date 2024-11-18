@@ -88,9 +88,32 @@ if __name__=='__main__':
     parser.add_argument("--wmv", 
                         help="protocol a json file", 
                         action="store_true")
+    parser.add_argument("--delete", 
+                        help="remove the original files", 
+                        action="store_true")
     args = parser.parse_args()
 
-    for f in find_subfolders(args.folder, 'FaceCamera'):
-        print(f)
+    for name in ['FaceCamera', 'RigCamera']:
+        for f in find_subfolders(args.folder, name):
+            success = False
+            try:
+                camData = CameraData(name, 
+                                     folder=f, 
+                                     force_video=False)
+                camData.convert_to_movie()
+                success = True
+            except BaseException as be:
+                print('')
+                print(be)
+                print('')
+                print('[!!] Problem with recording,', f)
+                print('               ----> impossible to build video')
+                print('')
+
+            if success and args.delete:
+                print('')
+                print(' [!!] removing original %s/%s-imgs/ folder' % (f, name))
+                shutil.rmtree(os.path.join(f,
+                                           '%s-imgs' % name))
 
     

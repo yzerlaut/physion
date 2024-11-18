@@ -60,7 +60,7 @@ class stim(visual_stim):
                      type='circle')
         return img
 
-    """
+"""
     def plot_stim_picture(self, episode,
                           ax=None, parent=None, label=None, enhance=False,
                           arrow={'length':10,
@@ -81,7 +81,7 @@ class stim(visual_stim):
             self.add_arrow(arrow, ax)
             
         return ax
-    """
+"""
 
 if __name__=='__main__':
 
