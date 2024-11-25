@@ -31,7 +31,8 @@ class CameraData:
         self.name = name
         self.folder = folder
         # empty init by default
-        self.times, self.FILES, self.cap, self.nFrames = [], None, None, 0
+        self.times, self.cap, self.nFrames = [], None, 0
+        self.FRAMES, self.FILES = None, None
 
         if os.path.isdir(\
                 os.path.join(self.folder, '%s-imgs' % name))\
@@ -40,7 +41,8 @@ class CameraData:
             load from set of *.npy frames
             """
             if verbose:
-                print(' - loading from raw image frames')
+                print(' - loading camera data from raw image frames')
+                print('                   --> ', os.path.join(self.folder, '%s-imgs' % name))
 
             self.times, self.FILES, self.nFrames,\
                     self.Ly, self.Lx = load_FaceCamera_data(\
@@ -59,16 +61,18 @@ class CameraData:
             """
             load from movie
             """
-            if verbose:
-                print(' - loading from movie ')
-
             i0 = np.flatnonzero([\
                             os.path.isfile(\
                                  os.path.join(self.folder, '%s.%s' % (name,f)))\
                                         for f in video_formats])[0]
 
-            self.cap  = cv.VideoCapture(os.path.join(self.folder,
-                                    '%s.%s' % (name, video_formats[i0])))
+            video_name = '%s.%s' % (name, video_formats[i0])
+
+            if verbose:
+                print(' - loading camera data from movie ')
+                print('                         --> ', video_name)
+
+            self.cap  = cv.VideoCapture(os.path.join(self.folder, video_name))
             nFrames = int(self.cap.get(cv.CAP_PROP_FRAME_COUNT))
 
             # # to read directly in grey scale (not working)
@@ -115,6 +119,22 @@ class CameraData:
                 print('')
 
 
+        elif os.path.isfile(
+                os.path.join(self.folder, '%s-summary.npy' % name)):
+            """
+            load from summmary only
+            """
+            if verbose:
+                print(' - loading camera data from ** SUMMARY ** only')
+                print('                   --> ', self.folder, '%s-summary.npy' % name)
+
+            summary = np.load(os.path.join(self.folder, '%s-summary.npy' % name),
+                              allow_pickle=True).item()
+
+            self.nFrames = len(summary['sample_frames'])
+            self.times = summary['times'][summary['sample_frames_index']]
+            self.FRAMES = summary['sample_frames'] 
+
         else:
             print('')
             print(' [!!] no camera data "%s" found ...' % name)
@@ -136,6 +156,9 @@ class CameraData:
             return np.load(os.path.join(self.folder, 
                                         '%s-imgs' % self.name,
                                         self.FILES[index])).T
+
+        elif self.FRAMES is not None:
+            return self.FRAMES[index].T
 
         else:
             return None
