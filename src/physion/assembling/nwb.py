@@ -26,15 +26,9 @@ ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   'VisualStim',
                   'Locomotion'] 
 
-
-def build_NWB_func(args):
-    
-    if args.verbose:
-        print('- Initializing NWB file for "%s" [...]' % args.datafolder)
-
-    #################################################
-    ####            BASIC metadata            #######
-    #################################################
+def read_metadata(args):
+    """
+    """
 
     if os.path.isfile(os.path.join(args.datafolder, 'metadata.json')):
         with open(os.path.join(args.datafolder, 'metadata.json'),
@@ -44,6 +38,16 @@ def build_NWB_func(args):
         # (deprecated, loading from metadata.npy)
         metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
                            allow_pickle=True).item()
+
+    return metadata 
+
+def build_NWB_func(args):
+    """
+    """
+    if args.verbose:
+        print('- Initializing NWB file for "%s" [...]' % args.datafolder)
+
+    metadata = read_metadata(args)
 
     # add visual stimulation protocol parameters to the metadata:
     if os.path.isfile(os.path.join(args.datafolder, 'protocol.json')):
@@ -84,7 +88,7 @@ def build_NWB_func(args):
             subject_file = [f for f in os.listdir(args.datafolder) if '.xlsx' in f][0]
             print('- Adding Subject data from the file: "%s" (TO BE DONE)' % subject_file)
         except BaseException:
-            print('[!!] / ! \\ no Subject .xlsx file found / ! \\ ')
+            print('     [!!] no Subject .xlsx file found [!!]   ')
 
     #################################
     # Implement READ from CSV here ##
@@ -640,6 +644,12 @@ if __name__=='__main__':
     parser.add_argument('-sfs', "--FaceMotion_frame_sampling", default=0.005, type=float)
 
     parser.add_argument('-df', "--destination_folder", type=str, default='')
+    parser.add_argument('-op', "--only_protocol", type=str, default='',
+                        help="""
+                        In recursive mode,
+                        if you want to build files for a given protocol only
+                        e.g.: -oe drifting-gratings 
+                        """)
 
     parser.add_argument("--silent", action="store_true")
     parser.add_argument('-v', "--verbose", action="store_true")
@@ -664,7 +674,17 @@ if __name__=='__main__':
                 print(' processing "%s" [...] ' % f)
                 args.datafolder = f
                 args.filename = ''
-                build_NWB_func(args)
+                if args.only_protocol!='':
+                    # we check that it matches the protocol
+                    metadata = read_metadata(args)
+                    if args.only_protocol in metadata['protocol']:
+                        build_NWB_func(args)
+                    else:
+                        print('')
+                        print('  [!!]  ignoring:', f, ' of protocol', metadata['protocol'])
+                        print('')
+                else:
+                    build_NWB_func(args)
 
     elif os.path.isdir(args.datafolder) and (\
                 ('metadata.npy' in os.listdir(args.datafolder)) or
