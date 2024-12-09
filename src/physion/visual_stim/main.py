@@ -506,6 +506,7 @@ class visual_stim:
                              ax=ax,
                              label=label,
                              with_mask=with_mask)
+        return ax
 
 
     def update_frame(self, episode, img,
