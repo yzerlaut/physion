@@ -50,7 +50,8 @@ class stim(visual_stim):
     def get_image(self, index,
                   time_from_episode_start=0,
                   parent=None):
-        return np.rot90(self.NIarray[int(self.experiment['Image-ID'][index])], 
+        return np.rot90(\
+                self.NIarray[int(self.experiment['Image-ID'][index])], 
                         k=2)
 
 """
