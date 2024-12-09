@@ -1,6 +1,6 @@
 import os, sys
 import numpy as np
-from scipy.interpolate import RectBivariateSpline, interp2d
+from scipy.interpolate import RectBivariateSpline
 
 import itertools, string, sys, pathlib
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
@@ -47,7 +47,8 @@ def adapt_to_screen_resolution(img, new_screen, verbose=False):
     new_Y = np.linspace(0, img.shape[1], new_screen['resolution'][1])
 
     new_img = np.zeros(new_screen['resolution'])
-    spline_approx = interp2d(old_X, old_Y, img.T, kind='linear')
+    spline_approx = RectBivariateSpline(old_X, old_Y, img, 
+                                        kx=1, ky=1)
     
     return spline_approx(new_X, new_Y)
 

@@ -15,19 +15,13 @@ params = {"movie_refresh_freq":30.,
 
 def get_NaturalImages_as_array(screen):
     
-    NI_FOLDERS = [os.path.join(str(pathlib.Path(__file__).resolve().parents[1]), 'NI_bank'),
-                  os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src', 'physion', 'visual_stim', 'NI_bank')]
+    NI_FOLDER = os.path.join(str(pathlib.Path(__file__).resolve().parents[1]), 'NI_bank')
     
     NIarray = []
 
-    NI_directory = None
-    for d in NI_FOLDERS:
-        if os.path.isdir(d):
-            NI_directory = d
-
-    if NI_directory is not None:
-        for filename in np.sort(os.listdir(NI_directory)):
-            img = load(os.path.join(NI_directory, filename)).T
+    if os.path.isdir(NI_FOLDER):
+        for filename in np.sort(os.listdir(NI_FOLDER)):
+            img = load(os.path.join(NI_FOLDER, filename)).T
             new_img = np.rot90(adapt_to_screen_resolution(img, screen), k=3)
             NIarray.append(img_after_hist_normalization(new_img))
         return NIarray
@@ -52,7 +46,7 @@ class stim(visual_stim):
                   parent=None):
         return np.rot90(\
                 self.NIarray[int(self.experiment['Image-ID'][index])], 
-                        k=2)
+                        k=1)
 
 """
     def plot_stim_picture(self, episode, parent=None, 
