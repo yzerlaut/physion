@@ -158,8 +158,8 @@ def add_VisualStim(data, tlim, ax,
 
     for i in np.arange(data.nwbfile.stimulus['time_start_realigned'].num_samples)[cond]:
 
-        tstart = data.nwbfile.stimulus['time_start_realigned'].data[i,0]
-        tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i,0]
+        tstart = min([tlim[0], data.nwbfile.stimulus['time_start_realigned'].data[i,0]])
+        tstop = max([tlim[1], data.nwbfile.stimulus['time_stop_realigned'].data[i,0]])
         # ax.plot([tstart, tstop], [ylevel, ylevel], color=color)
         ax.fill_between([tstart, tstop], [0,0], np.zeros(2)+ylevel,
                         lw=0, alpha=0.05, color=color)
