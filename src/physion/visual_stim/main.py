@@ -32,15 +32,19 @@ class visual_stim:
         self.screen = SCREENS[self.protocol['Screen']]
         self.k = self.screen['gamma_correction']['k']
         self.gamma = self.screen['gamma_correction']['gamma']
+
+        # insure backward compatibility, bby setting params if not existing
+        if 'presentation-blank-screen-color' not in self.protocol:
+            self.protocol['presentation-blank-screen-color'] = 0.5
+        if 'movie_refresh_freq' not in self.protocol:
+            self.protocol['movie_refresh_freq'] = 0.
+        if 'units' not in self.protocol:
+            self.protocol['units'] = 'lin-deg'
+
+        self.units = self.protocol['units']
+        self.movie_refresh_freq = self.protocol['movie_refresh_freq']
         self.blank_color=self.gamma_correction(\
                 self.protocol['presentation-blank-screen-color'])
-        self.movie_refresh_freq = self.protocol['movie_refresh_freq']
-
-        # fix the unit system
-        if 'units' in self.protocol:
-            self.units = self.protocol['units']
-        else:
-            self.units = 'lin-deg' # convention < 08/2024
 
         if demo or (('demo' in self.protocol) and self.protocol['demo']):
             self.screen['fullscreen'] = False
