@@ -184,7 +184,7 @@ def extract_boundaries_from_ellipse(ellipse, Lx, Ly):
     else:
         cx, cy, sx, sy = ellipse
         angle=0
-    x,y = np.meshgrid(np.arange(0,Lx), np.arange(0,Ly), indexing='ij')
+    x, y = np.meshgrid(np.arange(0,Lx), np.arange(0,Ly), indexing='ij')
     ellipse = inside_ellipse_cond(x, y, cx, cy, sx, sy, alpha=angle)
     xmin, xmax = np.min(x[ellipse]), np.max(x[ellipse])
     ymin, ymax = np.min(y[ellipse]), np.max(y[ellipse])

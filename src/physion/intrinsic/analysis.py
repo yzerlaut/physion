@@ -9,6 +9,7 @@ from physion.utils.files import last_datafolder_in_dayfolder, day_folder
 from physion.intrinsic.tools import default_segmentation_params
 from physion.intrinsic import tools as intrinsic_analysis
 from physion.intrinsic import RetinotopicMapping
+from physion.pupil.roi import extract_ellipse_props, ellipse_props_to_ROI
 
 phase_color_map = pg.ColorMap(pos=np.linspace(0.0, 1.0, 3),
                               color=[(255, 0, 0),
@@ -37,7 +38,6 @@ def gui(self,
     
     self.datafolder, self.IMAGES = '', {} 
     self.subject, self.timestamps, self.data = '', '', None
-
 
     ##########################################################
     ####### GUI settings
@@ -245,6 +245,15 @@ def gui(self,
     self.pixROI.sigRegionChangeFinished.connect(self.moved_pixels)
     self.img1B.addItem(self.pixROI)
 
+    self.ROI = pg.EllipseROI([-20, -20], [100, 100],
+                        movable = True,
+                        rotatable=True,
+                        resizable=True,
+                        pen= pg.mkPen((0, 0, 255), width=3,
+                                  style=QtCore.Qt.SolidLine),
+                        removable=False)
+    self.img1B.addItem(self.ROI)
+
     self.refresh_tab(tab)
 
     self.data = None
@@ -432,6 +441,7 @@ def show_raw_data(self):
 def compute_phase_maps(self):
 
     print('- computing phase maps [...]')
+    self.IMAGES['ROI'] = extract_ellipse_props(self.ROI)
 
     intrinsic_analysis.compute_phase_power_maps(get_datafolder(self), 
                                                 self.protocolBox.currentText(),
@@ -538,6 +548,9 @@ def perform_area_segmentation(self):
     
 
 def save_intrinsic(self):
+
+    # add ROI props
+    self.IMAGES['ROI_coords'] = ellipse_props_to_ROI(self.ROI)
 
     intrinsic_analysis.save_maps(self.IMAGES,
             os.path.join(self.datafolder, 'raw-maps.npy'))

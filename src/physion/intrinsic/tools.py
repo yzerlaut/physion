@@ -9,6 +9,7 @@ from scipy.ndimage.filters import gaussian_filter1d, gaussian_filter
 from PIL import Image
 
 from physion.utils import plot_tools as pt
+from physion.pupil.process import inside_ellipse_cond, roi
 
 # from datavyz import graph_env
 ge_screen = None
@@ -203,6 +204,11 @@ def perform_fft_analysis(data, nrepeat,
 
     return rel_power, phase
 
+def find_ellipse_cond(maps, shape):
+    xc, yc, dx, dy, angle = maps['ROI']
+    x, y = np.meshgrid(np.arange(0, shape[0]),
+                       np.arange(0, shape[1]), indexing='ij')
+    return inside_ellipse_cond(x, y, yc, xc, dy, dx, -angle)
 
 def compute_phase_power_maps(datafolder, direction,
                              maps={},
@@ -214,12 +220,16 @@ def compute_phase_power_maps(datafolder, direction,
     if (p is None) or (t is None) or (data is None):
         p, (t, data) = load_raw_data(datafolder, direction, run_id=run_id)
 
-
     # FFT and write maps
     maps['%s-power' % direction],\
            maps['%s-phase' % direction] = perform_fft_analysis(data, p['Nrepeat'],
                                                     phase_range=phase_range)
     maps['%s-phase-range' % direction] = phase_range
+
+    if 'ROI' in maps:
+        ellipse = find_ellipse_cond(maps, (data.shape[1], data.shape[2]))
+        maps['%s-power' % direction][~ellipse] = 0
+        maps['%s-phase' % direction][~ellipse] = 0
 
     return maps
 
