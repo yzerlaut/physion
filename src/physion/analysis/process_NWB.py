@@ -17,6 +17,18 @@ class EpisodeData:
             the raw signal on a fixed time interval (surrounding the stim)
 
     - Using metadata to store stimulus informations per episode
+
+    quantities should be given as:
+            - Photodiode-Signal
+            - running_speed
+            - Deconvolved
+            - dFoF
+            - Zscore_dFoF
+            - neuropil
+            - rawFluo
+            - pupil_diameter
+            - gaze_movement
+            - facemotion
     """
 
     def __init__(self, full_data,
