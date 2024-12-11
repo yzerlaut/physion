@@ -85,7 +85,14 @@ def gui(self,
     self.add_side_widget(tab.layout,self.loadButton)
 
     # -------------------------------------------------------
-    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+    # self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+
+    self.roiBox = QtWidgets.QCheckBox("ROI")
+    self.roiBox.setStyleSheet("color: gray;")
+    self.add_side_widget(tab.layout,self.roiBox, spec='small-middle')
+    self.roiButton = QtWidgets.QPushButton("reset", self)
+    self.roiButton.clicked.connect(self.reset_ROI)
+    self.add_side_widget(tab.layout,self.roiButton, 'small-right')
 
     self.pmButton = QtWidgets.QPushButton(\
             " == compute phase/power maps == ", self)
@@ -207,13 +214,16 @@ def gui(self,
                          self.nWidgetRow, 
                          self.nWidgetCol-self.side_wdgt_length)
 
-    self.raw_trace = self.graphics_layout.addPlot(row=0, col=0, rowspan=1, colspan=23)
+    self.raw_trace = self.graphics_layout.addPlot(row=0, col=0, 
+                                                  rowspan=1, colspan=23)
     
-    self.spectrum_power = self.graphics_layout.addPlot(row=1, col=0, rowspan=2, colspan=9)
+    self.spectrum_power = self.graphics_layout.addPlot(row=1, col=0, 
+                                                       rowspan=2, colspan=9)
     self.spDot = pg.ScatterPlotItem()
     self.spectrum_power.addItem(self.spDot)
     
-    self.spectrum_phase = self.graphics_layout.addPlot(row=1, col=9, rowspan=2, colspan=9)
+    self.spectrum_phase = self.graphics_layout.addPlot(row=1, col=9, 
+                                                       rowspan=2, colspan=9)
     self.sphDot = pg.ScatterPlotItem()
     self.spectrum_phase.addItem(self.sphDot)
 
@@ -239,19 +249,19 @@ def gui(self,
     self.graphics_layout.ci.layout.setRowStretchFactor(3, 5)
         
     # -------------------------------------------------------
-    self.pixROI = pg.ROI((0, 0), size=(10,10),
+    self.pixROI = pg.ROI((0, 0), size=(20,20),
                          pen=pg.mkPen((255,0,0,255)),
                          rotatable=False,resizable=False)
     self.pixROI.sigRegionChangeFinished.connect(self.moved_pixels)
     self.img1B.addItem(self.pixROI)
 
-    self.ROI = pg.EllipseROI([-20, -20], [100, 100],
+    self.ROI = pg.EllipseROI([0, 0], [100, 100],
                         movable = True,
-                        rotatable=True,
+                        rotatable=False,
                         resizable=True,
                         pen= pg.mkPen((0, 0, 255), width=3,
                                   style=QtCore.Qt.SolidLine),
-                        removable=False)
+                        removable=True)
     self.img1B.addItem(self.ROI)
 
     self.refresh_tab(tab)
@@ -259,7 +269,25 @@ def gui(self,
     self.data = None
 
     self.show()
-    
+
+def reset_ROI(self):
+
+    if hasattr(self, 'ROI'):
+        self.ROI.sigRemoveRequested.connect(lambda: self.remove(self))
+        self.img1B.removeItem(self.ROI)
+
+    if 'raw-img-start' in self.IMAGES:
+        Ly, Lx = self.IMAGES['raw-img-start'].shape
+        self.ROI = pg.EllipseROI([0.05*Lx, 0.05*Ly], [0.9*Lx, 0.9*Ly],
+                            movable = True,
+                            rotatable=False,
+                            resizable=True,
+                            pen= pg.mkPen((0, 0, 255), width=3,
+                                      style=QtCore.Qt.SolidLine),
+                            removable=True)
+        self.img1B.addItem(self.ROI)
+
+
 def open_intrinsic_folder(self):
 
     self.datafolder = self.open_folder()
@@ -441,7 +469,11 @@ def show_raw_data(self):
 def compute_phase_maps(self):
 
     print('- computing phase maps [...]')
-    self.IMAGES['ROI'] = extract_ellipse_props(self.ROI)
+    if self.roiBox.isChecked():
+        self.IMAGES['ROI'] = extract_ellipse_props(self.ROI)
+    else:
+        # a very large one
+        self.IMAGES['ROI'] = [-1000,-1000,20000,20000,0]
 
     intrinsic_analysis.compute_phase_power_maps(get_datafolder(self), 
                                                 self.protocolBox.currentText(),
@@ -543,7 +575,14 @@ def perform_area_segmentation(self):
         self.data['params'][key] = float(getattr(self, key+'Box').text())
 
     trial = RetinotopicMapping.RetinotopicMappingTrial(**self.data)
-    trial.processTrial(isPlot=True)
+    _ = trial._getSignMap(onlySMplot=True)
+    _ = trial._getRawPatchMap()
+    _ = trial._getRawPatches()
+    _ = trial._getDeterminantMap()
+    _ = trial._getEccentricityMap()
+    _ = trial._splitPatches()
+    _ = trial._mergePatches(onlyPplot=True)
+    intrinsic_analysis.plt.show()
     print(' -> area segmentation done ! ')
     
 
