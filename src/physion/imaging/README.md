@@ -1,11 +1,20 @@
 # Calcium imaging
 
+## Block ripping from `.RAW` Bruker files 
+
+- use the image block ripping utility from Bruker to convert the raw data to tiff files. Download the program from your Prairie version, see [https://pvupdate.blogspot.com/](https://pvupdate.blogspot.com/) (e.g. Prairie 5.5 at the [following link](https://www.brukersupport.com/File/?id=61188&folderid=44665)).
+
+To use on linux:
+
+- get the `Image-Bolck-Ripping.exe` and the `daq_int.dll` files from the Bruker install
+- install the latest `winehq`, see [the winehq install instructions](https://gitlab.winehq.org/wine/wine/-/wikis/Download)
+- `sudo apt-get install winetricks`
+- install visual c++ stuff: `winetricks vcrun2015`
+
 ## Raw data transfer and conversion to tiff files
 
 - use `rsync` to transfer the raw data via `ssh`
 
-- use the image block ripping utility from Bruker to convert the raw data to tiff files. Download the program from your Prairie version, see [https://pvupdate.blogspot.com/](https://pvupdate.blogspot.com/) (e.g. Prairie 5.5 at the [following link](https://www.brukersupport.com/File/?id=61188&folderid=44665)).
-  
 ## Registration and Cell detection with [Suite2P](https://github.com/MouseLand/suite2p)
 
 The pipeline relies on [Suite2P](https://github.com/MouseLand/suite2p). Read the documentation at [http://mouseland.github.io/suite2p](http://mouseland.github.io/suite2p).
