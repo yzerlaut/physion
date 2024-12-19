@@ -157,7 +157,7 @@ class EpisodeData:
                 full_data.nwbfile.stimulus['time_start'].data[self.protocol_cond_in_full_data,0][0]
         idur = int(duration/dt_sampling/1e-3)
         # -> time array:
-        self.t = np.arange(-ipre+1, idur+ipre-1)*dt_sampling*1e-3
+        self.t = np.arange(-ipre+2, idur+ipre)*dt_sampling*1e-3
 
 
         #############################################################################
