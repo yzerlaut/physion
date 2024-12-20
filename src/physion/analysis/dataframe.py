@@ -57,9 +57,9 @@ def NWB_to_dataframe(nwbfile,
                             interpolation='linear',
                             verbose=verbose)
 
-        dataframe.vNrois = data.vNrois
+        dataframe.nROIs = data.nROIs
 
-        for i in range(data.vNrois):
+        for i in range(data.nROIs):
 
             if ('dFoF' in normalize) or (normalize=='all'):
                 dataframe['dFoF-ROI%i'%i] = Normalize(data.dFoF[i,:])
