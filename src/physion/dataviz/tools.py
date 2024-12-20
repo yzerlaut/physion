@@ -35,7 +35,8 @@ def plot_scaled_signal(data,
                        tlim, scale_bar,
                        scale_side='left',
                        ax_fraction_extent=1, ax_fraction_start=0,
-                       color='#1f77b4', scale_unit_string='%.1f'):
+                       color='#1f77b4', scale_unit_string='%.1f',
+                       lw=0.5):
     """
     # generic function to add scaled signal
     """
@@ -49,7 +50,7 @@ def plot_scaled_signal(data,
 
     ax.plot(t,
             ax_fraction_start+(signal-min_signal)*ax_fraction_extent/scale_range,
-            color=color, lw=1)
+            color=color, lw=lw)
 
     if scale_side=='left':
         tscale, side = shifted_start(tlim), 'right'
