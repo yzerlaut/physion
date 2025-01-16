@@ -6,7 +6,7 @@
 
 To use on linux:
 
-- get the `Image-Bolck-Ripping.exe` and the `daq_int.dll` files from the Bruker install
+- get the `Image-Block-Ripping.exe` and the `daq_int.dll` files from the Bruker install
 - install the latest `winehq`, see [the winehq install instructions](https://gitlab.winehq.org/wine/wine/-/wikis/Download)
 - `sudo apt-get install winetricks`
 - install visual c++ stuff: `winetricks vcrun2015`
