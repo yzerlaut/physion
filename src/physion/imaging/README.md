@@ -4,12 +4,45 @@
 
 - use the image block ripping utility from Bruker to convert the raw data to tiff files. Download the program from your Prairie version, see [https://pvupdate.blogspot.com/](https://pvupdate.blogspot.com/) (e.g. Prairie 5.5 at the [following link](https://www.brukersupport.com/File/?id=61188&folderid=44665)).
 
+The command line arguments of the executable are the following:
+```
+Image-Block-Ripping.exe -KeepRaw -DoNotRipToInputDirectory -IncludeSubFolders -AddRawFileWithSubFolders $datafolder -Convert
+```
+
 To use on linux:
 
 - get the `Image-Block-Ripping.exe` and the `daq_int.dll` files from the Bruker install
 - install the latest `winehq`, see [the winehq install instructions](https://gitlab.winehq.org/wine/wine/-/wikis/Download)
 - `sudo apt-get install winetricks`
 - install visual c++ stuff: `winetricks vcrun2015`
+
+Then you can use the following code to automatize block-ripping:
+
+```
+datafolder=$HOME'/UNPROCESSED/'
+# go to the folder where you have the executable (renamed `Run.exe`) and the `daq_int.dll` file:
+cd $HOME/Block-Ripping-tools/Prairie-5.5
+echo " -------------------------------- "
+echo "    --> starting block ripping "
+# run the Image-Block-Ripping-Utility from Prairie through wine:
+exec wine "Run.exe" "-KeepRaw" "-IncludeSubFolders" "-AddRawFileWithSubFolders" "$datafolder" "-Convert"
+# if you need to run wine with sudo: echo "<password>" | exec sudo -S wine "Run.exe" "-IncludeSubFolders" "-AddRawFileWithSubFolders" "$datafolder" "-Convert"  &
+# monitor advancement by tracking the disappearance of *RAW* files
+while :
+do
+	check=$(find $datafolder/* -name "*RAW*" -print)
+	echo $check
+	if [ "$check" = "" ]
+	then
+		break
+	fi
+	echo "  still block-ripping [...] "
+	sleep 10s
+done
+echo " -------------------------------- "
+echo "    --> Block Ripping done ! "
+# --> do something else, e.g. suite2p pre-processing
+```
 
 ## Raw data transfer and conversion to tiff files
 
