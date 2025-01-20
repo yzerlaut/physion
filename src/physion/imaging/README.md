@@ -25,7 +25,8 @@ cd $HOME/Block-Ripping-tools/Prairie-5.5
 echo " -------------------------------- "
 echo "    --> starting block ripping "
 # run the Image-Block-Ripping-Utility from Prairie through wine:
-wine "Run.exe" "-KeepRaw" "-IncludeSubFolders" "-AddRawFileWithSubFolders" "$datafolder" "-Convert"
+exec wine "Run.exe" "-KeepRaw" "-IncludeSubFolders" "-AddRawFileWithSubFolders" "$datafolder" "-Convert"
+# if you need to run wine with sudo: echo "<password>" | exec sudo -S wine "Run.exe" "-IncludeSubFolders" "-AddRawFileWithSubFolders" "$datafolder" "-Convert"  &
 # monitor advancement by tracking the disappearance of *RAW* files
 while :
 do
