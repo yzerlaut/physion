@@ -84,7 +84,11 @@ class CameraData:
             summary = np.load(os.path.join(self.folder, '%s-summary.npy' % name),
                               allow_pickle=True).item()
             for key in summary:
+                print(key, summary[key])
                 setattr(self, key, summary[key])
+
+            if hasattr(self, 'nframes'):
+                self.nFrames = self.nframes # old typo
 
             if nFrames!=self.nFrames:
                 print('movie: ', nFrames, ', raw images:', self.nFrames)
@@ -168,8 +172,8 @@ class CameraData:
 
         if self.FILES is not None:
             """ we can build a movie """
-            nframes = len(self.FILES)
-            movie_rate = nframes/(self.times[-1]-self.times[0])
+            nFrames = len(self.FILES)
+            movie_rate = nFrames/(self.times[-1]-self.times[0])
 
             Format = 'wmv' if ('win32' in sys.platform) else 'mp4'
             out = cv.VideoWriter(\
@@ -190,7 +194,7 @@ class CameraData:
                                                '%s-imgs' % self.name, 
                                                f))
                     out.write(np.array(img, dtype=dtype))
-                    printProgressBar(i, nframes)
+                    printProgressBar(i, nFrames)
                     success[i] = True
                 except BaseException as be:
                     print(be)
@@ -201,7 +205,7 @@ class CameraData:
             np.save(os.path.join(self.folder, '%s-summary.npy' % self.name),
                     {'times':self.times,
                      'FILES':self.FILES,
-                     'nframes':nframes,
+                     'nFrames':nFrames,
                      'resolution':(self.Lx, self.Ly),
                      'movie_rate':movie_rate,
                      'Frames_succesfully_in_movie':success})

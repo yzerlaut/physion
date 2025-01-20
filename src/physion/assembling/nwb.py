@@ -322,13 +322,13 @@ def build_NWB_func(args):
             print('=> Storing FaceCamera acquisition for "%s" [...]' % args.datafolder)
 
         fcamData = CameraData('FaceCamera', folder=args.datafolder)
-
         if os.path.isfile(os.path.join(args.datafolder, 'FaceCamera-summary.npy')):
             FCS_data = np.load(os.path.join(args.datafolder, 'FaceCamera-summary.npy'),
                                allow_pickle=True).item()
             FC_times = FCS_data['times'] # can be overwritten later
         else:
             FCS_data = None
+            FC_times = fcamData.times
 
         FC_times = check_times(FC_times, NIdaq_Tstart)
 
@@ -377,6 +377,8 @@ def build_NWB_func(args):
                     
                 dataP = np.load(os.path.join(args.datafolder, 'pupil.npy'),
                                 allow_pickle=True).item()
+                print(len(FC_times))
+                print('pupil frames: ', len(dataP['frame']))
 
                 if 'FaceCamera-1cm-in-pix' in metadata:
                     pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
