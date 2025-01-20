@@ -34,6 +34,7 @@ Then simply:
 pip install physion
 ```
 
+- if you clone it from source, use the submodule argument `--recurse-submodules`
 - For an installation on an acquisition setup, see the detailed steps in [./docs/install/acquisition.md](./docs/install/acquisition.md)
 - For some installation issues, see [./docs/install/troubleshooting.md](./docs/install/troubleshooting.md)
 
