@@ -84,15 +84,17 @@ class CameraData:
             summary = np.load(os.path.join(self.folder, '%s-summary.npy' % name),
                               allow_pickle=True).item()
             for key in summary:
-                print(key, summary[key])
                 setattr(self, key, summary[key])
 
             if hasattr(self, 'nframes'):
                 self.nFrames = self.nframes # old typo
 
             if nFrames!=self.nFrames:
+                print(' ------------------------------------------------------------ ')
+                print(' [!!] different number of frames in video and raw images [!!] ')
                 print('movie: ', nFrames, ', raw images:', self.nFrames)
-                print(' [!!] different number of frames in video and raw images')
+                print('             ->> forcing data to %i frames ' % nFrames)
+                print(' ------------------------------------------------------------ ')
                 self.FILES = [None for n in range(nFrames)]
                 self.times = np.linspace(self.times[0], self.times[-1], nFrames)
                 self.nFrames = nFrames
