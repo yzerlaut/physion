@@ -1,6 +1,6 @@
 [project]
 name = "physion"
-version = "1.2"
+version = "1.2.1"
 authors = [
   { name="Yann Zerlaut", email="yann.zerlaut@gmail.com" },
 ]
