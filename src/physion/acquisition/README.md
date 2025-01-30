@@ -5,13 +5,12 @@
 The interface is minimal:
 
 <p align="center">
-  <img src="../../doc/exp.png"/>
+  <img src="../../doc/acquisition.png"/>
 </p>
-
 
 #### 1. Pick the configuration that you want to use.
 
-   The set of configuration is loaded from the files in the [protocols/](protocols/) folder.
+   The set of configuration is loaded from the files in the [configs/](configs/) folder.
 
    Each file should be a JSON file, it specifies some key metadata related to the experiment:
    ```
@@ -34,7 +33,7 @@ The interface is minimal:
     }
    ```
 
-#### 2. Pick the modality that you want to have by checking the upper boxes.
+#### 2. Pick the modalities that you want to have by checking the upper boxes.
 
    N.B. the Camera initialization might take 5-6 seconds after clicking
 
@@ -74,11 +73,3 @@ Using separate `threads` for the different processes using the `multiprocessing`
 - THe visual stimulation
 
 - The FLIR-camera
-
-## Full install for experimental setups
-
-```
-pip install psychopy
-pip install nidaqmx
-```
-
