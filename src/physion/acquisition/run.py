@@ -154,6 +154,7 @@ def run(self):
                      'dt':1e-2})
         else:
             try:
+                print(output_funcs)
                 self.acq = Acquisition(\
                     sampling_rate=\
                         self.metadata['NIdaq-acquisition-frequency'],
@@ -271,9 +272,7 @@ def run_update(self):
             self.current_index = self.stim.next_index_table[iT]
 
             # at each interstim, we re-align the stimulus presentation
-            #self.mediaPlayer.pause()
             self.mediaPlayer.setPosition(int(1e3*t))
-            #self.mediaPlayer.play()
 
             # -*- now we update the stimulation display in the terminal -*-
             protocol_id = self.stim.experiment['protocol_id'][\

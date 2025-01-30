@@ -31,8 +31,8 @@ class Acquisition:
 
         self.sampling_rate = sampling_rate
         self.dt = 1./self.sampling_rate
-        self.max_time = max_time
         self.buffer_size = int(buffer_time*self.sampling_rate)
+        self.max_time = int(max_time/buffer_time)*self.buffer_size # ENFORCE multiple of buffer time !! 
         self.Nchannel_analog_in = Nchannel_analog_in
         self.Nchannel_digital_in = Nchannel_digital_in
         self.filename = filename
