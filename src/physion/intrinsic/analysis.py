@@ -589,7 +589,7 @@ def perform_area_segmentation(self):
 def save_intrinsic(self):
 
     # add ROI props
-    self.IMAGES['ROI_coords'] = ellipse_props_to_ROI(self.ROI)
+    self.IMAGES['ROI_coords'] = extract_ellipse_props(self.ROI)
 
     intrinsic_analysis.save_maps(self.IMAGES,
             os.path.join(self.datafolder, 'raw-maps.npy'))
