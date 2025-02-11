@@ -10,11 +10,7 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 params = {"presentation-duration":3,
           "x-center (deg)":0.,
           "y-center (deg)":0.,
-          "angle1 (deg)":90,
           "radius1 (deg)":20,
-          "phase1 (deg)":0.,
-          "spatial-freq1 (cycle/deg)":0.1,
-          "contrast1 (lum.)":1.0,
           "angle2 (deg)":0,
           "radius2 (deg)":40,
           "phase2 (deg)":0.,
@@ -58,15 +54,6 @@ class stim(visual_stim):
                        self.experiment['y-center'][episode]),
                        self.experiment['radius1'][episode],
                        self.experiment['bg-color'][episode], type='circle')
-        self.add_grating_patch(img,
-                       angle=self.experiment['angle1'][episode],
-                       radius=self.experiment['radius1'][episode],
-                       phase_shift_Deg=self.experiment['phase1'][episode]\
-                               if 'phase1' in self.experiment else 90.,
-                       spatial_freq=self.experiment['spatial-freq1'][episode],
-                       contrast=self.experiment['contrast1'][episode],
-                       xcenter=self.experiment['x-center'][episode],
-                       zcenter=self.experiment['y-center'][episode])
         return img
 
 
@@ -75,7 +62,7 @@ if __name__=='__main__':
 
     from physion.visual_stim.build import get_default_params
 
-    params = get_default_params('center-surround-grating')
+    params = get_default_params('surround-grating')
 
     import time
     import cv2 as cv
