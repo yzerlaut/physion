@@ -187,7 +187,6 @@ class visual_stim:
 
         image[cond] += contrast*full_grating[cond] 
 
-
     def add_gaussian(self, image,
                      t=0, t0=0, sT=1.,
                      radius=10,
