@@ -32,9 +32,7 @@ class stim(visual_stim):
         super().__init__(protocol,
                          keys=['bg-color',
                                'x-center', 'y-center',
-                               'radius1','spatial-freq1',
-                               'angle1', 'phase1', 'contrast1',
-                               'radius2','spatial-freq2',
+                               'radius1', 'radius2','spatial-freq2',
                                'angle2', 'phase2', 'contrast2'])
 
 
