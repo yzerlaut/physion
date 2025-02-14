@@ -1,0 +1,20 @@
+{
+  "Presentation": "multiprotocol",
+  "Screen": "Dell-2020",
+  "movie_refresh_freq":30.0,
+  "units":"cm",
+  "shuffling" :"full",
+  "shuffling-seed" :23,
+  "Protocol-1": "subprotocols/vision-survey/spatial-mapping.json",
+  "Protocol-2": "subprotocols/vision-survey/moving-dots.json",
+  "Protocol-3": "subprotocols/vision-survey/static-patch.json",
+  "Protocol-4": "subprotocols/vision-survey/looming-stim.json",
+  "Protocol-5": "subprotocols/vision-survey/Natural-Images-4-repeats.json",
+  "Protocol-6": "subprotocols/blank/grey-10min.json",
+  "Protocol-7": "subprotocols/vision-survey/drifting-gratings.json",
+  "Protocol-8": "subprotocols/vision-survey/drifting-surround.json",
+  "presentation-blank-screen-color": 0.5,
+  "presentation-prestim-period": 6,
+  "presentation-poststim-period": 6,
+  "presentation-interstim-period": 4
+}
