@@ -8,18 +8,24 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 
   # default param values:
 params = {"presentation-duration":3,
+          #
           "x-center (deg)":0.,
           "y-center (deg)":0.,
+          #
           "angle1 (deg)":90,
           "radius1 (deg)":20,
           "phase1 (deg)":0.,
           "spatial-freq1 (cycle/deg)":0.1,
           "contrast1 (lum.)":1.0,
+          "speed1 (cycle/s)":0, # 0 speed = static (by default)
+          #
           "angle2 (deg)":0,
           "radius2 (deg)":40,
           "phase2 (deg)":0.,
           "spatial-freq2 (cycle/deg)":0.1,
           "contrast2 (lum.)":1.0,
+          "speed2 (cycle/s)":0, # 0 speed = static (by default)
+          #
           "bg-color (lum.)":0.5}
     
 
@@ -36,9 +42,9 @@ class stim(visual_stim):
         super().__init__(protocol,
                          keys=['bg-color',
                                'x-center', 'y-center',
-                               'radius1','spatial-freq1',
+                               'radius1','spatial-freq1', 'speed1',
                                'angle1', 'phase1', 'contrast1',
-                               'radius2','spatial-freq2',
+                               'radius2','spatial-freq2', 'speed2',
                                'angle2', 'phase2', 'contrast2'])
 
 
@@ -52,7 +58,8 @@ class stim(visual_stim):
                        spatial_freq=self.experiment['spatial-freq2'][episode],
                        contrast=self.experiment['contrast2'][episode],
                        xcenter=self.experiment['x-center'][episode],
-                       zcenter=self.experiment['y-center'][episode])
+                       zcenter=self.experiment['y-center'][episode],
+                       time_phase=self.experiment['speed2'][episode]*time_from_episode_start)
         self.add_dot(img,
                      (self.experiment['x-center'][episode],
                        self.experiment['y-center'][episode]),
@@ -66,7 +73,8 @@ class stim(visual_stim):
                        spatial_freq=self.experiment['spatial-freq1'][episode],
                        contrast=self.experiment['contrast1'][episode],
                        xcenter=self.experiment['x-center'][episode],
-                       zcenter=self.experiment['y-center'][episode])
+                       zcenter=self.experiment['y-center'][episode],
+                       time_phase=self.experiment['speed1'][episode]*time_from_episode_start)
         return img
 
 

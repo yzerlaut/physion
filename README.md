@@ -29,12 +29,16 @@ Create a `"physion"` environment running `python 3.11`, with:
 conda create -n "physion" python=3.11
 ```
 
-Then simply:
+Then either install:
+- the [Pypi build](https://pypi.org/project/physion/) with:
 ```
 pip install physion
 ```
+- from source with:
+```
+git clone https://github.com/yzerlaut/physion --recurse-submodules
+```
 
-- if you clone it from source, use the submodule argument `--recurse-submodules`
 - For an installation on an acquisition setup, see the detailed steps in [./docs/install/acquisition.md](./docs/install/acquisition.md)
 - For some installation issues, see [./docs/install/troubleshooting.md](./docs/install/troubleshooting.md)
 

@@ -2,21 +2,23 @@ import numpy as np
 
 from physion.visual_stim.main import visual_stim , init_bg_image
 
-##############################################
-##  ----    CENTER DRIFTING GRATINGS --- #####
-##############################################
+#####################################
+##  ----    CENTER GRATINGS --- #####
+#####################################
 
 params = {"presentation-duration":3,
-          # default param values:
+          # grating center/size
           "x-center (deg)":0.,
           "y-center (deg)":0.,
           "size (deg)":4.,
+          # grating props
           "angle (deg)":90,
-          "radius (deg)":5.,
-          "speed (cycle/s)":1,
+          "radius (deg)":200., # 200 deg. = full screen (by default)
+          "speed (cycle/s)":0, # 0 speed = static (by default)
           "spatial-freq (cycle/deg)":0.04,
           "phase (deg)":0.,
           "contrast (lum.)":1.0,
+          #
           "bg-color (lum.)":0.5}
     
 
