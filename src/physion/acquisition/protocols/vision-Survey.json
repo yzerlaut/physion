@@ -5,7 +5,7 @@
   "units":"cm",
   "shuffling" :"full",
   "shuffling-seed" :23,
-  "Protocol-1": "subprotocols/vision-survey/spatial-mapping.json",
+  "Protocol-1": "quick-spatial-mapping.json",
   "Protocol-2": "subprotocols/vision-survey/moving-dots.json",
   "Protocol-3": "subprotocols/vision-survey/static-patch.json",
   "Protocol-4": "subprotocols/vision-survey/looming-stim.json",

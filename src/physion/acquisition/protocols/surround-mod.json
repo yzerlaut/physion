@@ -1,5 +1,6 @@
 {
   "Presentation": "multiprotocol",
+  "Screen": "Dell-2020",
   "shuffling" :"full",
   "shuffling-seed" :34,
   "movie_refresh_freq":30.0,
@@ -7,10 +8,9 @@
   "Protocol-1": "subprotocols/surround-mod/center-surround.json",
   "Protocol-2": "subprotocols/surround-mod/center.json",
   "Protocol-3": "subprotocols/surround-mod/surround.json",
-  "Protocol-4": "subprotocols/surround-mod/spatial-mapping.json",
+  "Protocol-4": "quick-spatial-mapping.json",
   "presentation-prestim-period": 4.0,
   "presentation-poststim-period": 4.0,
   "presentation-interstim-period": 4.0,
-  "presentation-blank-screen-color": 0.5,
-  "Screen": "Dell-2020"
+  "presentation-blank-screen-color": 0.5
 }
