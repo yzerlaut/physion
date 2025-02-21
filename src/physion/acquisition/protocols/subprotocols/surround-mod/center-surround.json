@@ -10,7 +10,7 @@
   "N-repeat": 15,
   "------------  center properties ----------------------------------------":0,
   "speed": 2,
-  "angle": 90,
+  "angle": 0,
   "spatial-freq": 0.04,
   "radius": 20,
   "phase":0,

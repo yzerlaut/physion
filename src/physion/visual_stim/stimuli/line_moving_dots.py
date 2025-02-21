@@ -3,9 +3,9 @@ import numpy as np
 
 from physion.visual_stim.main import visual_stim, init_bg_image
 
-####################################################
-##  ----    SCATTERED MOVING DOTS          --- #####
-####################################################
+###############################################
+##  ----    LINE MOVING DOTS          --- #####
+###############################################
 
 params = {"movie_refresh_freq":30.,
           "presentation-duration":3,
