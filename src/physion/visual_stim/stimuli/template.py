@@ -36,12 +36,9 @@ class stim(visual_stim):
 
     def __init__(self, protocol):
 
-        super().__init__(protocol,
-                         keys=['radius', 'bg-color', 'ndots',
-                               'size', 'dotcolor', 'seed'])
+        super().__init__(protocol, params)
 
         self.refresh_freq = protocol['movie_refresh_freq']
-
 
     def get_image(self, index,
                   time_from_episode_start=0,

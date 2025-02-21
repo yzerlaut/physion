@@ -13,8 +13,9 @@
   "contrast":0,
   "_______________________________________________________________________3":0,
   "angle-surround-1": 0,"angle-surround-2": 90, "N-angle-surround":2,
-  "speed-surround": 1,
+  "speed-surround": 2,
   "contrast-surround": 1,
+  "phase-surround":0,
   "spatial-freq-surround": 0.04,
   "radius-surround": 200
 }

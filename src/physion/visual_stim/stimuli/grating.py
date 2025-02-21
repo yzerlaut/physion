@@ -17,7 +17,7 @@ params = {\
       "angle":0, # orientation in degree
       "speed":0, # cycle/second   .       -- 0 speed = static (default)
       "spatial-freq":0.04, # cycle/degree 
-      "phase":0.,
+      "phase":90.,
       "contrast":1.0,
       # ------------------------------------
       # possibility to add a second grating:
@@ -25,7 +25,7 @@ params = {\
       "radius-surround":0.0, # size in deg        -- 200 deg. = full screen (default)
       "speed-surround":0, # cycle/second   .       -- 0 speed = static (default)
       "spatial-freq-surround":0.04, # cycle/degree 
-      "phase-surround":0.,
+      "phase-surround":90.,
       "contrast-surround":1.0,
       # ----------------------------------- 
       "bg-color":0.5

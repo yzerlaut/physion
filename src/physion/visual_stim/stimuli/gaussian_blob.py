@@ -31,6 +31,7 @@ class stim(visual_stim):
 
         super().__init__(protocol, params)
 
+
     def get_image(self, index, time_from_episode_start=0, parent=None):
         img = init_bg_image(self, index)
         self.add_gaussian(img,
