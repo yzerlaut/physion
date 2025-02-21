@@ -315,14 +315,12 @@ def run(self):
     self.stim = visual_stim({"Screen": self.config['Screen'],
                              "Presentation": "Single-Stimulus",
                              "movie_refresh_freq": 30.0,
-                             "null (None)": 0,
                              "demo":self.demoBox.isChecked(),
                              "fullscreen":~(self.demoBox.isChecked()),
                              "presentation-prestim-period":0,
                              "presentation-poststim-period":0,
                              "presentation-duration":self.period*self.Nrepeat,
-                             "presentation-blank-screen-color": -1}, 
-                             keys=['null'])
+                             "presentation-blank-screen-color": -1})
 
 
     xmin, xmax = np.min(self.stim.x), np.max(self.stim.x)
