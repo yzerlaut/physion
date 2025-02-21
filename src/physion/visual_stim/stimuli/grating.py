@@ -67,7 +67,6 @@ class stim(visual_stim):
                            self.experiment['radius'][episode],
                            self.experiment['bg-color'][episode], type='circle')
 
-
         self.add_grating_patch(img,
                angle=self.experiment['angle'][episode],
                radius=self.experiment['radius'][episode],

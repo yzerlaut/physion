@@ -81,3 +81,26 @@ class stim(visual_stim):
         # ax = self.show_frame(episode, tcenter, ax=ax,
                              # parent=parent,
                              # label=label)
+
+if __name__=='__main__':
+
+    from physion.visual_stim.build import get_default_params
+
+    params = get_default_params('template')
+    params['radius'] = 20.
+    params['speed'] = 2.
+    params['angle-surround'] = 90.
+    params['radius-surround'] = 50.
+    params['speed-surround'] = 2.
+
+    import time
+    import cv2 as cv
+
+    Stim = stim(params)
+
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break
