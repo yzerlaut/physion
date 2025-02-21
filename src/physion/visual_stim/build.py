@@ -30,17 +30,15 @@ def get_default_params(protocol_name):
         # set all params to default values
         for key in Dparams:
             params[key] = Dparams[key]
-            if ' (' in key:
-                new_key = key.split(' (')[0]
-                params['%s-1'%new_key] = params[key]
-                params['%s-2'%new_key] = params[key]
-                params['N-%s'%new_key] = 0
 
         params['Stimulus'],  params['Presentation'] = protocol_name, ''
         params['Screen'], params['demo'] = 'Dell-2020', True
         params['seed-1'], params['seed-2'] = 1, 1
         params['N-seed'] = 1
         params['N-repeat'] = 1
+
+        if 'presentation-duration' not in params:
+            params['presentation-duration'] = 3
 
         params['presentation-blank-screen-color'] = 0.5
 
@@ -158,7 +156,7 @@ if __name__=='__main__':
                     return np.inf, np.inf
 
             # prepare the monitoring square properties
-            if 'monitoring-square' in Stim.screen:
+            if 'monitoring_square' in Stim.screen:
                 square = MonitoringSquare(Stim)
 
             # prepare video file
@@ -191,14 +189,17 @@ if __name__=='__main__':
                             np.ones(Stim.screen['resolution'])
 
                 # put the monitoring square
-                if 'monitoring-square' in Stim.screen:
+                if 'monitoring_square' in Stim.screen:
                     data = square.draw(data, t, tstart, tstop)
 
                 out.write(np.array(255*np.rot90(data, k=1),
                                    dtype='uint8'))
                 t+= 1./Stim.movie_refresh_freq
 
-            print('\n [ok] video file saved in: "%s" \n ' % protocol_folder)
+            np.save(os.path.join(protocol_folder, 'visual-stim.npy'), 
+                    Stim.experiment)
+            print('\n [ok] video file and metadata saved in: "%s" \n ' % protocol_folder)
+
             out.release()
 
     else:

@@ -8,12 +8,12 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 
   # default param values:
 params = {"presentation-duration":12,
-          "flicker-size (deg)":10.,
-          "flicker-freq (Hz)":5.,
-          "bar-size (deg)":5.,
-          "direction (#)":3, # 0-Up, 1-Down, 2-Left, 3-Right
-          "contrast (lum.)":1.0,
-          "bg-color (lum.)":0.5}
+          "flicker-size":10.,
+          "flicker-freq":5.,
+          "bar-size":5.,
+          "direction":3, # 0-Up, 1-Down, 2-Left, 3-Right
+          "contrast":1.0,
+          "bg-color":0.5}
     
 
 class stim(visual_stim):
@@ -26,12 +26,8 @@ class stim(visual_stim):
 
     def __init__(self, protocol, units='cm'):
 
-        super().__init__(protocol,
-                         keys=['bar-size',
-                               'flicker-size', 
-                               'flicker-freq',
-                               'bg-color',
-                               'direction'])
+        super().__init__(protocol, params)
+
 
     def get_image(self, episode, 
                   time_from_episode_start=0):

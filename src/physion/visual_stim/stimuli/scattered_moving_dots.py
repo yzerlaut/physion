@@ -7,14 +7,16 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 ##  ----    SCATTERED MOVING DOTS          --- #####
 ####################################################
 
-params = {"presentation-duration":3,
-          "speed (deg/s)":60.,
-          "size (deg)":4.,
-          "spacing (deg)":10.,
-          "direction (deg)":270.,
-          "ndots (#)":7,
-          "dotcolor (lum.)":-1,
-          "bg-color (lum.)":0.5}
+params = {\
+    "presentation-duration":3,
+    "speed":60.,
+    "size":4.,
+    "spacing":10.,
+    "direction":270.,
+    "ndots":7,
+    "dotcolor":-1,
+    "bg-color":0.5,
+}
     
 
 def get_starting_point_and_direction_mv_dots(line,
@@ -68,10 +70,7 @@ class stim(visual_stim):
     """
     def __init__(self, protocol):
 
-        super().__init__(protocol,
-                         keys=['speed', 'bg-color', 'ndots',
-                               'spacing', 'direction', 'size',
-                               'dotcolor', 'seed'])
+        super().__init__(protocol, params)
 
         self.refresh_freq = protocol['movie_refresh_freq']
 

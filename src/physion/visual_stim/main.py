@@ -14,6 +14,16 @@ import json
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
 
+defaults = {\
+    'presentation-duration': 2,
+    'presentation-prestim-period': 6,
+    'presentation-poststim-period': 6,
+    'presentation-interstim-period': 4,
+    'presentation-blank-screen-color':0.5,
+    'movie_refresh_freq':30.,
+    # 'units':'lin-deg',
+    'units':'cm',
+}
 
 class visual_stim:
     """
@@ -21,7 +31,7 @@ class visual_stim:
 
     def __init__(self,
                  protocol,
-                 keys=[], # need to pass the varied parameters
+                 default_params={},
                  demo=False):
         """
         """
@@ -33,13 +43,10 @@ class visual_stim:
         self.k = self.screen['gamma_correction']['k']
         self.gamma = self.screen['gamma_correction']['gamma']
 
-        # insure backward compatibility, bby setting params if not existing
-        if 'presentation-blank-screen-color' not in self.protocol:
-            self.protocol['presentation-blank-screen-color'] = 0.5
-        if 'movie_refresh_freq' not in self.protocol:
-            self.protocol['movie_refresh_freq'] = 0.
-        if 'units' not in self.protocol:
-            self.protocol['units'] = 'lin-deg'
+        # insure backward compatibility, by setting params if not existing
+        for key in defaults:
+            if key not in self.protocol:
+                self.protocol[key] = defaults[key]
 
         self.units = self.protocol['units']
         self.movie_refresh_freq = self.protocol['movie_refresh_freq']
@@ -54,7 +61,7 @@ class visual_stim:
 
         ### INITIALIZE EXP ###
         if not (self.protocol['Presentation']=='multiprotocol'):
-            self.init_experiment(protocol, keys)
+            self.init_experiment(protocol, default_params)
 
 
     ################################
@@ -147,11 +154,13 @@ class visual_stim:
         self.x *= 180./np.pi
         self.z *= 180./np.pi
 
+
     # some general grating functions
     def compute_rotated_coords(self, angle,
                                xcenter=0, zcenter=0):
         return (self.x-xcenter)*np.cos(angle/180.*np.pi)+\
                     (self.z-zcenter)*np.sin(angle/180.*np.pi)
+
 
     def compute_grating(self, xrot,
                         spatial_freq=0.1, 
@@ -159,6 +168,7 @@ class visual_stim:
                         phase_shift_Deg=90.):
         return 0.5+np.cos(phase_shift_Deg*np.pi/180.+\
                         2*np.pi*(spatial_freq*xrot-time_phase))/2.
+
 
     ################################
     #  ---  Draw Stimuli       --- #
@@ -218,37 +228,46 @@ class visual_stim:
     #  ---     Experiment (time course) properties     --- #
     ########################################################
 
-    def init_experiment(self, protocol, keys):
+    def init_experiment(self, 
+                        protocol, 
+                        default_params):
 
         self.experiment = {}
 
         if protocol['Presentation']=='Single-Stimulus':
 
             # ------------    SINGLE STIMS ------------
-            for key in protocol:
-                if key.split(' (')[0] in keys:
-                    self.experiment[key.split(' (')[0]] = [protocol[key]]
-                    self.experiment['index'] = [0]
-                    self.experiment['repeat'] = [0]
-                    self.experiment['bg-color'] = \
-                            [protocol['presentation-blank-screen-color']]
-                    self.experiment['time_start'] = [\
-                            protocol['presentation-prestim-period']]
-                    self.experiment['time_stop'] = [\
-                            protocol['presentation-duration']+\
-                            protocol['presentation-prestim-period']]
-                    self.experiment['time_duration'] = [\
-                            protocol['presentation-duration']]
-                    self.experiment['interstim'] = [\
-                        protocol['presentation-interstim-period']\
-                        if 'presentation-interstim-period' in protocol else 0]
+            # 
+            self.experiment['index'] = [0]
+            self.experiment['repeat'] = [0]
+            self.experiment['bg-color'] = \
+                    [protocol['presentation-blank-screen-color']]
+            self.experiment['time_start'] = [\
+                    protocol['presentation-prestim-period']]
+            self.experiment['time_stop'] = [\
+                    protocol['presentation-duration']+\
+                    protocol['presentation-prestim-period']]
+            self.experiment['time_duration'] = [\
+                    protocol['presentation-duration']]
+            self.experiment['interstim'] = [\
+                protocol['presentation-interstim-period']\
+                if 'presentation-interstim-period' in protocol else 0]
+            # 
+            for key in default_params:
+                if key in protocol:
+                    self.experiment[key] = [protocol[key]]
+                else:
+                    self.experiment[key] = [default_params[key]]
 
         else:
 
             # ------------  MULTIPLE STIMS ------------
+            # 
             VECS, FULL_VECS = [], {}
-            for key in keys:
+            for key in default_params:
                 FULL_VECS[key], self.experiment[key] = [], []
+
+
                 if ('N-log-'+key in protocol) and (protocol['N-log-'+key]>1):
                     # LOG-SPACED parameters
                     VECS.append(np.logspace(np.log10(protocol[key+'-1']),
@@ -259,20 +278,20 @@ class visual_stim:
                     VECS.append(np.linspace(protocol[key+'-1'],
                                             protocol[key+'-2'],
                                             protocol['N-'+key]))
-                elif (key+'-2' in protocol):
-                    #  [!!]  we pick the SECOND VALUE as the constant one 
-                    #         (so remember to fill this right in GUI)
-                    VECS.append(np.array([protocol[key+'-2']])) 
+                elif key in protocol:
+                    # parameter in the protocol:
+                    VECS.append(np.array([protocol[key]])) 
                 else:
-                    # just a 0 vector
-                    VECS.append(np.zeros(1))
+                    # just the default value:
+                    VECS.append(np.ones(1)*default_params[key])
+
 
             for vec in itertools.product(*VECS):
-                for i, key in enumerate(keys):
+                for i, key in enumerate(default_params.keys()):
                     FULL_VECS[key].append(vec[i])
 
-            for k in ['index', 'repeat', 'time_start', 'time_stop',
-                      'bg-color', 'interstim', 'time_duration']:
+            for k in ['index', 'repeat', 'bg-color', 'interstim',
+                      'time_start', 'time_stop', 'time_duration']:
                 self.experiment[k] = []
 
             index_no_repeat = np.arange(len(FULL_VECS[key]))
@@ -290,7 +309,7 @@ class visual_stim:
                     np.random.shuffle(index_no_repeat)
 
                 for n, i in enumerate(index_no_repeat):
-                    for key in keys:
+                    for key in default_params:
                         self.experiment[key].append(FULL_VECS[key][i])
                     self.experiment['index'].append(i) # shuffled
                     # self.experiment['bg-color'].append(self.blank_color)

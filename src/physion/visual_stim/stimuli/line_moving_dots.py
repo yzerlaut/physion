@@ -9,13 +9,13 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 
 params = {"movie_refresh_freq":30.,
           "presentation-duration":3,
-          "speed (deg/s)":60.,
-          "size (deg)":4.,
-          "spacing (deg)":12.,
-          "direction (deg)":270.,
-          "ndots (#)":9,
-          "dotcolor (lum.)":-1,
-          "bg-color (lum.)":0.5}
+          "speed":60., #                    degree per second
+          "size":4., #                      degree
+          "spacing":12., #                  degree
+          "direction":270., #               degree
+          "ndots":9, #                      number of dots
+          "dotcolor":-1,
+          "bg-color":0.5}
 
 def get_starting_point_and_direction_mv_dots(line,
                                              interval,
@@ -66,9 +66,7 @@ class stim(visual_stim):
     """
     def __init__(self, protocol):
 
-        super().__init__(protocol,
-                         keys=['speed', 'bg-color', 'ndots', 'spacing',
-                               'direction', 'size', 'dotcolor', 'seed'])
+        super().__init__(protocol, params)
 
 
     def get_image(self, index,

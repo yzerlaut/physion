@@ -6,14 +6,15 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 ##  ----    RANDOM DOTS    --- #####
 ####################################
 
-params = {"movie_refresh_freq":30.,
-          "presentation-duration":3,
-          "refresh (Hz)":1.,
-          "size (deg)":5.,
-          "ndots (#)":7,
-          "seed (#)":1,
-          "dotcolor (lum.)":-1,
-          "bg-color (lum.)":0.5}
+params = {\
+        "presentation-duration":3,
+        "refresh":1.,
+        "size":5.,
+        "ndots":7,
+        "seed":1,
+        "dotcolor":-1,
+        "bg-color":0.5,
+}
     
 def compute_new_image_with_dots(cls, index,
                                 seed=0,
@@ -51,13 +52,7 @@ class stim(visual_stim):
 
     def __init__(self, protocol):
 
-        super().__init__(protocol,
-                         keys=['bg-color', 
-                               'ndots', 
-                               'size', 
-                               'refresh', 
-                               'dotcolor', 
-                               'seed'])
+        super().__init__(protocol, params)
 
 
     def get_image(self, index,

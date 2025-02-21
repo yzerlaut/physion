@@ -9,9 +9,7 @@ from physion.visual_stim.preprocess_NI import load,\
 ##  ----    NATURAL IMAGES    --- #####
 #######################################
 
-params = {"movie_refresh_freq":30.,
-          "presentation-duration":3,
-          "Image-ID (#)":1}
+params = {"Image-ID":1}
 
 def get_NaturalImages_as_array(screen):
     
@@ -35,8 +33,7 @@ class stim(visual_stim):
 
     def __init__(self, protocol):
 
-        super().__init__(protocol,
-                         keys=['Image-ID'])
+        super().__init__(protocol, params)
 
         # initializing set of NI
         self.NIarray = get_NaturalImages_as_array(self.screen)

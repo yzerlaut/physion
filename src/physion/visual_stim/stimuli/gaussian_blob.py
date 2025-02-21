@@ -10,13 +10,13 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 params = {"movie_refresh_freq":30,
           "presentation-duration":4,
           # default param values:
-          "radius (deg)":5,
-          "x-center (deg)":0,
-          "y-center (deg)":0,
-          "center-time (s)": 2.,
-          "extent-time (s)": 1.,
-          "contrast (norm.)":1.,
-          "bg-color (lum.)":0., # not thought to be varied
+          "radius":5,
+          "x-center":0,
+          "y-center":0,
+          "center-time": 2.,
+          "extent-time": 1.,
+          "contrast":1.,
+          "bg-color":0., # not thought to be varied
         }
 
 class stim(visual_stim):
@@ -29,10 +29,7 @@ class stim(visual_stim):
     
     def __init__(self, protocol):
 
-        super().__init__(protocol,
-                         ['x-center', 'y-center', 'radius',
-                          'center-time', 'extent-time',
-                          'contrast', 'bg-color'])
+        super().__init__(protocol, params)
 
     def get_image(self, index, time_from_episode_start=0, parent=None):
         img = init_bg_image(self, index)

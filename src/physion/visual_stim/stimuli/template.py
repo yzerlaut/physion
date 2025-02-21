@@ -15,20 +15,15 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 ##  ----    STIMULUS TEMPLATE    --- #####
 ##########################################
 
-params = {"movie_refresh_freq":2,
-          # default param values:
-          "presentation-duration":3,
-          "size (deg)":4.,
-          "radius (deg)":40.,
-          "ndots (#)":7,
-          "dotcolor (lum.)":-1,
-          "bg-color (lum.)":0.5,
-          # now we set the range of possible values:
-          "size-1": 0.01, "size-2": 100, "N-size": 0,
-          "radius-1": 0.001, "radius-2": 100, "N-radius": 0,
-          "ndots-1": 1, "ndots-2": 1000, "N-ndots": 0,
-          "bg-color-1": 0., "bg-color-2": 1., "N-bg-color": 0,
-          "dotcolor-1": -1, "dotcolor-2": 1, "N-dotcolor": 0}
+params = {\
+      # default param values:
+      "presentation-duration":3,
+      "size":4.,
+      "radius":40.,
+      "ndots":7,
+      "dotcolor":-1,
+      "bg-color":0.5,
+}
     
 
 class stim(visual_stim):

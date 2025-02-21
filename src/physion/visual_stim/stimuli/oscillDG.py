@@ -6,15 +6,14 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 ##  ----    oscillatory DRIFTING GRATINGS --- #####
 ###################################################
 
-params = {"movie_refresh_freq":20,
-          "presentation-duration":1,
-          # default param values:
-          "frequency (Hz)":5,
-          "speed (cycle/s)":1,
-          "angle (deg)":0,
-          "spatial-freq (cycle/deg)":0.04,
-          "contrast (lum.)":1.0,
-          "bg-color (lum.)":0.5}
+params = {
+      "frequency (Hz)":5,
+      "speed (cycle/s)":1,
+      "angle (deg)":0,
+      "spatial-freq (cycle/deg)":0.04,
+      "contrast (lum.)":1.0,
+      "bg-color (lum.)":0.5,
+}
     
 
 class stim(visual_stim):

@@ -27,14 +27,14 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 params = {"movie_refresh_freq":30.,
           "presentation-duration":0.5,
           "presentation-interstim-period":0,
-          "screen-width (deg)":116,
-          "screen-height (deg)":84,
-          "size (deg)":6.,
-          "sparseness (%)":4,
-          "black-white-ratio (%)":50,
-          "seed (#)":1,
+          "screen-width":116,        # degree
+          "screen-height":84,  # degree
+          "size":6.,           # degree
+          "sparseness":4,        # % (percent full screen)
+          "black-white-ratio":50, # % percent
+          "seed":1,
           # "shape ":0, # 0 is square, 1 is circle
-          "bg-color (lum.)":0.5}
+          "bg-color":0.5}
     
 
 class stim(visual_stim):
@@ -43,22 +43,21 @@ class stim(visual_stim):
 
     def __init__(self, protocol):
 
-        super().__init__(protocol,
-                         keys=['bg-color', 'size'])
+        super().__init__(protocol, params)
 
         # screen size 
-        Dx = protocol["screen-width (deg)"]
-        Dy = protocol["screen-height (deg)"]
+        Dx = protocol["screen-width"]
+        Dy = protocol["screen-height"]
 
         # calculate number of dots:
         self.ndots = int(\
-                np.floor(((Dx*Dy) * protocol['sparseness (%)']/100. /\
+                np.floor(((Dx*Dy) * protocol['sparseness']/100. /\
                         np.max(self.experiment['size'])**2 ) / 2.) * 2.) 
-        iThresh = int(protocol['black-white-ratio (%)']/100.*self.ndots)
+        iThresh = int(protocol['black-white-ratio']/100.*self.ndots)
 
         # print(iThresh, self.ndots)
 
-        np.random.seed(int(protocol['seed (#)']))
+        np.random.seed(int(protocol['seed']))
 
         index = 0
         for i in range(self.ndots):

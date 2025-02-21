@@ -6,17 +6,18 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 ##  ----    LOOMING STIMULUS     --- #####
 ##########################################
 
-params = {"movie_refresh_freq":30,
-          "presentation-duration":3, # should be: looming-duration + end-duration
-          "looming-duration (s)":3,
-          "end-duration (s)":1,
-          "radius-start (deg)":5,
-          "radius-end (deg)":110.,
-          "x-center (deg)":0.,
-          "y-center (deg)":0.,
-          "color (lum.)":-1,
-          "looming-nonlinearity (a.u.)":2,
-          "bg-color (lum.)":0.5}
+params = {\
+      "presentation-duration":3, # should be: looming-duration + end-duration
+      "looming-duration":3,  #  second
+      "end-duration":1, # s
+      "radius-start":5, # degree
+      "radius-end":110., # degree
+      "x-center":0., # degree
+      "y-center":0., # degree
+      "color":-1, # degree
+      "looming-nonlinearity":2, # degree
+      "bg-color":0.5,
+} 
     
 
 class stim(visual_stim):
@@ -29,15 +30,7 @@ class stim(visual_stim):
 
     def __init__(self, protocol):
 
-        super().__init__(protocol,
-                         keys=['radius-start', 
-                               'radius-end',
-                               'x-center', 'y-center',
-                               'color', 
-                               'looming-nonlinearity', 
-                               'looming-duration',
-                               'end-duration', 
-                               'bg-color'])
+        super().__init__(protocol, params)
 
 
     def get_circle_size(self, index, t):
