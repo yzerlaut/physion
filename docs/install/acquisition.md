@@ -41,7 +41,7 @@ Permanent link to [vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64
 
 Download and install the NIDAQ MX dirvers from the [National Instruments website](https://www.ni.com/fr/support/downloads/drivers/download.ni-daq-mx.html)
 
-## C) Screen Setup & Psychopy setup
+## C) Screen Setup 
 
 ### C.1) Display Settings on Windows
 
@@ -57,21 +57,6 @@ Set the visual stimulation screen as the second monitor
 
 - Hide the taskbar on the non-primary display
 
-### C.3) Test the `psychopy` module for visual stimulation
-
-```
-cd %UserProfile%\work\physion\src\physion\visual_stim & python psychopy_test.py
-```
-### C.3) Test the `psychopy` module for visual stimulation
-
-- Basic `psychopy` test:
-    ```
-    cd %UserProfile%\work\physion\src\physion\visual_stim & python psychopy_test.py
-    ```
-- Test of the `visual_stim` class of `physion`:
-    ```
-    python -m src.visual_stim.main
-    ```
 
 ## D) FLIR Camera setup
 
