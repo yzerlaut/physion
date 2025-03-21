@@ -155,6 +155,26 @@ Choose the 64-bit version. Current Version is `2.0.0`
 
 [...]
 
+### F.3) Install `pycromanager`
+
+```
+pip install pycromanager
+```
+
+### F.4) Run test
+
+Setup test:
+```
+python -m physion.harware.QCamera.camera_core_test
+```
+
+Frame rate test:
+```
+python -m physion.harware.QCamera.camera_core_test
+```
+
+N.B.  [!!] `MicroManager` needs to be running to access the camera via the API
+
 
 ## G) Create Windows Launchers
 
