@@ -2,25 +2,39 @@
 
 > *installation instructions on an experimental setup*
 
+> *so far tested in Windows 10 and Windows 11, Need to use `Python 3.10`*
+
+Executables and drivers are stored in the following [drive folder](https://drive.google.com/drive/folders/1z_9GERKwQc6SKhsBnSZh-2scl_wdgHQs?usp=drive_link)
+
 ## A) Set up the `python` environment
 
-### A.1) Download and install the `miniconda` distribution
+### A.1) Install the `miniforge` distribution
 
-Download and install the `miniconda` environmment following the [installation instructions](https://docs.conda.io/projects/miniconda/en/latest/miniconda-install.html)
+Run the executable: `Miniforge3-Windows-x86_64.exe` (available at this [link](https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe))
+
+With the following settings:
+- Install it in the location: `~/miniforge3`
+- Add python to your path
 
 ### A.2) Create the `acquisition` environment
 
 ```
+cd work/physion
 conda env create -n acquisition -f acquisition.yml
 ```
 
 N.B. uninstall and re-install `psychopy` with `pip` to get the latest version
+
+
+https://www.vim.org/download.php
 
 ## B) NI DAQ setup
 
 ### B.1) Re-install Visual C++ Redistributable on Windows
 
 That's usually a necessary step. Download `vc_redist.x64.exe` from the [Microsoft Website](https://learn.microsoft.com/fr-fr/cpp/windows/latest-supported-vc-redist?view=msvc-170) and install it.
+
+Permanent link to [vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64.exe).
 
 ### B.2) Install the NIDAQ MX drivers
 
