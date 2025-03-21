@@ -19,14 +19,15 @@ With the following settings:
 ### A.2) Create the `acquisition` environment
 
 ```
-cd work/physion
+cd work/physion/docs/install
 conda env create -n acquisition -f acquisition.yml
 ```
 
-N.B. uninstall and re-install `psychopy` with `pip` to get the latest version
+### A.3) Install other useful packages
 
-
-https://www.vim.org/download.php
+```
+conda install git vim
+```
 
 ## B) NI DAQ setup
 
@@ -109,7 +110,7 @@ Run the `test.py` script to make sure the camera runs fine:
 cd %UserProfile%\work\physion\src\physion\hardware\FLIRcamera & python test.py
 ```
 
-## E) Intrinsic Imaging Camera setup
+## E) Thorlabs Imaging Camera setup
 
 ### E.1) Install `ThorCam` 
 
@@ -142,21 +143,26 @@ into the folder:
 src/physion/hardware/Thorlabs/camera_dlls.
 ```
 
-### E.4) Test the camera
+## F) QImaging Rolera Camera setup
 
-```
-conda activate acquisition
-cd %USERPROFILE%\work\physion\src\physion\hardware\Thorlabs
-python cam_test.py
-```
+### F.1) Install MicroManager
 
-## F) Create Windows Launchers
+Download and execute the [installer from the MicroManager website](https://micro-manager.org/Download_Micro-Manager_Latest_Release)
+
+Choose the 64-bit version. Current Version is `2.0.0`
+
+### F.2) Configure the Camera
+
+[...]
+
+
+## G) Create Windows Launchers
 
 Create Windows shortcut to launch the Acquisition and Analysis programs.
 
 On the desktop, right click -> `New` -> `Shortcut` and modigy its `Properties as follows: 
 
-### F.1) Analysis Program
+### G.1) Analysis Program
 
 - Target:
   ```
@@ -167,11 +173,11 @@ On the desktop, right click -> `New` -> `Shortcut` and modigy its `Properties as
   %UserProfile%\work\physion\src
   ```
 
-### F.2) Acquisition Program
+### G.2) Acquisition Program
 
 - Target:
   ```
-  %SystemRoot%\System32\cmd.exe /D /S /K %UserProfile%\miniconda3\Scripts\activate.bat %UserProfile%\miniconda3\envs\acquisition & python -m physion acquisition
+  %SystemRoot%\System32\cmd.exe /D /S /K %UserProfile%\miniforge3\Scripts\activate.bat %UserProfile%\miniforge3\envs\acquisition & python -m physion acquisition
   ```
 - Start in:
   ```
