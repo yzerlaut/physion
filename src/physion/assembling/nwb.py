@@ -428,7 +428,6 @@ def build_NWB_func(args):
                 print(' [!!] No processed pupil data found for "%s" [!!] ' % args.datafolder)
 
                 
-    
         #################################################
         ####      FaceMotion from FaceCamera        #######
         #################################################
