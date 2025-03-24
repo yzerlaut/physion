@@ -322,11 +322,7 @@ def build_NWB_func(args):
             print('=> Storing FaceCamera acquisition for "%s" [...]' % args.datafolder)
 
         fcamData = CameraData('FaceCamera', folder=args.datafolder)
-
         FC_times = fcamData.times
-        print()
-        print(len(FC_times))
-        print()
         FC_times = check_times(FC_times, NIdaq_Tstart)
 
         if ('raw_FaceCamera' in args.modalities) and (len(fcamData.times)>0):
@@ -374,8 +370,11 @@ def build_NWB_func(args):
                     
                 dataP = np.load(os.path.join(args.datafolder, 'pupil.npy'),
                                 allow_pickle=True).item()
-                print(len(FC_times))
-                print('pupil frames: ', len(dataP['frame']))
+                if len(FC_times)==len(dataP['frame']):
+                    FC_timesP = FC_times[dataP['frame']]
+                else:
+                    FC_timesP = np.linspace(FC_times[0], FC_times[-1],
+                                            len(dataF['frame']))
 
                 if 'FaceCamera-1cm-in-pix' in metadata:
                     pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
@@ -392,9 +391,9 @@ def build_NWB_func(args):
                                       [pix_to_mm for i in range(4)]+[1,1]):
                     if type(dataP[key]) is np.ndarray:
                         PupilProp = pynwb.TimeSeries(name=key,
-                                 data = np.reshape(dataP[key]*scale, (len(FC_times[dataP['frame']]),1)),
+                                 data = np.reshape(dataP[key]*scale, (len(FC_timesP),1)),
                                  unit='seconds',
-                                 timestamps=FC_times[dataP['frame']])
+                                 timestamps=FC_timesP)
                         pupil_module.add(PupilProp)
 
                 # then add the frames subsampled
