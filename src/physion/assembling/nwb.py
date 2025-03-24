@@ -374,7 +374,7 @@ def build_NWB_func(args):
                     FC_timesP = FC_times[dataP['frame']]
                 else:
                     FC_timesP = np.linspace(FC_times[0], FC_times[-1],
-                                            len(dataF['frame']))
+                                            len(dataP['frame']))
 
                 if 'FaceCamera-1cm-in-pix' in metadata:
                     pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
