@@ -99,6 +99,18 @@ class stim(visual_stim):
 
         return img
 
+    def reverse_correlation_analysis(self, 
+                                     weight_array):
+
+        img = 0*init_bg_image(self, 0)
+
+        for index in range(self.ndots):
+
+            img += self.get_image(index)/self.ndots
+
+        return img
+
+
 def insure_no_overlap_with():
     pass
 
@@ -107,7 +119,7 @@ if __name__=='__main__':
     from physion.visual_stim.build import get_default_params
 
     params = get_default_params('sparse-noise')
-    params['N-repeat'] = 10
+    params['N-repeat'] = 10 
 
     import time
     import cv2 as cv
@@ -115,10 +127,23 @@ if __name__=='__main__':
     Stim = stim(params)
 
     t0, index = time.time(), 0
+    weight_array = []
     while True and index<(len(Stim.experiment['index'])-1):
         index = int((time.time()-t0)\
                 /Stim.protocol['presentation-duration'])
+
+        # add a random observation
+        weight_array.append(np.clip(np.random.randn(), 0, 1))
+
         cv.imshow("Video Output", 
                   Stim.get_image(index).T)
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
+
+    RF = Stim.reverse_correlation_analysis(weight_array)
+
+    import physion.utils.plot_tools as pt
+    fig, ax = pt.figure()
+    ax.imshow(RF.T, cmap=pt.bwr)
+    ax.axis('off')
+    pt.plt.show()

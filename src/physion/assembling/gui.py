@@ -51,6 +51,8 @@ def build_NWB_UI(self, tab_id=1):
     self.add_side_widget(tab.layout, QtWidgets.QLabel(20*'-'))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
+    self.reversePhotodiodeBox = QtWidgets.QCheckBox('reverse Photodiode Signal ', self)
+    self.add_side_widget(tab.layout, self.reversePhotodiodeBox)
     # an option to force based on Visual Stim infos
     self.alignFromStimCheckBox = QtWidgets.QCheckBox('align from VisStim label (!=diode) ', self)
     self.add_side_widget(tab.layout, self.alignFromStimCheckBox)
@@ -128,6 +130,8 @@ def runBuildNWB(self):
                              modalities=modalities,
                              force_to_visualStimTimestamps=\
                                 self.alignFromStimCheckBox.isChecked(),
+                             reverse_photodiodeSignal=\
+                                self.reversePhotodiodeBox.isChecked(),
                              dest_folder=self.folder)
         print('\n launching the command \n :  %s \n ' % cmd)
         p = subprocess.Popen(cmd, cwd=cwd,

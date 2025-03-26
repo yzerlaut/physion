@@ -1,6 +1,7 @@
 import os, sys, pathlib, shutil, time, datetime, tempfile, json
 from PIL import Image
 import numpy as np
+import pandas as pd
 
 import pynwb
 from hdmf.data_utils import DataChunkIterator
@@ -47,6 +48,10 @@ def build_NWB_func(args):
     if args.verbose:
         print('- Initializing NWB file for "%s" [...]' % args.datafolder)
 
+    #################################################
+    ####         PREPARING THE METADATA       #######
+    #################################################
+
     metadata = read_metadata(args)
 
     # add visual stimulation protocol parameters to the metadata:
@@ -82,27 +87,58 @@ def build_NWB_func(args):
     start_time = datetime.datetime(int(day[0]),int(day[1]),int(day[2]),
                 int(Time[0]),int(Time[1]),int(Time[2]),tzinfo=tzlocal())
 
-    # subject info
-    if args.verbose:
-        try:
-            subject_file = [f for f in os.listdir(args.datafolder) if '.xlsx' in f][0]
-            print('- Adding Subject data from the file: "%s" (TO BE DONE)' % subject_file)
-        except BaseException:
-            print('     [!!] no Subject .xlsx file found [!!]   ')
+    # --------------------------------------------------------------
+    # subject info -- empty by default
+    # --------------------------------------------------------------
 
-    #################################
-    # Implement READ from CSV here ##
-    #################################
-    dob = ['1988', '4', '24'] # non-sense by default
-    if 'subject_props' in metadata and (metadata['subject_props'] is not None):
+    subject_file = [f for f in os.listdir(args.datafolder) if '.xlsx' in f]
+    if len(subject_file)==1:
+        subjectTable = pd.read_excel(os.path.join(args.datafolder, subject_file[0]),
+                                     skiprows=[0])
+        keys = ['Date-of-Birth', 'Date-Surgery-1', 'Date-Surgery-2',
+                'sex', 'strain', 'genotype', 'subject_id', 'virus', 'species']
+        print(subjectTable.keys())
+        print(subjectTable['Acronyme lignée'].values[0])
+        """
+        subject_props = {}
+        for k in keys:
+            subject_props[k] = ''
+        Mapping = {'Nickname':'Nickname', 
+                   'Full-Line':'Lignée', 
+                   'Line':'Acronyme lignée', 'Marque', 'Sexe',
+       'D. naissance', 'D. chirurgie 1', 'D. chirugie 2', 'Virus', 'Génotype',
+       'Espèce', 'Souche']
+            print(subjectTable['Acronyme Lignée'].values[0])
+            print('- Adding Subject data from the file: "%s" (TO BE DONE)' % subject_file)
+        except BaseException as be:
+            print(be)
+            print('     [!!] no Subject.xlsx file found [!!]   ')
+        """
+
+    # --------------------------------------------------------------
+    # read from the subject_props in metadata
+    #         ---> deprecated soon...
+    #                (it should be done by modifying the xslx file)
+    # --------------------------------------------------------------
+    elif 'subject_props' in metadata and (metadata['subject_props'] is not None):
         subject_props = metadata['subject_props']
         if 'Date-of-Birth' in subject_props:
             dob = subject_props['Date-of-Birth'].split('/')[::-1]
-    else:
-        subject_props = {}
-        # print('subject properties not in metadata ...')
+        else:
+            dob = ['24', '04', '1988']
 
+    else:
+        print('')
+        print(' [!!] no subject information available [!!] ')
+        print('subject_files :', subject_file)
+        print('')
+        
+
+    # --------------------------------------------------------------
     # override a few properties (when curating/rebuilding datafiles)
+    #         ---> deprecated soon... 
+    #                (it should be done by modifying the xslx file)
+    # --------------------------------------------------------------
     if hasattr(args, 'subject_id') and ('subject_id' in subject_props):
         # means we're over-writing the subject_id, we keep the old one in the description
         subject_props['description'] = 'original-subject_id=%s' % subject_props['subject_id']+\
@@ -113,20 +149,37 @@ def build_NWB_func(args):
         subject_props['genotype'] = args.genotype
     if hasattr(args, 'species'):
         subject_props['species'] = args.species
-
-    subject = pynwb.file.Subject(description=(subject_props['description'] if ('description' in subject_props) else ''),
-                                 subject_id=(subject_props['subject_id'] if ('subject_id' in subject_props) else 'Unknown'),
-                                 sex=(subject_props['sex'] if ('sex' in subject_props) else 'Unknown'),
-                                 genotype=(subject_props['genotype'] if ('genotype' in subject_props) else 'Unknown'),
-                                 species=(subject_props['species'] if ('species' in subject_props) else 'Unknown'),
-                                 weight=(subject_props['weight'] if ('weight' in subject_props) else 'Unknown'),
-                                 date_of_birth=datetime.datetime(int(dob[0]),int(dob[1]),int(dob[2]),tzinfo=tzlocal()))
-                                 
     if hasattr(args, 'virus'):
-        metadata['species'] = args.virus
+        metadata['virus'] = args.virus
     if hasattr(args, 'surgery'):
         metadata['surgery'] = args.surgery
 
+    # --------------------------------------------------------------
+    #    ---------  building the pynwb subject object   ----------
+    # --------------------------------------------------------------
+    subject = pynwb.file.Subject(description=\
+        (subject_props['description'] if ('description' in subject_props) else ''),
+                                 age=\
+        (subject_props['age'] if ('age' in subject_props) else ''),
+                                 subject_id=\
+        (subject_props['subject_id'] if ('subject_id' in subject_props) else 'Unknown'),
+                                 sex=\
+        (subject_props['sex'] if ('sex' in subject_props) else 'Unknown'),
+                                 genotype=\
+        (subject_props['genotype'] if ('genotype' in subject_props) else 'Unknown'),
+                                 species=\
+        (subject_props['species'] if ('species' in subject_props) else 'Unknown'),
+                                 weight=\
+        (subject_props['weight'] if ('weight' in subject_props) else 'Unknown'),
+                                 strain=\
+        (subject_props['strain'] if ('strain' in subject_props) else 'Unknown'),
+                                 date_of_birth=\
+        datetime.datetime(int(dob[0]), int(dob[1]), int(dob[2]), tzinfo=tzlocal()))
+                                 
+
+    # --------------------------------------------------------------
+    #    ---------  building the pynwb NWBfile object   ----------
+    # --------------------------------------------------------------
     nwbfile = pynwb.NWBFile(\
                 identifier=identifier,
                 session_description=str(metadata),
@@ -145,9 +198,11 @@ def build_NWB_func(args):
 
     if not hasattr(args, 'filename') or args.filename=='':
         if args.destination_folder=='':
-            args.filename = os.path.join(pathlib.Path(args.datafolder).parent, '%s.nwb' % identifier)
+            args.filename = os.path.join(pathlib.Path(args.datafolder).parent,
+                                         '%s.nwb' % identifier)
         else:
-            args.filename = os.path.join(args.destination_folder, '%s.nwb' % identifier)
+            args.filename = os.path.join(args.destination_folder,
+                                         '%s.nwb' % identifier)
 
     
     manager = pynwb.get_manager() # we need a manager to link raw and processed data
@@ -178,9 +233,9 @@ def build_NWB_func(args):
             print('- Computing and storing running-speed for "%s" [...]' % args.datafolder)
 
         speed = compute_speed(NIdaq_data['digital'][0],
-                                         acq_freq=float(metadata['NIdaq-acquisition-frequency']),
-                                         radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
-                                         rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']))
+                acq_freq=float(metadata['NIdaq-acquisition-frequency']),
+                radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
+                rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']))
         _, speed = resample_signal(speed,
                                    original_freq=float(metadata['NIdaq-acquisition-frequency']),
                                    new_freq=args.running_sampling,
@@ -223,8 +278,8 @@ def build_NWB_func(args):
                                      original_freq=float(metadata['NIdaq-acquisition-frequency']),
                                      pre_smoothing=2./float(metadata['NIdaq-acquisition-frequency']),
                                      new_freq=args.photodiode_sampling)
-        #if 'A1-2P' in metadata['Rig']:
-        #    Psignal *=-1 # reversing sign on the setup
+        if args.reverse_photodiodeSignal:
+           Psignal *=-1 # reversing sign on the setup
 	
         VisualStim = np.load(os.path.join(args.datafolder,
                         'visual-stim.npy'), allow_pickle=True).item()
@@ -239,7 +294,8 @@ def build_NWB_func(args):
         for key in ['time_start', 'time_stop', 'time_duration']:
             metadata[key] = VisualStim[key]
             
-        if (args.indices_forced is not None) and (args.times_forced is not None) and (args.times_forced is not None):
+        if (args.indices_forced is not None) and (args.times_forced is not None)\
+                                and (args.times_forced is not None):
             print(' FORCING ALIGNEMENT IN SPECIFIC EPISODES: ', args.indices_forced)
             indices_forced=args.indices_forced
             times_forced=args.times_forced
@@ -587,6 +643,7 @@ def build_NWB_func(args):
 def build_cmd(datafolder,
               modalities=['Locomotion', 'VisualStim'],
               force_to_visualStimTimestamps=False,
+              reverse_photodiodeSignal=False,
               dest_folder=''):
 
     cmd = '%s -m physion.assembling.nwb %s -M ' % (python_path,
@@ -594,6 +651,8 @@ def build_cmd(datafolder,
     cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src')
     for m in modalities:
         cmd += '%s '%m
+    if reverse_photodiodeSignal:
+        cmd += '--reverse_photodiodeSignal '
     if force_to_visualStimTimestamps:
         cmd += '--force_to_visualStimTimestamps '
     if dest_folder!='':
@@ -637,6 +696,7 @@ if __name__=='__main__':
     parser.add_argument("--durations_forced", nargs='*', type=float, default=[])
     # or we just simply force the timestamps to the ones desired by visualStim
     parser.add_argument("--force_to_visualStimTimestamps", action="store_true")
+    parser.add_argument("--reverse_photodiodeSignal", action="store_true")
 
     parser.add_argument('-rs', "--running_sampling", default=50., type=float)
     parser.add_argument('-ps', "--photodiode_sampling", default=1000., type=float)
