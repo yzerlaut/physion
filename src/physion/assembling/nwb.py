@@ -1,7 +1,6 @@
 import os, sys, pathlib, shutil, time, datetime, tempfile, json
 from PIL import Image
 import numpy as np
-import pandas as pd
 
 import pynwb
 from hdmf.data_utils import DataChunkIterator
@@ -11,6 +10,7 @@ from dateutil.tz import tzlocal
 from physion.acquisition.tools import get_subject_props
 
 from physion.assembling.realign_from_photodiode import realign_from_photodiode
+from physion.assembling.subject import build_subject_props
 from physion.behavior.locomotion import compute_speed
 from physion.analysis.tools import resample_signal
 from physion.assembling.tools import load_FaceCamera_data,\
@@ -81,78 +81,16 @@ def build_NWB_func(args):
     else:
         sep = '/' # a weird behavior on Windows
 
-    day = metadata['date'].split('_')
-    Time = metadata['time'].split('-')
+    day = [int(i) for i in metadata['date'].split('_')]
+    Time = [int(i) for i in metadata['time'].split('-')]
     identifier = metadata['date']+'-'+metadata['time']
-    start_time = datetime.datetime(int(day[0]),int(day[1]),int(day[2]),
-                int(Time[0]),int(Time[1]),int(Time[2]),tzinfo=tzlocal())
+    start_time = datetime.datetime(*day, *Time, tzinfo=tzlocal())
 
     # --------------------------------------------------------------
     # subject info -- empty by default
     # --------------------------------------------------------------
 
-    subject_file = [f for f in os.listdir(args.datafolder) if '.xlsx' in f]
-    if len(subject_file)==1:
-        subjectTable = pd.read_excel(os.path.join(args.datafolder, subject_file[0]),
-                                     skiprows=[0])
-        keys = ['Date-of-Birth', 'Date-Surgery-1', 'Date-Surgery-2',
-                'sex', 'strain', 'genotype', 'subject_id', 'virus', 'species']
-        print(subjectTable.keys())
-        print(subjectTable['Acronyme lignée'].values[0])
-        """
-        subject_props = {}
-        for k in keys:
-            subject_props[k] = ''
-        Mapping = {'Nickname':'Nickname', 
-                   'Full-Line':'Lignée', 
-                   'Line':'Acronyme lignée', 'Marque', 'Sexe',
-       'D. naissance', 'D. chirurgie 1', 'D. chirugie 2', 'Virus', 'Génotype',
-       'Espèce', 'Souche']
-            print(subjectTable['Acronyme Lignée'].values[0])
-            print('- Adding Subject data from the file: "%s" (TO BE DONE)' % subject_file)
-        except BaseException as be:
-            print(be)
-            print('     [!!] no Subject.xlsx file found [!!]   ')
-        """
-
-    # --------------------------------------------------------------
-    # read from the subject_props in metadata
-    #         ---> deprecated soon...
-    #                (it should be done by modifying the xslx file)
-    # --------------------------------------------------------------
-    elif 'subject_props' in metadata and (metadata['subject_props'] is not None):
-        subject_props = metadata['subject_props']
-        if 'Date-of-Birth' in subject_props:
-            dob = subject_props['Date-of-Birth'].split('/')[::-1]
-        else:
-            dob = ['24', '04', '1988']
-
-    else:
-        print('')
-        print(' [!!] no subject information available [!!] ')
-        print('subject_files :', subject_file)
-        print('')
-        
-
-    # --------------------------------------------------------------
-    # override a few properties (when curating/rebuilding datafiles)
-    #         ---> deprecated soon... 
-    #                (it should be done by modifying the xslx file)
-    # --------------------------------------------------------------
-    if hasattr(args, 'subject_id') and ('subject_id' in subject_props):
-        # means we're over-writing the subject_id, we keep the old one in the description
-        subject_props['description'] = 'original-subject_id=%s' % subject_props['subject_id']+\
-            subject_props['description'] if ('description' in subject_props) else ''
-    if hasattr(args, 'subject_id') and ('subject_id' in subject_props):
-        subject_props['subject_id'] = args.subject_id
-    if hasattr(args, 'genotype'):
-        subject_props['genotype'] = args.genotype
-    if hasattr(args, 'species'):
-        subject_props['species'] = args.species
-    if hasattr(args, 'virus'):
-        metadata['virus'] = args.virus
-    if hasattr(args, 'surgery'):
-        metadata['surgery'] = args.surgery
+    subject_props = build_subject_props(args, metadata)
 
     # --------------------------------------------------------------
     #    ---------  building the pynwb subject object   ----------
@@ -174,7 +112,7 @@ def build_NWB_func(args):
                                  strain=\
         (subject_props['strain'] if ('strain' in subject_props) else 'Unknown'),
                                  date_of_birth=\
-        datetime.datetime(int(dob[0]), int(dob[1]), int(dob[2]), tzinfo=tzlocal()))
+        datetime.datetime(*subject_props['Date-of-Birth'], tzinfo=tzlocal()))
                                  
 
     # --------------------------------------------------------------
@@ -383,9 +321,6 @@ def build_NWB_func(args):
 
         if ('raw_FaceCamera' in args.modalities) and (len(fcamData.times)>0):
            
-            FC_timesR = fcamData.times
-            FC_timesR = check_times(FC_timesR, NIdaq_Tstart)
-
             imgR = fcamData.get(0)
             FC_SUBSAMPLING = build_subsampling_from_freq(args.FaceCamera_frame_sampling,
                                              1./np.mean(np.diff(fcamData.times)), 
@@ -405,7 +340,7 @@ def build_NWB_func(args):
             FaceCamera_frames = pynwb.image.ImageSeries(name='FaceCamera',
                                                         data=FC_dataI,
                                                         unit='NA',
-                                                        timestamps=FC_timesR[FC_SUBSAMPLING])
+                                                        timestamps=FC_times[FC_SUBSAMPLING])
             nwbfile.add_acquisition(FaceCamera_frames)
                 
         else:
@@ -426,11 +361,6 @@ def build_NWB_func(args):
                     
                 dataP = np.load(os.path.join(args.datafolder, 'pupil.npy'),
                                 allow_pickle=True).item()
-                if len(FC_times)==len(dataP['frame']):
-                    FC_timesP = FC_times[dataP['frame']]
-                else:
-                    FC_timesP = np.linspace(FC_times[0], FC_times[-1],
-                                            len(dataP['frame']))
 
                 if 'FaceCamera-1cm-in-pix' in metadata:
                     pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
@@ -447,9 +377,9 @@ def build_NWB_func(args):
                                       [pix_to_mm for i in range(4)]+[1,1]):
                     if type(dataP[key]) is np.ndarray:
                         PupilProp = pynwb.TimeSeries(name=key,
-                                 data = np.reshape(dataP[key]*scale, (len(FC_timesP),1)),
+                                 data = np.reshape(dataP[key]*scale, (len(FC_times),1)),
                                  unit='seconds',
-                                 timestamps=FC_timesP)
+                                 timestamps=FC_times)
                         pupil_module.add(PupilProp)
 
                 # then add the frames subsampled
@@ -497,11 +427,6 @@ def build_NWB_func(args):
                     
                 dataF = np.load(os.path.join(args.datafolder, 'facemotion.npy'),
                                 allow_pickle=True).item()
-                if len(FC_times)==len(dataF['frame']):
-                    FC_timesF = FC_times[dataF['frame']]
-                else:
-                    FC_timesF = np.linspace(FC_times[0], FC_times[-1], len(dataF['frame']))
-
 
                 faceMotion_module = nwbfile.create_processing_module(\
                         name='FaceMotion', 
@@ -510,17 +435,17 @@ def build_NWB_func(args):
                                                                                 dataF['ROI'][2],dataF['ROI'][3]))
                 FaceMotionProp = pynwb.TimeSeries(name='face-motion',
                                                   data = np.reshape(dataF['motion'],
-                                                                    (len(FC_timesF),1)),
+                                                                    (len(FC_times),1)),
                                                   unit='seconds',
-                                                  timestamps=FC_timesF)
+                                                  timestamps=FC_times)
                 faceMotion_module.add(FaceMotionProp)
 
                 if 'grooming' in dataF:
                     GroomingProp = pynwb.TimeSeries(name='grooming',
                                                     data = np.reshape(dataF['grooming'],
-                                                                    (len(FC_timesF),1)),
+                                                                    (len(FC_times),1)),
                                                     unit='seconds',
-                                                  timestamps=FC_timesF)
+                                                  timestamps=FC_times)
                     faceMotion_module.add(GroomingProp)
 
                 # then add the motion frames subsampled

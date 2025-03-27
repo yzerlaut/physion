@@ -38,7 +38,7 @@ class CameraData:
                 os.path.join(self.folder, '%s-imgs' % name))\
                 and not force_video:
             """
-            load from set of *.npy frames
+            ## load from set of *.npy frames ##
             """
             if verbose:
                 print(' - loading camera data from raw image frames')
@@ -59,7 +59,7 @@ class CameraData:
                      os.path.join(self.folder, '%s.%s' % (name,f)))\
                             for f in video_formats]):
             """
-            load from movie
+            ## load from movie ##
             """
             i0 = np.flatnonzero([\
                             os.path.isfile(\
@@ -73,33 +73,28 @@ class CameraData:
                 print('                         --> ', video_name)
 
             self.cap  = cv.VideoCapture(os.path.join(self.folder, video_name))
-            nFrames = int(self.cap.get(cv.CAP_PROP_FRAME_COUNT))
-
-            # # to read directly in grey scale (not working)
-            # try:
-                # possible = self.cap.set(cv.CAP_PROP_MODE, cv.CAP_MODE_GRAY)
-            # except AttributeError:
-                # pass
+            # number of camera frames doesn't match 
+            self.nFrames_movie = int(self.cap.get(cv.CAP_PROP_FRAME_COUNT))
 
             summary = np.load(os.path.join(self.folder, '%s-summary.npy' % name),
                               allow_pickle=True).item()
             for key in summary:
                 setattr(self, key, summary[key])
 
+
             if hasattr(self, 'nframes'):
                 self.nFrames = self.nframes # old typo
 
-            if nFrames!=self.nFrames:
+            if verbose and self.nFrames_movie!=self.nFrames:
                 print(' ------------------------------------------------------------ ')
                 print(' [!!] different number of frames in video and raw images [!!] ')
-                print('movie: ', nFrames, ', raw images:', self.nFrames)
-                print('             ->> forcing data to %i frames ' % nFrames)
+                print('           movie: ', self.nFrames_movie, ', raw images:', self.nFrames)
+                print('   this is due to the FPS precision in the movie, see:')
+                print('        * movie FPS      : %.3f ' % self.cap.get(cv.CAP_PROP_FPS))
+                print('        real acquisition : %.3f' % ( 1./np.diff(self.times).mean()))
+                print('             ->> forcing data to %i frames ' % self.nFrames)
                 print(' ------------------------------------------------------------ ')
-                self.FILES = [None for n in range(nFrames)]
-                self.times = np.linspace(self.times[0], self.times[-1], nFrames)
-                self.nFrames = nFrames
-
-            if verbose:
+            elif verbose:
                 print('loaded Camera data with %i frames' % self.nFrames)
 
         elif 'TSeries' in name:
@@ -150,7 +145,23 @@ class CameraData:
     def get(self, index):
 
         if self.cap is not None:
-            self.cap.set(cv.CAP_PROP_POS_FRAMES, index-1)
+            # ---------------------------------------------
+            #     transform to movie index (movies have low fps precision)
+            # 
+            movie_index = round(1.0* index\
+                    /self.nFrames*self.nFrames_movie)
+            if movie_index<0:
+                print('movie index: ', movie_index, 
+                      ' outside the range [0,%i]'%(self.nFrames_movie-1))
+                movie_index = 0
+            if movie_index>=self.nFrames_movie:
+                print('movie index: ', movie_index, 
+                      ' outside the range [0,%i]'%(self.nFrames_movie-1))
+                movie_index = self.nFrames_movie-1
+            # 
+            # ---------------------------------------------
+            # 
+            self.cap.set(cv.CAP_PROP_POS_FRAMES, movie_index)
             res, frame = self.cap.read()
             if res:
                 return np.array(frame[:,:,0]).T

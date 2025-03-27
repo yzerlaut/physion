@@ -683,3 +683,12 @@ def scan_folder_for_NWBfiles(folder,
             'subjects':np.array(SUBJECTS)[isorted],
             'protocol_ids':[PROTOCOL_IDS[i] for i in isorted],
             'protocols':[PROTOCOLS[i] for i in isorted]}
+
+if __name__=='__main__':
+
+    DATASET = \
+        scan_folder_for_NWBfiles(\
+            os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
+                 'TEST-NDNF-protocol'))
+
+    print(DATASET)
