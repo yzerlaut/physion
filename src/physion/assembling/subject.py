@@ -55,7 +55,7 @@ def build_subject_props(args, metadata):
                 # - dates
                 if 'T00:00:00.000000000' in subject_props[k]:
                     subject_props[k] = np.array([int(i) for i in \
-                        subject_props[k].replace('T00:00:00.000000000','').split('-')])[[0,2,1]]
+                        subject_props[k].replace('T00:00:00.000000000','').split('-')])[[0,1,2]]
 
 
 
@@ -67,7 +67,8 @@ def build_subject_props(args, metadata):
     elif 'subject_props' in metadata and (metadata['subject_props'] is not None):
         subject_props = metadata['subject_props']
         if 'Date-of-Birth' in subject_props:
-            subject_props['Date-of-Birth'] = subject_props['Date-of-Birth'].split('/')[::-1]
+            subject_props['Date-of-Birth'] = [int(i) for i in\
+                    subject_props['Date-of-Birth'].split('/')[::-1]]
         else:
             subject_props['Date-of-Birth'] = [1988, 4, 24] # non-sense
 
@@ -77,15 +78,17 @@ def build_subject_props(args, metadata):
         print('subject_files :', subject_file)
         print('')
         
+    print(subject_props['Date-Surgery-1'])
+    print(subject_props['Date-of-Birth'])
     ###########################################################
     ###        Cleaning up a few keys     #####################
     ###########################################################
     # -
     # ** surgery ** :
-    if subject_props['Date-Surgery-1']!='':
+    if subject_props['Surgery-1']!='':
         subject_props['surgery'] += '%s %s' % (\
             subject_props['Surgery-1'], subject_props['Date-Surgery-1'])
-    if subject_props['Date-Surgery-2']!='':
+    if subject_props['Surgery-2']!='':
         subject_props['surgery'] += ' -- %s %s' % (\
             subject_props['Surgery-2'], subject_props['Date-Surgery-2'])
     # print('surgery', subject_props['surgery'])
