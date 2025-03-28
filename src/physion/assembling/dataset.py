@@ -42,7 +42,7 @@ if __name__=='__main__':
 
     filename = sys.argv[-1]
     dataset = read_dataset_spreadsheet(filename)
-    print(dataset[['mouse', 'day', 'time', 'protocol', 'FOV']])
+    print(dataset[['subject', 'day', 'time', 'protocol', 'FOV']])
     
 
 

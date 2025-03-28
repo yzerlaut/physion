@@ -660,6 +660,10 @@ if __name__=='__main__':
         for i in range(len(dataset)):
             # resetting the datafodler
             args.datafolder = dataset['datafolder'][i]
+            # copy the subject file 
+            shutil.copyfile(os.path.join(directory, 'subjects', 
+                                     '%s.xlsx' % dataset['subject'].values[i]),
+                            args.datafolder)
             # building the options
             for key in ['force_to_visualStimTimestamps',
                         'reverse_photodiodeSignal']:
