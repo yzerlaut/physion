@@ -48,10 +48,11 @@ class CameraData:
                     self.Ly, self.Lx = load_FaceCamera_data(\
                                 os.path.join(self.folder, '%s-imgs' % name),
                                                 t0=0, verbose=verbose)
+            self.original_times = self.times
 
             if verbose:
-                print('- loaded Camera data with %i frames' % self.nFrames)
-                print('- frame rate', np.mean(1./np.diff(self.times)))
+                print('     - loaded Camera data with %i frames' % self.nFrames)
+                print('     - frame rate', np.mean(1./np.diff(self.times)))
                 # print(self.nFrames/(self.times[-1]-self.times[0]))
 
         elif np.sum([\
@@ -69,7 +70,7 @@ class CameraData:
             video_name = '%s.%s' % (name, video_formats[i0])
 
             if verbose:
-                print(' - loading camera data from movie ')
+                print('     - loading camera data from movie ')
                 print('                         --> ', video_name)
 
             self.cap  = cv.VideoCapture(os.path.join(self.folder, video_name))
@@ -81,11 +82,16 @@ class CameraData:
             for key in summary:
                 setattr(self, key, summary[key])
 
+            self.original_times = self.times
 
             if hasattr(self, 'nframes'):
                 self.nFrames = self.nframes # old typo
 
-            if verbose and self.nFrames_movie!=self.nFrames:
+            if verbose:
+                print('     - loaded Camera data with %i frames (original: %i frames)'\
+                        % (self.nFrames_movie, self.nFrames))
+
+            if False: # to debug
                 print(' ------------------------------------------------------------ ')
                 print(' [!!] different number of frames in video and raw images [!!] ')
                 print('           movie: ', self.nFrames_movie, ', raw images:', self.nFrames)
@@ -94,8 +100,6 @@ class CameraData:
                 print('        real acquisition : %.3f' % ( 1./np.diff(self.times).mean()))
                 print('             ->> forcing data to %i frames ' % self.nFrames)
                 print(' ------------------------------------------------------------ ')
-            elif verbose:
-                print('loaded Camera data with %i frames' % self.nFrames)
 
         elif 'TSeries' in name:
 
@@ -132,6 +136,7 @@ class CameraData:
             summary = np.load(os.path.join(self.folder, '%s-summary.npy' % name),
                               allow_pickle=True).item()
 
+            self.original_times = summary['times']
             self.nFrames = len(summary['sample_frames'])
             self.times = summary['times'][summary['sample_frames_index']]
             self.FRAMES = summary['sample_frames'] 

@@ -565,7 +565,7 @@ class multiprotocol(visual_stim):
         self.STIM, i = [], 1
 
         if 'Protocol-1-Stimulus' in protocol:
-            print('loading from protocol')
+            print('     - loading visual stim params from saved protocol params [...]')
             # this means the subprotocol parameters were already saved, 
             #      so we build the protocol from those
             while 'Protocol-%i'%i in protocol:

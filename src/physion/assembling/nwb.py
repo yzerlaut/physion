@@ -27,32 +27,34 @@ ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   'VisualStim',
                   'Locomotion'] 
 
-def read_metadata(args):
+def read_metadata(datafolder):
     """
     """
-
-    if os.path.isfile(os.path.join(args.datafolder, 'metadata.json')):
-        with open(os.path.join(args.datafolder, 'metadata.json'),
+    
+    if os.path.isfile(os.path.join(datafolder, 'metadata.json')):
+        with open(os.path.join(datafolder, 'metadata.json'),
                   'r', encoding='utf-8') as f:
             metadata = json.load(f)
     else:
         # (deprecated, loading from metadata.npy)
-        metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
+        metadata = np.load(os.path.join(datafolder, 'metadata.npy'),
                            allow_pickle=True).item()
 
     return metadata 
+
 
 def build_NWB_func(args):
     """
     """
     if args.verbose:
-        print('- Initializing NWB file for "%s" [...]' % args.datafolder)
+        print()
+        print('=> Initializing NWB file for "%s" [...]' % args.datafolder)
 
     #################################################
     ####         PREPARING THE METADATA       #######
     #################################################
 
-    metadata = read_metadata(args)
+    metadata = read_metadata(args.datafolder)
 
     # add visual stimulation protocol parameters to the metadata:
     if os.path.isfile(os.path.join(args.datafolder, 'protocol.json')):
@@ -149,13 +151,13 @@ def build_NWB_func(args):
     ####         IMPORTING NI-DAQ data        #######
     #################################################
     if args.verbose:
-        print('- Loading NIdaq data for "%s" [...]' % args.datafolder)
+        print('=> Loading NIdaq data for "%s" [...]' % args.datafolder)
     try:
         NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), allow_pickle=True).item()
         NIdaq_Tstart = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
     except FileNotFoundError:
-        print(' [!!] No NI-DAQ data found [!!] ')
-        print('   -----> Not able to build NWB file for "%s"' % args.datafolder)
+        print('   [!!] No NI-DAQ data found [!!] ')
+        print('      -----> Not able to build NWB file for "%s"' % args.datafolder)
         raise BaseException
 
     st = datetime.datetime.fromtimestamp(NIdaq_Tstart).strftime('%H:%M:%S.%f')
@@ -168,7 +170,7 @@ def build_NWB_func(args):
     if metadata['Locomotion'] and ('Locomotion' in args.modalities):
         # compute running speed from binary NI-daq signal
         if args.verbose:
-            print('- Computing and storing running-speed for "%s" [...]' % args.datafolder)
+            print('=> Computing and storing running-speed for "%s" [...]' % args.datafolder)
 
         speed = compute_speed(NIdaq_data['digital'][0],
                 acq_freq=float(metadata['NIdaq-acquisition-frequency']),
@@ -233,8 +235,8 @@ def build_NWB_func(args):
             metadata[key] = VisualStim[key]
             
         if (args.indices_forced is not None) and (args.times_forced is not None)\
-                                and (args.times_forced is not None):
-            print(' FORCING ALIGNEMENT IN SPECIFIC EPISODES: ', args.indices_forced)
+                and (len(args.indices_forced)>0):
+            print('     FORCING ALIGNEMENT IN SPECIFIC EPISODES: ', args.indices_forced)
             indices_forced=args.indices_forced
             times_forced=args.times_forced
             durations_forced=args.durations_forced
@@ -316,7 +318,7 @@ def build_NWB_func(args):
             print('=> Storing FaceCamera acquisition for "%s" [...]' % args.datafolder)
 
         fcamData = CameraData('FaceCamera', folder=args.datafolder)
-        FC_times = fcamData.times
+        FC_times = fcamData.original_times
         FC_times = check_times(FC_times, NIdaq_Tstart)
 
         if ('raw_FaceCamera' in args.modalities) and (len(fcamData.times)>0):
@@ -338,13 +340,14 @@ def build_NWB_func(args):
                                          maxshape=(None, *imgR.shape),
                                          dtype=np.dtype(np.uint8))
             FaceCamera_frames = pynwb.image.ImageSeries(name='FaceCamera',
-                                                        data=FC_dataI,
-                                                        unit='NA',
-                                                        timestamps=FC_times[FC_SUBSAMPLING])
+                                                data=FC_dataI,
+                                            unit='NA',
+                                        timestamps=fcamData.times[FC_SUBSAMPLING])
             nwbfile.add_acquisition(FaceCamera_frames)
+            print('    [ok] raw_FaceCamera successfully added ')
                 
         else:
-            print(' --> no raw_FaceCamera added !! ' )
+            print('     --> no raw_FaceCamera added !! ' )
 
             
 
@@ -596,7 +599,6 @@ def check_times(times, t0):
     return times
 
 
-
 if __name__=='__main__':
 
     import argparse, os
@@ -652,7 +654,14 @@ if __name__=='__main__':
     args.FaceCamera_frame_sampling = 0
 
     # if os.path.isdir(args.datafolder) and ('NIdaq.npy' in os.listdir(args.datafolder)):
-    if args.recursive:
+    if '.xlsx' in args.datafolder:
+        filename = args.datafolder
+        directory = os.path.basename(args.datafolder)
+        import pandas as pd
+        dataset = pd.read_excel(filename)
+        # build_NWB_func(args)
+        
+    elif args.recursive:
         for f, _, __ in os.walk(args.datafolder):
             timeFolder = f.split(os.path.sep)[-1]
             dateFolder = f.split(os.path.sep)[-2]
@@ -663,7 +672,7 @@ if __name__=='__main__':
                 args.filename = ''
                 if args.only_protocol!='':
                     # we check that it matches the protocol
-                    metadata = read_metadata(args)
+                    metadata = read_metadata(args.datafolder)
                     if args.only_protocol in metadata['protocol']:
                         build_NWB_func(args)
                     else:

@@ -78,8 +78,6 @@ def build_subject_props(args, metadata):
         print('subject_files :', subject_file)
         print('')
         
-    print(subject_props['Date-Surgery-1'])
-    print(subject_props['Date-of-Birth'])
     ###########################################################
     ###        Cleaning up a few keys     #####################
     ###########################################################
