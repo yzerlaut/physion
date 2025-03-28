@@ -10,6 +10,8 @@ from dateutil.tz import tzlocal
 from physion.acquisition.tools import get_subject_props
 
 from physion.assembling.realign_from_photodiode import realign_from_photodiode
+from physion.assembling.dataset import read_dataset_spreadsheet,\
+        read_metadata
 from physion.assembling.subject import build_subject_props
 from physion.behavior.locomotion import compute_speed
 from physion.analysis.tools import resample_signal
@@ -26,21 +28,6 @@ ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   # 'EphysLFP', 'EphysVm',
                   'VisualStim',
                   'Locomotion'] 
-
-def read_metadata(datafolder):
-    """
-    """
-    
-    if os.path.isfile(os.path.join(datafolder, 'metadata.json')):
-        with open(os.path.join(datafolder, 'metadata.json'),
-                  'r', encoding='utf-8') as f:
-            metadata = json.load(f)
-    else:
-        # (deprecated, loading from metadata.npy)
-        metadata = np.load(os.path.join(datafolder, 'metadata.npy'),
-                           allow_pickle=True).item()
-
-    return metadata 
 
 
 def build_NWB_func(args):
@@ -364,6 +351,7 @@ def build_NWB_func(args):
                     
                 dataP = np.load(os.path.join(args.datafolder, 'pupil.npy'),
                                 allow_pickle=True).item()
+                FC_timesP = FC_times[:len(dataP['cx'])]
 
                 if 'FaceCamera-1cm-in-pix' in metadata:
                     pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
@@ -380,9 +368,10 @@ def build_NWB_func(args):
                                       [pix_to_mm for i in range(4)]+[1,1]):
                     if type(dataP[key]) is np.ndarray:
                         PupilProp = pynwb.TimeSeries(name=key,
-                                 data = np.reshape(dataP[key]*scale, (len(FC_times),1)),
+                                 data = np.reshape(dataP[key]*scale, 
+                                                   (len(FC_timesP),1)),
                                  unit='seconds',
-                                 timestamps=FC_times)
+                                 timestamps=FC_timesP)
                         pupil_module.add(PupilProp)
 
                 # then add the frames subsampled
@@ -414,7 +403,8 @@ def build_NWB_func(args):
                     nwbfile.add_acquisition(Pupil_frames)
                         
             else:
-                print(' [!!] No processed pupil data found for "%s" [!!] ' % args.datafolder)
+                print(' [!!] No processed pupil data found',
+                      'for "%s" [!!] ' % args.datafolder)
 
                 
         #################################################
@@ -426,41 +416,50 @@ def build_NWB_func(args):
             if os.path.isfile(os.path.join(args.datafolder, 'facemotion.npy')):
                 
                 if args.verbose:
-                    print('=> Adding processed facemotion data for "%s" [...]' % args.datafolder)
+                    print('=> Adding processed facemotion data',
+                          'for "%s" [...]' % args.datafolder)
                     
                 dataF = np.load(os.path.join(args.datafolder, 'facemotion.npy'),
                                 allow_pickle=True).item()
+                FC_timesF = FC_times[:len(dataF['motion'])]
 
                 faceMotion_module = nwbfile.create_processing_module(\
                         name='FaceMotion', 
                         description='face motion dynamics,\n'+\
-                            ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n' % (dataF['ROI'][0],dataF['ROI'][1],
-                                                                                dataF['ROI'][2],dataF['ROI'][3]))
+                            ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n'\
+                                        % (dataF['ROI'][0],dataF['ROI'][1],
+                                           dataF['ROI'][2],dataF['ROI'][3]))
                 FaceMotionProp = pynwb.TimeSeries(name='face-motion',
-                                                  data = np.reshape(dataF['motion'],
-                                                                    (len(FC_times),1)),
+                                      data = np.reshape(dataF['motion'],
+                                                        (len(FC_timesF),1)),
                                                   unit='seconds',
-                                                  timestamps=FC_times)
+                                                  timestamps=FC_timesF)
                 faceMotion_module.add(FaceMotionProp)
 
                 if 'grooming' in dataF:
                     GroomingProp = pynwb.TimeSeries(name='grooming',
-                                                    data = np.reshape(dataF['grooming'],
-                                                                    (len(FC_times),1)),
+                                        data = np.reshape(dataF['grooming'],
+                                                        (len(FC_timesF),1)),
                                                     unit='seconds',
-                                                  timestamps=FC_times)
+                                                  timestamps=FC_timesF)
                     faceMotion_module.add(GroomingProp)
 
                 # then add the motion frames subsampled
                 if fcamData is not None:
                     
-                    FACEMOTION_SUBSAMPLING=build_subsampling_from_freq(args.FaceMotion_frame_sampling,
-                                                1./np.mean(np.diff(fcamData.times)), fcamData.nFrames, Nmin=3)
+                    FACEMOTION_SUBSAMPLING=build_subsampling_from_freq(
+                                        args.FaceMotion_frame_sampling,
+                                        1./np.mean(np.diff(fcamData.times)),
+                                        fcamData.nFrames, Nmin=3)
                     
                     imgFM = fcamData.get(0)
-                    x, y = np.meshgrid(np.arange(0,imgFM.shape[0]), np.arange(0,imgFM.shape[1]), indexing='ij')
-                    condF = (x>=dataF['ROI'][0]) & (x<=(dataF['ROI'][0]+dataF['ROI'][2])) &\
-                        (y>=dataF['ROI'][1]) & (y<=(dataF['ROI'][1]+dataF['ROI'][3]))
+                    x, y = np.meshgrid(np.arange(0,imgFM.shape[0]), 
+                                       np.arange(0,imgFM.shape[1]), 
+                                       indexing='ij')
+                    condF = (x>=dataF['ROI'][0]) &\
+                            (x<=(dataF['ROI'][0]+dataF['ROI'][2])) &\
+                            (y>=dataF['ROI'][1]) &\
+                            (y<=(dataF['ROI'][1]+dataF['ROI'][3]))
 
                     new_shapeF = len(np.unique(x[condF])), len(np.unique(y[condF]))
                     
@@ -655,11 +654,24 @@ if __name__=='__main__':
 
     # if os.path.isdir(args.datafolder) and ('NIdaq.npy' in os.listdir(args.datafolder)):
     if '.xlsx' in args.datafolder:
-        filename = args.datafolder
-        directory = os.path.basename(args.datafolder)
-        import pandas as pd
-        dataset = pd.read_excel(filename)
-        # build_NWB_func(args)
+        filename, directory = args.datafolder, os.path.basename(args.datafolder)
+        dataset = read_dataset_spreadsheet(filename)
+        args.destination_folder = os.path.join(directory, 'NWBs')
+        for i in range(len(dataset)):
+            # resetting the datafodler
+            args.datafolder = dataset['datafolder'][i]
+            # building the options
+            for key in ['force_to_visualStimTimestamps',
+                        'reverse_photodiodeSignal']:
+                setattr(args, key, True if dataset[key].values[i]=='Yes'\
+                            else False)
+            # building the modalities
+            args.modalities = []
+            for key in ALL_MODALITIES: 
+                if dataset[key].values[i]=='Yes':
+                    args.modalities.append(key)
+            # run the build:
+            build_NWB_func(args)
         
     elif args.recursive:
         for f, _, __ in os.walk(args.datafolder):
