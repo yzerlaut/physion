@@ -50,6 +50,7 @@ def build_subject_props(args, metadata):
             if (k in Mapping) and (Mapping[k] in list(subjectTable.keys())):
 
                 subject_props[k] = str(subjectTable[Mapping[k]].values[0])
+                print(k, subject_props[k])
 
                 # some cleanup already:
                 # - dates

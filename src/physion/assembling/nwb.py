@@ -657,7 +657,7 @@ if __name__=='__main__':
 
     # if os.path.isdir(args.datafolder) and ('NIdaq.npy' in os.listdir(args.datafolder)):
     if '.xlsx' in args.datafolder:
-        filename, directory = args.datafolder, os.path.basename(args.datafolder)
+        filename, directory = args.datafolder, os.path.dirname(args.datafolder)
         dataset = read_dataset_spreadsheet(filename)
         args.destination_folder = os.path.join(directory, 'NWBs')
         for i in range(len(dataset)):
@@ -666,7 +666,8 @@ if __name__=='__main__':
             # copy the subject file 
             shutil.copyfile(os.path.join(directory, 'subjects', 
                                      '%s.xlsx' % dataset['subject'].values[i]),
-                            args.datafolder)
+                            os.path.join(args.datafolder,
+                                     '%s.xlsx' % dataset['subject'].values[i]))
             # building the options
             for key in ['force_to_visualStimTimestamps',
                         'reverse_photodiodeSignal']:

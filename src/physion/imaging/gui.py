@@ -313,7 +313,7 @@ def run_TSeries_analysis(self):
                 print('  deleting suite2p folder in "%s" [...]' % folder)
                 shutil.rmtree(os.path.join(folder, 'suite2p'))
 
-            if np.sum([('.mp4' in ff) for ff in os.listdir(folder)]):
+            if np.sum([('.mp4' in str(ff)) for ff in os.listdir(folder)]):
                 # it means there is the mp4 movie, now are the tiffs missing ?
                 xml_file = get_files_with_extension(folder, 
                                                     extension='.xml')[0]
