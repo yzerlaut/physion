@@ -307,6 +307,7 @@ def build_NWB_func(args):
         fcamData = CameraData('FaceCamera', folder=args.datafolder)
         FC_times = fcamData.original_times
         FC_times = check_times(FC_times, NIdaq_Tstart)
+        print(len(FC_times))
 
         if ('raw_FaceCamera' in args.modalities) and (len(fcamData.times)>0):
            
@@ -422,6 +423,8 @@ def build_NWB_func(args):
                 dataF = np.load(os.path.join(args.datafolder, 'facemotion.npy'),
                                 allow_pickle=True).item()
                 FC_timesF = FC_times[:len(dataF['motion'])]
+
+                print(len(FC_times), len(dataF['motion']))
 
                 faceMotion_module = nwbfile.create_processing_module(\
                         name='FaceMotion', 
