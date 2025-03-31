@@ -1,2 +1,2 @@
-eval "$(conda shell.bash hook)"
-echo 3
+cd ~/work/physion/src
+~/miniforge3/envs/physion/bin/python -m physion 
