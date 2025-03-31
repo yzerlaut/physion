@@ -12,9 +12,8 @@ Image-Block-Ripping.exe -KeepRaw -DoNotRipToInputDirectory -IncludeSubFolders -A
 To use on linux:
 
 - get the `Image-Block-Ripping.exe` and the `daq_int.dll` files from the Bruker install
-- install the latest `winehq`, see [the winehq install instructions](https://gitlab.winehq.org/wine/wine/-/wikis/Download)
-- `sudo apt-get install winetricks`
-- install visual c++ stuff: `winetricks vcrun2015`
+- install `wine` (>=0.9, e.g. the latest `winehq`, see [the winehq install instructions](https://gitlab.winehq.org/wine/wine/-/wikis/Download))
+- install Visual C++ components (either get the dlls directly, or install them through `winetricks`: `sudo apt-get install winetricks`, then `winetricks vcrun2015`).
 
 Then you can use the following code to automatize block-ripping:
 
