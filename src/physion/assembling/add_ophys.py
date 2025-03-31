@@ -303,8 +303,8 @@ def add_ophys(nwbfile, args,
 
 
     device = pynwb.ophys.Device(\
-        'Imaging device with settings: \n %s' %\
-                    str(xml['settings'])) # TO BE FILLED
+        'Imaging device with settings %s' %\
+         str(xml['settings']).replace(': ','= '))
     nwbfile.add_device(device)
     optical_channel = pynwb.ophys.OpticalChannel(\
             'excitation_channel 1',
