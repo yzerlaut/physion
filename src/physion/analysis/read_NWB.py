@@ -79,6 +79,7 @@ class Data:
         else:
             self.description += '\n - Visual-Stim: \n %s' % space
 
+
         # deal with multi-protocols
         if ('Presentation' in self.metadata) and\
                 (self.metadata['Presentation']=='multiprotocol'):
@@ -94,7 +95,8 @@ class Data:
             self.protocols = [self.metadata['protocol']]
             if self.metadata['protocol']!='None':
                 self.description += '- %s \n' % self.metadata['protocol']
-            
+
+ 
         self.protocols = np.array(self.protocols, dtype=str)
         self.metadata['protocols'] = self.protocols
 
@@ -105,6 +107,11 @@ class Data:
         self.description += '\n - Intervention: %s %s\n' % (space, self.metadata['intervention'] if 'intervention' in self.metadata else 'None')
 
         self.description += '\n - Notes: %s %s\n' % (space, self.metadata['notes'])
+
+        if hasattr(self.nwbfile.subject, 'age'):
+            self.age = self.nwbfile.subject.age
+        else:
+            self.age = -1
 
         # FIND A BETTER WAY TO DESCRIBE
         # if self.metadata['protocol']!='multiprotocols':
@@ -624,7 +631,7 @@ def scan_folder_for_NWBfiles(folder,
                                       ('up-' not in f))]
 
     DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES0])
-    FILES, SUBJECTS, PROTOCOLS, PROTOCOL_IDS = [], [], [], []
+    FILES, SUBJECTS, PROTOCOLS, PROTOCOL_IDS, AGES = [], [], [], [], []
 
     for f in FILES0[:Nmax]:
 
@@ -647,6 +654,7 @@ def scan_folder_for_NWBfiles(folder,
                     PROTOCOLS.append(Protocols)
                     PROTOCOL_IDS.append(iProtocols)
                     SUBJECTS.append(data.metadata['subject_ID'])
+                    AGES.append(data.age)
 
             else:
 
@@ -655,6 +663,7 @@ def scan_folder_for_NWBfiles(folder,
                 PROTOCOLS.append(data.protocols)
                 PROTOCOL_IDS.append(range(len(data.protocols)))
                 SUBJECTS.append(data.metadata['subject_ID'])
+                AGES.append(data.age)
 
         except BaseException as be:
             SUBJECTS.append('N/A')
@@ -674,6 +683,8 @@ def scan_folder_for_NWBfiles(folder,
         isorted = np.argsort(SUBJECTS)
     elif sorted_by=='date':
         isorted = np.argsort(DATES)
+    elif sorted_by=='age':
+        isorted = np.argsort(AGES)
     else:
         print(' "%s" no recognized , --> sorted by filename by default ! ' % sorted_by)
         isorted = np.argsort(FILES)
@@ -681,14 +692,15 @@ def scan_folder_for_NWBfiles(folder,
     return {'files':np.array(FILES)[isorted], 
             'dates':np.array(DATES)[isorted],
             'subjects':np.array(SUBJECTS)[isorted],
+            'ages':np.array(AGES)[isorted],
             'protocol_ids':[PROTOCOL_IDS[i] for i in isorted],
             'protocols':[PROTOCOLS[i] for i in isorted]}
 
+
 if __name__=='__main__':
 
+    datafolder = sys.argv[-1]
     DATASET = \
-        scan_folder_for_NWBfiles(\
-            os.path.join(os.path.expanduser('~'), 'UNPROCESSED',
-                 'TEST-NDNF-protocol'))
+        scan_folder_for_NWBfiles(datafolder)
 
     print(DATASET)

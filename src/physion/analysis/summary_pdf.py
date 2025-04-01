@@ -144,32 +144,6 @@ def generate_FOV_fig(AX, data, args):
         ax.set_title(title, fontsize=6)
         ax.axis('off')
 
-def zoom_view(ax, data, args, tlim=[300,420]):
-
-    settings={}
-    if 'Running-Speed' in data.nwbfile.acquisition:
-        settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
-    if 'ophys' in data.nwbfile.processing:
-        settings['CaImaging']= dict(fig_fraction=6,
-                                    subsampling=1, 
-                                    subquantity=args.imaging_quantity, 
-                                    color='green',
-                                    annotation_side='right',
-                                    roiIndices=np.random.choice(data.nROIs,
-                                                    np.min([10,data.nROIs]), 
-                                                        replace=False))
-        settings['CaImagingRaster']= dict(fig_fraction=3,
-                                          subquantity='dFoF')
-    settings['VisualStim'] = dict(fig_fraction=0, color='black',
-                                  with_screen_inset=True)
-
-    plot_raw(data, tlim, 
-             settings=settings, Tbar=10, ax=ax)
-
-
-    pt.annotate(ax, 
-    '%.1f min sample @ $t_0$=%.1f min  ' % ((tlim[1]-tlim[0])/60, tlim[0]/60),
-                (0,1), ha='right', va='top', rotation=90) 
 
 
 def generate_raw_data_figs(data, ax, args,
