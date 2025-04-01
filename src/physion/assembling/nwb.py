@@ -556,12 +556,9 @@ def build_NWB_func(args):
         ---> moving the file to the temporary file directory as: "%s" [...]
         """ % (args.filename, temp))
         shutil.move(args.filename, temp)
-        print('---> done !')
 
     io = pynwb.NWBHDF5IO(args.filename, mode='w', manager=manager)
-    print("""
-    ---> Creating the NWB file: "%s"
-    """ % args.filename)
+    print("""     ----> Saving the NWB file: "%s" """ % args.filename)
     io.write(nwbfile, link_data=False)
     io.close()
     print('---> done !')
