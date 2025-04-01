@@ -6,8 +6,7 @@ import pandas as pd
 Days_per_month = [31, 28, 31, 30, 31, 30, 31,  # Jan to Jul
                   31, 30, 31, 30, 31] # Aug to Dec
 def date_to_days(date):
-    return 365*date[0]+Days_per_month[date[1]-1]+date[2]
-
+    return 365*date[0]+np.sum(Days_per_month[:date[1]-1])+date[2]
 
 def build_subject_props(args, metadata):
 
@@ -54,12 +53,16 @@ def build_subject_props(args, metadata):
 
                 # some cleanup already:
                 # - dates
-                if 'T00:00:00.000000000' in subject_props[k]:
-                    subject_props[k] = np.array([int(i) for i in \
-                        subject_props[k].replace('T00:00:00.000000000','').split('-')])[[0,1,2]]
+                if len(subject_props[k].split('_'))==3 and subject_props[k].split('_')[0][:2]=='20':
+                    subject_props[k] = [int(i) for i in subject_props[k].split('_')]
+                    # print(k, subject_props[k])
 
-
-
+    else:
+        print('')
+        print(' [!!] no subject information available [!!] ')
+        print('subject_files :', subject_file)
+        print('')
+    """
     # --------------------------------------------------------------
     # read from the subject_props in metadata
     #         ---> deprecated soon...
@@ -73,12 +76,8 @@ def build_subject_props(args, metadata):
         else:
             subject_props['Date-of-Birth'] = [1988, 4, 24] # non-sense
 
-    else:
-        print('')
-        print(' [!!] no subject information available [!!] ')
-        print('subject_files :', subject_file)
-        print('')
-        
+    """
+
     ###########################################################
     ###        Cleaning up a few keys     #####################
     ###########################################################
@@ -94,9 +93,9 @@ def build_subject_props(args, metadata):
     # -
     # ** age ** :
     recording_day = [int(i) for i in metadata['date'].split('_')]
-    subject_props['age'] = 'P%iD' % (\
-        date_to_days(recording_day)-date_to_days(subject_props['Date-of-Birth']))
-    # print(subject_props['age'])
+    subject_props['age'] = date_to_days(recording_day)-\
+                            date_to_days(subject_props['Date-of-Birth'])
+    # print('age', subject_props['age'])
     # -
     # ** virus ** :
     if 'virus_dilution' in subject_props:

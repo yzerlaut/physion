@@ -87,7 +87,7 @@ def build_NWB_func(args):
     subject = pynwb.file.Subject(description=\
         (subject_props['description'] if ('description' in subject_props) else ''),
                                  age=\
-        (subject_props['age'] if ('age' in subject_props) else ''),
+        ('P%iD' % subject_props['age'] if ('age' in subject_props) else ''),
                                  subject_id=\
         (subject_props['subject_id'] if ('subject_id' in subject_props) else 'Unknown'),
                                  sex=\
@@ -307,7 +307,7 @@ def build_NWB_func(args):
         fcamData = CameraData('FaceCamera', folder=args.datafolder)
         FC_times = fcamData.original_times
         FC_times = check_times(FC_times, NIdaq_Tstart)
-        print(len(FC_times))
+        # print(len(FC_times))
 
         if ('raw_FaceCamera' in args.modalities) and (len(fcamData.times)>0):
            
@@ -424,7 +424,7 @@ def build_NWB_func(args):
                                 allow_pickle=True).item()
                 FC_timesF = FC_times[:len(dataF['motion'])]
 
-                print(len(FC_times), len(dataF['motion']))
+                # print(len(FC_times), len(dataF['motion']))
 
                 faceMotion_module = nwbfile.create_processing_module(\
                         name='FaceMotion', 
@@ -663,6 +663,7 @@ if __name__=='__main__':
         for i in range(len(dataset)):
             # resetting the datafodler
             args.datafolder = dataset['datafolder'][i]
+            args.filename = ''
             # copy the subject file 
             shutil.copyfile(os.path.join(directory, 'subjects', 
                                      '%s.xlsx' % dataset['subject'].values[i]),

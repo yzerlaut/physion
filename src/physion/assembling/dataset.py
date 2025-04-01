@@ -10,12 +10,12 @@ def read_dataset_spreadsheet(filename):
 
     directory = os.path.dirname(filename)
 
-    protocols, FOVs, datafolders = [], [], []
+    protocols, FOVs, datafolders, ages = [], [], [], []
 
     for i in range(len(dataset)):
 
         path = os.path.join(directory, 'processed',
-                            str(dataset['day'].values[i]).replace('T00:00:00.000000000','').replace('-','_'),
+                            str(dataset['day'].values[i]),
                             str(dataset['time'].values[i]))
 
         datafolders.append(path)
