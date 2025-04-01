@@ -61,7 +61,7 @@ def open_pdf(self,
 
     
 def generate_pdf(self,
-                 include=['exp', 'raw', 'behavior', 'rois', 'protocols'],
+                 debug=False,
                  verbose=True):
 
     pdf = os.path.join(os.path.dirname(args.datafile).replace('NWBs', 'pdfs'),
@@ -89,11 +89,13 @@ def generate_pdf(self,
         getattr(protocols,
                 data.metadata['protocol'].replace('-', '_')).plot(fig,data,args)
 
-        pt.plt.show()
-
     else:
         print('\n \n Need to pick a datafile')
 
+    if debug:
+        pt.plt.show()
+    else:
+        fig.savefig(pdf, dpi=300)
 
 def metadata_fig(ax, data, short=True):
     
@@ -199,8 +201,9 @@ def generate_raw_data_figs(data, ax, args,
                                     subsampling=2, 
                                     subquantity=args.imaging_quantity, color='green',
                                     annotation_side='right',
-                                    roiIndices=np.random.choice(nROIs,
-                                                    args.nROIs, replace=False))
+                                    roiIndices=np.random.choice(data.nROIs,
+                                                    np.min([12, data.nROIs]), 
+                                                replace=False))
 
     plot_raw(data, data.tlim, 
               settings=settings, Tbar=30, ax=ax)
@@ -264,36 +267,18 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    generate_pdf(args)
 
-    """
-    if args.remove_all_pdfs and os.path.isdir(args.datafile):
-        FILES = get_files_with_extension(args.datafile, extension='.pdf', recursive=True)
-        for f in FILES:
-            print('removing', f)
-            os.remove(f)
-    elif os.path.isdir(args.datafile):
-        folder = args.datafile
-        FILES = get_files_with_extension(folder, extension='.nwb', recursive=True)
-        for f in FILES:
+    if os.path.isdir(args.datafile):
+        directory = args.datafile
+        for f in get_files_with_extension(directory,
+                                          extension='.nwb', recursive=True):
             args.datafile = f
             generate_pdf(args)
-            # try:
-                # make_summary_pdf(f,
-                                 # include=args.ops,
-                                 # Nmax=args.Nmax,
-                                 # verbose=args.verbose)
-            # except BaseException as be:
-                # print('')
-                # print('Pb with', f)
-                # print(be)
-                # print('')
-    elif os.path.isfile(args.datafile):
-        make_summary_pdf(args.datafile,
-                         include=args.ops,
-                         Nmax=args.Nmax,
-                         verbose=args.verbose)
-    else:
-        print(' [!!] provide a valid folder or datafile [!!] ')
 
-    """
+    elif '.nwb' in args.datafile:
+        generate_pdf(args)
+
+    else:
+        print()
+        print()
+        print()

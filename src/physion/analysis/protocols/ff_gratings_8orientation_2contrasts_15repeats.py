@@ -6,8 +6,8 @@ from physion.analysis.summary_pdf import zoom_view
 from physion.analysis.process_NWB import EpisodeData
 from physion.dataviz.episodes.trial_average import plot as plot_trial_average
 
-stat_test = dict(interval_pre=[0,1],
-                 interval_post=[1,2],
+stat_test = dict(interval_pre=[-1.5,-0.5],
+                 interval_post=[0.5,1.5],
                  test='anova',
                  positive=True)
 response_significance_threshold=0.05
@@ -25,11 +25,10 @@ def responsiveness(data,
     for contrast in [0.5, 1.0]:
 
         responsive['c=%.1f' % contrast] = []
-        episode_cond=(episodes.contrast==contrast)
+        episode_cond = (episodes.contrast==contrast)
 
         for roi in range(data.nROIs):
 
-            print(np.sum(episode_cond))
             summary_data = episodes.compute_summary_data(\
                          stat_test,
                          episode_cond=episode_cond,
@@ -70,10 +69,10 @@ def plot(fig, data, args,
 
 
     for c, contrast in enumerate([0.5, 1.0]):
-        ax = pt.inset(fig, [0.08, 0.03+0.1*c, 0.12, 0.08])
+        ax = pt.inset(fig, [0.08, 0.03+0.1*c, 0.12, 0.07])
         r = len(responsive['c=%.1f' % contrast])/data.nROIs
         pt.pie([100*r, 100*(1-r)],
-           COLORS=['green', 'grey'], ax=ax)
+           COLORS=['green', 'lightcoral'], ax=ax)
         pt.annotate(ax, 'c=%.1f \n  %.1f%%\n  (n=%i)'%(\
                     contrast, 100*r, len(responsive['c=%.1f' % contrast])),
                     (0,1), va='top', ha='right')
@@ -81,9 +80,11 @@ def plot(fig, data, args,
     pt.annotate(ax, 'responsiveness\n n=%i ROIs' % data.nROIs,
                 (0.5, 1), ha='center')
 
-    for j, n in enumerate(np.random.choice(data.nROIs,7)):
+    for j, n in enumerate(np.random.choice(data.nROIs, 
+                                           np.min([7, data.nROIs]), 
+                                           replace=False)):
 
-        AX = [[pt.inset(fig, [0.22+i*0.085, 0.03+0.028*j, 0.09, 0.03])\
+        AX = [[pt.inset(fig, [0.22+i*0.085, 0.03+0.026*j, 0.09, 0.03])\
                 for i in range(8)]]
         
         plot_trial_average(episodes, roiIndex=n,
@@ -92,9 +93,12 @@ def plot(fig, data, args,
                            Xbar=1, Xbar_label='1s', 
                            Ybar=0.1, Ybar_label='0.1$\Delta$F/F',
                            with_std=False,
-                           color=['dimgrey', 'k'],
+                           with_stat_test=True,
+                           stat_test_props=stat_test,
+                           color=['lightgrey', 'dimgrey'],
                            AX=AX)
-        pt.annotate(AX[-1][-1], 'roi #%i' % n, (1,1), va='top',
-                    color='tab:green' if n in responsive['c=1.0'] else 'grey')
+
+        pt.annotate(AX[-1][-1], 'roi #%i' % n, (1,0.5), va='center',
+                    color='tab:green' if n in responsive['c=1.0'] else 'lightcoral')
 
     
