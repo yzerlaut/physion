@@ -407,6 +407,9 @@ class EpisodeData:
         pre_cond  = self.compute_interval_cond(interval_pre)
         post_cond  = self.compute_interval_cond(interval_post)
 
+        # print(response[episode_cond,:][:,pre_cond].mean(axis=1))
+        # print(response[episode_cond,:][:,post_cond].mean(axis=1))
+        # print(len(response.shape)>1,(np.sum(episode_cond)>1))
         if len(response.shape)>1 and (np.sum(episode_cond)>1):
             return stat_tools.StatTest(response[episode_cond,:][:,pre_cond].mean(axis=1),
                                        response[episode_cond,:][:,post_cond].mean(axis=1),
