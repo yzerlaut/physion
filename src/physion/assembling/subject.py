@@ -93,9 +93,12 @@ def build_subject_props(args, metadata):
     # -
     # ** age ** :
     recording_day = [int(i) for i in metadata['date'].split('_')]
+    print(recording_day)
+    print(subject_props['Date-of-Birth'])
+    print(date_to_days(recording_day), date_to_days(subject_props['Date-of-Birth']))
     subject_props['age'] = date_to_days(recording_day)-\
                             date_to_days(subject_props['Date-of-Birth'])
-    # print('age', subject_props['age'])
+    print('age', subject_props['age'])
     # -
     # ** virus ** :
     if 'virus_dilution' in subject_props:
