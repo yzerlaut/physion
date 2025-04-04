@@ -108,8 +108,8 @@ class Data:
 
         self.description += '\n - Notes: %s %s\n' % (space, self.metadata['notes'])
 
-        if hasattr(self.nwbfile.subject, 'age'):
-            self.age = self.nwbfile.subject.age
+        if hasattr(self.nwbfile.subject, 'age') and self.nwbfile.subject.age!=None:
+            self.age = int(str(self.nwbfile.subject.age).replace('P','').replace('D',''))
         else:
             self.age = -1
 
@@ -599,7 +599,6 @@ class Data:
             return ['rawFluo', 'neuropil', 'dFoF', 'Deconvolved']
         else:
             return ['']
-        
             
         
 def scan_folder_for_NWBfiles(folder, 
@@ -653,7 +652,7 @@ def scan_folder_for_NWBfiles(folder,
                     FILES.append(f)
                     PROTOCOLS.append(Protocols)
                     PROTOCOL_IDS.append(iProtocols)
-                    SUBJECTS.append(data.metadata['subject_ID'])
+                    SUBJECTS.append(data.nwbfile.subject.subject_id)
                     AGES.append(data.age)
 
             else:
@@ -662,7 +661,7 @@ def scan_folder_for_NWBfiles(folder,
                 FILES.append(f)
                 PROTOCOLS.append(data.protocols)
                 PROTOCOL_IDS.append(range(len(data.protocols)))
-                SUBJECTS.append(data.metadata['subject_ID'])
+                SUBJECTS.append(data.nwbfile.subject.subject_id)
                 AGES.append(data.age)
 
         except BaseException as be:

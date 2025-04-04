@@ -652,12 +652,13 @@ if __name__=='__main__':
     args.FaceMotion_frame_sampling = 0
     args.FaceCamera_frame_sampling = 0
 
-    # if os.path.isdir(args.datafolder) and ('NIdaq.npy' in os.listdir(args.datafolder)):
     if '.xlsx' in args.datafolder:
+
         filename, directory = args.datafolder, os.path.dirname(args.datafolder)
         dataset = read_dataset_spreadsheet(filename)
         args.destination_folder = os.path.join(directory, 'NWBs')
         for i in range(len(dataset)):
+            print('\n \n     [%i] -- %s \n ' % (i+1,dataset['datafolder'][i]))
             # resetting the datafodler
             args.datafolder = dataset['datafolder'][i]
             args.filename = ''
@@ -680,6 +681,7 @@ if __name__=='__main__':
             build_NWB_func(args)
         
     elif args.recursive:
+
         for f, _, __ in os.walk(args.datafolder):
             timeFolder = f.split(os.path.sep)[-1]
             dateFolder = f.split(os.path.sep)[-2]
@@ -706,6 +708,7 @@ if __name__=='__main__':
         if (args.datafolder[-1]==os.path.sep) or (args.datafolder[-1]=='/'):
             args.datafolder = args.datafolder[:-1]
         build_NWB_func(args)
+
     else:
         print('"%s" not a valid datafolder' % args.datafolder)
         print('                 or missing the "--recursive"/"-R" option !!')

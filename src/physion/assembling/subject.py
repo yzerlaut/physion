@@ -49,7 +49,7 @@ def build_subject_props(args, metadata):
             if (k in Mapping) and (Mapping[k] in list(subjectTable.keys())):
 
                 subject_props[k] = str(subjectTable[Mapping[k]].values[0])
-                # print(k, subject_props[k])
+                print(k, subject_props[k])
 
                 # some cleanup already:
                 # - dates
@@ -108,10 +108,8 @@ def build_subject_props(args, metadata):
     #         ---> deprecated soon... 
     #                (it should be done by modifying the xslx file)
     # --------------------------------------------------------------
-    if hasattr(args, 'subject_id') and ('subject_id' in subject_props):
-        # means we're over-writing the subject_id, we keep the old one in the description
-        subject_props['description'] = 'original-subject_id=%s' % subject_props['subject_id']+\
-            subject_props['description'] if ('description' in subject_props) else ''
+    subject_props['description'] = subject_props['description'] if\
+            ('description' in subject_props) else ''
     if hasattr(args, 'subject_id') and ('subject_id' in subject_props):
         subject_props['subject_id'] = args.subject_id
     if hasattr(args, 'genotype'):
