@@ -8,6 +8,7 @@ Days_per_month = [31, 28, 31, 30, 31, 30, 31,  # Jan to Jul
 def date_to_days(date):
     return 365*date[0]+np.sum(Days_per_month[:date[1]-1])+date[2]
 
+
 def build_subject_props(args, metadata):
 
     subject_file = [f for f in os.listdir(args.datafolder) if '.xlsx' in f]
@@ -26,7 +27,8 @@ def build_subject_props(args, metadata):
     if len(subject_file)==1:
 
         # load excel sheet infos
-        subjectTable = pd.read_excel(os.path.join(args.datafolder, subject_file[0]),
+        subjectTable = pd.read_excel(os.path.join(args.datafolder,
+                                                  subject_file[0]),
                                      skiprows=[0])
 
         # Mapping from Anibio keys to NWB keys
@@ -49,7 +51,7 @@ def build_subject_props(args, metadata):
             if (k in Mapping) and (Mapping[k] in list(subjectTable.keys())):
 
                 subject_props[k] = str(subjectTable[Mapping[k]].values[0])
-                print(k, subject_props[k])
+                # print(k, subject_props[k])
 
                 # some cleanup already:
                 # - dates
