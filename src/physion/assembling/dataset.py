@@ -2,7 +2,7 @@ import sys, os
 import pandas as pd
 import numpy as np
 
-from physion.assembling.tools import read_metadata
+from .tools import read_metadata
 
 def read_dataset_spreadsheet(filename):
 
@@ -63,6 +63,7 @@ def add_to_table(filename,
 if __name__=='__main__':
 
     filename = sys.argv[-1]
+
     dataset = read_dataset_spreadsheet(filename)
     add_to_table(filename, 
                  data=dataset['protocol'],
