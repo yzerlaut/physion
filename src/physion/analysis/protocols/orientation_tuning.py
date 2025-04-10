@@ -10,7 +10,7 @@ def selectivity_index(angles, resp):
     imax = np.argmax(resp)
     iop = np.argmin(((angles[imax]+90)%(180)-angles)**2)
     if (resp[imax]>0):
-        return min([1,max([0,(resp[imax]-resp[iop])/(resp[imax]+resp[iop])])])
+        return np.clip((resp[imax]-resp[iop])/(resp[imax]+resp[iop]), 0, 1)
     else:
         return 0
 
@@ -26,17 +26,12 @@ def shift_orientation_according_to_pref(angle,
         return new_angle
 
 
-stat_test_props = dict(interval_pre=[-1.,0],                                   
-                       interval_post=[1.,2.],                                   
-                       test='ttest',                                            
-                       positive=True)
-
 
 def compute_tuning_response_per_cells(data, Episodes,
-                                      quantity='dFoF',
-                                      contrast=1,
-                                      stat_test_props=stat_test_props,
+                                      stat_test_props,
                                       response_significance_threshold = 0.05,
+                                      quantity='dFoF',
+                                      contrast=1.0,
                                       return_significant_waveforms=False,
                                       verbose=True):
     """
@@ -46,7 +41,7 @@ def compute_tuning_response_per_cells(data, Episodes,
     shifted_angle = Episodes.varied_parameters['angle']-\
                             Episodes.varied_parameters['angle'][1]
 
-    significant_waveforms, RESPONSES = [], []
+    selectivities, significant_waveforms, RESPONSES = [], [], []
     significant = np.zeros(data.nROIs, dtype=bool)
 
     for roi in np.arange(data.nROIs):
@@ -57,6 +52,8 @@ def compute_tuning_response_per_cells(data, Episodes,
 
         condition = (cell_resp['contrast']==contrast)
 
+        selectivities.append(selectivity_index(cell_resp['angle'][condition], 
+                                               cell_resp['value'][condition]))
         # if significant in at least one orientation
         if np.sum(cell_resp['significant'][condition]):
 
@@ -85,13 +82,14 @@ def compute_tuning_response_per_cells(data, Episodes,
                 significant_waveforms.append(getattr(Episodes, 
                                     quantity)[full_cond,roi,:].mean(axis=0))
 
-    output = {'Responses':RESPONSES,
-              'shifted_angle':shifted_angle,
-              'significant_ROIs':significant}
+    output = {'Responses':np.array(RESPONSES),
+              'selectivities':np.array(selectivities),
+              'shifted_angle':np.array(shifted_angle),
+              'significant_ROIs':np.array(significant)}
 
     if return_significant_waveforms:
         output['t'] = Episodes.t
-        output['significant_waveforms'] = significant_waveforms
+        output['significant_waveforms'] = np.array(significant_waveforms)
 
     return output
 
@@ -108,6 +106,12 @@ if __name__=='__main__':
                            protocol_id=0,
                            quantities=['dFoF'])
 
+    stat_test_props = dict(interval_pre=[-1.,0],                                   
+                           interval_post=[1.,2.],                                   
+                           test='ttest',                                            
+                           positive=True)
+
     resp = compute_tuning_response_per_cells(data, Episodes,
+                                             stat_test_props,
                                              return_significant_waveforms=True)
 

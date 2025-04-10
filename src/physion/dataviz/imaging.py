@@ -93,7 +93,8 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
 def add_CaImaging(data, tlim, ax,
                   fig_fraction_start=0., fig_fraction=1., color='green',
                   subquantity='Fluorescence', 
-                  roiIndices='all', dFoF_args={},
+                  roiIndices='all', 
+                  dFoF_args={},
                   scale_side='left',
                   vicinity_factor=1, 
                   subsampling=1, 
@@ -105,7 +106,7 @@ def add_CaImaging(data, tlim, ax,
         
     if (type(roiIndices)==str) and roiIndices=='all':
         roiIndices = data.valid_roiIndices
-        
+
     if color=='tab':
         COLORS = [plt.cm.tab10(n%10) for n in range(len(roiIndices))]
     else:
@@ -273,8 +274,7 @@ def show_CaImaging_FOV(data,
 
     if with_annotation:
         ax.annotate('%i ROIs' % np.sum(data.iscell), (0, 0), xycoords='axes fraction', rotation=90, ha='right')
-    
-    ax.set_title(key)
+        ax.set_title(key)
     
     return fig, ax, img
 

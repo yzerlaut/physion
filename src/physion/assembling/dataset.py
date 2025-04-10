@@ -7,7 +7,8 @@ from .tools import read_metadata
 def read_dataset_spreadsheet(filename):
 
     dataset = pd.read_excel(filename, sheet_name='Dataset')
-
+    subjects = pd.read_excel(filename, sheet_name='Subjects')
+    print(subjects)
     directory = os.path.dirname(filename)
 
     protocols, FOVs, datafolders, ages = [], [], [], []
@@ -36,7 +37,7 @@ def read_dataset_spreadsheet(filename):
     dataset['protocol'] = protocols
     dataset['FOV'] = FOVs
 
-    return dataset
+    return dataset, subjects
 
 def add_to_table(filename, 
                  data=[''],

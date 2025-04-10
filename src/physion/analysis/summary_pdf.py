@@ -38,16 +38,16 @@ def join_pdf(PAGES, pdf):
                      stderr=subprocess.STDOUT)
 
 
-def open_pdf(self,
+def open_pdf(args,
              Nmax=1000000,
              include=['exp', 'raw', 'behavior', 'rois', 'protocols'],
              verbose=True):
     """
     works only on linux
     """
-    if self.datafile!='':
+    if args.datafile!='':
 
-        pdf_folder = summary_pdf_folder(self.datafile)
+        pdf_folder = summary_pdf_folder(args.datafile)
         if os.path.isdir(pdf_folder):
             PDFS = os.listdir(pdf_folder)
             for pdf in PDFS:
@@ -60,34 +60,36 @@ def open_pdf(self,
         print('\n \n Need to pick a datafile')
 
     
-def generate_pdf(self,
+def generate_pdf(args,
+                 filename=None,
                  debug=False,
                  verbose=True):
 
-    pdf = os.path.join(os.path.dirname(args.datafile).replace('NWBs', 'pdfs'),
-                       os.path.basename(args.datafile).replace('.nwb', '.pdf'))
+    if filename is None:
+        filename = os.path.join(os.path.dirname(args.datafile).replace('NWBs', 'pdfs'),
+                                os.path.basename(args.datafile).replace('.nwb', '.pdf'))
 
     fig = pt.plt.figure(figsize=(8.27, 11.7), dpi=75)
 
-    if self.datafile!='':
+    if args.datafile!='':
 
-        data = Data(self.datafile)
+        data = Data(args.datafile)
 
         # metadata annotations:
         ax = pt.inset(fig, [0.07, 0.85, 0.4, 0.1])
         metadata_fig(ax, data)
 
         # FOVs:
-        AX = [pt.inset(fig, [0.42+i*0.17, 0.8, 0.16, 0.15]) for i in range(3)]
+        AX = [pt.inset(fig, [0.42+i*0.17, 0.82, 0.16, 0.15]) for i in range(3)]
         generate_FOV_fig(AX, data, args)
 
         # raw data full view:
-        ax = pt.inset(fig, [0.07, 0.6, 0.84, 0.2])
+        ax = pt.inset(fig, [0.07, 0.625, 0.84, 0.2])
         generate_raw_data_figs(data, ax, args)
 
         # protocol-specific plots
         getattr(protocols,
-                data.metadata['protocol'].replace('-', '_')).plot(fig,data,args)
+                data.metadata['protocol'].replace('-', '_')).plot(fig, data, args)
 
     else:
         print('\n \n Need to pick a datafile')
@@ -95,16 +97,22 @@ def generate_pdf(self,
     if debug:
         pt.plt.show()
     else:
-        fig.savefig(pdf, dpi=300)
+        fig.savefig(filename, dpi=300)
 
 def metadata_fig(ax, data, short=True):
     
     s=' [-- **   %s   ** --] ' % data.filename
     pt.annotate(ax, s, (0,1), va='top', fontsize=8, bold=True)
 
-    s = '\n \n'
-    for key in ['protocol', 'subject_ID', 'notes', 'FOV']:
-        s+='- %s :\n    "%s" \n' % (key, data.metadata[key])
+    s = '\n \n '
+    s+= ' %s ' % data.metadata['subject_ID']
+    if hasattr(data, 'age'):
+        s += ' -- P%i \n \n' % data.age
+    else:
+        s += ' \n \n'
+    s+='- %s \n' % data.metadata['protocol']
+    for key in ['notes', 'FOV']:
+        s+='- %s : "%s" \n' % (key, data.metadata[key])
 
     s += '- completed:\n       n=%i/%i episodes' %(data.nwbfile.stimulus['time_start_realigned'].data.shape[0],
                                                    data.nwbfile.stimulus['time_start'].data.shape[0])
@@ -133,15 +141,15 @@ def metadata_fig(ax, data, short=True):
 
 def generate_FOV_fig(AX, data, args):
 
-    show_CaImaging_FOV(data,key='meanImg',
+    show_CaImaging_FOV(data,key='meanImg', 
                        ax=AX[0],NL=4,with_annotation=False)
     show_CaImaging_FOV(data, key='max_proj', 
-                       ax=AX[1], NL=3, with_annotation=False)
+                       ax=AX[1], NL=4, with_annotation=False)
     show_CaImaging_FOV(data, key='meanImg', 
                        ax=AX[2], NL=4, with_annotation=False,
                        roiIndices=np.arange(data.nROIs))
     for ax, title in zip(AX, ['meanImg', 'max_proj', 'n=%i ROIs' % data.nROIs]):
-        ax.set_title(title, fontsize=6)
+        pt.annotate(ax, title, (0.5, .95), va='top', ha='center', fontsize=7)
         ax.axis('off')
 
 
@@ -159,6 +167,7 @@ def generate_raw_data_figs(data, ax, args,
 
     nROIs = data.nROIs
     args.imaging_quantity = 'dFoF'
+    data.build_dFoF()
 
     if not hasattr(args, 'nROIs'):
         args.nROIs = np.min([12, nROIs])
@@ -247,10 +256,10 @@ if __name__=='__main__':
         for f in get_files_with_extension(directory,
                                           extension='.nwb', recursive=True):
             args.datafile = f
-            generate_pdf(args)
+            generate_pdf(args, debug=args.verbose)
 
     elif '.nwb' in args.datafile:
-        generate_pdf(args)
+        generate_pdf(args, debug=args.verbose)
 
     else:
         print()

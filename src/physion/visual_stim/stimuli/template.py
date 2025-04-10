@@ -46,8 +46,13 @@ class stim(visual_stim):
         """ 
         return the frame at a given time point
         """
-        img = init_bg_image(self, index)
+        # img = init_bg_image(self, index)
 
+        img = np.sin(self.experiment['size'][index]*self.z+time_from_episode_start*10)
+
+        
+
+        """
         # do you image construction/processing here:
         for i in range(int(self.experiment['ndots'][index])):
 
@@ -56,7 +61,8 @@ class stim(visual_stim):
             self.add_dot(img, pos,
                          self.experiment['size'][index],
                          self.experiment['dotcolor'][index],
-                         type='circle')
+                         type='square')
+        """
 
         return img
 
@@ -87,6 +93,7 @@ if __name__=='__main__':
     from physion.visual_stim.build import get_default_params
 
     params = get_default_params('template')
+    params['size'] = 0.1
     params['radius'] = 20.
     params['speed'] = 2.
     params['angle-surround'] = 90.
