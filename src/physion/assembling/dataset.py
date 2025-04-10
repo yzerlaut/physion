@@ -71,6 +71,3 @@ if __name__=='__main__':
                  column='protocol',
                  sheet='Analysis')
     print(dataset[['subject', 'day', 'time', 'protocol', 'FOV']])
-    
-
-

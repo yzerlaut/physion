@@ -30,7 +30,7 @@ subject_template = {\
 # ---------------------------------------
 # Mapping from Anibio keys to NWB keys
 # ---------------------------------------
-Mapping = {'subject_id':'Nickname', 
+Mapping = {'subject_id':'subject', 
            'full-genotype':'Lignée', 
            'genotype':'Acronyme lignée', 
            'Date-of-Birth':'D. naissance',
