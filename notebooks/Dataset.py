@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.16.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -20,11 +20,16 @@ import sys
 sys.path.append('../src')
 import physion
 
+# %% [markdown]
+# # Read Dataset from Table 
+
 # %%
 filename = os.path.join(os.path.expanduser('~'), 'DATA', 'Cibele', 'PV_BB_V1', 'PV_BB.xlsx')
 dataset = physion.assembling.dataset.read_dataset_spreadsheet(filename)
 dataset[['subject', 'day', 'time', 'protocol', 'FOV']]
 
 # %%
+import pandas as pd
+pd.DataFrame(dataset)
 
 # %%
