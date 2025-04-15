@@ -8,7 +8,7 @@ def read_dataset_spreadsheet(filename):
 
     dataset = pd.read_excel(filename, sheet_name='Dataset')
     subjects = pd.read_excel(filename, sheet_name='Subjects')
-    print(subjects)
+
     directory = os.path.dirname(filename)
 
     protocols, FOVs, datafolders, ages = [], [], [], []
