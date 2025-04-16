@@ -29,7 +29,10 @@ dataset, subjects = physion.assembling.dataset.read_dataset_spreadsheet(filename
 dataset[['subject', 'day', 'time', 'protocol', 'FOV']]
 
 # %% [markdown]
-# # Read Dataset from NWB files
+# # Read & Re-Build Dataset from NWB files
+
+# %% [markdown]
+# ## read
 
 # %%
 datafolder = os.path.join(os.path.expanduser('~'), 'DATA', 'SST-WT-NR1-GluN3-2023')
@@ -39,7 +42,53 @@ warnings.filterwarnings("ignore") # disable the UserWarning from pynwb for old d
 
 DATASET = physion.analysis.read_NWB.scan_folder_for_NWBfiles(datafolder)
 
+dataset = {}
+for key in ['subject', 'day', 'time', 'filename', 'protocol']:
+    dataset[key] = []
+
+for f in DATASET['files']:
+    data = physion.analysis.read_NWB.Data(f, verbose=False)
+    if f not in dataset['filename']:
+        dataset['subject'].append(data.metadata['subject_ID'])
+        dataset['protocol'].append(data.metadata['protocol'])
+        dataset['day'].append(os.path.basename(f).split('-')[0])
+        dataset['time'].append(os.path.basename(f).split('_')[-1][3:].replace('.nwb',''))
+        dataset['filename'].append(os.path.basename(f))
+
+pd.DataFrame(dataset)
+
+# %% [markdown]
+# ## re-build
+#
+# start from the empty [DataTable.xlsx](../src/physion/acquisition/DataTable.xlsx) sheet and copy infos there
+
 # %%
+import shutil
+shutil.copy('../src/physion/acquisition/DataTable.xlsx', os.path.join(datafolder, 'DataTable.xlsx'))
+
+for i, key in enumerate(['subject', 'day', 'time']):
+    physion.assembling.dataset.add_to_table(os.path.join(datafolder, 'DataTable.xlsx'),
+                                            sheet='Recordings',
+                                            insert_at=i,
+                                            data=dataset[key],
+                                            column=key)
+
+dataset['recording'] = [f.replace('.nwb', '') for f in dataset['filename']]
+for i, key in enumerate(['recording', 'protocol']):
+    physion.assembling.dataset.add_to_table(os.path.join(datafolder, 'DataTable.xlsx'),
+                                            sheet='Analysis',
+                                            insert_at=i,
+                                            data=dataset[key],
+                                            column=key)
+
+# %%
+datafolder = os.path.join(os.path.expanduser('~'), 'CURATED', 'SST-ffGratingStim-2P_Morabito-Zerlaut-2024')
+
+import warnings
+warnings.filterwarnings("ignore") # disable the UserWarning from pynwb for old data (arrays were not well oriented)
+
+DATASET = physion.analysis.read_NWB.scan_folder_for_NWBfiles(datafolder)
+
 dataset = {}
 for key in ['subject', 'day', 'time', 'filename', 'protocol']:
     dataset[key] = []

@@ -51,7 +51,7 @@ def add_to_table(filename,
     if column in new_sheet:
         new_sheet[column] = data
     else:
-        new_sheet.insert(inset_at, column, data)
+        new_sheet.insert(insert_at, column, data)
 
     with pd.ExcelWriter(filename, mode="a", 
                         if_sheet_exists='replace',

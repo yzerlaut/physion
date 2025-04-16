@@ -150,7 +150,7 @@ class Data:
         if 'ophys' in self.nwbfile.processing:
             self.read_and_format_ophys_data()
         else:
-            for key in ['Segmentation', 'Fluorescence', 'iscell', 'redcell', 'plane',
+            for key in ['Segmentation', 'Fluorescence', 'redcell', 'plane',
                         'valid_roiIndices', 'neuropil']:
                 setattr(self, key, None)
                 
@@ -168,37 +168,38 @@ class Data:
     def initialize_ROIs(self, 
                         valid_roiIndices=None):
 
-        if valid_roiIndices is None:
-            self.nROIs = self.Segmentation.columns[0].data.shape[0]
-            self.valid_roiIndices = np.arange(self.nROIs)
-            # ---------------------------------------------------------
-            # only when they were no previous roi validation
-            #         -> we read the table properties
-            # ---------------------------------------------------------
-            # looping over the table properties (0,1 -> rois locs)
-            #      for the ROIS to overwrite the defaults:
-            for i in range(2, len(self.Segmentation.columns)):
-                if self.Segmentation.columns[i].name=='iscell': # DEPRECATED
-                    self.valid_roiIndices = self.valid_roiIndices[\
-                            self.Segmentation.columns[i].data[:,0].astype(bool)]
-                if self.Segmentation.columns[i].name=='plane':
-                    self.planeID = self.valid_roiIndices[\
-                            self.Segmentation.columns[i].data[:].astype(int)]
-                if self.Segmentation.columns[i].name=='redcell':
-                    self.redcell = self.valid_roiIndices[\
-                            self.Segmentation.columns[i].data[:,0].astype(bool)]
-        else:
-            self.nROIs = len(valid_roiIndices)
-            self.valid_roiIndices = valid_roiIndices
-            if hasattr(self, 'planeID'):
-                self.planeID = self.planeID[self.valid_roiIndices]
-            if hasattr(self, 'redcell'):
-                self.redcell= self.redcell[self.valid_roiIndices]
-            
+        """
+        we read the table properties of the suite2p Segmentation
+
+        we always restart from the original ROIs and only after we apply
+                the valid_roiIndices filter
+        """
+
+        self.original_nROIs = self.Segmentation.columns[0].data.shape[0]
+
         # initialize rois properties to default values
-        self.iscell = np.ones(self.nROIs, dtype=bool) # deprecated
-        self.planeID = np.zeros(self.nROIs, dtype=int)
-        self.redcell = np.zeros(self.nROIs, dtype=bool) 
+        planeID = np.zeros(self.original_nROIs, dtype=int)
+        redcell = np.zeros(self.original_nROIs, dtype=bool) 
+
+        # looping over the table properties (0,1 -> rois locs)
+        #      for the ROIS to overwrite the defaults:
+        for i in range(2, len(self.Segmentation.columns)):
+            if self.Segmentation.columns[i].name=='plane':
+                planeID = self.Segmentation.columns[i].data[:].astype(int)
+            if self.Segmentation.columns[i].name=='redcell':
+                redcell = self.Segmentation.columns[i].data[:,0].astype(bool)
+
+        # now we apply the filter if needed:
+
+        if valid_roiIndices is None:
+            self.valid_roiIndices = np.arange(self.original_nROIs)
+        else:
+            self.valid_roiIndices = valid_roiIndices
+
+        self.nROIs = len(self.valid_roiIndices)
+        self.planeID = planeID[self.valid_roiIndices]
+        self.redcell= redcell[self.valid_roiIndices]
+            
 
 
     def read_and_format_ophys_data(self):
@@ -229,7 +230,7 @@ class Data:
         self.pixel_masks_index = self.Segmentation.columns[0].data[:]
         self.pixel_masks = self.Segmentation.columns[1].data[:]
 
-        self.initialize_ROIs(valid_roiIndices=None)
+        self.initialize_ROIs()
                 
         
     ######################
@@ -354,19 +355,6 @@ class Data:
     #       Calcium Imaging     #
     #############################
 
-    def compute_ROI_indices(self,
-                            roiIndex=None,
-                            roiIndices='all',
-                            verbose=True):
-
-        if roiIndex is not None:
-            return roiIndex
-        elif roiIndices=='all':
-            return np.array(self.valid_roiIndices, dtype=int)
-        else:
-            return np.array(self.valid_roiIndices[np.array(roiIndices)],\
-                    dtype=int)
-        
         
     def build_dFoF(self,
                    roiIndex=None, roiIndices='all',
@@ -384,22 +372,18 @@ class Data:
                    verbose=True):
         """
         creates self.dFoF, self.t_dFoF
+
+        [!!] we always rebuild the rawFluo and neuropil 
+                to remove the potential valid_roiIndices previous filters
         """
 
-        if not hasattr(self, 'rawFluo'):
-            self.build_rawFluo(roiIndex=roiIndex, 
-                               roiIndices='all',
-                               specific_time_sampling=specific_time_sampling,
-                               interpolation=interpolation,
-                               verbose=verbose)
+        self.build_rawFluo(specific_time_sampling=specific_time_sampling,
+                           interpolation=interpolation,
+                           verbose=verbose)
+        self.build_neuropil(specific_time_sampling=specific_time_sampling,
+                            interpolation=interpolation,
+                            verbose=verbose)
         self.t_dFoF = self.t_rawFluo
-
-        if not hasattr(self, 'neuropil'):
-            self.build_neuropil(roiIndex=roiIndex, 
-                                roiIndices='all',
-                                specific_time_sampling=specific_time_sampling,
-                                interpolation=interpolation,
-                                verbose=verbose)
 
         return compute_dFoF(self,
                             roi_to_neuropil_fluo_inclusion_factor=\
@@ -433,7 +417,6 @@ class Data:
 
 
     def build_neuropil(self,
-                       roiIndex=None, roiIndices='all',
                        specific_time_sampling=None,
                        interpolation='linear',
                        verbose=True):
@@ -441,22 +424,18 @@ class Data:
         we build the neuropil matrix in the form (nROIs, time_samples)
             we need to deal with the fact that matrix orientation 
             was changed because of pynwb complains
-        """
-        if self.nROIs==self.Neuropil.data.shape[0]:
-            self.neuropil = self.Neuropil.data[\
-                    self.compute_ROI_indices(roiIndex=roiIndex,\
-                                             roiIndices=roiIndices,\
-                                             verbose=verbose),:]
-        else:
-            # data badly oriented --> transpose in that case
-            self.neuropil = np.array(self.Neuropil.data).T[\
-                                            self.compute_ROI_indices(\
-                                                    roiIndex=roiIndex,
-                                                    roiIndices=roiIndices,
-                                                    verbose=verbose),:]
 
+        [!!] always built for all ROIs [!!]
+                (the valid_roiIndices filter will be applied in build_dFoF)
+        """
         if not hasattr(self, 't_neuropil'):
             self.t_neuropil = self.Neuropil.timestamps[:]
+
+        if len(self.t_neuropil)==self.Neuropil.data.shape[1]:
+            self.neuropil = np.array(self.Neuropil.data)[:,:]
+        else:
+            # data badly oriented --> transpose in that case
+            self.neuropil = np.array(self.Neuropil.data).T
 
         if specific_time_sampling is not None:
             # we first interpolate and resample the data
@@ -478,18 +457,18 @@ class Data:
                       verbose=True):
         """
         same than above for neuropil
+
+        [!!] always built for all ROIs [!!]
+                (the valid_roiIndices filter will be applied in build_dFoF)
         """
-        if self.nROIs==self.Fluorescence.data.shape[0]:
-            self.rawFluo = self.Fluorescence.data[self.compute_ROI_indices(roiIndex=roiIndex,
-                                                                           roiIndices=roiIndices,
-                                                                           verbose=verbose), :]
-        else:
-            # data badly oriented --> transpose in that case
-            self.rawFluo = np.array(self.Fluorescence.data).T[self.compute_ROI_indices(roiIndex=roiIndex,
-                                                                             roiIndices=roiIndices,
-                                                                             verbose=verbose),:]
         if not hasattr(self, 't_rawFluo'):
             self.t_rawFluo = self.Fluorescence.timestamps[:]
+
+        if len(self.t_rawFluo)==self.Fluorescence.data.shape[1]:
+            self.rawFluo = np.array(self.Fluorescence.data)
+        else:
+            # data badly oriented --> transpose in that case
+            self.rawFluo = np.array(self.Fluorescence.data).T
 
         if specific_time_sampling is not None:
             # we first interpolate and resample the data

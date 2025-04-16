@@ -170,9 +170,12 @@ def add_CaImagingSum(data, tlim, ax,
 
 def find_full_roi_coords(data, roiIndex):
 
-    indices = np.arange((data.pixel_masks_index[roiIndex-1] if roiIndex>0 else 0),
-                        (data.pixel_masks_index[roiIndex] if roiIndex<len(data.valid_roiIndices) else len(data.pixel_masks_index)))
-    return [data.pixel_masks[ii][1] for ii in indices],  [data.pixel_masks[ii][0] for ii in indices]
+    indices = np.arange(\
+        (data.pixel_masks_index[roiIndex-1] if roiIndex>0 else 0),
+        (data.pixel_masks_index[roiIndex] if\
+                roiIndex<data.original_nROIs else len(data.pixel_masks_index)))
+    return [data.pixel_masks[ii][1] for ii in indices],\
+                [data.pixel_masks[ii][0] for ii in indices]
 
 def find_roi_coords(data, roiIndex):
     x, y = find_full_roi_coords(data, roiIndex)
@@ -248,9 +251,8 @@ def show_CaImaging_FOV(data,
     
     img = (img-img.min())/(img.max()-img.min())
     img = np.power(img, 1/NL)
-    img = ax.imshow(img, vmin=0, vmax=1, cmap=cmap, aspect='equal', interpolation='none', 
-            origin='lower',
-            extent=extent)
+    img = ax.imshow(img, vmin=0, vmax=1, cmap=cmap, aspect='equal', 
+                    interpolation='none', origin='lower', extent=extent)
     ax.axis('off')
 
     if roiIndex is not None:
