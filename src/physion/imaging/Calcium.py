@@ -11,7 +11,7 @@ ROI_TO_NEUROPIL_INCLUSION_FACTOR = 1.0 # ratio to discard ROIs with weak fluo co
 METHOD = 'percentile' # either 'minimum', 'percentile', 'sliding_minimum', or 'sliding_percentile'
 T_SLIDING = 300. # seconds (used only if METHOD= 'sliding_minimum' | 'sliding_percentile')
 PERCENTILE = 10. # for baseline (used only if METHOD= 'percentile' | 'sliding_percentile')
-NEUROPIL_CORRECTION_FACTOR = 0.8
+NEUROPIL_CORRECTION_FACTOR = 0.8 # fraction of neuropil substracted to fluorescence
 
 # -------------------------------------------------------------------------- #
 ##############################################################################
