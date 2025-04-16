@@ -64,7 +64,7 @@ def reformat_props(Subject, debug=False):
                 subject_props[k] = str(Subject[Mapping[k]])
 
             if debug:
-                print(k, subject_props[k])
+                print('    -', k, ' : ', subject_props[k])
 
             # some cleanup already:
             # - dates
@@ -74,7 +74,7 @@ def reformat_props(Subject, debug=False):
                         int(i) for i in subject_props[k].split('_')]
 
                 if debug:
-                    print('date -> ', k, subject_props[k])
+                    print('    - date -> ', k, subject_props[k])
 
     return subject_props
 
@@ -96,7 +96,7 @@ def cleanup_keys(subject_props, metadata,
             subject_props['Surgery-2'], subject_props['Date-Surgery-2'])
 
     if debug:
-        print('surgery', subject_props['surgery'])
+        print('    - surgery :', subject_props['surgery'])
     # -
     # ** age ** :
 
@@ -105,12 +105,12 @@ def cleanup_keys(subject_props, metadata,
                 date_to_days(subject_props['Date-of-Birth'])
     subject_props['age'] = 'P%iD' % age
     if debug:
-        print('age', subject_props['age'])
+        print('    - age:', subject_props['age'])
     # -
     # ** virus ** :
     if 'virus_dilution' in subject_props:
         subject_props['virus'] += ' (%s)' % subject_props['virus_dilution']
 
     if debug:
-        print('virus: ', subject_props['virus'])
+        print('    - virus:', subject_props['virus'])
 

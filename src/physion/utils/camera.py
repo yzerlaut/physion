@@ -137,9 +137,15 @@ class CameraData:
                               allow_pickle=True).item()
 
             self.original_times = summary['times']
-            self.nFrames = len(summary['sample_frames'])
-            self.times = summary['times'][summary['sample_frames_index']]
-            self.FRAMES = summary['sample_frames'] 
+            if 'sample_frames' in summary:
+                self.nFrames = len(summary['sample_frames'])
+                self.times = summary['times'][summary['sample_frames_index']]
+                self.FRAMES = summary['sample_frames'] 
+            else:
+                self.nFrames = 1
+                self.times = np.array([summary['times'][0]])
+                self.FRAMES = [np.zeros(summary['resolution'])]
+                    
 
         else:
             print('')

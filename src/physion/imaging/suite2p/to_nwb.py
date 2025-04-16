@@ -18,7 +18,8 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
                                       device=None,
                                       optical_channel=None,
                                       imaging_plane=None,
-                                      image_series=None):
+                                      image_series=None,
+                                      verbose=False):
     """ 
     adapted from suite2p/suite2p/io/nwb.py "save_nwb" function
     """
@@ -34,19 +35,17 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
         pData_folder = os.path.join(save_folder, 'plane0') # processed data folder
 
     # find time sampling per plane
-    if ('Ch1' in xml) and (len(xml['Ch1']['relativeTime'])>1):
-        functional_chan = 'Ch1'
-    elif ('Ch2' in xml) and (len(xml['Ch2']['relativeTime'])>1):
-        functional_chan = 'Ch2'
-    elif ('Green' in xml) and (len(xml['Green']['relativeTime'])>1):
-        functional_chan = 'Green'
-    else:
-        functional_chan = xml['channels'][0]
-
-    print(' - Functional channel set to:', functional_chan)
+    functional_chan = xml['channels'][0] # by default
+    for chan in ['Ch1', 'Ch2', 'Ch2 Green', 'Green']:
+        if (chan in xml) and (len(xml[chan]['relativeTime'])>1):
+            functional_chan = chan
 
     CaImaging_timestamps = xml[functional_chan]['relativeTime']
-    # print('- timestamps :', len(CaImaging_timestamps), len(CaImaging_timestamps)/5)
+
+    if verbose:
+        print('    - Functional channel set to:', functional_chan)
+        print('    - timestamps :', len(CaImaging_timestamps))
+
 
     # [!!] Add the 2P trigger delay
     if TwoP_trigger_delay>0:
@@ -54,14 +53,13 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
     else:
         print("\n / ! \\  no delay from 2P trigger ... check !   / ! \\ \n")
 
-
     ops = np.load(os.path.join(pData_folder, 'ops.npy'), allow_pickle=True).item() 
     
     if device is None:
         device = nwbfile.create_device(
             name='Microscope', 
             description='My two-photon microscope',
-            manufacturer='The best microscope manufacturer')
+            manufacturer='Bruker')
     if optical_channel is None:
         optical_channel = OpticalChannel(
             name='OpticalChannel', 
@@ -118,8 +116,8 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
             redcell = np.load(os.path.join(pData_folder, 'redcell_manual.npy'))[iscell[:,0], :]
         else:
             print('\n'+30*'--')
-            print(' [!!] no file found for the manual labelling of red cells (generate it with the red-cell labelling GUI) [!!] ')
-            print(' [!!] taking the raw suit2p output with the classifier settings [!!] ')
+            print(15*' '+'[!!] no file found for the manual labelling of red cells (generate it with the red-cell labelling GUI) [!!] ')
+            print(15*' '+'[!!] taking the raw suite2p output with the classifier settings [!!] ')
             print('\n'+30*'--')
             redcell = np.load(os.path.join(pData_folder, 'redcell.npy'))[iscell[:,0], :]
             

@@ -3,18 +3,18 @@ from scipy.ndimage import filters
 from scipy.interpolate import interp1d
 import time
 
-####################################
-# ---------------------------------
-# DEFAULT_CA_IMAGING_OPTIONS
+##############################################################################
+# -------------------------------------------------------------------------- #
+#          DEFAULT OPTIONS FOR FLUORESCENCE (dFoF) PROCESSING                # 
 
-ROI_TO_NEUROPIL_INCLUSION_FACTOR = 1.1 # ratio to discard ROIs with weak fluo compared to neuropil
+ROI_TO_NEUROPIL_INCLUSION_FACTOR = 1.0 # ratio to discard ROIs with weak fluo compared to neuropil
 METHOD = 'percentile' # either 'minimum', 'percentile', 'sliding_minimum', or 'sliding_percentile'
-T_SLIDING = 300. # seconds
-PERCENTILE = 10. # percent
+T_SLIDING = 300. # seconds (used only if METHOD= 'sliding_minimum' | 'sliding_percentile')
+PERCENTILE = 10. # for baseline (used only if METHOD= 'percentile' | 'sliding_percentile')
 NEUROPIL_CORRECTION_FACTOR = 0.8
 
-# ---------------------------------
-####################################
+# -------------------------------------------------------------------------- #
+##############################################################################
 
 def compute_minimum(array):
     return np.repeat(np.min(array, axis=1)[:,np.newaxis],

@@ -637,6 +637,8 @@ if __name__=='__main__':
     parser.add_argument("--silent", action="store_true")
     parser.add_argument('-v', "--verbose", action="store_true")
     parser.add_argument('-R', "--recursive", action="store_true")
+    parser.add_argument('-fi', "--files_indices", 
+                        default=range(1000), nargs='*', type=int)
 
     args = parser.parse_args()
 
@@ -652,7 +654,7 @@ if __name__=='__main__':
         filename, directory = args.datafolder, os.path.dirname(args.datafolder)
         dataset, subjects = read_dataset_spreadsheet(filename)
         args.destination_folder = os.path.join(directory, 'NWBs')
-        for i in range(len(dataset)):
+        for i in np.array(args.files_indices)[:len(dataset)]:
             print('\n \n     [%i] -- %s \n ' % (i+1,dataset['datafolder'][i]))
 
             # subject information:
