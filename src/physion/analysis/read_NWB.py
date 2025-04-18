@@ -22,7 +22,7 @@ class Data:
                  with_tlim=True,
                  metadata_only=False,
                  with_visual_stim=False,
-                 verbose=True):
+                 verbose=False):
 
         self.filename = filename.split(os.path.sep)[-1]
         self.tlim, self.visual_stim, self.nwbfile = None, None, None
@@ -31,20 +31,31 @@ class Data:
         if verbose:
             t0 = time.time()
 
+        if verbose:
+            print('starting reading [...]')
         # try:
         self.io = pynwb.NWBHDF5IO(filename, 'r')
         self.nwbfile = self.io.read()
 
         self.read_metadata()
+        if verbose:
+            print(' [ok] -> metadata')
+            print(self.metadata)
 
         if with_tlim:
             self.read_tlim()
+            if verbose:
+                print(' [ok] -> tlim:', self.tlim)
 
         if not metadata_only:
             self.read_data()
+        if verbose:
+            print(' [ok] -> data ')
 
         if with_visual_stim:
             self.init_visual_stim(verbose=verbose)
+            if verbose:
+                print(' [ok] -> visual stim')
 
         if metadata_only:
             self.close()
@@ -139,9 +150,10 @@ class Data:
                                  self.nwbfile.acquisition[key].starting_time+\
                                  (self.nwbfile.acquisition[key].data.shape[0]-1)/self.nwbfile.acquisition[key].rate]
                 except BaseException as be:
-                    pass
+                    safety_counter += 1
+
         if self.tlim is None:
-            self.tlim = [0, 50] # bad for movies
+            self.tlim = [0, 60*60] # 1h by default (~ upper limit) 
 
 
     def read_data(self):
@@ -677,8 +689,11 @@ def scan_folder_for_NWBfiles(folder,
 
 if __name__=='__main__':
 
-    datafolder = sys.argv[-1]
-    DATASET = \
-        scan_folder_for_NWBfiles(datafolder)
-
-    print(DATASET)
+    if '.nwb' in sys.argv[-1]:
+        data = Data(sys.argv[-1], verbose=True)
+        print(data.metadata)
+    else:
+        datafolder = sys.argv[-1]
+        DATASET = \
+            scan_folder_for_NWBfiles(datafolder)
+        print(DATASET)

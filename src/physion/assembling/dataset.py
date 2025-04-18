@@ -4,10 +4,11 @@ import numpy as np
 
 from .tools import read_metadata
 
-def read_dataset_spreadsheet(filename):
+def read_dataset_spreadsheet(filename, verbose=True):
 
-    dataset = pd.read_excel(filename, sheet_name='Dataset')
+    dataset = pd.read_excel(filename, sheet_name='Recordings')
     subjects = pd.read_excel(filename, sheet_name='Subjects')
+    analysis = pd.read_excel(filename, sheet_name='Analysis')
 
     directory = os.path.dirname(filename)
 
@@ -20,24 +21,25 @@ def read_dataset_spreadsheet(filename):
                             str(dataset['time'].values[i]))
 
         datafolders.append(path)
+        protocols.append('') # default, will be overwritten if possible
+        FOVs.append('') # default, will be overwritten if possible
 
         try:
 
             metadata = read_metadata(path)
-            protocols.append(metadata['protocol'])
-            FOVs.append(metadata['FOV'])
+            protocols[-1] = metadata['protocol']
+            FOVs[-1] = metadata['FOV']
 
         except BaseException as be:
 
-            print(be)
-            protocols.append('')
-            FOVs.append('')
+            if verbose:
+                print(be)
 
     dataset['datafolder'] = datafolders
     dataset['protocol'] = protocols
     dataset['FOV'] = FOVs
 
-    return dataset, subjects
+    return dataset, subjects, analysis
 
 def add_to_table(filename, 
                  data=[''],

@@ -41,7 +41,7 @@ def responsiveness(data, Episodes,
     return responsive
 
 
-def zoom_view(ax, data, args, tlim=[300,420]):
+def zoom_view(ax, data, args, tlim=[25*60,25*60+120]):
 
     settings={}
     if 'Running-Speed' in data.nwbfile.acquisition:
@@ -74,6 +74,8 @@ def plot(fig, data, args,
          stat_test=stat_test):
 
     Episodes = EpisodeData(data,
+                           protocol_id=data.get_protocol_id(\
+                        'ff-gratings-8orientation-2contrasts-10repeats'),
                            quantities=['dFoF'],
                            prestim_duration=3,
                            verbose=True)
@@ -152,3 +154,17 @@ def plot(fig, data, args,
     pt.set_plot(AX[0], yticks=[0, 0.5, 1],
                 xlabel='angle from pref. ($^o$)', ylabel='n. $\\Delta$F/F')
 
+
+if __name__=='__main__':
+
+    from physion.analysis.read_NWB import Data
+    from physion.analysis.process_NWB import EpisodeData
+    from physion.utils import plot_tools as pt
+
+    data = Data(sys.argv[-1])
+
+    print(data.protocols)
+
+    Episodes = EpisodeData(data,
+                           protocol_id=0,
+                           quantities=['dFoF'])

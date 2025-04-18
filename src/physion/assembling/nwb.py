@@ -652,7 +652,7 @@ if __name__=='__main__':
     if '.xlsx' in args.datafolder:
 
         filename, directory = args.datafolder, os.path.dirname(args.datafolder)
-        dataset, subjects = read_dataset_spreadsheet(filename)
+        dataset, subjects, _ = read_dataset_spreadsheet(filename)
         args.destination_folder = os.path.join(directory, 'NWBs')
         for i in np.array(args.files_indices)[:len(dataset)]:
             print('\n \n     [%i] -- %s \n ' % (i+1,dataset['datafolder'][i]))

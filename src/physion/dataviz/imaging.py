@@ -42,10 +42,10 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
         else:
             raster = data.dFoF[roiIndices,:]
             
-        roiIndices = np.arange(data.iscell.sum())
+        roiIndices = np.arange(data.nROIs)
 
     elif (type(roiIndices)==str) and (roiIndices=='all') and (subquantity in ['dFoF', 'dF/F']):
-        roiIndices = np.arange(data.vNrois)
+        roiIndices = np.arange(data.nROIs)
         
     if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
         raster = np.array([(raster[i,:]-np.min(raster[i,:]))/(np.max(raster[i,:])-\
@@ -275,7 +275,7 @@ def show_CaImaging_FOV(data,
                         color='w', fontsize=7)
 
     if with_annotation:
-        ax.annotate('%i ROIs' % np.sum(data.iscell), (0, 0), xycoords='axes fraction', rotation=90, ha='right')
+        ax.annotate('%i ROIs' % data.nROIs, (0, 0), xycoords='axes fraction', rotation=90, ha='right')
         ax.set_title(key)
     
     return fig, ax, img
