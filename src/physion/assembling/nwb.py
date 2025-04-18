@@ -638,7 +638,7 @@ if __name__=='__main__':
     parser.add_argument('-v', "--verbose", action="store_true")
     parser.add_argument('-R', "--recursive", action="store_true")
     parser.add_argument('-fi', "--files_indices", 
-                        default=range(1000), nargs='*', type=int)
+                        default=[0, 10000], nargs=2, type=int)
 
     args = parser.parse_args()
 
@@ -654,7 +654,8 @@ if __name__=='__main__':
         filename, directory = args.datafolder, os.path.dirname(args.datafolder)
         dataset, subjects, _ = read_dataset_spreadsheet(filename)
         args.destination_folder = os.path.join(directory, 'NWBs')
-        for i in np.array(args.files_indices)[:len(dataset)]:
+        for i in np.arange(args.files_indices[0], 
+                           min([len(dataset)+1, args.files_indices[1]])):
             print('\n \n     [%i] -- %s \n ' % (i+1,dataset['datafolder'][i]))
 
             # subject information:
@@ -682,25 +683,30 @@ if __name__=='__main__':
         
     elif args.recursive:
 
+        i = -1
         for f, _, __ in os.walk(args.datafolder):
             timeFolder = f.split(os.path.sep)[-1]
             dateFolder = f.split(os.path.sep)[-2]
             if (len(timeFolder.split('-'))==3) and \
                     (len(dateFolder.split('_'))==3):
-                print(' processing "%s" [...] ' % f)
-                args.datafolder = f
-                args.filename = ''
-                if args.only_protocol!='':
-                    # we check that it matches the protocol
-                    metadata = read_metadata(args.datafolder)
-                    if args.only_protocol in metadata['protocol']:
-                        build_NWB_func(args)
+                i+=1
+                if (i>=args.files_indices[0]) and (i<=args.files_indices[1]):
+                    print()
+                    print(' [ %i ]  processing "%s" [...] ' % (i,f))
+                    args.datafolder = f
+                    args.filename = ''
+                    if args.only_protocol!='':
+                        # we check that it matches the protocol
+                        metadata = read_metadata(args.datafolder)
+                        if args.only_protocol in metadata['protocol']:
+                            build_NWB_func(args)
+                        else:
+                            print('')
+                            print('  [!!]  ignoring:', f, ' of protocol', 
+                                  metadata['protocol'])
+                            print('')
                     else:
-                        print('')
-                        print('  [!!]  ignoring:', f, ' of protocol', metadata['protocol'])
-                        print('')
-                else:
-                    build_NWB_func(args)
+                        build_NWB_func(args)
 
     elif os.path.isdir(args.datafolder) and (\
                 ('metadata.npy' in os.listdir(args.datafolder)) or

@@ -38,8 +38,15 @@ def generate_pdf(args,
         generate_raw_data_figs(data, ax, args)
 
         # protocol-specific plots
-        getattr(physion.analysis.protocols,
-                data.metadata['protocol'].replace('-', '_')).plot(fig, data, args)
+        try:
+            getattr(physion.analysis.protocols,
+                    data.metadata['protocol'].replace('-', '_')).plot(fig, data, args)
+        except BaseException as be:
+            print()
+            print()
+            print(be)
+            print(' [!!] protocol-specific analysis failed for "%s"' % args.datafile)
+            print('        protocol = %s' % data.metadata['protocol'])
 
     else:
         print('\n \n Need to pick a datafile')

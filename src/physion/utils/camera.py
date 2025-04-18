@@ -31,7 +31,8 @@ class CameraData:
         self.name = name
         self.folder = folder
         # empty init by default
-        self.times, self.cap, self.nFrames = [], None, 0
+        self.times, self.original_times = [], []
+        self.cap, self.nFrames = None, 0
         self.FRAMES, self.FILES = None, None
 
         if os.path.isdir(\
