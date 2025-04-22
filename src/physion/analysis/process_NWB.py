@@ -319,8 +319,10 @@ class EpisodeData:
         self.quantities = QUANTITIES
 
 
-
-    def get_response(self, quantity=None, roiIndex=None, roiIndices='all', average_over_rois=True):
+    def get_response(self, 
+                     quantity=None, 
+                     roiIndex=None, roiIndices='all', 
+                     average_over_rois=True):
         """
         to deal with the fact that single-episode responses can be multidimensional
 
@@ -532,3 +534,22 @@ class EpisodeData:
         for key in self.visual_stim.experiment:
             if hasattr(self, key):
                 self.visual_stim.experiment[key] = getattr(self, key)
+
+
+
+if __name__=='__main__':
+
+    import physion
+
+    filename = sys.argv[-1]
+    data= physion.analysis.read_NWB.Data(filename)
+    data.build_dFoF()
+    Episodes = EpisodeData(data, quantities=['dFoF'], protocol_id=2)
+    for ia, angle in enumerate(Episodes.varied_parameters['angle']):
+        ep_cond = Episodes.find_episode_cond('angle', ia)
+        stats = Episodes.stat_test_for_evoked_responses(\
+                                episode_cond=ep_cond,
+                                response_args={'quantity':'dFoF', 
+                                               'roiIndex':3})
+        print(ia, angle, stats.significant())
+

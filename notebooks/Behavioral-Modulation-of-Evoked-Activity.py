@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.14.0
+#       jupytext_version: 1.16.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -19,91 +19,97 @@
 # %%
 # general python modules for scientific analysis
 import sys, pathlib, os, itertools
+import pandas as pd
 import numpy as np
 
-# add the python path:
-sys.path.append('../../src')
-from physion.utils import plot_tools as pt
+sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src'))
+
 from physion.analysis.read_NWB import Data, scan_folder_for_NWBfiles
 from physion.analysis.process_NWB import EpisodeData
-from physion.dataviz.episodes.trial_average import plot_trial_average
+from physion.dataviz.episodes.trial_average import plot as plot_trial_average
+from physion.analysis.protocols.orientation_tuning import shift_orientation_according_to_pref
+import physion.utils.plot_tools as pt
 
 # %%
-options = dict(subquantity='d(F-0.7*Fneu)',
-               dt_sampling=1, prestim_duration=3, 
-               verbose=False)
+## GCAmP preprocessing -> Delta F / F computation:
+dFoF_parameters = dict(\
+        roi_to_neuropil_fluo_inclusion_factor=1.15,
+        neuropil_correction_factor = 0.7,
+        method_for_F0 = 'sliding_percentile',
+        percentile=5., # percent
+        sliding_window = 5*60, # seconds
+)
 
+## Statistical test for evoked responses:
+stat_test_props=dict(interval_pre=[-1.5,0],                                   
+                     interval_post=[0.5,2.],                                   
+                     test='anova',                                            
+                     positive=True)
+response_significance_threshold=5e-2
 
-def shift_orientation_according_to_pref(angle, 
-                                        pref_angle=0, 
-                                        start_angle=-45, 
-                                        angle_range=360):
-    new_angle = (angle-pref_angle)%angle_range
-    if new_angle>=angle_range+start_angle:
-        return new_angle-angle_range
-    else:
-        return new_angle
-    
-# shift_orientation_according_to_pref(360, 45)
-
-def compute_population_resp(filename, options,
-                         protocol_id=0,
-                         Nmax = 100000,
-                         stat_test_props=dict(interval_pre=[-2,0],
-                                              interval_post=[1,3],
-                                              test='ttest', positive=True),
-                         significance_threshold=0.01):
+def compute_population_resp(filename,
+                            protocol_id=0,
+                            Nmax = 100000):
 
     # load datafile
     data = Data(filename)
 
-    full_resp = {'roi':[], 'angle_from_pref':[], 'Nroi_tot':data.iscell.sum(),
+    full_resp = {'roi':[], 'angle_from_pref':[], 'Nroi_tot':data.nROIs,
                  'post_level':[], 'evoked_level':[]}
 
+
+    quantities = ['dFoF']
     # get levels of pupil and running-speed in the episodes (i.e. after realignement)
     if 'Pupil' in data.nwbfile.acquisition:    
-        Pupil_episodes = EpisodeResponse(data, protocol_id=protocol_id, quantity='Pupil', **options)
+        quantities.append('Pupil')
         full_resp['pupil_level'] = []
     if 'Running-Speed' in data.nwbfile.acquisition:
-        Running_episodes = EpisodeResponse(data, protocol_id=protocol_id, quantity='Running-Speed', **options)
+        quantities.append('Running-Speed')
         full_resp['speed_level'] = []
-    
-    for key in Pupil_episodes.varied_parameters.keys():
+
+    protocol = 'ff-gratings-8orientation-2contrasts-15repeats' if\
+                ('ff-gratings-8orientation-2contrasts-15repeats' in data.protocols) else\
+                'ff-gratings-8orientation-2contrasts-10repeats'
+
+    Episodes = EpisodeData(data,
+                           protocol_name=protocol,
+                           quantities=quantities,
+                           dt_sampling=1, prestim_duration=3)
+    print(np.unique(Episodes.angle))
+    for key in Episodes.varied_parameters.keys():
         full_resp[key] = []
 
-    for roi in np.arange(data.iscell.sum())[:Nmax]:
-        ROI_EPISODES = EpisodeResponse(data,
-                                       protocol_id=protocol_id,
-                                       quantity='CaImaging',
-                                       baseline_substraction=True, 
-                                       roiIndex = roi, **options)
+    for roi in np.arange(data.nROIs)[:Nmax]:
         # check if significant response in at least one direction and compute mean evoked resp
         resp = {'significant':[], 'pre':[], 'post':[]}
-        for ia, angle in enumerate(ROI_EPISODES.varied_parameters['angle']):
+        for ia, angle in enumerate(Episodes.varied_parameters['angle']):
 
-            stats = ROI_EPISODES.stat_test_for_evoked_responses(episode_cond=ROI_EPISODES.find_episode_cond('angle', ia),
-                                                                **stat_test_props)
-            resp['significant'].append(stats.significant(threshold=significance_threshold))
+            stats = Episodes.stat_test_for_evoked_responses(episode_cond=Episodes.find_episode_cond('angle', ia),
+                                                            response_args={'quantity':'dFoF', 'roiIndex':roi},
+                                                            **stat_test_props)
+            resp['significant'].append(stats.significant(threshold=response_significance_threshold))
             resp['pre'].append(np.mean(stats.x))
             resp['post'].append(np.mean(stats.y))
 
         if np.sum(resp['significant'])>0:
             # if significant in at least one
             imax = np.argmax(np.array(resp['post'])-np.array(resp['pre']))
-            amax = ROI_EPISODES.varied_parameters['angle'][imax]
+            amax = Episodes.varied_parameters['angle'][imax]
             # we compute the post response relative to the preferred orientation for all episodes
-            post_interval_cond = ROI_EPISODES.compute_interval_cond(stat_test_props['interval_post'])
-            pre_interval_cond = ROI_EPISODES.compute_interval_cond(stat_test_props['interval_pre'])
-            for iep, r in enumerate(ROI_EPISODES.resp):
-                full_resp['angle_from_pref'].append(shift_orientation_according_to_pref(ROI_EPISODES.angle[iep], amax))
-                full_resp['post_level'].append(ROI_EPISODES.resp[iep, post_interval_cond].mean())
-                full_resp['evoked_level'].append(full_resp['post_level'][-1]-ROI_EPISODES.resp[iep, pre_interval_cond].mean())
+            post_interval_cond = Episodes.compute_interval_cond(stat_test_props['interval_post'])
+            pre_interval_cond = Episodes.compute_interval_cond(stat_test_props['interval_pre'])
+            for iep in range(Episodes.dFoF.shape[0]):
+                full_resp['angle_from_pref'].append(\
+                    shift_orientation_according_to_pref(Episodes.angle[iep], 
+                                                        pref_angle=amax, start_angle=-22.5, angle_range=180))
+                full_resp['post_level'].append(Episodes.dFoF[iep, roi, post_interval_cond].mean())
+                full_resp['evoked_level'].append(full_resp['post_level'][-1]-Episodes.dFoF[iep, roi, pre_interval_cond].mean())
                 full_resp['roi'].append(roi)
                 # adding running and speed level in the "post" interval:
                 if 'Pupil' in data.nwbfile.acquisition:
-                    full_resp['pupil_level'].append(Pupil_episodes.resp[iep, post_interval_cond].mean())
+                    full_resp['pupil_level'].append(Episodes.pupil_diameter[iep, post_interval_cond].mean())
                 if 'Running-Speed' in data.nwbfile.acquisition:
-                    full_resp['speed_level'].append(Running_episodes.resp[iep, post_interval_cond].mean())
+                    full_resp['speed_level'].append(Episodes.running_speed[iep, post_interval_cond].mean())
 
     # transform to numpy array for convenience
     for key in full_resp:
@@ -134,16 +140,31 @@ def compute_population_resp(filename, options,
         
     return full_resp
 
-
-
-# %%
-data = Data(fn)
-print(data.protocols)
+full_resp = compute_population_resp(DATASET['files'][0], protocol_id=0)
 
 # %%
-fn = '/home/yann/DATA/CaImaging/SSTcre_GCamp6s/2021_06_23/2021_06_23-13-25-43.nwb' 
-fn = '/home/yann/DATA/CaImaging/SSTcre_GCamp6s/Batch2-Sept_2021/2021_10_14/2021_10_14-15-34-45.nwb' 
-full_resp = compute_population_resp(fn, options, protocol_id=0)
+# shift_orientation_according_to_pref?
+
+# %%
+full_resp
+
+# %%
+#Ep = EpisodeData(, quantities=['Pupil', 'Running-Speed', 'dFoF'])
+stat = Ep.stat_test_for_evoked_responses(response_args={'quantity':'dFoF', 'roiIndex':0})
+stat.y
+
+# %%
+DATASET['files'][0]
+
+# %%
+data = Data(DATASET['files'][0])
+data.protocols
+
+# %%
+DATASET = scan_folder_for_NWBfiles(os.path.join(os.path.expanduser('~'), 'DATA', 'Taddy', 'SST-WT', 'Orient-Tuning', 'NWBs'))
+
+# %%
+full_resp = compute_population_resp(DATASET['files'][0], protocol_id=0)
 
 
 # %%
@@ -152,29 +173,29 @@ def population_tuning_fig(full_resp):
     Ncells = len(np.unique(full_resp['roi']))
     Neps = len(full_resp['roi'])/Ncells   
     angles = np.unique(full_resp['angle_from_pref'])
-
-    fig, AX = ge.figure(axes=(3,1), figsize=(1.5,1.5))
+    print(angles)
+    fig, AX = pt.figure(axes=(3,1), figsize=(1.5,1.5))
     
     for ax in AX:
-        ge.annotate(ax, 'n=%i resp. cells (%.0f%% of rois)' % (Ncells, 
+        pt.annotate(ax, 'n=%i resp. cells (%.0f%% of rois)' % (Ncells, 
                                                     100.*Ncells/full_resp['Nroi_tot']), (1,1), va='top', ha='right')
     
-    ge.plot(angles, np.mean(full_resp['per_cell_post'], axis=0), 
+    pt.plot(angles, np.mean(full_resp['per_cell_post'], axis=0), 
             sy = np.std(full_resp['per_cell_post'], axis=0),
             color='grey', ms=2, m='o', ax=AX[0], no_set=True, lw=1)
-    ge.set_plot(AX[0], xlabel='angle ($^{o}$) w.r.t. pref. orient.', ylabel='post level (dF/F)',
+    pt.set_plot(AX[0], xlabel='angle ($^{o}$) w.r.t. pref. orient.', ylabel='post level (dF/F)',
                xticks=[0,90,180,270])
     
-    ge.plot(angles, np.mean(full_resp['per_cell'], axis=0), 
+    pt.plot(angles, np.mean(full_resp['per_cell'], axis=0), 
             sy = np.std(full_resp['per_cell'], axis=0),
             color='grey', ms=2, m='o', ax=AX[1], no_set=True, lw=1)
-    ge.set_plot(AX[1], xlabel='angle ($^{o}$) w.r.t. pref. orient.', ylabel='evoked resp. ($\delta$ dF/F)',
+    pt.set_plot(AX[1], xlabel='angle ($^{o}$) w.r.t. pref. orient.', ylabel='evoked resp. ($\delta$ dF/F)',
                xticks=[0,90,180,270])
     
-    ge.plot(angles, np.mean(full_resp['per_cell'].T/np.max(full_resp['per_cell'], axis=1).T, axis=1), 
+    pt.plot(angles, np.mean(full_resp['per_cell'].T/np.max(full_resp['per_cell'], axis=1).T, axis=1), 
             sy = np.std(full_resp['per_cell'].T/np.max(full_resp['per_cell'], axis=1).T, axis=1),
             color='grey', ms=2, m='o', ax=AX[2], no_set=True, lw=1)
-    ge.set_plot(AX[2], xlabel='angle ($^{o}$) w.r.t. pref. orient.', 
+    pt.set_plot(AX[2], xlabel='angle ($^{o}$) w.r.t. pref. orient.', 
                 ylabel='norm. resp ($\delta$ dF/F)', yticks=[0,0.5,1],
                xticks=[0,90,180,270])
 
