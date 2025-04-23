@@ -18,17 +18,15 @@ import os, sys, shutil
 import pandas as pd
 import numpy as np
 
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+sys.path.append('../src')
 import physion
 
 # %% [markdown]
 # # Read Dataset from Spreasheet
 
 # %%
-filename = os.path.join(os.path.expanduser('~'), 
-                        'DATA', 'physion_Demo-Datasets', 'SST-WT', 
-                        'DataTable.xlsx')
-dataset, _, _ = physion.assembling.dataset.read_dataset_spreadsheet(filename, verbose=False)
+filename = os.path.join(os.path.expanduser('~'), 'DATA', 'Cibele', 'PV-Young-V1', 'PV_BB.xlsx')
+dataset, _, _ = physion.assembling.dataset.read_dataset_spreadsheet(filename)
 dataset[['subject', 'day', 'time', 'protocol', 'FOV']]
 
 # %% [markdown]

@@ -177,13 +177,6 @@ if __name__=='__main__':
     data = Data(sys.argv[-1])
     data.build_dFoF(verbose=False)
 
-
     plot(fig, data)
 
     pt.plt.show()
-
-    # resp = compute_tuning_response_per_cells(data, Episodes,
-                                             # stat_test_props,
-                                             # return_significant_waveforms=True)
-
-    # print(len(resp['significant_ROIs']), np.sum(resp['significant_ROIs']))

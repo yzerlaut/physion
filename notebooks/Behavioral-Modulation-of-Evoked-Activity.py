@@ -17,415 +17,295 @@
 # # Behavioral modulation of visually Evoked Activity
 
 # %%
-# general python modules for scientific analysis
-import sys, pathlib, os, itertools
-import pandas as pd
+import sys, os
 import numpy as np
+from scipy.optimize import minimize
 
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src'))
-
-from physion.analysis.read_NWB import Data, scan_folder_for_NWBfiles
-from physion.analysis.process_NWB import EpisodeData
-from physion.dataviz.episodes.trial_average import plot as plot_trial_average
-from physion.analysis.protocols.orientation_tuning import shift_orientation_according_to_pref
+sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+import physion
 import physion.utils.plot_tools as pt
 
-# %%
-## GCAmP preprocessing -> Delta F / F computation:
-dFoF_parameters = dict(\
-        roi_to_neuropil_fluo_inclusion_factor=1.15,
-        neuropil_correction_factor = 0.7,
-        method_for_F0 = 'sliding_percentile',
-        percentile=5., # percent
-        sliding_window = 5*60, # seconds
-)
-
-## Statistical test for evoked responses:
-stat_test_props=dict(interval_pre=[-1.5,0],                                   
-                     interval_post=[0.5,2.],                                   
-                     test='anova',                                            
-                     positive=True)
-response_significance_threshold=5e-2
-
-def compute_population_resp(filename,
-                            protocol_name=None,
-                            Nmax = 100000):
-
-    # load datafile
-    data = Data(filename)
-
-    full_resp = {'roi':[], 'angle_from_pref':[], 'Nroi_tot':data.nROIs,
-                 'post_level':[], 'evoked_level':[]}
-
-    quantities = ['dFoF']
-    
-    # get levels of pupil and running-speed in the episodes (i.e. after realignement)
-    #         only WHEN they are available
-    if 'Pupil' in data.nwbfile.acquisition:    
-        quantities.append('Pupil')
-        full_resp['pupil_level'] = []
-    if 'Running-Speed' in data.nwbfile.acquisition:
-        quantities.append('Running-Speed')
-        full_resp['speed_level'] = []
-
-    Episodes = EpisodeData(data,
-                           protocol_name=protocol_name,
-                           quantities=quantities,
-                           dt_sampling=1, prestim_duration=3)
-    
-    print(np.unique(Episodes.angle))
-    for key in Episodes.varied_parameters.keys():
-        full_resp[key] = []
-
-    for roi in np.arange(data.nROIs)[:Nmax]:
-        # check if significant response in at least one direction and compute mean evoked resp
-        resp = {'significant':[], 'pre':[], 'post':[]}
-        for ia, angle in enumerate(Episodes.varied_parameters['angle']):
-
-            stats = Episodes.stat_test_for_evoked_responses(episode_cond=Episodes.find_episode_cond(key='angle',
-                                                                                                    value=angle),
-                                                            response_args={'quantity':'dFoF', 'roiIndex':roi},
-                                                            **stat_test_props, verbose=True)
-            resp['significant'].append(stats.significant(threshold=response_significance_threshold))
-            resp['pre'].append(np.mean(stats.x))
-            resp['post'].append(np.mean(stats.y))
-
-        if np.sum(resp['significant'])>0:
-            # if significant in at least one
-            imax = np.argmax(np.array(resp['post'])-np.array(resp['pre']))
-            amax = Episodes.varied_parameters['angle'][imax]
-            # we compute the post response relative to the preferred orientation for all episodes
-            post_interval_cond = Episodes.compute_interval_cond(stat_test_props['interval_post'])
-            pre_interval_cond = Episodes.compute_interval_cond(stat_test_props['interval_pre'])
-            for iep in range(Episodes.dFoF.shape[0]):
-                full_resp['angle_from_pref'].append(\
-                    shift_orientation_according_to_pref(Episodes.angle[iep], 
-                                                        pref_angle=amax, start_angle=-22.5, angle_range=180))
-                full_resp['post_level'].append(Episodes.dFoF[iep, roi, post_interval_cond].mean())
-                full_resp['evoked_level'].append(full_resp['post_level'][-1]-Episodes.dFoF[iep, roi, pre_interval_cond].mean())
-                full_resp['roi'].append(roi)
-                # adding running and speed level in the "post" interval:
-                if 'Pupil' in data.nwbfile.acquisition:
-                    full_resp['pupil_level'].append(Episodes.pupil_diameter[iep, post_interval_cond].mean())
-                if 'Running-Speed' in data.nwbfile.acquisition:
-                    full_resp['speed_level'].append(Episodes.running_speed[iep, post_interval_cond].mean())
-
-    # transform to numpy array for convenience
-    for key in full_resp:
-        full_resp[key] = np.array(full_resp[key])
-        
-    #########################################################
-    ############ per cell analysis ##########################
-    #########################################################
-    
-    angles = np.unique(full_resp['angle_from_pref'])
-
-    full_resp['per_cell'], full_resp['per_cell_post'] = [], []
-    
-    for roi in np.unique(full_resp['roi']):
-        
-        roi_cond = (full_resp['roi']==roi)
-        
-        full_resp['per_cell'].append([])
-        full_resp['per_cell_post'].append([])
-       
-        for ia, angle in enumerate(angles):
-            cond = (full_resp['angle_from_pref']==angle) & roi_cond
-            full_resp['per_cell'][-1].append(full_resp['evoked_level'][cond].mean())
-            full_resp['per_cell_post'][-1].append(full_resp['post_level'][cond].mean())
-    
-    full_resp['per_cell'] = np.array(full_resp['per_cell'])
-    full_resp['per_cell_post'] = np.array(full_resp['per_cell_post'])
-        
-    return full_resp
-
-full_resp = compute_population_resp(DATASET['files'][0],
-                                    # Find full-field grating subprotocol:
-                                    protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0])
+# %% [markdown]
+# ## Load the Episodes of a given Protocol in a Datafile 
 
 # %%
-full_resp
+filename = os.path.join(os.path.expanduser('~'), 
+                        'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
+                        '2023_02_15-13-30-47.nwb')
+
+data = physion.analysis.read_NWB.Data(filename, verbose=False)
+data.build_dFoF(method_for_F0='sliding_percentile', percentile=10., verbose=False)
+
+Episodes = physion.analysis.process_NWB.EpisodeData(data,
+                                                    quantities=['dFoF', 'running_speed', 'pupil_diameter'],
+                                                    protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
+                                                    verbose=False,
+                                                    dt_sampling=10)
 
 # %%
-Ep = EpisodeData(data, protocol_id=2, quantities=['Pupil', 'Running-Speed', 'dFoF'])
-stat = Ep.stat_test_for_evoked_responses(episode_cond=Ep.find_episode_cond('angle', 1),
-                                         response_args={'quantity':'dFoF', 'roiIndex':0})
-stat.significant()
-
-# %%
-DATASET['files'][0]
-
-# %%
-data = Data(DATASET['files'][0])
-data.protocols
-
-# %%
-DATASET = scan_folder_for_NWBfiles(os.path.join(os.path.expanduser('~'), 'DATA', 'Taddy', 'SST-WT', 'Orient-Tuning', 'NWBs'))
-
-# %%
-full_resp = compute_population_resp(DATASET['files'][0], protocol_id=0)
-
-
-# %%
-def population_tuning_fig(full_resp):
-
-    Ncells = len(np.unique(full_resp['roi']))
-    Neps = len(full_resp['roi'])/Ncells   
-    angles = np.unique(full_resp['angle_from_pref'])
-    print(angles)
-    fig, AX = pt.figure(axes=(3,1), figsize=(1.5,1.5))
-    
-    for ax in AX:
-        pt.annotate(ax, 'n=%i resp. cells (%.0f%% of rois)' % (Ncells, 
-                                                    100.*Ncells/full_resp['Nroi_tot']), (1,1), va='top', ha='right')
-    
-    pt.plot(angles, np.mean(full_resp['per_cell_post'], axis=0), 
-            sy = np.std(full_resp['per_cell_post'], axis=0),
-            color='grey', ms=2, m='o', ax=AX[0], no_set=True, lw=1)
-    pt.set_plot(AX[0], xlabel='angle ($^{o}$) w.r.t. pref. orient.', ylabel='post level (dF/F)',
-               xticks=[0,90,180,270])
-    
-    pt.plot(angles, np.mean(full_resp['per_cell'], axis=0), 
-            sy = np.std(full_resp['per_cell'], axis=0),
-            color='grey', ms=2, m='o', ax=AX[1], no_set=True, lw=1)
-    pt.set_plot(AX[1], xlabel='angle ($^{o}$) w.r.t. pref. orient.', ylabel='evoked resp. ($\delta$ dF/F)',
-               xticks=[0,90,180,270])
-    
-    pt.plot(angles, np.mean(full_resp['per_cell'].T/np.max(full_resp['per_cell'], axis=1).T, axis=1), 
-            sy = np.std(full_resp['per_cell'].T/np.max(full_resp['per_cell'], axis=1).T, axis=1),
-            color='grey', ms=2, m='o', ax=AX[2], no_set=True, lw=1)
-    pt.set_plot(AX[2], xlabel='angle ($^{o}$) w.r.t. pref. orient.', 
-                ylabel='norm. resp ($\delta$ dF/F)', yticks=[0,0.5,1],
-               xticks=[0,90,180,270])
-
-    return fig
-
-fig = population_tuning_fig(full_resp)
-#fig.savefig('/home/yann/Desktop/fig.svg')
-
-# %%
-def compute_behavior_mod_population_tuning(full_resp,
-                                           resp_key='evoked_level',
-                                           pupil_threshold=2.5,
-                                           running_speed_threshold = 0.1):
-
-    Ncells = len(np.unique(full_resp['roi']))
-    Neps = len(full_resp['roi'])/Ncells
-
-    if 'speed_level' in full_resp:
-        running_cond = (np.abs(full_resp['speed_level'])>=running_speed_threshold)
-    else:
-        running_cond = np.zeros(len(full_resp['roi']), dtype=bool) # False by default
-        
-    if 'pupil_level' in full_resp:
-        dilated_cond = ~running_cond & (full_resp['pupil_level']>=pupil_threshold)
-        constricted_cond = ~running_cond & (full_resp['pupil_level']<pupil_threshold)
-
-    # add to full_resp
-    full_resp['running_cond'] = running_cond
-    full_resp['dilated_cond'] = dilated_cond
-    full_resp['constricted_cond'] = constricted_cond
-    full_resp['Ncells'], full_resp['Neps'] = Ncells, Neps
-            
-    angles = np.unique(full_resp['angle_from_pref'])
-    curves = {'running_mean': [], 'running_std':[],
-              'still_mean': [], 'still_std':[],
-              'dilated_mean': [], 'dilated_std':[],
-              'constricted_mean': [], 'constricted_std':[],
-              'angles':angles}
-
-    for ia, angle in enumerate(angles):
-        cond = full_resp['angle_from_pref']==angle
-        # running
-        curves['running_mean'].append(full_resp[resp_key][cond & running_cond].mean())
-        curves['running_std'].append(full_resp[resp_key][cond & running_cond].std())
-        # still
-        curves['still_mean'].append(full_resp[resp_key][cond & ~running_cond].mean())
-        curves['still_std'].append(full_resp[resp_key][cond & ~running_cond].std())
-        # dilated pupil
-        curves['dilated_mean'].append(full_resp[resp_key][cond & dilated_cond].mean())
-        curves['dilated_std'].append(full_resp[resp_key][cond & dilated_cond].std())
-        # constricted pupil
-        curves['constricted_mean'].append(full_resp[resp_key][cond & constricted_cond].mean())
-        curves['constricted_std'].append(full_resp[resp_key][cond & constricted_cond].std())
-        
-    curves['all'] = np.mean(full_resp['per_cell'], axis=0)
-
-    return curves
-
-def tuning_modulation_fig(curves, full_resp=None):
-    # running vs still --- raw evoked response
-    fig, ax = ge.figure(figsize=(1.5,1.5), right=6)
-    ge.plot(curves['angles'], curves['all'], label='all', color='grey', ax=ax, no_set=True, lw=2, alpha=.5)
-    ge.plot(curves['angles'], curves['running_mean'], 
-            color=ge.orange, ms=4, m='o', ax=ax, lw=2, label='running', no_set=True)
-    ge.plot(curves['angles'], curves['still_mean'], 
-            color=ge.blue, ms=4, m='o', ax=ax, lw=2, label='still', no_set=True)
-    ge.legend(ax, ncol=3, loc=(.3,1.))
-    ge.set_plot(ax, xlabel='angle ($^{o}$) w.r.t. pref. orient.', ylabel='evoked resp, ($\delta$ dF/F)   ',
-               xticks=[0,90,180,270])
-
-    if full_resp is not None:
-        inset = ge.inset(fig, [.8,.5,.16,.28])
-        ge.scatter(full_resp['pupil_level'][full_resp['running_cond']],full_resp['speed_level'][full_resp['running_cond']],
-                   ax=inset, no_set=True, color=ge.orange)
-        ge.scatter(full_resp['pupil_level'][~full_resp['running_cond']],full_resp['speed_level'][~full_resp['running_cond']],
-                   ax=inset, no_set=True, color=ge.blue)
-        ge.annotate(ax, 'n=%i cells\n' % full_resp['Ncells'], (0.,1.), ha='center')
-        ge.set_plot(inset, xlabel='pupil size (mm)', ylabel='run. speed (cm/s)     ',
-                   title='episodes (n=%i)   ' % full_resp['Neps'])
-        ge.annotate(inset, 'n=%i' % (np.sum(full_resp['running_cond'])/full_resp['Ncells']), (0.,1.), va='top', color=ge.orange)
-        ge.annotate(inset, '\nn=%i' % (np.sum(~full_resp['running_cond'])/full_resp['Ncells']), (0.,1.), va='top', color=ge.blue)
- 
-    # constricted vs dilated --- raw evoked response
-    fig2, ax = ge.figure(figsize=(1.5,1.5), right=6)
-    ge.plot(curves['angles'], curves['all'], label='all', color='grey', ax=ax, no_set=True, lw=2, alpha=.5)
-    ge.plot(curves['angles'], curves['constricted_mean'], 
-            color=ge.green, ms=4, m='o', ax=ax, lw=2, label='constricted', no_set=True)
-    ge.plot(curves['angles'], curves['dilated_mean'], 
-            color=ge.purple, ms=4, m='o', ax=ax, lw=2, label='dilated', no_set=True)
-    ge.legend(ax, ncol=3, loc=(.1,1.))
-    ge.set_plot(ax, xlabel='angle ($^{o}$) w.r.t. pref. orient.', ylabel='evoked resp, ($\delta$ dF/F)   ',
-               xticks=[0,90,180,270])
-
-    if full_resp is not None:
-        inset2 = ge.inset(fig2, [.8,.5,.16,.28])
-        ge.scatter(full_resp['pupil_level'][full_resp['dilated_cond']],
-                   full_resp['speed_level'][full_resp['dilated_cond']],
-                   ax=inset2, no_set=True, color=ge.purple)
-        ge.scatter(full_resp['pupil_level'][full_resp['constricted_cond']],
-                   full_resp['speed_level'][full_resp['constricted_cond']],
-                   ax=inset2, no_set=True, color=ge.green)
-        ge.annotate(ax, 'n=%i cells\n' % len(np.unique(full_resp['roi'])), (0.,1.), ha='right')
-        ge.set_plot(inset2, xlabel='pupil size (mm)', ylabel='run. speed (cm/s)     ', ylim=inset.get_ylim(),
-                   title='episodes (n=%i)   ' % full_resp['Neps'])
-        ge.annotate(inset2, 'n=%i' % (np.sum(full_resp['constricted_cond'])/full_resp['Ncells']), (0.,1.), va='top', color=ge.green)
-        ge.annotate(inset2, '\nn=%i' % (np.sum(full_resp['dilated_cond'])/full_resp['Ncells']), (0.,1.), va='top', color=ge.purple)
-    
-    return fig, fig2
-
-curves = compute_behavior_mod_population_tuning(full_resp,
-                                                running_speed_threshold = 0.2,
-                                                pupil_threshold=2.1)
-
-fig1, fig2 = tuning_modulation_fig(curves, full_resp=full_resp)
-
-#fig1.savefig('/home/yann/Desktop/fig1.svg')
-#fig2.savefig('/home/yann/Desktop/fig2.svg')
-
-# %%
-ge.scatter(Pupil_episodes.resp.mean(axis=1), Running_episodes.resp.mean(axis=1))
-cond = (Running_episodes.resp.mean(axis=1)<0.25)
-ge.hist(Pupil_episodes.resp.mean(axis=1)[cond])
-ge.hist(Pupil_episodes.resp.mean(axis=1))
-print(np.sum(cond)/len(cond))
+# visualize those data
+t0 = Episodes.time_start_realigned[0]-1
+figRaw, _ = physion.dataviz.raw.plot(data, tlim=[t0,t0+300],
+                                     settings=physion.dataviz.raw.find_default_plot_settings(data, with_subsampling=True))
 
 # %% [markdown]
-# ## Datafile
-#
-# We take a datafile that intermixes static and drifting gratings visual stimulation in a pseudo-randomized sequence
+# ## Split Episodes according to Behavioral States
 
 # %%
-filename = os.path.join(os.path.expanduser('~'), 'DATA', 'data.nwb')
-FullData= Data(filename)
-print('the datafile has %i validated ROIs (over %i from the full suite2p output) ' % (np.sum(FullData.iscell),
-                                                                                      len(FullData.iscell)))
+# Compute average behavior within episodes
+withinEpisode_cond = (Episodes.t>0) & (Episodes.t<Episodes.time_duration[0])
+
+Ep_run_speed = Episodes.running_speed[:,withinEpisode_cond].mean(axis=1)
+Ep_pupil_size = Episodes.pupil_diameter[:,withinEpisode_cond].mean(axis=1)
+
+# binning the data according to pupil level for analysis:
+pupil_bins = np.linspace(Ep_pupil_size.min(), Ep_pupil_size.max(), 15)
+
+bins = np.digitize(Ep_pupil_size, pupil_bins)
+speed_binned, sb_std = np.zeros(len(pupil_bins)), np.zeros(len(pupil_bins))
+
+for b in np.unique(bins):
+    speed_binned[b-1] = np.mean(Ep_run_speed[bins==b])
+    sb_std[b-1] = np.std(Ep_run_speed[bins==b])
+
+# Run vs Rest --> speed threshold
+
+speed_threshold = 0.1
+
+# Constricted vs Dilated --> pupil threshold
+
+def func(t, X):
+    """ threshold-linear function """
+    return np.array([X[1]*(tt-X[0]) if tt>X[0] else 0 for tt in t])
+def to_minimize(X):
+    return np.sum((speed_binned-func(pupil_bins, X))**2)
+    
+res = minimize(to_minimize,
+               [pupil_bins.mean(), 1])
+
+pupil_threshold = res.x[0]
+
+# %%
+# plot analysis quantities
+
+fig, AX = pt.figure(axes=(3,1), figsize=(1.2,1.2))
+
+pt.scatter(Ep_pupil_size, Ep_run_speed, ax=AX[0])
+
+AX[1].plot([Ep_pupil_size.min(), Ep_pupil_size.max()], [speed_threshold,speed_threshold], 'r:')
+pt.annotate(AX[1], 'speed \nthresh. ', (Ep_pupil_size.max(), speed_threshold),
+            color='r', xycoords='data', fontsize=7)
+
+pt.scatter(pupil_bins, speed_binned, sy=sb_std, ax=AX[1], ms=2, lw=0)
+
+pt.plot(pupil_bins, speed_binned, sy=sb_std, ax=AX[2], ms=2, lw=1)
+AX[2].plot(pupil_bins, func(pupil_bins, res.x), 'r-', lw=2)
+
+
+AX[2].plot([pupil_threshold,pupil_threshold], [0, speed_binned[-1]], 'r:')
+pt.annotate(AX[2], 'pupil \nthresh. ', (pupil_threshold, speed_binned[-1]),
+            va='top', ha='right', color='r', xycoords='data', fontsize=7)
+
+for ax, title in zip(AX, ['single episodes', 'binned ', 'thresh.-linear fit']):
+    pt.set_plot(ax, xlabel='pupil size (mm)', ylabel=' run. speed (cm/s)      ', title=title)
+
+# %%
+# plot analysis output
+
+fig, AX = pt.figure(axes=(3,1), figsize=(1.2,1.2))
+
+run = Ep_run_speed>speed_threshold
+pt.scatter(Ep_pupil_size[run], Ep_run_speed[run], color='tab:orange', ax=AX[0])
+pt.scatter(Ep_pupil_size[~run], Ep_run_speed[~run], color='tab:blue', ax=AX[0])
+pt.annotate(AX[0], '%i ep.' % np.sum(~run), (0,1), va='top', color='tab:blue')
+pt.annotate(AX[0], '\n%i ep.' % np.sum(run), (0,1), va='top', color='tab:orange')
+
+dilated = Ep_pupil_size>pupil_threshold
+pt.scatter(Ep_pupil_size[dilated], Ep_run_speed[dilated], color='tab:orange', ax=AX[1])
+pt.scatter(Ep_pupil_size[~dilated], Ep_run_speed[~dilated], color='tab:blue', ax=AX[1])
+pt.annotate(AX[1], '%i ep.' % np.sum(~dilated), (0,1), va='top', color='tab:blue')
+pt.annotate(AX[1], '\n%i ep.' % np.sum(dilated), (0,1), va='top', color='tab:orange')
+
+for i, cond, title, color in zip(range(4),
+                          [dilated & run, dilated & ~run, ~dilated & ~run, ~dilated & run],
+                          ['dilated & run ', 'dilated & rest', 'constr. & rest', 'constr. & run '],
+                          ['tab:orange', 'tab:green', 'tab:blue', 'r']):
+    pt.scatter(Ep_pupil_size[cond], Ep_run_speed[cond], color=color, ax=AX[2])
+    pt.annotate(AX[2], i*'\n'+title+': %i ep.' % np.sum(cond), (1,1), va='top', color=color)
+
+for ax, title in zip(AX, ['rest / run', 'constricted / dilated', 'mixed states']):
+    pt.set_plot(ax, xlabel='pupil size (mm)', ylabel=' run. speed (cm/s)      ', title=title)
+
+# %%
+# show running speed and pupil size in different states
+
+fig, AX = pt.figure(axes=(3,2), figsize=(1.2,1.2), hspace=0.5)
+
+for cond, color in zip([run, ~run], ['tab:orange', 'tab:blue']):
+    pt.plot(Episodes.t, Episodes.running_speed[cond,:].mean(axis=0), 
+            sy=Episodes.running_speed[cond,:].std(axis=0), color=color, ax=AX[0][0])
+    pt.plot(Episodes.t, Episodes.pupil_diameter[cond,:].mean(axis=0), 
+            sy=Episodes.pupil_diameter[cond,:].std(axis=0), color=color, ax=AX[1][0])
+    
+for cond, color in zip([dilated, ~dilated], ['tab:orange', 'tab:blue']):
+    pt.plot(Episodes.t, Episodes.running_speed[cond,:].mean(axis=0), 
+            sy=Episodes.running_speed[cond,:].std(axis=0), color=color, ax=AX[0][1])
+    pt.plot(Episodes.t, Episodes.pupil_diameter[cond,:].mean(axis=0), 
+            sy=Episodes.pupil_diameter[cond,:].std(axis=0), color=color, ax=AX[1][1])
+
+for i, cond, color in zip(range(4),
+                          [dilated & run, dilated & ~run, ~dilated & ~run, ~dilated & run],
+                          ['tab:orange', 'tab:green', 'tab:blue', 'r']):
+    pt.plot(Episodes.t, Episodes.running_speed[cond,:].mean(axis=0), 
+            sy=Episodes.running_speed[cond,:].std(axis=0), color=color, ax=AX[0][2])
+    pt.plot(Episodes.t, Episodes.pupil_diameter[cond,:].mean(axis=0), 
+            sy=Episodes.pupil_diameter[cond,:].std(axis=0), color=color, ax=AX[1][2])
+    
+pt.set_common_ylims(AX[0])
+pt.set_common_ylims(AX[1])
+
+for i, label, Ax in zip(range(2), ['run. speed\n(cm/s)', 'pupil diam.\n(mm)'], AX):
+    for j, title, ax in zip(range(3), ['rest / run', 'constricted / dilated', 'mixed states'], Ax):
+        pt.set_plot(ax, ylabel=label if j==0 else '', xlabel='time from stim. (s)' if i==1 else '',
+                    title=title if i==0 else '')
+        
+
+
+# %%
+# show state-dependent evoked activity for all ROIs
+
+fig, AX = pt.figure(axes=(3,data.nROIs), figsize=(1,1), hspace=0.3, wspace=0.8)
+from scipy import stats
+
+for roi in range(data.nROIs):
+
+    for cond, color in zip([run, ~run], ['tab:orange', 'tab:blue']):
+        pt.plot(Episodes.t, Episodes.dFoF[cond,roi,:].mean(axis=0), 
+                sy=stats.sem(Episodes.dFoF[cond,roi,:], axis=0), color=color, ax=AX[roi][0])
+        
+    for cond, color in zip([dilated, ~dilated], ['tab:orange', 'tab:blue']):
+        pt.plot(Episodes.t, Episodes.dFoF[cond,roi,:].mean(axis=0), 
+                sy=stats.sem(Episodes.dFoF[cond,roi,:], axis=0), color=color, ax=AX[roi][1])
+    
+    for i, cond, color in zip(range(4),
+                              [dilated & run, dilated & ~run, ~dilated & ~run],
+                              ['tab:orange', 'tab:green', 'tab:blue']):
+        pt.plot(Episodes.t, Episodes.dFoF[cond,roi,:].mean(axis=0), 
+                sy=stats.sem(Episodes.dFoF[cond,roi,:], axis=0), color=color, ax=AX[roi][2])
+        
+    pt.set_common_ylims(AX[roi])
+    pt.annotate(AX[roi][0], 'roi #%i' % (roi+1), (0,1), va='top', fontsize=7)
+    for j, title in enumerate(['rest / run', 'constricted / dilated', 'mixed states']):
+        pt.set_plot(AX[roi][j], ylabel='$\delta$ $\Delta$F/F' if j==0 else '', 
+                    xticks_labels=None if roi==(data.nROIs-1) else [],
+                    xlabel='time from stim. (s)' if roi==(data.nROIs-1) else '',
+                    title=title if roi==0 else '')
+
 
 # %% [markdown]
-# # Orientation selectivity
+# ## Session Summary
 
 # %%
-# Load data for FIRST PROTOCOL
-data = CellResponse(FullData, protocol_id=0, quantity='CaImaging', subquantity='dF/F', roiIndex = 8)
-# Show stimulation
-fig, AX = data.show_stim('angle', figsize=(20,2))
-# Compute and plot trial-average responses
-fig, AX = plt.subplots(1, len(data.varied_parameters['angle']), figsize=(17,2.))
-for i, angle in enumerate(data.varied_parameters['angle']):
-    data.plot('angle',i, ax=AX[i], with_std=False)
-    AX[i].set_title('%.0f$^o$' % angle)
-# put all on the same axis range
-YLIM = (np.min([ax.get_ylim()[0] for ax in AX]), np.max([ax.get_ylim()[1] for ax in AX]))
-for ax in AX:
-    ax.set_ylim(YLIM)
-    data.add_stim(ax)
-    ax.axis('off')
-# add scale bar
-add_bar(AX[0], Xbar=2, Ybar=0.5)
-# Orientation selectivity plot based on the integral of the trial-averaged response
-orientation_selectivity_plot(*data.compute_integral_responses('angle'))
-# close the nwbfile
-#data.io.close()
+fig, AX = pt.figure(axes=(3, 1), figsize=(1,1), hspace=0.3, wspace=0.8)
+from scipy import stats
+
+
+for cond, color in zip([run, ~run], ['tab:orange', 'tab:blue']):
+    pt.plot(Episodes.t, Episodes.dFoF[cond,:,:].mean(axis=(0,1)), 
+            sy=stats.sem(Episodes.dFoF[cond,:,:].mean(axis=1), axis=0), color=color, ax=AX[0])
+    
+for cond, color in zip([dilated, ~dilated], ['tab:orange', 'tab:blue']):
+    pt.plot(Episodes.t, Episodes.dFoF[cond,:,:].mean(axis=(0,1)), 
+            sy=stats.sem(Episodes.dFoF[cond,:,:].mean(axis=1), axis=0), color=color, ax=AX[1])
+
+for i, cond, color in zip(range(4),
+                          [dilated & run, dilated & ~run, ~dilated & ~run],
+                          ['tab:orange', 'tab:green', 'tab:blue']):
+    pt.plot(Episodes.t, Episodes.dFoF[cond,:,:].mean(axis=(0,1)), 
+            sy=stats.sem(Episodes.dFoF[cond,:,:].mean(axis=1), axis=0), color=color, ax=AX[2])
+    
+pt.set_common_ylims(AX)
+pt.annotate(AX[0], '%i ROIs\n' % data.nROIs, (0,1), ha='right')
+for j, title in enumerate(['rest / run', 'constricted / dilated', 'mixed states']):
+    pt.set_plot(AX[j], ylabel='$\delta$ $\Delta$F/F' if j==0 else '', 
+                xticks_labels=None if roi==(data.nROIs-1) else [],
+                xlabel='time from stim. (s)' if roi==(data.nROIs-1) else '',
+                title=title)
+
 
 # %% [markdown]
-# # Direction selectivity
+# ## Multiple Sessions
 
 # %%
-# Load data for FIRST PROTOCOL
-data = CellResponse(FullData, protocol_id=1, quantity='CaImaging', subquantity='dF/F', roiIndex = 8)
-# Show stimulation
-fig, AX = data.show_stim('angle', figsize=(20,2), with_arrow=True)
-# Compute and plot trial-average responses
-fig, AX = plt.subplots(1, len(data.varied_parameters['angle']), figsize=(17,2.))
-for i, angle in enumerate(data.varied_parameters['angle']):
-    data.plot('angle',i, ax=AX[i], with_std=False)
-    AX[i].set_title('%.0f$^o$' % angle)
-# put all on the same axis range
-YLIM = (np.min([ax.get_ylim()[0] for ax in AX]), np.max([ax.get_ylim()[1] for ax in AX]))
-for ax in AX:
-    ax.set_ylim(YLIM)
-    data.add_stim(ax)
-    ax.axis('off')
-# add scale bar
-add_bar(AX[0], Xbar=2, Ybar=0.5)
-# Orientation selectivity plot based on the integral of the trial-averaged response
-direction_selectivity_plot(*data.compute_integral_responses('angle'))
-# close the nwbfile
-#data.io.close()
+DATASET = physion.analysis.read_NWB.scan_folder_for_NWBfiles(\
+        os.path.join(os.path.expanduser('~'), 'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs'))
+
+Responses = {'run':[], 'rest':[],
+             'constricted':[], 'dilated':[],
+             'low':[], 'mid':[], 'high':[]}
+
+for f in DATASET['files']:
+    
+    print(' - analyzing file: %s  [...] ' % f)
+    data = physion.analysis.read_NWB.Data(f, verbose=False)
+    data.build_dFoF(method_for_F0='sliding_percentile', neuropil_correction_factor=0.7, percentile=10., verbose=False)
+
+    Episodes = physion.analysis.process_NWB.EpisodeData(data, 
+                                                    quantities=['dFoF', 'running_speed', 'pupil_diameter'],
+                                                    protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
+                                                    verbose=False, prestim_duration=3,
+                                                    dt_sampling=10)
+
+    # Run vs Rest :
+    withinEpisode_cond = (Episodes.t>0) & (Episodes.t<Episodes.time_duration[0])
+    Ep_run_speed = Episodes.running_speed[:,withinEpisode_cond].mean(axis=1)
+    run = Ep_run_speed>speed_threshold
+    
+    Responses['run'].append(Episodes.dFoF[run,:,:].mean(axis=(0,1)))
+    Responses['rest'].append(Episodes.dFoF[~run,:,:].mean(axis=(0,1)))
+Responses['t'] = Episodes.t
 
 # %%
-def direction_selectivity_analysis(FullData, roiIndex=0):
-    data = CellResponse(FullData, protocol_id=1, quantity='CaImaging', subquantity='dF/F', roiIndex = roiIndex)
-    fig, AX = plt.subplots(1, len(data.varied_parameters['angle']), figsize=(17,2.))
-    plt.subplots_adjust(right=.85)
-    for i, angle in enumerate(data.varied_parameters['angle']):
-        data.plot('angle',i, ax=AX[i], with_std=False)
-        AX[i].set_title('%.0f$^o$' % angle)
-    # put all on the same axis range
-    YLIM = (np.min([ax.get_ylim()[0] for ax in AX]), np.max([ax.get_ylim()[1] for ax in AX]))
-    for ax in AX:
-        ax.set_ylim(YLIM)
-        data.add_stim(ax)
-        ax.axis('off')
-    # add scale bar
-    add_bar(AX[0], Xbar=2, Ybar=0.5)
-    # Orientation selectivity plot based on the integral of the trial-averaged response
-    ax = plt.axes([0.85,0.1,0.15,0.8], projection='polar')
-    direction_selectivity_plot(*data.compute_integral_responses('angle'), ax=ax)
-    return fig
-fig = direction_selectivity_analysis(FullData, roiIndex=8)
+fig, AX = pt.figure(axes=(2,1))
+
+baselineCond = (Episodes.t>-0.1) & (Episodes.t<0)
+for cond, color in zip(['run', 'rest'], ['tab:orange', 'tab:blue']):
+
+    pt.plot(Responses['t'], np.mean(Responses[cond], axis=0), 
+            sy = stats.sem(Responses[cond], axis=0), color=color, no_set=True, ax=AX[0])
+
+    Responses['baselineSubstr_%s' % cond] = [\
+                r-r[baselineCond].min() for r in Responses[cond]]
+    
+    pt.plot(Responses['t'], np.mean(Responses['baselineSubstr_%s' % cond], axis=0), 
+            sy = stats.sem(Responses['baselineSubstr_%s' % cond], axis=0), color=color, no_set=True, ax=AX[1])
+    
+pt.set_plot(AX[0], ylabel='$\delta$ $\Delta$F/F', 
+            xlabel='time from stim. (s)' , xlim=[-1, Responses['t'][-1]],
+            title='N=%i sessions' % len(Responses['run']))
 
 
-# %%
-def orientation_selectivity_analysis(FullData, roiIndex=0):
-    data = CellResponse(FullData, protocol_id=0, quantity='CaImaging', subquantity='dF/F', roiIndex = 8)
-    fig, AX = plt.subplots(1, len(data.varied_parameters['angle']), figsize=(14,2.))
-    plt.subplots_adjust(right=.8)
-    for i, angle in enumerate(data.varied_parameters['angle']):
-        data.plot('angle',i, ax=AX[i], with_std=False)
-        AX[i].set_title('%.0f$^o$' % angle)
-    YLIM = (np.min([ax.get_ylim()[0] for ax in AX]), np.max([ax.get_ylim()[1] for ax in AX]))
-    for ax in AX:
-        ax.set_ylim(YLIM)
-        data.add_stim(ax)
-        ax.axis('off')
-    add_bar(AX[0], Xbar=2, Ybar=0.5)
-    ax = plt.axes([0.85,0.1,0.15,0.8])
-    orientation_selectivity_plot(*data.compute_integral_responses('angle'), ax=ax)
-orientation_selectivity_analysis(FullData, roiIndex=8)
+from scipy.optimize import minimize
+t_cond = Responses['t']>(-0.1)
 
-# %%
-fig, AX = data.show_stim('angle', figsize=(20,2), with_arrow=True)
-fig.savefig('/home/yann/Desktop/data2/stim.svg')
+gains = []
 
-# %%
+for i in range(len(Responses['run'])):
+    
+    def to_minimize(X):
+        return np.sum((X[0]*Responses['baselineSubstr_rest'][i][t_cond]-
+                       Responses['baselineSubstr_run'][i][t_cond])**2)
+        
+    res = minimize(to_minimize, [1.05])
+    gains.append(res.x[0])
+    
+AX[1].plot(np.array(Responses['t'])[t_cond], 
+           np.mean(gains)*np.mean(Responses['baselineSubstr_rest'], axis=0)[t_cond], 'k:', lw=0.5)
+
+pt.set_plot(AX[1], ylabel='$\delta$ $\Delta$F/F', 
+            xlabel='time from stim. (s)' , xlim=[-.1, Responses['t'][-1]],
+            title='baseline substracted')
+
+pt.annotate(AX[1], 
+            'gain = %.2f $\pm$ %.2f' % (np.mean(gains), stats.sem(gains)),
+            (1,.7), va='top')
