@@ -48,7 +48,7 @@ stat_test_props=dict(interval_pre=[-1.5,0],
 response_significance_threshold=5e-2
 
 def compute_population_resp(filename,
-                            protocol_id=0,
+                            protocol_name=None,
                             Nmax = 100000):
 
     # load datafile
@@ -57,9 +57,10 @@ def compute_population_resp(filename,
     full_resp = {'roi':[], 'angle_from_pref':[], 'Nroi_tot':data.nROIs,
                  'post_level':[], 'evoked_level':[]}
 
-
     quantities = ['dFoF']
+    
     # get levels of pupil and running-speed in the episodes (i.e. after realignement)
+    #         only WHEN they are available
     if 'Pupil' in data.nwbfile.acquisition:    
         quantities.append('Pupil')
         full_resp['pupil_level'] = []
@@ -67,14 +68,11 @@ def compute_population_resp(filename,
         quantities.append('Running-Speed')
         full_resp['speed_level'] = []
 
-    protocol = 'ff-gratings-8orientation-2contrasts-15repeats' if\
-                ('ff-gratings-8orientation-2contrasts-15repeats' in data.protocols) else\
-                'ff-gratings-8orientation-2contrasts-10repeats'
-
     Episodes = EpisodeData(data,
-                           protocol_name=protocol,
+                           protocol_name=protocol_name,
                            quantities=quantities,
                            dt_sampling=1, prestim_duration=3)
+    
     print(np.unique(Episodes.angle))
     for key in Episodes.varied_parameters.keys():
         full_resp[key] = []
@@ -84,9 +82,10 @@ def compute_population_resp(filename,
         resp = {'significant':[], 'pre':[], 'post':[]}
         for ia, angle in enumerate(Episodes.varied_parameters['angle']):
 
-            stats = Episodes.stat_test_for_evoked_responses(episode_cond=Episodes.find_episode_cond('angle', ia),
+            stats = Episodes.stat_test_for_evoked_responses(episode_cond=Episodes.find_episode_cond(key='angle',
+                                                                                                    value=angle),
                                                             response_args={'quantity':'dFoF', 'roiIndex':roi},
-                                                            **stat_test_props)
+                                                            **stat_test_props, verbose=True)
             resp['significant'].append(stats.significant(threshold=response_significance_threshold))
             resp['pre'].append(np.mean(stats.x))
             resp['post'].append(np.mean(stats.y))
@@ -140,18 +139,18 @@ def compute_population_resp(filename,
         
     return full_resp
 
-full_resp = compute_population_resp(DATASET['files'][0], protocol_id=0)
-
-# %%
-# shift_orientation_according_to_pref?
+full_resp = compute_population_resp(DATASET['files'][0],
+                                    # Find full-field grating subprotocol:
+                                    protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0])
 
 # %%
 full_resp
 
 # %%
-#Ep = EpisodeData(, quantities=['Pupil', 'Running-Speed', 'dFoF'])
-stat = Ep.stat_test_for_evoked_responses(response_args={'quantity':'dFoF', 'roiIndex':0})
-stat.y
+Ep = EpisodeData(data, protocol_id=2, quantities=['Pupil', 'Running-Speed', 'dFoF'])
+stat = Ep.stat_test_for_evoked_responses(episode_cond=Ep.find_episode_cond('angle', 1),
+                                         response_args={'quantity':'dFoF', 'roiIndex':0})
+stat.significant()
 
 # %%
 DATASET['files'][0]

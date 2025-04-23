@@ -17,23 +17,23 @@
 # # Convert NWB files to pandas Dataframes
 
 # %%
-# general python modules for scientific analysis
-import sys, pathlib, os
+import sys, os
 import numpy as np
 
-# add the python path:
-sys.path.append('../../src')
-from physion.analysis.dataframe import NWB_to_dataframe
-from physion.utils import plot_tools as pt
+sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+import physion
+import physion.utils.plot_tools as pt
 
 # %%
-filename = os.path.join(os.path.expanduser('~'), 'CURATED' , 'NDNF-December-2022', '2022_12_14-13-27-41.nwb')
-data = NWB_to_dataframe(filename,
-                        visual_stim_label='per-protocol',
-                        #visual_stim_label='per-protocol-and-parameters',
-                        #visual_stim_label='per-protocol-and-parameters-and-timepoints', #
-                        subsampling = 10,
-                        verbose=False)
+filename = os.path.join(os.path.expanduser('~'), 
+                        'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
+                        '2023_02_15-13-30-47.nwb')
+data = physion.analysis.dataframe.NWB_to_dataframe(filename,
+                                                   visual_stim_label='per-protocol',
+                                                   #visual_stim_label='per-protocol-and-parameters',
+                                                   #visual_stim_label='per-protocol-and-parameters-and-timepoints', #
+                                                   subsampling = 10,
+                                                   verbose=False)
 
 # %%
 def min_max(array):
@@ -59,7 +59,12 @@ for key in data.keys():
     if key !='time':
         c = color(key)
         ax.plot(data['time'], -i+.8*min_max(data[key].astype(float)), color=c, lw=1) # convert bool to float when needed
-        ax.annotate(key+' ', (0, -i+.1), ha='right', color=c)
+        ax.annotate(key.replace('_', '  \n').replace('-', '  \n')+' ', (0.5, -i+.1), ha='right', va='center', color=c, fontsize=5)
         i+=1
                 
 ax.axis('off');
+
+# %%
+data
+
+# %%

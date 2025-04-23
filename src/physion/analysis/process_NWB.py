@@ -465,12 +465,14 @@ class EpisodeData:
                                                    [x[-1]+.5*(x[-1]-x[-2])]]))
 
         summary_data = {'value':[], 'std-value':[], 'significant':[], 'relative_value':[]}
+
         for key, bins in zip(VARIED_KEYS, VARIED_BINS):
             summary_data[key] = []
             summary_data[key+'-index'] = []
             summary_data[key+'-bins'] = bins
 
         if len(VARIED_KEYS)>0:
+
             for indices in itertools.product(*VARIED_INDICES):
                 stats = self.stat_test_for_evoked_responses(episode_cond=self.find_episode_cond(VARIED_KEYS,
                                                                                                 list(indices)) &\
@@ -494,8 +496,10 @@ class EpisodeData:
                     for kk in ['value', 'std-value', 'significant', 'relative_value']:
                         summary_data[kk].append(np.nan)
         else:
+
             stats = self.stat_test_for_evoked_responses(response_args=response_args,
                                                         **stat_test_props)
+
             # if (stats.x is not None) and (stats.y is not None):
             if stats.r!=0:
                 summary_data['value'].append(np.mean(stats.y-stats.x))

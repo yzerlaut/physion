@@ -41,7 +41,7 @@ def responsiveness(data, Episodes,
     return responsive
 
 
-def zoom_view(ax, data, args, tlim=[25*60,25*60+120]):
+def zoom_view(ax, data, tlim=[17*60,17*60+120]):
 
     settings={}
     if 'Running-Speed' in data.nwbfile.acquisition:
@@ -49,7 +49,7 @@ def zoom_view(ax, data, args, tlim=[25*60,25*60+120]):
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=6,
                                     subsampling=1, 
-                                    subquantity=args.imaging_quantity, 
+                                    subquantity='dFoF',
                                     color='green',
                                     annotation_side='right',
                                     roiIndices=np.random.choice(data.nROIs,
@@ -70,20 +70,20 @@ def zoom_view(ax, data, args, tlim=[25*60,25*60+120]):
 
 
 
-def plot(fig, data, args, 
+def plot(fig, data, args=None,
          stat_test=stat_test):
 
     Episodes = EpisodeData(data,
-                           protocol_id=data.get_protocol_id(\
-                        'ff-gratings-8orientation-2contrasts-10repeats'),
+                           protocol_name=[p for p in data.protocols if 'gratings' in p][0],
                            quantities=['dFoF'],
                            prestim_duration=3,
                            verbose=True)
 
     ax = pt.inset(fig, [0.07, 0.41, 0.84, 0.2])
-    zoom_view(ax, data, args)
 
-    responsive = responsiveness(data, Episodes)
+    t0 = Episodes.time_start_realigned[0]
+    zoom_view(ax, data, tlim=[t0-1, t0-1+90])
+
     
     AX = [[pt.inset(fig, [0.06+i*0.11, 0.28+0.07*j, 0.1, 0.06])\
             for i in range(8)] for j in range(2)]
@@ -102,14 +102,29 @@ def plot(fig, data, args,
     pt.annotate(AX[0][0], '\n'+str(stat_test)+\
         ', p=%.3f\n' % response_significance_threshold, (0,0), va='top', fontsize=6)
 
+    # responsive = responsiveness(data, Episodes)
+
+    # loop over contrast levels:
     for c, contrast in enumerate([0.5, 1.0]):
+
         ax = pt.inset(fig, [0.08, 0.16+0.04*c, 0.12, 0.04])
-        r = len(responsive['c=%.1f' % contrast])/data.nROIs
+
+        resp = compute_tuning_response_per_cells(data, Episodes,
+                                          stat_test,
+                                          response_significance_threshold =\
+                                              response_significance_threshold,
+                                           quantity='dFoF',
+                                          contrast=contrast)
+
+        r = len(resp['significant_ROIs'])/data.nROIs
+
         pt.pie([100*r, 100*(1-r)],
            COLORS=['green', 'lightcoral'], ax=ax)
         pt.annotate(ax, 'c=%.1f \n  %.1f%%\n  (n=%i)'%(\
-                    contrast, 100*r, len(responsive['c=%.1f' % contrast])),
+                    contrast, 100*r,len(resp['significant_ROIs'])),
                     (0,1), va='top', ha='right', fontsize=7)
+    
+    # we keep the "resp" of contrast=1
 
     pt.annotate(ax, 'responsiveness\n n=%i ROIs' % data.nROIs,
                 (0.5, 1), ha='center')
@@ -133,14 +148,8 @@ def plot(fig, data, args,
                            AX=AX)
 
         pt.annotate(AX[-1][-1], 'roi #%i' % n, (1,0.5), va='center',
-                    color='tab:green' if n in responsive['c=1.0'] else 'lightcoral')
+                    color='tab:green' if n in np.arange(data.nROIs)[resp['significant_ROIs']] else 'lightcoral')
 
-   
-
-    resp = compute_tuning_response_per_cells(data, Episodes, stat_test,
-                                                  response_significance_threshold =\
-                                                        response_significance_threshold,
-                                             contrast=1.0)
 
     AX = [pt.inset(fig, [0.08, 0.06+0.05*j, 0.1, 0.045]) for j in range(2)]
 
@@ -157,14 +166,24 @@ def plot(fig, data, args,
 
 if __name__=='__main__':
 
+    import sys
+
     from physion.analysis.read_NWB import Data
     from physion.analysis.process_NWB import EpisodeData
     from physion.utils import plot_tools as pt
 
+    fig = pt.plt.figure(figsize=(8.27, 11.7), dpi=75)
+
     data = Data(sys.argv[-1])
+    data.build_dFoF(verbose=False)
 
-    print(data.protocols)
 
-    Episodes = EpisodeData(data,
-                           protocol_id=0,
-                           quantities=['dFoF'])
+    plot(fig, data)
+
+    pt.plt.show()
+
+    # resp = compute_tuning_response_per_cells(data, Episodes,
+                                             # stat_test_props,
+                                             # return_significant_waveforms=True)
+
+    # print(len(resp['significant_ROIs']), np.sum(resp['significant_ROIs']))

@@ -23,7 +23,6 @@ def generate_pdf(args,
     if args.datafile!='':
 
         data = physion.analysis.read_NWB.Data(args.datafile)
-        print(data.protocols)
 
         # metadata annotations:
         ax = pt.inset(fig, [0.07, 0.85, 0.4, 0.1])

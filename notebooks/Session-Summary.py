@@ -17,13 +17,18 @@
 # # Session Summary 
 
 # %%
-filename = '/Users/yann/ASSEMBLE/2024_03_08-10-59-53.nwb'
+import sys, os
+
+sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+import physion
 
 # %% [markdown]
 # ## Load Datafile
 
 # %%
-import physion, os
+filename = os.path.join(os.path.expanduser('~'), 
+                        'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
+                        '2023_02_15-13-30-47.nwb')
 data = physion.analysis.read_NWB.Data(filename,
                                       verbose=False)
 
@@ -60,13 +65,13 @@ figRaw, _ = physion.dataviz.raw.plot(data, tlim=[0,data.tlim[1]], settings=setti
 # ## Raw Data -- Zoomed View 
 
 # %%
-zoom = [100,160] 
+zoom = [1100,1300] 
 settings = physion.dataviz.raw.find_default_plot_settings(data)
 # settings['CaImaging']['roiIndices'] = [1, 13, 0, 34, 5, 6, 8]
 figRaw, _ = physion.dataviz.raw.plot(data, tlim=zoom, settings=settings)
 
 # %%
-zoom = [620,680] 
+zoom = [620,820] 
 settings = physion.dataviz.raw.find_default_plot_settings(data)
 # settings['CaImaging']['roiIndices'] = [1, 13, 0, 34, 5, 6, 8]
 figRaw, _ = physion.dataviz.raw.plot(data, tlim=zoom, settings=settings)
@@ -81,8 +86,3 @@ settings['CaImaging']['roiIndices'] = range(data.nROIs)
 settings['CaImaging']['fig_fraction']=10.
 figRaw, _ = plot_raw(data, figsize=(9,15),
                      tlim=[0,data.tlim[1]], settings=settings)
-
-# %%
-## 
-
-# %%

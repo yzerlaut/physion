@@ -231,11 +231,13 @@ def find_default_plot_settings(data,
                                 color='#d62728')
 
     if 'ophys' in data.nwbfile.processing:
+        if not hasattr(data, 'dFoF'):
+            data.build_dFoF()
         settings['CaImaging'] = dict(fig_fraction=4, 
                                      subsampling=10 if with_subsampling else 1, 
-                                     subquantity='dF/F', color='#2ca02c',
-                                     roiIndices=np.sort(np.random.choice(np.arange(np.sum(data.iscell)),
-                                          np.min([Nmax, data.iscell.sum()]), replace=False)))
+                                     subquantity='dFoF', color='#2ca02c',
+                                     roiIndices=np.sort(np.random.choice(np.arange(data.nROIs),
+                                          np.min([Nmax, data.nROIs]), replace=False)))
 
     if 'ophys' in data.nwbfile.processing:
         settings['CaImagingRaster'] = dict(fig_fraction=3, 
