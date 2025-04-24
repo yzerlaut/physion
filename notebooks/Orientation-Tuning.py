@@ -28,12 +28,14 @@
 # %%
 import sys, os
 import numpy as np
+from scipy import stats
 
 sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+
 import physion
 import physion.utils.plot_tools as pt
 
-from physion.analysis.protocols.orientation_tuning import compute_tuning_response_per_cells
+from physion.analysis.protocols.orientation_tuning import compute_tuning_response_per_cells, fit_gaussian
 
 # %%
 filename = os.path.join(os.path.expanduser('~'), 
@@ -59,26 +61,26 @@ stat_test_props = dict(interval_pre=[-1.,0],
                        test='ttest',                                            
                        positive=True)
 
-response_significance_threshold = 0.001
+response_significance_threshold = 0.001 # very very conservative
 
 Tuning = compute_tuning_response_per_cells(data, Episodes,
                                            quantity='dFoF',
                                            stat_test_props=stat_test_props,
                                            response_significance_threshold = response_significance_threshold,
                                            contrast=1,
-                                           return_significant_waveforms=True,
                                            verbose=False)
 
 # %% [markdown]
 # ## Plot Individual Responses
 
 # %%
-fig, AX = pt.figure(axes=(5, int(len(Tuning['Responses'])/5)+1), figsize=(1,.7), hspace=1.5)
+fig, AX = pt.figure(axes=(5, int(data.nROIs/5)+1), figsize=(1,.7), hspace=1.5)
 
 for i, ax in enumerate(pt.flatten(AX)):
-    if i<len(Tuning['Responses']):
-        pt.annotate(ax, 'ROI #%i' % (1+np.arange(data.nROIs)[Tuning['significant_ROIs']][i]), (1,1), va='top', ha='right', fontsize=7)
-        pt.annotate(ax, 'SI=%.2f' % Tuning['selectivities'][i], (0,1), fontsize=7)
+    if i<data.nROIs:
+        pt.annotate(ax, ' ROI #%i \n (SI=%.2f)' % (1+i, Tuning['selectivities'][i]), (1,1), 
+                    va='center', ha='right', fontsize=7,
+                    color='tab:green' if Tuning['significant_ROIs'][i] else 'tab:red')
         ax.plot(Tuning['shifted_angle'], Tuning['Responses'][i], 'k')
         ax.plot(Tuning['shifted_angle'], 0*Tuning['shifted_angle'], 'k:', lw=0.5)
         pt.set_plot(ax, xticks=Tuning['shifted_angle'], 
@@ -92,35 +94,26 @@ for i, ax in enumerate(pt.flatten(AX)):
 # ## Single Session Summary
 
 # %%
-from scipy import stats
-from scipy.optimize import minimize
+# Gaussian Fit
+_, func = fit_gaussian(Tuning['shifted_angle'], np.mean([r/r[1] for r in Tuning['Responses']], axis=0))
 
-def func(S, X):
-    """ fitting function """
-    nS = (S+90)%180-90
-    return X[0]*np.exp(-(nS**2/2./X[1]**2))+X[2]
-
+# Plot
 
 fig, AX = pt.figure(axes=(3, 1), figsize=(1.2, 1), wspace=1.5)
 
-pt.plot(Tuning['shifted_angle'], np.mean(Tuning['Responses'], axis=0), 
-        sy=np.std(Tuning['Responses'], axis=0), ax=AX[0])
+pt.plot(Tuning['shifted_angle'], np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:], axis=0), 
+        sy=np.std(Tuning['Responses'][Tuning['significant_ROIs'],:], axis=0), ax=AX[0])
 
-pt.plot(Tuning['shifted_angle'], np.mean([r/r[1] for r in Tuning['Responses']], axis=0), 
-        sy=np.std([r/r[1] for r in Tuning['Responses']], axis=0), ax=AX[1])
+pt.plot(Tuning['shifted_angle'], np.mean([r/r[1] for r in Tuning['Responses'][Tuning['significant_ROIs'],:]], axis=0), 
+        sy=np.std([r/r[1] for r in Tuning['Responses'][Tuning['significant_ROIs'],:]], axis=0), ax=AX[1])
 
-pt.scatter(Tuning['shifted_angle'], np.mean([r/r[1] for r in Tuning['Responses']], axis=0), 
-        sy=stats.sem([r/r[1] for r in Tuning['Responses']], axis=0), ax=AX[2], ms=3)
+pt.scatter(Tuning['shifted_angle'], np.mean([r/r[1] for r in Tuning['Responses'][Tuning['significant_ROIs'],:]], axis=0), 
+        sy=stats.sem([r/r[1] for r in Tuning['Responses'][Tuning['significant_ROIs'],:]], axis=0), ax=AX[2], ms=3)
 
-# fit
-def to_minimize(x0):
-    return np.sum((np.mean([r/r[1] for r in Tuning['Responses']], axis=0)-\
-                   func(Tuning['shifted_angle'], x0))**2)
-
-res = minimize(to_minimize,
-               [0.8, 10, 0.2])
 x = np.linspace(-30, 180-30, 100)
-AX[2].plot(x, func(x, res.x), lw=2, alpha=.5, color='dimgrey')
+
+
+AX[2].plot(x, func(x), lw=2, alpha=.5, color='dimgrey')
 
 pt.set_plot(AX[0], xticks=Tuning['shifted_angle'], 
             ylabel='(post - pre)\n$\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',
@@ -158,35 +151,24 @@ for f in DATASET['files']:
                                            response_significance_threshold = response_significance_threshold,
                                            contrast=1)
 
-    Responses.append(np.mean(Tuning['Responses'], axis=0))
+    Responses.append(np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:], axis=0))
 
 # %%
-from scipy import stats
-from scipy.optimize import minimize
+# Gaussian Fit
+C, func = fit_gaussian(Tuning['shifted_angle'], np.mean([r/r[1] for r in Responses], axis=0))
 
-def func(S, X):
-    """ fitting function """
-    nS = (S+90)%180-90
-    return X[0]*np.exp(-(nS**2/2./X[1]**2))+X[2]
-
-
+# Plot
 fig, ax = pt.figure(figsize=(1.2, 1))
-
 
 pt.scatter(Tuning['shifted_angle'], np.mean([r/r[1] for r in Responses], axis=0), 
         sy=stats.sem([r/r[1] for r in Responses], axis=0), ax=ax, ms=3)
 
-# fit
-def to_minimize(x0):
-    return np.sum((np.mean([r/r[1] for r in Responses], axis=0)-\
-                   func(Tuning['shifted_angle'], x0))**2)
-
-res = minimize(to_minimize,
-               [0.8, 10, 0.2])
 x = np.linspace(-30, 180-30, 100)
-ax.plot(x, func(x, res.x), lw=2, alpha=.5, color='dimgrey')
+ax.plot(x, func(x), lw=2, alpha=.5, color='dimgrey')
 
 pt.annotate(ax, 'N=%i sessions' % len(Responses), (0.8,1))
+
+pt.annotate(ax, 'SI=%.2f' % (1-C[2]), (1., 0.9), ha='right', va='top')
 
 pt.set_plot(ax, xticks=Tuning['shifted_angle'], yticks=np.arange(3)*0.5, ylim=[-0.05, 1.05],
             ylabel='norm. $\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',

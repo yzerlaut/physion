@@ -1,10 +1,11 @@
 import numpy as np
+from scipy.stats import sem
 
 import physion.utils.plot_tools as pt
 from physion.dataviz.raw import plot as plot_raw
 from physion.analysis.process_NWB import EpisodeData
 from physion.dataviz.episodes.trial_average import plot as plot_trial_average
-from .orientation_tuning import compute_tuning_response_per_cells
+from .orientation_tuning import compute_tuning_response_per_cells, fit_gaussian
 
 stat_test = dict(interval_pre=[-1.5,-0.5],
                  interval_post=[0.5,1.5],
@@ -116,12 +117,12 @@ def plot(fig, data, args=None,
                                            quantity='dFoF',
                                           contrast=contrast)
 
-        r = len(resp['significant_ROIs'])/data.nROIs
+        r = np.sum(resp['significant_ROIs'])/data.nROIs
 
         pt.pie([100*r, 100*(1-r)],
            COLORS=['green', 'lightcoral'], ax=ax)
         pt.annotate(ax, 'c=%.1f \n  %.1f%%\n  (n=%i)'%(\
-                    contrast, 100*r,len(resp['significant_ROIs'])),
+                    contrast, 100*r, np.sum(resp['significant_ROIs'])),
                     (0,1), va='top', ha='right', fontsize=7)
     
     # we keep the "resp" of contrast=1
@@ -147,19 +148,29 @@ def plot(fig, data, args=None,
                            color=['lightgrey', 'dimgrey'],
                            AX=AX)
 
-        pt.annotate(AX[-1][-1], 'roi #%i' % n, (1,0.5), va='center',
-                    color='tab:green' if n in np.arange(data.nROIs)[resp['significant_ROIs']] else 'lightcoral')
-
+        pt.annotate(AX[-1][-1], 'roi #%i\n(SI=%.2f)' % (n, resp['selectivities'][n]), 
+                    (1,0.5), va='center',
+                    color='tab:green' if resp['significant_ROIs'][n] else 'lightcoral')
 
     AX = [pt.inset(fig, [0.08, 0.06+0.05*j, 0.1, 0.045]) for j in range(2)]
 
-    pt.plot(resp['shifted_angle'], np.mean(resp['Responses'], axis=0),
-            sy = np.std(resp['Responses'], axis=0), ax=AX[1], no_set=True)
+    pt.plot(resp['shifted_angle'], 
+            np.mean(resp['Responses'][resp['significant_ROIs'],:], axis=0),
+            sy = np.std(resp['Responses'][resp['significant_ROIs'],:], axis=0), 
+            ax=AX[1], no_set=True)
     pt.set_plot(AX[1], xticks_labels=[], ylabel='$\\Delta$F/F')
 
-    tuning = np.array([r/r[1] for r in resp['Responses']])
-    pt.plot(resp['shifted_angle'], np.mean(tuning, axis=0),
-            sy = np.std(tuning, axis=0), ax=AX[0])
+    tuning = np.array([r/r[1] for r in resp['Responses'][resp['significant_ROIs'],:]])
+    pt.scatter(resp['shifted_angle'], np.mean(tuning, axis=0),
+                sy = sem(tuning, axis=0), ax=AX[0], ms=3)
+    # add gaussian fit
+    C, func = fit_gaussian(resp['shifted_angle'], np.mean(tuning, axis=0))
+    x = np.linspace(-30, 180-30, 100)
+    AX[0].plot(x, func(x), lw=2, alpha=.5, color='dimgrey')
+
+    # selectivity index from fit
+    pt.annotate(AX[0], 'SI=%.2f' % (1-C[2]), (1., 0.9), ha='right', va='top')
+
     pt.set_plot(AX[0], yticks=[0, 0.5, 1],
                 xlabel='angle from pref. ($^o$)', ylabel='n. $\\Delta$F/F')
 

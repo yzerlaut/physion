@@ -1,6 +1,7 @@
 import sys, time, os, pathlib, string, itertools
 
 import numpy as np
+from scipy.stats import sem
 from scipy.interpolate import interp1d
 
 from physion.analysis import stat_tools
@@ -464,7 +465,8 @@ class EpisodeData:
                                                    .5*(x[1:]+x[:-1]),
                                                    [x[-1]+.5*(x[-1]-x[-2])]]))
 
-        summary_data = {'value':[], 'std-value':[], 'significant':[], 'relative_value':[]}
+        summary_data = {'value':[], 'std-value':[], 'sem-value':[], 
+                        'significant':[], 'relative_value':[]}
 
         for key, bins in zip(VARIED_KEYS, VARIED_BINS):
             summary_data[key] = []
@@ -474,6 +476,7 @@ class EpisodeData:
         if len(VARIED_KEYS)>0:
 
             for indices in itertools.product(*VARIED_INDICES):
+
                 stats = self.stat_test_for_evoked_responses(episode_cond=self.find_episode_cond(VARIED_KEYS,
                                                                                                 list(indices)) &\
                                                                           episode_cond,
@@ -487,13 +490,15 @@ class EpisodeData:
                 if stats.r!=0:
                     summary_data['value'].append(np.mean(stats.y-stats.x))
                     summary_data['std-value'].append(np.std(stats.y-stats.x))
+                    summary_data['sem-value'].append(sem(stats.y-stats.x))
                     if np.sum(stats.x==0)==0:
                         summary_data['relative_value'].append(np.mean((stats.y-stats.x)/stats.x))
                     else:
                         summary_data['relative_value'].append(np.nan) # if one of them is 0, all to Nan so that it's unusable
                     summary_data['significant'].append(stats.significant(threshold=response_significance_threshold))
                 else:
-                    for kk in ['value', 'std-value', 'significant', 'relative_value']:
+                    for kk in ['value', 'std-value', 'sem-value', 
+                               'significant', 'relative_value']:
                         summary_data[kk].append(np.nan)
         else:
 
@@ -504,10 +509,12 @@ class EpisodeData:
             if stats.r!=0:
                 summary_data['value'].append(np.mean(stats.y-stats.x))
                 summary_data['std-value'].append(np.std(stats.y-stats.x))
+                summary_data['sem-value'].append(sem(stats.y-stats.x))
                 summary_data['significant'].append(stats.significant(threshold=response_significance_threshold))
                 summary_data['relative_value'].append(np.mean((stats.y-stats.x)/stats.x))
             else:
-                for kk in ['value', 'std-value', 'significant', 'relative_value']:
+                for kk in ['value', 'std-value', 'sem-value',
+                           'significant', 'relative_value']:
                     summary_data[kk].append(np.nan)
 
         for key in summary_data:

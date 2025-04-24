@@ -33,12 +33,12 @@ class StatTest:
                     setattr(self, key, getattr(result, key))
             else:
                 print(' "%s" test not implemented ! ' % test)
-        except (ValueError, TypeError):
-            if verbose:
-                print(' -----------------   ')
-                print('x, y = ', x, y)
-                print('  statistical test failed   ')
-                print(' -----------------   ')
+        except BaseException as be:
+            print(' -----------------   ')
+            print(be)
+            print('x, y = ', x, y)
+            print('  statistical test failed   ')
+            print(' -----------------   ')
             self.r, self.sign = 0, 0
             self.pvalue, self.statistic = 1, 0
 
