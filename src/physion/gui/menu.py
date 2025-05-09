@@ -82,5 +82,5 @@ def build_menu(self):
                               self.behav_to_movie_gui)
     self.otherMenu.addAction('&Convert Imaging to Movies',
                               self.imaging_to_movie_gui)
-    self.otherMenu.addAction('&Delete Data',
-                              self.in_progress)
+    #self.otherMenu.addAction('&Delete Data',
+    #                          self.in_progress)
