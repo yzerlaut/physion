@@ -26,10 +26,10 @@ import physion.utils.plot_tools as pt
 
 # %%
 filename = os.path.join(os.path.expanduser('~'), 
-                        'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
-                        '2023_02_15-13-30-47.nwb')
+                        'DATA', 'physion_Demo-Datasets', 'NDNF-WT', 'NWBs',
+                        '2022_12_14-13-27-41.nwb')
 data = physion.analysis.dataframe.NWB_to_dataframe(filename,
-                                                   visual_stim_label='per-protocol',
+                                                   visual_stim_features='per-protocol',
                                                    #visual_stim_label='per-protocol-and-parameters',
                                                    #visual_stim_label='per-protocol-and-parameters-and-timepoints', #
                                                    subsampling = 10,
@@ -63,8 +63,5 @@ for key in data.keys():
         i+=1
                 
 ax.axis('off');
-
-# %%
-data
 
 # %%

@@ -3,34 +3,46 @@ import numpy as np
 
 from physion.analysis import read_NWB, process_NWB
 
+from warnings import simplefilter
+simplefilter(action="ignore", category=pandas.errors.PerformanceWarning)
+
 def Normalize(x):
-    if np.std(x)>0:
-        return (x-np.mean(x))/np.std(x)
+    mean, std = np.mean(x), np.std(x)
+    if std>0:
+        return (x-mean)/std, mean, std
     else:
-        return np.zeros(len(x))
+        return np.zeros(len(x)), mean, 0
 
 def NWB_to_dataframe(nwbfile,
-                     visual_stim_label='per-protocol',
-                     exclude_from_stim=[],
-                     exclude_from_timepoints=['grey-10min'],
+                     # behavior features:
+                     add_shifted_behavior_features=False,
+                     behavior_shifting_range=[-0.5, 1.],
+                     # visual stimulation features:
+                     visual_stim_features='per-protocol',
                      prestim_duration=0.5,
                      poststim_duration=1.5,
+                     exclude_from_stim=[],
+                     exclude_from_timepoints=['grey-10min'],
+                     #
                      time_sampling_reference='dFoF',
-                     normalize=[], # array of quantities to normalize
                      subsampling=None,
                      verbose=True):
     """
-    builds a pandas.DataFrame from a nwbfile 
-    with a given time sampling reference
+        builds a pandas.DataFrame from a nwbfile 
+            with a given time sampling reference
 
-    visual stimulation can be labelled either:
-        - "per-protocol"   or
-        - "per-protocol-and-parameters"
+    * visual stimulation features can be labelled either:
+        - "" 
+        - "per-protocol"
+        - "per-protocol-and-parameters" 
         - "per-protocol-and-parameters-and-timepoints"
 
-    ---
-    possibility to normalize some quantities set in the "normalize" array
-    e.g. normalize = ['Running-Speed', 'Pupil-diameter', 'Whisking', 'dFoF']
+        -> features of boolean types
+
+    * behavioral features 
+            can be shifted over time
+
+        normalized (Z-scored) over the whole time trace
 
     """
     data = read_NWB.Data(nwbfile, verbose=verbose)
@@ -38,7 +50,8 @@ def NWB_to_dataframe(nwbfile,
     if subsampling is None:
         subsampling = 1
 
-    if time_sampling_reference=='dFoF' and ('ophys' in data.nwbfile.processing):
+    if time_sampling_reference=='dFoF' and\
+                ('ophys' in data.nwbfile.processing):
         time = np.array(data.Fluorescence.timestamps[:])[::subsampling]
     else:
         print('taking running speed by default')
@@ -48,8 +61,10 @@ def NWB_to_dataframe(nwbfile,
     dataframe.dt = time[1]-time[0] # store the time step in the metadata
     dataframe.filename = os.path.basename(nwbfile) # keep filename
 
-    # - - - - - - - - - - - - - - - 
-    # --- neural activity 
+    # - - - - - - - - - - - - - - - - - - #
+    #       --- neural activity ---       #
+    # - - - - - - - - - - - - - - - - - - #
+
     if 'ophys' in data.nwbfile.processing:
 
         if not hasattr(data, 'dFoF'):
@@ -61,50 +76,115 @@ def NWB_to_dataframe(nwbfile,
 
         for i in range(data.nROIs):
 
-            if ('dFoF' in normalize) or (normalize=='all'):
-                dataframe['dFoF-ROI%i'%i] = Normalize(data.dFoF[i,:])
-            else:
-                dataframe['dFoF-ROI%i'%i] = data.dFoF[i,:]
+            dFoF = data.dFoF[i,:]
+            dFoF, dFoF_mean, dFoF_std = Normalize(dFoF)
+            setattr(data, 'dFoF_ROI%i_mean' % i, dFoF_mean)
+            setattr(data, 'dFoF_ROI%i_std' % i, dFoF_std)
+            dataframe['dFoF-ROI%i'%i] = dFoF
 
-    # - - - - - - - - - - - - - - - 
-    # --- behavioral characterization
-
+    # - - - - - - - - - - - - - - - - - - #
+    # --- behavioral characterization --- #
+    # - - - - - - - - - - - - - - - - - - #
+    
     if 'Running-Speed' in data.nwbfile.acquisition:
 
-        dataframe['Running-Speed'] = data.build_running_speed(\
-                                        specific_time_sampling=time,
-                                        verbose=verbose)
-        if ('Running-Speed' in normalize) or (normalize=='all'):
-            dataframe['Running-Speed'] = Normalize(dataframe['Running-Speed'])
+        # get:
+        running_speed = data.build_running_speed(\
+                                            specific_time_sampling=time,
+                                            verbose=verbose)
+        # normalize:
+        running_speed,\
+                dataframe.running_speed_mean,\
+                dataframe.running_speed_std = Normalize(running_speed)
 
+        if add_shifted_behavior_features:
+
+            build_timelag_set_of_behavior_arrays(data, 
+                                                 dataframe, 
+                                                 running_speed,
+                                                 'Running-Speed',
+                                                 behavior_shifting_range)
+
+        else:
+
+            dataframe['Running-Speed'] = running_speed 
 
 
     if 'Pupil' in data.nwbfile.processing:
 
-        dataframe['Pupil-diameter'] = data.build_pupil_diameter(\
-                                        specific_time_sampling=time,
-                                        verbose=verbose)
-        if ('Pupil-diameter') in normalize or (normalize=='all'):
-            dataframe['Pupil-diameter'] = Normalize(dataframe['Pupil-diameter'])
+        # get:
+        pupil_size = data.build_pupil_diameter(\
+                            specific_time_sampling=time, verbose=verbose)
+
+        # normalize:
+        pupil_size,\
+                dataframe.pupil_size_mean,\
+                dataframe.pupil_size_std = Normalize(pupil_size)
+
+        if add_shifted_behavior_features:
+
+            build_timelag_set_of_behavior_arrays(data, 
+                                                 dataframe, 
+                                                 pupil_size,
+                                                 'Pupil-Diameter',
+                                                 behavior_shifting_range)
+        else:
+
+            dataframe['Pupil-Diameter'] = pupil_size
+
     
     if 'Pupil' in data.nwbfile.processing:
 
-        dataframe['Gaze-Position'] = data.build_gaze_movement(\
-                                        specific_time_sampling=time,
-                                        verbose=verbose)
-        if ('Gaze-Position') in normalize or (normalize=='all'):
-            dataframe['Gaze-Position'] = Normalize(dataframe['Gaze-Position'])
+        # get:
+        gaze_mov= data.build_gaze_movement(\
+                                    specific_time_sampling=time,
+                                    verbose=verbose)
+
+        # normalize:
+        gaze_mov,\
+            dataframe.gaze_mov_mean,\
+            dataframe.gaze_mov_std = Normalize(gaze_mov)
+
+        if add_shifted_behavior_features:
+
+            build_timelag_set_of_behavior_arrays(data, 
+                                                 dataframe, 
+                                                 gaze_mov,
+                                                 'Gaze-Position',
+                                                 behavior_shifting_range)
+
+        else:
+
+            dataframe['Gaze-Position'] = gaze_mov
+
         
     if 'FaceMotion' in data.nwbfile.processing:
 
-        dataframe['Whisking'] = data.build_facemotion(\
+        # get:
+        facemotion = data.build_facemotion(\
                                     specific_time_sampling=time,
                                         verbose=verbose)
-        if ('Whisking' in normalize) or (normalize=='all'):
-            dataframe['Whisking'] = Normalize(dataframe['Whisking'])
+        # normalize:
+        facemotion,\
+            dataframe.facemotion_mean,\
+            dataframe.facemotion_std = Normalize(facemotion)
+
+        if add_shifted_behavior_features:
+
+            build_timelag_set_of_behavior_arrays(data, 
+                                                 dataframe, 
+                                                 facemotion,
+                                                 'Whisking',
+                                                 behavior_shifting_range)
+
+        else:
+
+            dataframe['Whisking'] = facemotion
+
     
-    # - - - - - - - - - - - - - - - 
-    # --- visual stimulation
+    # - - - - - - - - - - - - - - - - - - #
+    #     --- visual stimulation ---      #
+    # - - - - - - - - - - - - - - - - - - #
 
     for p, protocol in enumerate(data.protocols):
 
@@ -112,21 +192,24 @@ def NWB_to_dataframe(nwbfile,
 
             episodes = process_NWB.EpisodeData(data, 
                                                protocol_id=p,
-                                            verbose=verbose)
+                                               verbose=verbose)
 
             protocol_cond = data.get_protocol_cond(p)
 
-            if visual_stim_label=='per-protocol':
+            if visual_stim_features=='':
+
+                pass
+                
+            elif visual_stim_features=='per-protocol':
 
                 # a binary array for this stimulation protocol,
                 #       same for all stimulation parameters
                 dataframe['VisStim_%s'%protocol] = \
                         build_stim_specific_array(data,
                                                   protocol_cond,
-                                                  dataframe['time'],
-                                normalize=('VisStim' in normalize) or (normalize=='all'))
+                                                  dataframe['time'])
 
-            elif visual_stim_label=='per-protocol-and-parameters':
+            elif visual_stim_features=='per-protocol-and-parameters':
 
                 # a binary array for this stimulation protocol,
                 #       and a given set of stimulation parameters
@@ -163,18 +246,16 @@ def NWB_to_dataframe(nwbfile,
                         dataframe[stim_name] =\
                                 build_stim_specific_array(data,
                                                           episode_cond,
-                                                          dataframe['time'],
-                                normalize=('VisStim' in normalize) or (normalize=='all'))
+                                                          dataframe['time'])
                 else:
 
                     # no varied parameter
                    dataframe['VisStim_%s'%protocol] = \
                             build_stim_specific_array(data,
                                                       protocol_cond,
-                                                      dataframe['time'],
-                                normalize=('VisStim' in normalize) or (normalize=='all'))
+                                                      dataframe['time'])
 
-            elif visual_stim_label=='per-protocol-and-parameters-and-timepoints':
+            elif visual_stim_features=='per-protocol-and-parameters-and-timepoints':
 
                 # a binary array for this stimulation protocol,
                 #       and a given set of stimulation parameters
@@ -230,7 +311,7 @@ def NWB_to_dataframe(nwbfile,
                                                                   normalize=False)
 
             else:
-                print('visual_stim_label key not recognized !')
+                print('visual_stim_features key not recognized !')
                 print(' ---> no visual stim array in the dataframe')
 
    
@@ -269,6 +350,26 @@ def build_stim_specific_array(data, index_cond, time,
     # else:
         # return array
     return array
+
+def build_timelag_set_of_behavior_arrays(data, DF, array, 
+                                         behav_key = 'Running-Speed',
+                                         behavior_shifting_range=[-0.5,1]):
+
+    bhv_index_shifts = np.arange(\
+            int(behavior_shifting_range[0]/DF.dt),
+            int(behavior_shifting_range[1]/DF.dt)+1)
+
+    for j, shift in enumerate(bhv_index_shifts):
+
+        # initialize:
+        DF['%s__%i' % (behav_key, j)] = np.zeros(len(DF['time']))
+
+        istart = np.max([0, shift]) 
+        iend = np.min([len(DF['time']), len(DF['time'])+shift])
+
+        # fill with values:
+        DF['%s__%i' % (behav_key, j)][istart:iend] = \
+                array[istart-shift:iend-shift]
 
 
 def build_timelag_set_of_stim_specific_arrays(data, DF, index_cond, 
@@ -373,9 +474,13 @@ if __name__=='__main__':
     if ('.nwb' in sys.argv[-1]) and os.path.isfile(sys.argv[-1]):
 
         df = NWB_to_dataframe(sys.argv[-1],
-                    visual_stim_label='per-protocol-and-parameters',
+                    visual_stim_features='',
+                    # visual_stim_features='per-protocol-and-parameters',
+                              add_shifted_behavior_features=True,
                                      verbose=False)
+        print(df)
 
+        """
         indices = np.arange(len(df['time']))
 
         stim_cond = (~df['VisStim_grey-10min'])
@@ -386,6 +491,7 @@ if __name__=='__main__':
 
         STIM = extract_stim_keys(df, indices_subset=stim_test_sets[0])
         print(STIM)
+        """
 
         # print(dataframe)
     else:

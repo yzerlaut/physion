@@ -77,6 +77,7 @@ speed_threshold = 0.1
 def func(t, X):
     """ threshold-linear function """
     return np.array([X[1]*(tt-X[0]) if tt>X[0] else 0 for tt in t])
+    
 def to_minimize(X):
     return np.sum((speed_binned-func(pupil_bins, X))**2)
     
@@ -168,8 +169,7 @@ for i, label, Ax in zip(range(2), ['run. speed\n(cm/s)', 'pupil diam.\n(mm)'], A
     for j, title, ax in zip(range(3), ['rest / run', 'constricted / dilated', 'mixed states'], Ax):
         pt.set_plot(ax, ylabel=label if j==0 else '', xlabel='time from stim. (s)' if i==1 else '',
                     title=title if i==0 else '')
-        
-
+    
 
 # %%
 # show state-dependent evoked activity for all ROIs
@@ -309,3 +309,5 @@ pt.set_plot(AX[1], ylabel='$\delta$ $\Delta$F/F',
 pt.annotate(AX[1], 
             'gain = %.2f $\pm$ %.2f' % (np.mean(gains), stats.sem(gains)),
             (1,.7), va='top')
+
+# %%
