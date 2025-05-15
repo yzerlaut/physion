@@ -60,7 +60,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.acquisition.tools import save_experiment,\
             set_filename_and_folder
         from physion.acquisition.settings import update_config,\
-            update_subject, save_settings
+            save_settings
 
 
     # -- Intrinsic Imaging -- acquisition

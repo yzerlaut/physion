@@ -2,8 +2,7 @@ import json, os, pathlib
 import numpy as np
 import pandas
 
-from physion.acquisition.tools import base_path,\
-        get_subject_props
+from physion.acquisition.tools import base_path
 from physion.visual_stim.screens import SCREENS
 
 settings_filename = os.path.join(base_path, 'settings.npy')
@@ -44,15 +43,6 @@ def update_config(self):
             self.protocolBox.clear()
             self.protocolBox.addItems(['None']+self.protocol_list)
 
-        # now update subjects
-        self.subject_list = [ff.replace('.xlsx','')\
-                    for ff in os.listdir(\
-                        os.path.join(base_path,
-                                    'subjects',
-                                     self.config['subjects_folder']))]
-        self.subjectBox.clear()
-        self.subjectBox.addItems(self.subject_list)
-
         if hasattr(self, 'runButton') and hasattr(self, 'stopButton')\
                 and not self.stopButton.isEnabled():
             self.runButton.setEnabled(True)
@@ -61,26 +51,11 @@ def update_config(self):
         # if 'Screen' in self.config:
             # self.screenBox.setCurrentText(self.config['Screen'])
 
-def update_subject(self):
-
-    subject = get_subject_props(self)
-
-    if hasattr(self, 'fovPick'):
-        # dealing with FOV option
-        self.fovPick.clear()
-        fovs = ['']
-        for i in range(1, 10):
-            key = 'FOV%i'%i
-            if (key in subject) and (subject[key]!='nan'):
-                fovs.append(key)
-        self.fovPick.addItems(fovs)
-
-
 def save_settings(self):
 
     settings = {'config':self.configBox.currentText(),
                 'protocol':self.protocolBox.currentText(),
-                'subject':self.subjectBox.currentText(),
+                'subject':self.subjectBox.text(),
                 'screen':self.screenBox.currentText(),
                 'recording':self.recordingBox.currentText()}
     
@@ -101,9 +76,6 @@ def load_settings(self):
             self.protocolBox.setCurrentText(settings['protocol'])
         if settings['screen'] in SCREENS:
             self.screenBox.setCurrentText(settings['screen'])
-        if settings['subject'] in self.subject_list:
-            self.subjectBox.setCurrentText(settings['subject'])
-            self.update_subject()
         if settings['recording'] in self.recording_list:
             self.recordingBox.setCurrentText(settings['recording'])
         for i, k in enumerate(self.MODALITIES):

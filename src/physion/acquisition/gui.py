@@ -124,25 +124,12 @@ def multimodal(self,
                          1, width)
     ip+=1
     # -
-    self.subjectBox = QtWidgets.QComboBox(self)
-    self.subjectBox.activated.connect(self.update_subject)
+    self.subjectBox = QtWidgets.QLineEdit(self)
+    self.subjectBox.setText('demo-Mouse')
     tab.layout.addWidget(self.subjectBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
-    # # -
-    # tab.layout.addWidget(\
-        # QtWidgets.QLabel(40*' '+'** Screen **', self),
-                         # ip, self.side_wdgt_length, 
-                         # 1, width)
-    # ip+=1
-    # # -
-    # self.screenBox = QtWidgets.QComboBox(self)
-    # self.screenBox.addItems(['']+list(SCREENS.keys()))
-    # tab.layout.addWidget(self.screenBox,\
-                         # ip, self.side_wdgt_length+1, 
-                         # 1, width)
-    # ip+=1
     # -
     tab.layout.addWidget(\
         QtWidgets.QLabel(40*' '+'** Visual Protocol **'+40*' ', self),
@@ -203,10 +190,7 @@ def multimodal(self,
         button.setStyleSheet("font-weight: bold")
 
     ip+=2
-    tab.layout.addWidget(QtWidgets.QLabel(' FOV: '),
-                         ip, 10, 1, 4)
-    ip+=1
-    self.fovPick= QtWidgets.QComboBox()
+    self.fovPick= QtWidgets.QLineEdit('FOV : ')
     tab.layout.addWidget(self.fovPick,
                          ip, 10, 1, 4)
 

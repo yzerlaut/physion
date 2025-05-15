@@ -48,7 +48,7 @@ except ModuleNotFoundError:
 
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
-from physion.acquisition.settings import get_config_list, get_subject_props
+from physion.acquisition.settings import get_config_list
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path
@@ -122,8 +122,8 @@ def gui(self,
     # subject box
     self.add_side_widget(tab.layout, QtWidgets.QLabel('subject:'),
                          spec='small-left')
-    self.subjectBox = QtWidgets.QComboBox(self)
-    self.subjectBox.activated.connect(self.update_subject)
+    self.subjectBox = QtWidgets.QLineEdit(self)
+    self.subjectBox.setText('demo-Mouse')
     self.add_side_widget(tab.layout, self.subjectBox, spec='large-right')
     
     get_config_list(self)
@@ -224,10 +224,10 @@ def gui(self,
 
 def take_fluorescence_picture(self):
 
-    if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
+    if (self.folderBox.currentText()!='') and (self.subjectBox.text()!=''):
 
         filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                            filename='fluorescence-%s' % self.subjectBox.currentText(),
+                            filename='fluorescence-%s' % self.subjectBox.text(),
                             extension='.tif')
         
         if self.cam is not None:
@@ -259,10 +259,10 @@ def take_fluorescence_picture(self):
 
 def take_vasculature_picture(self):
 
-    if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
+    if (self.folderBox.currentText()!='') and (self.subjectBox.text()!=''):
 
         filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                            filename='vasculature-%s' % self.subjectBox.currentText(),
+                            filename='vasculature-%s' % self.subjectBox.text(),
                             extension='.tif')
         
         if self.cam is not None:
@@ -432,7 +432,7 @@ def save_intrinsic_metadata(self):
                                'subjects',self.config['subjects_file']))
     subject = get_subject_props(self)
         
-    metadata = {'subject':str(self.subjectBox.currentText()),
+    metadata = {'subject':str(self.subjectBox.text()),
                 'exposure':self.exposure,
                 'period':float(self.periodBox.text()),
                 'Nsubsampling':int(self.spatialBox.text()),

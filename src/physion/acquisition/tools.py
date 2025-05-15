@@ -41,40 +41,6 @@ def save_experiment(self, metadata):
     print('[ok] Metadata data saved as: %s ' % filename)
     self.statusBar.showMessage('Metadata saved as: "%s" ' % filename)
 
-    # SAVING THE Subject FILE
-    shutil.copy(\
-            os.path.join(base_path, 'subjects',
-                         self.config['subjects_folder'],
-                         '%s.xlsx' % self.subjectBox.currentText()),
-                filename.replace('metadata.json',
-                         '%s.xlsx' % self.subjectBox.currentText()))
-    print('[ok] Subject data saved as: %s.xlsx' % self.subjectBox.currentText())
-
-
-
-def get_subject_props(self, filename=None):
-
-    if (filename is None) and hasattr(self, 'subjectBox'):
-        filename = os.path.join(base_path,
-                                'subjects',
-                                self.config['subjects_folder'],
-                                '%s.xlsx' % \
-                                    self.subjectBox.currentText())
-        
-    table = pandas.read_excel(filename)
-
-    subject_props = {}
-
-    for i in range(len(table.keys())):
-        key = str(table.get(table.keys()[i])[0])
-        if key.replace(' ', '')!='':
-            try:
-                subject_props[key] = str(table.get(table.keys()[i])[1])
-            except BaseException as be:
-                # print(' pb with key: %s', key)
-                pass
-
-    return subject_props
 
 
 def check_gui_to_init_metadata(self):
@@ -87,8 +53,8 @@ def check_gui_to_init_metadata(self):
                 'VisualStim':self.protocolBox.currentText()!='None',
                 'recording':self.recordingBox.currentText(),
                 'notes':self.qmNotes.toPlainText(),
-                'FOV':self.fovPick.currentText(),
-                'subject_ID':self.subjectBox.currentText()}
+                'FOV':self.fovPick.text(),
+                'subject_ID':self.subjectBox.text()}
 
     if self.protocolBox.currentText()!='None':
         fn = os.path.join(base_path, 'protocols',

@@ -126,8 +126,8 @@ def gui(self,
     # subject box
     self.add_side_widget(tab.layout, QtWidgets.QLabel('subject:'),
                          spec='small-left')
-    self.subjectBox = QtWidgets.QComboBox(self)
-    self.subjectBox.activated.connect(self.update_subject)
+    self.subjectBox = QtWidgets.QLineEdit(self)
+    self.subjectBox.setText('demo-Mouse')
     self.add_side_widget(tab.layout, self.subjectBox, spec='large-right')
     
     get_config_list(self)
@@ -244,10 +244,10 @@ def gui(self,
 
 def take_fluorescence_picture(self):
 
-    if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
+    if (self.folderBox.currentText()!=''):
 
         filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                            filename='fluorescence-%s' % self.subjectBox.currentText(),
+                            filename='fluorescence-%s' % self.subjectBox.text(),
                             extension='.tif')
         
         if self.cam is not None:
@@ -276,10 +276,10 @@ def take_fluorescence_picture(self):
 
 def take_vasculature_picture(self):
 
-    if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
+    if (self.folderBox.currentText()!=''):
 
         filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                            filename='vasculature-%s' % self.subjectBox.currentText(),
+                            filename='vasculature-%s' % self.subjectBox.text(),
                             extension='.tif')
         
         if self.cam is not None:
@@ -483,15 +483,8 @@ def save_intrinsic_metadata(self):
             FOLDERS[self.folderBox.currentText()],
             filename='metadata', extension='.json')
 
-    # subject information copied to the recording folder
-    shutil.copy(\
-            os.path.join(base_path, 'subjects',
-                         self.config['subjects_folder'],
-                         '%s.xlsx' % self.subjectBox.currentText()),
-                filename.replace('metadata.json',
-                         '%s.xlsx' % self.subjectBox.currentText()))
 
-    metadata = {'subject':str(self.subjectBox.currentText()),
+    metadata = {'subject':str(self.subjectBox.text()),
                 'exposure':str(self.exposure),
                 'acq-freq':str(self.freqBox.text()),
                 'period':str(self.periodBox.currentText()),
