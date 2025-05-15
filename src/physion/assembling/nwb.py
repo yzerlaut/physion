@@ -133,9 +133,8 @@ def build_NWB_func(args, Subject=None):
     ####         IMPORTING NI-DAQ data        #######
     #################################################
     if args.verbose:
-        print('=> Loading NIdaq data for "%s" [...]' % args.datafolder)
+        print('=> Loading NIdaq.start timestamps data for "%s" [...]' % args.datafolder)
     try:
-        NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), allow_pickle=True).item()
         NIdaq_Tstart = np.load(os.path.join(args.datafolder, 'NIdaq.start.npy'))[0]
     except FileNotFoundError:
         print('   [!!] No NI-DAQ data found [!!] ')
@@ -145,6 +144,14 @@ def build_NWB_func(args, Subject=None):
     st = datetime.datetime.fromtimestamp(NIdaq_Tstart).strftime('%H:%M:%S.%f')
     true_tstart = StartTime_to_day_seconds(st)
     
+    if args.verbose:
+        print('=> Loading NIdaq data for "%s" [...]' % args.datafolder)
+    try:
+        NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), allow_pickle=True).item()
+    except FileNotFoundError:
+        print('\n   [!!] No NI-DAQ data found [!!] \n')
+        NIdaq_data = None
+
     # #################################################
     # ####         Locomotion                   #######
     # #################################################
@@ -195,13 +202,14 @@ def build_NWB_func(args, Subject=None):
                     fns = os.path.join(args.datafolder, 'subprotocols', 'Protocol-%i.json' % i)
 
 
-        # preprocessing photodiode signal
-        _, Psignal = resample_signal(NIdaq_data['analog'][0],
-                                     original_freq=float(metadata['NIdaq-acquisition-frequency']),
-                                     pre_smoothing=2./float(metadata['NIdaq-acquisition-frequency']),
-                                     new_freq=args.photodiode_sampling)
-        if args.reverse_photodiodeSignal:
-           Psignal *=-1 # reversing sign on the setup
+        if NIdaq_data is not None:
+            # preprocessing photodiode signal
+            _, Psignal = resample_signal(NIdaq_data['analog'][0],
+                                         original_freq=float(metadata['NIdaq-acquisition-frequency']),
+                                         pre_smoothing=2./float(metadata['NIdaq-acquisition-frequency']),
+                                         new_freq=args.photodiode_sampling)
+            if args.reverse_photodiodeSignal:
+               Psignal *=-1 # reversing sign on the setup
 	
         VisualStim = np.load(os.path.join(args.datafolder,
                         'visual-stim.npy'), allow_pickle=True).item()
@@ -228,7 +236,7 @@ def build_NWB_func(args, Subject=None):
             times_forced=(metadata['realignement_times_forced'] if ('realignement_times_forced' in metadata) else []),
             durations_forced=(metadata['realignement_durations_forced'] if ('realignement_durations_forced' in metadata) else []),
 
-        if not args.force_to_visualStimTimestamps:
+        if NIdaq_data is not None:
             # we do the re-alignement
             success, metadata = \
                     realign_from_photodiode(Psignal, metadata,
@@ -282,12 +290,13 @@ def build_NWB_func(args, Subject=None):
         if args.verbose:
             print('=> Storing the photodiode signal for "%s" [...]' % args.datafolder)
 
-        photodiode = pynwb.TimeSeries(name='Photodiode-Signal',
-                                      data = np.reshape(Psignal, (len(Psignal),1)),
-                                      starting_time=0.,
-                                      unit='[current]',
-                                      rate=args.photodiode_sampling)
-        nwbfile.add_acquisition(photodiode)
+        if NIdaq_data is not None:
+            photodiode = pynwb.TimeSeries(name='Photodiode-Signal',
+                                          data = np.reshape(Psignal, (len(Psignal),1)),
+                                          starting_time=0.,
+                                          unit='[current]',
+                                          rate=args.photodiode_sampling)
+            nwbfile.add_acquisition(photodiode)
 
         
     #################################################
