@@ -4,7 +4,7 @@ import pandas as pd
 
 subject_template = {\
                     'subject_id':'demo-Mouse', 
-                    'Date-of-Birth':[1988, 4, 24],
+                    'Date-of-Birth':'2000_01_01',
                     # -
                     'description':'', 
                     # -
@@ -53,7 +53,7 @@ def date_to_days(date):
     return 365*date[0]+np.sum(Days_per_month[:date[1]-1])+date[2]
 
 
-def reformat_props(Subject, debug=False):
+def reformat_props(Subject, debug=True):
 
     subject_props = subject_template.copy()
 
