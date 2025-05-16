@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.7
+#       jupytext_version: 1.16.0
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -25,9 +25,36 @@ import physion
 # # Read Dataset from Spreasheet
 
 # %%
-filename = os.path.join(os.path.expanduser('~'), 'DATA', 'Cibele', 'PV-Young-V1', 'PV_BB.xlsx')
-dataset, _, _ = physion.assembling.dataset.read_dataset_spreadsheet(filename)
-dataset[['subject', 'day', 'time', 'protocol', 'FOV']]
+sheets = os.path.join(os.path.expanduser('~'), 'CURATED', 'Cibele', 'PV-cells_WT_Adult_V1', 'DataTable.xlsx')
+
+# loading dataset from spreadsheet:
+dataset_table, subjects_table, _ = physion.assembling.dataset.read_spreadsheet(sheets)
+
+# printing dataset sheet:
+dataset_table[['subject', 'day', 'time', 'protocol', 'FOV']]
+
+# %%
+# printing subject sheet:
+subjects_table
+
+# %% [markdown]
+# ## Filter Dataset by Subject Condition
+
+# %%
+# 1) identifying female subjects 
+female_cond = (subjects_table['Sexe']=='female')
+female_subjects_table = subjects_table[female_cond]
+female_subjects_table
+
+# %%
+# 2) Identify recordings with sujects in the female_subjects_table
+
+# looping over all recordings and checking if the subject is in the female_subjects_table
+recordings_with_female_subjects = [s in list(female_subjects_table['subject']) for s in dataset_table['subject']]
+
+dataset_female_recordings = dataset_table[recordings_with_female_subjects]
+
+dataset_female_recordings
 
 # %% [markdown]
 # # Build Sub-Dataset corresponding to a given Genotype and Protocol

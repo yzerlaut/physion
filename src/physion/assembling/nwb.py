@@ -17,7 +17,7 @@ from physion.utils.camera import CameraData
 from .subject import reformat_props, cleanup_keys, subject_template
 from .add_ophys import add_ophys
 from .realign_from_photodiode import realign_from_photodiode
-from .dataset import read_dataset_spreadsheet, read_metadata
+from .dataset import read_spreadsheet, read_metadata
 from .tools import load_FaceCamera_data,\
         build_subsampling_from_freq, StartTime_to_day_seconds
 

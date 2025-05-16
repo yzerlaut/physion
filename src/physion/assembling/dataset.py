@@ -4,7 +4,7 @@ import numpy as np
 
 from .tools import read_metadata
 
-def read_dataset_spreadsheet(filename, verbose=True):
+def read_spreadsheet(filename, verbose=True):
 
     dataset = pd.read_excel(filename, sheet_name='Recordings')
     subjects = pd.read_excel(filename, sheet_name='Subjects')
