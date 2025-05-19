@@ -4,7 +4,17 @@ import numpy as np
 
 from .tools import read_metadata
 
-def read_spreadsheet(filename, verbose=True):
+def read_spreadsheet(filename, 
+                     get_metadata_from='', # can 
+                     verbose=True):
+    """
+    get_metadata_from can have the value:
+            - "file"
+            - "nwb"
+            - "table"
+    
+
+    """
 
     dataset = pd.read_excel(filename, sheet_name='Recordings')
     subjects = pd.read_excel(filename, sheet_name='Subjects')
@@ -12,7 +22,7 @@ def read_spreadsheet(filename, verbose=True):
 
     directory = os.path.dirname(filename)
 
-    protocols, FOVs, datafolders, ages = [], [], [], []
+    protocols, FOVs, datafolders, ages, files = [], [], [], [], []
 
     for i in range(len(dataset)):
 
@@ -24,20 +34,48 @@ def read_spreadsheet(filename, verbose=True):
         protocols.append('') # default, will be overwritten if possible
         FOVs.append('') # default, will be overwritten if possible
 
-        try:
+        fn = os.path.join(directory, 'NWBs', 
+                '%s-%s.nwb' % (dataset['day'][i], dataset['time'][i]))
 
-            metadata = read_metadata(path)
-            protocols[-1] = metadata['protocol']
-            FOVs[-1] = metadata['FOV']
+        if os.path.isfile(fn):
+            files.append(fn)
+        else:
+            files.append('')
 
-        except BaseException as be:
+        if get_metadata_from=='files':
 
-            if verbose:
-                print(be)
+            try:
+
+                metadata = read_metadata(path)
+                protocols[-1] = metadata['protocol']
+                FOVs[-1] = metadata['FOV']
+
+            except BaseException as be:
+
+                if verbose:
+                    print(be)
+
+
+        elif get_metadata_from=='nwbs':
+
+            pass
+
+        elif get_metadata_from=='table':
+
+            try:
+
+                protocols[-1] = analysis['protocol'][i]
+                FOVs[-1] = dataset['FOV'][i]
+
+            except BaseException as be:
+
+                if verbose:
+                    print(be)
 
     dataset['datafolder'] = datafolders
     dataset['protocol'] = protocols
     dataset['FOV'] = FOVs
+    dataset['files'] = files
 
     return dataset, subjects, analysis
 
