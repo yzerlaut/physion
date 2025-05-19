@@ -169,7 +169,7 @@ for i, label, Ax in zip(range(2), ['run. speed\n(cm/s)', 'pupil diam.\n(mm)'], A
     for j, title, ax in zip(range(3), ['rest / run', 'constricted / dilated', 'mixed states'], Ax):
         pt.set_plot(ax, ylabel=label if j==0 else '', xlabel='time from stim. (s)' if i==1 else '',
                     title=title if i==0 else '')
-    
+
 
 # %%
 # show state-dependent evoked activity for all ROIs

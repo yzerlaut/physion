@@ -299,17 +299,17 @@ stim = build_stim(protocol)
 
 # %%
 def compute_new_image_with_dots(self, index, dot_size, Ndots,
-                                away_from_edges_factor=4):
-    dot_size_pix = int(np.round(self.angle_to_pix(dot_size),0))
-    Nx = int(self.x.shape[0]/dot_size_pix)
-    Nz = int(self.x.shape[1]/dot_size_pix)
+                                bounds_range = [60,40]):
+
+    within_bounds_cond = (np.abs(stim.x)<bounds_range[0]) & (np.abs(stim.z)<bounds_range[1])
+    
     dots = []
     img = init_bg_image(self, index)
     for n in range(Ndots):
-        ix, iz = (np.random.choice(np.arange(away_from_edges_factor, Nx-away_from_edges_factor),1)[0],
-                  np.random.choice(range(away_from_edges_factor,Nz-away_from_edges_factor),1)[0])
-        img[dot_size_pix*ix:dot_size_pix*(ix+1),
-            dot_size_pix*iz:dot_size_pix*(iz+1)] = 1
+        iCenter = np.random.choice(np.arange(len(stim.x[within_bounds_cond])))
+        x0 = stim.x[within_bounds_cond][iCenter]
+        z0 = stim.z[within_bounds_cond][iCenter]
+        stim.add_dot(img, (x0,z0), dot_size, -1)
     return img
         
 img = compute_new_image_with_dots(stim, 0, 5, 8)
@@ -324,5 +324,3 @@ img = init_bg_image(stim, 0)
 img += np.exp(-(stim.x**2+stim.z**2)/2/radius**2)
 ax.imshow(img.T, origin='lower', cmap=plt.cm.gray)
 #ax.axis('off')
-
-# %%

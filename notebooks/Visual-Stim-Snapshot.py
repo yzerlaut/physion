@@ -19,7 +19,10 @@
 # %%
 # filename:            /!\ modify if it is not in your "Downloads" folder
 import os
-filename = os.path.join(os.path.expanduser('~'),'CURATED','SST-FF-Gratings-Stim','Wild-Type', '2023_05_11-15-25-41.nwb')
+
+filename = os.path.join(os.path.expanduser('~'), 
+                        'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
+                        '2023_02_15-13-30-47.nwb')
 
 # %%
 # general python modules for scientific analysis
@@ -30,9 +33,6 @@ import numpy as np
 sys.path.append('../src')
 from physion.utils import plot_tools as pt
 from physion.analysis.read_NWB import Data
-
-import warnings
-warnings.filterwarnings("ignore") # disable the UserWarning from pynwb (arrays are not well oriented)
 
 # %%
 # load the datafile
@@ -45,7 +45,7 @@ data.init_visual_stim()
 
 # %%
 episode = 1
-data.visual_stim.show_frame(episode, label={'degree': 20, 'shift_factor': 0.02, 'lw': 2, 'fontsize': 12})
+data.visual_stim.show_frame(episode) #label={'degree': 20, 'shift_factor': 0.02, 'lw': 2, 'size': 12})
 
 # %%
 # or:

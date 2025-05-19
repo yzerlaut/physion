@@ -16,20 +16,12 @@
 # %% [markdown]
 # # Visualize Raw Data
 
-# %% [markdown]
-# Get the example data file:
-#
-# https://drive.google.com/file/d/1tjOfxj1WuvMF3uBUHLXTGfs6dUUr1QaC/view?usp=drive_link
-#
-# The code below assume that you have it in your "Downloads" folder, modify the filename location otherwise
-#
-
 # %%
-# filename:            /!\ modify if it is not in your "Downloads" folder
 import os
+
 filename = os.path.join(os.path.expanduser('~'), 
-                        'Desktop', 
-                        '2024_09_03-16-00-59.nwb')
+                        'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
+                        '2023_02_15-13-30-47.nwb')
 
 # %%
 # general python modules for scientific analysis
@@ -82,7 +74,7 @@ fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'FOV.png'))
 # default plot
 from physion.dataviz.raw import plot as plot_raw, find_default_plot_settings
 settings = find_default_plot_settings(data)
-_ = plot_raw(data, settings=settings)
+_ = plot_raw(data, settings=settings, tlim=[1200,1300])
 
 # %% [markdown]
 # ## Full view
@@ -103,8 +95,4 @@ settings = {'Locomotion': {'fig_fraction': 1,
                            'roiIndices': np.random.choice(np.arange(data.nROIs), np.min([20,data.nROIs]), replace=False),
                            'color': '#2ca02c'}
            }
-plot_raw(data, tlim=[0, data.t_dFoF[-1]], settings=settings)
-
-# %%
-
-# %%
+plot_raw(data, tlim=[100, data.t_dFoF[-1]], settings=settings)
