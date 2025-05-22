@@ -30,38 +30,38 @@ sheets = os.path.join(os.path.expanduser('~'),
                       'DataTable.xlsx')
 
 # loading dataset from spreadsheet:
-dataset_table, subjects_table, analysis = physion.assembling.dataset.read_spreadsheet(sheets,
+dataset, subjects, analysis = physion.assembling.dataset.read_spreadsheet(sheets,
                                                                                       get_metadata_from='table')
 
 # printing dataset sheet:
-dataset_table[['subject', 'day', 'time', 'protocol', 'FOV']]
+dataset[['subject', 'day', 'time', 'protocol', 'FOV']]
 
 # %% [markdown]
 # ## Filter Dataset by Protocol Condition to build Sub-Dataset
 
 # %%
 # set protocol condition:
-protocol_cond = (dataset_table['protocol']=='GluN3-BlankFirst') # PROTOCOL-NAME here !
-subdataset_table = dataset_table[protocol_cond]
+protocol_cond = (dataset['protocol']=='GluN3-BlankFirst') # PROTOCOL-NAME here !
+subdataset = dataset[protocol_cond]
 
-subdataset_table[['subject', 'day', 'time', 'protocol', 'FOV']]
+subdataset[['subject', 'day', 'time', 'protocol', 'FOV']]
 
 # %% [markdown]
 # ## Filter Dataset by Subject Condition to build Sub-Dataset
 
 # %%
 # 1) identifying female subjects 
-female_cond = (subjects_table['Sexe']=='Female')
-female_subjects_table = subjects_table[female_cond]
-female_subjects_table
+female_cond = (subjects['Sexe']=='Female')
+female_subjects = subjects[female_cond]
+female_subjects
 
 # %%
-# 2) Identify recordings with sujects in the female_subjects_table
+# 2) Identify recordings with sujects in the female_subjects
 
-# looping over all recordings and checking if the subject is in the female_subjects_table
-recordings_with_female_subjects = [s in list(female_subjects_table['subject']) for s in dataset_table['subject']]
+# looping over all recordings and checking if the subject is in the female_subjects
+recordings_with_female_subjects = [s in list(female_subjects['subject']) for s in dataset['subject']]
 
-dataset_female_recordings = dataset_table[recordings_with_female_subjects]
+dataset_female_recordings = dataset[recordings_with_female_subjects]
 
 dataset_female_recordings[['subject', 'day', 'time', 'protocol', 'FOV', 'files']]
 
