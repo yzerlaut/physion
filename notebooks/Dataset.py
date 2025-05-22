@@ -6,7 +6,7 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.16.0
+#       jupytext_version: 1.16.7
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -40,8 +40,8 @@ dataset_table[['subject', 'day', 'time', 'protocol', 'FOV']]
 # ## Filter Dataset by Protocol Condition to build Sub-Dataset
 
 # %%
-# 1) identifying female subjects 
-protocol_cond = (dataset_table['protocol']=='GluN3-BlankFirst')
+# set protocol condition:
+protocol_cond = (dataset_table['protocol']=='GluN3-BlankFirst') # PROTOCOL-NAME here !
 subdataset_table = dataset_table[protocol_cond]
 
 subdataset_table[['subject', 'day', 'time', 'protocol', 'FOV']]
