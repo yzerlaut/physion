@@ -666,8 +666,8 @@ if __name__=='__main__':
         dataset, subjects, _ = read_spreadsheet(filename)
         args.destination_folder = os.path.join(directory, 'NWBs')
         for i in np.arange(args.files_indices[0], 
-                           min([len(dataset)+1, args.files_indices[1]])):
-            print('\n \n     [%i] -- %s \n ' % (i+1,dataset['datafolder'][i]))
+                           min([len(dataset), args.files_indices[1]])):
+            print('\n \n     [%i] -- %s \n ' % (i+1, dataset['datafolder'][i]))
 
             # subject information:
             Subject = subjects[\
