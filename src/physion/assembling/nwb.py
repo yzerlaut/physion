@@ -214,10 +214,6 @@ def build_NWB_func(args, Subject=None):
         VisualStim = np.load(os.path.join(args.datafolder,
                         'visual-stim.npy'), allow_pickle=True).item()
 
-        # using the photodiod signal for the realignement
-        if args.verbose:
-            print('=> Performing realignement from photodiode for "%s" [...]  ' % args.datafolder)
-
         if 'time_duration' not in VisualStim:
             VisualStim['time_duration'] = np.array(VisualStim['time_stop'])-np.array(VisualStim['time_start'])
 
@@ -236,7 +232,18 @@ def build_NWB_func(args, Subject=None):
             times_forced=(metadata['realignement_times_forced'] if ('realignement_times_forced' in metadata) else []),
             durations_forced=(metadata['realignement_durations_forced'] if ('realignement_durations_forced' in metadata) else []),
 
-        if NIdaq_data is not None:
+        if args.force_to_visualStimTimestamps or (NIdaq_data is None):
+            if args.verbose:
+                print('=> Forcing the realignement from visualStim timestamps for "%s" [...]  ' % args.datafolder)
+            # we just take the original timestamps
+            success = True
+            for key in ['time_start', 'time_stop']:
+                metadata['%s_realigned' % key] = np.array(metadata['%s' % key], dtype=float)
+        else:
+            # using the photodiod signal for the realignement
+            if args.verbose:
+                print('=> Performing realignement from photodiode for "%s" [...]  ' % args.datafolder)
+
             # we do the re-alignement
             success, metadata = \
                     realign_from_photodiode(Psignal, metadata,
@@ -248,11 +255,6 @@ def build_NWB_func(args, Subject=None):
                                     times_forced=times_forced,
                                     durations_forced=durations_forced,
                                     verbose=args.verbose)
-        else:
-            # we just take the original timestamps
-           success = True
-           for key in ['time_start', 'time_stop']:
-               metadata['%s_realigned' % key] = np.array(metadata['%s' % key], dtype=float)
 
         if success:
             timestamps = metadata['time_start_realigned']
