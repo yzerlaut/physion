@@ -4,6 +4,22 @@ Some presets for our recording conditions
 
 presets = {\
         "":{},
+        "hsyn-Ventricle-inj":{\
+                           # registration
+                           "nonrigid": False,
+                           # functional detection
+                           "sparse_mode":0,
+                           "allow_overlap":True,
+                           "denoise":0,
+                           "connected":True,
+                           "threshold_scaling":0.5,
+                           "cell_diameter":20,
+                           "spatial_hp_detect":25,
+                           # neuropil
+                           "inner_neuropil_radius": 2,
+                           "min_neuropil_pixels": 100, 
+                           "flow_threshold": 0.1,
+                           "cellprob_threshold": -2.0},\
         "SomasOnly-zoomed":{\
                            # registration
                            "nonrigid": False,
