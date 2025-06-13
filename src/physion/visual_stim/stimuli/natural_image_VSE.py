@@ -9,7 +9,7 @@ from physion.visual_stim.preprocess_NI import load,\
 ##  ----    NATURAL IMAGES    --- #####
 #######################################
 
-params = {"Image-ID":0,
+params = {"Image-ID":3,
           "seed":0}
 
 def get_NaturalImages_as_array(screen):
@@ -68,7 +68,10 @@ class stim(visual_stim):
         # initializing set of NI
         self.NIarray = get_NaturalImages_as_array(self.screen)
 
-        self.vse = generate_VSE(seed=protocol['seed-1'])
+        if 'seed' in protocol:
+            self.vse = generate_VSE(seed=protocol['seed'])
+        else:
+            self.vse = generate_VSE(seed=1)
 
     def compute_shifted_image(self, img, ix, iy):
         sx, sy = img.shape

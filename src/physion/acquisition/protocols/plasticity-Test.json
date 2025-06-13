@@ -1,0 +1,13 @@
+{
+  "Presentation": "Stimuli-Sequence",
+  "Stimulus": "natural-image-VSE",
+  "Screen": "Dell-2020",
+  "presentation-duration": 7,
+  "presentation-prestim-period": 30,
+  "presentation-poststim-period": 30,
+  "presentation-interstim-period": 60,
+  "N-repeat": 30,
+  "_______________________________________________________________________1":0,
+  "Image-ID": 0,
+  "seed": 0
+}
