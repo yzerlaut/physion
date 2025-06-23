@@ -4,7 +4,7 @@ import pandas as pd
 
 subject_template = {\
                     'subject_id':'demo-Mouse', 
-                    'Date-of-Birth':'2000_01_01',
+                    'Date-of-Birth':[2000,1,1],
                     # -
                     'description':'', 
                     # -

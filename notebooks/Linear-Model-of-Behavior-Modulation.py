@@ -20,15 +20,15 @@
 #
 # i.e. we use the `sklearn` functions with parameters:
 #
-# - `model_validation.test_train_split(X, y, test_size=0.4)`
+# - `model_selection.test_train_split(X, y, test_size=0.4)`
 # - `linear_model.RidgeCV(alphas=[1e-3, 1e-2, 1e-1, 1, 10, 100])`
 
 # %%
-## import sys, os
+import sys, os
 import numpy as np
-from sklearn.linear_model import Ridge
+from sklearn import linear_model, model_selection
 
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+sys.path += ['../src', './src']
 import physion
 import physion.utils.plot_tools as pt
 
@@ -55,8 +55,8 @@ for i in range(N):
     
     bhv_keys = [k for k in data.keys() if (('Run' in k) or ('Gaze' in k) or ('Whisk' in k) or ('Pupil' in k))]
 
-    X_train, X_test, y_train, y_test = train_test_split(data[bhv_keys], data['dFoF-ROI%i' % i], test_size=0.4, random_state=0)
-    model = RidgeCV(alphas=[1e-3, 1e-2, 1e-1, 1, 10, 100], cv=3).fit(X_train, y_train)
+    X_train, X_test, y_train, y_test = model_selection.train_test_split(data[bhv_keys], data['dFoF-ROI%i' % i], test_size=0.4, random_state=0)
+    model = linear_model.RidgeCV(alphas=[1e-3, 1e-2, 1e-1, 1, 10, 100], cv=3).fit(X_train, y_train)
 
     AX[i].plot(data['time'], model.predict(data[bhv_keys]), 'b-', lw=0.5)
     pt.annotate(AX[i], '%.1f%% ($\\alpha$=%.1f)' % (100*model.score(X_test, y_test),
@@ -90,9 +90,9 @@ for shift, color in zip([False, True], ['b', 'r']):
         
         bhv_keys = [k for k in data.keys() if (('Run' in k) or ('Gaze' in k) or ('Whisk' in k) or ('Pupil' in k))]
     
-        X_train, X_test, y_train, y_test = train_test_split(data[bhv_keys], data['dFoF-ROI%i' % i],
+        X_train, X_test, y_train, y_test = model_selection.train_test_split(data[bhv_keys], data['dFoF-ROI%i' % i],
                                                             test_size=0.4, random_state=0)
-        model = RidgeCV(alphas=[1e-3, 1e-2, 1e-1, 1, 10, 100], cv=3).fit(X_train, y_train)
+        model = linear_model.RidgeCV(alphas=[1e-3, 1e-2, 1e-1, 1, 10, 100], cv=3).fit(X_train, y_train)
     
         AX[i].plot(data['time'], model.predict(data[bhv_keys]), color=color, lw=0.2 if shift else 0.5)
         pt.annotate(AX[i], shift*'\n'+'%.1f%% ($\\alpha$=%.1f)' % (100*model.score(X_test, y_test),
@@ -100,7 +100,6 @@ for shift, color in zip([False, True], ['b', 'r']):
 
         if shift:
             pt.set_plot(AX[i], ['left', 'bottom'] if i==(N-1) else ['left'], ylabel='$\\Delta$F/F\n'+'ROI-%i' % i)
-
 # %% [markdown]
 # ## Visualizing the time-shifted behavioral features
 

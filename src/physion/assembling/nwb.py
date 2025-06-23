@@ -79,9 +79,9 @@ def build_NWB_func(args, Subject=None):
 
     if Subject is not None:
         subject_props = reformat_props(Subject, debug=args.verbose)
-        cleanup_keys(subject_props, metadata, debug=args.verbose)
     else:
         subject_props = subject_template.copy()
+    cleanup_keys(subject_props, metadata, debug=args.verbose)
 
     # --------------------------------------------------------------
     #    ---------  building the pynwb subject object   ----------
