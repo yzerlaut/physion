@@ -8,19 +8,18 @@ presets = {\
                            # registration
                            "nonrigid": False,
                            # functional detection
-                           "sparse_mode":False,
-                           "allow_overlap":True,
+                           "sparse_mode":True,
+                           "allow_overlap":False,
                            "denoise":0,
                            "connected":True,
-                           "threshold_scaling":0.5,
+                           "threshold_scaling":1.0,
                            "high_pass":300,
-                           "spatial_hp_detect":25,
-                           "cell_diameter":10,
+                           "spatial_hp_detect":25.0,
+                           "spatial_scale":0, # no pre-shape
                            # neuropil
                            "inner_neuropil_radius": 2,
-                           "min_neuropil_pixels": 200, 
-                           "flow_threshold": 0.1,
-                           "cellprob_threshold": 0.5},\
+                           "min_neuropil_pixels": 350, 
+                           "flow_threshold": 1.5},\
         "SomasOnly-zoomed":{\
                            # registration
                            "nonrigid": False,
