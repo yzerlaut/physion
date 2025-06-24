@@ -198,6 +198,13 @@ def load_RCL(self):
         self.iscell = np.load(os.path.join(self.folder, 'suite2p', 'plane0', 'iscell.npy'), allow_pickle=True)
         self.ops = np.load(os.path.join(self.folder, 'suite2p', 'plane0', 'ops.npy'), allow_pickle=True).item()
 
+        # SAVE A COPY of the meanImg_chan2
+        for key in ['meanImg_chan2', 'meanImg_chan2_corrected']:
+            if key in self.ops:
+                im = Image.fromarray(self.ops[key], mode='F')
+                im.save(os.path.join(self.folder, 
+                                     'suite2p', 'plane0', '%s.tiff' % key))
+
         # self.build_linear_interpolation()
 
         draw_image_RCL(self)
