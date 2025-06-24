@@ -6,6 +6,7 @@ import numpy as np
 from PyQt5 import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
 import matplotlib.pylab as plt
+from PIL import Image
 
 from physion.utils.paths import FOLDERS
 from physion.utils.plot_tools import figure
@@ -115,10 +116,6 @@ def red_channel_labelling(self,
     self.img = pg.ImageItem()
     self.p0.setAspectLocked()
     self.p0.addItem(self.img)
-
-    def clickS(self, points, ev):
-        print(points.pos())
-    self.clickS = clickS
 
     self.rois_green = pg.ScatterPlotItem(pxMode=False)
     self.rois_red = pg.ScatterPlotItem()
@@ -269,7 +266,6 @@ def draw_rois(self):
     self.p0.addItem(self.rois_red)
     self.p0.addItem(self.rois_green)
 
-    self.rois_green.sigClicked(self.clickS)
 
 def highlight_roi(self, size=6, t=np.arange(20)):
     
