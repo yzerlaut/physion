@@ -116,12 +116,17 @@ def red_channel_labelling(self,
     self.p0.setAspectLocked()
     self.p0.addItem(self.img)
 
-    self.rois_green = pg.ScatterPlotItem()
+    def clickS(self, points, ev):
+        print(points.pos())
+    self.clickS = clickS
+
+    self.rois_green = pg.ScatterPlotItem(pxMode=False)
     self.rois_red = pg.ScatterPlotItem()
     self.rois_hl = pg.ScatterPlotItem()
 
     self.refresh_tab(tab)
     self.draw_image_RCL()
+
 
 
 def reset_all_to_green(self):
@@ -258,11 +263,13 @@ def draw_rois(self):
     for i in range(len(self.stat)):
         if self.iscell[i,0]:
             add_single_roi_pix(self, i)
-    
+   
     self.rois_red.setData(self.x_red, self.y_red, size=3, brush=pg.mkBrush(255,0,0))
     self.rois_green.setData(self.x_green, self.y_green, size=1, brush=pg.mkBrush(0,255,0))
     self.p0.addItem(self.rois_red)
     self.p0.addItem(self.rois_green)
+
+    self.rois_green.sigClicked(self.clickS)
 
 def highlight_roi(self, size=6, t=np.arange(20)):
     
