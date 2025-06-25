@@ -5,35 +5,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 from dateutil.tz import tzlocal
 
-#################################################
-###        Select the Camera Interface    #######
-#################################################
-CameraInterface = None
-### --------- MicroManager Interface -------- ###
-try:
-    from pycromanager import Core
-    CameraInterface = 'MicroManager'
-except ModuleNotFoundError:
-    pass
-
-### ------------ ThorCam Interface ---------- ###
-if CameraInterface is None:
-    try:
-        absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
-                            'work', 'physion', 'src', 'physion',
-                            'hardware', 'Thorlabs', 'camera_dlls')
-        os.environ['PATH'] = absolute_path_to_dlls + os.pathsep +\
-                                                    os.environ['PATH']
-        os.add_dll_directory(absolute_path_to_dlls)
-        CameraInterface = 'ThorCam'
-        from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
-    except (AttributeError, ModuleNotFoundError):
-        pass
-### --------- None -> demo mode ------------- ###
-if CameraInterface is None:
-    print('------------------------------------')
-    print('   camera support not available !')
-    print('------------------------------------')
+from physion.intrinsic.load_camera import *
 
 #################################################
 ###        Now set up the Acquisition     #######
@@ -47,21 +19,9 @@ from physion.visual_stim.show import init_stimWindow
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path
+from physion.intrinsic.acquisition import init_thorlab_cam, close_thorlab_cam
 
 camera_depth = 12
-
-def init_thorlab_cam(self):
-    self.sdk = TLCameraSDK()
-    self.cam = self.sdk.open_camera(self.sdk.discover_available_cameras()[0])
-    # for software trigger
-    self.cam.frames_per_trigger_zero_for_unlimited = 0
-    self.cam.operation_mode = 0
-    print('\n [ok] Thorlabs Camera successfully initialized ! \n')
-    self.demo = False
-
-def close_thorlab_cam(self):
-    self.cam.dispose()
-    self.sdk.dispose()
 
 def gui(self,
         box_width=250,

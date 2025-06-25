@@ -57,7 +57,7 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
         from physion.gui.parts import inactivated as multimodal
 
-    if Acquisition or Intrinsic:
+    if Acquisition or Intrinsic or OD:
         from physion.acquisition.tools import save_experiment,\
             set_filename_and_folder
         from physion.acquisition.settings import update_config,\
@@ -77,7 +77,10 @@ class MainWindow(QtWidgets.QMainWindow):
                 stop_SS_intrinsic, update_dt_SS_intrinsic
     elif OD:
         from physion.intrinsic.ocular_dominance import gui as intrinsic_acq
-
+        from physion.intrinsic.acquisition import launch_intrinsic,\
+                stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
+                take_vasculature_picture, take_fluorescence_picture
+        from physion.gui.parts import inactivated as SS_intrinsic_acq
     else:
         from physion.gui.parts import inactivated as intrinsic_acq
         from physion.gui.parts import inactivated as SS_intrinsic_acq
@@ -261,6 +264,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if ('acquisition' in sys.argv):
             self.multimodal()
         elif ('intrinsic' in sys.argv):
+            self.intrinsic_acq()
+        elif ('OD' in sys.argv):
             self.intrinsic_acq()
         elif filename is not None:
             from physion.analysis.read_NWB import Data
