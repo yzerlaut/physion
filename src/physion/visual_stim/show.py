@@ -41,18 +41,29 @@ def init_stimWindow(self,
     self.mediaPlayer.setVideoOutput(self.videowidget)
 
     # load the movie
-    self.mediaPlayer.setMedia(\
-            QtMultimedia.QMediaContent(\
-                    QtCore.QUrl.fromLocalFile(\
-                        os.path.abspath(self.stim.movie_file))))
+    if os.path.isfile(self.stim.movie_file):
 
-    # initialize the stimulation index
-    self.current_index= -1 
+        self.mediaPlayer.setMedia(\
+                QtMultimedia.QMediaContent(\
+                        QtCore.QUrl.fromLocalFile(\
+                            os.path.abspath(self.stim.movie_file))))
 
-    self.mediaPlayer.play()
-    self.mediaPlayer.pause()
+        # initialize the stimulation index
+        self.current_index= -1 
 
-    self.stimWin.show()
+        self.mediaPlayer.play()
+        self.mediaPlayer.pause()
+
+        self.stimWin.show()
+
+    else:
+
+        print()
+        print(' ########################################## ')
+        print('    [!!]   movie file not found ! [!!]')
+        print(self.stim.movie_file)
+        print(' ########################################## ')
+
 
 
 if __name__=='__main__':
@@ -61,7 +72,7 @@ if __name__=='__main__':
     ####  visualize the stimulation   ####
     ######################################
 
-    from physion.visual_stim.build import build_stim
+    from physion.visual_stim.build import build_stim, get_default_params
     import json, sys, multiprocessing
 
     import argparse
@@ -85,22 +96,29 @@ if __name__=='__main__':
 
     valid = False
 
-    Format = 'wmv' if 'win32' in sys.platform else 'mp4'
-    if os.path.isfile(os.path.join(args.protocol, 'movie.%s' % Format)) and\
-        os.path.isfile(os.path.join(args.protocol, 'protocol.json')):
+    if '.wmv' in args.protocol or '.mp4' in args.protocol:
+        protocol = get_default_params('natural-image')
+        movie_file = args.protocol
         valid = True
-        
-    if not valid:
-        print('')
-        print(' [!!] protocol folder not valid [!!] ')
-        print('         it does not contain the protocol.json and movie.%s files' % Format)
-        print('')
 
     else:
+        Format = 'wmv' if 'win32' in sys.platform else 'mp4'
+        if os.path.isfile(os.path.join(args.protocol, 'movie.%s' % Format)) and\
+            os.path.isfile(os.path.join(args.protocol, 'protocol.json')):
 
-        with open(os.path.join(args.protocol, 'protocol.json'), 'r') as fp:
-            protocol = json.load(fp)
-        protocol['demo'] = True
+            movie_file = os.path.join(args.protocol, 'movie.%s' % Format)
+            with open(os.path.join(args.protocol, 'protocol.json'), 'r') as fp:
+                protocol = json.load(fp)
+            protocol['demo'] = True
+            valid = True
+            
+        if not valid:
+            print('')
+            print(' [!!] protocol folder not valid [!!] ')
+            print('         it does not contain the protocol.json and movie.%s files' % Format)
+            print('')
+
+    if valid:
 
         # A minimal GUI to display the stim window 
         class MainWindow(QtWidgets.QMainWindow):
@@ -108,7 +126,7 @@ if __name__=='__main__':
             def __init__(self):
                 super(MainWindow, self).__init__()
                 self.stim = build_stim(protocol)
-                self.stim.movie_file = os.path.join(args.protocol, 'movie.%s' % Format)
+                self.stim.movie_file = movie_file
                 self.setGeometry(100, 100, 400, 40)
                 self.runBtn = QtWidgets.QPushButton('Start/Stop')
                 self.runBtn.clicked.connect(self.run)

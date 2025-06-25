@@ -11,6 +11,8 @@ params = {"presentation-duration":12,
           "flicker-size":10.,
           "flicker-freq":5.,
           "bar-size":5.,
+          "bar-length":200.,
+          "bar-center":0.,
           "direction":3, # 0-Up, 1-Down, 2-Left, 3-Right
           "contrast":1.0,
           "bg-color":0.5}
@@ -55,6 +57,7 @@ class stim(visual_stim):
             center = self.x.min()+T*(self.x.max()-self.x.min())
 
 
+        # build the bar
         if self.experiment['direction'][episode] in [0,1]:
             bar_cond = (self.z<\
                         (center+self.experiment['bar-size'][episode]/2.)) &\
@@ -69,6 +72,11 @@ class stim(visual_stim):
                                  flickSpace[:-1], flickSpace[1:]):
                 cond = bar_cond & (self.x>=f1) & (self.x<f2)
                 img[cond] = (iFlicker+i%2)%2
+            img[(self.x<(self.experiment['bar-center'][episode]-\
+                            self.experiment['bar-length'][episode]/2.)) |\
+                (self.x>(self.experiment['bar-center'][episode]+\
+                            self.experiment['bar-length'][episode]/2.))] =\
+                            self.experiment['bg-color'][episode]
 
         if self.experiment['direction'][episode] in [2,3]:
             bar_cond = (self.x<\
@@ -84,6 +92,11 @@ class stim(visual_stim):
                                  flickSpace[:-1], flickSpace[1:]):
                 cond = bar_cond & (self.z>=f1) & (self.z<f2)
                 img[cond] = (iFlicker+i%2)%2
+            img[(self.z<(self.experiment['bar-center'][episode]-\
+                            self.experiment['bar-length'][episode]/2.)) |\
+                (self.z>(self.experiment['bar-center'][episode]+\
+                            self.experiment['bar-length'][episode]/2.))] =\
+                            self.experiment['bg-color'][episode]
 
         return img
 
@@ -94,6 +107,8 @@ if __name__=='__main__':
     from physion.visual_stim.build import get_default_params
 
     params = get_default_params('flickering_bar')
+    params['bar-center'] = -20
+    params['bar-length'] = 30
 
     import time
     import cv2 as cv

@@ -10,7 +10,6 @@ try:
 except ModuleNotFoundError:
     pass
 
-print(sys.argv)
 GUI = MainWindow(app,
     filename=sys.argv[-1] if (('.nwb' in sys.argv[-1]) and \
                     os.path.isfile(sys.argv[-1])) else None,

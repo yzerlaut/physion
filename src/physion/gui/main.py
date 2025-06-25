@@ -77,7 +77,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 stop_SS_intrinsic, update_dt_SS_intrinsic
     elif OD:
         from physion.intrinsic.ocular_dominance import gui as intrinsic_acq
-        from physion.intrinsic.acquisition import launch_intrinsic,\
+        from physion.intrinsic.ocular_dominance import launch_intrinsic,\
                 stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
                 take_vasculature_picture, take_fluorescence_picture
         from physion.gui.parts import inactivated as SS_intrinsic_acq

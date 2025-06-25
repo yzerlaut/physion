@@ -22,9 +22,7 @@ SCREENS = {
         'distance_from_eye':15, # in cm
         'fullscreen':True,
         'monitoring_square':{'size':8,
-                             'location':'bottom-left',
-                             'x':-24,
-                             'y':-13.5},
+                             'location':'top-right'},
         'gamma_correction':{'k':1.03,
                             'gamma':1.77},
     },
