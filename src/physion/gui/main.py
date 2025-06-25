@@ -5,6 +5,7 @@ from PyQt5 import QtWidgets
 
 Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv)
 Intrinsic = ('all' in sys.argv) or ('intrinsic' in sys.argv)
+OD = ('all' in sys.argv) or ('OD' in sys.argv)
 
 class MainWindow(QtWidgets.QMainWindow):
     """
@@ -74,6 +75,9 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.intrinsic.somatosensory import gui as SS_intrinsic_acq
         from physion.intrinsic.somatosensory import launch_SS_intrinsic,\
                 stop_SS_intrinsic, update_dt_SS_intrinsic
+    elif OD:
+        from physion.intrinsic.ocular_dominance import gui as intrinsic_acq
+
     else:
         from physion.gui.parts import inactivated as intrinsic_acq
         from physion.gui.parts import inactivated as SS_intrinsic_acq
