@@ -105,6 +105,7 @@ class MainWindow(QtWidgets.QMainWindow):
                 compute_SS_power_maps, save_SS_intrinsic
     else:
         from physion.gui.parts import inactivated as intrinsic
+        from physion.gui.parts import inactivated as OD_analysis 
         from physion.gui.parts import inactivated as SS_intrinsic
 
     # -- FaceMotion tracking
