@@ -35,7 +35,6 @@ from physion.utils.paths import FOLDERS
 from physion.acquisition.settings import get_config_list, update_config
 from physion.visual_stim.main import visual_stim
 from physion.visual_stim.show import init_stimWindow
-from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path
 from physion.intrinsic.acquisition import take_fluorescence_picture,\
@@ -447,7 +446,7 @@ def analysis_gui(self,
 
 
     self.saveButton = QtWidgets.QPushButton("SAVE", self)
-    self.saveButton.clicked.connect(self.save_intrinsic)
+    self.saveButton.clicked.connect(self.save_OD)
     self.add_side_widget(tab.layout,self.saveButton, 'small-right')
 
 
@@ -546,6 +545,44 @@ def analysis_gui(self,
 
     self.show()
 
+def make_fig(IMAGES):
+
+
+    fig, AX = plt.subplots(3, 2, figsize=(7,5))
+    plt.subplots_adjust(wspace=0.8, right=0.8, bottom=0.1)
+
+    plot_power_map(AX[0][0], fig, IMAGES['ipsi-power'])
+    AX[0][0].set_title('Ipsi power')
+    plot_power_map(AX[0][1], fig, IMAGES['contra-power'])
+    AX[0][1].set_title('Contra power')
+    for ax in AX[0]:
+        ax.axis('off')
+
+    plot_power_map(AX[1][0], fig, IMAGES['ipsi-power-thresh'],
+                    bounds=[0, 1e4*np.max(IMAGES['ipsi-power'])])
+    AX[1][0].set_title('thresh. Ipsi ')
+    plot_power_map(AX[1][1], fig, IMAGES['contra-power-thresh'],
+                    bounds=[0, 1e4*np.max(IMAGES['contra-power'])])
+    AX[1][1].set_title('thresh. Contra')
+    for ax in AX[1]:
+        ax.axis('off')
+
+    im = AX[2][0].imshow(IMAGES['ocular-dominance'],
+                        cmap=plt.cm.twilight, vmin=-0.5, vmax=0.5)
+    cbar = fig.colorbar(im, ax=AX[2][0],
+                        ticks=[-0.5, 0, 0.5], 
+                        shrink=0.4, aspect=10, label='OD index')
+    AX[2][0].axis('off')
+    AX[2][0].set_title('Ocular Dominance')
+
+    AX[2][1].hist(IMAGES['ocular-dominance'].flatten(),
+                bins=np.linspace(-1, 1, 150))
+    AX[2][1].set_xlabel('OD index')
+    AX[2][1].set_ylabel('pix. count')
+    AX[2][1].set_title('mean OD index: %.2f' % \
+            np.nanmean(IMAGES['ocular-dominance']))
+    
+    return fig, AX
 
 
 def calc_OD(self):
@@ -556,13 +593,14 @@ def calc_OD(self):
     self.IMAGES['ipsiKey'] = ipsiKey
     self.IMAGES['threshOD'] = threshOD
 
-    fig, AX = plt.subplots(3, 2, figsize=(7,5))
-    plt.subplots_adjust(wspace=0.8, right=0.8, bottom=0.1)
-
     if ('left-up-power' in self.IMAGES) and\
             ('left-down-power' in self.IMAGES) and\
             ('right-up-power' in self.IMAGES) and\
             ('right-down-power' in self.IMAGES): 
+
+        # ----------------------------------- #
+        #               power maps            #
+        # ----------------------------------- #
 
         self.IMAGES['ipsi-power'] = 0.5*(\
                 self.IMAGES['%s-up-power' % ipsiKey]+\
@@ -571,17 +609,6 @@ def calc_OD(self):
         self.IMAGES['contra-power'] = 0.5*(\
                 self.IMAGES['%s-up-power' % contraKey]+\
                 self.IMAGES['%s-down-power' % contraKey])
-
-        # ----------------------------------- #
-        #               power maps            #
-        # ----------------------------------- #
-
-        plot_power_map(AX[0][0], fig, self.IMAGES['ipsi-power'])
-        AX[0][0].set_title('Ipsi power')
-        plot_power_map(AX[0][1], fig, self.IMAGES['contra-power'])
-        AX[0][1].set_title('Contra power')
-        for ax in AX[0]:
-            ax.axis('off')
 
         # ----------------------------------- #
         #           threshold power           #
@@ -600,14 +627,6 @@ def calc_OD(self):
         self.IMAGES['contra-power-thresh'][threshCond] = \
                 self.IMAGES['contra-power'][threshCond]
         
-        plot_power_map(AX[1][0], fig, self.IMAGES['ipsi-power-thresh'],
-                       bounds=[0, 1e4*np.max(self.IMAGES['ipsi-power'])])
-        AX[1][0].set_title('thresh. Ipsi ')
-        plot_power_map(AX[1][1], fig, self.IMAGES['contra-power-thresh'],
-                       bounds=[0, 1e4*np.max(self.IMAGES['contra-power'])])
-        AX[1][1].set_title('thresh. Contra')
-        for ax in AX[1]:
-            ax.axis('off')
 
         # ----------------------------------- #
         #           ocular dominance          #
@@ -620,21 +639,7 @@ def calc_OD(self):
                 (self.IMAGES['contra-power'][threshCond]+\
                     self.IMAGES['ipsi-power'][threshCond])
 
-        im = AX[2][0].imshow(self.IMAGES['ocular-dominance'],
-                          cmap=plt.cm.twilight, vmin=-1, vmax=1)
-        cbar = fig.colorbar(im, ax=AX[2][0],
-                            ticks=[-1, 0, 1], 
-                            shrink=0.4, aspect=10, label='OD index')
-        AX[2][0].axis('off')
-        AX[2][0].set_title('Ocular Dominance')
-
-        AX[2][1].hist(self.IMAGES['ocular-dominance'].flatten(),
-                   bins=np.linspace(-1, 1, 150))
-        AX[2][1].set_xlabel('OD index')
-        AX[2][1].set_ylabel('pix. count')
-        AX[2][1].set_title('')
-
-
+        fig, AX = make_fig(self.IMAGES)
         print(' --> ok')
     else:
 
@@ -648,5 +653,15 @@ def calc_OD(self):
         -  right-down-power
 
         """)
-
     plt.show()
+
+def save_OD(self):
+
+    save_maps(self.IMAGES,
+            os.path.join(self.datafolder, 'ocular-dominance-maps.npy'))
+
+    print("""
+    Ocular-Dominance maps saved as:
+        %s
+    """ % os.path.join(self.datafolder, 'ocular-dominance-maps.npy'))
+

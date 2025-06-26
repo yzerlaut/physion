@@ -98,7 +98,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # ocular dominance
         from physion.intrinsic.ocular_dominance import analysis_gui\
                 as OD_analysis
-        from physion.intrinsic.ocular_dominance import calc_OD
+        from physion.intrinsic.ocular_dominance import calc_OD, save_OD
         # somatosensory
         from physion.intrinsic.SS_analysis import gui as SS_intrinsic
         from physion.intrinsic.SS_analysis import load_SS_intrinsic_data,\
