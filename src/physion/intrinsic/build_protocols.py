@@ -67,6 +67,7 @@ if __name__=='__main__':
                         either:
                             - Dell-2020
                             - Mouse-Goggles
+                            - Lilliput
                         """)
     parser.add_argument("--bg_color", type=float, default=0.2)
     
@@ -115,18 +116,11 @@ if __name__=='__main__':
                                            flicker_size=2,
                                            bg_color=args.bg_color))
                     # build the movie
-                    """
                     os.system('python -m physion.visual_stim.build temp.json --wmv')
                     os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
                           os.path.join(folder,
                                        'flickering-bars-period%is' % period,
                                        '%s-%s.wmv' % (side, direction)))
-                    """
-                    os.system('python -m physion.visual_stim.build temp.json')
-                    os.rename(os.path.join('movies', 'temp', 'movie.mp4'),
-                          os.path.join(folder,
-                                       'flickering-bars-period%is' % period,
-                                       '%s-%s.mp4' % (side, direction)))
 
         os.remove('temp.json')
     shutil.rmtree('movies')
