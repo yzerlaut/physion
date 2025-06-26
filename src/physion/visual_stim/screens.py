@@ -17,9 +17,10 @@ SCREENS = {
     'Lilliput':{
         'name':'Lilliput',
         'screen_id':1,
-        'resolution':[1280, 768],
-        'width':16, # in cm
-        'distance_from_eye':15, # in cm
+        'resolution':[768, 1280],
+        'width':9.25, # in cm
+        'height':16.25, # in cm
+        'distance_from_eye':13, # in cm
         'fullscreen':True,
         'monitoring_square':{'size':8,
                              'location':'top-right'},
