@@ -24,8 +24,10 @@ SCREENS = {
         'fullscreen':True,
         'monitoring_square':{'size':8,
                              'location':'top-right'},
-        'gamma_correction':{'k':1.03,
-                            'gamma':1.77},
+        # 'gamma_correction':{'k':1.03,
+                            # 'gamma':1.77},
+        'gamma_correction':{'k':1.,
+                            'gamma':1.},
     },
     'Mouse-Goggles':{
         'name':'Mouse-Googles',
