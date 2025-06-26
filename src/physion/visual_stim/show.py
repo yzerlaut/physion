@@ -5,6 +5,7 @@ def init_stimWindow(self,
                     demo=False):
     
     """
+     [!!] NEED TO MODIFY THIS FUNCTION WHEN SETTING UP NEW SCREENS [!!]
     """
     self.stimWin = QtWidgets.QWidget()
     # we prepare the stimulus table
@@ -16,6 +17,9 @@ def init_stimWindow(self,
             self.stimWin.setGeometry(-400, 400, 600, int(9./16*600))
             self.stimWin.showFullScreen()
         elif 'A1-2P' in self.config['Rig']:
+            self.stimWin.setGeometry(2000, 400, 600, int(9./16*600))
+            self.stimWin.showFullScreen()
+        elif 'Laptop' in self.config['Rig']:
             self.stimWin.setGeometry(2000, 400, 600, int(9./16*600))
             self.stimWin.showFullScreen()
     else:
@@ -79,9 +83,15 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser()
     parser.add_argument("protocol", 
                         help="""
-                                a folder containing: 
-                                    - protocol.json 
-                                    - movie.mp4
+                                either:
+
+                                - a folder containing: 
+                                        - protocol.json 
+                                        - movie.mp4
+
+                                - or simply a ".mp4" or ".wmv" movie
+
+
                              """, 
                         default='')
     parser.add_argument('-s', "--speed", type=float,

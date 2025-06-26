@@ -1,3 +1,11 @@
+"""
+
+[!!]
+when setting up a new screen:
+    --> need to also modify visual_stim/show.py
+[!!]
+
+"""
 import numpy as np
 
 SCREENS = {
