@@ -5,8 +5,15 @@ build the movies for the protocols with:
 
 python -m physion.intrinsic.build_protocols ocular-dominance Dell-2020
 
+based on the paper
 
+Optical imaging of the intrinsic signal as a measure of cortical plasticity in the mouse
+JIANHUA CANG, VALERY A. KALATSKY, SIEGRID LÖWEL, and MICHAEL P. STRYKER
+Visual Neuroscience 2005, 22, 685–691. 
+DOI: 10.10170S0952523805225178
 """
+
+
 
 import sys, os, shutil, glob, time, pathlib, json, tempfile, datetime
 import numpy as np
@@ -23,6 +30,7 @@ from physion.intrinsic.load_camera import *
 #################################################
 ###        Now set up the Acquisition     #######
 #################################################
+
 from physion.utils.paths import FOLDERS
 from physion.acquisition.settings import get_config_list, update_config
 from physion.visual_stim.main import visual_stim
@@ -35,7 +43,7 @@ from physion.intrinsic.acquisition import take_fluorescence_picture,\
         save_intrinsic_metadata, live_intrinsic,\
         stop_intrinsic, get_frame, update_Image, update_dt_intrinsic,\
         initialize_stimWindow
-
+from physion.intrinsic.tools import *
 
 def gui(self,
         box_width=250,
@@ -317,3 +325,328 @@ def run(self):
     self.update_dt_intrinsic() # while loop
 
 
+#################################################
+###        Now set up the Analysis        #######
+#################################################
+
+
+def analysis_gui(self,
+                 box_width=250,
+                 tab_id=2):
+
+    self.windows[tab_id] = 'OD_analysis'
+
+    tab = self.tabs[tab_id]
+
+    self.cleanup_tab(tab)
+    
+    self.datafolder, self.IMAGES = '', {} 
+    self.subject, self.timestamps, self.data = '', '', None
+
+    ##########################################################
+    ####### GUI settings
+    ##########################################################
+
+    # ========================================================
+    #------------------- SIDE PANELS FIRST -------------------
+    self.add_side_widget(tab.layout, 
+            QtWidgets.QLabel('     _-* Ocular Dominance Analysis *-_ '))
+    # folder box
+    self.add_side_widget(tab.layout,QtWidgets.QLabel('folder:'),
+                         spec='small-left')
+    self.folderBox = QtWidgets.QComboBox(self)
+    self.folderBox.addItems(FOLDERS.keys())
+    self.add_side_widget(tab.layout, self.folderBox, spec='large-right')
+        
+    self.folderButton = QtWidgets.QPushButton("Open folder [Ctrl+O]", self)
+    self.folderButton.clicked.connect(self.open_intrinsic_folder)
+    self.add_side_widget(tab.layout,self.folderButton, spec='large-left')
+    self.lastBox = QtWidgets.QCheckBox("last ")
+    self.lastBox.setStyleSheet("color: gray;")
+    self.add_side_widget(tab.layout,self.lastBox, spec='small-right')
+    self.lastBox.setChecked(True)
+
+    self.add_side_widget(tab.layout,QtWidgets.QLabel('  - protocol:'),
+                    spec='small-left')
+    self.protocolBox = QtWidgets.QComboBox(self)
+    self.protocolBox.addItems(['left-up', 'left-down', 
+                               'right-up', 'right-down'])
+    self.add_side_widget(tab.layout,self.protocolBox,
+                    spec='small-middle')
+    self.numBox = QtWidgets.QComboBox(self)
+    self.numBox.addItems(['sum']+[str(i) for i in range(1,10)])
+    self.add_side_widget(tab.layout,self.numBox,
+                    spec='small-right')
+
+    self.add_side_widget(\
+            tab.layout,QtWidgets.QLabel('  - spatial-smoothing (pix):'),
+            spec='large-left')
+    self.ssBox = QtWidgets.QLineEdit()
+    self.ssBox.setText('2')
+    self.add_side_widget(tab.layout,self.ssBox, spec='small-right')
+
+    self.loadButton = QtWidgets.QPushButton(" === load data === ", self)
+    self.loadButton.clicked.connect(self.load_intrinsic_data)
+    self.add_side_widget(tab.layout,self.loadButton)
+
+    # -------------------------------------------------------
+    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+
+    self.roiBox = QtWidgets.QCheckBox("ROI")
+    self.roiBox.setStyleSheet("color: gray;")
+    self.add_side_widget(tab.layout,self.roiBox, spec='small-left')
+    self.roiButton = QtWidgets.QPushButton("reset", self)
+    self.roiButton.clicked.connect(self.reset_ROI)
+    self.add_side_widget(tab.layout,self.roiButton, 'small-middle')
+    self.twoPiBox = QtWidgets.QCheckBox("[0,2pi]")
+    self.twoPiBox.setStyleSheet("color: gray;")
+    self.add_side_widget(tab.layout,self.twoPiBox, spec='small-right')
+
+    self.pmButton = QtWidgets.QPushButton(\
+            " == compute phase/power maps == ", self)
+    self.pmButton.clicked.connect(self.compute_phase_maps)
+    self.add_side_widget(tab.layout,self.pmButton)
+    
+    """
+    # Map shift
+    self.add_side_widget(\
+            tab.layout,QtWidgets.QLabel('  - (Azimuth, Altitude) shift:'),
+                    spec='large-left')
+    self.phaseMapShiftBox = QtWidgets.QLineEdit()
+    self.phaseMapShiftBox.setText('(0, 0)')
+    self.add_side_widget(tab.layout,self.phaseMapShiftBox, spec='small-right')
+    """
+
+    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+
+    # -------------------------------------------------------
+
+    # === -- parameters for ocular dominance analysis -- ===
+    
+    # -------------------------------------------------------
+
+    self.add_side_widget(tab.layout,QtWidgets.QLabel('  - ipsi side :'),
+                    spec='large-left')
+    self.ipsiBox = QtWidgets.QComboBox(self)
+    self.ipsiBox.addItems(['right', 'left'])
+    self.add_side_widget(tab.layout,self.ipsiBox, spec='small-right')
+
+    self.add_side_widget(\
+            tab.layout,QtWidgets.QLabel('  - detect. Thresh.:'),
+                    spec='large-left')
+    self.threshBox = QtWidgets.QLineEdit()
+    self.threshBox.setText('0.35')
+    self.add_side_widget(tab.layout, self.threshBox, spec='small-right')
+
+    # RUN ANALYSIS
+    self.odButton  = QtWidgets.QPushButton(" = calc. Ocular Dom. = ", self)
+    self.odButton .clicked.connect(self.calc_OD)
+    self.add_side_widget(tab.layout,self.odButton)
+
+    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+
+
+    self.saveButton = QtWidgets.QPushButton("SAVE", self)
+    self.saveButton.clicked.connect(self.save_intrinsic)
+    self.add_side_widget(tab.layout,self.saveButton, 'small-right')
+
+
+    self.add_side_widget(tab.layout,QtWidgets.QLabel('scale: '), 'small-left')
+    self.scaleButton = QtWidgets.QDoubleSpinBox(self)
+    self.scaleButton.setRange(0, 10)
+    self.scaleButton.setSuffix(' (mm, image height)')
+    self.scaleButton.setValue(2.7)
+    self.add_side_widget(tab.layout,self.scaleButton, 'large-right')
+
+    self.add_side_widget(tab.layout,QtWidgets.QLabel('angle: '), 'small-left')
+    self.angleButton = QtWidgets.QSpinBox(self)
+    self.angleButton.setRange(-360, 360)
+    self.angleButton.setSuffix(' (°)')
+    self.angleButton.setValue(15)
+
+    self.add_side_widget(tab.layout,self.angleButton, 'small-middle')
+    self.pdfButton = QtWidgets.QPushButton("PDF", self)
+    self.pdfButton.clicked.connect(self.pdf_intrinsic)
+    self.add_side_widget(tab.layout,self.pdfButton, 'small-right')
+
+    # -------------------------------------------------------
+    self.add_side_widget(tab.layout,QtWidgets.QLabel('Image 1: '), 'small-left')
+    self.img1Button = QtWidgets.QComboBox(self)
+    self.add_side_widget(tab.layout,self.img1Button, 'large-right')
+    self.img1Button.currentIndexChanged.connect(self.update_img1)
+
+    self.add_side_widget(tab.layout,QtWidgets.QLabel('Image 2: '), 'small-left')
+    self.img2Button = QtWidgets.QComboBox(self)
+    self.add_side_widget(tab.layout,self.img2Button, 'large-right')
+    self.img2Button.currentIndexChanged.connect(self.update_img2)
+
+    # ========================================================
+    #------------------- THEN MAIN PANEL   -------------------
+
+    self.graphics_layout= pg.GraphicsLayoutWidget()
+
+    tab.layout.addWidget(self.graphics_layout,
+                         0, self.side_wdgt_length,
+                         self.nWidgetRow, 
+                         self.nWidgetCol-self.side_wdgt_length)
+
+    self.raw_trace = self.graphics_layout.addPlot(row=0, col=0, 
+                                                  rowspan=1, colspan=23)
+    
+    self.spectrum_power = self.graphics_layout.addPlot(row=1, col=0, 
+                                                       rowspan=2, colspan=9)
+    self.spDot = pg.ScatterPlotItem()
+    self.spectrum_power.addItem(self.spDot)
+    
+    self.spectrum_phase = self.graphics_layout.addPlot(row=1, col=9, 
+                                                       rowspan=2, colspan=9)
+    self.sphDot = pg.ScatterPlotItem()
+    self.spectrum_phase.addItem(self.sphDot)
+
+    # images
+    self.img1B = self.graphics_layout.addViewBox(row=3, col=0,
+                                                 rowspan=10, colspan=10,
+                                                 lockAspect=True, invertY=True)
+    self.img1 = pg.ImageItem()
+    self.img1B.addItem(self.img1)
+
+    self.img2B = self.graphics_layout.addViewBox(row=3, col=10,
+                                                 rowspan=10, colspan=9,
+                                                 lockAspect=True, invertY=True)
+    self.img2 = pg.ImageItem()
+    self.img2B.addItem(self.img2)
+
+    for i in range(3):
+        self.graphics_layout.ci.layout.setColumnStretchFactor(i, 1)
+    self.graphics_layout.ci.layout.setColumnStretchFactor(3, 2)
+    self.graphics_layout.ci.layout.setColumnStretchFactor(12, 2)
+    self.graphics_layout.ci.layout.setRowStretchFactor(0, 3)
+    self.graphics_layout.ci.layout.setRowStretchFactor(1, 4)
+    self.graphics_layout.ci.layout.setRowStretchFactor(3, 5)
+        
+    # -------------------------------------------------------
+    self.pixROI = pg.ROI((0, 0), size=(20,20),
+                         pen=pg.mkPen((255,0,0,255)),
+                         rotatable=False,resizable=False)
+    self.pixROI.sigRegionChangeFinished.connect(self.moved_pixels)
+    self.img1B.addItem(self.pixROI)
+
+    self.ROI = pg.EllipseROI([0, 0], [100, 100],
+                        movable = True,
+                        rotatable=False,
+                        resizable=True,
+                        pen= pg.mkPen((0, 0, 255), width=3,
+                                  style=QtCore.Qt.SolidLine),
+                        removable=True)
+    self.img1B.addItem(self.ROI)
+
+    self.refresh_tab(tab)
+
+    self.data = None
+
+    self.show()
+
+
+
+def calc_OD(self):
+
+    threshOD = float(self.threshBox.text())
+    ipsiKey = self.ipsiBox.currentText()
+    contraKey = 'right' if ipsiKey=='left' else 'left'
+    self.IMAGES['ipsiKey'] = ipsiKey
+    self.IMAGES['threshOD'] = threshOD
+
+    fig, AX = plt.subplots(3, 2, figsize=(7,5))
+    plt.subplots_adjust(wspace=0.8, right=0.8, bottom=0.1)
+
+    if ('left-up-power' in self.IMAGES) and\
+            ('left-down-power' in self.IMAGES) and\
+            ('right-up-power' in self.IMAGES) and\
+            ('right-down-power' in self.IMAGES): 
+
+        self.IMAGES['ipsi-power'] = 0.5*(\
+                self.IMAGES['%s-up-power' % ipsiKey]+\
+                self.IMAGES['%s-down-power' % ipsiKey])
+
+        self.IMAGES['contra-power'] = 0.5*(\
+                self.IMAGES['%s-up-power' % contraKey]+\
+                self.IMAGES['%s-down-power' % contraKey])
+
+        # ----------------------------------- #
+        #               power maps            #
+        # ----------------------------------- #
+
+        plot_power_map(AX[0][0], fig, self.IMAGES['ipsi-power'])
+        AX[0][0].set_title('Ipsi power')
+        plot_power_map(AX[0][1], fig, self.IMAGES['contra-power'])
+        AX[0][1].set_title('Contra power')
+        for ax in AX[0]:
+            ax.axis('off')
+
+        # ----------------------------------- #
+        #           threshold power           #
+        # ----------------------------------- #
+
+        thresh = float(self.threshBox.text())*\
+                np.max(self.IMAGES['ipsi-power'])
+        threshCond = self.IMAGES['ipsi-power']>thresh
+
+        self.IMAGES['ipsi-power-thresh'] = -np.ones(\
+                self.IMAGES['ipsi-power'].shape)*np.nan
+        self.IMAGES['ipsi-power-thresh'][threshCond] = \
+                self.IMAGES['ipsi-power'][threshCond]
+        self.IMAGES['contra-power-thresh'] = -np.ones(\
+                self.IMAGES['contra-power'].shape)*np.nan
+        self.IMAGES['contra-power-thresh'][threshCond] = \
+                self.IMAGES['contra-power'][threshCond]
+        
+        plot_power_map(AX[1][0], fig, self.IMAGES['ipsi-power-thresh'],
+                       bounds=[0, 1e4*np.max(self.IMAGES['ipsi-power'])])
+        AX[1][0].set_title('thresh. Ipsi ')
+        plot_power_map(AX[1][1], fig, self.IMAGES['contra-power-thresh'],
+                       bounds=[0, 1e4*np.max(self.IMAGES['contra-power'])])
+        AX[1][1].set_title('thresh. Contra')
+        for ax in AX[1]:
+            ax.axis('off')
+
+        # ----------------------------------- #
+        #           ocular dominance          #
+        # ----------------------------------- #
+        self.IMAGES['ocular-dominance'] = -np.ones(\
+                self.IMAGES['contra-power'].shape)*np.nan
+        self.IMAGES['ocular-dominance'][threshCond] = \
+                (self.IMAGES['contra-power'][threshCond]-\
+                    self.IMAGES['ipsi-power'][threshCond])/\
+                (self.IMAGES['contra-power'][threshCond]+\
+                    self.IMAGES['ipsi-power'][threshCond])
+
+        im = AX[2][0].imshow(self.IMAGES['ocular-dominance'],
+                          cmap=plt.cm.twilight, vmin=-1, vmax=1)
+        cbar = fig.colorbar(im, ax=AX[2][0],
+                            ticks=[-1, 0, 1], 
+                            shrink=0.4, aspect=10, label='OD index')
+        AX[2][0].axis('off')
+        AX[2][0].set_title('Ocular Dominance')
+
+        AX[2][1].hist(self.IMAGES['ocular-dominance'].flatten(),
+                   bins=np.linspace(-1, 1, 150))
+        AX[2][1].set_xlabel('OD index')
+        AX[2][1].set_ylabel('pix. count')
+        AX[2][1].set_title('')
+
+
+        print(' --> ok')
+    else:
+
+        print("""
+
+        MAPS are missing !!
+        need to compute all:
+        -  left-up-power
+        -  left-down-power
+        -  right-up-power
+        -  right-down-power
+
+        """)
+
+    plt.show()

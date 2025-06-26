@@ -21,9 +21,11 @@ def build_menu(self):
                                   self.multimodal)
     self.experimentMenu.addAction('Visual Stimulation',
                                   self.in_progress)
-    self.experimentMenu.addAction('Retinotopic Mapping (intrinsic)',
+    self.experimentMenu.addAction('Retinotopic Mapping',
                                   self.intrinsic_acq)
-    self.experimentMenu.addAction('Whisker Mapping (intrinsic)',
+    self.experimentMenu.addAction('Ocular Dominance Charact.',
+                                  self.intrinsic_acq)
+    self.experimentMenu.addAction('Whisker Mapping',
                                   self.SS_intrinsic_acq)
     self.experimentMenu.addAction('Face Camera',
                                   self.in_progress)
@@ -39,6 +41,8 @@ def build_menu(self):
                                      self.facemotion)
     self.preprocessingMenu.addAction('&Visual-Areas Segmentation',
                                      self.intrinsic)
+    self.preprocessingMenu.addAction('&Ocular Dominance',
+                                     self.OD_analysis)
     self.preprocessingMenu.addAction('&Whisker Maps',
                                      self.SS_intrinsic)
     self.preprocessingMenu.addAction('&Suite2P Preprocessing',

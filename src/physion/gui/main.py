@@ -86,22 +86,25 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as SS_intrinsic_acq
 
     # -- Intrinsic Imaging -- analysis
-    # visual
+    # visual & somatosensory
     if not Acquisition:
+        # intrinsic
         from physion.intrinsic.analysis import gui as intrinsic
         from physion.intrinsic.analysis import open_intrinsic_folder,\
                 moved_pixels, load_intrinsic_data, compute_phase_maps,\
                 compute_retinotopic_maps, perform_area_segmentation,\
                 update_img1, update_img2, save_intrinsic, pdf_intrinsic,\
                 reset_ROI
-    else:
-        from physion.gui.parts import inactivated as intrinsic
-    # somatosensory
-    if not Acquisition:
+        # ocular dominance
+        from physion.intrinsic.ocular_dominance import analysis_gui\
+                as OD_analysis
+        from physion.intrinsic.ocular_dominance import calc_OD
+        # somatosensory
         from physion.intrinsic.SS_analysis import gui as SS_intrinsic
         from physion.intrinsic.SS_analysis import load_SS_intrinsic_data,\
                 compute_SS_power_maps, save_SS_intrinsic
     else:
+        from physion.gui.parts import inactivated as intrinsic
         from physion.gui.parts import inactivated as SS_intrinsic
 
     # -- FaceMotion tracking
@@ -305,6 +308,10 @@ class MainWindow(QtWidgets.QMainWindow):
             self.switch_roi_RCL()
         else:
             # ---- DEBUG interface ---- #
+            self.OD_analysis()
+            # self.lastBox.setChecked(False)
+            # self.datafolder = '/Users/yann/UNPROCESSED/CIBELE/2024_06_28/14-35-30'
+            self.load_intrinsic_data()
             # self.SS_intrinsic()
             # self.facemotion()
             # self.pupil()
@@ -323,10 +330,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.trial_averaging()
             # self.FOV()
             # self.multimodal()
-            self.intrinsic()
-            self.lastBox.setChecked(False)
-            self.datafolder = '/Users/yann/UNPROCESSED/CIBELE/2024_06_28/14-35-30'
-            # self.load_intrinsic_data()
+            # self.intrinsic()
 
     def refresh(self):
         tab_id = self.tabWidget.currentIndex()
