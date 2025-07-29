@@ -524,7 +524,7 @@ def stop_intrinsic(self):
 
 def get_frame(self, force_HQ=False):
     
-    if self.exposure>0 and (CameraInterface=='MicroManager'):
+    if self.exposure>0 and (CameraInterface=='MicroManager') and self.camBox.isChecked():
 
         self.core.snap_image()
         tagged_image = self.core.get_tagged_image()
@@ -533,7 +533,7 @@ def get_frame(self, force_HQ=False):
                          newshape=[tagged_image.tags['Height'],
                                    tagged_image.tags['Width']])
 
-    elif (CameraInterface=='ThorCam'):
+    elif (CameraInterface=='ThorCam') and self.camBox.isChecked():
 
         frame = self.cam.get_pending_frame_or_null()
         while frame is None:
