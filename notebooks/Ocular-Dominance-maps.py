@@ -29,7 +29,7 @@
 
 import sys
 import numpy as np
-sys.path.append('../src')
+sys.path += ['./src', '../src']
 from physion.intrinsic.ocular_dominance import make_fig
 
 maps = np.load(os.path.join(os.path.expanduser('~'), 'DATA',

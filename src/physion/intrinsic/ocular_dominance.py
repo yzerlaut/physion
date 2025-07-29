@@ -139,9 +139,7 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - protocol:'),
                          spec='large-left')
     self.ISIprotocolBox = QtWidgets.QComboBox(self)
-    self.ISIprotocolBox.addItems(['ALL', 
-                                  'left-up', 'left-down',
-                                  'right-up', 'right-down'])
+    self.ISIprotocolBox.addItems(['left', 'right'])
     self.add_side_widget(tab.layout, self.ISIprotocolBox,
                          spec='small-right')
 
@@ -287,22 +285,18 @@ def run(self):
     self.angle_start, self.angle_max, self.protocol, self.label = 0, 0, '', ''
     self.Npoints = int(self.period/self.dt)
 
-    if self.ISIprotocolBox.currentText()=='ALL':
-        self.STIM = {'angle_start':[zmin, xmax, zmax, xmin],
-                     'angle_stop':[zmax, xmin, zmin, xmax],
-                     'label': ['left-up', 'left-down', 'right-up', 'right-down'],
+    if self.ISIprotocolBox.currentText()=='left':
+        self.STIM = {'angle_start':[zmin, xmax],
+                     'angle_stop':[zmax, xmin],
+                     'label': ['left-up', 'left-down'],
                      'xmin':xmin, 'xmax':xmax, 'zmin':zmin, 'zmax':zmax}
         self.label = 'left-up' # starting point
-    else:
-        self.STIM = {'label': [self.ISIprotocolBox.currentText()],
+    elif self.ISIprotocolBox.currentText()=='right':
+        self.STIM = {'angle_start':[zmax, xmin],
+                     'angle_stop':[zmin, xmax],
+                     'label': ['right-up', 'right-down'],
                      'xmin':xmin, 'xmax':xmax, 'zmin':zmin, 'zmax':zmax}
-        if 'up' in self.ISIprotocolBox.currentText()=='up':
-            self.STIM['angle_start'] = [zmin]
-            self.STIM['angle_stop'] = [zmax]
-        elif 'down' in self.ISIprotocolBox.currentText()=='down':
-            self.STIM['angle_start'] = [zmax]
-            self.STIM['angle_stop'] = [zmin]
-        self.label = self.ISIprotocolBox.currentText()
+        self.label = 'right-up' # starting point
         
     for il, label in enumerate(self.STIM['label']):
         self.STIM[label+'-times'] = np.arange(self.Npoints*self.Nrepeat)*self.dt
