@@ -109,7 +109,7 @@ if __name__=='__main__':
 
     parser=argparse.ArgumentParser()
     parser.add_argument("protocol", 
-                        help="protocol a json file", 
+                        help="protocol as a json file", 
                         default='')
     parser.add_argument("--wmv", 
                         help="protocol a json file", 
@@ -118,7 +118,7 @@ if __name__=='__main__':
 
     if os.path.isfile(args.protocol) and args.protocol.endswith('.json'):
 
-            # create the associated protocol folder in the binary folder
+            # create the associated protocol folder in the movies folder
             protocol_folder = \
                 os.path.join(os.path.dirname(args.protocol),
                     'movies',
@@ -140,6 +140,9 @@ if __name__=='__main__':
             # build the protocol
             with open(args.protocol, 'r') as f:
                 protocol = json.load(f)
+
+            protocol['json_location'] = os.path.dirname(args.protocol)
+            print(protocol['json_location'])
 
             Stim = build_stim(protocol)
 
