@@ -1,0 +1,19 @@
+{
+    "Presentation": "Stimuli-Sequence",
+    "Stimulus": "looming-stim",
+    "Screen": "Dell-2020",
+    "units": "lin-deg",
+  "-----------------------------------------------------------------------1":0,
+    "presentation-duration": 5.0,
+    "radius-start":0.5,
+    "radius-end":120,
+    "end-duration": 4,
+    "looming-nonlinearity": 3,
+    "looming-duration": 1.0,
+    "color":0,
+    "contrast-1":0.05,
+    "contrast-2":1.0,
+    "N-log-contrast":4,
+  "-----------------------------------------------------------------------2":0,
+    "N-repeat": 10
+}

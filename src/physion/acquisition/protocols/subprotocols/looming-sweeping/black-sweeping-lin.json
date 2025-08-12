@@ -1,0 +1,15 @@
+{
+    "Presentation": "Stimuli-Sequence",
+    "Stimulus": "sweeping-circle",
+    "Screen": "Dell-2020",
+    "units": "lin-deg",
+  "-----------------------------------------------------------------------1":0,
+    "presentation-duration": 4.0,
+    "sweeping-duration": 4.0,
+    "radius":5,
+    "contrast-1":0.05,
+    "contrast-2":1,
+    "N-contrast":4,
+  "-----------------------------------------------------------------------2":0,
+    "N-repeat": 10
+}
