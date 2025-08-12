@@ -3,7 +3,7 @@ from . import uniform_bg, looming_stim, grating,\
     	random_dots, natural_image, oscillDG,\
         gaussian_blob, flickering_bar, sparse_noise,\
         oddball, template, natural_image_VSE,\
-        set_of_images
+        set_of_images, sweeping_circle, dimming_circle
 
 # backward compatibility:
 gaussian_blobs=gaussian_blob
