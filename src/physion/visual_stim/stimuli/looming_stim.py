@@ -14,9 +14,10 @@ params = {\
       "radius-end":110., # degree
       "x-center":0., # degree
       "y-center":0., # degree
-      "color":-1, # degree
+      "color":0., # degree
       "looming-nonlinearity":2, # degree
       "bg-color":0.5,
+      "contrast":1.0,
 } 
     
 
@@ -47,9 +48,11 @@ class stim(visual_stim):
     def get_image(self, index, time_from_episode_start=0, parent=None):
         img = self.experiment['bg-color'][index]+0.*self.x
 
+        contrast = self.experiment['contrast'][index] * (self.experiment['bg-color'][index] - self.experiment['color'][index])
+        color = self.experiment['bg-color'][index] - contrast
         self.add_dot(img, (self.experiment['x-center'][index], self.experiment['y-center'][index]),
                      self.get_circle_size(index, time_from_episode_start),
-                     self.experiment['color'][index],
+                     color,
                      type='circle')
         return img
 
