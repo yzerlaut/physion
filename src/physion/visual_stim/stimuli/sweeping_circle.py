@@ -12,8 +12,8 @@ params = {\
       "sweeping-duration":4, # second
       "start-duration":0., # second
       "radius":5., #degre
-      "color":1.,
-      "contrast":0.5,
+      "color":0.,
+      "contrast":1,
       "bg-color":0.5,     
 }
     
