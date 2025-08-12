@@ -1,77 +1,86 @@
 """
 script to build the different ignore function to be used in shutil.copytree
     for COPYING SPECIFIC SUBSETS OF DATA
+
+
+by default shutil doesn't have an "include_pattern" function,
+    so taken from:
+https://stackoverflow.com/questions/52071642/python-copying-the-files-with-include-pattern
+
 """
 import shutil
 
-def ignore_all_behav_image_folders(Dir, f):
-    return ('FaceCamera' in Dir) or ('RigCamera' in Dir)
+from fnmatch import fnmatch, filter
+from os.path import isdir, join
 
-def ignore_to_take_only_processed_imaging(Dir, files):
-    print(Dir)
-    print(files)
-    # return [not( ('TSeries' in Dir) and\
-                   # (('.npy' in f) or ('.xml' in f)) )\
-                        # for f in files]
-    # return [not ('TSeries' in Dir) for f in files]
-    return 
+def include_patterns(*patterns):
+    """Factory function that can be used with copytree() ignore parameter.
 
-def ignore_to_take_only_processed_imaging_with_vids(Dir, f):
-    return (not 'TSeries' in Dir) or \
-                    ((not '.npy' in f) and \
-                    (not '.xml' in f) and \
-                    (not '.mp4' in f) and \
-                    (not '.wmv' in f))
-
-def ignore_to_take_only_processed_imaging_with_binary(Dir, f):
-    return (not 'TSeries' in Dir) or \
-                        ((not '.npy' in f) and \
-                        (not '.xml' in f) and \
-                        (not '.bin' in f))
-
-def ignore_to_take_only_raw_imaging(Dir, f):
-    return (not 'TSeries' in Dir) or \
-            ((not '.tif' in f) and \
-            (not '.xml' in f))
-
-def ignore_to_take_only_processed_behavior(Dir, f):
-    return (not 'TSeries' in Dir) or\
-                        ((not '.npy' in f) and\
-                        (not '.xml' in f))  
-
-def ignore_all_tiffs(Dir, f):
-    return ('.tif' in f)
-
-def ignore_to_take_only_NWBs(Dir, f):
-    return (not '.nwb' in f)
-
-def ignore_to_take_only_npy(Dir, f):
-    return (not '.npy' in f)
-
-def ignore_to_take_only_xml(Dir, f):
-    return (not '.xml' in f)
-
+    Arguments define a sequence of glob-style patterns
+    that are used to specify what files to NOT ignore.
+    Creates and returns a function that determines this for each directory
+    in the file hierarchy rooted at the source directory when used with
+    shutil.copytree().
+    """
+    def _ignore_patterns(path, names):
+        keep = set(name for pattern in patterns
+                            for name in filter(names, pattern))
+        ignore = set(name for name in names
+                        if name not in keep and not isdir(join(path, name)))
+        return ignore
+    return _ignore_patterns
 
 TYPES = {
-    'processed-Imaging':shutil.ignore_patterns('*.ome.tif', 'Reference*', 
-                                               '*.avi', '*.mp4', '*.wmv',
-                                               '*.env', '*.bin'),
-    'processed-Imaging-wVids':shutil.ignore_patterns('*.ome.tif', 'Reference*', 
-                                                     '*.env', '*.bin'),
-    'processed-Imaging-wBinary':shutil.ignore_patterns('*.ome.tif', 'Reference*', 
+    '':None,
+    'processed-Imaging':shutil.ignore_patterns('*.ome.tif', 
+                                               'Reference*', 
+                                               'CYCLE*',
+                                               '*.bin',
+                                               '*.mp4', '*.avi',
+                                                '*.env'),
+    'processed-Imaging-wVids':shutil.ignore_patterns('*.ome.tif', 
+                                                    'Reference*', 
+                                                    'CYCLE*',
+                                                    '*.bin',
+                                                    '*.env'),
+    'processed-Imaging-wBinary':shutil.ignore_patterns('*.ome.tif', 
+                                                       'Reference*', 
                                                        '*.env'),
-    'raw-Imaging-only':shutil.ignore_patterns('*.npy', 'suite2*', '*.env'),
+    'raw-Imaging-only':shutil.ignore_patterns('*.npy', 'suite2*', 
+                                              '*.env'),
     'video-Imaging-only':shutil.ignore_patterns('*.ome.tif', 
                                                 'db.npy', 'ops.npy', 
                                                 'suite2*', '*.env'),
     'processed-Behavior':shutil.ignore_patterns('FaceCamera-*', 
                                                 'RigCamera-*',
                                                 'TSerie*'),
-    'nwb':shutil.ignore_patterns('*.npy', '*.env', '*.tif', '*.bin', 
-                                    '*.mp4', '*.wmv', '*.avi', '*.xml'),
-    'npy':shutil.ignore_patterns('*.nwb', '*.env', '*.tif', '*.bin', 
-                                    '*.mp4', '*.wmv', '*.avi', '*.xml'),
-    'xml':shutil.ignore_patterns('*.nwb', '*.env', '*.tif', '*.bin', 
-                                    '*.mp4', '*.wmv', '*.avi', '*.npy'),
+    'nwb':include_patterns('*.nwb'),
+    'npy':include_patterns('*.npy'),
+    'xml':include_patterns('*.xml'),
     'all':None,
 }
+
+
+if __name__=='__main__':
+
+    import sys
+
+    if sys.argv[-1] not in TYPES:
+       print("""
+
+       should be used as 
+       python -m physion.utils.transfer.types SOURCE DEST type
+
+       with type in :
+       """)
+       for key in TYPES:
+           print(' - '+key)
+
+    else:
+        Source = sys.argv[-3]
+        Dest = sys.argv[-2]
+        Type = sys.argv[-1]
+
+        shutil.copytree(Source, Dest, 
+                        dirs_exist_ok=True,
+                        ignore=TYPES[Type])
