@@ -12,11 +12,11 @@
   "speed": 2,
   "radius": 20,
   "phase":0,
-  "contrast-1": 0.25, "contrast-2": 1.0, "N-contrast": 2,
+  "contrast": 1.0,
   "------------  surround properties --------------------------------------":0,
   "angle-surround-1": 0,"angle-surround-2": 90, "N-angle-surround":2,
   "speed-surround": 2,
   "phase-surround":0,
-  "contrast-surround-match": 1,
+  "contrast-surround": 1.0,
   "radius-surround": 200
 }
