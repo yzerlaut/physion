@@ -43,8 +43,8 @@ class stim(visual_stim):
 
         # Define position of circle
         tfrac = np.clip((time_from_episode_start-self.experiment['start-duration'][episode_index])/self.experiment['sweeping-duration'][episode_index], 0, 1)
-        x0 = self.x.min() + tfrac*(self.x.max()-self.x.min())
-        z0 = self.z.min() + tfrac*(self.z.max()-self.z.min())
+        x0 = self.x[0,0] + tfrac*(self.x[-1,-1]-self.x[0,0])
+        z0 = self.z[0,0] + tfrac*(self.z[-1,-1]-self.z[0,0])
 
         # Define color of circle
         radius = self.experiment['radius'][episode_index]
