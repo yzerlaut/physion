@@ -4,16 +4,15 @@
     "Screen": "Dell-2020",
     "units": "lin-deg",
   "-----------------------------------------------------------------------1":0,
-    "presentation-duration": 8.0,
+    "presentation-duration": 4.0,
     "presentation-interstim-period": 8,
     "sweeping-duration": 4.0,
-    "start-duration":4.0,
     "radius":5,
     "color":1,
     "contrast-1":0.05,
     "contrast-2":1.0,
     "N-log-contrast":4,
-    "bg-color":0, 
+    "bg-color":0.5, 
   "-----------------------------------------------------------------------2":0,
     "N-repeat": 10
 }
