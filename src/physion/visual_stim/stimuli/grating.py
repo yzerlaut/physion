@@ -27,7 +27,6 @@ params = {\
       "spatial-freq-surround":0.04, # cycle/degree 
       "phase-surround":90.,
       "contrast-surround":1.0,
-      "contrast-surround-match": 0, # boolean 0 or 1
       # ----------------------------------- 
       "bg-color":0.5
 }
@@ -51,18 +50,13 @@ class stim(visual_stim):
 
         if self.experiment['radius-surround'][episode]>0:
 
-            if self.experiment['contrast-surround-match'][episode]:
-                contrast_surround = self.experiment['contrast'][episode]
-            else:
-                contrast_surround = self.experiment['contrast-surround'][episode]
-
             self.add_grating_patch(img,
                        angle=self.experiment['angle-surround'][episode],
                        radius=self.experiment['radius-surround'][episode],
                        phase_shift_Deg=self.experiment['phase-surround'][episode]\
                                if 'phase-surround' in self.experiment else 90.,
                        spatial_freq=self.experiment['spatial-freq-surround'][episode],
-                       contrast=contrast_surround,
+                       contrast=self.experiment['contrast-surround'][episode],
                        xcenter=self.experiment['x-center'][episode],
                        zcenter=self.experiment['y-center'][episode],
                        time_phase=self.experiment['speed-surround'][episode]*time_from_episode_start)
