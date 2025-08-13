@@ -5,6 +5,7 @@
     "units": "lin-deg",
   "-----------------------------------------------------------------------1":0,
     "presentation-duration": 5.0,
+    "presentation-interstim-period": 8,
     "dimming-duration": 1.0,
     "radius":25,
     "contrast-end-1": 0.05,

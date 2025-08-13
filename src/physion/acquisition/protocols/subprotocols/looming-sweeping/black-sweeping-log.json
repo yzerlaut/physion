@@ -5,6 +5,7 @@
     "units": "lin-deg",
   "-----------------------------------------------------------------------1":0,
     "presentation-duration": 4.0,
+    "presentation-interstim-period": 8,
     "sweeping-duration": 4.0,
     "radius":5,
     "contrast-1":0.05,
