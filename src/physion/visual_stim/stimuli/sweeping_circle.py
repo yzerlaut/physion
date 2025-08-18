@@ -8,12 +8,13 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 
 params = {\
       # default param values:
-      "presentation-duration":4, # should be: start-duration + sweeping-duration
+      "presentation-duration":4, # should be: sweeping-start + sweeping-duration
       "sweeping-duration":4, # second
-      "start-duration":0., # second
+      "sweeping-start":0., # second
       "radius":5., #degre
       "color":0.,
       "contrast":1,
+      "trajectory": "bottom-left_to_top-right",
       "bg-color":0.5,     
 }
     
@@ -42,9 +43,20 @@ class stim(visual_stim):
         img = init_bg_image(self, episode_index)
 
         # Define position of circle
-        tfrac = np.clip((time_from_episode_start-self.experiment['start-duration'][episode_index])/self.experiment['sweeping-duration'][episode_index], 0, 1)
-        x0 = self.x[0,0] + tfrac*(self.x[-1,-1]-self.x[0,0])
-        z0 = self.z[0,0] + tfrac*(self.z[-1,-1]-self.z[0,0])
+        tfrac = np.clip((time_from_episode_start-self.experiment['sweeping-start'][episode_index])/self.experiment['sweeping-duration'][episode_index], 0, 1)
+
+        if self.experiment['trajectory'][episode_index] == "bottom-left_to_top-right":
+            x0 = self.x[0,0] + tfrac*(self.x[-1,-1]-self.x[0,0])
+            z0 = self.z[0,0] + tfrac*(self.z[-1,-1]-self.z[0,0])
+        elif self.experiment['trajectory'][episode_index] == "top-left_to_bottom-right":
+            x0 = self.x[0,0] + tfrac*(self.x[-1,-1]-self.x[0,0])
+            z0 = self.z[-1,-1] + tfrac*(self.z[0,0]-self.z[-1,-1])
+        elif self.experiment['trajectory'][episode_index] == "top-right_to_bottom-left":
+            x0 = self.x[-1,-1] + tfrac*(self.x[0,0]-self.x[-1,-1])
+            z0 = self.z[-1,-1] + tfrac*(self.z[0,0]-self.z[-1,-1])
+        elif self.experiment['trajectory'][episode_index] == "bottom-right_to_right-left":
+            x0 = self.x[-1,-1] + tfrac*(self.x[0,0]-self.x[-1,-1])
+            z0 = self.z[0,0] + tfrac*(self.z[-1,-1]-self.z[0,0])
 
         # Define color of circle
         radius = self.experiment['radius'][episode_index]
