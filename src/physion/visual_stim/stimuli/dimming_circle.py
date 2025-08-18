@@ -13,9 +13,8 @@ params = {\
       "radius":25.,
       "x-center":0., # degree
       "y-center":0., # degree
-      "color-start": 0.5,
-      "color-end": 0.,
-      "contrast-end": 1,
+      "color": 0.,
+      "contrast": 1,
       "dimming-nonlinearity":3, # degree
       "bg-color":0.5,
 }
@@ -37,15 +36,11 @@ class stim(visual_stim):
 
     def get_circle_color(self, index, t):
         t_frac = np.clip(t/self.experiment['dimming-duration'][index], 0, 1)
-
-        contrast = self.experiment['contrast-end'][index] * (self.experiment['bg-color'][index] - self.experiment['color-end'][index])
-        start_color = self.experiment['color-start'][index]
-        end_color = self.experiment['bg-color'][index] - contrast
-        dColor = end_color - start_color
+        dColor = self.experiment['contrast'][index] * (self.experiment['color'][index] - self.experiment['bg-color'][index])
 
         nonlinearity = self.experiment['dimming-nonlinearity'][index]
 
-        return start_color + t_frac**nonlinearity * dColor
+        return self.experiment['bg-color'][index] + t_frac**nonlinearity * dColor
     
     def get_image(self, episode_index,
                   time_from_episode_start=0,
