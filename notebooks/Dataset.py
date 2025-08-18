@@ -30,8 +30,9 @@ sheets = os.path.join(os.path.expanduser('~'),
                       'DataTable.xlsx')
 
 # loading dataset from spreadsheet:
-dataset, subjects, analysis = physion.assembling.dataset.read_spreadsheet(sheets,
-                                                                                      get_metadata_from='table')
+dataset, subjects, analysis = \
+    physion.assembling.dataset.read_spreadsheet(sheets, 
+                                                get_metadata_from='table')
 
 # printing dataset sheet:
 dataset[['subject', 'day', 'time', 'protocol', 'FOV']]

@@ -26,16 +26,18 @@
 # are implemented in the script [../src/physion/analysis/protocols/orientation_tuning.py](./../src/physion/analysis/protocols/orientation_tuning.py)
 
 # %%
-import sys, os
+import sys, os, tempfile
 import numpy as np
 from scipy import stats
 
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+sys.path.append(os.path.join(os.path.expanduser('~'),\
+        'work', 'physion', 'src')) # update to your "physion" location
 
 import physion
 import physion.utils.plot_tools as pt
 
-from physion.analysis.protocols.orientation_tuning import compute_tuning_response_per_cells, fit_gaussian
+from physion.analysis.protocols.orientation_tuning\
+          import compute_tuning_response_per_cells, fit_gaussian
 
 # %%
 filename = os.path.join(os.path.expanduser('~'), 
@@ -81,7 +83,9 @@ for i, ax in enumerate(pt.flatten(AX)):
         pt.annotate(ax, ' ROI #%i \n (SI=%.2f)' % (1+i, Tuning['selectivities'][i]), (1,1), 
                     va='center', ha='right', fontsize=7,
                     color='tab:green' if Tuning['significant_ROIs'][i] else 'tab:red')
-        ax.plot(Tuning['shifted_angle'], Tuning['Responses'][i], 'k')
+        # ax.plot(Tuning['shifted_angle'], Tuning['Responses'][i], 'k')
+        pt.plot(Tuning['shifted_angle'], Tuning['Responses'][i], 
+                sy=Tuning['semResponses'][i], ax=ax)
         ax.plot(Tuning['shifted_angle'], 0*Tuning['shifted_angle'], 'k:', lw=0.5)
         pt.set_plot(ax, xticks=Tuning['shifted_angle'], 
                     ylabel='(post - pre)\n$\delta$ $\Delta$F/F' if i%5==0 else '',
@@ -108,10 +112,10 @@ pt.plot(Tuning['shifted_angle'], np.mean([r/r[1] for r in Tuning['Responses'][Tu
         sy=np.std([r/r[1] for r in Tuning['Responses'][Tuning['significant_ROIs'],:]], axis=0), ax=AX[1])
 
 pt.scatter(Tuning['shifted_angle'], np.mean([r/r[1] for r in Tuning['Responses'][Tuning['significant_ROIs'],:]], axis=0), 
-        sy=stats.sem([r/r[1] for r in Tuning['Responses'][Tuning['significant_ROIs'],:]], axis=0), ax=AX[2], ms=3)
+        sy=stats.sem([r/r[1] for r in Tuning['Responses'][Tuning['significant_ROIs'],:]], axis=0), 
+        ax=AX[2], ms=2)
 
 x = np.linspace(-30, 180-30, 100)
-
 
 AX[2].plot(x, func(x), lw=2, alpha=.5, color='dimgrey')
 
@@ -136,26 +140,45 @@ fig.suptitle(' session: %s ' % os.path.basename(data.filename), fontsize=7)
 DATASET = physion.analysis.read_NWB.scan_folder_for_NWBfiles(\
         os.path.join(os.path.expanduser('~'), 'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs'))
 
-Responses = []
+Tunings = []
 
 for f in DATASET['files']:
     print(' - analyzing file: %s  [...] ' % f)
     data = physion.analysis.read_NWB.Data(f, verbose=False)
-    data.build_dFoF(neuropil_correction_factor=0.9, percentile=10., verbose=False)
+    data.build_dFoF(neuropil_correction_factor=0.9,
+                    percentile=10., 
+                    verbose=False)
 
-    Episodes = physion.analysis.process_NWB.EpisodeData(data, quantities=['dFoF'],
-                                                    protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0], verbose=False)
+    protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0]
+    Episodes = physion.analysis.process_NWB.EpisodeData(data, 
+                                                        quantities=['dFoF'], 
+                                                        protocol_name=protocol_name, 
+                                                        verbose=False)
 
-    Tuning = compute_tuning_response_per_cells(data, Episodes, quantity='dFoF',
-                                           stat_test_props=stat_test_props,
-                                           response_significance_threshold = response_significance_threshold,
-                                           contrast=1)
+    Tuning = compute_tuning_response_per_cells(data, Episodes, 
+                                               quantity='dFoF', 
+                                               stat_test_props=stat_test_props, 
+                                               response_significance_threshold = response_significance_threshold, 
+                                               contrast=1)
 
-    Responses.append(np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:], axis=0))
+    Tunings.append(Tuning)
+
+# saving data
+np.save(os.path.join(tempfile.tempdir, 'Tunings.npy'),
+        Tunings)
 
 # %%
+
+# loading data
+Tunings = np.load(os.path.join(tempfile.tempdir, 'Tunings.npy'), 
+                  allow_pickle=True)
+
+# mean significant responses per session
+Responses = [np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:], axis=0)
+                 for Tuning in Tunings]
 # Gaussian Fit
-C, func = fit_gaussian(Tuning['shifted_angle'], np.mean([r/r[1] for r in Responses], axis=0))
+C, func = fit_gaussian(Tuning['shifted_angle'],
+                        np.mean([r/r[1] for r in Responses], axis=0))
 
 # Plot
 fig, ax = pt.figure(figsize=(1.2, 1))
