@@ -2,7 +2,7 @@
     "Presentation": "Stimuli-Sequence",
     "Stimulus": "looming-stim",
     "Screen": "Dell-2020",
-    "units": "lin-deg",
+    "units": "cm",
   "-----------------------------------------------------------------------1":0,
     "presentation-duration": 5.0,
     "presentation-interstim-period": 8,
