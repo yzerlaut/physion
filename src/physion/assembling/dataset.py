@@ -16,7 +16,8 @@ def read_spreadsheet(filename,
 
     """
 
-    dataset = pd.read_excel(filename, sheet_name='Recordings')
+    #dataset = pd.read_excel(filename, sheet_name='Recordings')
+    dataset = pd.read_excel(filename, sheet_name='Dataset')
     subjects = pd.read_excel(filename, sheet_name='Subjects')
     analysis = pd.read_excel(filename, sheet_name='Analysis')
 
