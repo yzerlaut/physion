@@ -1,0 +1,15 @@
+{
+    "Presentation": "Stimuli-Sequence",
+    "Stimulus": "dimming-circle",
+    "Screen": "Dell-2020",
+    "units": "cm",
+  "-----------------------------------------------------------------------1":0,
+    "presentation-duration": 5.0,
+    "presentation-interstim-period": 8,
+    "dimming-duration": 1.0,
+    "radius":25,
+    "contrast-1": 0.05, "contrast-2": 1, "N-contrast": 4,
+    "dimming-nonlinearity": 3,
+  "-----------------------------------------------------------------------2":0,
+    "N-repeat": 10
+}

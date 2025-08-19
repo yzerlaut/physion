@@ -1,0 +1,15 @@
+{
+  "Presentation": "multiprotocol",
+  "shuffling" :"full",
+  "shuffling-seed" :34,
+  "movie_refresh_freq":30.0,
+  "units":"cm",
+  "Protocol-1": "subprotocols/looming-sweeping/looming-stim-lin.json",
+  "Protocol-2": "subprotocols/looming-sweeping/dimming-circle-lin.json",
+  "Protocol-3": "subprotocols/looming-sweeping/black-sweeping-lin.json",
+  "Protocol-4": "subprotocols/looming-sweeping/white-sweeping-lin.json",
+  "presentation-prestim-period": 5.0,
+  "presentation-poststim-period": 5.0,
+  "presentation-blank-screen-color": 0.5,
+  "Screen": "Dell-2020"
+}
