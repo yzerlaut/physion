@@ -48,8 +48,8 @@ class stim(visual_stim):
     def get_image(self, index, time_from_episode_start=0, parent=None):
         img = self.experiment['bg-color'][index]+0.*self.x
 
-        contrast = self.experiment['contrast'][index] * (self.experiment['bg-color'][index] - self.experiment['color'][index])
-        color = self.experiment['bg-color'][index] - contrast
+        dColor = self.experiment['contrast'][index] * (self.experiment['color'][index] - self.experiment['bg-color'][index])
+        color = self.experiment['bg-color'][index] + dColor
         self.add_dot(img, (self.experiment['x-center'][index], self.experiment['y-center'][index]),
                      self.get_circle_size(index, time_from_episode_start),
                      color,
