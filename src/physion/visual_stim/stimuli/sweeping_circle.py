@@ -54,9 +54,11 @@ class stim(visual_stim):
         elif self.experiment['trajectory'][episode_index] == "top-right_to_bottom-left":
             x0 = self.x[-1,-1] + tfrac*(self.x[0,0]-self.x[-1,-1])
             z0 = self.z[-1,-1] + tfrac*(self.z[0,0]-self.z[-1,-1])
-        elif self.experiment['trajectory'][episode_index] == "bottom-right_to_right-left":
+        elif self.experiment['trajectory'][episode_index] == "bottom-right_to_top-left":
             x0 = self.x[-1,-1] + tfrac*(self.x[0,0]-self.x[-1,-1])
             z0 = self.z[0,0] + tfrac*(self.z[-1,-1]-self.z[0,0])
+        else :
+            raise ValueError(f"trajectory {self.experiment['trajectory'][episode_index]} not implemented")
 
         # Define color of circle
         radius = self.experiment['radius'][episode_index]
