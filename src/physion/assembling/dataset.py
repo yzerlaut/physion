@@ -16,8 +16,7 @@ def read_spreadsheet(filename,
 
     """
 
-    #dataset = pd.read_excel(filename, sheet_name='Recordings')
-    dataset = pd.read_excel(filename, sheet_name='Dataset')
+    dataset = pd.read_excel(filename, sheet_name='Recordings')
     subjects = pd.read_excel(filename, sheet_name='Subjects')
     analysis = pd.read_excel(filename, sheet_name='Analysis')
 
@@ -88,7 +87,8 @@ def add_to_table(filename,
 
 
     # old_sheet = pd.read_excel(filename, sheet_name=sheet)
-    new_sheet = pd.read_excel(filename, sheet_name=sheet).copy()
+    new_sheet = pd.read_excel(filename, 
+                              sheet_name=sheet).copy()
     if column in new_sheet:
         new_sheet[column] = data
     else:
@@ -104,11 +104,35 @@ def add_to_table(filename,
 
 if __name__=='__main__':
 
+    """
+    here we just fill the "Analysis" sheet
+    """
+    import os
+    from physion.analysis.read_NWB import Data
+
     filename = sys.argv[-1]
 
-    dataset = read_dataset_spreadsheet(filename)
-    add_to_table(filename, 
-                 data=dataset['protocol'],
-                 column='protocol',
-                 sheet='Analysis')
-    print(dataset[['subject', 'day', 'time', 'protocol', 'FOV']])
+    recordings, _, _ = read_spreadsheet(filename)
+
+    fns, protocol, protocols, age = [], [], [], []
+
+    for day, time in zip(recordings['day'],
+                         recordings['time']):
+        
+        data = Data(os.path.join(filename.replace('DataTable.xlsx', ''),
+                                 'NWBs', '%s-%s.nwb' % (day, time)),
+                                 metadata_only=True)
+        fns.append('%s-%s.nwb' % (day, time))
+        
+        protocol.append(data.metadata['protocol'])
+        protocols.append(str(data.protocols).replace('[','').replace(']','').replace("'",'').replace(' ','+'))
+
+        age.append(data.age)
+
+    for col, array in zip(['protocols', 'protocol', 'age', 'recordings'],
+                          [protocols, protocol, age, fns]):
+        add_to_table(filename, 
+                    data=array,
+                    column=col,
+                    sheet='Analysis',
+                    insert_at=0)
