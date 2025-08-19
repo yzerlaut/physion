@@ -35,6 +35,7 @@ sys.path.append(os.path.join(os.path.expanduser('~'),\
 
 import physion
 import physion.utils.plot_tools as pt
+pt.set_style('dark-notebook')
 
 from physion.analysis.protocols.orientation_tuning\
           import compute_tuning_response_per_cells, fit_gaussian
@@ -181,71 +182,40 @@ Responses = [np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:],
                      axis=0)
                  for Tuning in Tunings]
 # Gaussian Fit
-C, func = fit_gaussian(Tuning['shifted_angle'],
+C, func = fit_gaussian(Tunings[0]['shifted_angle'],
                         np.mean([r/r[1] for r in Responses], axis=0))
 
 # Plot
 fig, ax = pt.figure(figsize=(1.2, 1))
 
-pt.scatter(Tuning['shifted_angle'], np.mean([r/r[1] for r in Responses], axis=0), 
+pt.scatter(Tunings[0]['shifted_angle'], np.mean([r/r[1] for r in Responses], axis=0), 
         sy=stats.sem([r/r[1] for r in Responses], axis=0), ax=ax, ms=3)
 
 x = np.linspace(-30, 180-30, 100)
 ax.plot(x, func(x), lw=2, alpha=.5, color='dimgrey')
 
 pt.annotate(ax, 'N=%i sessions' % len(Responses), (0.8,1))
-
 pt.annotate(ax, 'SI=%.2f' % (1-C[2]), (1., 0.9), ha='right', va='top')
 
-pt.set_plot(ax, xticks=Tuning['shifted_angle'], yticks=np.arange(3)*0.5, ylim=[-0.05, 1.05],
-            ylabel='norm. $\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',
-            xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tuning['shifted_angle'] ])
+pt.set_plot(ax, xticks=Tunings[0]['shifted_angle'], 
+            yticks=np.arange(3)*0.5, 
+            ylim=[-0.05, 1.05],
+            ylabel='norm. $\delta$ $\Delta$F/F',  
+            xlabel='angle ($^o$) from pref.',
+            xticks_labels=\
+                ['%i' % a if (a in [0, 90]) else ''\
+                  for a in Tunings[0]['shifted_angle'] ])
 
 # %%
+# --> plot above implemented in the 
+from physion.analysis.protocols.orientation_tuning\
+        import plot_orientation_tuning_curve
 
-def plot_orientation_tuning_curve(keys,
-                      path=os.path.expanduser('~'),
-                      colors=['k']+[pt.tab10(i) for i in range(10)]):
-
-
-        if type(keys)==str:
-                keys = [keys]
-                colors = [colors[0]]
-
-        fig, ax = pt.figure(figsize=(1.2, 1))
-        x = np.linspace(-30, 180-30, 100)
-
-        for i, (key, color) in enumerate(zip(keys, colors)):
-
-                # load data
-                Tunings = \
-                        np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
-                                allow_pickle=True)
-        
-                # mean significant responses per session
-                Responses = [np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:],
-                                axis=0) for Tuning in Tunings]
-                # Gaussian Fit
-                C, func = fit_gaussian(Tuning['shifted_angle'],
-                                        np.mean([r/r[1] for r in Responses], axis=0))
-
-                pt.scatter(Tuning['shifted_angle'], np.mean([r/r[1] for r in Responses], axis=0), 
-                                sy=stats.sem([r/r[1] for r in Responses], axis=0), 
-                                color=color, ax=ax, ms=2)
-
-                ax.plot(x, func(x), lw=2, alpha=.5, color=color)
-
-                pt.annotate(ax, i*'\n'+'SI=%.2f' % (1-C[2]) + ', N=%i sessions' % len(Responses),
-                        (1., 0.9), va='top', color=color)
-
-        pt.set_plot(ax, xticks=Tuning['shifted_angle'], yticks=np.arange(3)*0.5, ylim=[-0.05, 1.05],
-                ylabel='norm. $\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',
-                xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tuning['shifted_angle'] ])
-
-        return fig, ax
-      
-plot_orientation_tuning_curve(['contrast-1.0', 'contrast-0.5'],
-                              path=tempfile.tempdir)
+fig, ax = plot_orientation_tuning_curve(\
+                                        ['contrast-1.0', 
+                                         'contrast-1.0', 
+                                         'contrast-0.5'],
+                                        path=tempfile.tempdir)
     
 
 

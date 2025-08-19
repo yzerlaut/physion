@@ -12,7 +12,7 @@ used in:
 
 """
 
-import sys
+import sys, os
 import numpy as np
 from scipy.optimize import minimize
 
@@ -145,6 +145,55 @@ def compute_tuning_response_per_cells(data, Episodes,
             'significant_ROIs':np.array(significant)}
 
 
+###########################
+###   ===  PLOTS  ===   ###
+###########################
+
+from physion.utils import plot_tools as pt
+from scipy import stats
+
+def plot_orientation_tuning_curve(keys,
+                      path=os.path.expanduser('~'),
+                      colors=[pt.plt.rcParams['lines.color']]+\
+                        [pt.tab10(i) for i in range(10)],
+                      figsize=(1,1)):
+    
+
+    if type(keys)==str:
+            keys = [keys]
+            colors = [colors[0]]
+
+    fig, ax = pt.figure(figsize=(1.2*figsize[0], 1.*figsize[1]))
+    x = np.linspace(-30, 180-30, 100)
+
+    for i, (key, color) in enumerate(zip(keys, colors)):
+
+            # load data
+            Tunings = \
+                    np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
+                            allow_pickle=True)
+    
+            # mean significant responses per session
+            Responses = [np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:],
+                            axis=0) for Tuning in Tunings]
+            # Gaussian Fit
+            C, func = fit_gaussian(Tunings[0]['shifted_angle'],
+                                    np.mean([r/r[1] for r in Responses], axis=0))
+
+            pt.scatter(Tunings[0]['shifted_angle'], np.mean([r/r[1] for r in Responses], axis=0), 
+                            sy=stats.sem([r/r[1] for r in Responses], axis=0), 
+                            color=color, ax=ax, ms=2)
+
+            ax.plot(x, func(x), lw=2, alpha=.5, color=color)
+
+            pt.annotate(ax, i*'\n'+'SI=%.2f' % (1-C[2]) + ', N=%i sessions' % len(Responses),
+                    (1., 0.9), va='top', color=color)
+
+    pt.set_plot(ax, xticks=Tunings[0]['shifted_angle'], yticks=np.arange(3)*0.5, ylim=[-0.05, 1.05],
+            ylabel='norm. $\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',
+            xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tunings[0]['shifted_angle'] ])
+
+    return fig, ax
 
 if __name__=='__main__':
 

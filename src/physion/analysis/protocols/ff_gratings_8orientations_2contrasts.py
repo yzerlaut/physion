@@ -4,8 +4,10 @@ from scipy.stats import sem
 import physion.utils.plot_tools as pt
 from physion.dataviz.raw import plot as plot_raw
 from physion.analysis.process_NWB import EpisodeData
-from physion.dataviz.episodes.trial_average import plot as plot_trial_average
-from .orientation_tuning import compute_tuning_response_per_cells, fit_gaussian
+from physion.dataviz.episodes.trial_average\
+      import plot as plot_trial_average
+from .orientation_tuning import\
+      compute_tuning_response_per_cells, fit_gaussian
 
 stat_test = dict(interval_pre=[-1.5,-0.5],
                  interval_post=[0.5,1.5],
