@@ -8,7 +8,6 @@
   "Protocol-2": "subprotocols/size-tuning-nathan/size-tuning-contrast-lin.json",
   "presentation-prestim-period": 5.0,
   "presentation-poststim-period": 5.0,
-  "presentation-interstim-period": 3.0,
   "presentation-blank-screen-color": 0.5,
   "Screen": "Dell-2020"
 }

@@ -12,9 +12,7 @@
     "looming-nonlinearity": 3,
     "looming-duration": 1.0,
     "color":0,
-    "contrast-1":0.05,
-    "contrast-2":1.0,
-    "N-log-contrast":4,
+    "contrast-1":0.05, "contrast-2":1.0, "N-log-contrast":4,
   "-----------------------------------------------------------------------2":0,
     "N-repeat": 10
 }

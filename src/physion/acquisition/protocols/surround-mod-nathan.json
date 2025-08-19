@@ -12,6 +12,5 @@
   "Protocol-5": "subprotocols/surround-mod-nathan/quick-spatial-mapping.json",
   "presentation-prestim-period": 4.0,
   "presentation-poststim-period": 4.0,
-  "presentation-interstim-period": 4.0,
   "presentation-blank-screen-color": 0.5
 }
