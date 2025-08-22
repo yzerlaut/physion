@@ -322,15 +322,23 @@ class EpisodeData:
 
     def get_response(self, 
                      quantity=None, 
-                     roiIndex=None, roiIndices='all', 
+                     episode_cond=None,
+                     roiIndex=None, 
+                     roiIndices='all', 
+                     first_dimension='episodes',
                      average_over_rois=True):
         """
-        to deal with the fact that single-episode responses can be multidimensional
+        returns a two dimensional matrix to be used for visualization
+        BECAUSE:
+        single-episode responses can have different shapes
+        e.g. 
+            self.pupil_diameter.shape() = (Nepisodes, Ntimestamps)
+            self.dFoF.shape() = (Nepisodes, Nrois, Ntimestamps)
 
-        if average_over_rois is True:
-            shape=(Nepisodes, Ntimestamps)
-        else:
-            shape=(Nepisodes, Nrois, Ntimestamps)
+        for 2P data (dFoF, Deconvolved, ...)
+        you can choose what is the first dimension
+        - "episodes" --> then you average over ROIs (for multiple ROIs)
+        - "ROIs" (for multiple ROIs) --> then you average over episodes 
         """
         if quantity is None:
             if len(self.quantities)>1:
@@ -338,26 +346,39 @@ class EpisodeData:
                 print('     -> need to define the desired quantity, here taking: "%s"' % self.quantities[0])
             quantity = self.quantities[0]
 
-        if len(getattr(self, quantity).shape)>2:
+        if episode_cond is None:
+            # by default all True
+            episode_cond = self.find_episode_cond()
+
+        if len(getattr(self, quantity).shape)==2:
+            # i.e. self.quantity.shape = (Nepisodes, Ntimestamps)
+
+            # no problem, we just need to filter by episode
+            return getattr(self, quantity)[episode_cond, :]
+
+        elif len(getattr(self, quantity).shape)==3:
+            # i.e. self.quantity.shape = (Nepisodes, Nrois, Ntimestamps) 
+
+            # then two cases:
 
             if roiIndex is not None:
-                if average_over_rois:
-                    return getattr(self, quantity)[:,roiIndex,:]
-                else:
-                    return getattr(self, quantity)[:,roiIndex,:].reshape(getattr(self, quantity).shape[0],
-                                                                         1,
-                                                                         getattr(self, quantity).shape[2])
+                # then no problem, we just return the 2D episode data for this roiIndex
+                return getattr(self, quantity)[episode_cond,roiIndex,:]
+
             else:
+                # multiple ROIs and multiple episodes
+
+                # (first we deal with the roiIndices key)
                 if roiIndices in ['all', 'sum', 'mean']:
-                    roiIndices = np.arange(getattr(self, quantity).shape[1])
+                    roiIndices = np.arange(self.data.nROIs)
 
-                if average_over_rois:
-                    return getattr(self, quantity)[:,roiIndices,:].mean(axis=1)
-                else:
-                    return getattr(self, quantity)[:,roiIndices,:]
-
-        else:
-            return getattr(self, quantity)
+                # then what do we return ? (it depends)
+                if first_dimension=='episodes':
+                    # we average over ROIs, first dim remains episodes
+                    return getattr(self, quantity)[episode_cond,roiIndices,:].mean(axis=1)
+                elif first_dimension=='ROIs':
+                    # we average over episodes, first dim becomes ROIs
+                    return getattr(self, quantity)[episode_cond,roiIndices,:].mean(axis=0)
 
 
     def compute_interval_cond(self, interval):

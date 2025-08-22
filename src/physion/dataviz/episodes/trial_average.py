@@ -16,17 +16,14 @@ from physion.visual_stim.build import build_stim
 def plot(episodes,
            # episodes props
            quantity='dFoF', roiIndex=None, roiIndices='all',
-           norm='',
-           interpolation='linear',
-           baseline_substraction=False,
            condition=None,
            COL_CONDS=None, column_keys=[], column_key='',
            ROW_CONDS=None, row_keys=[], row_key='',
            COLOR_CONDS = None, color_keys=[], color_key='',
-           fig_preset=' ',
            Xbar=0., Xbar_label='',
            Ybar=0., Ybar_label='',
-           with_std=True, with_std_over_trials=False, with_std_over_rois=False,
+           with_std=True, 
+           with_std_over_rois=False,
            with_screen_inset=False,
            with_stim=True,
            with_axis=False,
@@ -46,10 +43,6 @@ def plot(episodes,
         - "Zscore-per-roi"
         - "minmax-per-roi"
     """
-    if with_std:
-        with_std_over_trials = True # for backward compatibility --- DEPRECATED you need to specify !!
-
-    response_args = dict(roiIndex=roiIndex, roiIndices=roiIndices, average_over_rois=False)
 
     if with_screen_inset and (episodes.visual_stim is None):
         print('\n [!!] visual stim of episodes was not initialized  [!!]  ')
@@ -107,9 +100,6 @@ def plot(episodes,
     else:
         COLORS = [color for ic in range(len(COLOR_CONDS))]
 
-    # single-value
-    # condition = [...]
-
     if (fig is None) and (AX is None):
         fig, AX = plt.subplots(len(ROW_CONDS), len(COL_CONDS),
                             figsize=figsize,
@@ -118,15 +108,6 @@ def plot(episodes,
     else:
         no_set=no_set
 
-    # get response reshape in
-    response = tools.normalize(episodes.get_response(\
-                                    **dict(quantity=quantity,
-                                           roiIndex=roiIndex,
-                                           roiIndices=roiIndices,
-                                           average_over_rois=False)),
-                                norm,
-                                verbose=verbose)
-
     episodes.ylim = [np.inf, -np.inf]
     for irow, row_cond in enumerate(ROW_CONDS):
         for icol, col_cond in enumerate(COL_CONDS):
@@ -134,14 +115,19 @@ def plot(episodes,
 
                 cond = np.array(condition & col_cond & row_cond & color_cond)
 
-                my = response[cond,:,:].mean(axis=(0,1))
+                response = episodes.get_response(\
+                                quantity=quantity,
+                                episode_cond=cond,
+                                roiIndex=roiIndex,
+                                roiIndices=roiIndices,
+                                first_dimension=\
+                                    'ROIs' if with_std_over_rois\
+                                                    else 'episodes')
 
-                if with_std_over_trials or with_std_over_rois:
-                    if with_std_over_rois:
-                        sy = response[cond,:,:].mean(axis=0).std(axis=-2)
-                    else:
-                        sy = response[cond,:,:].std(axis=(0,1))
+                my = response.mean(axis=0) # mean response
 
+                if with_std:
+                    sy = response.mean(axis=0)
                     pt.plot(episodes.t, my, sy=sy,
                             ax=AX[irow][icol], color=COLORS[icolor], lw=1)
                     episodes.ylim = [min([episodes.ylim[0], np.min(my-sy)]),

@@ -49,6 +49,7 @@ def summary_pdf_folder(filename):
 def find_modalities(data):
 
     MODALITIES, QUANTITIES, TIMES, UNITS, COLORS = [], [], [], [], []
+
     if 'Running-Speed' in data.nwbfile.acquisition:
         MODALITIES.append('Running-Speed')
         # QUANTITIES.append(data.nwbfile.acquisition['Running-Speed'])
