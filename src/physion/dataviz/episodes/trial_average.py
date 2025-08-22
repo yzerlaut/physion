@@ -66,25 +66,36 @@ def plot(episodes,
 
     # columns
     if column_key!='':
-        COL_CONDS = [episodes.find_episode_cond(column_key, index) for index in range(len(episodes.varied_parameters[column_key]))]
+        COL_CONDS = [episodes.find_episode_cond(column_key, index)\
+                for index in range(len(episodes.varied_parameters[column_key]))]
     elif len(column_keys)>0:
-        COL_CONDS = [episodes.find_episode_cond(column_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in column_keys])]
+        COL_CONDS = [episodes.find_episode_cond(column_keys, indices)\
+                for indices in itertools.product(*[range(len(episodes.varied_parameters[key]))\
+                        for key in column_keys])]
     elif (COL_CONDS is None):
-        COL_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
+        COL_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data),\
+                dtype=bool)]
 
     # rows
     if row_key!='':
-        ROW_CONDS = [episodes.find_episode_cond(row_key, index) for index in range(len(episodes.varied_parameters[row_key]))]
+        ROW_CONDS = [episodes.find_episode_cond(row_key, index)\
+                for index in range(len(episodes.varied_parameters[row_key]))]
     elif len(row_keys)>0:
-        ROW_CONDS = [episodes.find_episode_cond(row_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in row_keys])]
+        ROW_CONDS = [episodes.find_episode_cond(row_keys, indices)\
+                for indices in itertools.product(*[range(len(episodes.varied_parameters[key]))\
+                        for key in row_keys])]
     elif (ROW_CONDS is None):
-        ROW_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
+        ROW_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data),\
+                dtype=bool)]
 
     # colors
     if color_key!='':
-        COLOR_CONDS = [episodes.find_episode_cond(color_key, index) for index in range(len(episodes.varied_parameters[color_key]))]
+        COLOR_CONDS = [episodes.find_episode_cond(color_key, index)\
+                for index in range(len(episodes.varied_parameters[color_key]))]
     elif len(color_keys)>0:
-        COLOR_CONDS = [episodes.find_episode_cond(color_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in color_keys])]
+        COLOR_CONDS = [episodes.find_episode_cond(color_keys, indices)\
+                for indices in itertools.product(*[range(len(episodes.varied_parameters[key]))\
+                     for key in color_keys])]
     elif (COLOR_CONDS is None):
         COLOR_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
 
@@ -108,10 +119,11 @@ def plot(episodes,
         no_set=no_set
 
     # get response reshape in
-    response = tools.normalize(episodes.get_response(**dict(quantity=quantity,
-                                                        roiIndex=roiIndex,
-                                                        roiIndices=roiIndices,
-                                                        average_over_rois=False)),
+    response = tools.normalize(episodes.get_response(\
+                                    **dict(quantity=quantity,
+                                           roiIndex=roiIndex,
+                                           roiIndices=roiIndices,
+                                           average_over_rois=False)),
                                 norm,
                                 verbose=verbose)
 
@@ -144,7 +156,10 @@ def plot(episodes,
                     AX[irow][icol].axis('off')
 
                 if with_screen_inset:
-                    inset = pt.inset(AX[irow][icol], [.83, .9, .3, .25])
+
+                    inset = pt.inset(AX[irow][icol],
+                                     [.83, .9, .3, .25])
+
                     istim = np.flatnonzero(cond)[0]
                     # start -- QUICK FIX
                     if 'protocol_id' in episodes.visual_stim.experiment:
@@ -169,13 +184,15 @@ def plot(episodes,
                         # ge.annotate(AX[irow][icol], s, (1, 1), ha='right', va='bottom', size='small')
                         AX[irow][icol].annotate(s[:-1], (0.5, 1),
                                 ha='center', va='bottom', size='small', xycoords='axes fraction')
+
                     # row label
                     if (len(ROW_CONDS)>1) and (icol==0) and (icolor==0):
                         s = ''
                         for i, key in enumerate(episodes.varied_parameters.keys()):
                             if (key==row_key) or (key in row_keys):
                                 try:
-                                    s+=format_key_value(key, getattr(episodes, key)[cond][0])+', ' # should have a unique value
+                                    s+=format_key_value(key, 
+                                        getattr(episodes, key)[cond][0])+', ' # should have a unique value
                                 except IndexError:
                                     pass
 

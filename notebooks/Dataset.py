@@ -1,17 +1,5 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.16.7
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
+# %% [markdown]
+# # Read Dataset from Spreasheet
 
 # %%
 import os, sys, shutil
@@ -20,9 +8,6 @@ import numpy as np
 
 sys.path.append('../src')
 import physion
-
-# %% [markdown]
-# # Read Dataset from Spreasheet
 
 # %%
 sheets = os.path.join(os.path.expanduser('~'), 
