@@ -37,7 +37,7 @@ where = ["src"]
 "physion.acquisition.protocols" = ["*.json"]
 "physion.acquisition.configs" = ["*.json"]
 "physion.acquisition.interventions" = ["*.json"]
-"physion.acquisition.subjects" = ["*.xlsx"]
+"physion.acquisition" = ["DataTable.xlsx"]
 
 [project.urls]
 "Homepage" = "https://github.com/yzerlaut/physion"

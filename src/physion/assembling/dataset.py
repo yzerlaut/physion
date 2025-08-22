@@ -104,35 +104,96 @@ def add_to_table(filename,
 
 if __name__=='__main__':
 
-    """
-    here we just fill the "Analysis" sheet
-    """
-    import os
-    from physion.analysis.read_NWB import Data
+    if len(sys.argv)<=2:
+        print("""
+       
+        should be used as: 
 
-    filename = sys.argv[-1]
+        python -m physion.assembling.dataset fill-analysis path-to/DataTable.xlsx
 
-    recordings, _, _ = read_spreadsheet(filename)
+        or:
 
-    fns, protocol, protocols, age = [], [], [], []
+        python -m physion.assembling.dataset build-DataTable path-to-folder-of-processed files
 
-    for day, time in zip(recordings['day'],
-                         recordings['time']):
-        
-        data = Data(os.path.join(filename.replace('DataTable.xlsx', ''),
-                                 'NWBs', '%s-%s.nwb' % (day, time)),
-                                 metadata_only=True)
-        fns.append('%s-%s.nwb' % (day, time))
-        
-        protocol.append(data.metadata['protocol'])
-        protocols.append(str(data.protocols).replace('[','').replace(']','').replace("'",'').replace(' ','+'))
+        """)
 
-        age.append(data.age)
+    elif sys.argv[-2]=='build-DataTable':
 
-    for col, array in zip(['protocols', 'protocol', 'age', 'recordings'],
-                          [protocols, protocol, age, fns]):
-        add_to_table(filename, 
-                    data=array,
-                    column=col,
-                    sheet='Analysis',
-                    insert_at=0)
+        folder = sys.argv[-1]
+
+        import pathlib, shutil
+
+        days, times, mice = [], [], []
+        for day in [day for day in os.listdir(folder) if (len(day.split('_'))==3)]:
+            for time in [t for t in os.listdir(os.path.join(folder,day)) if (len(t.split('-'))==3)]:
+                days.append(day)
+                times.append(time)
+                mice.append('demo-Mouse') # by default
+
+        base_path = str(pathlib.Path(__file__).resolve().parents[2])
+        dest = os.path.join(pathlib.Path(folder).resolve().parent, 'DataTable0.xlsx')
+        shutil.copyfile(\
+            os.path.join(base_path, 'physion', 'acquisition', 'DataTable.xlsx'), 
+                        dest)
+
+
+        for col, array in zip(['subject', 'day', 'time'],
+                              [mice, days, times]):
+            add_to_table(dest, 
+                        data=array,
+                        column=col,
+                        sheet='Recordings')
+
+        yes = ['Yes' for t in times]
+        for col in ['Locomotion', 'VisualStim', 'FaceMotion', 
+                    'Pupil', 'raw_FaceCamera', 'processed_CaImaging',
+                    'raw_CaImaging']:
+            add_to_table(dest, 
+                        data=yes,
+                        column=col,
+                        sheet='Recordings')
+
+
+        print("""
+
+                DataTable sucessfully initialized as "%s" 
+                        
+                        N.B. rename to DataTable.xlsx if you're happy with it
+
+        """ % dest)
+
+
+    elif sys.argv[-2]=='fill-analysis':
+        """
+        here we just fill the "Analysis" sheet based on the "Recordings" sheet
+                and the associated NWBs files
+        """
+        import os
+        from physion.analysis.read_NWB import Data
+
+        filename = sys.argv[-1]
+
+        recordings, _, _ = read_spreadsheet(filename)
+
+        fns, protocol, protocols, age = [], [], [], []
+
+        for day, time in zip(recordings['day'],
+                             recordings['time']):
+            
+            data = Data(os.path.join(filename.replace('DataTable.xlsx', ''),
+                                     'NWBs', '%s-%s.nwb' % (day, time)),
+                                     metadata_only=True)
+            fns.append('%s-%s.nwb' % (day, time))
+            
+            protocol.append(data.metadata['protocol'])
+            protocols.append(str(data.protocols).replace('[','').replace(']','').replace("'",'').replace(' ','+'))
+
+            age.append(data.age)
+
+        for col, array in zip(['protocols', 'protocol', 'age', 'recordings'],
+                              [protocols, protocol, age, fns]):
+            add_to_table(filename, 
+                        data=array,
+                        column=col,
+                        sheet='Analysis',
+                        insert_at=0)
