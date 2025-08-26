@@ -375,10 +375,10 @@ class EpisodeData:
                 # then what do we return ? (it depends)
                 if first_dimension=='episodes':
                     # we average over ROIs, first dim remains episodes
-                    return getattr(self, quantity)[episode_cond,roiIndices,:].mean(axis=1)
+                    return getattr(self, quantity)[:,roiIndices,:].mean(axis=1)[episode_cond,:]
                 elif first_dimension=='ROIs':
                     # we average over episodes, first dim becomes ROIs
-                    return getattr(self, quantity)[episode_cond,roiIndices,:].mean(axis=0)
+                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=0)[roiIndices,:]
 
 
     def compute_interval_cond(self, interval):
@@ -415,6 +415,7 @@ class EpisodeData:
 
 
     def stat_test_for_evoked_responses(self,
+                                       quantity=None,
                                        episode_cond=None,
                                        response_args={},
                                        interval_pre=[-2,0], interval_post=[1,3],
@@ -423,10 +424,9 @@ class EpisodeData:
                                        verbose=True):
         """
         """
-        response = self.get_response(**response_args)
-
-        if episode_cond is None:
-            episode_cond = self.find_episode_cond()
+        response = self.get_response(quantity=quantity,
+                                     episode_cond=episode_cond,
+                                     **response_args)
 
         pre_cond  = self.compute_interval_cond(interval_pre)
         post_cond  = self.compute_interval_cond(interval_post)
@@ -434,9 +434,11 @@ class EpisodeData:
         # print(response[episode_cond,:][:,pre_cond].mean(axis=1))
         # print(response[episode_cond,:][:,post_cond].mean(axis=1))
         # print(len(response.shape)>1,(np.sum(episode_cond)>1))
-        if len(response.shape)>1 and (np.sum(episode_cond)>1):
-            return stat_tools.StatTest(response[episode_cond,:][:,pre_cond].mean(axis=1),
-                                       response[episode_cond,:][:,post_cond].mean(axis=1),
+        print(response.shape)
+        print(pre_cond.shape)
+        if len(response.shape)>1:
+            return stat_tools.StatTest(response[:,pre_cond].mean(axis=1),
+                                       response[:,post_cond].mean(axis=1),
                                        test=test, positive=positive,
                                        verbose=verbose)
         else:

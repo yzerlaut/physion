@@ -27,12 +27,13 @@ def plot(episodes,
            with_screen_inset=False,
            with_stim=True,
            with_axis=False,
-           with_stat_test=False, stat_test_props=dict(interval_pre=[-1,0],
-                                                      interval_post=[1,2],
-                                                      test='wilcoxon',
-                                                      positive=True),
+           with_stat_test=False, 
+           stat_test_props=dict(interval_pre=[-1,0],
+                                interval_post=[1,2],
+                                test='wilcoxon',
+                                positive=True),
            with_annotation=False,
-           color='k',
+           color=None,
            label='',
            ylim=None, xlim=None,
            fig=None, AX=None, figsize=(5,3),
@@ -206,10 +207,11 @@ def plot(episodes,
             for icol, col_cond in enumerate(COL_CONDS):
                 for icolor, color_cond in enumerate(COLOR_CONDS):
 
-                    cond = np.array(condition & col_cond & row_cond & color_cond)[:response.shape[0]]
-                    results = episodes.stat_test_for_evoked_responses(episode_cond=cond,
-                                                                  response_args=dict(roiIndex=roiIndex, roiIndices=roiIndices),
-                                                                  **stat_test_props)
+                    cond = np.array(condition & col_cond & row_cond & color_cond)#[:response.shape[0]]
+                    results = episodes.stat_test_for_evoked_responses(quantity=quantity,
+                                                                      episode_cond=cond,
+                                                                      response_args=dict(roiIndex=roiIndex, roiIndices=roiIndices),
+                                                                      **stat_test_props)
 
                     ps, size = results.pval_annot()
                     AX[irow][icol].annotate(icolor*'\n'+ps, ((stat_test_props['interval_post'][0]+stat_test_props['interval_pre'][1])/2.,
