@@ -47,9 +47,18 @@ def shift_orientation_according_to_pref(angle,
 
 def gaussian_function(angle, X,
                       angle_range=180):
-    """ Gaussian Function for Orientation Tuning fit """
+    """ Gaussian Function for Orientation Tuning fit 
+    F(0) = X[0]+X[2]
+    F(90) = X[2] 
+    """
     nAngle = (angle+angle_range/2.)%angle_range - angle_range/2.
     return X[0]*np.exp(-(nAngle**2/2./X[1]**2))+X[2]
+
+def SI_from_fit(X):
+    """ Selectivity Index from fit values
+    ( F(0) - F(90) ) /( F(0) + F(90) ) """
+    return X[0]/(2*X[2]+X[0])
+
 
 def fit_gaussian(angles, values,
                  x0 = [0.8, 10, 0.2],
@@ -60,7 +69,8 @@ def fit_gaussian(angles, values,
     def to_minimize(x0):
         return np.sum((values-gaussian_function(angles, x0))**2)
 
-    res = minimize(to_minimize, x0)
+    res = minimize(to_minimize, x0,
+                   bounds=[[0,1],[1,100],[0,1]])
 
     def func(angles):
         return gaussian_function(angles, res.x)
@@ -152,18 +162,99 @@ def compute_tuning_response_per_cells(data, Episodes,
 from physion.utils import plot_tools as pt
 from scipy import stats
 
+def get_tuning_responses(Tunings,
+                         average_by='sessions'):
+
+    if average_by=='sessions':
+        # mean significant responses per session
+        Responses = [np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:],
+                        axis=0) for Tuning in Tunings]
+
+    elif average_by=='ROIs':
+        # mean significant responses per session
+        Responses = np.concatenate([\
+                        Tuning['Responses'][Tuning['significant_ROIs'],:]\
+                                                    for Tuning in Tunings])
+
+    else:
+        print()
+        print(' choose average_by either "sessions" or "ROIs"  ')
+        print()
+
+    return Responses
+
+def compute_selectivities(Responses,
+                          using='orth-resp', # or "fit"
+                          angles=np.linspace(-22.5, 135, 8),
+                          verbose=False):
+
+    if using=='orth-resp':
+        SIs = [selectivity_index(angles, r) for r in Responses]
+    elif using=='fit':
+        SIs = [SI_from_fit(\
+                fit_gaussian(angles,r/r[1])[0])\
+                      for r in Responses]
+    return SIs 
+
+
+
+def plot_selectivity(keys,
+                     path=os.path.expanduser('~'),
+                     average_by='sessions',
+                     using='orth-resp',
+                     colors=[pt.plt.rcParams['lines.color']]+\
+                        [pt.tab10(i) for i in range(10)],
+                     with_label=True,
+                     fig_args={}):
+
+    if type(keys)==str:
+        keys, colors = [keys], [colors[0]]
+
+    fig, ax = pt.figure(**fig_args)
+
+    for i, (key, color) in enumerate(zip(keys, colors)):
+
+            # load data
+            Tunings = \
+                    np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
+                            allow_pickle=True)
+    
+            Responses = get_tuning_responses(Tunings,
+                                             average_by=average_by)
+            Selectivities = compute_selectivities(Responses,
+                                                  angles=Tunings[0]['shifted_angle'],
+                                                  using=using)
+            pt.violin(Selectivities, x=i, color=color, ax=ax)
+
+            if with_label:
+                annot = i*'\n'+\
+                    'SI=%.2f$\pm$%.2f' % (np.mean(Selectivities), stats.sem(Selectivities))
+                if average_by=='sessions':
+                    annot += ', N=%02d %s, ' % (len(Responses), average_by) + key
+                else:
+                    annot += ', n=%04d %s, ' % (len(Responses), average_by) + key
+
+                pt.annotate(ax, annot, (1., 0.9), va='top', color=color)
+
+    pt.set_plot(ax, ['left'],
+                yticks=np.arange(3)*0.5,
+                ylabel='Select. Index')
+
+    return fig, ax
+
 def plot_orientation_tuning_curve(keys,
                       path=os.path.expanduser('~'),
+                      average_by='sessions',
                       colors=[pt.plt.rcParams['lines.color']]+\
                         [pt.tab10(i) for i in range(10)],
-                      figsize=(1,1)):
+                      with_label=True,
+                      fig_args={}):
     
 
     if type(keys)==str:
-            keys = [keys]
-            colors = [colors[0]]
+        keys, colors = [keys], [colors[0]]
 
-    fig, ax = pt.figure(figsize=(1.2*figsize[0], 1.*figsize[1]))
+    fig, ax = pt.figure(**fig_args)
     x = np.linspace(-30, 180-30, 100)
 
     for i, (key, color) in enumerate(zip(keys, colors)):
@@ -173,9 +264,9 @@ def plot_orientation_tuning_curve(keys,
                     np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
                             allow_pickle=True)
     
-            # mean significant responses per session
-            Responses = [np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:],
-                            axis=0) for Tuning in Tunings]
+            Responses = get_tuning_responses(Tunings,
+                                             average_by=average_by)
+
             # Gaussian Fit
             C, func = fit_gaussian(Tunings[0]['shifted_angle'],
                                     np.mean([r/r[1] for r in Responses], axis=0))
@@ -186,8 +277,13 @@ def plot_orientation_tuning_curve(keys,
 
             ax.plot(x, func(x), lw=2, alpha=.5, color=color)
 
-            pt.annotate(ax, i*'\n'+'SI=%.2f' % (1-C[2]) + ', N=%i sessions' % len(Responses),
-                    (1., 0.9), va='top', color=color)
+            if with_label:
+                annot = i*'\n'+'SI=%.2f' % SI_from_fit(C)
+                if average_by=='sessions':
+                    annot += ', N=%02d %s, ' % (len(Responses), average_by) + key
+                else:
+                    annot += ', n=%04d %s, ' % (len(Responses), average_by) + key
+                pt.annotate(ax, annot, (1., 0.9), va='top', color=color)
 
     pt.set_plot(ax, xticks=Tunings[0]['shifted_angle'], yticks=np.arange(3)*0.5, ylim=[-0.05, 1.05],
             ylabel='norm. $\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',

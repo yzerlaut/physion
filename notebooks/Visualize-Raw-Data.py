@@ -31,21 +31,22 @@ data.build_dFoF(verbose=False)
 # ## Showing Field of View
 
 # %%
-fig, AX = pt.figure(axes=(3,1), figsize=(1.4,3), wspace=0.15)
+fig, AX = pt.figure(axes=(3,1), 
+                    ax_scale=(1.4,3), wspace=0.15)
 
 from physion.dataviz.imaging import show_CaImaging_FOV
 #
 show_CaImaging_FOV(data, key='meanImg', 
                    cmap=pt.get_linear_colormap('k', 'tab:green'),
-                   NL=2, # non-linearity to normalize image
+                   NL=3, # non-linearity to normalize image
                    ax=AX[0])
 show_CaImaging_FOV(data, key='max_proj', 
                    cmap=pt.get_linear_colormap('k', 'tab:green'),
-                   NL=2, # non-linearity to normalize image
+                   NL=3, # non-linearity to normalize image
                    ax=AX[1])
 show_CaImaging_FOV(data, key='meanImg', 
                    cmap=pt.get_linear_colormap('k', 'tab:green'),
-                   NL=2,
+                   NL=3,
                    roiIndices=range(data.nROIs), 
                    ax=AX[2])
 
@@ -56,6 +57,7 @@ fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'FOV.png'))
 # # Show Raw Data
 
 # %%
+
 # default plot
 from physion.dataviz.raw import plot as plot_raw, find_default_plot_settings
 settings = find_default_plot_settings(data)
@@ -81,3 +83,4 @@ settings = {'Locomotion': {'fig_fraction': 1,
                            'color': '#2ca02c'}
            }
 plot_raw(data, tlim=[100, data.t_dFoF[-1]], settings=settings)
+

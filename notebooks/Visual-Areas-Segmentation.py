@@ -24,9 +24,9 @@ from PIL import Image
 # ## Load data
 
 # %%
-dataFolder = os.path.join(os.path.expanduser('~'), 'DATA', 'CIBELE', 'intrinsic_img', 'SST', 'SST_F4', '12-59-33')
-dataFolder = os.path.join(os.path.expanduser('~'), 'DATA', 'CIBELE', 'intrinsic_img', 'PVNR1', 'PVNR1_M3', '14-55-55')
-dataFolder = os.path.join(os.path.expanduser('~'), 'DATA', 'CIBELE', 'intrinsic_img', '2024_09_18', '16-15-18')
+dataFolder = os.path.join(os.path.expanduser('~'), 'DATA', 
+                        'physion_Demo-Datasets', 'PV-WT', 'retinotopic_mapping',
+                        'PVTOM_BB_5')
 # retinotopic mapping data
 maps = np.load(os.path.join(dataFolder, 'raw-maps.npy') , allow_pickle=True).item()
 # vasculature picture
@@ -49,12 +49,12 @@ plot_retinotopic_maps(maps, map_type='azimuth');
 data = build_trial_data(maps)
 data['vasculatureMap'] = imVasc[::int(imVasc.shape[0]/data['aziPosMap'].shape[0]),\
                                 ::int(imVasc.shape[1]/data['aziPosMap'].shape[1])]
-segmentation_params={'phaseMapFilterSigma': 2.,
-                     'signMapFilterSigma': 3.,
-                     'signMapThr': 0.6,
+segmentation_params={'phaseMapFilterSigma': 3.,
+                     'signMapFilterSigma': 2.,
+                     'signMapThr': 0.8,
                      'eccMapFilterSigma': 10.,
                      'splitLocalMinCutStep': 5.,
-                     'mergeOverlapThr': 0.1,
+                     'mergeOverlapThr': 0.4,
                      'closeIter': 3,
                      'openIter': 3,
                      'dilationIter': 15,
@@ -66,9 +66,10 @@ segmentation_params={'phaseMapFilterSigma': 2.,
 data['params'] = segmentation_params
 trial = RetinotopicMapping.RetinotopicMappingTrial(**data)
 trial.processTrial(isPlot=False) # TURN TO TRUE TO VISUALIZE THE SEGMENTATION STEPS
+_ = trial._getSignMap(onlySMplot=True)
 
 # %%
-fig, ax = pt.figure(figsize=(5,5))
+fig, ax = pt.figure(ax_scale=(5,5))
 h = RetinotopicMapping.plotPatches(trial.finalPatches, plotaxis=ax)
 ax.imshow(imVasc, cmap=plt.cm.grey, vmin=imVasc.min(), vmax=imVasc.max(), extent=[*ax.get_xlim(), *ax.get_ylim()])
 h = RetinotopicMapping.plotPatches(trial.finalPatches, plotaxis=ax)
@@ -79,21 +80,23 @@ ax.axis('off');
 # # Summary Plot
 
 # %%
-fig, AX = pt.figure(axes=(5,1), figsize=(.9*2,.9*3), wspace=0.4)
+fig, AX = pt.figure(axes=(5,1), 
+                    ax_scale=(.9*2,.9*3), 
+                    wspace=0.4)
 
 for map_type, ax, bounds in zip(['altitude', 'azimuth'], AX[:2],
                                 [[-50, 50],[-60, 60]]):
     im = ax.imshow(maps['%s-retinotopy' % map_type], cmap=plt.cm.PRGn,\
                    vmin=bounds[0], vmax=bounds[1])
     fig.colorbar(im, ax=ax,
-                 label='visual angle (deg.)')
+                 label='visual e (deg.)')
     ax.set_title('%s map' % map_type)
 
 ax = AX[2]
 im = ax.imshow(trial.signMapf, cmap='jet', vmin=-1, vmax=1)
 fig.colorbar(im, ax=ax, label='phase gradient sign')
 ax.set_title('sign map')
-    
+
 ax=AX[-2]
 h = RetinotopicMapping.plotPatches(trial.finalPatches, plotaxis=ax)
 ax.imshow(imVasc, cmap=plt.cm.grey, vmin=imVasc.min(), vmax=imVasc.max(), 
@@ -109,4 +112,7 @@ for ax in AX:
     ax.axis('equal')
     ax.axis('off')    
 
-#fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'fig.svg'))
+fig.savefig(os.path.join(os.path.expanduser('~'), 
+                         'Desktop', 'fig.svg'))
+
+# %%

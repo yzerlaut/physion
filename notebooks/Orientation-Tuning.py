@@ -1,21 +1,3 @@
-<<<<<<< HEAD
-=======
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.16.7
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
-
->>>>>>> 2de2131 (working on massive tuning)
 # %% [markdown]
 # # Compute Orientation Selectivity
 
@@ -36,10 +18,10 @@ from scipy import stats
 sys.path.append(os.path.join(os.path.expanduser('~'),\
         'work', 'physion', 'src')) # update to your "physion" location
 
-import physion
 import physion.utils.plot_tools as pt
-pt.set_style('dark-notebook')
+pt.set_style('dark')
 
+import physion
 from physion.analysis.protocols.orientation_tuning\
           import compute_tuning_response_per_cells, fit_gaussian
 
@@ -92,7 +74,7 @@ for i, ax in enumerate(pt.flatten(AX)):
                 sy=Tuning['semResponses'][i], ax=ax)
         ax.plot(Tuning['shifted_angle'], 0*Tuning['shifted_angle'], 'k:', lw=0.5)
         pt.set_plot(ax, xticks=Tuning['shifted_angle'], 
-                    ylabel='(post - pre)\n$\delta$ $\Delta$F/F' if i%5==0 else '',
+                    ylabel='(post - pre)\n$\\delta$ $\\Delta$F/F' if i%5==0 else '',
                     xlabel='angle ($^o$) from preferred orientation' if i==(data.nROIs-1) else '',
                     xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tuning['shifted_angle'] ])
     else:
@@ -124,18 +106,18 @@ x = np.linspace(-30, 180-30, 100)
 AX[2].plot(x, func(x), lw=2, alpha=.5, color='dimgrey')
 
 pt.set_plot(AX[0], xticks=Tuning['shifted_angle'], 
-            ylabel='(post - pre)\n$\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',
+            ylabel='(post - pre)\n$\\delta$ $\\Delta$F/F',  xlabel='angle ($^o$) from pref.',
             xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tuning['shifted_angle'] ])
 
-pt.set_plot(AX[1], xticks=Tuning['shifted_angle'], yticks=np.arange(6)*0.2, ylim=[-0.05, 1.05],
-            ylabel='norm. $\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',
+pt.set_plot(AX[1], xticks=Tuning['shifted_angle'], yticks=np.arange(3)*0.5, ylim=[-0.05, 1.05],
+            ylabel='norm. $\\delta$ $\\Delta$F/F',  xlabel='angle ($^o$) from pref.',
             xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tuning['shifted_angle'] ])
 
 pt.set_plot(AX[2], xticks=Tuning['shifted_angle'], yticks=np.arange(3)*0.5, ylim=[-0.05, 1.05],
-            ylabel='norm. $\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',
+            ylabel='norm. $\\delta$ $\\Delta$F/F',  xlabel='angle ($^o$) from pref.',
             xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tuning['shifted_angle'] ])
 
-fig.suptitle(' session: %s ' % os.path.basename(data.filename), fontsize=7)
+fig.suptitle(' session: %s ' % os.path.basename(data.filename), fontsize=7);
 
 # %% [markdown]
 # ## Multiple Session Summary
@@ -151,9 +133,11 @@ for contrast in [0.5, 1.0]:
         for f in DATASET['files']:
                 print(' - analyzing file: %s  [...] ' % f)
                 data = physion.analysis.read_NWB.Data(f, verbose=False)
+                nROIs_original = data.nROIs # manually-selected ROIs
                 data.build_dFoF(neuropil_correction_factor=0.9,
                                 percentile=10., 
                                 verbose=False)
+                nROIs_final = data.nROIs # ROIs after dFoF criterion
 
                 protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0]
                 Episodes = physion.analysis.process_NWB.EpisodeData(data, 
@@ -166,12 +150,15 @@ for contrast in [0.5, 1.0]:
                                                         stat_test_props=stat_test_props, 
                                                         response_significance_threshold = response_significance_threshold, 
                                                         contrast=contrast)
+                Tuning['nROIs_original'] = nROIs_original
+                Tuning['nROIs_final'] = nROIs_final
+                Tuning['nROIs_responsive'] = np.sum(Tuning['significant_ROIs'])
 
                 Tunings.append(Tuning)
 
         # saving data
         np.save(os.path.join(tempfile.tempdir, 
-                        'Tunings_contrast-%.1f.npy' % contrast),
+                        'Tunings_WT_contrast-%.1f.npy' % contrast),
                 Tunings)
 
 # %%
@@ -210,16 +197,29 @@ pt.set_plot(ax, xticks=Tunings[0]['shifted_angle'],
                   for a in Tunings[0]['shifted_angle'] ])
 
 # %%
-# --> plot above implemented in the 
+# --> plot above implemented in the orientation_tuning protocol
+import tempfile
 from physion.analysis.protocols.orientation_tuning\
-        import plot_orientation_tuning_curve
+        import plot_orientation_tuning_curve, plot_selectivity
+
+fig, ax = plot_selectivity(\
+                        ['WT_contrast-1.0', 
+                         'WT_contrast-1.0', 
+                         'WT_contrast-0.5'],
+                        #  average_by='ROIs',
+                        #  using='fit',
+                        path=tempfile.tempdir)
+    
 
 fig, ax = plot_orientation_tuning_curve(\
-                                        ['contrast-1.0', 
-                                         'contrast-1.0', 
-                                         'contrast-0.5'],
+                                        ['WT_contrast-1.0', 
+                                         'WT_contrast-1.0', 
+                                         'WT_contrast-0.5'],
+                                        #  average_by='ROIs',
                                         path=tempfile.tempdir)
     
 
+
+# %%
 
 # %%
