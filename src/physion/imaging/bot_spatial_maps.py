@@ -45,8 +45,12 @@ def gui(self,
 
     # ========================================================
     #------------------- SIDE PANELS FIRST -------------------
+    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
     self.add_side_widget(tab.layout, 
             QtWidgets.QLabel('     _-* BOT SPATIAL MAPS *-_ '))
+    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+
     # folder box
     self.add_side_widget(tab.layout,QtWidgets.QLabel('folder:'),
                          spec='small-left')
@@ -67,11 +71,39 @@ def gui(self,
     self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
     
     self.add_side_widget(\
-            tab.layout,QtWidgets.QLabel('  - grid (pix):'),
+            tab.layout,QtWidgets.QLabel('  - spatial grid :'),
             spec='large-left')
-    self.ssBox = QtWidgets.QLineEdit()
-    self.ssBox.setText('(3,3)')
-    self.add_side_widget(tab.layout,self.ssBox, spec='small-right')
+    self.gridBox = QtWidgets.QLineEdit()
+    self.gridBox.setText('(3,3)')
+    self.add_side_widget(tab.layout,self.gridBox, spec='small-right')
+
+    self.add_side_widget(\
+            tab.layout,QtWidgets.QLabel('  - N-repeat :'),
+            spec='large-left')
+    self.repeatBox = QtWidgets.QLineEdit()
+    self.repeatBox.setText('4')
+    self.add_side_widget(tab.layout,self.repeatBox, spec='small-right')
+
+    self.add_side_widget(\
+            tab.layout,QtWidgets.QLabel('  - interstim (s) :'),
+            spec='large-left')
+    self.interstimBox = QtWidgets.QLineEdit()
+    self.interstimBox.setText('4')
+    self.add_side_widget(tab.layout,self.interstimBox, spec='small-right')
+
+    self.add_side_widget(\
+            tab.layout,QtWidgets.QLabel('  - duration (s) :'),
+            spec='large-left')
+    self.durationBox = QtWidgets.QLineEdit()
+    self.durationBox.setText('2')
+    self.add_side_widget(tab.layout,self.durationBox, spec='small-right')
+
+    self.add_side_widget(\
+            tab.layout,QtWidgets.QLabel('  - pre stim. (s) :'),
+            spec='large-left')
+    self.preBox = QtWidgets.QLineEdit()
+    self.preBox.setText('4')
+    self.add_side_widget(tab.layout,self.preBox, spec='small-right')
 
     self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
     self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
@@ -210,10 +242,10 @@ def gui(self,
     self.add_side_widget(tab.layout,self.img2Button, 'large-right')
     self.img2Button.currentIndexChanged.connect(self.update_img2)
 
-    """
     # ========================================================
     #------------------- THEN MAIN PANEL   -------------------
 
+    """
     self.graphics_layout= pg.GraphicsLayoutWidget()
 
     tab.layout.addWidget(self.graphics_layout,
@@ -221,6 +253,7 @@ def gui(self,
                          self.nWidgetRow, 
                          self.nWidgetCol-self.side_wdgt_length)
 
+    """
     self.raw_trace = self.graphics_layout.addPlot(row=0, col=0, 
                                                   rowspan=1, colspan=23)
     
@@ -270,6 +303,7 @@ def gui(self,
                                   style=QtCore.Qt.SolidLine),
                         removable=True)
     self.img1B.addItem(self.ROI)
+    """
 
     self.refresh_tab(tab)
 
@@ -299,16 +333,16 @@ def run_bot_analysis(self):
     t = np.array(DF['Timestamp']-DF['Timestamp'][0])
     F = np.array(DF['Region 1'])
 
+    pre = float(self.preBox.text())
+    interstim = float(self.interstimBox.text())
+    duration = float(self.durationBox.text())
+    Nrepeat = int(self.repeatBox.text())
 
-    pre, post = 4, 4
-    interstim = 4
-    duration = 2
+    s = self.gridBox.text().replace('(','').replace(')','')
+    size = [int(ss) for ss in s.split(',')]
+    Neps = Nrepeat * size[0] * size[1]
 
-    size = (3, 3)
-    Nrepeat = 4
-    Neps = 9*4
-
-    Npoints = 30*(2+duration+2)-10 # 30 Hz + -2s : duration : 2s
+    Npoints = int(30*(2+duration+2)-10) # 30 Hz + -2s : duration : 2s
 
     R = np.zeros((size[0],size[1],Nrepeat,Npoints))
 
@@ -323,7 +357,7 @@ def run_bot_analysis(self):
     # R[0,0,:,:] *= 0 # checking that the first is bottom-left
 
     tEp = np.arange(Npoints)/30.-2
-    fig, AX = pt.figure(size, ax_scale=(2,2), wspace=0.5, hspace=0.5)
+    fig, AX = pt.figure(size, ax_scale=(1.3,1.4), wspace=0.5, hspace=0.5)
     for i in range(size[0]):
         for j in range(size[0]):
             pt.plot(tEp, np.mean(R[i,j,:,:], axis=0),
@@ -333,7 +367,9 @@ def run_bot_analysis(self):
     pt.set_common_ylims(AX)
     for i in range(3):
         for j in range(3):
-            pt.set_plot(AX[i][j])
+            pt.set_plot(AX[i][j],
+                        ylabel='Fluo.' if j==0 else '',
+                        xlabel='time (s)' if i==(size[0]-1) else '')
 
     pt.plt.show()
 
