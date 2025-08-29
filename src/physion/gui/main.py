@@ -165,6 +165,14 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
         from physion.gui.parts import inactivated as trial_averaging
 
+    # -- Imaging - BOT Spatial Maps
+    if not Acquisition:
+        from physion.imaging.bot_spatial_maps \
+                import gui as bot_spatial_maps
+        from physion.imaging.bot_spatial_maps import run_bot_analysis
+    else:
+        from physion.gui.parts import inactivated as bot_spatial_maps
+
     # -- Imaging - Red Label GUI 
     if not Acquisition:
         from physion.imaging.red_label import red_channel_labelling,\
@@ -309,10 +317,11 @@ class MainWindow(QtWidgets.QMainWindow):
             self.switch_roi_RCL()
         else:
             # ---- DEBUG interface ---- #
-            self.OD_analysis()
+            self.bot_spatial_maps()
+            # self.OD_analysis()
             # self.lastBox.setChecked(False)
             # self.datafolder = '/Users/yann/UNPROCESSED/CIBELE/2024_06_28/14-35-30'
-            self.load_intrinsic_data()
+            # self.load_intrinsic_data()
             # self.SS_intrinsic()
             # self.facemotion()
             # self.pupil()

@@ -70,6 +70,8 @@ def build_menu(self):
     # ##### ------- Analysis -------------------------------
     self.analysisMenu = self.mainMenu.addMenu('  *** &Analysis')
     # --
+    self.analysisMenu.addAction('&BOT Spatial Maps',
+                                self.bot_spatial_maps)
     self.analysisMenu.addAction('&Behavior',
                                 self.in_progress)
     self.analysisMenu.addAction('&Trial Averaging',

@@ -28,10 +28,15 @@ dataFolder = os.path.join(os.path.expanduser('~'), 'DATA',
                         'physion_Demo-Datasets', 'PV-WT', 'retinotopic_mapping',
                         'PVTOM_BB_5')
 # retinotopic mapping data
-maps = np.load(os.path.join(dataFolder, 'raw-maps.npy') , allow_pickle=True).item()
+# maps = np.load(os.path.join(dataFolder, 'raw-maps.npy') , 
+#                allow_pickle=True).item()
+maps = dict(np.load(os.path.join(dataFolder, 'raw-maps.npz') , 
+               allow_pickle=True))
 # vasculature picture
 imVasc = np.array(Image.open(os.path.join(dataFolder, 'vasculature.tif')))
-plt.imshow(imVasc**1, cmap=plt.cm.grey); plt.axis('off');
+fig, ax = pt.figure(ax_scale=(2,2))
+ax.imshow(imVasc**1, cmap=plt.cm.gray) 
+plt.axis('off');
 
 # %% [markdown]
 # # Retinotopic Maps
@@ -106,7 +111,9 @@ ax.set_title('w/ vasculature')
 
 ax = AX[-1]
 h = RetinotopicMapping.plotPatches(trial.finalPatches, plotaxis=ax)
-ax.imshow(imVasc, cmap=plt.cm.grey, vmin=imVasc.min(), vmax=imVasc.max(), extent=[*ax.get_xlim(), *ax.get_ylim()])
+ax.imshow(imVasc, cmap=plt.cm.grey, 
+          vmin=imVasc.min(), vmax=imVasc.max(), 
+          extent=[*ax.get_xlim(), *ax.get_ylim()])
 
 for ax in AX:
     ax.axis('equal')
@@ -114,5 +121,15 @@ for ax in AX:
 
 fig.savefig(os.path.join(os.path.expanduser('~'), 
                          'Desktop', 'fig.svg'))
+
+# %%
+
+m = 0*maps['altitude-retinotopy']
+cond = ( np.abs(maps['altitude-retinotopy'])<7) & ( np.abs(maps['azimuth-retinotopy'])<7)
+cond = np.abs(maps['altitude-retinotopy'])<7
+cond = np.abs(maps['azimuth-retinotopy'])<7
+
+m[cond] = 1
+plt.imshow(m)
 
 # %%
