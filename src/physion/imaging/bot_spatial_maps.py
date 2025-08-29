@@ -71,6 +71,13 @@ def gui(self,
     self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
     
     self.add_side_widget(\
+            tab.layout,QtWidgets.QLabel('  - region ID:'),
+            spec='large-left')
+    self.regionBox = QtWidgets.QLineEdit()
+    self.regionBox.setText('Region 1')
+    self.add_side_widget(tab.layout,self.regionBox, spec='small-right')
+
+    self.add_side_widget(\
             tab.layout,QtWidgets.QLabel('  - spatial grid :'),
             spec='large-left')
     self.gridBox = QtWidgets.QLineEdit()
@@ -109,13 +116,6 @@ def gui(self,
     self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
     self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
     self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
-
-    self.add_side_widget(\
-            tab.layout,QtWidgets.QLabel('  - grid (pix):'),
-            spec='large-left')
-    self.ssBox = QtWidgets.QLineEdit()
-    self.ssBox.setText('(3,3)')
-    self.add_side_widget(tab.layout,self.ssBox, spec='small-right')
 
     self.runButton = QtWidgets.QPushButton(" === RUN Analysis === ", self)
     self.runButton.clicked.connect(self.run_bot_analysis)
@@ -331,7 +331,7 @@ def run_bot_analysis(self):
     DF = pd.read_csv(os.path.join(self.folder, csv_file))
 
     t = np.array(DF['Timestamp']-DF['Timestamp'][0])
-    F = np.array(DF['Region 1'])
+    F = np.array(DF[self.regionBox.text()])
 
     pre = float(self.preBox.text())
     interstim = float(self.interstimBox.text())
