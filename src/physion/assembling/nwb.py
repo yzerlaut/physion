@@ -494,7 +494,35 @@ def build_NWB_func(args, Subject=None):
                                                                 data=FMCI_dataI, unit='NA',
                                                                 timestamps=FC_times[FACEMOTION_SUBSAMPLING])
                     nwbfile.add_acquisition(FaceMotion_frames)
-                        
+            
+            elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz')):
+
+                if args.verbose:
+                    print('=> Adding processed facemotion data',
+                          'for "%s" [...]' % args.datafolder)
+                    
+                dataF = np.load(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz'),
+                                allow_pickle=True)
+                FC_timesF = FC_times[:len(dataF['motion_energy'])]
+
+                faceMotion_module = nwbfile.create_processing_module(\
+                        name='FaceMotion', 
+                        description='face motion dynamics,\n')
+                FaceMotionProp = pynwb.TimeSeries(name='face-motion',
+                                      data = np.reshape(dataF['motion_energy'],
+                                                        (len(FC_timesF),1)),
+                                                  unit='seconds',
+                                                  timestamps=FC_timesF)
+                faceMotion_module.add(FaceMotionProp)
+
+                if not np.isnan(dataF['grooming_threshold'][0]):
+                    GroomingProp = pynwb.TimeSeries(name='grooming',
+                                        data = np.reshape(dataF['grooming_ids'],
+                                                        (len(FC_timesF),1)),
+                                                    unit='seconds',
+                                                  timestamps=FC_timesF)
+                    faceMotion_module.add(GroomingProp)
+
             else:
                 print(' [!!] No processed facemotion data found for "%s" [!!] ' % args.datafolder)
                 
