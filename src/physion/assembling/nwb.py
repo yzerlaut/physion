@@ -411,7 +411,35 @@ def build_NWB_func(args, Subject=None):
                                                            unit='NA',
                                                            timestamps=FC_times[PUPIL_SUBSAMPLING])
                     nwbfile.add_acquisition(Pupil_frames)
-                        
+
+            if os.path.isfile(os.path.join(args.datafolder, 'FaceIt','faceit.npz')):
+                
+                if args.verbose:
+                    print('=> Adding processed pupil data for "%s" [...]' % args.datafolder)
+                    
+                dataP = np.load(os.path.join(args.datafolder, 'FaceIt','faceit.npz'),
+                                allow_pickle=True)
+                FC_timesP = FC_times[:len(dataP['pupil_dilation'])]
+
+                if 'FaceCamera-1cm-in-pix' in metadata:
+                    pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
+                else:
+                    pix_to_mm = 1
+                    
+                pupil_module = nwbfile.create_processing_module(name='Pupil', 
+                            description='processed quantities of Pupil dynamics,\n'+\
+                                ' pix_to_mm=%.3f' % pix_to_mm)
+
+                for key, key2 in zip(['cx', 'cy', 'sx', 'sy', 'blinking'],
+                                     ['pupil_center_X', 'pupil_center_y', 'width', 'height', 'blinking_ids']):
+                    if type(dataP[key2]) is np.ndarray:
+                        PupilProp = pynwb.TimeSeries(name=key,
+                                 data = np.reshape(dataP[key2], 
+                                                   (len(FC_timesP),1)),
+                                 unit='seconds',
+                                 timestamps=FC_timesP)
+                        pupil_module.add(PupilProp)
+
             else:
                 print(' [!!] No processed pupil data found',
                       'for "%s" [!!] ' % args.datafolder)
