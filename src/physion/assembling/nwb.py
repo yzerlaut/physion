@@ -430,8 +430,8 @@ def build_NWB_func(args, Subject=None):
                             description='processed quantities of Pupil dynamics,\n'+\
                                 ' pix_to_mm=%.3f' % pix_to_mm)
 
-                for key, key2 in zip(['cx', 'cy', 'sx', 'sy', 'blinking'],
-                                     ['pupil_center_X', 'pupil_center_y', 'width', 'height', 'blinking_ids']):
+                for key, key2 in zip(['cx', 'cy', 'sx', 'sy', 'blinking', 'area'],
+                                     ['pupil_center_X', 'pupil_center_y', 'width', 'height', 'blinking_ids', 'pupil_dilation_blinking_corrected']):
                     if type(dataP[key2]) is np.ndarray:
                         PupilProp = pynwb.TimeSeries(name=key,
                                  data = np.reshape(dataP[key2], 
