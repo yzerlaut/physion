@@ -22,8 +22,7 @@ import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
 import physion
-from physion.analysis.protocols.orientation_tuning\
-          import compute_tuning_response_per_cells, fit_gaussian
+# from physion.analysis.protocols.orientation_tuning\ import compute_tuning_response_per_cells, fit_gaussian
 
 # %%
 filename = os.path.join(os.path.expanduser('~'), 

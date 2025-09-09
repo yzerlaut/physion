@@ -7,6 +7,4 @@ Transform the scripts to jupyter notebooks with:
 jupytext --to ipynb *.py
 ```
 
-[ [Get the demo datafiles] ](https://drive.google.com/drive/folders/1vWzhtpDkqN7JgHN07r5WvIWPdUy0aZWT?usp=sharing)
-
-
+[ [Get the folder of demo datafiles] ](https://drive.google.com/drive/folders/1vWzhtpDkqN7JgHN07r5WvIWPdUy0aZWT?usp=sharing) and store it in `~/DATA/physion_Demo-Datasets`
