@@ -411,7 +411,36 @@ def build_NWB_func(args, Subject=None):
                                                            unit='NA',
                                                            timestamps=FC_times[PUPIL_SUBSAMPLING])
                     nwbfile.add_acquisition(Pupil_frames)
-                        
+
+            if os.path.isfile(os.path.join(args.datafolder, 'FaceIt','faceit.npz')):
+                
+                if args.verbose:
+                    print('=> Adding processed pupil data for "%s" [...]' % args.datafolder)
+                    
+                dataP = np.load(os.path.join(args.datafolder, 'FaceIt','faceit.npz'),
+                                allow_pickle=True)
+                FC_timesP = FC_times[:len(dataP['pupil_dilation'])]
+
+                if 'FaceCamera-1cm-in-pix' in metadata:
+                    pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
+                else:
+                    pix_to_mm = 1
+                    
+                pupil_module = nwbfile.create_processing_module(name='Pupil', 
+                            description='processed quantities of Pupil dynamics,\n'+\
+                                ' pix_to_mm=%.3f' % pix_to_mm)
+
+                for key, key2, coef in zip(['cx', 'cy', 'sx', 'sy', 'blinking', 'area'],
+                                     ['pupil_center_X', 'pupil_center_y', 'width', 'height', 'blinking_ids', 'pupil_dilation_blinking_corrected'],
+                                     [pix_to_mm, pix_to_mm, pix_to_mm*2, pix_to_mm*2, 1, pix_to_mm**2]):
+                    if type(dataP[key2]) is np.ndarray:
+                        PupilProp = pynwb.TimeSeries(name=key,
+                                 data = np.reshape(dataP[key2]*coef, 
+                                                   (len(FC_timesP),1)),
+                                 unit='seconds',
+                                 timestamps=FC_timesP)
+                        pupil_module.add(PupilProp)
+
             else:
                 print(' [!!] No processed pupil data found',
                       'for "%s" [!!] ' % args.datafolder)
@@ -494,7 +523,35 @@ def build_NWB_func(args, Subject=None):
                                                                 data=FMCI_dataI, unit='NA',
                                                                 timestamps=FC_times[FACEMOTION_SUBSAMPLING])
                     nwbfile.add_acquisition(FaceMotion_frames)
-                        
+            
+            elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz')):
+
+                if args.verbose:
+                    print('=> Adding processed facemotion data',
+                          'for "%s" [...]' % args.datafolder)
+                    
+                dataF = np.load(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz'),
+                                allow_pickle=True)
+                FC_timesF = FC_times[:len(dataF['motion_energy'])]
+
+                faceMotion_module = nwbfile.create_processing_module(\
+                        name='FaceMotion', 
+                        description='face motion dynamics,\n')
+                FaceMotionProp = pynwb.TimeSeries(name='face-motion',
+                                      data = np.reshape(dataF['motion_energy'],
+                                                        (len(FC_timesF),1)),
+                                                  unit='seconds',
+                                                  timestamps=FC_timesF)
+                faceMotion_module.add(FaceMotionProp)
+
+                if not np.isnan(dataF['grooming_threshold'][0]):
+                    GroomingProp = pynwb.TimeSeries(name='grooming',
+                                        data = np.reshape(dataF['grooming_ids'],
+                                                        (len(FC_timesF),1)),
+                                                    unit='seconds',
+                                                  timestamps=FC_timesF)
+                    faceMotion_module.add(GroomingProp)
+
             else:
                 print(' [!!] No processed facemotion data found for "%s" [!!] ' % args.datafolder)
                 
