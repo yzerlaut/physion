@@ -15,15 +15,15 @@
 import sys, os
 import numpy as np
 from scipy import stats
-
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
-
-import physion
-import physion.utils.plot_tools as pt
 import matplotlib.pylab as plt
 
+sys.path.append('../src') # add src code directory for physion
+import physion
+import physion.utils.plot_tools as pt
+pt.set_style('dark')
+
 # %% [markdown]
-# ## Baseline determination to compute $\Delta$F/F (on synthetic data)
+# ## Baseline determination to compute ∆F/F (on synthetic data)
 #
 # I illustrate below a few different options to determine the baseline of a signal
 
@@ -35,7 +35,8 @@ sWindow = 30
 percentile = 10
 
 # %%
-from physion.imaging.Calcium import compute_percentile, compute_minimum
+from physion.imaging.Calcium import compute_percentile,\
+                                    compute_minimum
 
 fig, AX = plt.subplots(1, 2, figsize=(10,2))
 
@@ -49,7 +50,8 @@ for ax, title, x0 in zip(AX,
         ax.plot(t, 6*roi+x0[roi,:], color='tab:red')
 
 # %%
-from physion.imaging.Calcium import compute_sliding_percentile, compute_sliding_minimum
+from physion.imaging.Calcium import compute_sliding_percentile,\
+                                    compute_sliding_minimum
 
 
 fig, AX = plt.subplots(2, 2, figsize=(10,4))
@@ -78,15 +80,7 @@ AX[1][0].set_ylabel('with smoothing')
 # ## Illustration of discarding criteria
 
 # %%
-import numpy as np
-import matplotlib.pylab as plt
-import os, sys
-from scipy import stats
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src'))
-from physion.analysis.read_NWB import Data
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src', 'physion', 'utils'))
-import plot_tools as pt
-from Calcium import compute_F0
+from physion.imaging.Calcium import compute_F0
 
 # %%
 filename = os.path.join(os.path.expanduser('~'), 

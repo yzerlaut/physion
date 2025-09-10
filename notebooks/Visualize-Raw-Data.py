@@ -2,28 +2,22 @@
 # # Visualize Raw Data
 
 # %%
-import os
-
-filename = os.path.join(os.path.expanduser('~'), 
-                        'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
-                        '2023_02_15-13-30-47.nwb')
-
-# %%
 # general python modules for scientific analysis
 import sys, pathlib, os
 import numpy as np
 
-# add the python path:
-sys.path += ['../src', './src']
-from physion.utils import plot_tools as pt
-from physion.analysis.read_NWB import Data, scan_folder_for_NWBfiles
+sys.path.append('../src') # add src code directory for physion
+import physion
+import physion.utils.plot_tools as pt
+pt.set_style('dark')
 
 # %%
 # load a datafile
-#filename = os.path.join(os.path.expanduser('~'), 
-#                        'CURATED', 'Pyr-FlexiCortPrelim-FebJuly2022', '2022_07_07-14-45-08.nwb')
-data = Data(filename,
-            verbose=False)
+filename = os.path.join(os.path.expanduser('~'), 
+                        'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
+                        '2023_02_15-13-30-47.nwb')
+data = physion.analysis.read_NWB.Data(filename,
+                                      verbose=False)
 data.build_rawFluo(verbose=False)
 data.build_dFoF(verbose=False)
 
@@ -82,5 +76,10 @@ settings = {'Locomotion': {'fig_fraction': 1,
                            'roiIndices': np.random.choice(np.arange(data.nROIs), np.min([20,data.nROIs]), replace=False),
                            'color': '#2ca02c'}
            }
-plot_raw(data, tlim=[100, data.t_dFoF[-1]], settings=settings)
+fig, AX = \
+    plot_raw(data, 
+             tlim=[100, data.t_dFoF[-1]], 
+             settings=settings)
 
+
+# %%
