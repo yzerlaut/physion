@@ -5,9 +5,10 @@
 import sys, os
 import numpy as np
 
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+sys.path.append('../src') # add src code directory for physion
 import physion
 import physion.utils.plot_tools as pt
+pt.set_style('dark')
 
 # %%
 filename = os.path.join(os.path.expanduser('~'), 

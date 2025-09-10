@@ -6,7 +6,7 @@ import os, sys, shutil
 import pandas as pd
 import numpy as np
 
-sys.path.append('../src')
+sys.path.append('../src') # add src code directory for physion
 import physion
 
 # %%

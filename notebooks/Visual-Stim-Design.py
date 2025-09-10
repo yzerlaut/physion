@@ -74,7 +74,7 @@ x = 16./9.*z
 X, Z = np.meshgrid(x, z, indexing='ij')
 Y = 0.*X+7
 
-fig, AX = pt.figure(axes = (2,1), figsize=(2,3), wspace=0.5)
+fig, AX = pt.figure(axes = (2,1), ax_scale=(2,3), wspace=0.5)
 AX[0].plot(X.flatten(), Z.flatten(), '.', ms=1)
 AX[0].axis('equal')
 x = np.arctan(X/Y)
@@ -96,7 +96,7 @@ for key, val in zip(['radius', 'x-center', 'y-center', 'angle'],
                     [100, 0, 0, 0]):
     params['%s' %key ] = val
 
-fig, AX = pt.figure(axes=(3,1), figsize=(1.8,2), wspace=0, left=0, right=0)
+fig, AX = pt.figure(axes=(3,1), ax_scale=(1.8,2), wspace=0, left=0, right=0)
 
 for units, ax, title in zip(['deg', 'cm', 'lin-deg'], AX,
                            ['angular space', 'on screen', 'linearized angle display\n(deprecated)']):
@@ -114,7 +114,7 @@ for key, val in zip(['radius', 'x-center', 'y-center', 'phase'],
                     [15, -30, 15, -90]):
     params['%s' %key ] = val
 
-fig, AX = pt.figure(axes=(3,1), figsize=(1.8,2), wspace=0, left=0, right=0)
+fig, AX = pt.figure(axes=(3,1), ax_scale=(1.8,2), wspace=0, left=0, right=0)
 
 for units, ax, title in zip(['deg', 'cm', 'lin-deg'], AX,
                            ['angular space', 'on screen', 'linearized angle display\n(deprecated)']):
@@ -309,3 +309,5 @@ img = init_bg_image(stim, 0)
 img += np.exp(-(stim.x**2+stim.z**2)/2/radius**2)
 ax.imshow(img.T, origin='lower', cmap=plt.cm.gray)
 #ax.axis('off')
+
+# %%

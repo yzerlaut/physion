@@ -15,14 +15,14 @@ import sys, os, tempfile
 import numpy as np
 from scipy import stats
 
-sys.path.append(os.path.join(os.path.expanduser('~'),\
-        'work', 'physion', 'src')) # update to your "physion" location
+sys.path.append('../src') # add src code directory for physion
 
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
 import physion
-# from physion.analysis.protocols.orientation_tuning\ import compute_tuning_response_per_cells, fit_gaussian
+from physion.analysis.protocols.orientation_tuning\
+          import compute_tuning_response_per_cells, fit_gaussian
 
 # %%
 filename = os.path.join(os.path.expanduser('~'), 
@@ -61,7 +61,7 @@ Tuning = compute_tuning_response_per_cells(data, Episodes,
 # ## Plot Individual Responses
 
 # %%
-fig, AX = pt.figure(axes=(5, int(data.nROIs/5)+1), figsize=(1,.7), hspace=1.5)
+fig, AX = pt.figure(axes=(5, int(data.nROIs/5)+1), ax_scale=(1,.7), hspace=1.5)
 
 for i, ax in enumerate(pt.flatten(AX)):
     if i<data.nROIs:
@@ -88,7 +88,7 @@ _, func = fit_gaussian(Tuning['shifted_angle'], np.mean([r/r[1] for r in Tuning[
 
 # Plot
 
-fig, AX = pt.figure(axes=(3, 1), figsize=(1.2, 1), wspace=1.5)
+fig, AX = pt.figure(axes=(3, 1), ax_scale=(1.2, 1), wspace=1.5)
 
 pt.plot(Tuning['shifted_angle'], np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:], axis=0), 
         sy=np.std(Tuning['Responses'][Tuning['significant_ROIs'],:], axis=0), ax=AX[0])
@@ -175,7 +175,7 @@ C, func = fit_gaussian(Tunings[0]['shifted_angle'],
                         np.mean([r/r[1] for r in Responses], axis=0))
 
 # Plot
-fig, ax = pt.figure(figsize=(1.2, 1))
+fig, ax = pt.figure(ax_scale=(1.2, 1))
 
 pt.scatter(Tunings[0]['shifted_angle'], np.mean([r/r[1] for r in Responses], axis=0), 
         sy=stats.sem([r/r[1] for r in Responses], axis=0), ax=ax, ms=3)
