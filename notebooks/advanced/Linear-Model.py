@@ -13,7 +13,7 @@ import sys, os
 import numpy as np
 from sklearn import linear_model, model_selection
 
-sys.path.append('../src') # add src code directory for physion
+sys.path.append('../../src') # add src code directory for physion
 import physion
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
@@ -101,6 +101,37 @@ for ax, label, array in zip(AX, ['Data', 'Model'], [Data, Model]):
                 ylim=[0,data.nROIs+1],
                 ylabel='neurons' if ax==AX[0] else '',
                 title = '%s' % label)
+
+# %% [markdown]
+# ### Show its learning curve
+
+# %%
+from sklearn.model_selection import\
+                LearningCurveDisplay, ShuffleSplit
+
+fig, ax = pt.figure(ax_scale=(1.5,1.5))
+
+i = 2
+common_params = {
+    "X": data[bhv_keys][tCond], 
+    "y":data['dFoF-ROI%i' % i][tCond],
+    "train_sizes": np.linspace(0.1, 1.0, 5),
+    "cv": ShuffleSplit(n_splits=50, test_size=0.2, random_state=0),
+    "score_type": "both",
+    "n_jobs": 4,
+    "line_kw": {"marker": "o"},
+    "std_display_style": "fill_between",
+    "score_name": "Accuracy",
+}
+
+model = linear_model.RidgeCV(alphas=[0.1,1.,10.,100.])
+LearningCurveDisplay.from_estimator(model, 
+                                    **common_params, 
+                                    ax=ax)
+handles, label = ax.get_legend_handles_labels()
+ax.legend(handles[:2], ["Training Score", "Test Score"],
+          loc=(1,0.5))
+ax.set_title("Learning Curve for RidgeCV") 
 
 # %% [markdown]
 # ## Adding time-shifted temporal features to improve the linear model
