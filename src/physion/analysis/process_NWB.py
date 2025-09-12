@@ -415,7 +415,6 @@ class EpisodeData:
 
 
     def stat_test_for_evoked_responses(self,
-                                       quantity=None,
                                        episode_cond=None,
                                        response_args={},
                                        interval_pre=[-2,0], interval_post=[1,3],
@@ -424,18 +423,12 @@ class EpisodeData:
                                        verbose=True):
         """
         """
-        response = self.get_response(quantity=quantity,
-                                     episode_cond=episode_cond,
+        response = self.get_response(episode_cond=episode_cond,
                                      **response_args)
 
         pre_cond  = self.compute_interval_cond(interval_pre)
         post_cond  = self.compute_interval_cond(interval_post)
 
-        # print(response[episode_cond,:][:,pre_cond].mean(axis=1))
-        # print(response[episode_cond,:][:,post_cond].mean(axis=1))
-        # print(len(response.shape)>1,(np.sum(episode_cond)>1))
-        print(response.shape)
-        print(pre_cond.shape)
         if len(response.shape)>1:
             return stat_tools.StatTest(response[:,pre_cond].mean(axis=1),
                                        response[:,post_cond].mean(axis=1),
@@ -450,7 +443,7 @@ class EpisodeData:
     def compute_stats_over_repeated_trials(self, key, index,
                                            response_args={},
                                            interval_cond=None,
-                                           quantity='mean'):
+                                           measure='mean'):
 
         cond = self.find_episode_cond(key, index)
         response = self.get_response(**response_args)
@@ -458,13 +451,13 @@ class EpisodeData:
         if interval_cond is None:
             interval_cond = np.ones(len(self.t), dtype=bool)
 
-        quantities = []
+        measures = []
         for i in np.arange(response.shape[0])[cond]:
-            if quantity=='mean':
-                quantities.append(np.mean(response[i, interval_cond]))
-            elif quantity=='integral':
-                quantities.append(np.trapz(response[i, interval_cond]))
-        return np.array(quantities)
+            if measure=='mean':
+                measures.append(np.mean(response[i, interval_cond]))
+            elif measure=='integral':
+                measures.append(np.trapz(response[i, interval_cond]))
+        return np.array(measures)
 
 
     def compute_summary_data(self, stat_test_props,

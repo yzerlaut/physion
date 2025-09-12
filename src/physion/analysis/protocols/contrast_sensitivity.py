@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import numpy as np
 
 def compute_sensitivity_per_cells(data, Episodes,
@@ -11,8 +11,14 @@ def compute_sensitivity_per_cells(data, Episodes,
 
     """
 
-    selectivities, significant_waveforms, RESPONSES = [], [], []
-    significant = np.zeros(data.nROIs, dtype=bool)
+    selectivities, significant_waveforms = [], []
+    RESPONSES, semRESPONSES = [], []
+    SIGNIFICANT = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
+                            dtype=bool)
+    RESPONSES = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
+                            dtype=float)
+    semRESPONSES = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
+                            dtype=float)
 
     for roi in np.arange(data.nROIs):
 
@@ -21,22 +27,30 @@ def compute_sensitivity_per_cells(data, Episodes,
                         response_args=dict(quantity=quantity, roiIndex=roi))
 
         condition = (cell_resp['angle']==angle)
+        for c, cont in np.unique(cell_resp['contrast'][condition]):
+            cond = condition & (cell_resp['contrast']==cont)
+            SIGNIFICANT[roi, c] = bool(cell_resp['significant'][cond])
+            RESPONSES[roi, c] = float(cell_resp['value'][cond])
+            semRESPONSES[roi, c] = float(cell_resp['sem-value'][cond])
 
-        # if significant in at least one orientation
-        if np.sum(cell_resp['significant'][condition]):
+        contrast = cell_resp['contrast'][condition]
 
-            significant[roi] = True
-
-            RESPONSES.append(cell_resp['value'][condition])
-
-            contrast = cell_resp['contrast'][condition]
-
-    output = {'Responses':np.array(RESPONSES),
-              'contrast':np.array(cell_resp['contrast'][condition]),
-              'significant_ROIs':np.array(significant)}
+    output = {'Responses':RESPONSES,
+              'semResponses':semRESPONSES,
+              'contrast':np.unique(Episodes.contrast),
+              'significant':SIGNIFICANT}
 
     return output
 
+def plot_contrast_sensitivity(keys,
+                              path=os.path.expanduser('~'),
+                              average_by='sessions',
+                              colors=[],
+                            #   colors=[pt.plt.rcParams['lines.color']]+\
+                            #             [pt.tab10(i) for i in range(10)],
+                              with_label=True,
+                              fig_args={}):
+    pass
 
 if __name__=='__main__':
 
@@ -57,4 +71,8 @@ if __name__=='__main__':
 
     resp = compute_sensitivity_per_cells(data, Episodes,
                                      stat_test_props)
+    
+    import physion.utils.plot_tools as pt
+
+    print(resp)
 
