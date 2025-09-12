@@ -419,7 +419,7 @@ class EpisodeData:
                                        response_args={},
                                        interval_pre=[-2,0], interval_post=[1,3],
                                        test='wilcoxon',
-                                       positive=True,
+                                       sign='positive',
                                        verbose=True):
         """
         """
@@ -432,11 +432,11 @@ class EpisodeData:
         if len(response.shape)>1:
             return stat_tools.StatTest(response[:,pre_cond].mean(axis=1),
                                        response[:,post_cond].mean(axis=1),
-                                       test=test, positive=positive,
+                                       test=test, sign=sign,
                                        verbose=verbose)
         else:
             return stat_tools.StatTest(None, None,
-                                       test=test, positive=positive,
+                                       test=test, sign=sign,
                                        verbose=verbose)
 
 

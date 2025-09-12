@@ -46,7 +46,7 @@ Episodes = physion.analysis.process_NWB.EpisodeData(data,
 stat_test_props = dict(interval_pre=[-1.,0],                                   
                        interval_post=[1.,2.],                                   
                        test='ttest',                                            
-                       positive=True)
+                       sign='positive')
 
 response_significance_threshold = 0.001 # very very conservative
 
@@ -123,7 +123,9 @@ fig.suptitle(' session: %s ' % os.path.basename(data.filename), fontsize=7);
 
 # %%
 DATASET = physion.analysis.read_NWB.scan_folder_for_NWBfiles(\
-        os.path.join(os.path.expanduser('~'), 'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs'))
+        os.path.join(os.path.expanduser('~'), 'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs'),
+        for_protocols=['ff-gratings-8orientation-2contrasts-10repeats',
+                       'ff-gratings-8orientations-2contrasts-15repeats'])
 
 for contrast in [0.5, 1.0]:
 
@@ -163,7 +165,7 @@ for contrast in [0.5, 1.0]:
 # %%
 
 # loading data
-Tunings = np.load(os.path.join(tempfile.tempdir, 'Tunings_contrast-1.0.npy'), 
+Tunings = np.load(os.path.join(tempfile.tempdir, 'Tunings_WT_contrast-1.0.npy'), 
                   allow_pickle=True)
 
 # mean significant responses per session
@@ -218,7 +220,5 @@ fig, ax = plot_orientation_tuning_curve(\
                                         path=tempfile.tempdir)
     
 
-
-# %%
 
 # %%

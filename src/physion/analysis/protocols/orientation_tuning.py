@@ -202,10 +202,12 @@ def plot_selectivity(keys,
                      path=os.path.expanduser('~'),
                      average_by='sessions',
                      using='orth-resp',
-                     colors=[pt.plt.rcParams['lines.color']]+\
-                        [pt.tab10(i) for i in range(10)],
+                     colors=None,
                      with_label=True,
                      fig_args={}):
+
+    if colors is None:
+        colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
 
     if type(keys)==str:
         keys, colors = [keys], [colors[0]]
@@ -245,11 +247,12 @@ def plot_selectivity(keys,
 def plot_orientation_tuning_curve(keys,
                       path=os.path.expanduser('~'),
                       average_by='sessions',
-                      colors=[pt.plt.rcParams['lines.color']]+\
-                        [pt.tab10(i) for i in range(10)],
+                      colors=None,
                       with_label=True,
                       fig_args={}):
     
+    if colors is None:
+        colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
 
     if type(keys)==str:
         keys, colors = [keys], [colors[0]]

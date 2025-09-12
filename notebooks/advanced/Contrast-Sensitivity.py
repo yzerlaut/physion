@@ -38,17 +38,14 @@ Episodes = physion.analysis.process_NWB.EpisodeData(data,
                                                     verbose=False)
 
 # %% [markdown]
-# ## Compute Responses of Visually-Reponsive Cells (i.e. Significantly-Modulated)
-#
-# N.B. This considers only significantly responsive cells !!
+# ## Compute Responses of Cells (all, not only signtificantly-modulated)
 
 # %%
 stat_test_props = dict(interval_pre=[-1.,0],                                   
                        interval_post=[1.,2.],                                   
-                       test='ttest',                                            
-                       positive=True)
+                       test='ttest') # no need to set "sign", compute_sensitivity tests both !                                          
 
-response_significance_threshold = 0.001 # very very conservative
+response_significance_threshold = 0.01 # very very conservative
 
 Sensitivity = compute_sensitivity_per_cells(data, Episodes,
                                         quantity='dFoF',
@@ -67,7 +64,7 @@ for i, ax in enumerate(pt.flatten(AX)):
     if i<data.nROIs:
         pt.annotate(ax, ' ROI #%i ' % (1+i), (1,1), 
                     va='center', ha='right', fontsize=7,
-                    color='tab:green' if Sensitivity['significant_ROIs'][i] else 'tab:red')
+                    color='tab:green' if np.sum(Sensitivity['significant_pos'][i,:]) else 'tab:red')
         pt.plot(Sensitivity['contrast'], Sensitivity['Responses'][i], 
                 sy=Sensitivity['semResponses'][i], ax=ax)
         ax.plot(Sensitivity['contrast'], 0*Sensitivity['contrast'], 'k:', lw=0.5)
@@ -84,31 +81,69 @@ for i, ax in enumerate(pt.flatten(AX)):
 
 # %%
 
-# Plot
+# Plot Response Levels
+fig, AX = pt.figure(axes=(2, 1), ax_scale=(1.2, 1), wspace=1.5, top=2.)
 
-fig, AX = pt.figure(axes=(2, 1), ax_scale=(1.2, 1), wspace=1.5)
+pt.plot(Sensitivity['contrast'], np.mean(Sensitivity['Responses'], axis=0), 
+        sy=np.std(Sensitivity['Responses'], axis=0), ax=AX[0])
 
-pt.plot(Sensitivity['contrast'], np.mean(Sensitivity['Responses'][Sensitivity['significant_ROIs'],:], axis=0), 
-        sy=np.std(Sensitivity['Responses'][Sensitivity['significant_ROIs'],:], axis=0), ax=AX[0])
+pt.plot(Sensitivity['contrast'], 
+        np.mean(Sensitivity['Responses'][\
+                        np.sum(Sensitivity['significant_pos'],axis=1)>0, :],
+                axis=0), 
+        sy=np.std(Sensitivity['Responses'][\
+                        np.sum(Sensitivity['significant_pos'],axis=1)>0, :],
+                axis=0), 
+        ax=AX[1])
+pt.set_common_ylims(AX)
 
-pt.scatter(Sensitivity['contrast'], np.mean([r for r in Sensitivity['Responses'][Sensitivity['significant_ROIs'],:]], axis=0), 
-        sy=stats.sem([r for r in Sensitivity['Responses'][Sensitivity['significant_ROIs'],:]], axis=0), 
-        ax=AX[1], ms=2)
-
-x = np.linspace(-30, 180-30, 100)
-
-pt.set_plot(AX[0], xticks=Sensitivity['contrast'], 
+pt.set_plot(AX[0], title='All (n=%i ROIs)' % data.nROIs,
+            xticks=Sensitivity['contrast'], 
             ylabel='(post - pre)\n$\\delta$ $\\Delta$F/F',  
             xlabel='contrast',
             xticks_labels=['%.2f' % c if j%3==1 else '' for j, c in enumerate(Sensitivity['contrast'])])
 
 pt.set_plot(AX[1], 
+            title='+Responsive-Only (n=%i ROIs)'\
+                 % np.sum(np.sum(Sensitivity['significant_pos'],axis=1)>0),
             ylabel='$\\delta$ $\\Delta$F/F',
             xlabel='contrast',
             xticks=Sensitivity['contrast'], 
             xticks_labels=['%.2f' % c if j%3==1 else '' for j, c in enumerate(Sensitivity['contrast'])])
 
 fig.suptitle(' session: %s ' % os.path.basename(data.filename), fontsize=7);
+
+# %%
+# Plot Responsiveness
+
+fig, AX = pt.figure(axes=(2, 1), ax_scale=(1.2, 1), wspace=1.5, top=2.)
+
+##########################
+### Positive Responses ### 
+##########################
+for i, c in enumerate(Sensitivity['contrast']):
+        AX[0].bar([c], 
+                  [100*np.sum(Sensitivity['significant_pos'][:,i],axis=0)/data.nROIs],
+                  color='tab:green', width=0.08)
+
+##########################
+### Negative Responses ### 
+##########################
+for i, c in enumerate(Sensitivity['contrast']):
+        AX[1].bar([c], 
+                  [100*np.sum(Sensitivity['significant_neg'][:,i],axis=0)/data.nROIs],
+                  color='tab:red', width=0.08)
+
+pt.set_common_ylims(AX)
+for ax, label in zip(AX, ['positive', 'negative']):
+        pt.set_plot(ax, title='%s-resp.' % label,
+                ylabel='% responsive',
+                xlabel='contrast',
+                xticks=Sensitivity['contrast'], 
+                xticks_labels=['%.2f' % c if j%3==1 else '' for j, c in enumerate(Sensitivity['contrast'])])
+fig.suptitle(' session: %s (n=%i ROIs)' % (
+                                os.path.basename(data.filename), data.nROIs),
+                fontsize=7)
 
 # %% [markdown]
 # ## Multiple Session Summary
@@ -118,7 +153,12 @@ DATASET = physion.analysis.read_NWB.scan_folder_for_NWBfiles(\
         os.path.join(os.path.expanduser('~'), 'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs'),
         for_protocols=['ff-gratings-2orientations-8contrasts-15repeats',
                        'ff-gratings-2orientations-8contrasts-15repeats'])
-print(DATASET)
+
+dFoF_options = dict(\
+    method_for_F0='percentile',
+    percentile=5.,
+    roi_to_neuropil_fluo_inclusion_factor=1.15,
+    neuropil_correction_factor=0.8)
 
 for angle in [0, 90]:
 
@@ -128,9 +168,7 @@ for angle in [0, 90]:
                 print(' - analyzing file: %s  [...] ' % f)
                 data = physion.analysis.read_NWB.Data(f, verbose=False)
                 nROIs_original = data.nROIs # manually-selected ROIs
-                data.build_dFoF(neuropil_correction_factor=0.9,
-                                percentile=10., 
-                                verbose=False)
+                data.build_dFoF(**dFoF_options)
                 nROIs_final = data.nROIs # ROIs after dFoF criterion
 
                 protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0]
@@ -138,7 +176,6 @@ for angle in [0, 90]:
                                                                         quantities=['dFoF'], 
                                                                         protocol_name=protocol_name, 
                                                                         verbose=False)
-
                 Sensitivity = compute_sensitivity_per_cells(data, Episodes, 
                                                             quantity='dFoF', 
                                                             stat_test_props=stat_test_props, 
@@ -146,7 +183,6 @@ for angle in [0, 90]:
                                                             angle=angle)
                 Sensitivity['nROIs_original'] = nROIs_original
                 Sensitivity['nROIs_final'] = nROIs_final
-                Sensitivity['nROIs_responsive'] = np.sum(Sensitivity['significant_ROIs'])
 
                 Sensitivities.append(Sensitivity)
 
@@ -158,18 +194,17 @@ for angle in [0, 90]:
 # %%
 
 # loading data
-Sensitivities = np.load(os.path.join(tempfile.tempdir, 'Sensitivities_WT_angle-0.0.npy'), 
+Sensitivities = np.load(os.path.join(tempfile.tempdir, 
+                                     'Sensitivities_WT_angle-0.0.npy'), 
                   allow_pickle=True)
 
 # mean significant responses per session
-Responses = [np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:], 
-                     axis=0)
-                 for Tuning in Sensitivities]
+Responses = [np.mean(S['Responses'], axis=0) for S in Sensitivities]
 
 # Plot
 fig, ax = pt.figure(ax_scale=(1.2, 1))
 
-pt.scatter(Sensitivities[0]['contrast'], np.mean(Responses, axis=0), 
+pt.plot(Sensitivities[0]['contrast'], np.mean(Responses, axis=0), 
         sy=stats.sem(Responses, axis=0), ax=ax, ms=3)
 
 pt.annotate(ax, 'N=%i sessions' % len(Responses), (0.8,1))
@@ -183,23 +218,28 @@ pt.set_plot(ax,
 # --> plot above implemented in the orientation_tuning protocol
 import tempfile
 from physion.analysis.protocols.contrast_sensitivity\
-        import plot_contrast_sensitivity
+        import plot_contrast_sensitivity, plot_contrast_responsiveness
 
 fig, ax = plot_contrast_sensitivity(\
-                        ['WT_contrast-1.0', 
-                         'WT_contrast-1.0', 
-                         'WT_contrast-0.5'],
-                        #  average_by='ROIs',
-                        #  using='fit',
+                        ['WT_angle-0.0', 
+                         'WT_angle-90.0'],
+                         average_by='sessions',
+                        path=tempfile.tempdir)
+
+fig, ax = plot_contrast_responsiveness(\
+                        ['WT_angle-0.0', 
+                         'WT_angle-90.0'],
+                         sign='negative',
+                         nROIs='final', # "original" or "final", before/after dFoF criterion
+                        path=tempfile.tempdir)
+
+fig, ax = plot_contrast_responsiveness(\
+                        ['WT_angle-0.0', 
+                         'WT_angle-90.0'],
+                         sign='positive',
+                         nROIs='final', # "original" or "final", before/after dFoF criterion
                         path=tempfile.tempdir)
     
-
-fig, ax = plot_orientation_tuning_curve(\
-                                        ['WT_contrast-1.0', 
-                                         'WT_contrast-1.0', 
-                                         'WT_contrast-0.5'],
-                                        #  average_by='ROIs',
-                                        path=tempfile.tempdir)
     
 
 

@@ -6,17 +6,28 @@ class StatTest:
     
     def __init__(self, x, y,
                  test='wilcoxon',
-                 positive=False,
+                 sign='both', # 
+                 positive=False, # DEPRECATED as of 09/2025 - use "sign" instead
                  verbose=True):
+        """
+        statistical test object
+
+        sign can be either: "both" (default), "positive", "negative"
+        
+        """
+
+        if positive:
+            self.sign = 'positive'
+            print(' "positive" arg is deprecated, switch to sign="positive" ')
+        else:
+            self.sign = sign
 
         self.x, self.y = np.array(x), np.array(y)
         for key in ['pvalue', 'statistic']:
             setattr(self, key, 1)
-        self.positive = positive # to evaluate positive only deflections
 
         try:
             self.r = stats.pearsonr(x, y)[0] # Pearson's correlation coef
-            self.sign = np.mean(y-x)>0 # sign of the effect
 
             if test=='wilcoxon':
                 result = stats.wilcoxon(self.x, self.y)
@@ -33,13 +44,14 @@ class StatTest:
                     setattr(self, key, getattr(result, key))
             else:
                 print(' "%s" test not implemented ! ' % test)
+
         except BaseException as be:
             print(' -----------------   ')
             print(be)
             print('x, y = ', x, y)
             print('  statistical test failed   ')
             print(' -----------------   ')
-            self.r, self.sign = 0, 0
+            self.r = 0
             self.pvalue, self.statistic = 1, 0
 
 
@@ -49,7 +61,9 @@ class StatTest:
         """
 
         if (self.pvalue is not None) and (self.pvalue<threshold):
-            if self.positive and not self.sign:        
+            if self.sign=='positive' and np.mean(self.y-self.x)<=0:
+                return False
+            elif self.sign=='negative' and np.mean(self.y-self.x)>=0:
                 return False
             else:
                 return True
@@ -61,9 +75,13 @@ class StatTest:
 
     def pval_annot(self, size=5):
         """
-        uses the 
+        uses the following annotation rule:
+        - n.s. : p>=0.05
+        - * : 0.01<p<=0.05
+        - ** : 0.001<p<=0.01
+        - *** : p<0.001
         """
-        if self.positive and not self.sign:        
+        if not self.significant(threshold=0.05):
             return 'n.s.', size
         elif self.pvalue<1e-3:
             return '***', size+1
@@ -72,6 +90,7 @@ class StatTest:
         elif self.pvalue<0.05:
             return '*', size+1
         else:
+            print(' stat_tools --> this should never happen !')
             return 'n.s.', size
         
 
