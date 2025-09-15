@@ -10,6 +10,13 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 ##   build your set of images in PNG format    ##
 ##    see an example to export from svg in :   ##
 ##      docs/visual_stim/stim-from-drawing.svg ##
+
+## Need to label your images as:
+##              1.png
+##              2.png
+##              ...
+##              14.png
+##      so that the order is clear
 #################################################
 
 params = {"Image-ID":1}
@@ -23,9 +30,14 @@ class stim(visual_stim):
         super().__init__(protocol, params)
 
         if 'json_location' in protocol:
-            self.images = [os.path.join(protocol['json_location'], f)
-                      for f in np.sort(os.listdir(protocol['json_location']))\
-                              if '.png' in f]
+            self.images = []
+            fn, i = os.path.join(protocol['json_location'], '1.png'), 1
+            while os.path.isfile(fn):
+                self.images.append(fn)
+                i += 1
+                fn = os.path.join(protocol['json_location'], '%i.png' % i)
+            print(10*'  '+\
+                    '--> found %i images in the protocol folder' % len(self.images))
         else:
             # for drafting/debugging:
             self.images = [os.path.join(os.path.expanduser('~'),
