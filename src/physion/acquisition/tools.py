@@ -8,6 +8,9 @@ from physion.utils.files import generate_filename_path,\
         get_date, get_time, generate_datafolders
 from physion.utils.paths import FOLDERS
 
+stimulus_movies_folder = os.path.join(base_path, 'protocols', 'movies')
+
+
 def set_filename_and_folder(self):
 
     self.date, self.time = get_date(), get_time()
@@ -57,8 +60,9 @@ def check_gui_to_init_metadata(self):
                 'subject_ID':self.subjectBox.text()}
 
     if self.protocolBox.currentText()!='None':
-        fn = os.path.join(base_path, 'protocols',
-                          self.protocolBox.currentText()+'.json')
+        fn = os.path.join(stimulus_movies_folder,
+                          self.protocolBox.currentText(), 
+                          'protocol.json')
         with open(fn) as f:
             self.protocol = json.load(f)
     else:
