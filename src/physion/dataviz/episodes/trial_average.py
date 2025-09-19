@@ -147,7 +147,7 @@ def plot(episodes,
                     inset = pt.inset(AX[irow][icol],
                                      [.83, .9, .3, .25])
 
-                    istim = np.flatnonzero(cond)[0]
+                    istim = np.flatnonzero(cond)[0] # 
                     # start -- QUICK FIX
                     if 'protocol_id' in episodes.visual_stim.experiment:
                         if type(episodes.visual_stim.experiment['protocol_id']) in [int, np.int64]:

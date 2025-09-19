@@ -409,6 +409,8 @@ class Data:
                                     with_correctedFluo_and_F0,
                             smoothing=smoothing,
                             verbose=verbose)
+        
+
 
     def build_Zscore_dFoF(self, verbose=True):
         """

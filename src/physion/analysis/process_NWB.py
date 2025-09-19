@@ -42,6 +42,10 @@ class EpisodeData:
                  with_visual_stim=False,
                  tfull=None,
                  verbose=True):
+        '''
+        Initializes EpisodeData
+
+        '''
 
         self.dt_sampling = dt_sampling
         self.verbose = verbose
@@ -65,9 +69,9 @@ class EpisodeData:
         ################################################i
         #           some clean up
         ################################################i
-        # because "protocol_id" and "protocol_name"
-        #     are over-written by self.set_quantities
+        # because "protocol_id" and "protocol_name" are over-written by self.set_quantities
 
+        #move this to set_quantities?#
         if (protocol_id is not None):
             # we overwrite those to single values
             self.protocol_id = protocol_id
@@ -89,7 +93,7 @@ class EpisodeData:
 
         if self.verbose:
             print('  -> [ok] episodes ready !')
-
+        #move this to set_quantities?#
 
     ##############################################
     ###########   --- METHODS ---  ###############
@@ -99,9 +103,10 @@ class EpisodeData:
                              protocol_id=None,
                              protocol_name=None):
         """
-        N.B. "protocol_id" and "protocol_name" will be over-written by self.set_quantities
+        Creates self.protocol_cond_in_full_data to filter the full data to this one protocol
+        self.protocol_cond_in_full_data is an ndarray of bool
+        Does not return anything
 
-        iso need to reset them at the end !
         """
         # choose protocol
         if (protocol_id is None) and (protocol_name is None):
@@ -114,15 +119,22 @@ class EpisodeData:
 
         self.protocol_cond_in_full_data = full_data.get_protocol_cond(protocol_id)
 
-
-
     def set_quantities(self, full_data, quantities,
                        quantities_args=None,
                        prestim_duration=None,
                        dt_sampling=1, # ms
                        interpolation='linear',
                        tfull=None):
+       
+        """
+        Sets self.varied_parameters and self.fixed_parameters
+        Sets time self.t
+        Sets each self.parameter given full_data.nwbfile.stimulus.keys() as np.arrays
+        Sets each self.quantity given by argument as np.arrays
+        Sets self.index_from_start (the first indexes where the protocol condition is satified = when protocol starts)
+        Sets self.quantities  as a list of str 
 
+        """
         if quantities_args is None:
             quantities_args = [{} for q in quantities]
         for q in quantities_args:
@@ -316,30 +328,34 @@ class EpisodeData:
         for q in QUANTITIES:
             setattr(self, q, np.array(getattr(self, q)))
 
-        self.index_from_start = np.arange(len(self.protocol_cond_in_full_data))[self.protocol_cond_in_full_data][:getattr(self, QUANTITIES[0]).shape[0]]
         self.quantities = QUANTITIES
 
-
-    def get_response(self, 
+    def get_response2D(self, 
                      quantity=None, 
                      episode_cond=None,
                      roiIndex=None, 
-                     roiIndices='all', 
-                     first_dimension='episodes',
-                     average_over_rois=True):
+                     averaging_dimension='episodes'):
         """
-        returns a two dimensional matrix to be used for visualization
-        BECAUSE:
+        takes the quantity you want the response from (default will be the first one). Check with ep.quantities
+        can take conditions on episodes, roi index (value, array of values or None), and average dimension (ROIs or episodes, default episodes)
+        
+        Makes an average of rois or episodes (with condition filter) to obtain a 2D matrix 
+        
+        returns a tuple, two dimensional matrix, 1 dim = each episode OR each roi, 2 dim = quantity values across time
+        
         single-episode responses can have different shapes
         e.g. 
             self.pupil_diameter.shape() = (Nepisodes, Ntimestamps)
             self.dFoF.shape() = (Nepisodes, Nrois, Ntimestamps)
 
-        for 2P data (dFoF, Deconvolved, ...)
-        you can choose what is the first dimension
-        - "episodes" --> then you average over ROIs (for multiple ROIs)
-        - "ROIs" (for multiple ROIs) --> then you average over episodes 
+        roiIndex can be either a index, an array of indices or None (default: then all indices)
         """
+        if roiIndex is None:
+            roiIndex = np.arange(self.data.nROIs)  #why mismatch?
+            #print(roiIndex)
+            #roiIndex = np.arange(getattr(self, quantity).shape[1])
+            #print(roiIndex)
+
         if quantity is None:
             if len(self.quantities)>1:
                 print('\n there are several modalities in that episode')
@@ -350,45 +366,73 @@ class EpisodeData:
             # by default all True
             episode_cond = self.find_episode_cond()
 
-        if len(getattr(self, quantity).shape)==2:
-            # i.e. self.quantity.shape = (Nepisodes, Ntimestamps)
+        #####
 
-            # no problem, we just need to filter by episode
+        print(getattr(self, quantity).shape)
+
+
+        if len(getattr(self, quantity).shape)==2:  #2 dimensions 
+            # i.e. self.quantity.shape = (Nepisodes, Ntimestamps)
+            #Filter by episode
+            print("2 dimensions")
             return getattr(self, quantity)[episode_cond, :]
 
-        elif len(getattr(self, quantity).shape)==3:
+        elif len(getattr(self, quantity).shape)==3: #3 dimensions
+            print("3 dimensions")
             # i.e. self.quantity.shape = (Nepisodes, Nrois, Ntimestamps) 
-
             # then two cases:
-
-            if roiIndex is not None:
-                # then no problem, we just return the 2D episode data for this roiIndex
+            if type(roiIndex) in [int, np.int16]:
                 return getattr(self, quantity)[episode_cond,roiIndex,:]
 
-            else:
-                # multiple ROIs and multiple episodes
+            else:  #roiIndex is an array -> multiple ROIs and multiple episodes
+                
+                if averaging_dimension=='episodes':
+                    dim = 0
+                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=0)[roiIndex,:]
+                elif averaging_dimension=='ROIs':
+                    dim = 1
+                    return getattr(self, quantity)[:,roiIndex,:].mean(axis=1)[episode_cond,:]
+                else:
+                    print('dimension not recognized, using episodes by default')
+                    dim = 0
+                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=0)[roiIndex,:]
 
-                # (first we deal with the roiIndices key)
-                if roiIndices in ['all', 'sum', 'mean']:
-                    roiIndices = np.arange(self.data.nROIs)
+                temp = getattr(self, quantity)[episode_cond,roiIndex,:]
+                response2D = temp.mean(axis=dim)
 
+                return response2D  
+            
+                '''
                 # then what do we return ? (it depends)
                 if first_dimension=='episodes':
                     # we average over ROIs, first dim remains episodes
-                    return getattr(self, quantity)[:,roiIndices,:].mean(axis=1)[episode_cond,:]
+                    return getattr(self, quantity)[:,roiIndex,:].mean(axis=1)[episode_cond,:]
                 elif first_dimension=='ROIs':
                     # we average over episodes, first dim becomes ROIs
-                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=0)[roiIndices,:]
-
+                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=0)[roiIndex,:]
+                '''
 
     def compute_interval_cond(self, interval):
+        """
+        returns a list of bool, False when t is not in interval, True when it is in interval
+        (very useful to define a condition (pre_cond  = self.compute_interval_cond(interval_pre)) to then filter the response (response[:,pre_cond])
+        """
         return (self.t>=interval[0]) & (self.t<=interval[1])
-
 
     def find_episode_cond(self, key=None, index=None, value=None):
         """
-        by default returns the conditions of all episodes in the protocol
+        Conditions can be key (check ep.varied_parameters), index (which option of the varied parameters) or value (??)
         'key' and 'index' can be either lists of values
+
+        Returns a list of bool, False when episode does not meet conditions, True if passes conditions. Size # episodes
+        By default no condition, all True
+
+        example for a 
+
+        data.find_episode_cond(key='orientation', index=0)
+
+        data.find_episode_cond(key='orientation', value=90.0)
+        
         """
 
         cond = np.ones(len(self.time_start), dtype=bool)
@@ -411,8 +455,10 @@ class EpisodeData:
         elif (key is not None) and (key!='') and (value is not None):
             cond = cond & (getattr(self, key)==value)
 
-        return cond
+        if np.sum(cond)==0:
+            print('all false, not match found')
 
+        return cond
 
     def stat_test_for_evoked_responses(self,
                                        quantity=None,
@@ -423,8 +469,15 @@ class EpisodeData:
                                        positive=True,
                                        verbose=True):
         """
+        Takes EpisodeData
+        Choose quantity from where you want to do a statistical test. Check possibilities with ep.quantities
+        Choose the test you want . default wilcoxon . 
+
+        It performs a test between the values from interval_pre and interval_post (evaluates only positive deflections)  (check)
+        
+        returns pvalue and statistic 
         """
-        response = self.get_response(quantity=quantity,
+        response = self.get_response2D(quantity=quantity,
                                      episode_cond=episode_cond,
                                      **response_args)
 
@@ -446,33 +499,16 @@ class EpisodeData:
                                        test=test, positive=positive,
                                        verbose=verbose)
 
-
-    def compute_stats_over_repeated_trials(self, key, index,
-                                           response_args={},
-                                           interval_cond=None,
-                                           quantity='mean'):
-
-        cond = self.find_episode_cond(key, index)
-        response = self.get_response(**response_args)
-
-        if interval_cond is None:
-            interval_cond = np.ones(len(self.t), dtype=bool)
-
-        quantities = []
-        for i in np.arange(response.shape[0])[cond]:
-            if quantity=='mean':
-                quantities.append(np.mean(response[i, interval_cond]))
-            elif quantity=='integral':
-                quantities.append(np.trapz(response[i, interval_cond]))
-        return np.array(quantities)
-
-
     def compute_summary_data(self, stat_test_props,
                              episode_cond=None,
                              exclude_keys=['repeat'],
                              response_args={},
                              response_significance_threshold=0.01,
                              verbose=True):
+        '''
+        return all the statistic values organized in a dictionary (str keys and arrays of values). 
+        dictionnary keys : 'value', 'std-value',  'sem-value', 'significant', 'relative_value', 'angle', 'angle-index', 'angle-bins'
+        '''
 
         if episode_cond is None:
             episode_cond = self.find_episode_cond() # all true by default
@@ -547,13 +583,30 @@ class EpisodeData:
 
     def init_visual_stim(self, full_data):
         """
-        initialize visual stimulation specific to those episodes
+        Initialize visual stimulation specific to those episodes (self.visual_stim) by creating a dictionnary from the metadata
+
+        PROBLEM - CHECK WHY THE visual_stim CAN HAVE DIFFERENT VALUES THAN THE DATA
+        
+        No return output
+
+        start from
+        data.init_visual_stim()
+        data.visual_stim.get_image(episode_number_in_multiprotocol)
+
+        Ep.init_visual_stim()
+        Ep.visual_stim.get_image(episode_number_in_single_protocol)
+
+        test in dataviz.episodes.trial_average.plot
+
         """
 
         stim_data = {'no-window':True}
 
         for key in full_data.metadata:
             stim_data[key]=full_data.metadata[key]
+            # if subprotocol, removes the "Protocol-i" from the key
+            print("prot id ", self.protocol_id+1)
+            print("key ", key)
             if ('Protocol-%i-' % (self.protocol_id+1)) in key:
                 stim_data[key.replace('Protocol-%i-' % (self.protocol_id+1), '')]=full_data.metadata[key]
 
@@ -568,7 +621,6 @@ class EpisodeData:
         for key in self.visual_stim.experiment:
             if hasattr(self, key):
                 self.visual_stim.experiment[key] = getattr(self, key)
-
 
 
 if __name__=='__main__':
