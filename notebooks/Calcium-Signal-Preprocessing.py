@@ -16,10 +16,11 @@ import sys, os
 import numpy as np
 from scipy import stats
 
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+sys.path.append(os.path.join(os.path.expanduser('~'), 'Programming', 'In_Vivo','physion','src'))
+#sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
 
 import physion
-import physion.utils.plot_tools as pt
+#import physion.utils.plot_tools as pt
 import matplotlib.pylab as plt
 
 # %% [markdown]
@@ -85,7 +86,7 @@ from scipy import stats
 sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src'))
 from physion.analysis.read_NWB import Data
 sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src', 'physion', 'utils'))
-import plot_tools as pt
+#import plot_tools as pt
 from Calcium import compute_F0
 
 # %%

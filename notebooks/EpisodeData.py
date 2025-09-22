@@ -42,7 +42,7 @@ data.build_running_speed()
 #init_visual_stim
 
 
-# 
+# %%
 # init
 quantities = ['dFoF', 'running_speed', 'pupil_diameter']
 protocol = "static-patch"
@@ -54,12 +54,12 @@ ep = EpisodeData(data,
 # 
 # select_protocol_from
 ep.select_protocol_from(data,protocol_name=protocol)
-print(ep.protocol_cond_in_full_data)
+print("Protocol condition in full data \n",  ep.protocol_cond_in_full_data)
 
-# 
+# %%
 # set_quantities
-
-ep.set_quantities(data, quantities = quantities)
+# CAREFUL, this overwrites protocol ID!!!! You have to rerun the initialization
+#ep.set_quantities(data, quantities = quantities)
 
 print("Varied parameters : ", ep.varied_parameters)
 print("Fixed parameters : ",ep.fixed_parameters)
@@ -76,7 +76,7 @@ for q in quantities:
     print(f"{q}: {getattr(ep, q)}")
 
       
-# 
+# %%
 # get_response()
 # takes the quantity you want the response from. Check with ep.quantities
 # makes an average of rois, episodes, condition
@@ -85,19 +85,16 @@ import random
 
 #3 dimensions (dFoF) - roi = None - averaging dimensions = episodes
 response = ep.get_response2D(quantity="dFoF")
-print("resp shape ",response.shape)
 fig, AX = pt.figure(figsize=(1,1))
 AX.plot(response)
 
 #3 dimensions (dFoF) - roi = None - averaging dimensions = ROIs
 response = ep.get_response2D(quantity="dFoF", averaging_dimension='ROIs')
-print("resp shape ",response.shape)
 fig, AX = pt.figure(figsize=(1,1))
 AX.plot(response)
 
 #3 dimensions (dFoF) - roi = 3 - averaging dimensions = episodes
 response = ep.get_response2D(quantity="dFoF", roiIndex = 3, averaging_dimension='episodes')
-print("resp shape ",response.shape)
 fig, AX = pt.figure(figsize=(1,1))
 AX.plot(response)
 
@@ -169,4 +166,6 @@ ep.compute_summary_data(stat_test_props)
 # PROBLEM - CHECK WHY THE visual_stim CAN HAVE DIFFERENT VALUES THAN THE DATA
 # does not return anything
 ep.init_visual_stim(ep.data)
+
+
 # %%

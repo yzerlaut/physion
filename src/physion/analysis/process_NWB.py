@@ -71,19 +71,18 @@ class EpisodeData:
         ################################################i
         # because "protocol_id" and "protocol_name" are over-written by self.set_quantities
 
-        #move this to set_quantities?#
-        if (protocol_id is not None):
-            # we overwrite those to single values
-            self.protocol_id = protocol_id
-            self.protocol_name = full_data.protocols[self.protocol_id]
+        if (protocol_id is None):
+            print("Protocol ID is None")
+            if (protocol_name is not None):
+                print("Protocol name is not None -> get protocol ID")
+                protocol_id = full_data.get_protocol_id(protocol_name)
+            else:
+                print("Protocol name is also None -> default id 0")
+                protocol_id = 0
 
-        elif (protocol_name is not None):
-            # we overwrite those to single values
-            self.protocol_id = full_data.get_protocol_id(protocol_name)
-            self.protocol_name = protocol_name
-
-        else:
-            print(' [!!] need to pass either a protocol_id or a protocol_name [!!] \n')
+        # we overwrite those to single values
+        self.protocol_id = protocol_id
+        self.protocol_name = full_data.protocols[self.protocol_id]
 
         # VISUAL STIM
         if with_visual_stim:
@@ -109,13 +108,15 @@ class EpisodeData:
 
         """
         # choose protocol
-        if (protocol_id is None) and (protocol_name is None):
+        if (protocol_id is None) and (protocol_name is not None):
+            protocol_id = full_data.get_protocol_id(protocol_name)
+        
+        elif (protocol_id is None) and (protocol_name is None):
             protocol_id = 0
             print('protocols:', full_data.protocols)
             print(' [!!] need to explicit the "protocol_id" or "protocol_name" [!!] ')
             print('         ---->   set to protocol_id=0 by default \n ')
-        elif (protocol_name is not None):
-            protocol_id = full_data.get_protocol_id(protocol_name)
+        
 
         self.protocol_cond_in_full_data = full_data.get_protocol_cond(protocol_id)
 
@@ -366,51 +367,29 @@ class EpisodeData:
             # by default all True
             episode_cond = self.find_episode_cond()
 
-        #####
-
-        print(getattr(self, quantity).shape)
-
-
         if len(getattr(self, quantity).shape)==2:  #2 dimensions 
             # i.e. self.quantity.shape = (Nepisodes, Ntimestamps)
             #Filter by episode
-            print("2 dimensions")
             return getattr(self, quantity)[episode_cond, :]
 
         elif len(getattr(self, quantity).shape)==3: #3 dimensions
-            print("3 dimensions")
             # i.e. self.quantity.shape = (Nepisodes, Nrois, Ntimestamps) 
             # then two cases:
             if type(roiIndex) in [int, np.int16]:
                 return getattr(self, quantity)[episode_cond,roiIndex,:]
 
             else:  #roiIndex is an array -> multiple ROIs and multiple episodes
-                
+                #could be written in a shorter way
                 if averaging_dimension=='episodes':
                     dim = 0
-                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=0)[roiIndex,:]
+                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=dim)[roiIndex,:]
                 elif averaging_dimension=='ROIs':
                     dim = 1
-                    return getattr(self, quantity)[:,roiIndex,:].mean(axis=1)[episode_cond,:]
+                    return getattr(self, quantity)[:,roiIndex,:].mean(axis=dim)[episode_cond,:]
                 else:
                     print('dimension not recognized, using episodes by default')
                     dim = 0
-                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=0)[roiIndex,:]
-
-                temp = getattr(self, quantity)[episode_cond,roiIndex,:]
-                response2D = temp.mean(axis=dim)
-
-                return response2D  
-            
-                '''
-                # then what do we return ? (it depends)
-                if first_dimension=='episodes':
-                    # we average over ROIs, first dim remains episodes
-                    return getattr(self, quantity)[:,roiIndex,:].mean(axis=1)[episode_cond,:]
-                elif first_dimension=='ROIs':
-                    # we average over episodes, first dim becomes ROIs
-                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=0)[roiIndex,:]
-                '''
+                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=dim)[roiIndex,:]
 
     def compute_interval_cond(self, interval):
         """
@@ -487,8 +466,7 @@ class EpisodeData:
         # print(response[episode_cond,:][:,pre_cond].mean(axis=1))
         # print(response[episode_cond,:][:,post_cond].mean(axis=1))
         # print(len(response.shape)>1,(np.sum(episode_cond)>1))
-        print(response.shape)
-        print(pre_cond.shape)
+
         if len(response.shape)>1:
             return stat_tools.StatTest(response[:,pre_cond].mean(axis=1),
                                        response[:,post_cond].mean(axis=1),
@@ -605,8 +583,6 @@ class EpisodeData:
         for key in full_data.metadata:
             stim_data[key]=full_data.metadata[key]
             # if subprotocol, removes the "Protocol-i" from the key
-            print("prot id ", self.protocol_id+1)
-            print("key ", key)
             if ('Protocol-%i-' % (self.protocol_id+1)) in key:
                 stim_data[key.replace('Protocol-%i-' % (self.protocol_id+1), '')]=full_data.metadata[key]
 
