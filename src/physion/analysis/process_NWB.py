@@ -351,6 +351,7 @@ class EpisodeData:
 
         roiIndex can be either a index, an array of indices or None (default: then all indices)
         """
+        print("quantity : ", quantity)
         if roiIndex is None:
             roiIndex = np.arange(self.data.nROIs)  #why mismatch?
             #print(roiIndex)
@@ -451,14 +452,13 @@ class EpisodeData:
         Choose quantity from where you want to do a statistical test. Check possibilities with ep.quantities
         Choose the test you want . default wilcoxon . 
 
-        It performs a test between the values from interval_pre and interval_post (evaluates only positive deflections)  (check)
+        It performs a test between the values from interval_pre and interval_post
         
         returns pvalue and statistic 
         """
 
-        #argument quantity removed?
-        response = self.get_response2D(episode_cond=episode_cond,
-                                     **response_args)
+        response = self.get_response2D(episode_cond = episode_cond,
+                                       **response_args)
 
         pre_cond  = self.compute_interval_cond(interval_pre)
         post_cond  = self.compute_interval_cond(interval_post)
@@ -513,7 +513,6 @@ class EpisodeData:
         if len(VARIED_KEYS)>0:
 
             for indices in itertools.product(*VARIED_INDICES):
-
                 stats = self.stat_test_for_evoked_responses(episode_cond=self.find_episode_cond(VARIED_KEYS,
                                                                                                 list(indices)) &\
                                                                           episode_cond,
@@ -538,7 +537,6 @@ class EpisodeData:
                                'significant', 'relative_value']:
                         summary_data[kk].append(np.nan)
         else:
-
             stats = self.stat_test_for_evoked_responses(response_args=response_args,
                                                         **stat_test_props)
 

@@ -15,15 +15,12 @@
 import sys, os
 import numpy as np
 from scipy import stats
-<<<<<<< HEAD
 
 sys.path.append(os.path.join(os.path.expanduser('~'), 'Programming', 'In_Vivo','physion','src'))
 #sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
 
 import physion
 #import physion.utils.plot_tools as pt
-=======
->>>>>>> e46dc01db66d1ec5c4eecf2188eac051da95f7db
 import matplotlib.pylab as plt
 
 sys.path.append('../src') # add src code directory for physion
@@ -89,19 +86,7 @@ AX[1][0].set_ylabel('with smoothing')
 # ## Illustration of discarding criteria
 
 # %%
-<<<<<<< HEAD
-import numpy as np
-import matplotlib.pylab as plt
-import os, sys
-from scipy import stats
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src'))
-from physion.analysis.read_NWB import Data
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src', 'physion', 'utils'))
-#import plot_tools as pt
-from Calcium import compute_F0
-=======
 from physion.imaging.Calcium import compute_F0
->>>>>>> e46dc01db66d1ec5c4eecf2188eac051da95f7db
 
 # %%
 filename = os.path.join(os.path.expanduser('~'), 

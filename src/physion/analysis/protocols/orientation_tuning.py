@@ -93,7 +93,8 @@ def compute_tuning_response_per_cells(data, Episodes,
 
     """
 
-
+    print(data.dFoF)
+    print(Episodes.dFoF)
     shifted_angle = np.array(\
         [shift_orientation_according_to_pref(r, pref_angle=-start_angle,
                                              start_angle=start_angle,

@@ -55,7 +55,7 @@ Tuning = compute_tuning_response_per_cells(data, Episodes,
                                            stat_test_props=stat_test_props,
                                            response_significance_threshold = response_significance_threshold,
                                            contrast=1,
-                                           verbose=False)
+                                           verbose=True)
 
 # %% [markdown]
 # ## Plot Individual Responses
