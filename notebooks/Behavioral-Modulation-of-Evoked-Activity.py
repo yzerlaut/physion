@@ -10,6 +10,7 @@ sys.path.append(os.path.join(os.path.expanduser('~'), 'Programming', 'In_Vivo','
 #sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
 import physion
 import physion.utils.plot_tools as pt
+pt.set_style('dark')
 
 # %% [markdown]
 # ## Load the Episodes of a given Protocol in a Datafile 
@@ -20,7 +21,9 @@ filename = os.path.join(os.path.expanduser('~'),
                         '2023_02_15-13-30-47.nwb')
 
 data = physion.analysis.read_NWB.Data(filename, verbose=False)
-data.build_dFoF(method_for_F0='sliding_percentile', percentile=10., verbose=False)
+data.build_dFoF(method_for_F0='sliding_percentile', 
+                percentile=10., 
+                verbose=False)
 
 Episodes = physion.analysis.process_NWB.EpisodeData(data,
                                                     quantities=['dFoF', 'running_speed', 'pupil_diameter'],
@@ -31,8 +34,11 @@ Episodes = physion.analysis.process_NWB.EpisodeData(data,
 # %%
 # visualize those data
 t0 = Episodes.time_start_realigned[0]-1
-figRaw, _ = physion.dataviz.raw.plot(data, tlim=[t0,t0+300],
-                                     settings=physion.dataviz.raw.find_default_plot_settings(data, with_subsampling=True))
+figRaw, _ = physion.dataviz.raw.plot(data, 
+                                     tlim=[t0,t0+300],
+                                     settings=\
+                physion.dataviz.raw.find_default_plot_settings(data, 
+                                                    with_subsampling=True))
 
 # %% [markdown]
 # ## Split Episodes according to Behavioral States

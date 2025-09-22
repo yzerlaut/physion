@@ -111,9 +111,9 @@ def load_and_resample_hq(key, datafolder, subject,
     from a tiff like:
         vasculature-Mouse1Ax3D.tiff
     """
-    if os.path.isfile(os.path.join(datafolder, '%s-%s.tif' % (key, subject))):
+    if os.path.isfile(os.path.join(datafolder, '%s.tif' % key)):
         img = np.array(Image.open(os.path.join(datafolder,\
-                                '%s-%s.tif' % (key, subject)))).astype('float')
+                                '%s.tif' % key))).astype('float')
         img = (img-np.min(img))/(img.max()-img.min())
         if shape is None:
             return img
@@ -335,7 +335,8 @@ def build_trial_data(maps,
               'comments':comments,
               'dateRecorded':dateRecorded}
 
-    maps['vasculature'] = load_and_resample_hq('vasculature', maps['datafolder'], 
+    maps["vasculature"] = load_and_resample_hq("vasculature", 
+                                               str(maps['datafolder']), 
                                                subject, 
                                                shape=maps['up-power'].shape)
     for key1, key2 in zip(\

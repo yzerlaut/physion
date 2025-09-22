@@ -4,7 +4,6 @@ import numpy as np
 
 import physion
 
-
 def build_stim(protocol):
     """
     """
@@ -111,8 +110,8 @@ if __name__=='__main__':
     parser.add_argument("protocol", 
                         help="protocol as a json file", 
                         default='')
-    parser.add_argument("--wmv", 
-                        help="protocol a json file", 
+    parser.add_argument("--mp4", 
+                        help="force to mp4 instead of wmv", 
                         action="store_true")
     args = parser.parse_args()
 
@@ -132,19 +131,17 @@ if __name__=='__main__':
             pathlib.Path(protocol_folder).mkdir(\
                                     parents=True, exist_ok=True)
 
-            #  copy the protocol infos
-            shutil.copyfile(args.protocol,
-                            os.path.join(protocol_folder, 'protocol.json'))
-
-
             # build the protocol
             with open(args.protocol, 'r') as f:
                 protocol = json.load(f)
 
             protocol['json_location'] = os.path.dirname(args.protocol)
-            print(protocol['json_location'])
 
             Stim = build_stim(protocol)
+
+            #  copy the protocol infos
+            with open(os.path.join(protocol_folder, 'protocol.json'), 'w') as f:
+                json.dump(Stim.protocol, f, indent=4)
 
             def update(Stim, index):
                 if index<len(Stim.experiment['index']):
@@ -163,7 +160,7 @@ if __name__=='__main__':
                 square = MonitoringSquare(Stim)
 
             # prepare video file
-            Format = 'wmv' if (('win32' in sys.platform) or args.wmv) else 'mp4'
+            Format = 'mp4' if (('linux' in sys.platform) or args.mp4) else 'wmv'
             out = cv.VideoWriter(os.path.join(protocol_folder, 'movie.%s' % Format),
                                   cv.VideoWriter_fourcc(*'mp4v'), 
                                   Stim.movie_refresh_freq,

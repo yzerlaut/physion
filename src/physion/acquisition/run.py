@@ -7,7 +7,7 @@ from physion.utils.files import get_time, get_date, generate_datafolders,\
         get_latest_file
 from physion.acquisition.tools import base_path,\
         check_gui_to_init_metadata, NIdaq_metadata_init,\
-        set_filename_and_folder
+        set_filename_and_folder, stimulus_movies_folder
 from physion.acquisition import recordings
 
 from physion.visual_stim.main import build_stim as build_VisualStim
@@ -36,15 +36,14 @@ except ModuleNotFoundError:
 
 def init_VisualStim(self):
 
-    with open(os.path.join(base_path,
-              'protocols', 'movies', 
-               self.protocolBox.currentText(),
-              'protocol.json'), 'r') as fp:
-        self.protocol = json.load(fp)
-
     movie_folder = \
-        os.path.join(base_path, 'protocols', 'movies',\
-               self.protocolBox.currentText())
+        os.path.join(stimulus_movies_folder,
+                     self.protocolBox.currentText())
+
+    with open(\
+            os.path.join(movie_folder,
+                         'protocol.json'), 'r') as fp:
+        self.protocol = json.load(fp)
 
     self.protocol['screen'] = self.config['Screen']
     self.protocol['Rig'] = self.config['Rig']

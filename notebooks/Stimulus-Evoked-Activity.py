@@ -1,16 +1,16 @@
 # %% [markdown]
 # # Trial Averaging
 
+# %%
+import os, sys
+sys.path.append('../src') # add src code directory for physion
+import physion
+import physion.utils.plot_tools as pt
+pt.set_style('dark')
+
+
 # %% [markdown]
 # ## Load data
-
-# %%
-# imports
-import os, sys
-sys.path.append(os.path.join(os.path.expanduser('~'),
-                              'work', 'physion', 'src'))
-import physion
-physion.utils.plot_tools.set_style('manuscript')
 
 # %%
 # load a datafile
@@ -71,3 +71,5 @@ fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
 fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
                                                       roiIndex=2,
                                                       **plot_props)
+
+# %%

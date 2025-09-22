@@ -440,12 +440,11 @@ class EpisodeData:
         return cond
 
     def stat_test_for_evoked_responses(self,
-                                       quantity=None,
                                        episode_cond=None,
                                        response_args={},
                                        interval_pre=[-2,0], interval_post=[1,3],
                                        test='wilcoxon',
-                                       positive=True,
+                                       sign='positive',
                                        verbose=True):
         """
         Takes EpisodeData
@@ -456,8 +455,9 @@ class EpisodeData:
         
         returns pvalue and statistic 
         """
-        response = self.get_response2D(quantity=quantity,
-                                     episode_cond=episode_cond,
+
+        #argument quantity removed?
+        response = self.get_response2D(episode_cond=episode_cond,
                                      **response_args)
 
         pre_cond  = self.compute_interval_cond(interval_pre)
@@ -470,11 +470,11 @@ class EpisodeData:
         if len(response.shape)>1:
             return stat_tools.StatTest(response[:,pre_cond].mean(axis=1),
                                        response[:,post_cond].mean(axis=1),
-                                       test=test, positive=positive,
+                                       test=test, sign=sign,
                                        verbose=verbose)
         else:
             return stat_tools.StatTest(None, None,
-                                       test=test, positive=positive,
+                                       test=test, sign=sign,
                                        verbose=verbose)
 
     def compute_summary_data(self, stat_test_props,

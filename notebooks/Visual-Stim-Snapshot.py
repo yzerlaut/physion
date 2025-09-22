@@ -46,7 +46,7 @@ data.visual_stim.plot_stim_picture(episode)
 # %%
 episodes = np.arange(16)
 
-fig, AX = pt.figure(axes=(len(episodes), 1), figsize=(2,2))
+fig, AX = pt.figure(axes=(len(episodes), 1), ax_scale=(2,2))
 for e, episode in enumerate(episodes):
     data.visual_stim.plot_stim_picture(episode, ax=AX[e])
 fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'stim.pdf'))

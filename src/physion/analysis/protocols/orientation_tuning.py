@@ -202,10 +202,12 @@ def plot_selectivity(keys,
                      path=os.path.expanduser('~'),
                      average_by='sessions',
                      using='orth-resp',
-                     colors=[pt.plt.rcParams['lines.color']]+\
-                        [pt.tab10(i) for i in range(10)],
+                     colors=None,
                      with_label=True,
                      fig_args={}):
+
+    if colors is None:
+        colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
 
     if type(keys)==str:
         keys, colors = [keys], [colors[0]]
@@ -245,11 +247,12 @@ def plot_selectivity(keys,
 def plot_orientation_tuning_curve(keys,
                       path=os.path.expanduser('~'),
                       average_by='sessions',
-                      colors=[pt.plt.rcParams['lines.color']]+\
-                        [pt.tab10(i) for i in range(10)],
+                      colors=None,
                       with_label=True,
                       fig_args={}):
     
+    if colors is None:
+        colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
 
     if type(keys)==str:
         keys, colors = [keys], [colors[0]]
@@ -297,21 +300,27 @@ if __name__=='__main__':
     from physion.analysis.process_NWB import EpisodeData
     from physion.utils import plot_tools as pt
 
-    data = Data(sys.argv[-1])
-    data.build_dFoF(verbose=False)
+    if False:
+        # --- test: compute_tuning_response_per_cells on a datafile ---
+        data = Data(sys.argv[-1])
+        data.build_dFoF(verbose=False)
 
-    Episodes = EpisodeData(data,
-                           protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
-                           quantities=['dFoF'])
+        Episodes = EpisodeData(data,
+                               protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
+                               quantities=['dFoF'])
 
-    stat_test_props = dict(interval_pre=[-1.,0],                                   
-                           interval_post=[1.,2.],                                   
-                           test='anova',                                            
-                           positive=True)
+        stat_test_props = dict(interval_pre=[-1.,0],                                   
+                               interval_post=[1.,2.],                                   
+                               test='anova',                                            
+                               positive=True)
 
-    resp = compute_tuning_response_per_cells(data, Episodes,
-                                             stat_test_props,
-                                             response_significance_threshold = 0.001)
+        resp = compute_tuning_response_per_cells(data, Episodes,
+                                                 stat_test_props,
+                                                 response_significance_threshold = 0.001)
 
-    print(np.mean(resp['preferred_angles']))
-    # print(len(resp['significant_ROIs']), np.sum(resp['significant_ROIs']))
+        print(np.mean(resp['preferred_angles']))
+        # print(len(resp['significant_ROIs']), np.sum(resp['significant_ROIs']))
+
+    if True:
+        # --- test: compute_tuning_response_per_cells on a datafile ---
+        print('test')
