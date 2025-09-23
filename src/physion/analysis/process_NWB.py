@@ -335,7 +335,7 @@ class EpisodeData:
                      quantity=None, 
                      episode_cond=None,
                      roiIndex=None, 
-                     averaging_dimension='episodes'):
+                     averaging_dimension='ROIs'):
         """
         takes the quantity you want the response from (default will be the first one). Check with ep.quantities
         can take conditions on episodes, roi index (value, array of values or None), and average dimension (ROIs or episodes, default episodes)

@@ -17,6 +17,7 @@ sys.path += ['../src'] # add src code directory for physion
 from physion.analysis.read_NWB import Data, scan_folder_for_NWBfiles
 from physion.analysis.process_NWB import EpisodeData
 from physion.utils  import plot_tools as pt
+import numpy as np
 
 # %%
 datafolder = os.path.join(os.path.expanduser('~'), 'DATA', 'physion_Demo-Datasets','NDNF-WT','NWBs')
@@ -86,33 +87,36 @@ ep = EpisodeData(data,
 
       
 # %% [markdown]
-# ### get_response()
+# ### get_response2D()
 # takes the quantity you want the response from. Check with ep.quantities <br>
 # makes an average of rois, episodes, condition -> choose averaging dimension <br>
 # returns a tuple, two dimensional matrix, 1 dim = each episode OR each roi, 2 dim = quantity values across time <br>
 #%%
 import random 
 
-#3 dimensions (dFoF) - roi = None - averaging dimensions = episodes
-response = ep.get_response2D(quantity="dFoF")
-fig, AX = pt.figure(figsize=(1,1))
-AX.plot(response)
+def plot(response, title=''):
+    fig, AX = pt.figure(figsize=(1,1))
+    for r in response:
+        AX.plot(ep.t, r, lw=0.4, color='dimgray')
+    AX.plot(ep.t, np.mean(response, axis=0), lw=2, color='k')
+    pt.set_plot(AX, xlabel='time from start (s)', ylabel='dFoF',
+                title=title)
 
-#3 dimensions (dFoF) - roi = None - averaging dimensions = ROIs
+# 3 dimensions (dFoF) - roi = None - averaging dimensions = ROIs [DEFAULT !]
 response = ep.get_response2D(quantity="dFoF", averaging_dimension='ROIs')
-fig, AX = pt.figure(figsize=(1,1))
-AX.plot(response)
+plot(response, 'mean over ROIs, n=%i eps' % response.shape[0])
 
-#3 dimensions (dFoF) - roi = 3 - averaging dimensions = episodes
-response = ep.get_response2D(quantity="dFoF", roiIndex = 3, averaging_dimension='episodes')
-fig, AX = pt.figure(figsize=(1,1))
-AX.plot(response)
+# 3 dimensions (dFoF) - roi = None - averaging dimensions = ROIs
+response = ep.get_response2D(quantity="dFoF", averaging_dimension='episodes')
+plot(response, 'mean over episodes, n=%i ROIs' % response.shape[0])
 
-#2 dimensions (running_speed) - roi = 5 - averaging dimensions = episodes
-response3 = ep.get_response2D(quantity="running_speed", 
-                            roiIndex = 5)
-fig, AX = pt.figure(figsize=(1,1))
-AX.plot(response3)
+#3 dimensions (dFoF) - roi = 3 
+response = ep.get_response2D(quantity="dFoF", roiIndex = 3)
+plot(response, 'n=%i eps' % response.shape[0])
+
+#2 dimensions (running_speed) 
+response = ep.get_response2D(quantity="running_speed")
+plot(response, 'n=%i eps' % response.shape[0])
 
 
 # %% [markdown]
@@ -175,8 +179,17 @@ stat_test_props = dict(interval_pre=[-1.,0],
 
 response_args = dict(quantity='running_speed')
 
-ep.compute_summary_data(stat_test_props = stat_test_props, 
-                        response_args = response_args)
+summary = ep.compute_summary_data(stat_test_props = stat_test_props, 
+                                  response_args = response_args)
+for key in summary:
+    print(key, summary[key])
+
+response_args = dict(quantity='dFoF', roiIndex=2)
+
+summary = ep.compute_summary_data(stat_test_props = stat_test_props, 
+                                  response_args = response_args)
+for key in summary:
+    print(key, summary[key])
 
 # %% [markdown]
 # creates dictionnary stim_data and adds as keys and values everything stored in metadata. (if subprotocol it removed the "Protocol-i" from the key) <br>
