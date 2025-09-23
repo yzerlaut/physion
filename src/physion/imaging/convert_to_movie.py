@@ -252,6 +252,18 @@ def find_subfolders(folder):
     return [f[0] for f in os.walk(folder)\
                     if 'TSeries' in f[0].split(os.path.sep)[-1]]
 
+
+def remove_files(folder):
+
+    for f in os.listdir(folder):
+        if f.endswith('.ome.tif')\
+                or f.endswith('.bin')\
+                or f.endswith('.env'):
+            print(f)
+            os.remove(os.path.join(folder, f))
+    
+
+
 if __name__=='__main__':
 
     import argparse
@@ -292,7 +304,7 @@ if __name__=='__main__':
                 for i in range(31):
                     printProgressBar(i, 30)
                     time.sleep(1)
-                shutil.rmtree(folder)
+                remove_files(folder)
                 
 
         elif args.restore:
