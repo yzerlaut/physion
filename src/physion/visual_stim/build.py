@@ -149,6 +149,11 @@ if __name__=='__main__':
                             index+1, len(Stim.experiment['index'])),
                           '   protocol-id : ', 
                           Stim.experiment['protocol_id'][index])
+                    s = 18*' '
+                    for k in Stim.experiment:
+                        s += '%s:%.1f ' % (k, Stim.experiment[k][index])
+                    print(s)
+                    print()
                     tstart = Stim.experiment['time_start'][index]
                     tstop= Stim.experiment['time_stop'][index]
                     return tstart, tstop

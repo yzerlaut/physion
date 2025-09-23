@@ -132,11 +132,14 @@ def run(self):
             output_funcs.append(recordings.trigger2P)
 
         if self.metadata['recording']!='':
-            other_funcs = \
-                getattr(recordings, 
-                        self.metadata['recording']).output_funcs
-            for func in other_funcs:
-                output_funcs.append(func)
+            other_funcs = []
+            for func in getattr(recordings, self.metadata['recording']).output_funcs:
+                # the function passed should only depend on time
+                def new_func(t):
+                    return func(t, 
+                                self.stim, 
+                                float(self.cmdPick.text().split(":")[1]))
+                output_funcs.append(new_func)
 
         ## QUICK FIX: need to put something, otherwise the empty channel bugs
         if len(output_funcs)==0:
@@ -153,7 +156,6 @@ def run(self):
                      'dt':1e-2})
         else:
             try:
-                print(output_funcs)
                 self.acq = Acquisition(\
                     sampling_rate=\
                         self.metadata['NIdaq-acquisition-frequency'],

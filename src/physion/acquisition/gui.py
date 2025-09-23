@@ -190,8 +190,12 @@ def multimodal(self,
         button.setStyleSheet("font-weight: bold")
 
     ip+=2
-    self.fovPick= QtWidgets.QLineEdit('FOV : ')
+    self.fovPick= QtWidgets.QLineEdit('FOV : X')
     tab.layout.addWidget(self.fovPick,
+                         ip, 10, 1, 4)
+    ip+=1
+    self.cmdPick= QtWidgets.QLineEdit('cmd (V): 0')
+    tab.layout.addWidget(self.cmdPick,
                          ip, 10, 1, 4)
 
     self.refresh_tab(tab)
