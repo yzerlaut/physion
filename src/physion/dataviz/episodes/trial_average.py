@@ -115,15 +115,13 @@ def plot(episodes,
             for icolor, color_cond in enumerate(COLOR_CONDS):
 
                 cond = np.array(condition & col_cond & row_cond & color_cond)
+                avg_dim = 'episodes' if with_std_over_rois else 'ROIs'  #check
 
-                response = episodes.get_response(\
+                response = episodes.get_response2D(\
                                 quantity=quantity,
                                 episode_cond=cond,
                                 roiIndex=roiIndex,
-                                roiIndices=roiIndices,
-                                first_dimension=\
-                                    'ROIs' if with_std_over_rois\
-                                                    else 'episodes')
+                                averaging_dimension=avg_dim)
 
                 my = response.mean(axis=0) # mean response
 
@@ -147,7 +145,7 @@ def plot(episodes,
                     inset = pt.inset(AX[irow][icol],
                                      [.83, .9, .3, .25])
 
-                    istim = np.flatnonzero(cond)[0]
+                    istim = np.flatnonzero(cond)[0] # 
                     # start -- QUICK FIX
                     if 'protocol_id' in episodes.visual_stim.experiment:
                         if type(episodes.visual_stim.experiment['protocol_id']) in [int, np.int64]:

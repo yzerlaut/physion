@@ -18,7 +18,7 @@ import sys, pathlib, os
 import numpy as np
 
 # add the python path:
-sys.path.append('../src')
+sys.path += ['../src'] # add src code directory for physion
 from physion.utils import plot_tools as pt
 from physion.analysis.read_NWB import Data
 

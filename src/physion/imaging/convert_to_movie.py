@@ -7,7 +7,7 @@ Two compression options:
         log the data to have a good resolution at low fluorescence
 
 """
-import sys, shutil, os, pathlib
+import sys, shutil, os, pathlib, time
 import cv2 as cv
 from PIL import Image
 import numpy as np
@@ -279,10 +279,22 @@ if __name__=='__main__':
         print(' - processing', folder, ' [...]')
 
         if args.convert:
+
             if args.lossless:
                 convert_to_16bit_avi(folder)
+
             else:
                 convert_to_log8bit_mp4(folder)
+
+            if args.delete:
+                print('    [!!] DELETING FOLDER IN 30s [!!] ')
+                print('                ', folder)
+                for i in range(31):
+                    printProgressBar(i, 30)
+                    time.sleep(1)
+                shutil.rmtree(folder)
+                
+
         elif args.restore:
 
             xml_file = get_files_with_extension(folder,
