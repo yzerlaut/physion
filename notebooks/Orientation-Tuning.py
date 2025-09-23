@@ -15,7 +15,7 @@ import sys, os, tempfile
 import numpy as np
 from scipy import stats
 
-sys.path.append('../src') # add src code directory for physion
+sys.path += ['../src'] # add src code directory for physion
 
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
@@ -56,6 +56,7 @@ Tuning = compute_tuning_response_per_cells(data, Episodes,
                                            response_significance_threshold = response_significance_threshold,
                                            contrast=1,
                                            verbose=True)
+
 
 # %% [markdown]
 # ## Plot Individual Responses

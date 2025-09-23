@@ -13,7 +13,7 @@
 # load packages:
 import numpy as np
 import sys
-sys.path.append('../src')
+sys.path += ['../src'] # add src code directory for physion
 import physion.utils.plot_tools as pt
 from physion.intrinsic.tools import *
 from physion.intrinsic.analysis import RetinotopicMapping
@@ -28,10 +28,10 @@ dataFolder = os.path.join(os.path.expanduser('~'), 'DATA',
                         'physion_Demo-Datasets', 'PV-WT', 'retinotopic_mapping',
                         'PVTOM_BB_5')
 # retinotopic mapping data
-# maps = np.load(os.path.join(dataFolder, 'raw-maps.npy') , 
-#                allow_pickle=True).item()
-maps = dict(np.load(os.path.join(dataFolder, 'raw-maps.npz') , 
-               allow_pickle=True))
+maps = np.load(os.path.join(dataFolder, 'raw-maps.npy') , 
+                allow_pickle=True).item()
+#maps = dict(np.load(os.path.join(dataFolder, 'raw-maps.npz') , 
+#               allow_pickle=True))
 # vasculature picture
 imVasc = np.array(Image.open(os.path.join(dataFolder, 'vasculature.tif')))
 fig, ax = pt.figure(ax_scale=(2,2))

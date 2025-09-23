@@ -93,8 +93,6 @@ def compute_tuning_response_per_cells(data, Episodes,
 
     """
 
-    print(data.dFoF)
-    print(Episodes.dFoF)
     shifted_angle = np.array(\
         [shift_orientation_according_to_pref(r, pref_angle=-start_angle,
                                              start_angle=start_angle,
@@ -110,16 +108,15 @@ def compute_tuning_response_per_cells(data, Episodes,
     significant = np.zeros(data.nROIs, dtype=bool)
 
     for roi in np.arange(data.nROIs):
-
+        
+        cond = Episodes.find_episode_cond(key='contrast', value=contrast)
         cell_resp = Episodes.compute_summary_data(stat_test_props,
-                        episode_cond=Episodes.find_episode_cond(\
-                                        key='contrast', value=contrast),
-                        exclude_keys=['repeat', 'contrast'],
-                        response_significance_threshold=\
-                                response_significance_threshold,
-                        response_args=dict(quantity=quantity, 
-                                           roiIndex=roi),
-                        verbose=True)
+                                                  episode_cond=cond,
+                                                  exclude_keys=['repeat', 'contrast'],
+                                                  response_args=dict(quantity=quantity, roiIndex=roi),
+                                                  response_significance_threshold=response_significance_threshold,
+                                                  verbose=True)
+        
 
         ipref = np.argmax(cell_resp['value'])
 

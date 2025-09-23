@@ -13,7 +13,7 @@
 
 # %%
 import os, sys
-sys.path.append('../src')
+sys.path += ['../src'] # add src code directory for physion
 from physion.analysis.read_NWB import Data, scan_folder_for_NWBfiles
 from physion.analysis.process_NWB import EpisodeData
 from physion.utils  import plot_tools as pt
@@ -151,7 +151,7 @@ print("Condition in list of episodes : ", ep.find_episode_cond(key = 'angle', va
 # it calculates a test between the values from interval_pre and interval_post <br>
 # returns pvalue and statistic  <br>
 #%%
-result = ep.stat_test_for_evoked_responses(response_args = dict(quantity='running_speed'),
+result = ep.stat_test_for_evoked_responses(response_args = dict(quantity='dFoF'),
                                            interval_pre=[-2,0], 
                                            interval_post=[1,3],
                                            test = 'wilcoxon')
@@ -173,7 +173,7 @@ stat_test_props = dict(interval_pre=[-1.,0],
                        interval_post=[1.,2.],                                   
                        test='ttest')
 
-response_args = dict(quantity='dFoF')
+response_args = dict(quantity='running_speed')
 
 ep.compute_summary_data(stat_test_props = stat_test_props, 
                         response_args = response_args)

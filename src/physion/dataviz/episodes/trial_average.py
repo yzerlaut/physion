@@ -115,15 +115,13 @@ def plot(episodes,
             for icolor, color_cond in enumerate(COLOR_CONDS):
 
                 cond = np.array(condition & col_cond & row_cond & color_cond)
+                avg_dim = 'episodes' if with_std_over_rois else 'ROIs'  #check
 
-                response = episodes.get_response(\
+                response = episodes.get_response2D(\
                                 quantity=quantity,
                                 episode_cond=cond,
                                 roiIndex=roiIndex,
-                                roiIndices=roiIndices,
-                                first_dimension=\
-                                    'ROIs' if with_std_over_rois\
-                                                    else 'episodes')
+                                averaging_dimension=avg_dim)
 
                 my = response.mean(axis=0) # mean response
 

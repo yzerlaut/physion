@@ -6,8 +6,7 @@ import sys, os
 import numpy as np
 from scipy.optimize import minimize
 
-sys.path.append(os.path.join(os.path.expanduser('~'), 'Programming', 'In_Vivo','physion','src'))
-#sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+sys.path += ['../src'] # add src code directory for physion
 import physion
 import physion.utils.plot_tools as pt
 pt.set_style('dark')

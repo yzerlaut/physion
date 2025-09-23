@@ -351,13 +351,11 @@ class EpisodeData:
 
         roiIndex can be either a index, an array of indices or None (default: then all indices)
         """
-        print("quantity : ", quantity)
-        if roiIndex is None:
-            roiIndex = np.arange(self.data.nROIs)  #why mismatch?
-            #print(roiIndex)
-            #roiIndex = np.arange(getattr(self, quantity).shape[1])
-            #print(roiIndex)
 
+
+        if roiIndex is None:
+            roiIndex = np.arange(self.data.nROIs)  
+            
         if quantity is None:
             if len(self.quantities)>1:
                 print('\n there are several modalities in that episode')
@@ -376,7 +374,7 @@ class EpisodeData:
         elif len(getattr(self, quantity).shape)==3: #3 dimensions
             # i.e. self.quantity.shape = (Nepisodes, Nrois, Ntimestamps) 
             # then two cases:
-            if type(roiIndex) in [int, np.int16]:
+            if type(roiIndex) in [int, np.int16, np.int64]:
                 return getattr(self, quantity)[episode_cond,roiIndex,:]
 
             else:  #roiIndex is an array -> multiple ROIs and multiple episodes
@@ -470,7 +468,8 @@ class EpisodeData:
         if len(response.shape)>1:
             return stat_tools.StatTest(response[:,pre_cond].mean(axis=1),
                                        response[:,post_cond].mean(axis=1),
-                                       test=test, sign=sign,
+                                       test=test, 
+                                       sign=sign,
                                        verbose=verbose)
         else:
             return stat_tools.StatTest(None, None,
