@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtCore
-import sys, time, os, pathlib, json
+import sys, time, os, pathlib, json, tempfile
 import numpy as np
-import multiprocessing # for the camera streams !!
+import multiprocessing # different processes (cameras, visual stim, ...) are sent on different threads...)
 from ctypes import c_char_p
 import pyqtgraph as pg
 import subprocess
@@ -13,34 +13,31 @@ from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import load_settings
 from physion.assembling.gui import build_cmd
 
+from physion.acquisition import MODALITIES
+
 def multimodal(self,
                tab_id=0):
 
     tab = self.tabs[tab_id]
+    self.animate_buttons = True
 
     self.cleanup_tab(tab)
 
     self.config = None
     self.subject, self.protocol = None, {}
-    self.MODALITIES = ['Locomotion',
-                       'FaceCamera',
-                       'EphysLFP',
-                       'EphysVm',
-                       'CaImaging']
+    self.MODALITIES = MODALITIES
 
     ##########################################
     ######## Multiprocessing quantities  #####
     ##########################################
     # to be used through multiprocessing.Process:
-    self.run_event = multiprocessing.Event() # to turn on/off recordings 
-    self.run_event.clear()
-    self.closeFaceCamera_event = multiprocessing.Event()
-    self.closeFaceCamera_event.clear()
-    self.quit_event = multiprocessing.Event()
-    self.quit_event.clear()
+    self.runEvent = multiprocessing.Event() # to turn on/off recordings 
+    self.runEvent.clear()
+    self.quitEvent = multiprocessing.Event()
+    self.quitEvent.clear()
     self.manager = multiprocessing.Manager() # to share a str across processes
-    self.datafolder = self.manager.Value(c_char_p,\
-            str(os.path.join(os.path.expanduser('~'), 'DATA', 'trash')))
+    self.datafolder = self.manager.Value(c_char_p,
+            str(tempfile.gettempdir())) # temp folder by default
 
     ##########################################
     ######   acquisition states/values  ######
@@ -48,6 +45,7 @@ def multimodal(self,
     self.stim, self.acq, self.init = None, None, False,
     self.screen, self.stop_flag = None, False
     self.FaceCamera_process = None
+    self.RigCamera_process = None
     self.RigView_process = None
     self.params_window = None
 
@@ -76,13 +74,14 @@ def multimodal(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.FaceCameraButton.clicked.connect(self.toggle_FaceCamera_process)
+    self.RigCameraButton.clicked.connect(self.toggle_RigCamera_process)
 
     # -------------------------------------------------------
-    self.add_side_widget(tab.layout,
-            QtWidgets.QLabel(' * Monitoring * '))
-    self.webcamButton = QtWidgets.QPushButton('Webcam', self)
-    self.webcamButton.setCheckable(True)
-    self.add_side_widget(tab.layout, self.webcamButton)
+    # self.add_side_widget(tab.layout,
+            # QtWidgets.QLabel(' * Monitoring * '))
+    # self.webcamButton = QtWidgets.QPushButton('Webcam', self)
+    # self.webcamButton.setCheckable(True)
+    # self.add_side_widget(tab.layout, self.webcamButton)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.add_side_widget(tab.layout,
@@ -93,12 +92,9 @@ def multimodal(self,
     # -------------------------------------------------------
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
-    self.demoW = QtWidgets.QCheckBox('demo', self)
-    self.add_side_widget(tab.layout, self.demoW, 'small-right')
-
-    self.saveSetB = QtWidgets.QPushButton('save settings', self)
-    self.saveSetB.clicked.connect(self.save_settings)
-    self.add_side_widget(tab.layout, self.saveSetB)
+    # self.saveSetB = QtWidgets.QPushButton('save settings', self)
+    # self.saveSetB.clicked.connect(self.save_settings)
+    # self.add_side_widget(tab.layout, self.saveSetB)
 
     self.buildNWB = QtWidgets.QPushButton('build NWB for last', self)
     self.buildNWB.clicked.connect(build_NWB_for_last)
@@ -108,9 +104,9 @@ def multimodal(self,
 
     # ========================================================
     #------------------- THEN MAIN PANEL   -------------------
-    ip, width = 0, 3
+    ip, width = 0, 4
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Config **', self),
+        QtWidgets.QLabel(40*' '+'** Configuration **', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
@@ -128,46 +124,34 @@ def multimodal(self,
                          1, width)
     ip+=1
     # -
-    self.subjectBox = QtWidgets.QComboBox(self)
-    self.subjectBox.activated.connect(self.update_subject)
+    self.subjectBox = QtWidgets.QLineEdit(self)
+    self.subjectBox.setText('demo-Mouse')
     tab.layout.addWidget(self.subjectBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
     # -
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Screen **', self),
-                         ip, self.side_wdgt_length, 
-                         1, width)
-    ip+=1
-    # -
-    self.screenBox = QtWidgets.QComboBox(self)
-    self.screenBox.addItems(['']+list(SCREENS.keys()))
-    tab.layout.addWidget(self.screenBox,\
-                         ip, self.side_wdgt_length+1, 
-                         1, width)
-    ip+=1
-    # -
-    tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Visual Protocol **', self),
+        QtWidgets.QLabel(40*' '+'** Visual Protocol **'+40*' ', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
     # -
     self.protocolBox= QtWidgets.QComboBox(self)
+    # self.protocolBox.activated.connect(self.update_visualStim)
     tab.layout.addWidget(self.protocolBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
     # -
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Intervention **', self),
+        QtWidgets.QLabel(40*' '+'** Rec. Settings **'+40*' ', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
     # -
-    self.interventionBox = QtWidgets.QComboBox(self)
-    tab.layout.addWidget(self.interventionBox,\
+    self.recordingBox = QtWidgets.QComboBox(self)
+    tab.layout.addWidget(self.recordingBox,\
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
@@ -178,26 +162,21 @@ def multimodal(self,
                          ip, self.side_wdgt_length,
                          self.nWidgetRow-ip, 
                          self.nWidgetCol-self.side_wdgt_length)
-
+    # image choice box
+    self.imgButton = QtWidgets.QComboBox()
+    self.imgButton.addItems([' *pick camera* ', 'FaceCamera', 'RigCamera'])
+    tab.layout.addWidget(self.imgButton,
+                         ip, self.nWidgetCol-2,
+                         1, 2)
     # FaceCamera panel
     self.pFace = self.winImg.addViewBox(lockAspect=True,
                         invertY=True, border=[1, 1, 1])
-    self.pFaceimg = pg.ImageItem(np.ones((10,12))*50)
-    self.pFace.addItem(self.pFaceimg)
+    self.pCamImg = pg.ImageItem(np.ones((10,12))*50)
+    self.pFace.addItem(self.pCamImg)
 
     # NOW MENU INTERACTION BUTTONS
     ip, width = 1, 5
-    self.initButton = QtWidgets.QPushButton(' * Initialize * ')
-    self.initButton.clicked.connect(self.initialize)
-    tab.layout.addWidget(self.initButton,
-                         ip, 10, 1, width)
-    ip+=1
-    self.bufferButton = QtWidgets.QPushButton(' * Buffer * ')
-    self.bufferButton.clicked.connect(self.buffer_stim)
-    tab.layout.addWidget(self.bufferButton,
-                         ip, 10, 1, width)
-    ip+=2
-    self.runButton = QtWidgets.QPushButton(' * RUN *')
+    self.runButton = QtWidgets.QPushButton(' * START *')
     self.runButton.clicked.connect(self.run)
     tab.layout.addWidget(self.runButton,
                          ip, 10, 1, width)
@@ -207,15 +186,11 @@ def multimodal(self,
     tab.layout.addWidget(self.stopButton,
                          ip, 10, 1, width)
 
-    for button in [self.initButton, self.bufferButton,
-            self.runButton, self.stopButton]:
+    for button in [self.runButton, self.stopButton]:
         button.setStyleSheet("font-weight: bold")
 
     ip+=2
-    tab.layout.addWidget(QtWidgets.QLabel(' FOV: '),
-                         ip, 10, 1, 4)
-    ip+=1
-    self.fovPick= QtWidgets.QComboBox()
+    self.fovPick= QtWidgets.QLineEdit('FOV : ')
     tab.layout.addWidget(self.fovPick,
                          ip, 10, 1, 4)
 
@@ -225,10 +200,14 @@ def multimodal(self,
     get_config_list(self) # first
     load_settings(self)
 
+    if self.animate_buttons:
+        self.runButton.setEnabled(False)
+        self.stopButton.setEnabled(False)
+
 def build_NWB_for_last():
     # last folder
-    folder = last_datafolder_in_dayfolder(day_folder(FOLDERS['~/DATA']))
-    print(folder)
+    folder = last_datafolder_in_dayfolder(day_folder(FOLDERS[list(FOLDERS.keys())[0]]))
+    print('[ ] build NWB file for recording: ', folder)
     if os.path.isdir(folder):
         cmd, cwd = build_cmd(folder)
         print('\n launching the command \n :  %s \n ' % cmd)

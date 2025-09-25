@@ -1,0 +1,19 @@
+{
+  "Presentation": "multiprotocol",
+  "shuffling" :"none",  
+  "movie_refresh_freq":30.0,
+  "units":"cm",
+  "Protocol-1": "subprotocols/blank/black-5min.json",
+  "Protocol-2": "subprotocols/blank/grey-5min.json",
+  "Protocol-3": "subprotocols/blank/black-10min.json",
+  "Protocol-4": "subprotocols/blank/grey-5min.json",
+  "Protocol-5": "subprotocols/blank/black-5min.json",
+  "presentation-blank-screen-color": 0.5,
+  "presentation-prestim-period": 2,
+  "presentation-poststim-period": 2,
+  "presentation-interstim-period": 2,
+  "realignement_indices_forced":[0, 1, 2, 3, 4],
+  "realignement_times_forced":[4, 307, 610, 912, 1214],
+  "realignement_durations_forced":[290, 290, 290, 290, 290],
+  "Screen": "Dell-2020"
+}

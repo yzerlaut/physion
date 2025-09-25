@@ -1,19 +1,14 @@
 import numpy as np
 
-from physion.visual_stim.main import vis_stim_image_built, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 
 ##########################################
 ##  ----    UNIFORM BACKGROUND   --- #####
 ##########################################
 
-params = {"movie_refresh_freq":0.1,
-          "presentation-duration":2,
-          "bg-color (lum.)":0.5,
-          # now we set the range of possible values:
-          "bg-color-1": 0., "bg-color-2": 1., "N-bg-color": 0}
-    
+params = {"presentation-duration":10, "bg-color":0.5}
 
-class stim(vis_stim_image_built):
+class stim(visual_stim):
     """
     stimulus specific visual stimulation object
 
@@ -23,10 +18,7 @@ class stim(vis_stim_image_built):
 
     def __init__(self, protocol):
 
-        super().__init__(protocol,
-                         keys=['bg-color'])
-        self.refresh_freq = protocol['movie_refresh_freq']
-
+        super().__init__(protocol, params)
 
     def get_image(self, index,
                   time_from_episode_start=0,
@@ -34,6 +26,28 @@ class stim(vis_stim_image_built):
         """ 
         return the frame at a given time point
         """
-        cls = (parent if parent is not None else self)
+        return init_bg_image(self, index)
 
-        return init_bg_image(cls, index)
+
+if __name__=='__main__':
+
+    from physion.visual_stim.build import get_default_params
+
+    params = get_default_params('uniform-bg')
+
+    import time
+    import cv2 as cv
+
+    Stim = stim(params)
+    t0, index = time.time(), 0
+
+    while True and index<1:
+
+        cv.imshow("Video Output", 
+                  Stim.get_image(index).T)
+
+        index = int((time.time()-t0)\
+                /Stim.protocol['presentation-duration'])
+
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break

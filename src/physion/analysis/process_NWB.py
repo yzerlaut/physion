@@ -1,6 +1,7 @@
 import sys, time, os, pathlib, string, itertools
 
 import numpy as np
+from scipy.stats import sem
 from scipy.interpolate import interp1d
 
 from physion.analysis import stat_tools
@@ -17,6 +18,18 @@ class EpisodeData:
             the raw signal on a fixed time interval (surrounding the stim)
 
     - Using metadata to store stimulus informations per episode
+
+    quantities should be given as:
+            - Photodiode-Signal
+            - running_speed
+            - Deconvolved
+            - dFoF
+            - Zscore_dFoF
+            - neuropil
+            - rawFluo
+            - pupil_diameter
+            - gaze_movement
+            - facemotion
     """
 
     def __init__(self, full_data,
@@ -66,7 +79,7 @@ class EpisodeData:
             self.protocol_name = protocol_name
 
         else:
-            print(' /!\ need to pass either a protocol_id or a protocol_name /!\ \n')
+            print(' [!!] need to pass either a protocol_id or a protocol_name [!!] \n')
 
         # VISUAL STIM
         if with_visual_stim:
@@ -94,7 +107,7 @@ class EpisodeData:
         if (protocol_id is None) and (protocol_name is None):
             protocol_id = 0
             print('protocols:', full_data.protocols)
-            print(' /!\ need to explicit the "protocol_id" or "protocol_name" /!\ ')
+            print(' [!!] need to explicit the "protocol_id" or "protocol_name" [!!] ')
             print('         ---->   set to protocol_id=0 by default \n ')
         elif (protocol_name is not None):
             protocol_id = full_data.get_protocol_id(protocol_name)
@@ -128,7 +141,7 @@ class EpisodeData:
                            'time_start_realigned', 'time_stop',
                            'time_stop_realigned', 'interstim',
                            'protocol-name']:
-                unique = np.sort(np.unique(full_data.nwbfile.stimulus[key].data[self.protocol_cond_in_full_data]))
+                unique = np.sort(np.unique(full_data.nwbfile.stimulus[key].data[self.protocol_cond_in_full_data,0]))
                 if len(unique)>1:
                     self.varied_parameters[key] = unique
                 elif len(unique)==1:
@@ -136,16 +149,16 @@ class EpisodeData:
 
         # new sampling, a window arround stimulus presentation
         if (prestim_duration is None) and ('interstim' in full_data.nwbfile.stimulus):
-            prestim_duration = np.min(full_data.nwbfile.stimulus['interstim'].data[:])/2. # half the stim duration
+            prestim_duration = np.min(full_data.nwbfile.stimulus['interstim'].data[:,0])/2. # half the stim duration
         if (prestim_duration is None) or (prestim_duration<1):
             prestim_duration = 1 # still 1s is a minimum
         ipre = int(prestim_duration/dt_sampling*1e3)
 
-        duration = full_data.nwbfile.stimulus['time_stop'].data[self.protocol_cond_in_full_data][0]-\
-                full_data.nwbfile.stimulus['time_start'].data[self.protocol_cond_in_full_data][0]
+        duration = full_data.nwbfile.stimulus['time_stop'].data[self.protocol_cond_in_full_data,0][0]-\
+                full_data.nwbfile.stimulus['time_start'].data[self.protocol_cond_in_full_data,0][0]
         idur = int(duration/dt_sampling/1e-3)
         # -> time array:
-        self.t = np.arange(-ipre+1, idur+ipre-1)*dt_sampling*1e-3
+        self.t = np.arange(-ipre+2, idur+ipre)*dt_sampling*1e-3
 
 
         #############################################################################
@@ -167,6 +180,13 @@ class EpisodeData:
                 QUANTITY_VALUES.append(full_data.running_speed)
                 QUANTITY_TIMES.append(full_data.t_running_speed)
                 QUANTITIES.append('running_speed')
+
+            elif quantity in ['Deconvolved']:
+                if not hasattr(full_data, 'Deconvolved'):
+                    full_data.build_Deconvolved(**quantity_args)
+                QUANTITY_VALUES.append(full_data.Deconvolved)
+                QUANTITY_TIMES.append(full_data.t_dFoF)
+                QUANTITIES.append('Deconvolved')
 
             elif quantity in ['dFoF', 'dF/F']:
                 if not hasattr(full_data, 'dFoF'):
@@ -220,11 +240,11 @@ class EpisodeData:
             else:
                 if quantity in full_data.nwbfile.acquisition:
                     QUANTITY_TIMES.append(np.arange(full_data.nwbfile.acquisition[quantity].data.shape[0])/full_data.nwbfile.acquisition[quantity].rate)
-                    QUANTITY_VALUES.append(full_data.nwbfile.acquisition[quantity].data[:])
+                    QUANTITY_VALUES.append(full_data.nwbfile.acquisition[quantity].data[:,0])
                     QUANTITIES.append(full_data.nwbfile.acquisition[quantity].name.replace('-', '').replace('_', ''))
                 elif quantity in full_data.nwbfile.processing:
                     QUANTITY_TIMES.append(np.arange(full_data.nwbfile.processing[quantity].data.shape[0])/full_data.nwbfile.processing[quantity].rate)
-                    QUANTITY_VALUES.append(full_data.nwbfile.processing[quantity].data[:])
+                    QUANTITY_VALUES.append(full_data.nwbfile.processing[quantity].data[:,0])
                     QUANTITIES.append(full_data.nwbfile.processing[quantity].name.replace('-', '').replace('_', ''))
                 else:
                     print(30*'-')
@@ -240,8 +260,8 @@ class EpisodeData:
 
         for iEp in np.arange(full_data.nwbfile.stimulus['time_start'].num_samples)[self.protocol_cond_in_full_data]:
 
-            tstart = full_data.nwbfile.stimulus['time_start_realigned'].data[iEp]
-            tstop = full_data.nwbfile.stimulus['time_stop_realigned'].data[iEp]
+            tstart = full_data.nwbfile.stimulus['time_start_realigned'].data[iEp,0]
+            tstop = full_data.nwbfile.stimulus['time_stop_realigned'].data[iEp,0]
 
             # print(iEp, tstart, tstop)
             # print(full_data.nwbfile.stimulus['patch-delay'].data[iEp])
@@ -274,6 +294,7 @@ class EpisodeData:
                         print('----')
                         print(be)
                         # print(tfull[ep_cond][0]-tstart, tfull[ep_cond][-1]-tstart, tstop-tstart)
+                        print(quantity)
                         print('Problem with episode %i between (%.2f, %.2f)s' % (iEp, tstart, tstop))
 
 
@@ -284,7 +305,7 @@ class EpisodeData:
                     getattr(self, quantity).append(response)
                 for key in full_data.nwbfile.stimulus.keys():
                     try:
-                        getattr(self, key).append(full_data.nwbfile.stimulus[key].data[iEp])
+                        getattr(self, key).append(full_data.nwbfile.stimulus[key].data[iEp,0])
                     except BaseException as be:
                         pass # we skip thise variable
 
@@ -299,8 +320,10 @@ class EpisodeData:
         self.quantities = QUANTITIES
 
 
-
-    def get_response(self, quantity=None, roiIndex=None, roiIndices='all', average_over_rois=True):
+    def get_response(self, 
+                     quantity=None, 
+                     roiIndex=None, roiIndices='all', 
+                     average_over_rois=True):
         """
         to deal with the fact that single-episode responses can be multidimensional
 
@@ -387,6 +410,9 @@ class EpisodeData:
         pre_cond  = self.compute_interval_cond(interval_pre)
         post_cond  = self.compute_interval_cond(interval_post)
 
+        # print(response[episode_cond,:][:,pre_cond].mean(axis=1))
+        # print(response[episode_cond,:][:,post_cond].mean(axis=1))
+        # print(len(response.shape)>1,(np.sum(episode_cond)>1))
         if len(response.shape)>1 and (np.sum(episode_cond)>1):
             return stat_tools.StatTest(response[episode_cond,:][:,pre_cond].mean(axis=1),
                                        response[episode_cond,:][:,post_cond].mean(axis=1),
@@ -439,14 +465,18 @@ class EpisodeData:
                                                    .5*(x[1:]+x[:-1]),
                                                    [x[-1]+.5*(x[-1]-x[-2])]]))
 
-        summary_data = {'value':[], 'std-value':[], 'significant':[], 'relative_value':[]}
+        summary_data = {'value':[], 'std-value':[], 'sem-value':[], 
+                        'significant':[], 'relative_value':[]}
+
         for key, bins in zip(VARIED_KEYS, VARIED_BINS):
             summary_data[key] = []
             summary_data[key+'-index'] = []
             summary_data[key+'-bins'] = bins
 
         if len(VARIED_KEYS)>0:
+
             for indices in itertools.product(*VARIED_INDICES):
+
                 stats = self.stat_test_for_evoked_responses(episode_cond=self.find_episode_cond(VARIED_KEYS,
                                                                                                 list(indices)) &\
                                                                           episode_cond,
@@ -460,22 +490,31 @@ class EpisodeData:
                 if stats.r!=0:
                     summary_data['value'].append(np.mean(stats.y-stats.x))
                     summary_data['std-value'].append(np.std(stats.y-stats.x))
-                    summary_data['relative_value'].append(np.mean((stats.y-stats.x)/stats.x))
+                    summary_data['sem-value'].append(sem(stats.y-stats.x))
+                    if np.sum(stats.x==0)==0:
+                        summary_data['relative_value'].append(np.mean((stats.y-stats.x)/stats.x))
+                    else:
+                        summary_data['relative_value'].append(np.nan) # if one of them is 0, all to Nan so that it's unusable
                     summary_data['significant'].append(stats.significant(threshold=response_significance_threshold))
                 else:
-                    for kk in ['value', 'std-value', 'significant', 'relative_value']:
+                    for kk in ['value', 'std-value', 'sem-value', 
+                               'significant', 'relative_value']:
                         summary_data[kk].append(np.nan)
         else:
+
             stats = self.stat_test_for_evoked_responses(response_args=response_args,
                                                         **stat_test_props)
+
             # if (stats.x is not None) and (stats.y is not None):
             if stats.r!=0:
                 summary_data['value'].append(np.mean(stats.y-stats.x))
                 summary_data['std-value'].append(np.std(stats.y-stats.x))
+                summary_data['sem-value'].append(sem(stats.y-stats.x))
                 summary_data['significant'].append(stats.significant(threshold=response_significance_threshold))
                 summary_data['relative_value'].append(np.mean((stats.y-stats.x)/stats.x))
             else:
-                for kk in ['value', 'std-value', 'significant', 'relative_value']:
+                for kk in ['value', 'std-value', 'sem-value',
+                           'significant', 'relative_value']:
                     summary_data[kk].append(np.nan)
 
         for key in summary_data:
@@ -506,3 +545,22 @@ class EpisodeData:
         for key in self.visual_stim.experiment:
             if hasattr(self, key):
                 self.visual_stim.experiment[key] = getattr(self, key)
+
+
+
+if __name__=='__main__':
+
+    import physion
+
+    filename = sys.argv[-1]
+    data= physion.analysis.read_NWB.Data(filename)
+    data.build_dFoF()
+    Episodes = EpisodeData(data, quantities=['dFoF'], protocol_id=2)
+    for ia, angle in enumerate(Episodes.varied_parameters['angle']):
+        ep_cond = Episodes.find_episode_cond('angle', ia)
+        stats = Episodes.stat_test_for_evoked_responses(\
+                                episode_cond=ep_cond,
+                                response_args={'quantity':'dFoF', 
+                                               'roiIndex':3})
+        print(ia, angle, stats.significant())
+

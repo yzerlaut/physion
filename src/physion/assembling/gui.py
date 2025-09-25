@@ -4,18 +4,10 @@ import numpy as np
 
 from physion.utils.paths import FOLDERS
 from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders
-from physion.assembling.build_NWB import build_cmd
+from physion.assembling.nwb import build_cmd, ALL_MODALITIES
 
-ALL_MODALITIES = ['VisualStim',
-                  'Locomotion',
-                  'Pupil', 'FaceMotion',
-                  'raw_FaceCamera', 
-                  'EphysLFP', 'EphysVm']
-defaults = [True,
-            True,
-            True, True,
-            False,
-            True, True]
+defaults = [True for m in ALL_MODALITIES]
+
 
 def build_NWB_UI(self, tab_id=1):
 
@@ -55,10 +47,15 @@ def build_NWB_UI(self, tab_id=1):
         setattr(self, '%sCheckBox'%modality, QtWidgets.QCheckBox(modality, self))
         self.add_side_widget(tab.layout, getattr(self, '%sCheckBox'%modality))#, 'large-left')
         getattr(self, '%sCheckBox'%modality).setChecked(default)
-        # setattr(self, '%sBox'%modality, QtWidgets.QLineEdit(modality, self))
-        # self.add_side_widget(tab.layout, getattr(self, '%sBox'%modality),
-                # 'small-right')
 
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(20*'-'))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.reversePhotodiodeBox = QtWidgets.QCheckBox('reverse Photodiode Signal ', self)
+    self.add_side_widget(tab.layout, self.reversePhotodiodeBox)
+    # an option to force based on Visual Stim infos
+    self.alignFromStimCheckBox = QtWidgets.QCheckBox('align from VisStim label (!=diode) ', self)
+    self.add_side_widget(tab.layout, self.alignFromStimCheckBox)
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
@@ -78,7 +75,7 @@ def build_NWB_UI(self, tab_id=1):
     #------------------- THEN MAIN PANEL   -------------------
 
     width = self.nWidgetCol-self.side_wdgt_length
-    tab.layout.addWidget(QtWidgets.QLabel('     *  NWB file  *'),
+    tab.layout.addWidget(QtWidgets.QLabel('     *  Recordings  *'),
                          0, self.side_wdgt_length, 
                          1, width)
 
@@ -95,31 +92,34 @@ def build_NWB_UI(self, tab_id=1):
 
 def load_NWB_folder(self):
 
-    folder = self.open_folder()
+    self.folder = self.open_folder()
 
     self.folders = []
     
-    if folder!='':
+    if self.folder!='':
 
-        if (len(folder.split(os.path.sep)[-1].split('-'))<2) and (len(folder.split(os.path.sep)[-1].split('_'))>2):
-            print('"%s" is recognized as a day folder' % folder)
-            self.folders = [os.path.join(folder, f) for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f, 'metadata.npy'))]
-        elif os.path.isfile(os.path.join(folder, 'metadata.npy')) and os.path.isfile(os.path.join(folder, 'NIdaq.npy')):
-            print('"%s" is a valid recording folder' % folder)
-            self.folders = [folder]
-        else:
-            print(' /!\ Data-folder missing either "metadata" or "NIdaq" datafiles /!\ ')
-            print('  --> nothing to assemble !')
+        for subfolder, _, files in os.walk(self.folder):
+            if ('NIdaq.npy' in files) and\
+                (('metadata.npy' in files) or ('metadata.json' in files)):
+                self.folders.append(os.path.join(self.folder, subfolder))
 
+        if len(self.folders)==0:
+            print(' ---------   [!!] no data-folder recognized [!!] -----------')
+            print('           missing either "metadata" or "NIdaq" datafiles ')
+            print('                 --> nothing to assemble !')
+
+    """
+    ## --------------------
+    ##      ISI MAPS
+    ## --------------------
     # now loop over folders and look for the ISI maps
-
     self.ISImaps = []
     for i, folder in enumerate(self.folders):
         self.ISImaps.append(look_for_ISI_maps(self, folder))     
         getattr(self, 'nwb%i' % (i+1)).setText('- %s           (%s)' %\
                 (str(folder.split(os.path.sep)[-2:]),
                  self.ISImaps[i]))
-
+    """
 
 
 def runBuildNWB(self):
@@ -127,16 +127,16 @@ def runBuildNWB(self):
                   if getattr(self, '%sCheckBox'%modality).isChecked()]
     for folder in self.folders:
         cmd, cwd = build_cmd(folder,
-                             modalities=modalities)
+                             modalities=modalities,
+                             force_to_visualStimTimestamps=\
+                                self.alignFromStimCheckBox.isChecked(),
+                             reverse_photodiodeSignal=\
+                                self.reversePhotodiodeBox.isChecked(),
+                             dest_folder=self.folder)
         print('\n launching the command \n :  %s \n ' % cmd)
-        p = subprocess.Popen(cmd,
-                             cwd=cwd,
+        p = subprocess.Popen(cmd, cwd=cwd,
                              shell=True)
 
 def look_for_ISI_maps(self, folder):
 
     return 'no ISI maps found'
-
-
-
-

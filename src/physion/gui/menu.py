@@ -6,8 +6,10 @@ def build_menu(self):
 
     ##### ------------- File  -----------------------
     self.fileMenu = self.mainMenu.addMenu('  * &Open ')
-    self.fileMenu.addAction('&File [O]',
+    self.fileMenu.addAction('&NWB File [O]',
                             self.open_file)
+    self.fileMenu.addAction('&Folder',
+                            self.open_NWB_folder)
     self.fileMenu.addAction('&Calendar',
                             self.calendar)
     self.fileMenu.addAction('&Quit', self.quit)
@@ -19,8 +21,12 @@ def build_menu(self):
                                   self.multimodal)
     self.experimentMenu.addAction('Visual Stimulation',
                                   self.in_progress)
-    self.experimentMenu.addAction('Intrinsic Imaging',
+    self.experimentMenu.addAction('Retinotopic Mapping',
                                   self.intrinsic_acq)
+    self.experimentMenu.addAction('Ocular Dominance',
+                                  self.intrinsic_acq)
+    self.experimentMenu.addAction('Whisker Mapping',
+                                  self.SS_intrinsic_acq)
     self.experimentMenu.addAction('Face Camera',
                                   self.in_progress)
     self.experimentMenu.addAction('Webcam',
@@ -33,8 +39,12 @@ def build_menu(self):
                                      self.pupil)
     self.preprocessingMenu.addAction('&Facemotion',
                                      self.facemotion)
-    self.preprocessingMenu.addAction('&Intrinsic Imaging Maps',
+    self.preprocessingMenu.addAction('&Visual-Areas Segmentation',
                                      self.intrinsic)
+    self.preprocessingMenu.addAction('&Ocular Dominance',
+                                     self.OD_analysis)
+    self.preprocessingMenu.addAction('&Whisker Maps',
+                                     self.SS_intrinsic)
     self.preprocessingMenu.addAction('&Suite2P Preprocessing',
                                      self.suite2p_preprocessing_UI)
     self.preprocessingMenu.addAction('&Red Channel Labelling',
@@ -45,8 +55,8 @@ def build_menu(self):
     # --
     self.assemblingMenu.addAction('Build NWB',
                                   self.build_NWB_UI)
-    self.assemblingMenu.addAction('Add Imaging',
-                                  self.add_imaging)
+    # self.assemblingMenu.addAction('Add Imaging',
+                                  # self.add_imaging)
     self.assemblingMenu.addAction('FOV coordinates',
                                   self.FOV_coords_UI)
 
@@ -66,12 +76,15 @@ def build_menu(self):
                                 self.trial_averaging)
     self.analysisMenu.addAction('&Behavioral Mod.',
                                 self.in_progress)
-    self.analysisMenu.addAction('&Retinotopic Maps',
-                                self.intrinsic)
 
     ##### ------   Other   -------------
     self.otherMenu = self.mainMenu.addMenu('     Others')
     # --
     self.otherMenu.addAction('&Transfer Data',
                               self.transfer_gui)
-
+    self.otherMenu.addAction('&Convert Behavior to Movies',
+                              self.behav_to_movie_gui)
+    self.otherMenu.addAction('&Convert Imaging to Movies',
+                              self.imaging_to_movie_gui)
+    #self.otherMenu.addAction('&Delete Data',
+    #                          self.in_progress)

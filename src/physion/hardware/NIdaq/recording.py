@@ -2,16 +2,15 @@ import nidaqmx, time
 import numpy as np
 
 from nidaqmx.utils import flatten_channel_string
-from nidaqmx.constants import Edge
+from nidaqmx.constants import Edge, READ_ALL_AVAILABLE
 from nidaqmx.stream_readers import (
     AnalogSingleChannelReader, AnalogMultiChannelReader, DigitalMultiChannelReader)
 from nidaqmx.stream_writers import (
     AnalogSingleChannelWriter, AnalogMultiChannelWriter , DigitalMultiChannelWriter)
 
-import sys, os, pathlib
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
-from hardware_control.NIdaq.config import find_x_series_devices, find_m_series_devices, get_analog_input_channels,\
-    get_analog_output_channels, get_digital_input_channels
+ 
+from physion.hardware.NIdaq.config import find_x_series_devices, find_m_series_devices,\
+        get_analog_input_channels, get_analog_output_channels, get_digital_input_channels
 
 def rec_only(device, t_array, inputs):
 
@@ -56,6 +55,7 @@ def stim_and_rec(device, t_array,
 
     dt = t_array[1]-t_array[0]
     sampling_rate = 1./dt
+    print(sampling_rate)
     
     # if analog_outputs.shape[0]>0:
     output_analog_channels = get_analog_output_channels(device)[:analog_outputs.shape[0]]
@@ -93,11 +93,13 @@ def stim_and_rec(device, t_array,
             
         read_analog_task.timing.cfg_samp_clk_timing(
                 sampling_rate, source=samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=len(t_array))
+                active_edge=Edge.FALLING, 
+                samps_per_chan=len(t_array))
         if N_digital_inputs >0:
             read_digital_task.timing.cfg_samp_clk_timing(
                 sampling_rate, source=samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=len(t_array))
+                active_edge=Edge.FALLING, 
+                samps_per_chan=len(t_array))
 
         analog_writer = AnalogMultiChannelWriter(write_analog_task.out_stream)
         analog_reader = AnalogMultiChannelReader(read_analog_task.in_stream)
@@ -115,12 +117,16 @@ def stim_and_rec(device, t_array,
         sample_clk_task.start()
             
         analog_reader.read_many_sample(
-            analog_inputs, number_of_samples_per_channel=len(t_array),
+            analog_inputs, 
+            number_of_samples_per_channel=len(t_array),
+            # number_of_samples_per_channel=READ_ALL_AVAILABLE,
+            # number_of_samples_per_channel=int(len(t_array)/5),
             timeout=t_array[-1]+2*dt)
         if N_digital_inputs >0:
             digital_inputs = np.zeros((1,len(t_array)), dtype=np.uint32)
             digital_reader.read_many_sample_port_uint32(
-                digital_inputs, number_of_samples_per_channel=len(t_array),
+                digital_inputs, 
+                number_of_samples_per_channel=len(t_array),
                 timeout=t_array[-1]+2*dt)
         else:
             digital_inputs = None
@@ -163,6 +169,9 @@ if __name__=='__main__':
     print('running rec & stim [...]')
     analog_inputs, digital_inputs = stim_and_rec(args.device, t_array, analog_inputs, analog_outputs,
                                                  args.Nchannel_digital_rec)
+    if args.filename !='':
+    	np.save(args.filename, analog_inputs)
+
     # print(digital_inputs)
     # tstart = 1e3*time.time()
     # print('writing T=%.1fs of recording (at f=%.2fkHz, across N=%i channels) in : %.2f ms' % (T, 1e-3/dt,inputs.shape[0],1e3*time.time()-tstart))
@@ -172,19 +181,13 @@ if __name__=='__main__':
     #     np.save('data.npy', inputs)
     #     print('writing T=%.1fs of recording (at f=%.2fkHz, across N=%i channels) in : %.2f ms' % (T, 1e-3/dt,inputs.shape[0],1e3*time.time()-tstart))
     # rec_only(args.device, t_array, inputs)
-    # np.save(args.filename, analog_inputs)
 
     import matplotlib.pylab as plt
-    fig, AX = plt.subplots(args.Nchannel_analog_rec-1)
-    for i, l in zip([1,2], ['A','B']):
+
+    fig, ax = plt.subplots(1, figsize=(5,4))
+    for i, c in zip(range(analog_inputs.shape[0]), ['blue','red']):
         signal = analog_inputs[i]
-        # if signal.std()>0:
-        #     plt.plot(t_array, i+(signal-signal.min())/(signal.max()-signal.min()))
-        # else:
-        AX[i-1].plot(t_array, signal)
-        AX[i-1].set_ylabel('Channel %s (V)' % l)
-        
-        
-    # plt.plot(1e3*t_array, analog_inputs[0,:])
-    plt.xlabel('time (ms)')
+        ax.plot(t_array, signal, color=c)
+    ax.set_ylabel('Channels (V)')
+    plt.xlabel('time (s)')
     plt.show()

@@ -6,10 +6,11 @@ from scipy.ndimage.filters import gaussian_filter1d
 def realign_from_photodiode(signal,
                             metadata,
                             sampling_rate=None,
-                            photodiode_rise_time=0.01,
+                            onset_shift=-0.005,
                             shift_time=0.3, # MODIFY IT HERE IN CASE NEEDED
                             debug=False, istart_debug=0, n_vis=5,
                             max_episode=-1,
+                            ignore_episodes=[],
                             indices_forced=[],
                             times_forced=[],
                             durations_forced=[],
@@ -19,10 +20,10 @@ def realign_from_photodiode(signal,
 
     - shift_time is to handle the fact that there might be a delay in stopping the protocol 
     without this, the start of the next one is put as the end of the previous...
-    """
-    if verbose:
-        print('---> Realigning data with respect to photodiode signal [...] ')
 
+    - onset_shift: possibility to shift the onset time by a fixed quantity
+            (N.B. that depends on the smoothing, so onset_shift can be negative to compensate)
+    """
     success = True
 
     if max_episode==-1:
@@ -41,7 +42,7 @@ def realign_from_photodiode(signal,
     metadata['time_start_realigned'] = []
 
     if verbose:
-        print('smoothing photodiode signal [...]')
+        print('     -> smoothing photodiode signal [...]')
 
     # smoothing the signal
     smooth_signal = np.diff(gaussian_filter1d(np.cumsum(signal), 20)) # integral + smooth + derivative
@@ -69,9 +70,13 @@ def realign_from_photodiode(signal,
             tstart = times_forced[iforced]
             tshift = 0.5
 
+        elif i in ignore_episodes:
+            # we just skip this episodes:
+            success = True
+
         elif np.sum(cond_thresh)>0:
             # success
-            tshift = t[:-2][cond_thresh][0] - tstart - photodiode_rise_time
+            tshift = t[:-2][cond_thresh][0] - tstart - onset_shift
             metadata['time_start_realigned'].append(tstart+tshift)
         else:
             success = False
@@ -80,6 +85,7 @@ def realign_from_photodiode(signal,
         
 
         if success and debug and ((i>=istart_debug) and (i<istart_debug+n_vis)):
+            import matplotlib.pylab as plt
             # plot alignment for debugging !
             cond = (t[:-1]>=tstart+shift_time-5) & (t[:-1]<=tstart+tshift+10)
             fig, ax = plt.subplots()
@@ -111,38 +117,11 @@ def realign_from_photodiode(signal,
         metadata['time_stop_realigned'] = metadata['time_stop_realigned'][:-1]
         
     if verbose:
-        print('[ok]          --> succesfully realigned')
-        print('                  found n=%i episodes over the %i of the protocol ' % (len(metadata['time_start_realigned']), len(metadata['time_start'])))
+        print('    [ok]    --> succesfully realigned')
+        print('              found n=%i episodes over the %i of the protocol '\
+                % (len(metadata['time_start_realigned']), len(metadata['time_start'])))
             
     return True, metadata
-
-
-def find_onset_time(t, photodiode_signal,
-                    baseline=0, high_level=1):
-    """
-    """
-    cond = (photodiode_signal[1:]>=(0.5*high_level)) & (photodiode_signal[:-1]<=(0.5*high_level))
-    if np.sum(cond)>0:
-        return t[:-1][cond][0]
-    else:
-        return None
-    
-
-# def find_onset_time(t, photodiode_signal,
-#                     smoothing_time = 20e-3,
-#                     # advance_time = 15e-3,
-#                     baseline=0, high_level=1):
-#     """
-#     we smooth the photodiode signal, with a gaussian filter of extent Tsmoothing
-#     Tonset = Tcrossing-3./4.*Tsmoothing
-#     Tcrossing is the time of crossing of half the max-min level (of the smoothed signal)
-#     """
-#     advance_time = 3./4.*smoothing_time
-#     smoothed = gaussian_filter1d(photodiode_signal, int(smoothing_time/(t[1]-t[0])))
-#     smoothed = (smoothed-smoothed.min())/(smoothed.max()-smoothed.min())
-#     cond = (smoothed[1:]>=0.5) & (smoothed[:-1]<=0.5)
-#     t0 = t[:-1][cond][0]
-#     return t0-advance_time, smoothed, smoothed.min()+0.5*(smoothed.max()-smoothed.min())
 
 
 def normalize_signal(x):

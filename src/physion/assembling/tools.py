@@ -1,9 +1,24 @@
-import os, sys, pathlib, time, datetime
+import os, sys, pathlib, time, datetime, json
 import numpy as np
 
 from physion.analysis.read_NWB import Data
 
 from physion.utils.files import get_files_with_extension
+
+def read_metadata(datafolder):
+    """
+    """
+    
+    if os.path.isfile(os.path.join(datafolder, 'metadata.json')):
+        with open(os.path.join(datafolder, 'metadata.json'),
+                  'r', encoding='utf-8') as f:
+            metadata = json.load(f)
+    else:
+        # (deprecated, loading from metadata.npy)
+        metadata = np.load(os.path.join(datafolder, 'metadata.npy'),
+                           allow_pickle=True).item()
+
+    return metadata 
 
 def build_subsampling_from_freq(subsampled_freq=1.,
                                 original_freq=1.,
@@ -12,10 +27,10 @@ def build_subsampling_from_freq(subsampled_freq=1.,
 
     """
     if original_freq==0:
-        print('  /!\ problem with original sampling freq /!\ ')
+        print('  [!!] problem with original sampling freq [!!] ')
         
     if subsampled_freq==0:
-        SUBSAMPLING = np.linspace(0, N-1, Nmin).astype(np.int)
+        SUBSAMPLING = np.linspace(0, N-1, Nmin).astype(np.int16)
     elif subsampled_freq>=original_freq:
         SUBSAMPLING = np.arange(0, N) # meaning all samples !
     else:

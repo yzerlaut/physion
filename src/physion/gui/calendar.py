@@ -7,9 +7,9 @@ from physion.utils.files import get_files_with_extension
 from physion.analysis.read_NWB import Data
 
 def calendar(self,
-                  tab_id=0,
-                  nCalendarRow=10,
-                  min_date=(2020, 8, 1)):
+             tab_id=0,
+             nCalendarRow=10,
+             min_date=(2020, 8, 1)):
 
     tab = self.tabs[tab_id]
 
@@ -100,7 +100,7 @@ def calendar(self,
 
     self.fovButton = QtWidgets.QPushButton(' FOV/window', self)
     # self.fovButton.setEnabled(False)
-    # self.fovButton.clicked.connect(self.visualization)
+    self.fovButton.clicked.connect(self.FOV)
     tab.layout.addWidget(self.fovButton,
                          nCalendarRow+2, self.nWidgetCol-2, 1, 2)
 
@@ -111,15 +111,15 @@ def calendar(self,
                          nCalendarRow+3, self.nWidgetCol-2, 1, 2)
 
 
-    self.pdfButton = QtWidgets.QPushButton('build analysis PDF', self)
-    self.pdfButton.clicked.connect(self.generate_pdf)
-    tab.layout.addWidget(self.pdfButton,
-                         nCalendarRow+4, self.nWidgetCol-2, 1, 2)
+    # self.pdfButton = QtWidgets.QPushButton('build analysis PDF', self)
+    # self.pdfButton.clicked.connect(self.generate_pdf)
+    # tab.layout.addWidget(self.pdfButton,
+                         # nCalendarRow+4, self.nWidgetCol-2, 1, 2)
 
-    self.openPdfButton = QtWidgets.QPushButton('open PDF', self)
-    self.openPdfButton.clicked.connect(self.open_pdf)
-    tab.layout.addWidget(self.openPdfButton,
-                         nCalendarRow+5, self.nWidgetCol-2, 1, 2)
+    # self.openPdfButton = QtWidgets.QPushButton('open PDF', self)
+    # self.openPdfButton.clicked.connect(self.open_pdf)
+    # tab.layout.addWidget(self.openPdfButton,
+                         # nCalendarRow+5, self.nWidgetCol-2, 1, 2)
 
     #####################################
     #######      Adding notes  ##########
@@ -165,27 +165,37 @@ def reinit_calendar(self, min_date=(2020, 8, 1), max_date=None):
         self.cal.setSelectedDate(datetime.date.today())
         
     
-def scan_folder(self):
+def scan_folder(self, 
+                folder=None):
     """
     Looping over all files in a root folder recursively 
 
     """
-    print('inspecting the folder "%s" [...]' %\
-            FOLDERS[self.folderBox.currentText()])
+    if os.path.isdir(folder):
+        self.folder = folder
+    else:
+        self.folder = FOLDERS[self.folderBox.currentText()]
 
-    # FILES0 = physion.utils.files.get_files_with_extension(\
-    FILES0 = get_files_with_extension(\
-                            FOLDERS[self.folderBox.currentText()],
-                            extension='.nwb', recursive=True)
+    print('inspecting the folder "%s" [...]' % self.folder)
+
+    FILES0 = get_files_with_extension(self.folder, 
+                                      extension='.nwb',
+                                      recursive=True)
 
     TIMES, DATES, FILES = [], [], []
-    for f in FILES0:
-        Time = f.split(os.path.sep)[-1].replace('.nwb', '').split('-')
-        if len(Time)>=4:
-            TIMES.append(3600*int(Time[0])+60*int(Time[1])+int(Time[2]))
-            DATES.append(f.split(os.path.sep)[-1].split('-')[0])
-            FILES.append(f)
-            
+    for ii, f in enumerate(FILES0):
+        if ('sub' in f) and ('ses' in f):
+            # not a date-time filename, today by default
+            Time = ['00', '00', '%.2i' % ii]
+            date = datetime.datetime.today().strftime('%Y_%m_%d')
+        else:
+            Time = f.split(os.path.sep)[-1].replace('.nwb', '').split('-')
+            date = f.split(os.path.sep)[-1].split('-')[0]
+
+        TIMES.append(3600*int(Time[0])+60*int(Time[1])+int(Time[2]))
+        DATES.append(date)
+        FILES.append(f)
+
     TIMES, DATES, FILES = np.array(TIMES), np.array(DATES), np.array(FILES)
     NDATES = np.array([datetime.date(*[int(dd)\
                             for dd in date.split('_')]).toordinal()\
@@ -193,18 +203,18 @@ def scan_folder(self):
     self.FILES_PER_DAY = {}
     
     self.reinit_calendar(min_date= tuple(int(dd)\
-                                    for dd in DATES[np.argmin(NDATES)].split('_')),
+                        for dd in DATES[np.argmin(NDATES)].split('_')),
                          max_date= tuple(int(dd)\
-                                    for dd in DATES[np.argmax(NDATES)].split('_')))
+                        for dd in DATES[np.argmax(NDATES)].split('_')))
     for d in np.unique(DATES):
         try:
             self.cal.setDateTextFormat(\
-                    QtCore.QDate(datetime.date(*[int(dd) for dd in d.split('_')])),
-                                       self.highlight_format)
+            QtCore.QDate(datetime.date(*[int(dd) for dd in d.split('_')])),
+                self.highlight_format)
             day_cond = (DATES==d)
             time_sorted = np.argsort(TIMES[day_cond])
-            self.FILES_PER_DAY[d] = [os.path.join(FOLDERS[self.folderBox.currentText()], f)\
-                                     for f in np.array(FILES)[day_cond][time_sorted]]
+            self.FILES_PER_DAY[d] = [os.path.join(self.folder, f)\
+                          for f in np.array(FILES)[day_cond][time_sorted]]
         except BaseException as be:
             print(be)
             print('error for date %s' % d)
@@ -247,7 +257,7 @@ def pick_date(self):
 def compute_subjects(self):
 
     print(' computing subjects [...]')
-    FILES = get_files_with_extension(FOLDERS[self.folderBox.currentText()],
+    FILES = get_files_with_extension(self.folder,
                                      extension='.nwb', recursive=True)
 
     print(' looping over n=%i datafiles to fetch "subjects" metadata [...]' % len(FILES))
@@ -297,7 +307,7 @@ def pick_subject(self):
                                        self.highlight_format)
             self.FILES_PER_DAY[d] = [f for f in np.array(self.SUBJECTS[self.subjectBox.currentText()]['datafiles'])[self.SUBJECTS[self.subjectBox.currentText()]['dates']==d]]
     else:
-        print(' /!\ subject not recognized /!\  ')
+        print(' [!!] subject not recognized [!!]  ')
     pass
 
 def pick_datafile(self):

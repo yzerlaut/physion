@@ -1,7 +1,9 @@
 import xml.etree.ElementTree as ET
 import numpy as np
 
-def bruker_xml_parser(filename):
+
+def bruker_xml_parser(filename, 
+                      verbose=False):
     """
     function to parse the xml metadata file produced by the Prairie software
 
@@ -27,7 +29,7 @@ def bruker_xml_parser(filename):
     except BaseException as be:
         print(be)
         CHANNELS = ['Ch1', 'Ch2']
-        print(' \n \n  /!\  Channel Names not found /!\ taking the defaults: %s \n ' % CHANNELS)
+        print(' \n \n  [!!]  Channel Names not found [!!] taking the defaults: %s \n ' % CHANNELS)
 
     for channel in CHANNELS:
         data[channel] = {'relativeTime':[], 'absoluteTime':[],
@@ -96,8 +98,9 @@ def bruker_xml_parser(filename):
                 depth_middle_piezo = 200 # SHOULD BE ALWAYS CENTER AT 200um
                 data['depth_shift'] = np.linspace(-1, 1, Ndepth)*(depth_middle_piezo-depth_start_piezo)
             except BaseException as be:
-                print(be)
-                print(' /!\ plane info was not found /!\ ')
+                if verbose:
+                    print(be)
+                    print(' [!!] plane info was not found [!!] ')
                 data['depth_shift'] = np.arange(1, Ndepth+1)
         else:
             data['depth_shift'] = np.zeros(1)
@@ -108,22 +111,22 @@ def bruker_xml_parser(filename):
         # version without multiplabe scanning: 5.4.X
         for x in root[2]:
             for f in x:
-                for channel in ['Ch1', 'Ch2']:
-                    if f.tag == 'File':
-                        data[channel]['tifFile'].append(f.attrib['filename'])
-                        for key in ['relativeTime', 'absoluteTime']:
-                            data[channel][key].append(float(x.attrib[key]))
-                        if len(root)>3:
-                            data[channel]['depth_index'].append(int(x.attrib['index'])-1)
-                        else:
-                            data[channel]['depth_index'].append(0)
+                if f.tag == 'File':
+                    channel = f.attrib['channelName']
+                    data[channel]['tifFile'].append(f.attrib['filename'])
+                    for key in ['relativeTime', 'absoluteTime']:
+                        data[channel][key].append(float(x.attrib[key]))
+                    if len(root)>3:
+                        data[channel]['depth_index'].append(int(x.attrib['index'])-1)
+                    else:
+                        data[channel]['depth_index'].append(0)
 
         data['depth_shift'] = np.zeros(1)
-        data['depth_index'] = np.zeros(len(data['Ch1']['relativeTime']))
+        data['depth_index'] = np.zeros(len(data[CHANNELS[0]]['relativeTime']))
 
     else:
 
-        raise NotImplementedError('\n \n  /!\  Prairie version "%s" of xml file not supported  /!\  \n ' % data['Prairie-version'])
+        raise NotImplementedError('\n \n  [!!]  Prairie version "%s" of xml file not supported  [!!]  \n ' % data['Prairie-version'])
 
     # ---------------------------- #
     #  translation to numpy arrays
@@ -163,6 +166,7 @@ if __name__=='__main__':
     # print(data.keys())
     # import pprint
     # pprint.pprint(data['settings'])
+    print(data['Prairie-version'])
     for key in data['channels']:
         print('--- ', key)
         # print(data[key].keys())

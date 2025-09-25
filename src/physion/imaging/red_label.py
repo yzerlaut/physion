@@ -6,6 +6,7 @@ import numpy as np
 from PyQt5 import QtWidgets, QtCore, QtGui
 import pyqtgraph as pg
 import matplotlib.pylab as plt
+from PIL import Image
 
 from physion.utils.paths import FOLDERS
 from physion.utils.plot_tools import figure
@@ -116,11 +117,13 @@ def red_channel_labelling(self,
     self.p0.setAspectLocked()
     self.p0.addItem(self.img)
 
-    self.rois_green = pg.ScatterPlotItem()
+    self.rois_green = pg.ScatterPlotItem(pxMode=False)
     self.rois_red = pg.ScatterPlotItem()
     self.rois_hl = pg.ScatterPlotItem()
 
     self.refresh_tab(tab)
+    self.draw_image_RCL()
+
 
 
 def reset_all_to_green(self):
@@ -197,6 +200,13 @@ def load_RCL(self):
         self.iscell = np.load(os.path.join(self.folder, 'suite2p', 'plane0', 'iscell.npy'), allow_pickle=True)
         self.ops = np.load(os.path.join(self.folder, 'suite2p', 'plane0', 'ops.npy'), allow_pickle=True).item()
 
+        # SAVE A COPY of the meanImg_chan2
+        for key in ['meanImg_chan2', 'meanImg_chan2_corrected']:
+            if key in self.ops:
+                im = Image.fromarray(self.ops[key], mode='F')
+                im.save(os.path.join(self.folder, 
+                                     'suite2p', 'plane0', '%s.tiff' % key))
+
         # self.build_linear_interpolation()
 
         draw_image_RCL(self)
@@ -250,11 +260,12 @@ def draw_rois(self):
     for i in range(len(self.stat)):
         if self.iscell[i,0]:
             add_single_roi_pix(self, i)
-    
+   
     self.rois_red.setData(self.x_red, self.y_red, size=3, brush=pg.mkBrush(255,0,0))
     self.rois_green.setData(self.x_green, self.y_green, size=1, brush=pg.mkBrush(0,255,0))
     self.p0.addItem(self.rois_red)
     self.p0.addItem(self.rois_green)
+
 
 def highlight_roi(self, size=6, t=np.arange(20)):
     

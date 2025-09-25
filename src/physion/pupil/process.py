@@ -149,9 +149,9 @@ def perform_loop(parent,
         temp[key] = []
 
     if with_ProgressBar:
-        printProgressBar(0, parent.nframes)
+        printProgressBar(0, parent.camData.nFrames)
 
-    for parent.cframe in list(range(parent.nframes-1)[::subsampling])+[parent.nframes-1]:
+    for parent.cframe in list(range(parent.camData.nFrames-1)[::subsampling])+[parent.camData.nFrames-1]:
         # preprocess image
         img = preprocess(parent,
                          gaussian_smoothing=gaussian_smoothing,
@@ -166,9 +166,9 @@ def perform_loop(parent,
         for key, val in zip(['cx', 'cy', 'sx', 'sy', 'angle'], coords):
             temp[key].append(val)
         if with_ProgressBar:
-            printProgressBar(parent.cframe, parent.nframes)
+            printProgressBar(parent.cframe, parent.camData.nFrames)
     if with_ProgressBar:
-        printProgressBar(parent.nframes, parent.nframes)
+        printProgressBar(parent.camData.nFrames, parent.camData.nFrames)
         
     print('Pupil size calculation over !')
     
@@ -184,7 +184,7 @@ def extract_boundaries_from_ellipse(ellipse, Lx, Ly):
     else:
         cx, cy, sx, sy = ellipse
         angle=0
-    x,y = np.meshgrid(np.arange(0,Lx), np.arange(0,Ly), indexing='ij')
+    x, y = np.meshgrid(np.arange(0,Lx), np.arange(0,Ly), indexing='ij')
     ellipse = inside_ellipse_cond(x, y, cx, cy, sx, sy, alpha=angle)
     xmin, xmax = np.min(x[ellipse]), np.max(x[ellipse])
     ymin, ymax = np.min(y[ellipse]), np.max(y[ellipse])
@@ -198,7 +198,7 @@ def init_fit_area(cls,
                   blanks=[]):
 
     if fullimg is None:
-        fullimg = np.load(os.path.join(cls.imgfolder,cls.FILES[0])).T
+        fullimg = cls.camData.get(0)
 
     cls.fullx, cls.fully = np.meshgrid(np.arange(fullimg.shape[0]),
                                        np.arange(fullimg.shape[1]),
@@ -253,13 +253,12 @@ def preprocess(cls, with_reinit=True,
 
     if (img is None):
         try:
-            img = np.load(os.path.join(cls.imgfolder,
-                          cls.FILES[cls.cframe])).T
+            img = cls.camData.get(cls.cframe)
         except ValueError:
-            print(' /!\ Problem with frame #%i: %s' % (cls.cframe,
+            print(' [!!] Problem with frame #%i: %s' % (cls.cframe,
                                                        cls.FILES[cls.cframe]))
             print(' replaced with #%i ' % (cls.cframe-1))
-            img = np.load(os.path.join(cls.imgfolder, cls.FILES[cls.cframe-1])).T
+            img = cls.camData.get(cls.cframe-1)
             
     else:
         img = img.copy()
@@ -438,4 +437,4 @@ if __name__=='__main__':
             np.save(os.path.join(args.datafolder, 'pupil.npy'), args.data)
             print('Data successfully saved as "%s"' % os.path.join(args.datafolder, 'pupil.npy'))
         else:
-            print('  /!\ "pupil.npy" file found, create one with the GUI  /!\ ')
+            print('  [!!] "pupil.npy" file found, create one with the GUI  [!!] ')

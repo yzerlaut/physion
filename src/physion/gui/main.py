@@ -4,8 +4,8 @@ from PyQt5 import QtWidgets
 # import pdb # for DEBUG
 
 Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv)
-for path in sys.path:
-    Acquisition = Acquisition or ('acquisition' in path)
+Intrinsic = ('all' in sys.argv) or ('intrinsic' in sys.argv)
+OD = ('all' in sys.argv) or ('OD' in sys.argv)
 
 class MainWindow(QtWidgets.QMainWindow):
     """
@@ -16,7 +16,8 @@ class MainWindow(QtWidgets.QMainWindow):
     
     # "parts" to build the GUI 
     from physion.gui.parts import open_NWB,\
-            open_file, open_folder, choose_root_folder,\
+            open_file, open_folder, open_NWB_folder,\
+            choose_root_folder,\
             add_keyboard_shortcuts, set_status_bar,\
             max_view, min_view, change_window_size,\
             add_side_widget, cleanup_tab, refresh_tab,\
@@ -30,14 +31,14 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.calendar import calendar, pick_date,\
                 reinit_calendar, pick_subject, scan_folder,\
                 pick_datafile, show_metadata 
-        from physion.analysis.summary_pdf import generate_pdf, open_pdf
+        # from physion.analysis.summary_pdf import generate_pdf, open_pdf
     else:
         from physion.gui.parts import inactivated as calendar 
 
     # -- Data Visualization
     if not Acquisition:
         from physion.dataviz.gui import visualization, update_frame,\
-            select_visualStim, select_imgDisplay
+            select_visualStim, snapshot, movie
         from physion.dataviz.plots import raw_data_plot
         from physion.dataviz.FOV import FOV, select_ROI_FOV,\
             next_ROI_FOV, prev_ROI_FOV, toggle_FOV, draw_image_FOV
@@ -50,36 +51,62 @@ class MainWindow(QtWidgets.QMainWindow):
     # -- Multimodal Acquisition 
     if Acquisition:
         from physion.acquisition.gui import multimodal 
-        from physion.acquisition.run import initialize, buffer_stim,\
-           run, stop, check_metadata, send_CaImaging_Stop_signal,\
-           toggle_FaceCamera_process
-        from physion.acquisition.tools import save_experiment,\
-            set_filename_and_folder
-        from physion.acquisition.settings import update_config,\
-            update_subject, save_settings
+        from physion.acquisition.run import run_update, run, stop,\
+                send_CaImaging_Stop_signal,\
+                toggle_FaceCamera_process, toggle_RigCamera_process
     else:
         from physion.gui.parts import inactivated as multimodal
 
+    if Acquisition or Intrinsic or OD:
+        from physion.acquisition.tools import save_experiment,\
+            set_filename_and_folder
+        from physion.acquisition.settings import update_config,\
+            save_settings
+
 
     # -- Intrinsic Imaging -- acquisition
-    if False:
+    if Intrinsic:
+        # visual intrinsic
         from physion.intrinsic.acquisition import gui as intrinsic_acq
         from physion.intrinsic.acquisition import launch_intrinsic,\
                 stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
                 take_vasculature_picture, take_fluorescence_picture
+        # somatosensory intrinsic
+        from physion.intrinsic.somatosensory import gui as SS_intrinsic_acq
+        from physion.intrinsic.somatosensory import launch_SS_intrinsic,\
+                stop_SS_intrinsic, update_dt_SS_intrinsic
+    elif OD:
+        from physion.intrinsic.ocular_dominance import gui as intrinsic_acq
+        from physion.intrinsic.ocular_dominance import launch_intrinsic,\
+                stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
+                take_vasculature_picture, take_fluorescence_picture
+        from physion.gui.parts import inactivated as SS_intrinsic_acq
     else:
         from physion.gui.parts import inactivated as intrinsic_acq
+        from physion.gui.parts import inactivated as SS_intrinsic_acq
 
     # -- Intrinsic Imaging -- analysis
-    if False:
+    # visual & somatosensory
+    if not Acquisition:
+        # intrinsic
         from physion.intrinsic.analysis import gui as intrinsic
         from physion.intrinsic.analysis import open_intrinsic_folder,\
                 moved_pixels, load_intrinsic_data, compute_phase_maps,\
                 compute_retinotopic_maps, perform_area_segmentation,\
-                update_img1, update_img2, save_intrinsic, pdf_intrinsic
+                update_img1, update_img2, save_intrinsic, pdf_intrinsic,\
+                reset_ROI
+        # ocular dominance
+        from physion.intrinsic.ocular_dominance import analysis_gui\
+                as OD_analysis
+        from physion.intrinsic.ocular_dominance import calc_OD, save_OD
+        # somatosensory
+        from physion.intrinsic.SS_analysis import gui as SS_intrinsic
+        from physion.intrinsic.SS_analysis import load_SS_intrinsic_data,\
+                compute_SS_power_maps, save_SS_intrinsic
     else:
         from physion.gui.parts import inactivated as intrinsic
-
+        from physion.gui.parts import inactivated as OD_analysis 
+        from physion.gui.parts import inactivated as SS_intrinsic
 
     # -- FaceMotion tracking
     if not Acquisition:
@@ -110,7 +137,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # -- Suite2P Preprocesssing
     if not Acquisition:
         from physion.imaging.gui import suite2p_preprocessing_UI,\
-                load_TSeries_folder, run_TSeries_analysis 
+                load_TSeries_folder, run_TSeries_analysis, change_presets
     else:
         from physion.gui.parts import inactivated as suite2p_preprocessing_UI
 
@@ -119,8 +146,8 @@ class MainWindow(QtWidgets.QMainWindow):
     if not Acquisition:
         from physion.assembling.gui import build_NWB_UI, runBuildNWB,\
                 load_NWB_folder
-        from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
-            loadNWBfolder, loadCafolder, runAddOphys, check_ordered
+        # from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
+            # loadNWBfolder, loadCafolder, runAddOphys, check_ordered
         from physion.assembling.FOV_coordinates import gui as FOV_coords_UI,\
                 load_intrinsic_maps_FOV
     else:
@@ -148,13 +175,21 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as red_channel_labelling
 
 
-    # -- File Transfer
     if not Acquisition:
-        from physion.transfer.gui import transfer_gui,\
+        # -- File Transfer
+        from physion.utils.transfer.gui import transfer_gui,\
                 set_source_folder, set_destination_folder,\
                 run_transfer
-                
+        # -- Behavior to Movie Files conversion
+        from physion.behavior.convert_to_movie import behav_to_movie_gui,\
+                run_behav_to_movie
+        from physion.imaging.convert_to_movie import imaging_to_movie_gui,\
+                run_imaging_to_movie
+        # -- File Deletion
+        from physion.utils.management.delete import deletion_gui, run_deletion
     else:
+        from physion.gui.parts import inactivated as behav_to_movie_gui
+        from physion.gui.parts import inactivated as imaging_to_movie_gui
         from physion.gui.parts import inactivated as transfer_gui 
 
 
@@ -162,6 +197,8 @@ class MainWindow(QtWidgets.QMainWindow):
                  args=None,
                  width=750, height=600,
                  Ntabs=4,
+                 filename=None,
+                 folder=None,
                  button_height = 20):
 
         tic = time.time() # for optimisation tests
@@ -230,6 +267,17 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if ('acquisition' in sys.argv):
             self.multimodal()
+        elif ('intrinsic' in sys.argv):
+            self.intrinsic_acq()
+        elif ('OD' in sys.argv):
+            self.intrinsic_acq()
+        elif filename is not None:
+            from physion.analysis.read_NWB import Data
+            self.data = Data(filename)
+            self.visualization()
+        elif folder is not None:
+            self.calendar()
+            self.scan_folder(folder=folder)
         else:
             self.calendar()
         self.show()
@@ -260,26 +308,30 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
+            # ---- DEBUG interface ---- #
+            self.OD_analysis()
+            # self.lastBox.setChecked(False)
+            # self.datafolder = '/Users/yann/UNPROCESSED/CIBELE/2024_06_28/14-35-30'
+            self.load_intrinsic_data()
+            # self.SS_intrinsic()
             # self.facemotion()
-            self.pupil()
+            # self.pupil()
             # self.transfer_gui()
             # self.suite2p_preprocessing_UI()
             # self.build_NWB_UI()
             # self.add_imaging()
-            # self.intrinsic()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()
-            # DEBUG
-            # import physion
-            # self.datafile = '/home/yann.zerlaut/ASSEMBLE/2022_12_02-11-39-37.nwb'
-            # self.data = physion.analysis.read_NWB.Data(self.datafile)
-            # self.data.build_rawFluo()
-            # print(self.data.t_rawFluo.shape, self.data.rawFluo.shape)
+            # ---- DEBUG analysis ---- #
+            # self.datafile = '/Users/yann/UNPROCESSED/DEMO-PYR/2023_12_20-15-14-20.nwb'
+            # from physion.analysis import read_NWB
+            # self.data = read_NWB.Data(self.datafile)
+            # self.visualization()
             # self.trial_averaging()
-            # # # self.visualization()
             # self.FOV()
             # self.multimodal()
+            # self.intrinsic()
 
     def refresh(self):
         tab_id = self.tabWidget.currentIndex()
@@ -313,7 +365,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def toggle(self):
         tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='red_channel_labelling':
+        if self.windows[tab_id] =='FOV':
+            self.toggle_FOV()
+        elif self.windows[tab_id] =='red_channel_labelling':
             self.toggle_RCL()
         else:
             print('no shortcut')
@@ -404,13 +458,19 @@ class MainWindow(QtWidgets.QMainWindow):
     def quit(self):
         if hasattr(self, 'quit_event') and (self.quit_event is not None):
             self.quit_event.set()
-        if hasattr(self, 'FaceCamera_process') and (self.FaceCamera_process is not None):
-            self.closeFaceCamera_event.set()
         if self.acq is not None:
             self.acq.close()
-        if self.stim is not None:
-            self.stim.quit()
+        if hasattr(self, 'close_stim'):
+            self.close_stim()
         if self.bridge is not None:
             self.bridge.close()
+        if hasattr(self, 'cam') and self.cam is not None:
+            self.cam.dispose() # Thorlabs Camera SDK
+        if hasattr(self, 'sdk') and self.sdk is not None:
+            self.sdk.dispose() # Thorlabs Camera SDK
+        if hasattr(self, 'FaceCamera_process') and (self.FaceCamera_process is not None):
+            self.FaceCamera_process.terminate()
+        if hasattr(self, 'RigCamera_process') and (self.RigCamera_process is not None):
+            self.RigCamera_process.terminate()
         QtWidgets.QApplication.quit()
         

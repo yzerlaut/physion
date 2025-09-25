@@ -13,9 +13,9 @@ smallfont.setPointSize(11)
 
 def choose_root_folder(self):
 
-    if hasattr(self, 'folderBox'):
+    try:
         return (physion.utils.paths.FOLDERS[self.folderBox.currentText()] if self.folderBox.currentText() in physion.utils.paths.FOLDERS else os.path.join(os.path.expanduser('~'), 'DATA'))
-    else:
+    except BaseException as be:
         return os.path.join(os.path.expanduser('~'), 'DATA')
 
 
@@ -30,35 +30,24 @@ def open_NWB(self):
     return filename
 
 def open_folder(self):
-    # self.lastBox.setChecked(False)
 
     folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
                                     "Choose datafolder",
                                     self.choose_root_folder())
     return folder
-    # if float(sys.version[:3])<=3.7:
-        # folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
-                                        # "Choose datafolder",
-                                        # self.choose_root_folder())
-        # return folder
-    # else:
-        # self.statusBar.showMessage(' /!\ QFileDialog broken in python >3.7 /!\     ---> use the calendar interface to load data ! ')
-        # print(' /!\ QFileDialog broken in python >3.7 ')
+
+def open_NWB_folder(self):
+
+    folder = self.open_folder()
+    self.calendar()
+    self.scan_folder(folder=folder)
+
+
+    return folder
 
 def open_file(self,
               folder=False):
 
-    # if float(sys.version[:3])<=3.7:
-        # filename = self.open_NWB()
-        # if filename!='':
-            # self.filename = filename
-            # self.data = physion.analysis.read_NWB.Data(self.filename)
-            # self.visualization()
-        # else:
-            # print('file not loaded ...')
-    # else:
-        # self.statusBar.showMessage(' /!\ QFileDialog broken in python >3.7 /!\     ---> use the calendar interface to load data ! ')
-        # print(' /!\ QFileDialog broken in python >3.7 ')
     filename = self.open_NWB()
     if filename!='':
         self.filename = filename
@@ -119,14 +108,26 @@ def add_keyboard_shortcuts(self,
     ##############################
 
     # adding a few general keyboard shortcut
-    self.tab1Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+1'), self)
-    self.tab1Sc.activated.connect(self.switch_to_tab1)
-    self.tab2Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+2'), self)
-    self.tab2Sc.activated.connect(self.switch_to_tab2)
-    self.tab3Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+3'), self)
-    self.tab3Sc.activated.connect(self.switch_to_tab3)
-    self.tab4Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+4'), self)
-    self.tab4Sc.activated.connect(self.switch_to_tab4)
+    if os.name=='posix':
+        # os-x
+        self.tab1Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+1'), self)
+        self.tab1Sc.activated.connect(self.switch_to_tab1)
+        self.tab2Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+2'), self)
+        self.tab2Sc.activated.connect(self.switch_to_tab2)
+        self.tab3Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+3'), self)
+        self.tab3Sc.activated.connect(self.switch_to_tab3)
+        self.tab4Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Ctrl+4'), self)
+        self.tab4Sc.activated.connect(self.switch_to_tab4)
+    else:
+        # linux or windows
+        self.tab1Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+1'), self)
+        self.tab1Sc.activated.connect(self.switch_to_tab1)
+        self.tab2Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+2'), self)
+        self.tab2Sc.activated.connect(self.switch_to_tab2)
+        self.tab3Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+3'), self)
+        self.tab3Sc.activated.connect(self.switch_to_tab3)
+        self.tab4Sc = QtWidgets.QShortcut(QtGui.QKeySequence('Alt+4'), self)
+        self.tab4Sc.activated.connect(self.switch_to_tab4)
 
     # adding a few general keyboard shortcut
     self.press1Sc = QtWidgets.QShortcut(QtGui.QKeySequence('1'), self)
@@ -365,7 +366,7 @@ def select_ROI_from_pick(self, data):
         except BaseException as be:
             print(be)
             roiIndices = [0]
-            self.statusBar.showMessage(' /!\ Problem in setting indices /!\ ')
+            self.statusBar.showMessage(' [!!] Problem in setting indices [!!] ')
             
     return roiIndices
 
@@ -400,7 +401,7 @@ def select_ROI_from_pick(self, data):
     # elif string=='subjects':
         # cls.compute_subjects()
     # else:
-        # self.statusBar.showMessage('  /!\ keyword "%s" not recognized /!\ ' % string)
+        # self.statusBar.showMessage('  [!!] keyword "%s" not recognized [!!] ' % string)
 
             
     # Layout11 = QtWidgets.QVBoxLayout()

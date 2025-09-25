@@ -1,11 +1,17 @@
-import datetime, os, string, pathlib, json, tempfile
+import datetime, os, string, pathlib, json, tempfile, glob
 import numpy as np
 
+def get_date():
+    return datetime.datetime.now().strftime("%Y_%m_%d")
+
+def get_time():
+    return datetime.datetime.now().strftime("%H-%M-%S")
+
 def day_folder(root_folder):
-    return os.path.join(root_folder, datetime.datetime.now().strftime("%Y_%m_%d"))
+    return os.path.join(root_folder, get_date())
 
 def second_folder(day_folder):
-    return os.path.join(day_folder, datetime.datetime.now().strftime("%H-%M-%S"))
+    return os.path.join(day_folder, get_time())
 
 def create_day_folder(root_folder):
     df = day_folder(root_folder)
@@ -15,10 +21,43 @@ def create_day_folder(root_folder):
 def create_second_folder(day_folder):
     pathlib.Path(second_folder(day_folder)).mkdir(parents=True, exist_ok=True)
     
-def generate_filename_path(root_folder,
-                           filename = '', extension='txt',
+def generate_datafolders(root_folder, date, time,
                            with_screen_frames_folder=False,
                            with_FaceCamera_frames_folder=False,
+                           with_RigCamera_frames_folder=False,
+                           with_microseconds=False):
+
+    Day_folder = os.path.join(root_folder, date)
+    date_time_folder = os.path.join(root_folder, date, time)
+    
+    if not os.path.exists(Day_folder):
+        print('[ok] creating the folder "%s"' % Day_folder)
+        pathlib.Path(Day_folder).mkdir(parents=True, exist_ok=True)
+    
+    if not os.path.exists(date_time_folder):
+        print('[ok] creating the folder "%s"' % date_time_folder)
+        pathlib.Path(date_time_folder).mkdir(parents=True, exist_ok=True)
+
+    if with_screen_frames_folder:
+        pathlib.Path(os.path.join(date_time_folder,
+                    'screen-frames')).mkdir(parents=True, exist_ok=True)
+
+    if with_FaceCamera_frames_folder:
+        pathlib.Path(os.path.join(date_time_folder,
+                'FaceCamera-imgs')).mkdir(parents=True, exist_ok=True)
+    if with_RigCamera_frames_folder:
+        pathlib.Path(os.path.join(date_time_folder,
+                'RigCamera-imgs')).mkdir(parents=True, exist_ok=True)
+
+    return date_time_folder
+        
+
+def generate_filename_path(root_folder,
+                           filename = '', 
+                           extension='txt',
+                           with_screen_frames_folder=False,
+                           with_FaceCamera_frames_folder=False,
+                           with_RigCamera_frames_folder=False,
                            with_microseconds=False):
 
     Day_folder = day_folder(root_folder)
@@ -37,6 +76,8 @@ def generate_filename_path(root_folder,
 
     if with_FaceCamera_frames_folder:
         pathlib.Path(os.path.join(Second_folder, 'FaceCamera-imgs')).mkdir(parents=True, exist_ok=True)
+    if with_RigCamera_frames_folder:
+        pathlib.Path(os.path.join(Second_folder, 'RigCamera-imgs')).mkdir(parents=True, exist_ok=True)
         
     if not extension.startswith('.'):
         extension='.'+extension
@@ -46,9 +87,9 @@ def generate_filename_path(root_folder,
 
 def list_dayfolder(day_folder, with_NIdaq=True):
     if with_NIdaq:
-        folders = [os.path.join(day_folder, d) for d in sorted(os.listdir(day_folder)) if ((d[0] in string.digits) and (len(d)==8) and os.path.isdir(os.path.join(day_folder, d)) and os.path.isfile(os.path.join(day_folder, d, 'metadata.npy')) and os.path.isfile(os.path.join(day_folder, d, 'NIdaq.npy')) and os.path.isfile(os.path.join(day_folder, d, 'NIdaq.start.npy')))]
+        folders = [os.path.join(day_folder, d) for d in sorted(os.listdir(day_folder)) if ((d[0] in string.digits) and (len(d)==8) and os.path.isdir(os.path.join(day_folder, d)) and os.path.isfile(os.path.join(day_folder, d, 'metadata.json')) and os.path.isfile(os.path.join(day_folder, d, 'NIdaq.npy')) and os.path.isfile(os.path.join(day_folder, d, 'NIdaq.start.npy')))]
     else:
-        folders = [os.path.join(day_folder, d) for d in sorted(os.listdir(day_folder)) if ((d[0] in string.digits) and (len(d)==8) and os.path.isdir(os.path.join(day_folder, d)) and os.path.isfile(os.path.join(day_folder, d, 'metadata.npy')))]
+        folders = [os.path.join(day_folder, d) for d in sorted(os.listdir(day_folder)) if ((d[0] in string.digits) and (len(d)==8) and os.path.isdir(os.path.join(day_folder, d)) and os.path.isfile(os.path.join(day_folder, d, 'metadata.json')))]
     return folders
 
 
@@ -154,5 +195,12 @@ def computerTimestamp_to_daySeconds(t):
     Seconds = float(s.split(':')[2])
     
     return 60*60*Hour+60*Min+Seconds
-    
 
+def get_latest_file(folder):
+    list_of_files = glob.glob(os.path.join(folder, '*')) 
+    latest_file = max(list_of_files, key=os.path.getctime)
+    return latest_file
+
+if __name__=='__main__':
+    import sys
+    print(get_latest_file(sys.argv[-1]))

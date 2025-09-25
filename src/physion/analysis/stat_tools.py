@@ -33,12 +33,12 @@ class StatTest:
                     setattr(self, key, getattr(result, key))
             else:
                 print(' "%s" test not implemented ! ' % test)
-        except (ValueError, TypeError):
-            if verbose:
-                print(' -----------------   ')
-                print('x, y = ', x, y)
-                print('  statistical test failed   ')
-                print(' -----------------   ')
+        except BaseException as be:
+            print(' -----------------   ')
+            print(be)
+            print('x, y = ', x, y)
+            print('  statistical test failed   ')
+            print(' -----------------   ')
             self.r, self.sign = 0, 0
             self.pvalue, self.statistic = 1, 0
 
@@ -56,7 +56,7 @@ class StatTest:
         elif (self.pvalue is not None):
             return False
         else:
-            print(' /!\ no valid p-value for significance test !! /!\ ')
+            print(' [!!] no valid p-value for significance test !! [!!] ')
             return False
 
     def pval_annot(self, size=5):
@@ -79,9 +79,7 @@ class StatTest:
 if __name__=='__main__':
 
 
-    # filename = os.path.join(os.path.expanduser('~'), 'DATA', 'CaImaging', 'Wild_Type_GCamp6f', '2021_03_23-11-26-36.nwb')
-    
-    #filename = sys.argv[-1]
-    #FullData= Data(filename)
+    filename = sys.argv[-1]
+    FullData= Data(filename)
         
     StatTest(None, None)

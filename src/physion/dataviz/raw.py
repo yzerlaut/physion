@@ -22,7 +22,7 @@ def add_Photodiode(data, tlim, ax,
     dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 1e-5,
                                 ax_fraction_extent=fig_fraction,
                                 ax_fraction_start=fig_fraction_start,
-                                color=color, scale_unit_string='a.u.')
+                                color=color, scale_unit_string=' a.u.')
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
 
@@ -131,7 +131,7 @@ def add_FaceMotion(data, tlim, ax,
                                 ax_fraction_extent=fig_fraction,
                                 ax_fraction_start=fig_fraction_start,
                                 scale_side=scale_side,
-                                color=color, scale_unit_string='a.u.')
+                                color=color, scale_unit_string=' a.u.')
 
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
@@ -151,15 +151,15 @@ def add_VisualStim(data, tlim, ax,
     # cond = (data.nwbfile.stimulus['time_start_realigned'].data[:]>tlim[0]) &\
         # (data.nwbfile.stimulus['time_stop_realigned'].data[:]<tlim[1])
 
-    cond = (data.nwbfile.stimulus['time_start_realigned'].data[:]<tlim[1]) &\
-        (data.nwbfile.stimulus['time_stop_realigned'].data[:]>tlim[0])
+    cond = (data.nwbfile.stimulus['time_start_realigned'].data[:,0]<tlim[1]) &\
+        (data.nwbfile.stimulus['time_stop_realigned'].data[:,0]>tlim[0])
 
     ylevel = fig_fraction_start+fig_fraction/2.
 
     for i in np.arange(data.nwbfile.stimulus['time_start_realigned'].num_samples)[cond]:
 
-        tstart = data.nwbfile.stimulus['time_start_realigned'].data[i]
-        tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i]
+        tstart = max([tlim[0], data.nwbfile.stimulus['time_start_realigned'].data[i,0]])
+        tstop = min([tlim[1], data.nwbfile.stimulus['time_stop_realigned'].data[i,0]])
         # ax.plot([tstart, tstop], [ylevel, ylevel], color=color)
         ax.fill_between([tstart, tstop], [0,0], np.zeros(2)+ylevel,
                         lw=0, alpha=0.05, color=color)
@@ -188,7 +188,7 @@ def show_VisualStim(data, tlim,
 
     for i, ti in enumerate(np.linspace(*tlim, Npanels)):
         iEp = data.find_episode_from_time(ti)
-        tEp = data.nwbfile.stimulus['time_start_realigned'].data[iEp]
+        tEp = data.nwbfile.stimulus['time_start_realigned'].data[iEp,0]
         if iEp>=0:
             data.visual_stim.show_frame(iEp, ax=AX[i],
                                         time_from_episode_start=ti-tEp,
@@ -200,49 +200,67 @@ def show_VisualStim(data, tlim,
     return fig, AX
 
 
-def find_default_plot_settings(data, Nmax=7):
+def find_default_plot_settings(data, 
+                               with_subsampling=False,
+                               Nmax=7):
     settings = {}
 
     if data.metadata['VisualStim']:
-        settings['Photodiode'] = dict(fig_fraction=.5, subsampling=1, color='grey')
+        settings['Photodiode'] = dict(fig_fraction=.5, 
+                                      subsampling=100 if with_subsampling else 1, 
+                                      color='grey')
 
     if data.metadata['Locomotion']:
-        settings['Locomotion'] = dict(fig_fraction=1, subsampling=1, color='#1f77b4')
+        settings['Locomotion'] = dict(fig_fraction=1, 
+                                      subsampling=10 if with_subsampling else 1, 
+                                      color='#1f77b4')
 
     if 'FaceMotion' in data.nwbfile.processing:
-        settings['FaceMotion'] = dict(fig_fraction=1, subsampling=10, color='purple')
+        settings['FaceMotion'] = dict(fig_fraction=1, 
+                                      subsampling=10 if with_subsampling else 1, 
+                                      color='purple')
 
     if 'Pupil' in data.nwbfile.processing:
-        settings['GazeMovement'] = dict(fig_fraction=0.5, subsampling=1, color='#ff7f0e')
+        settings['GazeMovement'] = dict(fig_fraction=0.5, 
+                                        subsampling=10 if with_subsampling else 1, 
+                                        color='#ff7f0e')
 
     if 'Pupil' in data.nwbfile.processing:
-        settings['Pupil']= dict(fig_fraction=2, subsampling=1, color='#d62728')
+        settings['Pupil']= dict(fig_fraction=2, 
+                                subsampling=10 if with_subsampling else 1, 
+                                color='#d62728')
 
     if 'ophys' in data.nwbfile.processing:
-        settings['CaImaging'] = dict(fig_fraction=4, subsampling=1,
-                                     subquantity='dF/F', color='#2ca02c',
-                                     roiIndices=np.sort(np.random.choice(np.arange(np.sum(data.iscell)),
-                                         np.min([Nmax, data.iscell.sum()]), replace=False)))
+        if not hasattr(data, 'dFoF'):
+            data.build_dFoF()
+        settings['CaImaging'] = dict(fig_fraction=4, 
+                                     subsampling=10 if with_subsampling else 1, 
+                                     subquantity='dFoF', color='#2ca02c',
+                                     roiIndices=np.sort(np.random.choice(np.arange(data.nROIs),
+                                          np.min([Nmax, data.nROIs]), replace=False)))
 
     if 'ophys' in data.nwbfile.processing:
-        settings['CaImagingRaster'] = dict(fig_fraction=3, subsampling=1,
+        settings['CaImagingRaster'] = dict(fig_fraction=3, 
+                                           subsampling=10 if with_subsampling else 1, 
                                            roiIndices='all',
                                            normalization='per-line',
                                            subquantity='dF/F')
 
-    if data.metadata['VisualStim']:
-        settings['VisualStim'] = dict(fig_fraction=.5, color='black')
+    if data.metadata['VisualStim'] and not with_subsampling:
+        settings['VisualStim'] = dict(fig_fraction=.5, 
+                                      color='black')
 
     return settings
 
 def plot(data,
          tlim=[0,100],
          settings = {},
-         figsize=(3,5), Tbar=0., zoom_area=None,
+         figsize=(9,6), 
+         Tbar=0., zoom_area=None,
          ax=None):
 
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10,4))
+        fig, ax = plt.subplots(figsize=figsize)
     else:
         fig = None
 

@@ -1,5 +1,5 @@
 import numpy, nidaqmx, time
-from recording import get_analog_output_channels
+from physion.hardware.NIdaq.recording import get_analog_output_channels
 
 system = nidaqmx.system.System.local()
 device  = system.devices[0]

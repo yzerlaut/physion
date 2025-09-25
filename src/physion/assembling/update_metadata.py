@@ -1,5 +1,7 @@
 """
 Script to add/modify the metadata in case of mistakes
+
+[10/2024 --> deprecated]
 """
 import os, tempfile, json, pathlib, shutil
 import numpy as np
@@ -28,7 +30,7 @@ def update_metadata(args):
                 metadata[key] = config[key]
         except BaseException as be:
             print(be)
-            print(' /!\ update of "Config" metadata failed /!\ ')
+            print(' [!!] update of "Config" metadata failed [!!] ')
 
     # updates of protocol
     if args.protocol!='':
@@ -40,7 +42,7 @@ def update_metadata(args):
                 metadata[key] = protocol[key]
         except BaseException as be:
             print(be)
-            print(' /!\ update of "Protocol" metadata failed /!\ ')
+            print(' [!!] update of "Protocol" metadata failed [!!] ')
             
     # updates of subject
     if args.subject!='':
@@ -52,7 +54,7 @@ def update_metadata(args):
             metadata['subject_props'] = subjects[args.subject]
         except BaseException as be:
             print(be)
-            print(' /!\ update of "Subject" metadata failed /!\ ')
+            print(' [!!] update of "Subject" metadata failed [!!] ')
     
     # save new
     if 'notes' not in metadata:

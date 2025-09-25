@@ -192,7 +192,7 @@ class sROI():
         
         xrange = np.arange(parent.Lx).astype(np.int32)
         yrange = np.arange(parent.Ly).astype(np.int32)
-        ellipse = np.zeros((xrange.size, yrange.size), np.bool)
+        ellipse = np.zeros((xrange.size, yrange.size), bool)
         self.x, self.y = np.meshgrid(np.arange(0,parent.Lx),
                                     np.arange(0,parent.Ly),
                                     indexing='ij')

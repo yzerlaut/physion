@@ -1,0 +1,12 @@
+{
+  "Presentation": "multiprotocol",
+  "shuffling" :"full",
+  "shuffling-seed" :23,
+  "Protocol-1": "subprotocols/stim-demo/inside.json",
+  "Protocol-2": "subprotocols/stim-demo/outside.json",
+  "presentation-blank-screen-color": 0.5,
+  "presentation-prestim-period": 6,
+  "presentation-poststim-period": 6,
+  "presentation-interstim-period": 4,
+  "Screen": "Dell-2020"
+}

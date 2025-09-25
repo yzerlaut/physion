@@ -1,22 +1,22 @@
 import sys, pathlib
 import numpy as np
 
-from physion.visual_stim.main import vis_stim_image_built, init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 
 ####################################################
 ##  ----    SCATTERED MOVING DOTS          --- #####
 ####################################################
 
-params = {"movie_refresh_freq":5,
-          "presentation-duration":3,
-          # default param values:
-          "speed (deg/s)":60.,
-          "size (deg)":4.,
-          "spacing (deg)":10.,
-          "direction (deg)":270.,
-          "ndots (#)":7,
-          "dotcolor (lum.)":-1,
-          "bg-color (lum.)":0.5}
+params = {\
+    "presentation-duration":3,
+    "speed":60.,
+    "size":4.,
+    "spacing":10.,
+    "direction":270.,
+    "ndots":7,
+    "dotcolor":-1,
+    "bg-color":0.5,
+}
     
 
 def get_starting_point_and_direction_mv_dots(line,
@@ -61,7 +61,7 @@ def get_starting_point_and_direction_mv_dots(line,
 
 
 
-class stim(vis_stim_image_built):
+class stim(visual_stim):
     """
     stimulus specific visual stimulation object
 
@@ -70,12 +70,8 @@ class stim(vis_stim_image_built):
     """
     def __init__(self, protocol):
 
-        super().__init__(protocol,
-                         keys=['speed', 'bg-color', 'ndots', 'spacing',
-                               'direction', 'size', 'dotcolor', 'seed'])
+        super().__init__(protocol, params)
 
-        ## /!\ here always use self.refresh_freq not the parent cls.refresh_freq ##
-        # when the parent multiprotocol will have ~10Hz refresh rate, this can  remain 2-3Hz
         self.refresh_freq = protocol['movie_refresh_freq']
 
         # we initialize the trajectories
@@ -105,23 +101,22 @@ class stim(vis_stim_image_built):
         """ 
         return the frame at a given time point
         """
-        cls = (parent if parent is not None else self)
+        img = init_bg_image(self, index)
 
-        img = init_bg_image(cls, index)
-
-        Index = str(cls.experiment['index'][index])
+        Index = str(self.experiment['index'][index])
         for x0, y0 in zip(self.X0[Index], self.Y0[Index]):
 
             new_position = (x0+self.dx_per_time[Index]*time_from_episode_start,
                             y0+self.dy_per_time[Index]*time_from_episode_start)
 
             self.add_dot(img, new_position,
-                         cls.experiment['size'][index],
-                         cls.experiment['dotcolor'][index])
+                         self.experiment['size'][index],
+                         self.experiment['dotcolor'][index])
 
         return img
 
 
+"""
     def plot_stim_picture(self, episode, ax,
                           parent=None, 
                           label=None,
@@ -130,25 +125,39 @@ class stim(vis_stim_image_built):
                                  'width_factor':0.05,
                                  'color':'red'}):
 
-        """
-        """
-        cls = (parent if parent is not None else self)
-
-        tcenter = .45*(cls.experiment['time_stop'][episode]-\
-                      cls.experiment['time_start'][episode])
+        tcenter = .45*(self.experiment['time_stop'][episode]-\
+                      self.experiment['time_start'][episode])
         
-        ax = self.show_frame(episode, tcenter, ax=ax,
-                             parent=parent)
+        ax = self.show_frame(episode, tcenter, ax=ax)
 
-        direction = cls.experiment['direction'][episode]
+        direction = self.experiment['direction'][episode]
         arrow['direction'] = ((direction+180)%180)+180
 
-        arrow['direction'] = cls.experiment['direction'][episode]+180
+        arrow['direction'] = self.experiment['direction'][episode]+180
         print(arrow['direction'])
 
         for shift in [-.5, 0, .5]:
 
-            arrow['center'] = [shift*np.sin(np.pi/180.*direction)*cls.x.max()/3.,
-                               shift*np.cos(np.pi/180.*direction)*cls.x.max()/3.]
+            arrow['center'] = [shift*np.sin(np.pi/180.*direction)*self.x.max()/3.,
+                               shift*np.cos(np.pi/180.*direction)*self.x.max()/3.]
 
             self.add_arrow(arrow, ax)
+"""
+
+if __name__=='__main__':
+
+    from physion.visual_stim.build import get_default_params
+
+    params = get_default_params('scattered-moving-dots')
+
+    import time
+    import cv2 as cv
+
+    Stim = stim(params)
+
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break

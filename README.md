@@ -1,10 +1,13 @@
-<!--<div><img src="https://github.com/yzerlaut/physion/raw/master/docs/physion.png" alt="physion logo" width="35%" align="right" style="margin-left: 10px"></div>-->
+<!--             ** Build Instructions **              -->
+<!--  python -m build                                  -->
+<!--  python -m twine upload --repository pypi dist/*  -->
+<!--                                                   -->
 
-<div><img src="./docs/physion.png" alt="physion logo" width="35%" align="right" style="margin-left: 10px"></div>
+<div><img src="./docs/icons/physion.png" alt="physion logo" width="35%" align="right" style="margin-left: 10px"></div>
 
 # Vision Physiology Software
 
-> *An integrated software for cellular and network physiology of visual circuits in behaving mice*
+> *An integrated software for the cellular and circuit physiology of visual processing during behavior*
 
 --------------------
 
@@ -20,17 +23,24 @@ The different modules are detailed in the [documentation below](README.md#module
 
 ## Install
 
-Simply:
+Create a `"physion"` environment running `python 3.11`, with:
+
+```
+conda create -n "physion" python=3.11
+```
+
+Then either install:
+- the [Pypi build](https://pypi.org/project/physion/) with:
 ```
 pip install physion
 ```
-
-N.B. the `PyQt` package can be broken after those steps, re-start from a fresh install with `pip uninstall PyQt5` and `pip install PyQt5`.
-
--> For an installation on an acquisition setup
+- from source with:
 ```
-conda env create -n acquisition -f acquisition_environment.yml
+git clone https://github.com/yzerlaut/physion --recurse-submodules
 ```
+
+- For an installation on an acquisition setup, see the detailed steps in [./docs/install/acquisition.md](./docs/install/acquisition.md)
+- For some installation issues, see [./docs/install/troubleshooting.md](./docs/install/troubleshooting.md)
 
 ## Usage
 
@@ -59,7 +69,8 @@ The different modules of the software are documented in the following links:
 - [Hardware control](src/physion/hardware/README.md)
 - [Visualization](src/physion/dataviz/README.md)
 - [Analysis](src/physion/analysis/README.md)
-- [Sharing](src/physion/sharing/README.md)
+- [Data Management](src/physion/utils/management/README.md)
+- [Data Sharing](src/physion/utils/sharing/README.md)
 
 ## Troubleshooting / Issues
 

@@ -1,4 +1,4 @@
-import sys, os, shutil, glob, time, subprocess, pathlib, json, tempfile, datetime
+import sys, os, glob, time, subprocess, pathlib, json, tempfile, datetime
 import numpy as np
 import pynwb, PIL, pandas
 from PyQt5 import QtGui, QtCore, QtWidgets
@@ -9,6 +9,7 @@ from physion.utils.files import last_datafolder_in_dayfolder, day_folder
 from physion.intrinsic.tools import default_segmentation_params
 from physion.intrinsic import tools as intrinsic_analysis
 from physion.intrinsic import RetinotopicMapping
+from physion.pupil.roi import extract_ellipse_props, ellipse_props_to_ROI
 
 phase_color_map = pg.ColorMap(pos=np.linspace(0.0, 1.0, 3),
                               color=[(255, 0, 0),
@@ -37,7 +38,6 @@ def gui(self,
     
     self.datafolder, self.IMAGES = '', {} 
     self.subject, self.timestamps, self.data = '', '', None
-
 
     ##########################################################
     ####### GUI settings
@@ -74,10 +74,10 @@ def gui(self,
                     spec='small-right')
 
     self.add_side_widget(\
-            tab.layout,QtWidgets.QLabel('  - spatial-subsampling (pix):'),
+            tab.layout,QtWidgets.QLabel('  - spatial-smoothing (pix):'),
             spec='large-left')
     self.ssBox = QtWidgets.QLineEdit()
-    self.ssBox.setText('0')
+    self.ssBox.setText('2')
     self.add_side_widget(tab.layout,self.ssBox, spec='small-right')
 
     self.loadButton = QtWidgets.QPushButton(" === load data === ", self)
@@ -85,7 +85,14 @@ def gui(self,
     self.add_side_widget(tab.layout,self.loadButton)
 
     # -------------------------------------------------------
-    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+    # self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+
+    self.roiBox = QtWidgets.QCheckBox("ROI")
+    self.roiBox.setStyleSheet("color: gray;")
+    self.add_side_widget(tab.layout,self.roiBox, spec='small-middle')
+    self.roiButton = QtWidgets.QPushButton("reset", self)
+    self.roiButton.clicked.connect(self.reset_ROI)
+    self.add_side_widget(tab.layout,self.roiButton, 'small-right')
 
     self.pmButton = QtWidgets.QPushButton(\
             " == compute phase/power maps == ", self)
@@ -207,13 +214,16 @@ def gui(self,
                          self.nWidgetRow, 
                          self.nWidgetCol-self.side_wdgt_length)
 
-    self.raw_trace = self.graphics_layout.addPlot(row=0, col=0, rowspan=1, colspan=23)
+    self.raw_trace = self.graphics_layout.addPlot(row=0, col=0, 
+                                                  rowspan=1, colspan=23)
     
-    self.spectrum_power = self.graphics_layout.addPlot(row=1, col=0, rowspan=2, colspan=9)
+    self.spectrum_power = self.graphics_layout.addPlot(row=1, col=0, 
+                                                       rowspan=2, colspan=9)
     self.spDot = pg.ScatterPlotItem()
     self.spectrum_power.addItem(self.spDot)
     
-    self.spectrum_phase = self.graphics_layout.addPlot(row=1, col=9, rowspan=2, colspan=9)
+    self.spectrum_phase = self.graphics_layout.addPlot(row=1, col=9, 
+                                                       rowspan=2, colspan=9)
     self.sphDot = pg.ScatterPlotItem()
     self.spectrum_phase.addItem(self.sphDot)
 
@@ -239,28 +249,61 @@ def gui(self,
     self.graphics_layout.ci.layout.setRowStretchFactor(3, 5)
         
     # -------------------------------------------------------
-    self.pixROI = pg.ROI((0, 0), size=(10,10),
+    self.pixROI = pg.ROI((0, 0), size=(20,20),
                          pen=pg.mkPen((255,0,0,255)),
                          rotatable=False,resizable=False)
     self.pixROI.sigRegionChangeFinished.connect(self.moved_pixels)
     self.img1B.addItem(self.pixROI)
+
+    self.ROI = pg.EllipseROI([0, 0], [100, 100],
+                        movable = True,
+                        rotatable=False,
+                        resizable=True,
+                        pen= pg.mkPen((0, 0, 255), width=3,
+                                  style=QtCore.Qt.SolidLine),
+                        removable=True)
+    self.img1B.addItem(self.ROI)
 
     self.refresh_tab(tab)
 
     self.data = None
 
     self.show()
-    
+
+def reset_ROI(self):
+
+    if hasattr(self, 'ROI'):
+        self.ROI.sigRemoveRequested.connect(lambda: self.remove(self))
+        self.img1B.removeItem(self.ROI)
+
+    if 'raw-img-start' in self.IMAGES:
+        Ly, Lx = self.IMAGES['raw-img-start'].shape
+        self.ROI = pg.EllipseROI([0.05*Lx, 0.05*Ly], [0.9*Lx, 0.9*Ly],
+                            movable = True,
+                            rotatable=False,
+                            resizable=True,
+                            pen= pg.mkPen((0, 0, 255), width=3,
+                                      style=QtCore.Qt.SolidLine),
+                            removable=True)
+        self.img1B.addItem(self.ROI)
+
+
 def open_intrinsic_folder(self):
 
     self.datafolder = self.open_folder()
 
-    if os.path.isfile(os.path.join(self.datafolder, 'metadata.npy')):
+    if os.path.isfile(os.path.join(self.datafolder, 'metadata.json')) or\
+        os.path.isfile(os.path.join(self.datafolder, 'metadata.npy')):
 
         self.IMAGES = {}
 
-        metadata = np.load(os.path.join(self.datafolder, 'metadata.npy'),
-                           allow_pickle=True).item()
+        if os.path.isfile(os.path.join(self.datafolder, 'metadata.json')):
+            with open(os.path.join(self.datafolder, 'metadata.json'),
+                      'r', encoding='utf-8') as f:
+                metadata = json.load(f)
+        else:
+            metadata = np.load(os.path.join(self.datafolder, 'metadata.npy'),
+                                    allow_pickle=True).item()
 
         # set subject and timestamip
         self.subject = metadata['subject']
@@ -310,7 +353,7 @@ def moved_pixels(self):
 
 def update_img(self, img, imgButton):
 
-    if imgButton.currentText() in self.IMAGES:
+    if imgButton.currentText() in [k for k in self.IMAGES if k not in ['datafolder', 'subject']]:
 
         img.setImage(self.IMAGES[imgButton.currentText()].T)
 
@@ -379,8 +422,10 @@ def load_intrinsic_data(self):
                 self.IMAGES['vasculature'] = np.load(vasc_img)
 
         self.IMAGES['raw-img-start'] = self.data[0,:,:]
-        self.IMAGES['raw-img-mid'] = self.data[int(self.data.shape[0]/2),:,:]
-        self.IMAGES['raw-img-stop'] = self.data[-1,:,:]
+        self.IMAGES['raw-img-mid'] = self.data[int(self.data.shape[0]/2.)-1,:,:]
+        self.IMAGES['raw-img-stop'] = self.data[-2,:,:]
+
+        self.IMAGES['datafolder'] = datafolder
        
         update_imgButtons(self)
 
@@ -406,12 +451,8 @@ def show_raw_data(self):
     self.raw_trace.plot(self.t, new_data)
 
     spectrum = np.fft.fft((new_data-new_data.mean())/new_data.mean())
-    power, phase = np.abs(spectrum), (2*np.pi+np.angle(spectrum))%(2.*np.pi)-np.pi
 
-    # if self.twoPiBox.isChecked():
-        # power, phase = np.abs(spectrum), -np.angle(spectrum)%(2.*np.pi)
-    # else:
-        # power, phase = np.abs(spectrum), np.angle(spectrum)
+    power, phase = np.abs(spectrum), np.angle(spectrum)
 
     x = np.arange(len(power))
     self.spectrum_power.plot(np.log10(x[1:]), np.log10(power[1:]))
@@ -428,12 +469,18 @@ def show_raw_data(self):
 def compute_phase_maps(self):
 
     print('- computing phase maps [...]')
+    if self.roiBox.isChecked():
+        self.IMAGES['ROI'] = extract_ellipse_props(self.ROI)
+    else:
+        # a very large one
+        self.IMAGES['ROI'] = [-1000,-1000,20000,20000,0]
 
     intrinsic_analysis.compute_phase_power_maps(get_datafolder(self), 
                                                 self.protocolBox.currentText(),
                                                 p=self.params, t=self.t, data=self.data,
                                                 run_id=self.numBox.currentText(),
-                                                maps=self.IMAGES)
+                                                maps=self.IMAGES,
+                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
 
 
     intrinsic_analysis.plot_phase_power_maps(self.IMAGES,
@@ -452,6 +499,7 @@ def compute_retinotopic_maps(self):
         intrinsic_analysis.compute_retinotopic_maps(get_datafolder(self), 'altitude',
                                                     maps=self.IMAGES,
                                                     keep_maps=True)
+                    # phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
         try:
             alt_shift = float(self.phaseMapShiftBox.text().split(',')[1].replace(')',''))
             self.IMAGES['altitude-retinotopy'] += alt_shift
@@ -462,13 +510,14 @@ def compute_retinotopic_maps(self):
                                                         'altitude')
     else:
         fig1 = None
-        print(' /!\ need both "up" and "down" maps to compute the altitude map !! /!\   ')
+        print(' [!!] need both "up" and "down" maps to compute the altitude map !! [!!]   ')
         
     if ('right-phase' in self.IMAGES) and ('left-phase' in self.IMAGES):
         print('- computing azimuth map [...]')
         intrinsic_analysis.compute_retinotopic_maps(get_datafolder(self), 'azimuth',
                                                     maps=self.IMAGES,
                                                     keep_maps=True)
+                    # phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
         try:
             azi_shift = float(self.phaseMapShiftBox.text().split(',')[0].replace('(',''))
             self.IMAGES['azimuth-retinotopy'] += azi_shift
@@ -479,7 +528,7 @@ def compute_retinotopic_maps(self):
                                                         'azimuth')
     else:
         fig2 = None
-        print(' /!\ need both "right" and "left" maps to compute the altitude map !! /!\   ')
+        print(' [!!] need both "right" and "left" maps to compute the altitude map !! [!!]   ')
 
     if (fig1 is not None) or (fig2 is not None):
         intrinsic_analysis.plt.show()
@@ -490,11 +539,6 @@ def compute_retinotopic_maps(self):
 
     self.IMAGES['subject'] = self.subject
     self.IMAGES['dateRecorded'] = self.timestamps
-
-    intrinsic_analysis.save_maps(self.IMAGES,
-            os.path.join(self.datafolder, 'raw-maps.npy'))
-    print('         current maps saved as: ', \
-            os.path.join(self.datafolder, 'raw-maps.npy'))
 
 
 def add_gui_shift_to_images(self):
@@ -531,25 +575,34 @@ def perform_area_segmentation(self):
         self.data['params'][key] = float(getattr(self, key+'Box').text())
 
     trial = RetinotopicMapping.RetinotopicMappingTrial(**self.data)
-    trial.processTrial(isPlot=True)
+    _ = trial._getSignMap(onlySMplot=True)
+    _ = trial._getRawPatchMap()
+    _ = trial._getRawPatches()
+    _ = trial._getDeterminantMap()
+    _ = trial._getEccentricityMap()
+    _ = trial._splitPatches()
+    _ = trial._mergePatches(onlyPplot=True)
+    intrinsic_analysis.plt.show()
     print(' -> area segmentation done ! ')
     
-    np.save(os.path.join(self.datafolder, 'RetinotopicMappingData.npy'),
-            self.data)
-    print('         current maps saved as: ', \
-            os.path.join(self.datafolder, 'RetinotopicMappingData.npy'))
 
 def save_intrinsic(self):
 
+    # add ROI props
+    self.IMAGES['ROI_coords'] = extract_ellipse_props(self.ROI)
+
+    intrinsic_analysis.save_maps(self.IMAGES,
+            os.path.join(self.datafolder, 'raw-maps.npy'))
+    print('         current maps saved as: ', \
+            os.path.join(self.datafolder, 'raw-maps.npy'))
+
     if self.data is not None:
 
-        np.save(os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject),
+        np.save(os.path.join(self.datafolder, 'RetinotopicMappingData.npy'),
                 self.data)
-        print('\n         current maps saved as: ', \
-           os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject))
+        print('         current Retinotopic-Mapping saved as: ', \
+                os.path.join(self.datafolder, 'RetinotopicMappingData.npy'))
 
-    else:
-        print(' need to perform Area Segmentation first ')
 
 
 def get_datafolder(self):
@@ -570,7 +623,7 @@ def get_datafolder(self):
 def pdf_intrinsic(self):
 
     cmd = '%s -m physion.intrinsic.pdf %s' % (python_path, self.datafolder)
-    cmd += ' --output %s' % os.path.join(FOLDERS[self.folderBox.currentText()], self.subject+'.pdf')
+    #cmd += ' --output %s' % os.path.join(FOLDERS[self.folderBox.currentText()], self.subject+'.pdf')
     cmd += ' --image_height %.1f ' % self.scaleButton.value()
     cmd += ' --angle_from_rig %.1f ' % self.angleButton.value()
 

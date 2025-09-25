@@ -3,27 +3,34 @@ import numpy as np
 import pandas, pynwb, PIL
 from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
+from dateutil.tz import tzlocal
 
-try:
-    from pycromanager import Core
-except ModuleNotFoundError:
-    print('camera support not available !')
+#################################################
+###        Select the Camera Interface    #######
+#################################################
+from physion.intrinsic.load_camera import *
 
+#################################################
+###        Now set up the Acquisition     #######
+#################################################
 from physion.utils.paths import FOLDERS
-from physion.visual_stim.screens import SCREENS
-from physion.acquisition.settings import get_config_list, get_subject_props
-from physion.visual_stim.main import visual_stim, visual
+from physion.acquisition.settings import get_config_list, update_config
+from physion.visual_stim.main import visual_stim
+from physion.visual_stim.show import init_stimWindow
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path
 
-camera_depth = 12 
 
 def gui(self,
         box_width=250,
         tab_id=0):
 
     self.windows[tab_id] = 'ISI_acquisition'
+    self.movie_folder = os.path.join(os.path.expanduser('~'),
+                                     'work', 'physion', 'src',
+         	                         'physion', 'acquisition', 'protocols',
+                                     'movies', 'intrinsic')
 
     tab = self.tabs[tab_id]
 
@@ -36,20 +43,27 @@ def gui(self,
     
     self.t0, self.period, self.TIMES = 0, 1, []
     
-    ### trying the camera
+    # initialize all to demo mode
+    self.cam, self.sdk, self.core = None, None, None
+    self.exposure = -1 # flag for no camera
+    self.demo = True
+
+    ### now trying the camera
     try:
-        # we initialize the camera
-        self.core = Core()
-        self.exposure = self.core.get_exposure()
-        self.demo = False
+        if CameraInterface=='ThorCam':
+            init_thorlab_cam(self)
+        if CameraInterface=='MicroManager':
+            # we initialize the camera
+            self.core = Core()
+            self.exposure = self.core.get_exposure()
+            print('\n [ok] Camera successfully initialized though pycromanager ! \n')
+            self.demo = False
     except BaseException as be:
         print(be)
         print('')
-        print(' /!\ Problem with the Camera /!\ ')
+        print(' [!!] Problem with the Camera [!!] ')
         print('        --> no camera found ')
         print('')
-        self.exposure = -1 # flag for no camera
-        self.demo = True
 
     ##########################################################
     ####### GUI settings
@@ -70,26 +84,26 @@ def gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel('config:'),
                          spec='small-left')
     self.configBox = QtWidgets.QComboBox(self)
-    self.protocolBox = QtWidgets.QComboBox(self) # needed even if not shown
-    self.fovPick = QtWidgets.QComboBox(self) # need even f not shown
     self.configBox.activated.connect(self.update_config)
     self.add_side_widget(tab.layout, self.configBox, spec='large-right')
     # subject box
     self.add_side_widget(tab.layout, QtWidgets.QLabel('subject:'),
                          spec='small-left')
-    self.subjectBox = QtWidgets.QComboBox(self)
-    self.subjectBox.activated.connect(self.update_subject)
+    self.subjectBox = QtWidgets.QLineEdit(self)
+    self.subjectBox.setText('demo-Mouse')
     self.add_side_widget(tab.layout, self.subjectBox, spec='large-right')
-    # screen box
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('screen:'),
-                         spec='small-left')
-    self.screenBox = QtWidgets.QComboBox(self)
-    self.screenBox.addItems(['']+list(SCREENS.keys()))
-    self.add_side_widget(tab.layout, self.screenBox, spec='large-right')
     
     get_config_list(self)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
+
+    #self.add_side_widget(tab.layout,\
+    #    QtWidgets.QLabel('  - exposure: %.0f ms (from Micro-Manager)' % self.exposure))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - exposure (ms) :'),
+                    spec='large-left')
+    self.exposureBox = QtWidgets.QLineEdit()
+    self.exposureBox.setText('50')
+    self.add_side_widget(tab.layout, self.exposureBox, spec='small-right')
 
     self.vascButton = QtWidgets.QPushButton(" - = save Vasculature Picture = - ", self)
     self.vascButton.clicked.connect(self.take_vasculature_picture)
@@ -106,8 +120,6 @@ def gui(self,
     self.ISIprotocolBox.addItems(['ALL', 'up', 'down', 'left', 'right'])
     self.add_side_widget(tab.layout, self.ISIprotocolBox,
                          spec='small-right')
-    self.add_side_widget(tab.layout,\
-        QtWidgets.QLabel('  - exposure: %.0f ms (from Micro-Manager)' % self.exposure))
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - Nrepeat :'),
                     spec='large-left')
@@ -117,16 +129,10 @@ def gui(self,
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - stim. period (s):'),
                     spec='large-left')
-    self.periodBox = QtWidgets.QLineEdit()
-    self.periodBox.setText('12')
+    self.periodBox = QtWidgets.QComboBox()
+    self.periodBox.addItems(['12', '6'])
     self.add_side_widget(tab.layout, self.periodBox, spec='small-right')
     
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - bar size (degree):'),
-                    spec='large-left')
-    self.barBox = QtWidgets.QLineEdit()
-    self.barBox.setText('10')
-    self.add_side_widget(tab.layout, self.barBox, spec='small-right')
-
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - spatial sub-sampling (px):'),
                     spec='large-left')
     self.spatialBox = QtWidgets.QLineEdit()
@@ -157,12 +163,15 @@ def gui(self,
     self.add_side_widget(tab.layout, self.liveButton)
     
     # ---  launching acquisition ---
-    self.acqButton = QtWidgets.QPushButton("-- RUN PROTOCOL -- ", self)
-    self.acqButton.clicked.connect(self.launch_intrinsic)
-    self.add_side_widget(tab.layout, self.acqButton, spec='large-left')
+    self.runButton = QtWidgets.QPushButton("-- RUN PROTOCOL -- ", self)
+    self.runButton.clicked.connect(self.launch_intrinsic)
+    self.add_side_widget(tab.layout, self.runButton, spec='large-left')
+    self.runButton.setEnabled(False)
     self.stopButton = QtWidgets.QPushButton(" STOP ", self)
     self.stopButton.clicked.connect(self.stop_intrinsic)
     self.add_side_widget(tab.layout, self.stopButton, spec='small-right')
+    self.runButton.setEnabled(False)
+    self.stopButton.setEnabled(False)
 
     # ========================================================
     #------------------- THEN MAIN PANEL   -------------------
@@ -198,97 +207,87 @@ def gui(self,
 
 def take_fluorescence_picture(self):
 
-    if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
+    if (self.folderBox.currentText()!=''):
 
         filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                            filename='fluorescence-%s' % self.subjectBox.currentText(),
+                            filename='fluorescence-%s' % self.subjectBox.text(),
                             extension='.tif')
         
-        # save HQ image as tiff
+        if self.cam is not None:
+            self.cam.exposure_time_us = int(1e3*int(self.exposureBox.text()))
+            self.cam.arm(2)
+            self.cam.issue_software_trigger()
+
         img = get_frame(self, force_HQ=True)
-        np.save(filename.replace('.tif', '.npy'), img)
-        img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
         im = PIL.Image.fromarray(img)
         im.save(filename)
-        print('fluorescence image, saved as: %s ' % filename)
+        # np.save(filename.replace('.tif', '.npy'), img)
+        print(' [ok] fluorescence image, saved as: %s ' % filename)
 
         # then keep a version to store with imaging:
-        self.fluorescence_img = get_frame(self)
+        self.fluorescence_img = img
         self.imgPlot.setImage(self.fluorescence_img.T) # show on display
+
+        if self.cam is not None:
+            self.cam.disarm()
 
     else:
 
-        self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
+        self.statusBar.showMessage(\
+                '  [!!] Need to pick a folder and a subject first ! [!!] ')
 
 
 def take_vasculature_picture(self):
 
-    if (self.folderBox.currentText()!='') and (self.subjectBox.currentText()!=''):
+    if (self.folderBox.currentText()!=''):
 
         filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                            filename='vasculature-%s' % self.subjectBox.currentText(),
+                            filename='vasculature-%s' % self.subjectBox.text(),
                             extension='.tif')
         
-        # save HQ image as tiff
+        if self.cam is not None:
+            self.cam.exposure_time_us = int(1e3*int(self.exposureBox.text()))
+            self.cam.arm(2)
+            self.cam.issue_software_trigger()
+
         img = get_frame(self, force_HQ=True)
-        np.save(filename.replace('.tif', '.npy'), img)
-        img = np.array(255*(img-img.min())/(img.max()-img.min()), dtype=np.uint8)
         im = PIL.Image.fromarray(img)
         im.save(filename)
-        print('vasculature image, saved as: %s' % filename)
+        # np.save(filename.replace('.tif', '.npy'), img)
+        print(' [ok] vasculature image, saved as: %s' % filename)
 
         # then keep a version to store with imaging:
-        self.vasculature_img = get_frame(self)
+        self.vasculature_img = img
         self.imgPlot.setImage(self.vasculature_img.T) # show on displayn
 
+        if self.cam is not None:
+            self.cam.disarm()
+
     else:
-        self.statusBar.showMessage('  /!\ Need to pick a folder and a subject first ! /!\ ')
+        self.statusBar.showMessage('  [!!] Need to pick a folder and a subject first ! [!!] ')
 
     
-
-def get_patterns(self, protocol, angle, size,
-                 Npatch=30):
-
-    patterns = []
-
-    if protocol in ['left', 'right']:
-        z = np.linspace(-self.stim.screen['resolution'][1], self.stim.screen['resolution'][1], Npatch)
-        for i in np.arange(len(z)-1)[(1 if self.flip else 0)::2]:
-            patterns.append(visual.Rect(win=self.stim.win,
-                                        size=(self.stim.angle_to_pix(size),
-                                              z[1]-z[0]),
-                                        pos=(self.stim.angle_to_pix(angle), z[i]),
-                                        units='pix', fillColor=1))
-
-    if protocol in ['up', 'down']:
-        x = np.linspace(-self.stim.screen['resolution'][0], self.stim.screen['resolution'][0], Npatch)
-        for i in np.arange(len(x)-1)[(1 if self.flip else 0)::2]:
-            patterns.append(visual.Rect(win=self.stim.win,
-                                        size=(x[1]-x[0],
-                                              self.stim.angle_to_pix(size)),
-                                        pos=(x[i], self.stim.angle_to_pix(angle)),
-                                        units='pix', fillColor=1))
-
-    return patterns
-
-
 def run(self):
 
-    self.flip = False
-    
-    self.stim = visual_stim({"Screen": "Dell-2020",
-                             "presentation-prestim-screen": -1,
-                             "presentation-poststim-screen": -1}, 
-                             demo=self.demoBox.isChecked())
-
+    update_config(self)
     self.Nrepeat = int(self.repeatBox.text()) #
-    self.period = float(self.periodBox.text()) # degree / second
-    self.bar_size = float(self.barBox.text()) # degree / second
-    self.dt = 1./float(self.freqBox.text())
-    self.flip_index=0
+    self.period = int(self.periodBox.currentText()) # in s
+    self.dt = 1./float(self.freqBox.text()) # in s
 
-    xmin, xmax = 1.15*np.min(self.stim.x), 1.15*np.max(self.stim.x)
-    zmin, zmax = 1.2*np.min(self.stim.z), 1.2*np.max(self.stim.z)
+    # dummy stimulus
+    self.stim = visual_stim({"Screen": self.config['Screen'],
+                             "Presentation": "Single-Stimulus",
+                             "movie_refresh_freq": 30.0,
+                             "demo":self.demoBox.isChecked(),
+                             "fullscreen":~(self.demoBox.isChecked()),
+                             "presentation-prestim-period":0,
+                             "presentation-poststim-period":0,
+                             "presentation-duration":self.period*self.Nrepeat,
+                             "presentation-blank-screen-color": -1})
+
+
+    xmin, xmax = np.min(self.stim.x), np.max(self.stim.x)
+    zmin, zmax = np.min(self.stim.z), np.max(self.stim.z)
 
     self.angle_start, self.angle_max, self.protocol, self.label = 0, 0, '', ''
     self.Npoints = int(self.period/self.dt)
@@ -323,82 +322,100 @@ def run(self):
                                                                 self.Npoints)\
                                                                 for n in range(self.Nrepeat)])
 
-    # initialize one episode:
-    self.iEp, self.t0_episode = 0, time.time()
-    self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
-
     save_intrinsic_metadata(self)
     
-    print('acquisition running [...]')
+    self.iEp, self.iRepeat = 0, 0
+    initialize_stimWindow(self)
     
+    self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
+    self.t0_episode = time.time()
+   
+    print('\n   -> acquisition running [...]')
+           
     self.update_dt_intrinsic() # while loop
 
 
 def update_dt_intrinsic(self):
 
-    self.t = time.time()
+    self.t = time.time()-self.t0_episode
 
     # fetch camera frame
     if self.camBox.isChecked():
 
-        self.TIMES.append(time.time()-self.t0_episode)
+        self.TIMES.append(self.t)
         self.FRAMES.append(get_frame(self))
 
+    else:
+
+        time.sleep(0.05)
 
     if self.live_only:
 
         self.imgPlot.setImage(self.FRAMES[-1].T)
-        self.barPlot.setOpts(height=np.log(1+np.histogram(self.FRAMES[-1], bins=self.xbins)[0]))
-
+        self.barPlot.setOpts(height=np.log(1+np.histogram(self.FRAMES[-1],
+                                                          bins=self.xbins)[0]))
     else:
 
-        # update presented stim every X frame
-        self.flip_index += 1
-        if self.flip_index==3:
+        tt = int(1e3*self.t) % int(1e3*self.period)
+        #print(tt/1e3, self.mediaPlayer.mediaStatus(), self.mediaPlayer.state(), )
 
-            # find image time, here %period
-            self.iTime = int(((self.t-self.t0_episode)%self.period)/self.dt)
+        if int(1e3*self.t)/int(1e3*self.period) > self.iRepeat:
+            #print('re-init stim')
+            self.mediaPlayer.stop()
+            self.mediaPlayer.setPosition(0)
+            self.mediaPlayer.play()
+            self.iRepeat += 1
 
-            angle = self.STIM[self.STIM['label'][self.iEp%len(self.STIM['label'])]+'-angle'][self.iTime]
-            patterns = get_patterns(self, self.STIM['label'][self.iEp%len(self.STIM['label'])],
-                                          angle, self.bar_size)
-            for pattern in patterns:
-                pattern.draw()
-            try:
-                self.stim.win.flip()
-            except BaseException:
-                pass
-            self.flip_index=0
-
-        self.flip = (False if self.flip else True) # flip the flag at each frame
+        if (self.mediaPlayer.mediaStatus()!=6) and (self.t<(self.period*self.Nrepeat)):
+            # print(' relaunching ! ')
+            self.mediaPlayer.setPosition(tt) 
+            self.mediaPlayer.play()
 
         # in demo mode, we show the image
         if self.demoBox.isChecked():
             self.imgPlot.setImage(self.FRAMES[-1].T)
 
         # checking if not episode over
-        if (time.time()-self.t0_episode)>(self.period*self.Nrepeat):
+        if self.t>(self.period*self.Nrepeat):
+
             if self.camBox.isChecked():
                 write_data(self) # writing data when over
-            self.t0_episode = time.time()
-            self.flip_index=0
+
             self.FRAMES, self.TIMES = [], [] # re init data
             self.iEp += 1
-            
+            initialize_stimWindow(self)
+            self.t0_episode = time.time()
 
     # continuing ?
     if self.running:
         QtCore.QTimer.singleShot(1, self.update_dt_intrinsic)
 
+def initialize_stimWindow(self):
+
+    if hasattr(self, 'stimWindow'):
+        # deleting the previous one
+        self.stimWin.close()
+        
+    # re-initializing
+    protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
+    self.stim.movie_file = os.path.join(self.movie_folder,
+                                        'flickering-bars-period%ss' % self.periodBox.currentText(),
+                                        '%s.wmv' % protocol)
+    init_stimWindow(self)
+
+    self.mediaPlayer.play()
 
 def write_data(self):
 
-    filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])], int(self.iEp/len(self.STIM['label']))+1)
+    filename = '%s-%i.nwb' % (self.STIM['label'][self.iEp%len(self.STIM['label'])],\
+                                                 int(self.iEp/len(self.STIM['label']))+1)
     
+    print('\n starting to write: "%s" [...] ' % filename)
+
     nwbfile = pynwb.NWBFile('Intrinsic Imaging data following bar stimulation',
                             'intrinsic',
-                            datetime.datetime.utcnow(),
-                            file_create_date=datetime.datetime.utcnow())
+                            datetime.datetime.utcnow().replace(tzinfo=tzlocal()),
+                            file_create_date=datetime.datetime.utcnow().replace(tzinfo=tzlocal()))
 
     # Create our time series
     angles = pynwb.TimeSeries(name='angle_timeseries',
@@ -408,52 +425,44 @@ def write_data(self):
     nwbfile.add_acquisition(angles)
 
     images = pynwb.image.ImageSeries(name='image_timeseries',
-                                     data=np.array(self.FRAMES, dtype=np.float64),
+                                     data=np.array(self.FRAMES, dtype=np.uint16),
                                      unit='a.u.',
                                      timestamps=np.array(self.TIMES, dtype=np.float64))
-
     nwbfile.add_acquisition(images)
     
     # Write the data to file
     io = pynwb.NWBHDF5IO(os.path.join(self.datafolder, filename), 'w')
-    print('writing:', filename)
     io.write(nwbfile)
     io.close()
-    print(filename, ' saved !')
+    print(' [ok] ', filename, ' saved !\n')
     
 
 def save_intrinsic_metadata(self):
     
-    filename = generate_filename_path(FOLDERS[self.folderBox.currentText()],
-                                      filename='metadata', extension='.npy')
+    filename = generate_filename_path(\
+            FOLDERS[self.folderBox.currentText()],
+            filename='metadata', extension='.json')
 
-    subjects = pandas.read_csv(os.path.join(base_path,
-                               'subjects',self.config['subjects_file']))
-    subject = get_subject_props(self)
-        
-    metadata = {'subject':str(self.subjectBox.currentText()),
-                'exposure':self.exposure,
-                'bar-size':float(self.barBox.text()),
-                'acq-freq':float(self.freqBox.text()),
-                'period':float(self.periodBox.text()),
+
+    metadata = {'subject':str(self.subjectBox.text()),
+                'exposure':str(self.exposure),
+                'acq-freq':str(self.freqBox.text()),
+                'period':str(self.periodBox.currentText()),
                 'Nsubsampling':int(self.spatialBox.text()),
                 'Nrepeat':int(self.repeatBox.text()),
-                'imgsize':self.imgsize,
-                'headplate-angle-from-rig-axis':subject['headplate-angle-from-rig-axis'],
+                'imgsize':str(self.imgsize),
+                'headplate-angle-from-rig-axis':'15.0',
                 'Height-of-Microscope-Camera-Image-in-mm':\
-                        self.config['Height-of-Microscope-Camera-Image-in-mm'],
-                'STIM':self.STIM}
-    
-    np.save(filename, metadata)
+            str(self.config['Height-of-Microscope-Camera-Image-in-mm'])}
 
-    if self.vasculature_img is not None:
-        np.save(filename.replace('metadata', 'vasculature'),
-                self.vasculature_img)
+    with open(filename, 'w', encoding='utf-8') as f:
+        json.dump(metadata, f,
+                  ensure_ascii=False, indent=4)
 
-    if self.fluorescence_img is not None:
-        np.save(filename.replace('metadata', 'fluorescence'),
-                self.fluorescence_img)
-        
+    # saving visual stim protocol
+    np.save(filename.replace('metadata.json', 'visual-stim.npy'),
+            self.STIM)
+
     self.datafolder = os.path.dirname(filename)
 
     
@@ -461,12 +470,17 @@ def launch_intrinsic(self, live_only=False):
 
     self.live_only = live_only
 
+    if (self.cam is not None) and not self.demoBox.isChecked():
+        self.cam.exposure_time_us = int(1e3*int(self.exposureBox.text()))
+        self.cam.arm(2)
+        self.cam.issue_software_trigger()
+
     if not self.running:
 
         self.running = True
 
         # initialization of data
-        self.FRAMES, self.TIMES, self.flip_index = [], [], 0
+        self.FRAMES, self.TIMES = [], []
         self.img = get_frame(self)
         self.imgsize = self.img.shape
         self.imgPlot.setImage(self.img.T)
@@ -478,10 +492,12 @@ def launch_intrinsic(self, live_only=False):
             self.iEp, self.t0_episode = 0, time.time()
             self.update_dt_intrinsic() # while loop
 
+        self.runButton.setEnabled(False)
+        self.stopButton.setEnabled(True)
         
     else:
 
-        print(' /!\  --> pb in launching acquisition (either already running or missing camera)')
+        print(' [!!]  --> pb in launching acquisition (either already running or missing camera)')
 
 
 def live_intrinsic(self):
@@ -492,55 +508,72 @@ def live_intrinsic(self):
 def stop_intrinsic(self):
     if self.running:
         self.running = False
-        if self.stim is not None:
-            self.stim.close()
+        if hasattr(self, 'mediaPlayer'):
+            self.mediaPlayer.stop()
+        if hasattr(self, 'stimWin'):
+            self.stimWin.close()
+        if (self.cam is not None) and not self.demoBox.isChecked():
+            self.cam.disarm()
         if len(self.TIMES)>5:
-            print('average frame rate: %.1f FPS' % (1./np.mean(np.diff(self.TIMES))))
+            print('average frame rate: %.1f FPS' % (\
+                                1./np.mean(np.diff(self.TIMES))))
+        self.runButton.setEnabled(True)
+        self.stopButton.setEnabled(False)
     else:
         print('acquisition not launched')
 
 def get_frame(self, force_HQ=False):
     
-    if self.exposure>0:
+    if self.exposure>0 and (CameraInterface=='MicroManager'):
 
         self.core.snap_image()
         tagged_image = self.core.get_tagged_image()
-        #pixels by default come out as a 1D array. We can reshape them into an image
+        # pixels by default come out as a 1D array. We can reshape them into an image
         img = np.reshape(tagged_image.pix,
                          newshape=[tagged_image.tags['Height'],
                                    tagged_image.tags['Width']])
+
+    elif (CameraInterface=='ThorCam'):
+
+        frame = self.cam.get_pending_frame_or_null()
+        while frame is None:
+            frame = self.cam.get_pending_frame_or_null()
+        img = frame.image_buffer
 
     elif (self.stim is not None) and (self.STIM is not None):
 
         it = int((time.time()-self.t0_episode)/self.dt)%int(self.period/self.dt)
         protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
-        if protocol=='left':
-            img = np.random.randn(*self.stim.x.shape)+\
-                np.exp(-(self.stim.x-(40*it/self.Npoints-20))**2/2./10**2)*\
-                np.exp(-self.stim.z**2/2./15**2)
-        elif protocol=='right':
-            img = np.random.randn(*self.stim.x.shape)+\
-                np.exp(-(self.stim.x+(40*it/self.Npoints-20))**2/2./10**2)*\
-                np.exp(-self.stim.z**2/2./15**2)
-        elif protocol=='up':
+        if 'up' in protocol:
             img = np.random.randn(*self.stim.x.shape)+\
                 np.exp(-(self.stim.z-(40*it/self.Npoints-20))**2/2./10**2)*\
                 np.exp(-self.stim.x**2/2./15**2)
-        else: # down
+        elif 'down' in protocol: # down
             img = np.random.randn(*self.stim.x.shape)+\
                 np.exp(-(self.stim.z+(40*it/self.Npoints-20))**2/2./10**2)*\
                 np.exp(-self.stim.x**2/2./15**2)
+        elif 'left' in protocol:
+            img = np.random.randn(*self.stim.x.shape)+\
+                np.exp(-(self.stim.x-(40*it/self.Npoints-20))**2/2./10**2)*\
+                np.exp(-self.stim.z**2/2./15**2)
+        elif 'right' in protocol:
+            img = np.random.randn(*self.stim.x.shape)+\
+                np.exp(-(self.stim.x+(40*it/self.Npoints-20))**2/2./10**2)*\
+                np.exp(-self.stim.z**2/2./15**2)
 
-        img = img.T+.2*(time.time()-self.t0_episode)/10.
+        img = img.T+.2*(time.time()-self.t0_episode)/10. # + a drift term
+        img = 2**12*(img-img.min())/(img.max()-img.min())
             
     else:
         time.sleep(0.03) # grabbing frames takes minimum 30ms
-        img = np.random.uniform(0, 2**camera_depth, size=(100, 70))
+        img = np.random.uniform(0, 2**8,
+                                size=(720, 1280))
 
     if (int(self.spatialBox.text())>1) and not force_HQ:
-        return 1.0*resample_img(img, int(self.spatialBox.text()))
+        return np.array(\
+                resample_img(img, int(self.spatialBox.text())))
     else:
-        return 1.0*img
+        return img
 
     
     

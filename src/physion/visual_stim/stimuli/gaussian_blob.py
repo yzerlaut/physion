@@ -1,26 +1,25 @@
 import numpy as np
 
-from physion.visual_stim.main import vis_stim_image_built,\
-        init_times_frames, init_bg_image
+from physion.visual_stim.main import visual_stim, init_bg_image
 
 
 ##############################################################
 ##  ----  Gaussian Blob Appearance (spatio-temporal) --- #####
 ##############################################################
 
-params = {"movie_refresh_freq":20,
+params = {"movie_refresh_freq":30,
           "presentation-duration":4,
           # default param values:
-          "radius (deg)":5,
-          "x-center (deg)":0,
-          "y-center (deg)":0,
-          "center-time (s)": 2.,
-          "extent-time (s)": 1.,
-          "contrast (norm.)":1.,
-          "bg-color (lum.)":0., # not thought to be varied
+          "radius":5,
+          "x-center":0,
+          "y-center":0,
+          "center-time": 2.,
+          "extent-time": 1.,
+          "contrast":1.,
+          "bg-color":0., # not thought to be varied
         }
 
-class stim(vis_stim_image_built):
+class stim(visual_stim):
     """
     stimulus specific visual stimulation object
 
@@ -30,37 +29,47 @@ class stim(vis_stim_image_built):
     
     def __init__(self, protocol):
 
-        if 'movie_refresh_freq' not in protocol:
-            protocol['movie_refresh_freq'] = 5.
-        self.refresh_freq = protocol['movie_refresh_freq']
+        super().__init__(protocol, params)
 
-        super().__init__(protocol,
-                         ['x-center', 'y-center', 'radius',
-                          'center-time', 'extent-time',
-                          'contrast', 'bg-color'])
 
     def get_image(self, index, time_from_episode_start=0, parent=None):
-        cls = (parent if parent is not None else self)
-        img = init_bg_image(cls, index)
+        img = init_bg_image(self, index)
         self.add_gaussian(img,
                           t=time_from_episode_start, 
-                          contrast = cls.experiment['contrast'][index],
-                          xcenter=cls.experiment['x-center'][index],
-                          zcenter=cls.experiment['y-center'][index],
-                          radius = cls.experiment['radius'][index],
-                          t0=cls.experiment['center-time'][index],
-                          sT=cls.experiment['extent-time'][index])
+                          contrast = self.experiment['contrast'][index],
+                          xcenter=self.experiment['x-center'][index],
+                          zcenter=self.experiment['y-center'][index],
+                          radius = self.experiment['radius'][index],
+                          t0=self.experiment['center-time'][index],
+                          sT=self.experiment['extent-time'][index])
         return img    
 
+"""
     def plot_stim_picture(self, episode,
                           ax=None, parent=None,
                           label=None, vse=False):
 
-        cls = (parent if parent is not None else self)
         ax = self.show_frame(episode,
-                             time_from_episode_start=cls.experiment['center-time'][episode],
+                             time_from_episode_start=self.experiment['center-time'][episode],
                              ax=ax, parent=parent)
 
         return ax
+"""
 
+if __name__=='__main__':
 
+    from physion.visual_stim.build import get_default_params
+
+    params = get_default_params('gaussian-blob')
+
+    import time
+    import cv2 as cv
+
+    Stim = stim(params)
+
+    t0 = time.time()
+    while True:
+        cv.imshow("Video Output", 
+                  Stim.get_image(0, time_from_episode_start=time.time()-t0).T)
+        if cv.waitKey(1) & 0xFF == ord('q'):
+            break
