@@ -5,12 +5,14 @@ import os, sys
 ###        Select the Camera Interface    #######
 #################################################
 CameraInterface = None
+"""
 ### --------- MicroManager Interface -------- ###
 try:
     from pycromanager import Core
     CameraInterface = 'MicroManager'
 except ModuleNotFoundError:
     pass
+"""
 
 ### ------------ ThorCam Interface ---------- ###
 if CameraInterface is None:

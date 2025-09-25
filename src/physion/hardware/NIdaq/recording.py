@@ -169,6 +169,9 @@ if __name__=='__main__':
     print('running rec & stim [...]')
     analog_inputs, digital_inputs = stim_and_rec(args.device, t_array, analog_inputs, analog_outputs,
                                                  args.Nchannel_digital_rec)
+    if args.filename !='':
+    	np.save(args.filename, analog_inputs)
+
     # print(digital_inputs)
     # tstart = 1e3*time.time()
     # print('writing T=%.1fs of recording (at f=%.2fkHz, across N=%i channels) in : %.2f ms' % (T, 1e-3/dt,inputs.shape[0],1e3*time.time()-tstart))
@@ -178,21 +181,13 @@ if __name__=='__main__':
     #     np.save('data.npy', inputs)
     #     print('writing T=%.1fs of recording (at f=%.2fkHz, across N=%i channels) in : %.2f ms' % (T, 1e-3/dt,inputs.shape[0],1e3*time.time()-tstart))
     # rec_only(args.device, t_array, inputs)
-    # np.save(args.filename, analog_inputs)
 
     import matplotlib.pylab as plt
 
-    """
-    fig = plt.figure(figsize=(5,4))
-    for i, l in zip([1,2], ['A','B']):
-        ax = fig.add_subplot()
+    fig, ax = plt.subplots(1, figsize=(5,4))
+    for i, c in zip(range(analog_inputs.shape[0]), ['blue','red']):
         signal = analog_inputs[i]
-        # if signal.std()>0:
-        #     plt.plot(t_array, i+(signal-signal.min())/(signal.max()-signal.min()))
-        # else:
-        ax.plot(t_array, signal)
-        ax.set_ylabel('Channel %s (V)' % l)
-    """
-    # plt.plot(1e3*t_array, analog_inputs[0,:])
-    plt.xlabel('time (ms)')
+        ax.plot(t_array, signal, color=c)
+    ax.set_ylabel('Channels (V)')
+    plt.xlabel('time (s)')
     plt.show()

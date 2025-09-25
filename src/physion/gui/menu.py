@@ -23,7 +23,7 @@ def build_menu(self):
                                   self.in_progress)
     self.experimentMenu.addAction('Retinotopic Mapping',
                                   self.intrinsic_acq)
-    self.experimentMenu.addAction('Ocular Dominance Charact.',
+    self.experimentMenu.addAction('Ocular Dominance',
                                   self.intrinsic_acq)
     self.experimentMenu.addAction('Whisker Mapping',
                                   self.SS_intrinsic_acq)

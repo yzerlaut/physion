@@ -10,6 +10,8 @@ from physion.visual_stim.preprocess_NI import load,\
 #######################################
 
 params = {"Image-ID":3,
+          "min-presentation-duration":0.5,
+          "mean-presentation-duration":2.0,
           "seed":0}
 
 def get_NaturalImages_as_array(screen):
@@ -31,8 +33,6 @@ def get_NaturalImages_as_array(screen):
 def generate_VSE(duration=5,
                  min_saccade_duration=0.5,# in s
                  max_saccade_duration=2.,# in s
-                 # mean_saccade_duration=2.,# in s
-                 # std_saccade_duration=1.,# in s
                  saccade_amplitude=200, # in pixels, TO BE PUT IN DEGREES
                  seed=0,
                  verbose=False):
@@ -69,7 +69,9 @@ class stim(visual_stim):
         self.NIarray = get_NaturalImages_as_array(self.screen)
 
         if 'seed' in protocol:
-            self.vse = generate_VSE(seed=protocol['seed'])
+            self.vse = generate_VSE(seed=protocol['seed'],
+		                    min_saccade_duration=protocol['min-presentation-duration'],
+			            max_saccade_duration=protocol['mean-presentation-duration'])
         else:
             self.vse = generate_VSE(seed=1)
 
