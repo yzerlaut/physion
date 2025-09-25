@@ -13,7 +13,7 @@ import json
 
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
-from physion.visual_stim.shuffling import shuffle
+from physion.visual_stim.shuffling import *
 
 defaults = {\
     'presentation-duration': 2,
@@ -262,8 +262,14 @@ class visual_stim:
 
         else:
 
+            #
             # ------------  MULTIPLE STIMS ------------
             # 
+
+            #############################################
+            ###    == build all set of parameters ==  ### 
+            #############################################
+
             VECS, FULL_VECS = [], {}
             for key in default_params:
                 FULL_VECS[key], self.experiment[key] = [], []
@@ -291,52 +297,72 @@ class visual_stim:
                 for i, key in enumerate(default_params.keys()):
                     FULL_VECS[key].append(vec[i])
 
-            for k in ['index', 'repeat', 'bg-color', 'interstim',
-                      'time_start', 'time_stop', 'time_duration']:
-                self.experiment[k] = []
+
+            #############################################
+            ###    == build repetition sequence   ==  ### 
+            #############################################
 
             index_no_repeat = np.arange(len(FULL_VECS[key]))
 
             # then dealing with repetitions
             Nrepeats = max([1, protocol['N-repeat']])
 
-            if 'shuffling-seed' in protocol:
-                np.random.seed(protocol['shuffling-seed']) # initialize random seed
+            # episodes in order of stim variations
+            indices = np.concatenate(
+                    [index_no_repeat for n in range(Nrepeats)])
+            repeats = np.concatenate(
+                    [np.ones(len(index_no_repeat),dtype=int)*n\
+                            for n in range(Nrepeats)])
 
-            for r in range(Nrepeats):
+            #############################################
+            ###    ======     SHUFFLING ?      =====  ### 
+            #############################################
 
-                # shuffling if necessary !
-                if (protocol['Presentation']=='Randomized-Sequence'):
-                    np.random.shuffle(index_no_repeat)
+            if ('shuffling' in protocol) or\
+                    (protocol['Presentation']=='Randomized-Sequence'):
 
-                for n, i in enumerate(index_no_repeat):
+                indices, repeats =\
+                        shuffle_single_protocol(indices, repeats,
+                                                protocol)
+                print('indices', indices)
+                print('repeats', repeats)
+            #############################################
+            ###    ==  building the time course   ==  ### 
+            #############################################
 
-                    for key in default_params:
-                        self.experiment[key].append(FULL_VECS[key][i])
+            for k in ['index', 'repeat', 'bg-color', 'interstim',
+                      'time_start', 'time_stop', 'time_duration']:
+                self.experiment[k] = []
 
-                    self.experiment['index'].append(i) # shuffled
-                    # self.experiment['bg-color'].append(self.blank_color)
-                    self.experiment['repeat'].append(r)
-                    self.experiment['time_start'].append(\
-                            protocol['presentation-prestim-period']+\
-                            (r*len(index_no_repeat)+n)*\
-                                (protocol['presentation-duration']+\
-                                protocol['presentation-interstim-period']))
-                    self.experiment['time_stop'].append(\
-                            self.experiment['time_start'][-1]+\
-                            protocol['presentation-duration'])
-                    self.experiment['interstim'].append(\
-                            protocol['presentation-interstim-period'])
-                    self.experiment['time_duration'].append(\
-                            protocol['presentation-duration'])
+            for n, i, r in zip(range(len(indices)), indices, repeats):
+
+                for key in default_params:
+                    self.experiment[key].append(FULL_VECS[key][i])
+
+                self.experiment['index'].append(i) # shuffled
+                self.experiment['bg-color'].append(self.blank_color)
+                self.experiment['repeat'].append(r)
+                self.experiment['time_start'].append(\
+                        protocol['presentation-prestim-period']+\
+                        (r*len(index_no_repeat)+n)*\
+                            (protocol['presentation-duration']+\
+                            protocol['presentation-interstim-period']))
+                self.experiment['time_stop'].append(\
+                        self.experiment['time_start'][-1]+\
+                        protocol['presentation-duration'])
+                self.experiment['interstim'].append(\
+                        protocol['presentation-interstim-period'])
+                self.experiment['time_duration'].append(\
+                        protocol['presentation-duration'])
 
         for k in ['index', 'repeat','time_start', 'time_stop',
                   'bg-color', 'interstim', 'time_duration']:
             self.experiment[k] = np.array(self.experiment[k])
 
-        if len(self.experiment['bg-color'])!=len(self.experiment['index']):
-            self.experiment['bg-color'] = self.blank_color*\
-                    np.ones(len(self.experiment['index']))
+        # if len(self.experiment['bg-color'])!=len(self.experiment['index']):
+            # self.experiment['bg-color'] = self.blank_color*\
+                    # np.ones(len(self.experiment['index']))
+
 
         # we add a protocol_id
         # 0 by default for single protocols, overwritten for multiprotocols
@@ -711,4 +737,8 @@ def init_bg_image(cls, index):
     return cls.experiment['bg-color'][index]+0.*cls.x
 
 
+if __name__=='__main__':
 
+    print(5)
+    stim = visual_stim()
+    print(4)

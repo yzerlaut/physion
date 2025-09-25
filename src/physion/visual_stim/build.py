@@ -113,6 +113,8 @@ if __name__=='__main__':
     parser.add_argument("--mp4", 
                         help="force to mp4 instead of wmv", 
                         action="store_true")
+    parser.add_argument('-v', "--verbose", 
+                        action="store_true")
     args = parser.parse_args()
 
     if os.path.isfile(args.protocol) and args.protocol.endswith('.json'):
@@ -137,6 +139,9 @@ if __name__=='__main__':
 
             protocol['json_location'] = os.path.dirname(args.protocol)
 
+            if args.verbose:
+                protocol['verbose'] = True
+
             Stim = build_stim(protocol)
 
             #  copy the protocol infos
@@ -149,11 +154,10 @@ if __name__=='__main__':
                             index+1, len(Stim.experiment['index'])),
                           '   protocol-id : ', 
                           Stim.experiment['protocol_id'][index])
-                    s = 18*' '
-                    for k in Stim.experiment:
-                        s += '%s:%.1f ' % (k, Stim.experiment[k][index])
-                    print(s)
-                    print()
+                    if 'verbose' in protocol:
+                        for k in Stim.experiment:
+                            print(18*' '+'- %s:%.1f ' %\
+                                    (k, Stim.experiment[k][index]))
                     tstart = Stim.experiment['time_start'][index]
                     tstop= Stim.experiment['time_stop'][index]
                     return tstart, tstop
