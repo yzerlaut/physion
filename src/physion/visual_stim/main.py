@@ -13,6 +13,7 @@ import json
 
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
+from physion.visual_stim.shuffling import shuffle
 
 defaults = {\
     'presentation-duration': 2,
@@ -309,8 +310,10 @@ class visual_stim:
                     np.random.shuffle(index_no_repeat)
 
                 for n, i in enumerate(index_no_repeat):
+
                     for key in default_params:
                         self.experiment[key].append(FULL_VECS[key][i])
+
                     self.experiment['index'].append(i) # shuffled
                     # self.experiment['bg-color'].append(self.blank_color)
                     self.experiment['repeat'].append(r)
@@ -622,6 +625,15 @@ class multiprotocol(visual_stim):
         # ---------------------------- #
 
         if (protocol['shuffling']=='full'):
+            # print('full shuffling of multi-protocol sequence !')
+            np.random.seed(protocol['shuffling-seed']) # initializing random seed
+            indices = np.arange(len(self.experiment['index']))
+            np.random.shuffle(indices)
+
+            for key in self.experiment:
+                self.experiment[key] = np.array(self.experiment[key])[indices]
+
+        if (protocol['shuffling']=='full-alternate-even-odd-repeats'):
             # print('full shuffling of multi-protocol sequence !')
             np.random.seed(protocol['shuffling-seed']) # initializing random seed
             indices = np.arange(len(self.experiment['index']))
