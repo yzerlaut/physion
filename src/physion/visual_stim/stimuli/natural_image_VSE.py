@@ -10,6 +10,8 @@ from physion.visual_stim.preprocess_NI import load,\
 #######################################
 
 params = {"Image-ID":3,
+          "min-saccade-duration":0.2,
+          "max-saccade-duration":1.0,
           "seed":0}
 
 def get_NaturalImages_as_array(screen):
@@ -21,7 +23,7 @@ def get_NaturalImages_as_array(screen):
     if os.path.isdir(NI_FOLDER):
         for filename in np.sort(os.listdir(NI_FOLDER)):
             img = load(os.path.join(NI_FOLDER, filename)).T
-            new_img = np.rot90(adapt_to_screen_resolution(img, screen), k=1)
+            new_img = np.rot90(adapt_to_screen_resolution(img, screen), k=3)
             NIarray.append(img_after_hist_normalization(new_img))
         return NIarray
     else:
@@ -68,10 +70,9 @@ class stim(visual_stim):
         # initializing set of NI
         self.NIarray = get_NaturalImages_as_array(self.screen)
 
-        if 'seed' in protocol:
-            self.vse = generate_VSE(seed=protocol['seed'])
-        else:
-            self.vse = generate_VSE(seed=1)
+        self.vse = generate_VSE(seed=protocol['seed'],
+                                min_saccade_duration=protocol['min-saccade-duration'],
+                                max_saccade_duration=protocol['max-saccade-duration'])
 
     def compute_shifted_image(self, img, ix, iy):
         sx, sy = img.shape
