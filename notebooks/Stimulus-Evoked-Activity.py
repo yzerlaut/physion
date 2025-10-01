@@ -3,7 +3,7 @@
 
 # %%
 import os, sys
-sys.path.append('../src') # add src code directory for physion
+sys.path += ['../src'] # add src code directory for physion
 import physion
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
