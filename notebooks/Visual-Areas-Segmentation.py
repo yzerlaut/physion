@@ -175,4 +175,16 @@ if False:
         ax.axis('off')
         ax.axis('equal');
 
+
+# %% [markdown]
+# ## Illustrating the phase shift
+
+# for shift in [0, np.pi/2., np.pi, 3*np.pi/2., 2*np.pi]:
+for shift in np.linspace(0, 2*np.pi, 9):
+        new_phase = perform_phase_shift(maps['up-phase'], shift)
+        fig, ax = pt.figure()
+        ax.axis('off')
+        plot_phase_map(ax, fig, new_phase)
+        ax.set_title('shift = %.2f Rd' % shift)
+
 # %%

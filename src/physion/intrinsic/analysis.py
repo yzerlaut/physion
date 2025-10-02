@@ -116,20 +116,8 @@ def gui(self,
 
     self.rmButton = QtWidgets.QPushButton(" = retinotopic maps = ", self)
     self.rmButton.clicked.connect(self.compute_retinotopic_maps)
-    self.add_side_widget(tab.layout,self.rmButton, spec='large-left')
+    self.add_side_widget(tab.layout,self.rmButton) #, spec='large-right')
 
-    self.phaseButton = QtWidgets.QDoubleSpinBox(self)
-    self.phaseButton.setRange(0, 2*3.14)
-    self.phaseButton.setSuffix(' (phase-shift)')
-    self.phaseButton.setValue(3.14)
-    self.add_side_widget(tab.layout, self.phaseButton, 
-                         spec='small-right')
-
-    # self.add_side_widget(tab.layout,self.scaleButton, 'large-right')
-    # self.twoPiBox = QtWidgets.QCheckBox("[0,2pi]")
-    # self.twoPiBox.setStyleSheet("color: gray;")
-    # self.add_side_widget(tab.layout,self.twoPiBox, spec='small-right')
-    # -------------------------------------------------------
 
     # === -- parameters for area segmentation -- ===
     
@@ -495,8 +483,7 @@ def compute_phase_maps(self):
                                                 self.protocolBox.currentText(),
                                                 p=self.params, t=self.t, data=self.data,
                                                 run_id=self.numBox.currentText(),
-                                                maps=self.IMAGES,
-                                                phase_shift=self.phaseButton.value())
+                                                maps=self.IMAGES)
 
     intrinsic_analysis.plot_phase_power_maps(self.IMAGES,
                                              self.protocolBox.currentText())
@@ -515,12 +502,6 @@ def compute_retinotopic_maps(self):
                                                     maps=self.IMAGES,
                                                     phase_shift=self.phaseButton.value(),
                                                     keep_maps=True)
-        try:
-            alt_shift = float(self.phaseMapShiftBox.text().split(',')[1].replace(')',''))
-            self.IMAGES['altitude-retinotopy'] += alt_shift
-        except BaseException as be:
-            print(be)
-            print('Pb with altitude shift:', self.phaseMapShiftBox.text())
         fig1 = intrinsic_analysis.plot_retinotopic_maps(self.IMAGES,
                                                         'altitude')
     else:
@@ -533,12 +514,6 @@ def compute_retinotopic_maps(self):
                                                     maps=self.IMAGES,
                                                     phase_shift=self.phaseButton.value(),
                                                     keep_maps=True)
-        try:
-            azi_shift = float(self.phaseMapShiftBox.text().split(',')[0].replace('(',''))
-            self.IMAGES['azimuth-retinotopy'] += azi_shift
-        except BaseException as be:
-            print(be)
-            print('Pb with azimuth shift:', self.phaseMapShiftBox.text())
         fig2 = intrinsic_analysis.plot_retinotopic_maps(self.IMAGES,
                                                         'azimuth')
     else:
