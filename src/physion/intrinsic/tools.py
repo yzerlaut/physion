@@ -204,6 +204,32 @@ def perform_fft_analysis(data, nrepeat,
 
     return rel_power, phase
 
+def perform_phase_shift(phase, shift):
+    """
+    need phase in [-pi:pi] and shift in [0,2pi]
+    """
+    if np.sum(phase<-np.pi)==0 and \
+        np.sum(phase>np.pi)==0 and\
+        shift>=0 and\
+        shift <= 2*np.pi:
+
+        new_phase = 0.*phase
+        #
+        cond_pre = (phase>=(-np.pi+shift))
+        cond_after = (phase>=(-np.pi+shift))
+
+        cond = phase[phase<]
+
+    else:
+        print()
+        print("""
+
+            []
+              """)
+        print('phase range: ', np.min(phase))
+
+
+
 def find_ellipse_cond(maps, shape):
     xc, yc, dx, dy, angle = maps['ROI']
     x, y = np.meshgrid(np.arange(0, shape[0]),
@@ -213,8 +239,7 @@ def find_ellipse_cond(maps, shape):
 def compute_phase_power_maps(datafolder, direction,
                              maps={},
                              p=None, t=None, data=None,
-                             run_id='sum',
-                             phase_range='-pi:pi'):
+                             run_id='sum'):
 
     # load raw data
     if (p is None) or (t is None) or (data is None):
@@ -222,9 +247,7 @@ def compute_phase_power_maps(datafolder, direction,
 
     # FFT and write maps
     maps['%s-power' % direction],\
-           maps['%s-phase' % direction] = perform_fft_analysis(data, p['Nrepeat'],
-                                                    phase_range=phase_range)
-    maps['%s-phase-range' % direction] = phase_range
+           maps['%s-phase' % direction] = perform_fft_analysis(data, p['Nrepeat'])
 
     if 'ROI' in maps:
         ellipse = find_ellipse_cond(maps, (data.shape[1], data.shape[2]))
@@ -266,12 +289,12 @@ def get_phase_to_angle_func(datafolder, direction):
 
 def compute_retinotopic_maps(datafolder, map_type,
                              maps={}, # we fill the dictionary passed as argument
-                             altitude_Zero_shift=10,
-                             azimuth_Zero_shift=60,
-                             run_id='sum',
+                            #  altitude_Zero_shift=0,
+                            #  azimuth_Zero_shift=0,
+                            #  run_id='sum',
                              keep_maps=False,
-                             verbose=True,
-                             phase_range='-pi:pi'):
+                             phase_shift=0.,
+                             verbose=True):
     """
     map type is either "altitude" or "azimuth"
     """
@@ -282,15 +305,15 @@ def compute_retinotopic_maps(datafolder, map_type,
     if map_type=='altitude':
         directions = ['down', 'up']
         phase_to_angle_func = get_phase_to_angle_func(datafolder, 'up')
-        if ('up-phase-range' in maps) and (maps['up-phase-range']=='0:2*pi'):
-            print(' the altitude map is using the 0:2*pi range')
-            phase_range = '0:2*pi'
+        # if ('up-phase-range' in maps) and (maps['up-phase-range']=='0:2*pi'):
+        #     print(' the altitude map is using the 0:2*pi range')
+        #     phase_range = '0:2*pi'
     else:
         directions = ['left', 'right']
         phase_to_angle_func = get_phase_to_angle_func(datafolder, 'right')
-        if ('left-phase-range' in maps) and (maps['left-phase-range']=='0:2*pi'):
-            print(' the azimuth map is using the 0:2*pi range')
-            phase_range = '0:2*pi'
+        # if ('left-phase-range' in maps) and (maps['left-phase-range']=='0:2*pi'):
+        #     print(' the azimuth map is using the 0:2*pi range')
+        #     phase_range = '0:2*pi'
 
     for direction in directions:
         if (('%s-power'%direction) not in maps) and not keep_maps:

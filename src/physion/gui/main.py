@@ -316,12 +316,14 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
         else:
+            import os
             # ---- DEBUG interface ---- #
-            self.bot_spatial_maps()
+            # self.bot_spatial_maps()
             # self.OD_analysis()
             # self.lastBox.setChecked(False)
-            # self.datafolder = '/Users/yann/UNPROCESSED/CIBELE/2024_06_28/14-35-30'
-            # self.load_intrinsic_data()
+            self.intrinsic()
+            self.datafolder = os.path.expanduser('~/DATA/physion_Demo-Datasets/PV-WT/retinotopic_mapping/PVTOM_BB_5')
+            self.load_intrinsic_data()
             # self.SS_intrinsic()
             # self.facemotion()
             # self.pupil()
