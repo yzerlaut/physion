@@ -207,8 +207,7 @@ def find_roi_cond(data, roiIndex,
                   force_square=False,
                   roi_zoom_factor=10.):
 
-    mx, my, sx, sy = find_roi_coords(data, roiIndex,
-                                     force_square=force_square)
+    mx, my, sx, sy = find_roi_coords(data, roiIndex)
 
     img_shape = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:].shape
 
@@ -226,31 +225,113 @@ def add_roi_ellipse(data, roiIndex, ax,
                     roi_lw=3):
 
     mx, my, sx, sy = find_roi_coords(data, roiIndex)
-    ellipse = plt.Circle((mx, my), size_factor*(sy+sx), edgecolor='lightgray', facecolor='none', lw=roi_lw)
+    ellipse = plt.Circle((my, mx), 
+                         size_factor*(sy+sx), 
+                         edgecolor='lightgray', 
+                         facecolor='none', lw=roi_lw)
     ax.add_patch(ellipse)
+
+def get_FOV_image(data, key):
+
+    img = getattr(\
+            getattr(data.nwbfile.processing['ophys'],
+                  'data_interfaces')['Backgrounds_0'],
+                  'images')[key][:]
+
+    extent=(0, img.shape[1], 
+            0, img.shape[0])
+    
+    return img, extent
+
 
 def show_CaImaging_FOV(data, 
                        key='meanImg', 
                        NL=1, 
                        cmap=pt.get_linear_colormap('k', 'g'), 
                        ax=None,
-                       roiIndex=None, roiIndices=[],
-                       roi_zoom_factor=10,
-                       roi_lw=3,
+                       roiIndex=None, 
                        with_ROI_annotation=False,
                        with_annotation=True,
-                       with_roi_zoom=False,):
-    
+                       fig_args=dict(ax_scale=(1.4,2.4)),
+                       ):
+
+    # set up axes 
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = pt.figure(**fig_args)
     else:
         fig = None
     ax.axis('equal')
 
-    img = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images[key][:]
-    extent=(0,img.shape[1], 0, img.shape[0])
+    img, extent = get_FOV_image(data, key)
 
-    if with_roi_zoom and roiIndex is not None:
+    img = (img-img.min())/(img.max()-img.min())
+    img = np.power(img, 1/NL)
+    img = ax.imshow(img, vmin=0, vmax=1, 
+                    cmap=cmap, 
+                    aspect='equal', 
+                    interpolation='none', 
+                    origin='lower', 
+                    extent=extent)
+    ax.axis('off')
+
+    if roiIndex is not None:
+
+        if type(roiIndex)==int:
+            roiIndex = [roiIndex]
+
+        for roi in roiIndex:
+            x, y = find_full_roi_coords(data, roi)
+            ax.plot(x, y, '.', 
+                    # color=plt.cm.tab10(roiIndex%10), 
+                    # color=plt.cm.hsv(np.random.uniform(0,1)),
+                    color=plt.cm.autumn(np.random.uniform(0,1)),
+                    alpha=0.5,
+                    ms=0.1)
+
+            if with_ROI_annotation:
+                ax.annotate('%i' % (roi+1), (np.mean(x), np.mean(y)), 
+                            color='w', fontsize=7)
+
+    if with_annotation:
+        ax.annotate('%i ROIs' % data.nROIs, 
+                    (0, 0), xycoords='axes fraction', 
+                    rotation=90, ha='right')
+        ax.set_title(key)
+    
+    return fig, ax, img
+
+
+def show_singleROI_in_FOV(data, 
+                       key='meanImg', 
+                       NL=1, 
+                       cmap=pt.get_linear_colormap('k', 'g'), 
+                       ax=None,
+                       roiIndex=None, 
+                       roi_zoom_factor=10,
+                       roi_lw=3,
+                       with_ROI_annotation=False,
+                       with_annotation=True,
+                       with_roi_zoom=False,
+                       fig_args=dict(ax_scale=(1.4,2.4)),
+                       ):
+
+    # set up axes 
+    if ax is None:
+        fig, ax = pt.figure(**fig_args)
+    else:
+        fig = None
+    ax.axis('equal')
+
+    # get FOV image
+    img = getattr(\
+            getattr(data.nwbfile.processing['ophys'],
+                  'data_interfaces')['Backgrounds_0'],
+                  'images')[key][:]
+
+    extent=(0, img.shape[1], 
+            0, img.shape[0])
+
+    if with_roi_zoom and type(roiIndex)==int:
         zoom_cond, zoom_cond_shape = find_roi_cond(data, roiIndex,
                                             roi_zoom_factor=roi_zoom_factor)
         img = img[zoom_cond].reshape(*zoom_cond_shape)
@@ -259,37 +340,47 @@ def show_CaImaging_FOV(data,
     
     img = (img-img.min())/(img.max()-img.min())
     img = np.power(img, 1/NL)
-    img = ax.imshow(img, vmin=0, vmax=1, cmap=cmap, aspect='equal', 
-                    interpolation='none', origin='lower', extent=extent)
+    img = ax.imshow(img, vmin=0, vmax=1, 
+                    cmap=cmap, 
+                    aspect='equal', 
+                    interpolation='none', 
+                    origin='lower', 
+                    extent=extent)
     ax.axis('off')
 
-    if roiIndex is not None:
-        add_roi_ellipse(data, roiIndex, ax, roi_lw=roi_lw)
+    if type(roiIndex)==int:
+        # if single ROI
+        add_roi_ellipse(data, roiIndex, 
+                        ax, roi_lw=roi_lw)
 
-    if (type(roiIndices)==str) and roiIndices=='all':
-        roiIndices = data.valid_roiIndices
+    else:
+        # multiple ROIs
+        if roiIndex is None:
+            roiIndex = np.arange(data.nROIs)
 
-    for roiIndex in roiIndices:
-        x, y = find_full_roi_coords(data, roiIndex)
-        ax.plot(x, y, '.', 
-                # color=plt.cm.tab10(roiIndex%10), 
-                # color=plt.cm.hsv(np.random.uniform(0,1)),
-                color=plt.cm.autumn(np.random.uniform(0,1)),
-                alpha=0.5,
-                ms=0.1)
+        for roi in roiIndex:
+            x, y = find_full_roi_coords(data, roi)
+            ax.plot(x, y, '.', 
+                    # color=plt.cm.tab10(roiIndex%10), 
+                    # color=plt.cm.hsv(np.random.uniform(0,1)),
+                    color=plt.cm.autumn(np.random.uniform(0,1)),
+                    alpha=0.5,
+                    ms=0.1)
 
-        if with_ROI_annotation:
-            ax.annotate('%i' % (roiIndex+1), (np.mean(x), np.mean(y)), 
-                        color='w', fontsize=7)
+            if with_ROI_annotation:
+                ax.annotate('%i' % (roi+1), (np.mean(x), np.mean(y)), 
+                            color='w', fontsize=7)
 
     if with_annotation:
-        ax.annotate('%i ROIs' % data.nROIs, (0, 0), xycoords='axes fraction', rotation=90, ha='right')
+        ax.annotate('%i ROIs' % data.nROIs, 
+                    (0, 0), xycoords='axes fraction', 
+                    rotation=90, ha='right')
         ax.set_title(key)
     
     return fig, ax, img
 
 
-    
+
 def format_key_value(key, value):
     if key in ['angle','direction']:
         return '$\\theta$=%.0f$^{o}$' % value

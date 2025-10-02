@@ -4,6 +4,8 @@ some utils functions
 
 ## Data Transfer/Copy
 
+### using python 
+
 Some specific transfer/copy functions handling specific types of files:
 
 ```
@@ -27,3 +29,21 @@ It can be one of:
 - Imaging (+binary)
 - all
 ```
+
+### using `rsync` on UNIX systems
+
+```
+SRC="/path/to/your/source/folder"
+DEST="/path/to/your/destination/folder"
+```
+
+- Transfer only green channel tiffs
+    ```
+    rsync -avhP --stats --include "*.npy" --include "*.env" --include "*.xml" --include "*_Ch2_*.tif" --include="*/" --include=".wmv" --exclude "*" SRC DEST --remove-source-files # --dry-run
+    ```
+
+    Delete only red channel tiffs (assuming a folder `to_trash`:
+    ```
+    sshpass -p YamWN88At6! rsync -avhP --stats --include "*_Ch1_*.tif" --include='*/' --exclude "*" SRC ./to_trash --remove-source-files
+    ```
+

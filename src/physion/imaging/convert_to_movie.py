@@ -107,11 +107,13 @@ def convert_to_16bit_avi(TS_folder):
         print(cmd)
 
 
+
 def convert_to_log8bit_mp4(TS_folder):
 
     Format = 'wmv' if ('win32' in sys.platform) else 'mp4'
 
-    xml_file = get_files_with_extension(TS_folder, extension='.xml')[0]
+    xml_file = get_files_with_extension(TS_folder, 
+                                        extension='.xml')[0]
     xml = bruker_xml_parser(xml_file)
 
     Ly, Lx = int(xml['settings']['linesPerFrame']),\
@@ -133,10 +135,10 @@ def convert_to_log8bit_mp4(TS_folder):
             vid_name = os.path.join(TS_folder, 'LOG-%s-plane%i.%s' %\
                                     (chan.replace(' ','-'), p, Format))
             out = cv.VideoWriter(vid_name,
-                                  cv.VideoWriter_fourcc(*'mp4v'), 
-                                  movie_rate,
-                                  (Lx, Ly),
-                                  False)
+                                 cv.VideoWriter_fourcc(*'mp4v'), 
+                                 movie_rate,
+                                 (Lx, Ly),
+                                 False)
 
             print('\n  [...]  Building the video: "%s" ' % vid_name)
 
@@ -253,14 +255,53 @@ def find_subfolders(folder):
                     if 'TSeries' in f[0].split(os.path.sep)[-1]]
 
 
-def remove_files(folder):
+##################  hjk
 
-    for f in os.listdir(folder):
-        if f.endswith('.ome.tif')\
-                or f.endswith('.bin')\
-                or f.endswith('.env'):
-            print(f)
-            os.remove(os.path.join(folder, f))
+def remove_tiff_and_binary_files(TS_folder):
+    """
+
+    we just check that the number of frames matches
+    if yes:
+        --> remove all tiffs and binary files !!
+
+    """
+
+    Format = 'wmv' if ('win32' in sys.platform) else 'mp4'
+
+    xml_file = get_files_with_extension(TS_folder, 
+                                        extension='.xml')[0]
+    xml = bruker_xml_parser(xml_file)
+
+    for chan in xml['channels']:
+    
+        print('    --> Channel: ', chan)
+        nframes = len(xml[chan]['tifFile'])
+
+        for p in np.unique(xml[chan]['depth_index']):
+
+            vid_name = os.path.join(TS_folder, 'LOG-%s-plane%i.%s' %\
+                                    (chan.replace(' ','-'), p, Format))
+
+            cap = cv.VideoCapture(vid_name)
+
+            nframes_vid = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
+
+            if ( (nframes-nframes_vid)/nframes ) < 0.001:
+                # less than 0.1% frame difference
+
+                print('    [!!] DELETING FOLDER IN 20s [!!] ')
+                print('          (stop with Ctrl+C Ctrl+X)  ')
+                print('                ', folder)
+                for i in range(20):
+                    printProgressBar(i, 20)
+                    time.sleep(1)
+
+                for f in os.listdir(TS_folder):
+                    if f.endswith('.ome.tif')\
+                            or f.endswith('.bin')\
+                            or f.endswith('.env'):
+                        print(f)
+                        os.remove(os.path.join(TS_folder, f))
     
 
 
@@ -297,14 +338,10 @@ if __name__=='__main__':
 
             else:
                 convert_to_log8bit_mp4(folder)
-
+            
             if args.delete:
-                print('    [!!] DELETING FOLDER IN 30s [!!] ')
-                print('                ', folder)
-                for i in range(31):
-                    printProgressBar(i, 30)
-                    time.sleep(1)
-                remove_files(folder)
+                print(' - deleting tiffs and binary in ', folder, ' [...]')
+                remove_tiff_and_binary_files(folder)
                 
 
         elif args.restore:
@@ -314,14 +351,17 @@ if __name__=='__main__':
             xml = bruker_xml_parser(xml_file)
 
             for chan in xml['channels']:
+
                 if os.path.isfile(\
                         os.path.join(folder,
                                      'LOG-%s-summary.npy'%(chan.replace(' ','-')))):
                     reconvert_to_tiffs_from_log8bit(folder)
+
                 elif os.path.isfile(\
                         os.path.join(folder,
                                      '%s-summary.npy'%(chan.replace(' ','-')))):
                     reconvert_to_tiffs_from_16bit(folder)
+
                 else:
                     print('\n no video file to restore was found ! \n ')
 

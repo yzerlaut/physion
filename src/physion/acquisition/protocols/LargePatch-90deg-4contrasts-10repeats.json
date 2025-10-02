@@ -1,0 +1,23 @@
+{
+  "Presentation": "Stimuli-Sequence",
+  "Stimulus": "grating",
+  "Screen": "Dell-2020",
+  "shuffling": "full-with-alternate-even-odd-repeats",
+  "shuffling-seed": 1,
+  "units":"lin-deg",
+  "------------------------------------------------------------------------1":0,
+  "presentation-duration": 1,
+  "presentation-prestim-period": 1,
+  "presentation-poststim-period": 1,
+  "presentation-interstim-period": 1,
+  "presentation-blank-screen-color": 0.5,
+  "N-repeat": 4,
+  "------------------------------------------------------------------------2":0,
+  "contrast-1": 0.0, "contrast-2": 1.0, "N-contrast": 4,
+  "------------------------------------------------------------------------3":0,
+  "speed": 0,
+  "angle": 0,
+  "spatial-freq": 0.04,
+  "radius": 45,
+  "phase":90
+}

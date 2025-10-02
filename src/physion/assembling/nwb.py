@@ -431,7 +431,8 @@ def build_NWB_func(args, Subject=None):
                                 ' pix_to_mm=%.3f' % pix_to_mm)
 
                 for key, key2, coef in zip(['cx', 'cy', 'sx', 'sy', 'blinking', 'area'],
-                                     ['pupil_center_X', 'pupil_center_y', 'width', 'height', 'blinking_ids', 'pupil_dilation_blinking_corrected'],
+                                     ['pupil_center_X', 'pupil_center_y', 'width', 'height', 
+                                      'blinking_ids', 'pupil_dilation_blinking_corrected'],
                                      [pix_to_mm, pix_to_mm, pix_to_mm*2, pix_to_mm*2, 1, pix_to_mm**2]):
                     if type(dataP[key2]) is np.ndarray:
                         PupilProp = pynwb.TimeSeries(name=key,

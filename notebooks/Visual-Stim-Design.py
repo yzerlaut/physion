@@ -4,7 +4,9 @@
 # %%
 import sys, os
 import numpy as np
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src'))
+
+sys.path += ['../src'] # add src code directory for physion
+#sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src'))
 import physion
 import physion.utils.plot_tools as pt
 from physion.visual_stim.build import get_default_params

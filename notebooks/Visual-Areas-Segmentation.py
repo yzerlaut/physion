@@ -13,7 +13,7 @@
 # load packages:
 import numpy as np
 import sys
-sys.path.append('../src')
+sys.path += ['../src'] # add src code directory for physion
 import physion.utils.plot_tools as pt
 from physion.intrinsic.tools import *
 from physion.intrinsic.analysis import RetinotopicMapping
@@ -28,10 +28,10 @@ dataFolder = os.path.join(os.path.expanduser('~'), 'DATA',
                         'physion_Demo-Datasets', 'PV-WT', 'retinotopic_mapping',
                         'PVTOM_BB_5')
 # retinotopic mapping data
-# maps = np.load(os.path.join(dataFolder, 'raw-maps.npy') , 
-#                allow_pickle=True).item()
-maps = dict(np.load(os.path.join(dataFolder, 'raw-maps.npz') , 
-               allow_pickle=True))
+maps = np.load(os.path.join(dataFolder, 'raw-maps.npy') , 
+                allow_pickle=True).item()
+#maps = dict(np.load(os.path.join(dataFolder, 'raw-maps.npz') , 
+#               allow_pickle=True))
 # vasculature picture
 imVasc = np.array(Image.open(os.path.join(dataFolder, 'vasculature.tif')))
 fig, ax = pt.figure(ax_scale=(2,2))
@@ -174,5 +174,17 @@ if False:
                         0, maps['vasculature'].shape[0]-1])
         ax.axis('off')
         ax.axis('equal');
+
+
+# %% [markdown]
+# ## Illustrating the phase shift
+
+# for shift in [0, np.pi/2., np.pi, 3*np.pi/2., 2*np.pi]:
+for shift in np.linspace(0, 2*np.pi, 9):
+        new_phase = perform_phase_shift(maps['up-phase'], shift)
+        fig, ax = pt.figure()
+        ax.axis('off')
+        plot_phase_map(ax, fig, new_phase)
+        ax.set_title('shift = %.2f Rd' % shift)
 
 # %%
