@@ -339,7 +339,10 @@ class Data:
     def read_facemotion(self):
         
         fd = str(self.nwbfile.processing['FaceMotion'].description)
-        self.FaceMotion_ROI = [int(i) for i in fd.split('y0,dy)=(')[1].split(')')[0].split(',')]
+        try :
+            self.FaceMotion_ROI = [int(i) for i in fd.split('y0,dy)=(')[1].split(')')[0].split(',')]
+        except:
+            self.FaceMotion_ROI = [0, 0, 0, 0]
 
     def build_facemotion(self,
                          specific_time_sampling=None,
