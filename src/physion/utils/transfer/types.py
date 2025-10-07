@@ -65,6 +65,14 @@ TYPES = {
     'npy':include_patterns('*.npy'),
     'xml':include_patterns('*.xml'),
     'all':None,
+    'to_build_nwb': shutil.ignore_patterns('FaceCamera-imgs*', 'RigCamera-imgs*',
+                                           '*.ome.tif', 
+                                            'Reference*', 
+                                            'CYCLE*',
+                                            '*.bin',
+                                            '*.mp4', '*.avi','*.wmv',
+                                            '*.env',  'reg_tif*', '*_output_*', "*.png"
+                                              ),
 }
 
 
