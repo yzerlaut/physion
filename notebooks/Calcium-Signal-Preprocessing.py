@@ -95,7 +95,8 @@ dFoF_options = dict(\
     percentile=5.,
     roi_to_neuropil_fluo_inclusion_factor=1.15,
     neuropil_correction_factor=0.8,
-    with_computed_neuropil_fact=False)
+    with_computed_neuropil_fact=False,
+    roi_to_neuropil_fluo_inclusion_factor_metric='mean')
 
 # %%
 # we first perform the dFoF determination with the above params

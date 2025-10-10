@@ -8,7 +8,7 @@ from physion.visual_stim.build import build_stim
 from physion.analysis import tools
 from physion.imaging.Calcium import compute_dFoF,\
         ROI_TO_NEUROPIL_INCLUSION_FACTOR, METHOD,\
-        T_SLIDING, PERCENTILE, NEUROPIL_CORRECTION_FACTOR
+        T_SLIDING, PERCENTILE, NEUROPIL_CORRECTION_FACTOR, ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC
 from physion.imaging.dcnv import oasis
 
 class Data:
@@ -385,6 +385,8 @@ class Data:
                    smoothing=None,
                    interpolation='linear',
                    with_computed_neuropil_fact=False,
+                   roi_to_neuropil_fluo_inclusion_factor_metric=\
+                    ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC,
                    verbose=True):
         """
         creates self.dFoF, self.t_dFoF
@@ -413,6 +415,8 @@ class Data:
                                     with_correctedFluo_and_F0,
                             smoothing=smoothing,
                             with_computed_neuropil_fact=with_computed_neuropil_fact,
+                            roi_to_neuropil_fluo_inclusion_factor_metric=\
+                                    roi_to_neuropil_fluo_inclusion_factor_metric,
                             verbose=verbose)
         
 

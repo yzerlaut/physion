@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.ndimage import filters
+from scipy.ndimage import gaussian_filter1d, minimum_filter1d, maximum_filter1d
 from scipy.signal import convolve, windows
 from scipy.interpolate import interp1d
 from sklearn.linear_model import LinearRegression
@@ -10,6 +10,7 @@ import time
 #          DEFAULT OPTIONS FOR FLUORESCENCE (dFoF) PROCESSING                # 
 
 ROI_TO_NEUROPIL_INCLUSION_FACTOR = 1.0 # ratio to discard ROIs with weak fluo compared to neuropil
+ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC = 'mean' # either 'mean' or 'std'
 METHOD = 'percentile' # either 'minimum', 'percentile', 'sliding_minimum', 'sliding_percentile', 'hamming', 'sliding_minmax'
 T_SLIDING = 300. # seconds (used only if METHOD= 'sliding_minimum' | 'sliding_percentile' | 'hamming' | 'sliding_minmax')
 PERCENTILE = 10. # for baseline (used only if METHOD= 'percentile' | 'sliding_percentile' | 'hamming')
@@ -72,7 +73,7 @@ def compute_sliding_percentile(array, percentile, Window,
                                                      max([1,int(Window/subsampling)]))
 
     if with_smoothing:
-        Flow[:,sbsmplIndices] = filters.gaussian_filter1d(Flow[:,sbsmplIndices], 
+        Flow[:,sbsmplIndices] = gaussian_filter1d(Flow[:,sbsmplIndices], 
                                                           max([1,int(Window/subsampling)]), 
                                                           axis=-1)
 
@@ -86,26 +87,26 @@ def compute_sliding_minimum(array, Window,
                             pre_smoothing=0,
                             with_smoothing=False):
     if pre_smoothing>0:
-        Flow = filters.gaussian_filter1d(array, pre_smoothing)
+        Flow = gaussian_filter1d(array, pre_smoothing)
     else:
         Flow = array
 
-    Flow = filters.minimum_filter1d(Flow, Window, mode='wrap')
+    Flow = minimum_filter1d(Flow, Window, mode='wrap')
 
     if with_smoothing:
-        Flow = filters.gaussian_filter1d(Flow, Window, axis=1)
+        Flow = gaussian_filter1d(Flow, Window, axis=1)
 
     return Flow
 
 def compute_sliding_minmax(array, Window,
                            pre_smoothing=0): 
     if pre_smoothing>0:
-        Flow = filters.gaussian_filter1d(array, pre_smoothing)
+        Flow = gaussian_filter1d(array, pre_smoothing)
     else:
         Flow = array
 
-    Flow = filters.minimum_filter1d(Flow, Window, mode='wrap')
-    Flow = filters.maximum_filter1d(Flow, Window, mode='wrap')
+    Flow = minimum_filter1d(Flow, Window, mode='wrap')
+    Flow = maximum_filter1d(Flow, Window, mode='wrap')
 
     return Flow
 
@@ -200,6 +201,7 @@ def compute_dFoF(data,
                  with_correctedFluo_and_F0=False,
                  smoothing=None,
                  with_computed_neuropil_fact=False,
+                 roi_to_neuropil_fluo_inclusion_factor_metric=ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC,
                  verbose=True):
     """
     -----------------
@@ -231,7 +233,7 @@ def compute_dFoF(data,
             if np.sum(~valid_ROIs_neuropil)>0:
                 print('\n  ** %i ROIs were discarded with the strictly positive neuropil correction factor criterion (%.1f%%) ** \n'\
                     % (np.sum(~valid_ROIs_neuropil),
-                        100*np.sum(~valid_ROIs_neuropil)/correctedFluo.shape[0]))
+                        100*np.sum(~valid_ROIs_neuropil)/data.rawFluo.shape[0]))
             else:
                 print('\n  ** all ROIs passed the strictly positive neuropil correction factor criterion ** \n')
                 
@@ -256,11 +258,22 @@ def compute_dFoF(data,
                                 sliding_window=sliding_window)
 
     # Step 3) -> determine the valid ROIs
-    # ROIs with strictly positive baseline ++ Above Inclusion Factor
-    valid_roiIndices = \
-                (np.min(correctedFluo0, axis=1)>1) &\
-        ((np.mean(data.rawFluo, axis=1)>\
-            roi_to_neuropil_fluo_inclusion_factor*np.mean(data.neuropil, axis=1)))
+    # ROIs with strictly positive baseline
+    valid_roiIndices = (np.min(correctedFluo0, axis=1)>1)
+
+    # ROIs above Inclusion Factor
+    if roi_to_neuropil_fluo_inclusion_factor_metric == 'mean':
+        valid_roiIndices = valid_roiIndices &\
+            ((np.mean(data.rawFluo, axis=1)>\
+                roi_to_neuropil_fluo_inclusion_factor*np.mean(data.neuropil, axis=1)))
+    elif roi_to_neuropil_fluo_inclusion_factor_metric == 'std' :
+        neuropil_filtered = gaussian_filter1d(data.neuropil, 10)
+        rawFluo_filtered = gaussian_filter1d(data.rawFluo, 10)
+        valid_roiIndices = valid_roiIndices &\
+            ((np.std(rawFluo_filtered, axis=1)>\
+                roi_to_neuropil_fluo_inclusion_factor*np.std(neuropil_filtered, axis=1)))
+    else:
+        raise ValueError('roi_to_neuropil_fluo_inclusion_factor must be either "mean" or "std"')
 
     # Add strictly positive neuropil correction factor criterion
     if with_computed_neuropil_fact :
@@ -272,7 +285,7 @@ def compute_dFoF(data,
 
     # Step 5) -> Gaussian smoothing if required
     if smoothing is not None:
-        data.dFoF = filters.gaussian_filter1d(data.dFoF, smoothing, axis=1)
+        data.dFoF = gaussian_filter1d(data.dFoF, smoothing, axis=1)
 
     #######################################################################
     if verbose:
