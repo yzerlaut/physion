@@ -502,8 +502,16 @@ class Data:
     #       episodes and visual stim protocols     #
     ################################################
     
-    def init_visual_stim(self, verbose=True):
+    def init_visual_stim(self, 
+                         verbose=True, 
+                         degree=False):
+        """
+        ability to force degrees when re-initializing from data
+                            (for plots in degrees)
+        """
         self.metadata['verbose'] = verbose
+        if degree:
+            self.metadata['units'] = 'deg'
         self.visual_stim = build_stim(self.metadata)
 
         
