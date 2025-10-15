@@ -316,6 +316,7 @@ def stop(self):
         self.acq.close()
 
     if self.CaImagingButton.isChecked():
+        time.sleep(0.5) # need to wait that the NIdaq process is released to create a new one
         # stop the Ca imaging recording
         self.send_CaImaging_Stop_signal()
 

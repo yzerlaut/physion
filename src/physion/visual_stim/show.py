@@ -12,7 +12,8 @@ def init_stimWindow(self,
     self.stim.prepare_stimProps_tables(verbose=False)
     
     # Set window properties such as title, size, and icon
-    if ('fullscreen' in self.stim.screen) and self.stim.screen['fullscreen']:
+    if ('fullscreen' in self.stim.screen) and\
+          self.stim.screen['fullscreen']:
         if 'Bacci-2P' in self.config['Rig']:
             self.stimWin.setGeometry(-400, 400, 600, int(9./16*600))
             self.stimWin.showFullScreen()
