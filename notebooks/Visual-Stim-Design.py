@@ -134,6 +134,8 @@ for units, ax, title in zip(['deg', 'cm', 'lin-deg'], AX,
 # %%
 # %%
 width = 29
+distance_front = 17
+distance_side = 14.5 
 
 x = np.linspace(-width/2, width/2, 20)
 
