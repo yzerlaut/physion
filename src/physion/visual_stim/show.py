@@ -14,7 +14,7 @@ def init_stimWindows(self,
     self.stimWins = []
     self.mediaPlayers, self.videowidgets = [], []
 
-    for s in range(self.screen['nScreens']):
+    for s in range(self.stim.screen['nScreens']):
 
         # Create a Qt Window
         self.stimWins.append(QtWidgets.QWidget())
@@ -49,10 +49,10 @@ def init_stimWindows(self,
         vboxLayout.addWidget(self.videowidgets[-1])
 
         # Set the layout of the window
-        stimWins[s].setLayout(vboxLayout)
+        self.stimWins[s].setLayout(vboxLayout)
 
         # Set the video output for the media player
-        self.mediaPlayer[s].setVideoOutput(\
+        self.mediaPlayers[s].setVideoOutput(\
                                     self.videowidgets[s])
 
         # load the movie
@@ -76,7 +76,7 @@ def init_stimWindows(self,
         print()
         print(' ########################################## ')
         print('    [!!]   movie file not found ! [!!]')
-        print(self.stim.movie_file)
+        print(self.stim.movie_files)
         print(' ########################################## ')
 
 

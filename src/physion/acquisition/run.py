@@ -64,7 +64,13 @@ def init_VisualStim(self):
             stim.experiment['time_start'][0]
 
     Format = 'wmv' if 'win' in sys.platform else 'mp4'
-    stim.movie_file = os.path.join(movie_folder, 'movie.%s' % Format)
+    if stim.screen['nScreens']==1:
+        stim.movie_files = [\
+            os.path.join(movie_folder, 'movie.%s' % Format)]
+    else:
+        stim.movie_files = [\
+            os.path.join(movie_folder, 'movie-%i.%s' % (s+1,Format))\
+            for s in range(stim.screen['nScreens'])]
 
     return stim
 
@@ -117,9 +123,9 @@ def run(self):
                     '[...] initializing acquisition & stimulation')
             # ---- init visual stim ---- #
             self.stim = init_VisualStim(self) # (this also sets "self.max_time")
-            init_stimWindows(self) # creates self.stimWin -> for stim display !
+            init_stimWindows(self) # creates self.stimWins -> for stim display !
         else:
-            self.stimWin = None
+            self.stimWins = None
             self.statusBar.showMessage('[...] initializing acquisition')
 
         print('[ok] max_time of NIdaq recording set to: %.2dh:%.2dm:%.2ds' %\
@@ -185,8 +191,9 @@ def run(self):
             self.t0 = time.time()
 
         self.runEvent.set()
-        if self.stimWin is not None:
-            self.mediaPlayer.play()
+        if self.stimWins is not None:
+            for mediaPlayer in self.mediaPlayers:
+                mediaPlayer.play()
 
         print('')
         print(' -> acquisition launched !  ')
@@ -273,7 +280,8 @@ def run_update(self):
             self.current_index = self.stim.next_index_table[iT]
 
             # at each interstim, we re-align the stimulus presentation
-            self.mediaPlayer.setPosition(int(1e3*t))
+            for mediaPlayer in self.mediaPlayers:
+                mediaPlayer.setPosition(int(1e3*t))
 
             # -*- now we update the stimulation display in the terminal -*-
             protocol_id = self.stim.experiment['protocol_id'][\
@@ -323,8 +331,9 @@ def stop(self):
     self.statusBar.showMessage('acquisition/stimulation stopped !')
     print('\n -> acquisition stopped !  \n')
 
-    if self.stimWin is not None:
-        self.stimWin.close()
+    if self.stimWins is not None:
+        for stimWin in self.stimWins:
+            stimWin.close()
 
     if self.animate_buttons:
         self.runButton.setEnabled(True)
