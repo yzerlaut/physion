@@ -73,7 +73,6 @@ SCREENS = {
         'width':29.0, # in cm
         'height':34.0, # in cm
         'distance_front':17.0, # in cm
-        'distance_side':14.5, # in cm
         'fullscreen':True,
         'monitoring_square':{'size':56,
                              'location':'top-right',

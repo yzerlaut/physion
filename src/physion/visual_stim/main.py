@@ -155,15 +155,11 @@ class visual_stim:
         self.x *= 180./np.pi
         self.z *= 180./np.pi
 
-    def set_angle_meshgrid_multiscreen(self):
+    def set_angle_meshgrid_U3Screens(self):
         """
         """
 
-        for s in range(self.screen['nScreens']):
-            print(s)
-
-        # we start from the real pixel Cartesian coordinates on the screen
-        widths, heights = np.meshgrid(\
+        X, Z = np.meshgrid(\
                              np.linspace(-self.screen['width']/2., 
                                          self.screen['width']/2., 
                                          self.screen['resolution'][0]),
@@ -171,20 +167,65 @@ class visual_stim:
                                           self.screen['height']/2., 
                                           self.screen['resolution'][1]),
                                       indexing='xy')
+
+        L = self.screen['width']
+        lF = self.screen['distance_front']
+
+        widths = np.concatenate([X+i*L-L\
+                                  for i in range(self.screen['nScreens'])],
+                                  axis=0)
+        heights = np.concatenate([Z for i in range(self.screen['nScreens'])],
+                                 axis=0)
+        screen_ids = np.concatenate([(i+1)+0*X\
+                                     for i in range(self.screen['nScreens'])],
+                                    axis=0)
+        # theta 1
+        O1 = np.arctan(L/2./lF)
+        # theta 2
+        O2 = np.pi/2.+np.arctan(2*(L-lF)/L)
+
+        # for s in range(self.screen['nScreens']):
+
         # we transpose given our coordinate system:
         self.widths, self.heights = widths.T, heights.T
+        X, Z = X.T, Z.T
+        self.screen_ids = screen_ids.T
 
-        self.mask = np.ones(self.widths.shape, dtype=bool) # stim mask, True by default
+        self.mask = np.ones(self.widths.shape, 
+                            dtype=bool) # stim mask, True by default
 
         if self.units=='cm':
 
             # we convert to angles in the x and z directions
-            self.x = np.arctan(self.widths/self.screen['distance_from_eye'])
-            self.z = np.arctan(self.heights*np.cos(self.x)/self.screen['distance_from_eye'])
+            self.x, self.z = 0*self.widths, 0*self.widths
+            #       screen by screen for the x-position
+            # - screen 1
+            cond1 = (self.screen_ids==1)
+            # - screen 2
+            cond2 = (self.screen_ids==2)
+            # 
+            dy = self.widths[cond2]+(lF-L/2)
+            print(dy.min(), dy.max())
+            self.x[cond1] = np.arctan(dy/L*2)
+            self.z[cond1] = np.arctan(\
+                -2*self.heights[cond1]/L*np.sin(self.x[cond1]+np.pi/2.))
+            # - screen 2
+            cond2 = (self.screen_ids==2)
+            self.x[cond2] = np.arctan(self.widths[cond2]/lF)
+            self.z[cond2] = np.arctan(\
+                self.heights[cond2]*np.cos(self.x[cond2])/lF)
+            # - screen 3
+            cond3 = (self.screen_ids==3)
+            self.x[cond3] = np.pi/2.+\
+                        np.arctan(2*(self.widths[cond3]-L/2.-lF)/L)
+            self.z[cond3] = np.arctan(\
+                self.heights[cond3]*np.cos(self.x[cond3]-np.pi/2.)/L)
+
 
         elif self.units=='deg':
 
-            altitudeMax = np.arctan(self.screen['height']/2./self.screen['distance_from_eye'])
+            altitudeMax = np.arctan(\
+                self.screen['height']/2./self.screen['distance_from_eye'])
             azimuthMax = self.screen['resolution'][0]\
                                 /self.screen['resolution'][1]*altitudeMax
 
@@ -229,7 +270,7 @@ class visual_stim:
         if self.screen['nScreens']==1:
             self.set_angle_meshgrid_1screen()
         else:
-            self.set_angle_meshgrid_multiscreen()
+            self.set_angle_meshgrid_U3Screens()
 
 
 
@@ -378,7 +419,6 @@ class visual_stim:
             #############################################
             ###    == build repetition sequence   ==  ### 
             #############################################
-
             index_no_repeat = np.arange(len(FULL_VECS[key]))
 
             # then dealing with repetitions
@@ -793,7 +833,8 @@ def init_bg_image(cls, index):
 if __name__=='__main__':
 
     import argparse, os, pathlib, shutil, json
-
+    import physion.utils.plot_tools as pt
+    import physion
     parser=argparse.ArgumentParser()
     parser.add_argument("protocol", 
                         help="protocol as a json file", 
@@ -805,7 +846,26 @@ if __name__=='__main__':
         with open(args.protocol, 'r') as f:
             protocol = json.load(f)
 
-        stim = visual_stim(protocol)
+        stim = physion.visual_stim.build.build_stim(protocol)
+
+        fig, AX = pt.figure(axes=(1,2), ax_scale=(2,2))
+
+        for s in range(stim.screen['nScreens']):
+            cond = stim.screen_ids.flatten()==(s+1)
+            pt.scatter(stim.widths.flatten()[cond][::200],
+                       stim.heights.flatten()[cond][::200],
+                       ax=AX[0], ms=0.1, color=pt.tab10(s))
+            pt.scatter(stim.x.flatten()[cond][::200],
+                       stim.z.flatten()[cond][::200],
+                       ax=AX[1], ms=0.2, color=pt.tab10(s))
+
+        pt.set_plot(AX[0], xlabel='x (cm)', ylabel='y (cm)')
+        pt.set_plot(AX[1], xlabel='x (deg.)', ylabel='y (deg.)')
+        for ax in AX:
+            ax.axis('equal')
+            ax.invert_xaxis()
+
+        pt.plt.show()
 
         # protocol['json_location'] = os.path.dirname(args.protocol)
     else:
