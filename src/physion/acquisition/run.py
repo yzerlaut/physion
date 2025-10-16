@@ -11,7 +11,7 @@ from physion.acquisition.tools import base_path,\
 from physion.acquisition import recordings
 
 from physion.visual_stim.main import build_stim as build_VisualStim
-from physion.visual_stim.show import init_stimWindow
+from physion.visual_stim.show import init_stimWindows
 
 try:
     from physion.hardware.NIdaq.main import Acquisition
@@ -117,7 +117,7 @@ def run(self):
                     '[...] initializing acquisition & stimulation')
             # ---- init visual stim ---- #
             self.stim = init_VisualStim(self) # (this also sets "self.max_time")
-            init_stimWindow(self) # creates self.stimWin -> for stim display !
+            init_stimWindows(self) # creates self.stimWin -> for stim display !
         else:
             self.stimWin = None
             self.statusBar.showMessage('[...] initializing acquisition')

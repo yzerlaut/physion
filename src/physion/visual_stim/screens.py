@@ -10,6 +10,7 @@ import numpy as np
 
 SCREENS = {
     'Dell-2020':{
+        'nScreens':1,
         'name':'Dell-2020',
         'screen_id':1,
         'resolution':[1280, 720],
@@ -23,6 +24,7 @@ SCREENS = {
                             'gamma':1.},
     },
     'Lilliput':{
+        'nScreens':1,
         'name':'Lilliput',
         'screen_id':1,
         'resolution':[768, 1280],
@@ -38,6 +40,7 @@ SCREENS = {
                             'gamma':1.},
     },
     'Mouse-Goggles':{
+        'nScreens':1,
         'name':'Mouse-Googles',
         'screen_id':1,
         'resolution':[240, 210],
@@ -49,7 +52,22 @@ SCREENS = {
                             'gamma':1.0},
     },
     'Dell-P2018H':{
+        'nScreens':1,
         'name':'Dell-P2018H',
+        'screen_id':1,
+        'resolution':[1280, 720],
+        'width':43.4, # in cm
+        'height':23.6, # in cm
+        'distance_from_eye':15.0, # in cm
+        'fullscreen':True,
+        'monitoring_square':{'size':56.,
+                             'location':'top-right'},
+        'gamma_correction':{'k':1.03,
+                            'gamma':1.77},
+    },
+    'LN-VR-3screens':{
+        'nScreens':3,
+        'name':'LN-VR-3screens',
         'screen_id':1,
         'resolution':[1280, 720],
         'width':43.4, # in cm

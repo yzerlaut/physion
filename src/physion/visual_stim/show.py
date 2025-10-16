@@ -1,65 +1,75 @@
 import os
 from PyQt5 import QtWidgets, QtCore, QtMultimedia, QtMultimediaWidgets
 
-def init_stimWindow(self, 
+def init_stimWindows(self, 
                     demo=False):
     
     """
      [!!] NEED TO MODIFY THIS FUNCTION WHEN SETTING UP NEW SCREENS [!!]
     """
-    self.stimWin = QtWidgets.QWidget()
+
     # we prepare the stimulus table
     self.stim.prepare_stimProps_tables(verbose=False)
-    
-    # Set window properties such as title, size, and icon
-    if ('fullscreen' in self.stim.screen) and\
-          self.stim.screen['fullscreen']:
-        if 'Bacci-2P' in self.config['Rig']:
-            self.stimWin.setGeometry(-400, 400, 600, int(9./16*600))
-            self.stimWin.showFullScreen()
-        elif 'A1-2P' in self.config['Rig']:
-            self.stimWin.setGeometry(2000, 400, 600, int(9./16*600))
-            self.stimWin.showFullScreen()
-        elif 'Laptop' in self.config['Rig']:
-            self.stimWin.setGeometry(2000, 400, 600, int(9./16*600))
-            self.stimWin.showFullScreen()
-    else:
-        self.stimWin.setGeometry(\
-                200, 400, 600, int(9./16*600))
 
+    self.stimWins = []
+    self.mediaPlayers, self.videowidgets = [], []
 
-    # Create a QMediaPlayer object
-    self.mediaPlayer = QtMultimedia.QMediaPlayer(None, 
-                QtMultimedia.QMediaPlayer.VideoSurface)
+    for s in range(self.screen['nScreens']):
 
-    # Create a QVideoWidget object to display video
-    self.videowidget = QtMultimediaWidgets.QVideoWidget()
+        # Create a Qt Window
+        self.stimWins.append(QtWidgets.QWidget())
 
-    vboxLayout = QtWidgets.QVBoxLayout()
-    vboxLayout.setContentsMargins(0,0,0,0)
-    vboxLayout.addWidget(self.videowidget)
+        # Set window properties such as title, size, and icon
+        if ('fullscreen' in self.stim.screen) and\
+            self.stim.screen['fullscreen']:
+            if 'Bacci-2P' in self.config['Rig']:
+                self.stimWins[-1].setGeometry(-400, 400, 600, int(9./16*600))
+                self.stimWins[-1].showFullScreen()
+            elif 'A1-2P' in self.config['Rig']:
+                self.stimWins[-1].setGeometry(2000, 400, 600, int(9./16*600))
+                self.stimWins[-1].showFullScreen()
+            elif 'Laptop' in self.config['Rig']:
+                self.stimWins[-1].setGeometry(2000, 400, 600, int(9./16*600))
+                self.stimWins[-1].showFullScreen()
+        else:
+            self.stimWins[-1].setGeometry(\
+                    200+100*s, 400+100*s, 600, int(9./16*600))
 
-    # Set the layout of the window
-    self.stimWin.setLayout(vboxLayout)
+        # Create a QMediaPlayer objects
+        self.mediaPlayers.append(\
+            QtMultimedia.QMediaPlayer(None, 
+                    QtMultimedia.QMediaPlayer.VideoSurface))
 
-    # Set the video output for the media player
-    self.mediaPlayer.setVideoOutput(self.videowidget)
+        # Create a QVideoWidget object to display video
+        self.videowidgets.append(\
+            QtMultimediaWidgets.QVideoWidget())
 
-    # load the movie
-    if os.path.isfile(self.stim.movie_file):
+        vboxLayout = QtWidgets.QVBoxLayout()
+        vboxLayout.setContentsMargins(0,0,0,0)
+        vboxLayout.addWidget(self.videowidgets[-1])
 
-        self.mediaPlayer.setMedia(\
-                QtMultimedia.QMediaContent(\
-                        QtCore.QUrl.fromLocalFile(\
-                            os.path.abspath(self.stim.movie_file))))
+        # Set the layout of the window
+        stimWins[s].setLayout(vboxLayout)
+
+        # Set the video output for the media player
+        self.mediaPlayer[s].setVideoOutput(\
+                                    self.videowidgets[s])
+
+        # load the movie
+        if os.path.isfile(self.stim.movie_files[s]):
+
+            self.mediaPlayers[s].setMedia(\
+                    QtMultimedia.QMediaContent(\
+                            QtCore.QUrl.fromLocalFile(\
+                                os.path.abspath(self.stim.movie_files[s]))))
 
         # initialize the stimulation index
         self.current_index= -1 
 
-        self.mediaPlayer.play()
-        self.mediaPlayer.pause()
+        self.mediaPlayers[s].play()
+        self.mediaPlayers[s].pause()
 
-        self.stimWin.show()
+        self.stimWins[s].show()
 
     else:
 

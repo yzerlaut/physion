@@ -1,5 +1,5 @@
 import numpy as np
-from datavyz import ges as ge
+import physion.utils.plot_tools as pt
 from scipy.optimize import minimize
 
 LAMBDA = {'blue':'470nm', 'green':'635nm', 'red':'830nm'}
@@ -25,8 +25,9 @@ def func(lum, coefs):
 
 
 for correc in ['before', 'after']:
-    fig, AX = ge.figure(axes=(3,1))
-    for i, color in enumerate(['blue', 'green', 'red']):
+    fig, AX = pt.figure(axes=(3,1), ax_scale=(1.2,1.2))
+    for i, color in enumerate(\
+        ['blue', 'green', 'red']):
         
         array = calib[correc][color]
         array=(array-np.min(array))/(np.max(array)-np.min(array))
@@ -40,11 +41,13 @@ for correc in ['before', 'after']:
         print('For %s and %s, gamma=' % (correc, color), residual.x[1])
         
         # ge.title(AX[i], "a=%.2f, k=%.2f, $\gamma$=%.2f" % (residual.x[0], residual.x[1], residual.x[2]), color=getattr(ge, color), size='small')
-        ge.title(AX[i], "k=%.2f, $\gamma$=%.2f" % (residual.x[0], residual.x[1]), color=getattr(ge, color), size='small')
-        ge.scatter(lum, array, ax=AX[i], color=getattr(ge, color), label='data', ms=3)
-        ge.plot(lum, func(lum, residual.x), ax=AX[i], lw=3, alpha=.5, color=getattr(ge, color), label='fit')
-        ge.annotate(AX[i],'$\lambda$=%s' % LAMBDA[color], (0.5,.1), color=getattr(ge, color))
-        ge.set_plot(AX[i], xlabel='(computer) luminosity', xticks=[0,0.5, 1], yticks=[0,0.5, 1], ylabel='measured I (norm.)')
+        # pt.title(AX[i], "k=%.2f, $\gamma$=%.2f" % (residual.x[0], residual.x[1]), color=getattr(ge, color), size='small')
+        pt.scatter(lum, array, ax=AX[i], color='tab:'+color, label='data', ms=3)
+        pt.plot(lum, func(lum, residual.x), ax=AX[i], lw=3, alpha=.5, color='tab:'+color, label='fit')
+        pt.annotate(AX[i],'$\lambda$=%s' % LAMBDA[color], (0.5,.1), color='tab:'+color)
+        pt.set_plot(AX[i], xlabel='(computer) luminosity', 
+                    xticks=[0,0.5, 1], yticks=[0,0.5, 1], 
+                    ylabel='measured I (norm.)')
 
-        fig.savefig('doc/gamma-correction-%s.png' % correc)
-ge.show()
+        # fig.savefig('doc/gamma-correction-%s.png' % correc)
+    pt.plt.show()
