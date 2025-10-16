@@ -12,13 +12,16 @@ import physion.utils.plot_tools as pt
 from physion.visual_stim.build import get_default_params
 
 # %% [markdown]
+# ## Single Screen Configuration
+
+# %% [markdown]
 # ## Dealing with the transformation from angles to display on the screen
 #
 # We want to convert the angular space of animal vision to the coordinates on a flat screen.
 #
 # The angular coordinates of animal vision are $\theta_x$ and $\theta_z$ that are the relative angles with respect to the center of the visual field of coordinates ($\theta_x$=0, $\theta_z$=0). This means that $\theta_x \in [-\pi/2,\pi/2]$ and $\theta_z \in [-\pi/2,\pi/2]$ (vision covers only half of the 3d space).
 #
-# <img src="../docs/visual_stim/coordinates.svg" width=60 height=60 />
+# <img src="docs/visual_stim/coordinates.svg" width=260 height=260 />
 #
 # We start from the [spherical coordinates](https://en.wikipedia.org/wiki/Spherical_coordinate_system) with the physics convention: $\theta$ is the polar angle and $\phi$ is the azimuthal angle. 
 #
@@ -124,6 +127,44 @@ for units, ax, title in zip(['deg', 'cm', 'lin-deg'], AX,
     stim = physion.visual_stim.stimuli.grating.stim(params)
     stim.plot_stim_picture(0, ax=ax, with_mask=True)
     ax.set_title(title)
+
+# %% [markdown]
+# # 3-Screens Configuration
+
+# %%
+# %%
+width = 29
+
+x = np.linspace(-width/2, width/2, 20)
+
+z = 34/29.*x
+X0, Z0 = np.meshgrid(x, z, indexing='ij')
+Z = np.concatenate([Z0, Z0, Z0], axis=0)
+X = np.concatenate([X0, X0+20, X0+40], axis=0)
+
+Y = 0.*X+7
+
+fig, AX = pt.figure(axes = (1,2), 
+                    ax_scale=(2,2), wspace=0.5)
+for i in range(3):
+    AX[0].plot(X0.flatten()+i*width, 
+               Z0.flatten(), '.', ms=1,
+               color=pt.tab10(i))
+    pt.annotate(AX[0], 'screen %i' % (i+1),
+                (i*width, z.max()), xycoords='data',
+                color=pt.tab10(i))
+AX[0].axis('equal')
+AX[0].invert_xaxis()
+pt.set_plot(AX[0], 
+            ylabel='y-position (cm)',
+            xlabel='x-position (cm)')
+
+x = np.arctan(X/Y)
+z = np.arctan(Z*np.cos(x)/Y)
+AX[1].plot(x.flatten(), z.flatten(), '.', ms=1)
+AX[1].axis('equal')
+
+
 
 # %% [markdown]
 # ## 1) Properties

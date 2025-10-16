@@ -90,7 +90,7 @@ class visual_stim:
     #  ---       Geometry      --- #
     ################################
 
-    def set_angle_meshgrid(self):
+    def set_angle_meshgrid_1screen(self):
         """
         """
 
@@ -154,6 +154,83 @@ class visual_stim:
         # convert back to angles in degrees
         self.x *= 180./np.pi
         self.z *= 180./np.pi
+
+    def set_angle_meshgrid_multiscreen(self):
+        """
+        """
+
+        for s in range(self.screen['nScreens']):
+            print(s)
+
+        # we start from the real pixel Cartesian coordinates on the screen
+        widths, heights = np.meshgrid(\
+                             np.linspace(-self.screen['width']/2., 
+                                         self.screen['width']/2., 
+                                         self.screen['resolution'][0]),
+                             np.linspace(-self.screen['height']/2., 
+                                          self.screen['height']/2., 
+                                          self.screen['resolution'][1]),
+                                      indexing='xy')
+        # we transpose given our coordinate system:
+        self.widths, self.heights = widths.T, heights.T
+
+        self.mask = np.ones(self.widths.shape, dtype=bool) # stim mask, True by default
+
+        if self.units=='cm':
+
+            # we convert to angles in the x and z directions
+            self.x = np.arctan(self.widths/self.screen['distance_from_eye'])
+            self.z = np.arctan(self.heights*np.cos(self.x)/self.screen['distance_from_eye'])
+
+        elif self.units=='deg':
+
+            altitudeMax = np.arctan(self.screen['height']/2./self.screen['distance_from_eye'])
+            azimuthMax = self.screen['resolution'][0]\
+                                /self.screen['resolution'][1]*altitudeMax
+
+            x, z = np.meshgrid(\
+                         np.linspace(-azimuthMax, azimuthMax,
+                                     self.screen['resolution'][0]),
+                         np.linspace(-altitudeMax, altitudeMax,
+                                      self.screen['resolution'][1]),
+                                  indexing='xy')
+            self.x, self.z = x.T, z.T
+
+            self.widths = self.screen['distance_from_eye']*np.tan(self.x)
+            self.heights = self.screen['distance_from_eye']*np.tan(self.z)/np.cos(self.x)
+
+            self.mask = (np.abs(self.widths)<=self.screen['width']/2.) &\
+                            (np.abs(self.heights)<=self.screen['height']/2.)
+
+        elif self.units=='lin-deg':
+
+            # OLD STRATEGY --> deprecated >08/2024
+            # we linearize the angle
+            dAngle_per_pix = np.arctan(
+                    1./self.screen['resolution'][0]*self.screen['width']\
+                    /self.screen['distance_from_eye'])
+            x, z = np.meshgrid(dAngle_per_pix*(\
+                                    np.arange(self.screen['resolution'][0])-\
+                                        self.screen['resolution'][0]/2.),
+                               dAngle_per_pix*(\
+                                    np.arange(self.screen['resolution'][1])-\
+                                        self.screen['resolution'][1]/2.),
+                                       indexing='xy')
+            self.x, self.z = x.T, z.T
+
+
+        # convert back to angles in degrees
+        self.x *= 180./np.pi
+        self.z *= 180./np.pi
+
+    def set_angle_meshgrid(self):
+        """
+        """
+        if self.screen['nScreens']==1:
+            self.set_angle_meshgrid_1screen()
+        else:
+            self.set_angle_meshgrid_multiscreen()
+
 
 
     # some general grating functions
@@ -715,6 +792,22 @@ def init_bg_image(cls, index):
 
 if __name__=='__main__':
 
-    print(5)
-    stim = visual_stim()
-    print(4)
+    import argparse, os, pathlib, shutil, json
+
+    parser=argparse.ArgumentParser()
+    parser.add_argument("protocol", 
+                        help="protocol as a json file", 
+                        default='')
+    args = parser.parse_args()
+
+    if os.path.isfile(args.protocol) and args.protocol.endswith('.json'):
+
+        with open(args.protocol, 'r') as f:
+            protocol = json.load(f)
+
+        stim = visual_stim(protocol)
+
+        # protocol['json_location'] = os.path.dirname(args.protocol)
+    else:
+        print('\nERROR: need to provide a valid json file as argument\n')
+
