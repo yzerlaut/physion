@@ -84,7 +84,7 @@ class MonitoringSquare:
     def find_mask(self, Stim):
         """ find the position of the square """
 
-        self.mask = np.zeros(Stim.screen['resolution'],
+        self.mask = np.array(Stim.get_null_image(),
                              dtype=bool)
 
         S = int(Stim.screen['monitoring_square']['size'])
@@ -212,12 +212,15 @@ if __name__=='__main__':
                         data = Stim.gamma_correction(\
                                 Stim.get_image(index, t-tstart))
                     else:
-                        data = Stim.blank_color*\
-                                np.ones(Stim.screen['resolution'])
+                        data = Stim.blank_color+\
+                                    Stim.get_null_image()
 
                     # put the monitoring square
                     if 'monitoring_square' in Stim.screen:
                         data = square.draw(data, t, tstart, tstop)
+
+                    data = Stim.restrict_to_screen(data, 
+                                                    screen_id=s+1)
 
                     out.write(np.array(255*np.rot90(data, k=1),
                                     dtype='uint8'))

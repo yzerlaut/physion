@@ -106,6 +106,7 @@ class visual_stim:
         # we transpose given our coordinate system:
         self.widths, self.heights = widths.T, heights.T
 
+        self.screen_ids = np.ones(self.width.shape, dtype=int)
         self.mask = np.ones(self.widths.shape, dtype=bool) # stim mask, True by default
 
         if self.units=='cm':
@@ -176,16 +177,9 @@ class visual_stim:
                                   axis=0)
         heights = np.concatenate([Z for i in range(self.screen['nScreens'])],
                                  axis=0)
-        screen_ids = np.concatenate([(i+1)+0*X\
+        screen_ids = np.concatenate([np.array((i+1)+0*X, dtype=int)\
                                      for i in range(self.screen['nScreens'])],
                                     axis=0)
-        # theta 1
-        O1 = np.arctan(L/2./lF)
-        # theta 2
-        O2 = np.pi/2.+np.arctan(2*(L-lF)/L)
-
-        # for s in range(self.screen['nScreens']):
-
         # we transpose given our coordinate system:
         self.widths, self.heights = widths.T, heights.T
         X, Z = X.T, Z.T
@@ -199,65 +193,63 @@ class visual_stim:
             # we convert to angles in the x and z directions
             self.x, self.z = 0*self.widths, 0*self.widths
             #       screen by screen for the x-position
+            # 
+
             # - screen 1
             cond1 = (self.screen_ids==1)
+
             # - screen 2
             cond2 = (self.screen_ids==2)
-            # 
             dy = self.widths[cond2]+(lF-L/2)
-            print(dy.min(), dy.max())
-            self.x[cond1] = np.arctan(dy/L*2)
+
+            # - screen 3
+            cond3 = (self.screen_ids==3)
+
+            # - screen 1
+            self.x[cond1] = np.arctan(-L/2/dy)
+            self.x[cond1] = (self.x[cond1]-np.pi)%np.pi-np.pi
             self.z[cond1] = np.arctan(\
-                -2*self.heights[cond1]/L*np.sin(self.x[cond1]+np.pi/2.))
+                -2*self.heights[cond1]/L*np.sin(self.x[cond1]))
+
             # - screen 2
             cond2 = (self.screen_ids==2)
             self.x[cond2] = np.arctan(self.widths[cond2]/lF)
             self.z[cond2] = np.arctan(\
                 self.heights[cond2]*np.cos(self.x[cond2])/lF)
-            # - screen 3
-            cond3 = (self.screen_ids==3)
-            self.x[cond3] = np.pi/2.+\
-                        np.arctan(2*(self.widths[cond3]-L/2.-lF)/L)
-            self.z[cond3] = np.arctan(\
-                self.heights[cond3]*np.cos(self.x[cond3]-np.pi/2.)/L)
 
+            # - screen 3 (mirrors screen 2)
+            cond3 = (self.screen_ids==3)
+            self.x[cond3] = -self.x[cond1]
+            self.z[cond3] = self.z[cond1]
 
         elif self.units=='deg':
 
-            altitudeMax = np.arctan(\
-                self.screen['height']/2./self.screen['distance_from_eye'])
-            azimuthMax = self.screen['resolution'][0]\
-                                /self.screen['resolution'][1]*altitudeMax
+            """ TO BE WRITTEN """
 
-            x, z = np.meshgrid(\
-                         np.linspace(-azimuthMax, azimuthMax,
-                                     self.screen['resolution'][0]),
-                         np.linspace(-altitudeMax, altitudeMax,
-                                      self.screen['resolution'][1]),
-                                  indexing='xy')
-            self.x, self.z = x.T, z.T
+            # altitudeMax = np.arctan(\
+            #     self.screen['height']/2./self.screen['distance_from_eye'])
+            # azimuthMax = self.screen['resolution'][0]\
+            #                     /self.screen['resolution'][1]*altitudeMax
 
-            self.widths = self.screen['distance_from_eye']*np.tan(self.x)
-            self.heights = self.screen['distance_from_eye']*np.tan(self.z)/np.cos(self.x)
+            # x, z = np.meshgrid(\
+            #              np.linspace(-azimuthMax, azimuthMax,
+            #                          self.screen['resolution'][0]),
+            #              np.linspace(-altitudeMax, altitudeMax,
+            #                           self.screen['resolution'][1]),
+            #                       indexing='xy')
+            # self.x, self.z = x.T, z.T
 
-            self.mask = (np.abs(self.widths)<=self.screen['width']/2.) &\
-                            (np.abs(self.heights)<=self.screen['height']/2.)
+            # self.widths = self.screen['distance_from_eye']*np.tan(self.x)
+            # self.heights = self.screen['distance_from_eye']*np.tan(self.z)/np.cos(self.x)
+
+            # self.mask = (np.abs(self.widths)<=self.screen['width']/2.) &\
+            #                 (np.abs(self.heights)<=self.screen['height']/2.)
 
         elif self.units=='lin-deg':
 
-            # OLD STRATEGY --> deprecated >08/2024
-            # we linearize the angle
-            dAngle_per_pix = np.arctan(
-                    1./self.screen['resolution'][0]*self.screen['width']\
-                    /self.screen['distance_from_eye'])
-            x, z = np.meshgrid(dAngle_per_pix*(\
-                                    np.arange(self.screen['resolution'][0])-\
-                                        self.screen['resolution'][0]/2.),
-                               dAngle_per_pix*(\
-                                    np.arange(self.screen['resolution'][1])-\
-                                        self.screen['resolution'][1]/2.),
-                                       indexing='xy')
-            self.x, self.z = x.T, z.T
+            print("""
+                   DEPRECATED !! 
+                  """)
 
 
         # convert back to angles in degrees
@@ -294,6 +286,7 @@ class visual_stim:
     ################################
 
     def add_grating_patch(self, image,
+                          screen_id=None,
                           angle=0,
                           radius=10,
                           spatial_freq=0.1,
@@ -307,7 +300,15 @@ class visual_stim:
                                            xcenter=xcenter,
                                            zcenter=zcenter)
 
-        cond = ((self.x-xcenter)**2+(self.z-zcenter)**2)<radius**2
+        if screen_id is not None:
+            cond0 = (self.screen_ids==screen_id)
+            x= self.x[cond0].reshape(self.screen['resolution'])
+            z= self.z[cond0].reshape(self.screen['resolution'])
+            xrot = xrot[cond0].reshape(self.screen['resolution'])
+        else:
+            x, z = self.x, self.z
+
+        cond = ((x-xcenter)**2+(z-zcenter)**2)<radius**2
 
         full_grating = self.compute_grating(xrot,
                                             spatial_freq=spatial_freq,
@@ -327,7 +328,7 @@ class visual_stim:
         N.B. when contrast=1, you need black background, otherwise it will saturate
              when contrast=0.5, you can start from the grey background to reach white in the center
         """
-        image += 2*np.exp(-((self.x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
+        image += 2*np.exp(-((x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
                      contrast*np.exp(-(t-t0)**2/2./sT**2)
 
 
@@ -522,34 +523,59 @@ class visual_stim:
     #############    DRAWING STIMULI   ##############
     #################################################
 
-    def get_image(self, episode, time_from_episode_start=0):
+    def restrict_to_screen(self, img,
+                           screen_id=None):
+        """
+        method to resctrict the image to a given screen 
+                    in multi-screen settings
+        """
+        if screen_id is not None:
+            cond = (self.screen_ids==screen_id)
+            return img[cond].reshape(self.screen['resolution'])
+        else:
+            return img
+
+    def get_null_image(self,
+                       screen_id=None):
+        # if screen_id is not None:
+        #     cond = self.screen_ids==screen_id
+        #     return 0*self.x[cond].reshape(self.screen['resolution'])
+        # else:
+        return 0*self.x
+
+    def get_image(self, episode, 
+                  time_from_episode_start=0):
         """
         print('to be implemented in child class')
         """
-        return 0*self.x+0.5
+        return 0.5+\
+            self.get_null_image()
 
-    def get_prestim_image(self):
+    def get_prestim_image(self,
+                          screen_id=None):
         if 'presentation-prestim-screen' in self.protocol:
             return (1+self.protocol['presentation-prestim-screen'])/2.+\
-                    0*self.x
+                    self.get_null_image(screen_id=screen_id)
         else:
-            return 0*self.x
+            return self.get_null_image(screen_id=screen_id)
 
     def get_interstim_image(self):
         if 'presentation-interstim-screen' in self.protocol:
             return (1+self.protocol['presentation-interstim-screen'])/2.+\
-                    0*self.x
+                    self.get_null_image(screen_id=screen_id)
         else:
-            return 0*self.x
+            return self.get_null_image(screen_id=screen_id)
 
     def get_poststim_image(self):
         if 'presentation-poststim-screen' in self.protocol:
             return (1+self.protocol['presentation-poststim-screen'])/2.+\
-                    0*self.x
+                    self.get_null_image(screen_id=screen_id)
         else:
-            return 0*self.x
+            return self.get_null_image(screen_id=screen_id)
 
-    def image_to_frame(self, img, norm=False, psychopy_to_numpy=False):
+    def image_to_frame(self, img, 
+                       norm=False, 
+                       psychopy_to_numpy=False):
         """ need to transpose given the current coordinate system"""
         if psychopy_to_numpy:
             return img.T/2.+0.5
@@ -825,9 +851,11 @@ class multiprotocol(visual_stim):
 ##  ----  BUILDING STIMULI  --- #####
 #####################################
 
-def init_bg_image(cls, index):
+def init_bg_image(cls, index,
+                  screen_id=None):
     """ initializing an empty image"""
-    return cls.experiment['bg-color'][index]+0.*cls.x
+    return cls.experiment['bg-color'][index]+\
+        cls.get_null_image(screen_id=screen_id)
 
 
 if __name__=='__main__':
@@ -860,7 +888,9 @@ if __name__=='__main__':
                        ax=AX[1], ms=0.2, color=pt.tab10(s))
 
         pt.set_plot(AX[0], xlabel='x (cm)', ylabel='y (cm)')
-        pt.set_plot(AX[1], xlabel='x (deg.)', ylabel='y (deg.)')
+        pt.set_plot(AX[1], xticks=[-90,0,90],
+                    ylabel='altitude (deg.)',
+                    xlabel='azimuth (deg.)')
         for ax in AX:
             ax.axis('equal')
             ax.invert_xaxis()
