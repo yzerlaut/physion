@@ -106,7 +106,7 @@ class visual_stim:
         # we transpose given our coordinate system:
         self.widths, self.heights = widths.T, heights.T
 
-        self.screen_ids = np.ones(self.width.shape, dtype=int)
+        self.screen_ids = np.ones(self.widths.shape, dtype=int)
         self.mask = np.ones(self.widths.shape, dtype=bool) # stim mask, True by default
 
         if self.units=='cm':
