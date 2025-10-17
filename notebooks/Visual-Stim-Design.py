@@ -165,6 +165,9 @@ x = np.arctan(X/Y)
 z = np.arctan(Z*np.cos(x)/Y)
 AX[1].plot(x.flatten(), z.flatten(), '.', ms=1)
 AX[1].axis('equal')
+pt.set_plot(AX[1], xticks=[-90,0,90],
+            ylabel='altitude (deg.)',
+            xlabel='azimuth (deg.)')
 
 
 
