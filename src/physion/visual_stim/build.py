@@ -173,7 +173,7 @@ if __name__=='__main__':
 
             # prepare video file
             Format = 'mp4' if (('linux' in sys.platform) or args.mp4) else 'wmv'
-
+            out = []
             for s in range(Stim.screen['nScreens']):
 
                 if s==0 and Stim.screen['nScreens']==1:
@@ -183,55 +183,53 @@ if __name__=='__main__':
                     filename = os.path.join(protocol_folder, 
                                             'movie-%i.%s' % (s+1, Format))
                 print("""
+                    Screen %i, %s""" % (s+1, filename))
+                
+                out.append(cv.VideoWriter(filename,
+                                cv.VideoWriter_fourcc(*'mp4v'), 
+                                Stim.movie_refresh_freq,
+                                Stim.screen['resolution'],
+                                False))
+            print()
+            # prepare the loop
+            t, tend = 0, Stim.experiment['time_stop'][-1]+\
+                    Stim.experiment['interstim'][-1]
+            index = 0
+            tstart, tstop = update(Stim, index)
 
-                    Screen %i
+            # LOOP over time to build the movie
+            while t<tend:
 
-                      """ % (s+1))
+                if t>=tstop:
+                    index += 1
+                    tstart, tstop = update(Stim, index)
+                    
+                # data in [0,1]
+                if (t>=tstart) and (t<tstop):
+                    data = Stim.gamma_correction(\
+                            Stim.get_image(index, t-tstart))
+                else:
+                    data = Stim.blank_color+\
+                                Stim.get_null_image()
 
-                out = cv.VideoWriter(filename,
-                                    cv.VideoWriter_fourcc(*'mp4v'), 
-                                    Stim.movie_refresh_freq,
-                                    Stim.screen['resolution'],
-                                    False)
+                # put the monitoring square
+                if 'monitoring_square' in Stim.screen:
+                    data = square.draw(data, t, tstart, tstop)
 
-                # prepare the loop
-                t, tend = 0, Stim.experiment['time_stop'][-1]+\
-                        Stim.experiment['interstim'][-1]
-                index = 0
-                tstart, tstop = update(Stim, index)
-
-                # LOOP over time to build the movie
-                while t<tend:
-
-                    if t>=tstop:
-                        index += 1
-                        tstart, tstop = update(Stim, index)
-                        
-                    # data in [0,1]
-                    if (t>=tstart) and (t<tstop):
-                        data = Stim.gamma_correction(\
-                                Stim.get_image(index, t-tstart))
-                    else:
-                        data = Stim.blank_color+\
-                                    Stim.get_null_image()
-
-                    # put the monitoring square
-                    if 'monitoring_square' in Stim.screen:
-                        data = square.draw(data, t, tstart, tstop)
-
-                    data = Stim.restrict_to_screen(data, 
+                for s, o in enumerate(out):
+                    dataS = Stim.restrict_to_screen(data, 
                                                     screen_id=s+1)
-
-                    out.write(np.array(255*np.rot90(data, k=1),
+                    o.write(np.array(255*np.rot90(dataS, k=1),
                                     dtype='uint8'))
-                    t+= 1./Stim.movie_refresh_freq
 
-                out.release()
+                t+= 1./Stim.movie_refresh_freq
+
+            for o in out:
+                o.release()
 
             np.save(os.path.join(protocol_folder, 'visual-stim.npy'), 
                     Stim.experiment)
             print('\n [ok] video file and metadata saved in: "%s" \n ' % protocol_folder)
-
 
     else:
         print('\nERROR: need to provide a valid json file as argument\n')
