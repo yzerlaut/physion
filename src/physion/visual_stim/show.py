@@ -31,6 +31,13 @@ def init_stimWindows(self,
             elif 'Laptop' in self.config['Rig']:
                 self.stimWins[-1].setGeometry(2000, 400, 600, int(9./16*600))
                 self.stimWins[-1].showFullScreen()
+            elif 'U3screens' in self.config['Rig']:
+                self.stimWins[0].setGeometry(2000, 400, 600, int(9./16*600))
+                self.stimWins[0].showFullScreen()
+                self.stimWins[1].setGeometry(4000, 400, 600, int(9./16*600))
+                self.stimWins[1].showFullScreen()
+                self.stimWins[2].setGeometry(6000, 400, 600, int(9./16*600))
+                self.stimWins[2].showFullScreen()
         else:
             self.stimWins[-1].setGeometry(\
                     200+100*s, 400+100*s, 600, int(9./16*600))
