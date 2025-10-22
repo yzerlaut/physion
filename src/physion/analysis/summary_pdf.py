@@ -1,4 +1,5 @@
-import sys, time, tempfile, os, pathlib, json, datetime, string, subprocess
+import sys, time, tempfile, os, pathlib, json,\
+      datetime, string, subprocess
 import numpy as np
 # from matplotlib.backends.backend_pdf import PdfPages
 # import matplotlib.pyplot as plt
@@ -6,7 +7,6 @@ from scipy.interpolate import interp1d
 
 import physion
 import physion.utils.plot_tools as pt
-
 
     
 def generate_pdf(args,
@@ -99,12 +99,12 @@ def metadata_fig(ax, data, short=True):
 def generate_FOV_fig(AX, data, args):
 
     physion.dataviz.imaging.show_CaImaging_FOV(\
-            data,key='meanImg', ax=AX[0],NL=4,with_annotation=False)
+            data,key='meanImg', ax=AX[0], NL=4,with_annotation=False)
     physion.dataviz.imaging.show_CaImaging_FOV(\
             data, key='max_proj', ax=AX[1], NL=4, with_annotation=False)
     physion.dataviz.imaging.show_CaImaging_FOV(\
             data, key='meanImg', ax=AX[2], NL=4, with_annotation=False,
-                       roiIndices=np.arange(data.nROIs))
+                       roiIndex=np.arange(data.nROIs))
 
     for ax, title in zip(AX, ['meanImg', 'max_proj', 'n=%i ROIs'%data.nROIs]):
         pt.annotate(ax, title, (0.5, .95), va='top', ha='center', fontsize=7)
@@ -145,6 +145,8 @@ def generate_raw_data_figs(data, ax, args,
                                     roiIndices=np.random.choice(data.nROIs,
                                                     np.min([12, data.nROIs]), 
                                                 replace=False))
+        settings['CaImagingRaster']= dict(fig_fraction=2,
+                                          subquantity='dFoF')
 
     physion.dataviz.raw.plot(data, data.tlim, 
               settings=settings, Tbar=30, ax=ax)
@@ -252,18 +254,19 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    if os.path.isdir(args.datafile):
+    if '.xlsx' in args.datafile:
+        pass
+
+    elif '.nwb' in args.datafile:
+        data = physion.analysis.read_NWB.Data(args.datafile)
+        generate_pdf(args, debug=args.verbose)
+
+    elif os.path.isdir(args.datafile):
         directory = args.datafile
         for f in physion.utils.files.get_files_with_extension(directory,
                                           extension='.nwb', recursive=True):
             args.datafile = f
             generate_pdf(args, debug=args.verbose)
-
-    elif '.nwb' in args.datafile:
-        data = physion.analysis.read_NWB.Data(args.datafile)
-        print(data.protocols)
-        generate_pdf(args, debug=args.verbose)
-
     else:
         print()
         print()

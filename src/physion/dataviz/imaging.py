@@ -19,8 +19,8 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
                         #
                         cmap=plt.cm.binary, 
                         axb=None,
-                        bar_inset_start=-0.01, bar_inset_width=0.01,
-                        normalization='None', subsampling=1,
+                        bar_inset_start=-0.02, bar_inset_width=0.01,
+                        normalization='per-line', subsampling=1,
                         name=''):
 
     if (subquantity in ['Fluorescence', 'rawFluo']) and (raster is None):
@@ -64,7 +64,7 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
 
         if axb is None:
-            axb = pt.inset(ax, [bar_inset_start, fig_fraction_start+.2*fig_fraction,
+            axb = pt.inset(ax, [bar_inset_start, fig_fraction_start+.1*fig_fraction,
                                 bar_inset_width, .6*fig_fraction], facecolor='w')
 
         cb = plt.colorbar(ims, cax=axb)
@@ -85,7 +85,7 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     ax.annotate('ROIs', 
                 (tlim[1], fig_fraction_start+fig_fraction/2.),
                 va='center',
-                rotation=-90,
+                # rotation=-90,
                 xycoords='data',
                 fontsize=8)
 
