@@ -8,7 +8,7 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 from dateutil.tz import tzlocal
 
 from physion.behavior.locomotion import compute_speed
-from physion.analysis.tools import resample_signal
+from physion.analysis.tools import resample, resample_signal
 from physion.utils.paths import python_path
 from physion.visual_stim.build import build_stim as build_visualStim
 
@@ -365,7 +365,6 @@ def build_NWB_func(args, Subject=None):
             print('     --> no raw_FaceCamera added !! ' )
 
             
-
         #################################################
         ####         Pupil from FaceCamera        #######
         #################################################
@@ -379,7 +378,6 @@ def build_NWB_func(args, Subject=None):
                     
                 dataP = np.load(os.path.join(args.datafolder, 'pupil.npy'),
                                 allow_pickle=True).item()
-                FC_timesP = FC_times[:len(dataP['cx'])]
 
                 if 'FaceCamera-1cm-in-pix' in metadata:
                     pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
@@ -395,11 +393,14 @@ def build_NWB_func(args, Subject=None):
                 for key, scale in zip(['cx', 'cy', 'sx', 'sy', 'angle', 'blinking'],
                                       [pix_to_mm for i in range(4)]+[1,1]):
                     if type(dataP[key]) is np.ndarray:
+                        signal = dataP[key]*scale
+                        signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                          signal, FC_times)
                         PupilProp = pynwb.TimeSeries(name=key,
-                                 data = np.reshape(dataP[key]*scale, 
-                                                   (len(FC_timesP),1)),
+                                 data = np.reshape(signal,
+                                                   (len(FC_times),1)),
                                  unit='seconds',
-                                 timestamps=FC_timesP)
+                                 timestamps=FC_times)
                         pupil_module.add(PupilProp)
 
                 # then add the frames subsampled
@@ -430,7 +431,7 @@ def build_NWB_func(args, Subject=None):
                                                            timestamps=FC_times[PUPIL_SUBSAMPLING])
                     nwbfile.add_acquisition(Pupil_frames)
 
-            if os.path.isfile(os.path.join(args.datafolder, 'FaceIt','faceit.npz')):
+            elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt','faceit.npz')):
                 
                 if args.verbose:
                     print('=> Adding processed pupil data for "%s" [...]' % args.datafolder)
@@ -481,27 +482,31 @@ def build_NWB_func(args, Subject=None):
                                 allow_pickle=True).item()
                 FC_timesF = FC_times[:len(dataF['motion'])]
 
-                # print(len(FC_times), len(dataF['motion']))
-
                 faceMotion_module = nwbfile.create_processing_module(\
                         name='FaceMotion', 
                         description='face motion dynamics,\n'+\
                             ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n'\
                                         % (dataF['ROI'][0],dataF['ROI'][1],
                                            dataF['ROI'][2],dataF['ROI'][3]))
+                signal = dataF['motion']
+                signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                    signal, FC_times)
                 FaceMotionProp = pynwb.TimeSeries(name='face-motion',
-                                      data = np.reshape(dataF['motion'],
-                                                        (len(FC_timesF),1)),
+                                      data = np.reshape(signal,
+                                                        (len(FC_times),1)),
                                                   unit='seconds',
-                                                  timestamps=FC_timesF)
+                                                  timestamps=FC_times)
                 faceMotion_module.add(FaceMotionProp)
 
                 if 'grooming' in dataF:
+                    signal = dataF['grooming']
+                    signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                        signal, FC_times)
                     GroomingProp = pynwb.TimeSeries(name='grooming',
-                                        data = np.reshape(dataF['grooming'],
-                                                        (len(FC_timesF),1)),
+                                        data = np.reshape(signal,
+                                                        (len(FC_times),1)),
                                                     unit='seconds',
-                                                  timestamps=FC_timesF)
+                                                  timestamps=FC_times)
                     faceMotion_module.add(GroomingProp)
 
                 # then add the motion frames subsampled
