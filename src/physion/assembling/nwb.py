@@ -438,7 +438,6 @@ def build_NWB_func(args, Subject=None):
                     
                 dataP = np.load(os.path.join(args.datafolder, 'FaceIt','faceit.npz'),
                                 allow_pickle=True)
-                FC_timesP = FC_times[:len(dataP['pupil_dilation'])]
 
                 if 'FaceCamera-1cm-in-pix' in metadata:
                     pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
@@ -454,11 +453,14 @@ def build_NWB_func(args, Subject=None):
                                       'blinking_ids', 'pupil_dilation_blinking_corrected'],
                                      [pix_to_mm, pix_to_mm, pix_to_mm*2, pix_to_mm*2, 1, pix_to_mm**2]):
                     if type(dataP[key2]) is np.ndarray:
+                        signal = dataP[key2]*coef
+                        signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                          signal, FC_times)
                         PupilProp = pynwb.TimeSeries(name=key,
-                                 data = np.reshape(dataP[key2]*coef, 
-                                                   (len(FC_timesP),1)),
+                                 data = np.reshape(signal,
+                                                   (len(FC_times),1)),
                                  unit='seconds',
-                                 timestamps=FC_timesP)
+                                 timestamps=FC_times)
                         pupil_module.add(PupilProp)
 
             else:
