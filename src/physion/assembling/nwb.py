@@ -150,7 +150,8 @@ def build_NWB_func(args, Subject=None):
     if args.verbose:
         print('=> Loading NIdaq data for "%s" [...]' % args.datafolder)
     try:
-        NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), allow_pickle=True).item()
+        NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), 
+                             allow_pickle=True).item()
     except FileNotFoundError:
         print('\n   [!!] No NI-DAQ data found [!!] \n')
         NIdaq_data = None
@@ -161,22 +162,39 @@ def build_NWB_func(args, Subject=None):
 
     if metadata['Locomotion'] and ('Locomotion' in args.modalities):
         # compute running speed from binary NI-daq signal
-        if args.verbose:
-            print('=> Computing and storing running-speed for "%s" [...]' % args.datafolder)
 
-        speed = compute_speed(NIdaq_data['digital'][0],
-                acq_freq=float(metadata['NIdaq-acquisition-frequency']),
-                radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
-                rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']))
-        _, speed = resample_signal(speed,
-                                   original_freq=float(metadata['NIdaq-acquisition-frequency']),
-                                   new_freq=args.running_sampling,
-                                   pre_smoothing=2./args.running_sampling)
+        if (not args.force_recalculation_of_speed) and\
+            os.path.isfile(os.path.join(args.datafolder, 'locomotion.npy')):
+
+            if args.verbose:
+                print('=> Using pre-computed running-speed for "%s" [...]' % args.datafolder)
+
+            L = np.load(os.path.join(args.datafolder, 'locomotion.npy'), 
+                         allow_pickle=True).item()
+            speed, running_sampling = L['speed'], L['running_sampling']
+
+        else:
+
+            if args.verbose:
+                print('=> Computing and storing running-speed for "%s" [...]' % args.datafolder)
+
+            speed = compute_speed(NIdaq_data['digital'][0],
+                    acq_freq=float(metadata['NIdaq-acquisition-frequency']),
+                    radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
+                    rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']))
+            _, speed = resample_signal(speed,
+                                    original_freq=float(metadata['NIdaq-acquisition-frequency']),
+                                    new_freq=args.running_sampling,
+                                    pre_smoothing=2./args.running_sampling)
+            running_sampling = args.running_sampling
+            np.save(os.path.join(args.datafolder, 'locomotion.npy'),
+                    dict(speed=speed, running_sampling=running_sampling))
+
         running = pynwb.TimeSeries(name='Running-Speed',
                                    data = np.reshape(speed, (len(speed),1)),
                                    starting_time=0.,
                                    unit='cm/s',
-                                   rate=args.running_sampling)
+                                   rate=running_sampling)
         nwbfile.add_acquisition(running)
 
     # #################################################
@@ -690,6 +708,7 @@ if __name__=='__main__':
     # or we just simply force the timestamps to the ones desired by visualStim
     parser.add_argument("--force_to_visualStimTimestamps", action="store_true")
     parser.add_argument("--reverse_photodiodeSignal", action="store_true")
+    parser.add_argument("--force_recalculation_of_speed", action="store_true")
 
     parser.add_argument('-rs', "--running_sampling", default=50., type=float)
     parser.add_argument('-ps', "--photodiode_sampling", default=1000., type=float)
