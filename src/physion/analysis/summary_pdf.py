@@ -267,57 +267,56 @@ if __name__=='__main__':
 
         if args.sorted_by!='':
             analysis.sort_values(args.sorted_by, inplace=True)
-            print(analysis)
 
         # create output folder
-    #     if args.for_protocol!='':
-    #         if analysis['protocol'][0]=='':
-    #             print("""
-    #                 protocol information not available in the DataTable.xlsx
-    #                     fill it by running:
+        if args.for_protocol!='':
+            if analysis['protocol'][0]=='':
+                print("""
+                    protocol information not available in the DataTable.xlsx
+                        fill it by running:
                       
-    #                   python -m physion.assembling.dataset fill-analysis %s
+                      python -m physion.assembling.dataset fill-analysis %s
                       
-    #                 """ % args.datafile)
-    #             output_folder = None
-    #             filenames = []
-    #         else:
-    #             output_folder = os.path.join(os.path.dirname(args.datafile), 'pdfs', args.for_protocol)
-    #             filenames = [os.path.join(root_folder, 'NWBs', r)\
-    #                           for (r, p) in zip(analysis['recordings'], analysis['protocols']) if args.for_protocol in p]
-    #     else:
-    #         filenames = list(dataset['files'])
-    #         output_folder = os.path.join(os.path.dirname(args.datafile), 'pdfs')
+                    """ % args.datafile)
+                output_folder = None
+                filenames = []
+            else:
+                output_folder = os.path.join(os.path.dirname(args.datafile), 'pdfs', args.for_protocol)
+                filenames = [os.path.join(root_folder, 'NWBs', r)\
+                              for (r, p) in zip(analysis['recording'], analysis['protocol']) if args.for_protocol in p]
+        else:
+            filenames = list(dataset['files'])
+            output_folder = os.path.join(os.path.dirname(args.datafile), 'pdfs')
             
-    #     if len(filenames)>0:
+        if len(filenames)>0:
 
-    #         os.makedirs(output_folder, exist_ok=True)
+            os.makedirs(output_folder, exist_ok=True)
 
-    #         for i, f in enumerate(filenames):
-    #             args.datafile = f
-    #             generate_pdf(args, 
-    #                          filename=os.path.join(output_folder, 
-    #                                                '%i-%s.pdf' %\
-    #                                                   (i+1, os.path.basename(f).replace('.nwb',''))),
-    #                          debug=args.verbose)
+            for i, f in enumerate(filenames):
+                args.datafile = f
+                generate_pdf(args, 
+                             filename=os.path.join(output_folder, 
+                                                   '%i-%s.pdf' %\
+                                                      (i+1, os.path.basename(f).replace('.nwb',''))),
+                             debug=args.verbose)
 
 
-    #         # from physion.utils.parallel import process_datafiles
-    #         # process_datafiles(process_file_for_parallel,
-    #         #                   filenames,
-    #         #                   output_folder)
+            # from physion.utils.parallel import process_datafiles
+            # process_datafiles(process_file_for_parallel,
+            #                   filenames,
+            #                   output_folder)
 
-    # elif '.nwb' in args.datafile:
-    #     data = physion.analysis.read_NWB.Data(args.datafile)
-    #     generate_pdf(args, debug=args.verbose)
+    elif '.nwb' in args.datafile:
+        data = physion.analysis.read_NWB.Data(args.datafile)
+        generate_pdf(args, debug=args.verbose)
 
-    # elif os.path.isdir(args.datafile):
-    #     directory = args.datafile
-    #     for f in physion.utils.files.get_files_with_extension(directory,
-    #                                       extension='.nwb', recursive=True):
-    #         args.datafile = f
-    #         generate_pdf(args, debug=args.verbose)
-    # else:
-    #     print()
-    #     print()
-    #     print()
+    elif os.path.isdir(args.datafile):
+        directory = args.datafile
+        for f in physion.utils.files.get_files_with_extension(directory,
+                                          extension='.nwb', recursive=True):
+            args.datafile = f
+            generate_pdf(args, debug=args.verbose)
+    else:
+        print()
+        print()
+        print()
