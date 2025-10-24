@@ -12,7 +12,7 @@ from .orientation_tuning import\
 stat_test = dict(interval_pre=[-1.5,-0.5],
                  interval_post=[0.5,1.5],
                  test='anova',
-                 positive=True)
+                 sign='positive')
 
 response_significance_threshold=0.01
 

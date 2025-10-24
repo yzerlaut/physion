@@ -237,12 +237,16 @@ def summary_fig(CELL_RESPS):
     # else:
         # print('\n \n Need to pick a datafile')
 
+def process_file_for_parallel(i, filename, output_folder):
+    args.datafile = filename
+
 if __name__=='__main__':
     
     import argparse
 
     parser=argparse.ArgumentParser()
     parser.add_argument("datafile", type=str)
+    parser.add_argument('-p', "--for_protocol", default='')
     parser.add_argument('-o', "--ops", type=str, nargs='*',
                         # default=['exp', 'raw', 'behavior', 'rois', 'protocols'],
                         # default=['raw'],
@@ -255,7 +259,45 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     if '.xlsx' in args.datafile:
-        pass
+        dataset, _, analysis = \
+            physion.assembling.dataset.read_spreadsheet(args.datafile)
+
+        # create output folder
+        if args.for_protocol!='':
+            if analysis['protocol'][0]=='':
+                print("""
+                    protocol information not available in the DataTable.xlsx
+                        fill it by running:
+                      
+                      python -m physion.assembling.dataset fill-analysis %s
+                      
+                    """ % args.datafile)
+                output_folder = None
+                filenames = []
+            else:
+                output_folder = os.path.join(os.path.dirname(args.datafile), 'pdfs', args.for_protocol)
+                filenames = [f for (f, p) in zip(dataset['files'], analysis['protocols']) if args.for_protocol in p]
+        else:
+            filenames = list(dataset['files'])
+            output_folder = os.path.join(os.path.dirname(args.datafile), 'pdfs')
+            
+        if len(filenames)>0:
+
+            os.makedirs(output_folder, exist_ok=True)
+
+            for i, f in enumerate(filenames):
+                args.datafile = f
+                generate_pdf(args, 
+                             filename=os.path.join(output_folder, 
+                                                   '%i-%s.pdf' %\
+                                                      (i+1, os.path.basename(f).replace('.nwb',''))),
+                             debug=args.verbose)
+
+
+            # from physion.utils.parallel import process_datafiles
+            # process_datafiles(process_file_for_parallel,
+            #                   filenames,
+            #                   output_folder)
 
     elif '.nwb' in args.datafile:
         data = physion.analysis.read_NWB.Data(args.datafile)
