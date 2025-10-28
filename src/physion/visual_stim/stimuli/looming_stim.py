@@ -46,6 +46,7 @@ class stim(visual_stim):
         return start_size + t_frac**nonlinearity * dSize
 
     def get_image(self, index, time_from_episode_start=0, parent=None):
+        print('t=', time_from_episode_start)
         img = self.experiment['bg-color'][index]+0.*self.x
 
         dColor = self.experiment['contrast'][index] * (self.experiment['color'][index] - self.experiment['bg-color'][index])
@@ -55,6 +56,37 @@ class stim(visual_stim):
                      color,
                      type='circle')
         return img
+
+    def plot_stim_picture(self, episode, 
+                          ax=None, label=None, vse=False,
+                          with_scale=False,
+                          arrow={'length':20,
+                                 'width_factor':0.05,
+                                 'color':'red'},
+                          with_mask=False):
+
+        """
+        """
+        tcenter = .15*(self.experiment['time_stop'][episode]-\
+                      self.experiment['time_start'][episode])
+        if with_scale:
+            if self.units in ['cm', 'lin-deg']:
+                label={'size':10/self.heights.max()*self.z.max(),
+                       'label':'10cm ',
+                       'shift_factor':0.02,
+                       'lw':1, 'fontsize':10}
+            else:
+                label={'size':20,'label':'20$^o$  ',
+                       'shift_factor':0.02,
+                       'lw':1, 'fontsize':10}
+        else:
+            label=None
+
+        ax = self.show_frame(episode, tcenter,
+                             ax=ax,
+                             label=label,
+                             with_mask=with_mask)
+        return ax
 
 """
     def plot_stim_picture(self, episode,

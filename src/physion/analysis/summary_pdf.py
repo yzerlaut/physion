@@ -1,4 +1,5 @@
-import sys, time, tempfile, os, pathlib, json, datetime, string, subprocess
+import sys, time, tempfile, os, pathlib, json,\
+      datetime, string, subprocess
 import numpy as np
 # from matplotlib.backends.backend_pdf import PdfPages
 # import matplotlib.pyplot as plt
@@ -6,7 +7,6 @@ from scipy.interpolate import interp1d
 
 import physion
 import physion.utils.plot_tools as pt
-
 
     
 def generate_pdf(args,
@@ -99,12 +99,12 @@ def metadata_fig(ax, data, short=True):
 def generate_FOV_fig(AX, data, args):
 
     physion.dataviz.imaging.show_CaImaging_FOV(\
-            data,key='meanImg', ax=AX[0],NL=4,with_annotation=False)
+            data,key='meanImg', ax=AX[0], NL=4,with_annotation=False)
     physion.dataviz.imaging.show_CaImaging_FOV(\
             data, key='max_proj', ax=AX[1], NL=4, with_annotation=False)
     physion.dataviz.imaging.show_CaImaging_FOV(\
             data, key='meanImg', ax=AX[2], NL=4, with_annotation=False,
-                       roiIndices=np.arange(data.nROIs))
+                       roiIndex=np.arange(data.nROIs))
 
     for ax, title in zip(AX, ['meanImg', 'max_proj', 'n=%i ROIs'%data.nROIs]):
         pt.annotate(ax, title, (0.5, .95), va='top', ha='center', fontsize=7)
@@ -145,6 +145,8 @@ def generate_raw_data_figs(data, ax, args,
                                     roiIndices=np.random.choice(data.nROIs,
                                                     np.min([12, data.nROIs]), 
                                                 replace=False))
+        settings['CaImagingRaster']= dict(fig_fraction=2,
+                                          subquantity='dFoF')
 
     physion.dataviz.raw.plot(data, data.tlim, 
               settings=settings, Tbar=30, ax=ax)
@@ -235,12 +237,17 @@ def summary_fig(CELL_RESPS):
     # else:
         # print('\n \n Need to pick a datafile')
 
+def process_file_for_parallel(i, filename, output_folder):
+    args.datafile = filename
+
 if __name__=='__main__':
     
     import argparse
 
     parser=argparse.ArgumentParser()
     parser.add_argument("datafile", type=str)
+    parser.add_argument('-p', "--for_protocol", default='')
+    parser.add_argument('-s', "--sorted_by", default='')
     parser.add_argument('-o', "--ops", type=str, nargs='*',
                         # default=['exp', 'raw', 'behavior', 'rois', 'protocols'],
                         # default=['raw'],
@@ -252,18 +259,63 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    if os.path.isdir(args.datafile):
+    if '.xlsx' in args.datafile:
+
+        dataset, _, analysis = \
+            physion.assembling.dataset.read_spreadsheet(args.datafile)
+        root_folder = os.path.dirname(args.datafile)
+
+        if args.sorted_by!='':
+            analysis.sort_values(args.sorted_by, inplace=True)
+
+        # create output folder
+        if args.for_protocol!='':
+            if analysis['protocol'][0]=='':
+                print("""
+                    protocol information not available in the DataTable.xlsx
+                        fill it by running:
+                      
+                      python -m physion.assembling.dataset fill-analysis %s
+                      
+                    """ % args.datafile)
+                output_folder = None
+                filenames = []
+            else:
+                output_folder = os.path.join(os.path.dirname(args.datafile), 'pdfs', args.for_protocol)
+                filenames = [os.path.join(root_folder, 'NWBs', r)\
+                              for (r, p) in zip(analysis['recording'], analysis['protocol']) if args.for_protocol in p]
+        else:
+            filenames = list(dataset['files'])
+            output_folder = os.path.join(os.path.dirname(args.datafile), 'pdfs')
+            
+        if len(filenames)>0:
+
+            os.makedirs(output_folder, exist_ok=True)
+
+            for i, f in enumerate(filenames):
+                args.datafile = f
+                generate_pdf(args, 
+                             filename=os.path.join(output_folder, 
+                                                   '%i-%s.pdf' %\
+                                                      (i+1, os.path.basename(f).replace('.nwb',''))),
+                             debug=args.verbose)
+
+
+            # from physion.utils.parallel import process_datafiles
+            # process_datafiles(process_file_for_parallel,
+            #                   filenames,
+            #                   output_folder)
+
+    elif '.nwb' in args.datafile:
+        data = physion.analysis.read_NWB.Data(args.datafile)
+        generate_pdf(args, debug=args.verbose)
+
+    elif os.path.isdir(args.datafile):
         directory = args.datafile
         for f in physion.utils.files.get_files_with_extension(directory,
                                           extension='.nwb', recursive=True):
             args.datafile = f
             generate_pdf(args, debug=args.verbose)
-
-    elif '.nwb' in args.datafile:
-        data = physion.analysis.read_NWB.Data(args.datafile)
-        print(data.protocols)
-        generate_pdf(args, debug=args.verbose)
-
     else:
         print()
         print()

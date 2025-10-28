@@ -135,11 +135,9 @@ for contrast in [0.5, 1.0]:
         for f in DATASET['files']:
                 print(' - analyzing file: %s  [...] ' % f)
                 data = physion.analysis.read_NWB.Data(f, verbose=False)
-                nROIs_original = data.nROIs # manually-selected ROIs
                 data.build_dFoF(neuropil_correction_factor=0.9,
                                 percentile=10., 
                                 verbose=False)
-                nROIs_final = data.nROIs # ROIs after dFoF criterion
 
                 protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0]
                 Episodes = physion.analysis.process_NWB.EpisodeData(data, 
@@ -152,8 +150,8 @@ for contrast in [0.5, 1.0]:
                                                         stat_test_props=stat_test_props, 
                                                         response_significance_threshold = response_significance_threshold, 
                                                         contrast=contrast)
-                Tuning['nROIs_original'] = nROIs_original
-                Tuning['nROIs_final'] = nROIs_final
+                Tuning['nROIs_original'] = data.original_nROIs
+                Tuning['nROIs_final'] = data.nROIs
                 Tuning['nROIs_responsive'] = np.sum(Tuning['significant_ROIs'])
 
                 Tunings.append(Tuning)
@@ -220,6 +218,4 @@ fig, ax = plot_orientation_tuning_curve(\
                                         #  average_by='ROIs',
                                         path=tempfile.tempdir)
     
-
-
 # %%
