@@ -81,6 +81,7 @@ def fit_gaussian(angles, values,
 def compute_tuning_response_per_cells(data, Episodes,
                                       stat_test_props,
                                       response_significance_threshold = 0.05,
+                                      filtering_cond=None,
                                       quantity='dFoF',
                                       contrast=1.0,
                                       start_angle=-22.5, 
@@ -102,6 +103,8 @@ def compute_tuning_response_per_cells(data, Episodes,
     if verbose:
         print('  - shifted_angle correspond to : ', shifted_angle)
 
+    if filtering_cond is None:
+        filtering_cond = Episodes.find_episode_cond() # True everywhere
 
     selectivities, prefered_angles = [], []
     RESPONSES, semRESPONSES = [], []
@@ -109,7 +112,9 @@ def compute_tuning_response_per_cells(data, Episodes,
 
     for roi in np.arange(data.nROIs):
         
-        cond = Episodes.find_episode_cond(key='contrast', value=contrast)
+        cond = Episodes.find_episode_cond(key='contrast', 
+                                          value=contrast) &\
+                                          filtering_cond
         cell_resp = Episodes.compute_summary_data(stat_test_props,
                                                   episode_cond=cond,
                                                   exclude_keys=['repeat', 'contrast'],
@@ -118,6 +123,7 @@ def compute_tuning_response_per_cells(data, Episodes,
                                                   verbose=True)
         
 
+        # find preferred angle:
         ipref = np.argmax(cell_resp['value'])
 
         prefered_angles.append(cell_resp['angle'][ipref])
