@@ -90,7 +90,7 @@ if __name__=='__main__':
                                        period=period, 
                                        bg_color=args.bg_color))
                 # build the movie
-                os.system('python -m physion.visual_stim.build temp.json --wmv')
+                os.system('python -m physion.visual_stim.build temp.json')
                 os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
                           os.path.join(folder,
                                        'flickering-bars-period%is' % period,
@@ -116,7 +116,7 @@ if __name__=='__main__':
                                            flicker_size=2,
                                            bg_color=args.bg_color))
                     # build the movie
-                    os.system('python -m physion.visual_stim.build temp.json --wmv')
+                    os.system('python -m physion.visual_stim.build temp.json')
                     os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
                           os.path.join(folder,
                                        'flickering-bars-period%is' % period,
