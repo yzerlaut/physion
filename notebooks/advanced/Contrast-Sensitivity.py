@@ -216,7 +216,9 @@ pt.set_plot(ax,
 
 # %%
 # --> plot above implemented in the orientation_tuning protocol
-import tempfile
+import tempfile, sys
+
+sys.path += ['../../src'] # add src code directory for physion
 from physion.analysis.protocols.contrast_sensitivity\
         import plot_contrast_sensitivity, plot_contrast_responsiveness
 

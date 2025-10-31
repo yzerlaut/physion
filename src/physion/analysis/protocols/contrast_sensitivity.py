@@ -175,9 +175,10 @@ def plot_contrast_responsiveness(keys,
                                np.sum(S['significant_'+sign[:3]], axis=0)/S['nROIs_%s' % nROIs]\
                                         for S in Sensitivities])
 
-                pt.plot(Sensitivities[0]['contrast'], 
-                        np.mean(Responsive, axis=0), 
+                pt.bar(np.mean(Responsive, axis=0), 
                         sy=stats.sem(Responsive, axis=0), 
+                        x = np.arange(Responsive.shape[1])+0.8*i/len(keys) , 
+                        width=0.7/len(keys),
                         color=color,
                         ax=ax)
                 
@@ -198,8 +199,8 @@ def plot_contrast_responsiveness(keys,
 
         pt.set_plot(ax, 
             ylabel='%% responsive \n %s' % sign,
-            xlabel='contrast',
-            xticks=np.arange(3)*0.5)        
+            xlabel='contrast', 
+            xticks=[0, Responsive.shape[1]-1], xticks_labels=[0,1])
 
         pt.set_plot(inset, ['left'],
                     title='gain',
