@@ -48,9 +48,10 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     elif (type(roiIndices)==str) and (roiIndices=='all') and (subquantity in ['dFoF', 'dF/F']):
         roiIndices = np.arange(data.nROIs)
         
-    if data.nROIs>1:
+    if len(roiIndices)>1:
         # checking more than one ROI to plot the raster
 
+        print('roiInices', len(roiIndices))
         if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
             raster = np.array([(raster[i,:]-np.min(raster[i,:]))/(np.max(raster[i,:])-\
                                     np.min(raster[i,:])) for i in range(raster.shape[0])])
