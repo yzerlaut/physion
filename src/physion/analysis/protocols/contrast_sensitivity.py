@@ -68,6 +68,20 @@ def get_responses(Sensitivities,
         # mean significant responses per session
         Responses = [np.mean(S['Responses'], axis=0) for S in Sensitivities]
 
+    elif average_by=='subjects':
+        subjects = np.array([Sensitivitie['subject']\
+                                for Sensitivitie in Sensitivities])
+        Responses = []
+        # mean significant responses per session
+        for subj in np.unique(subjects):
+            sCond = (subjects==subj)
+            Responses.append(\
+                np.mean(\
+                    np.concatenate([\
+                        Sensitivities[i]['Responses']\
+                          for i in np.arange(len(subjects))[sCond]]),
+                    axis=0))
+
     elif average_by=='ROIs':
         # mean significant responses per session
         Responses = np.concatenate([\
@@ -108,7 +122,8 @@ def plot_contrast_sensitivity(keys,
                     np.load(os.path.join(path, 'Sensitivities_%s.npy' % key), 
                             allow_pickle=True)
 
-                Responses = get_responses(Sensitivities, average_by=average_by)
+                Responses = get_responses(Sensitivities, 
+                                          average_by=average_by)
                 pt.plot(Sensitivities[0]['contrast'], 
                         np.mean(Responses, axis=0), 
                         sy=stats.sem(Responses, axis=0), 
@@ -123,7 +138,7 @@ def plot_contrast_sensitivity(keys,
                 if with_label:
                         annot = i*'\n'+' %.1f$\pm$%.1f, ' %(\
                                np.mean(Gains), stats.sem(Gains))
-                        if average_by=='sessions':
+                        if average_by in ['sessions', 'subjects']:
                                 annot += 'N=%02d %s, ' % (len(Responses), average_by) + key
                         else:
                                 annot += 'n=%04d %s, ' % (len(Responses), average_by) + key

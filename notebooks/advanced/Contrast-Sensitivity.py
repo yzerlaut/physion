@@ -183,6 +183,7 @@ for angle in [0, 90]:
                                                             angle=angle)
                 Sensitivity['nROIs_original'] = nROIs_original
                 Sensitivity['nROIs_final'] = nROIs_final
+                Sensitivity['subject'] = data.nwbfile.subject.subject_id
 
                 Sensitivities.append(Sensitivity)
 
@@ -225,7 +226,8 @@ from physion.analysis.protocols.contrast_sensitivity\
 fig, ax = plot_contrast_sensitivity(\
                         ['WT_angle-0.0', 
                          'WT_angle-90.0'],
-                         average_by='sessions',
+                        #  average_by='sessions',
+                         average_by='subjects',
                         path=tempfile.tempdir)
 
 fig, ax = plot_contrast_responsiveness(\
@@ -242,9 +244,4 @@ fig, ax = plot_contrast_responsiveness(\
                          nROIs='final', # "original" or "final", before/after dFoF criterion
                         path=tempfile.tempdir)
     
-    
-
-
-# %%
-
 # %%
