@@ -28,7 +28,7 @@ from physion.analysis.protocols.orientation_tuning\
 filename = os.path.join(os.path.expanduser('~'), 
                         'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
                         '2023_02_15-13-30-47.nwb')
-filename=os.path.expanduser('~/CURATED/Cibele/SST-cells_cond-GluN1-KO_Young_V1/NWBs/2025_10_13-14-20-17.nwb')
+
 data = physion.analysis.read_NWB.Data(filename, verbose=False)
 data.build_dFoF(neuropil_correction_factor=0.9, percentile=10., verbose=False)
 
