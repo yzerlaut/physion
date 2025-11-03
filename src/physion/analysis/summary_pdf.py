@@ -61,7 +61,7 @@ def metadata_fig(ax, data, short=True):
     pt.annotate(ax, s, (0,1), va='top', fontsize=8, bold=True)
 
     s = '\n \n '
-    s+= ' %s ' % data.metadata['subject_ID']
+    s+= ' %s ' % data.nwbfile.subject.subject_id
     if hasattr(data, 'age'):
         s += ' -- P%i \n \n' % data.age
     else:

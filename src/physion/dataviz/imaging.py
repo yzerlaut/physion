@@ -48,46 +48,49 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     elif (type(roiIndices)==str) and (roiIndices=='all') and (subquantity in ['dFoF', 'dF/F']):
         roiIndices = np.arange(data.nROIs)
         
-    if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
-        raster = np.array([(raster[i,:]-np.min(raster[i,:]))/(np.max(raster[i,:])-\
-                                np.min(raster[i,:])) for i in range(raster.shape[0])])
+    if len(roiIndices)>1:
+        # checking more than one ROI to plot the raster
+
+        if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
+            raster = np.array([(raster[i,:]-np.min(raster[i,:]))/(np.max(raster[i,:])-\
+                                    np.min(raster[i,:])) for i in range(raster.shape[0])])
+            
+        indices=np.arange(*dv_tools.convert_times_to_indices(*tlim,
+                                    data.Neuropil, axis=1))[::subsampling]
         
-    indices=np.arange(*dv_tools.convert_times_to_indices(*tlim,
-                                data.Neuropil, axis=1))[::subsampling]
-    
-    ims = ax.imshow(raster[:,indices], origin='lower', cmap=cmap,
-              aspect='auto', interpolation='none', vmin=0, vmax=1,
-              extent=(dv_tools.convert_index_to_time(indices[0], data.Neuropil),
-                      dv_tools.convert_index_to_time(indices[-1], data.Neuropil),
-                      fig_fraction_start, fig_fraction_start+fig_fraction))
+        ims = ax.imshow(raster[:,indices], origin='lower', cmap=cmap,
+                aspect='auto', interpolation='none', vmin=0, vmax=1,
+                extent=(dv_tools.convert_index_to_time(indices[0], data.Neuropil),
+                        dv_tools.convert_index_to_time(indices[-1], data.Neuropil),
+                        fig_fraction_start, fig_fraction_start+fig_fraction))
 
-    if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
+        if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
 
-        if axb is None:
-            axb = pt.inset(ax, [bar_inset_start, fig_fraction_start+.1*fig_fraction,
-                                bar_inset_width, .6*fig_fraction], facecolor='w')
+            if axb is None:
+                axb = pt.inset(ax, [bar_inset_start, fig_fraction_start+.1*fig_fraction,
+                                    bar_inset_width, .6*fig_fraction], facecolor='w')
 
-        cb = plt.colorbar(ims, cax=axb)
-        cb.set_ticks([])
-        axb.set_ylabel('$\\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.', fontsize=9)
-        axb.annotate('max', (0.5,1.1), fontsize=7,
-                xycoords='axes fraction', ha='center')
-        axb.annotate('min', (0.5,-0.1), fontsize=7, va='top',
-                xycoords='axes fraction', ha='center')
+            cb = plt.colorbar(ims, cax=axb)
+            cb.set_ticks([])
+            axb.set_ylabel('$\\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.', fontsize=9)
+            axb.annotate('max', (0.5,1.1), fontsize=7,
+                    xycoords='axes fraction', ha='center')
+            axb.annotate('min', (0.5,-0.1), fontsize=7, va='top',
+                    xycoords='axes fraction', ha='center')
 
-        
-    dv_tools.add_name_annotation(data, ax, name, tlim,
-            fig_fraction, fig_fraction_start, rotation=90)
+            
+        dv_tools.add_name_annotation(data, ax, name, tlim,
+                fig_fraction, fig_fraction_start, rotation=90)
 
-    ax.annotate('1', (tlim[1], fig_fraction_start), xycoords='data')
-    ax.annotate('%i' % raster.shape[0],
-                (tlim[1], fig_fraction_start+fig_fraction), va='top', xycoords='data')
-    ax.annotate('ROIs', 
-                (tlim[1], fig_fraction_start+fig_fraction/2.),
-                va='center',
-                # rotation=-90,
-                xycoords='data',
-                fontsize=8)
+        ax.annotate('1', (tlim[1], fig_fraction_start), xycoords='data')
+        ax.annotate('%i' % raster.shape[0],
+                    (tlim[1], fig_fraction_start+fig_fraction), va='top', xycoords='data')
+        ax.annotate('ROIs', 
+                    (tlim[1], fig_fraction_start+fig_fraction/2.),
+                    va='center',
+                    # rotation=-90,
+                    xycoords='data',
+                    fontsize=8)
 
     
     

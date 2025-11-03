@@ -174,6 +174,21 @@ def get_tuning_responses(Tunings,
         Responses = [np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:],
                         axis=0) for Tuning in Tunings]
 
+    elif average_by=='subjects':
+        subjects = np.array([Tuning['subject']\
+                                for Tuning in Tunings])
+        Responses = []
+        # mean significant responses per session
+        for subj in np.unique(subjects):
+            sCond = (subjects==subj)
+            Responses.append(\
+                np.mean(\
+                    np.concatenate([\
+                        Tunings[i]['Responses'][\
+                            Tunings[i]['significant_ROIs'],:]\
+                                 for i in np.arange(len(subjects))[sCond]]),
+                    axis=0))
+            
     elif average_by=='ROIs':
         # mean significant responses per session
         Responses = np.concatenate([\
@@ -182,7 +197,7 @@ def get_tuning_responses(Tunings,
 
     else:
         print()
-        print(' choose average_by either "sessions" or "ROIs"  ')
+        print(' choose average_by either "sessions", "subjects" or "ROIs"  ')
         print()
 
     return Responses
@@ -235,7 +250,7 @@ def plot_selectivity(keys,
             if with_label:
                 annot = i*'\n'+\
                     'SI=%.2f$\pm$%.2f' % (np.mean(Selectivities), stats.sem(Selectivities))
-                if average_by=='sessions':
+                if average_by in ['sessions', 'subjects']:
                     annot += ', N=%02d %s, ' % (len(Responses), average_by) + key
                 else:
                     annot += ', n=%04d %s, ' % (len(Responses), average_by) + key
@@ -286,7 +301,7 @@ def plot_orientation_tuning_curve(keys,
 
             if with_label:
                 annot = i*'\n'+'SI=%.2f' % SI_from_fit(C)
-                if average_by=='sessions':
+                if average_by in ['sessions', 'subjects']:
                     annot += ', N=%02d %s, ' % (len(Responses), average_by) + key
                 else:
                     annot += ', n=%04d %s, ' % (len(Responses), average_by) + key

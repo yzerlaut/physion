@@ -154,27 +154,29 @@ def plot(fig, data, args=None,
                     (1,0.5), va='center',
                     color='tab:green' if resp['significant_ROIs'][n] else 'lightcoral')
 
-    AX = [pt.inset(fig, [0.08, 0.06+0.05*j, 0.1, 0.045]) for j in range(2)]
+    if np.sum(resp['significant_ROIs'])>0:
 
-    pt.plot(resp['shifted_angle'], 
-            np.mean(resp['Responses'][resp['significant_ROIs'],:], axis=0),
-            sy = np.std(resp['Responses'][resp['significant_ROIs'],:], axis=0), 
-            ax=AX[1], no_set=True)
-    pt.set_plot(AX[1], xticks_labels=[], ylabel='$\\Delta$F/F')
+        AX = [pt.inset(fig, [0.08, 0.06+0.05*j, 0.1, 0.045]) for j in range(2)]
 
-    tuning = np.array([r/r[1] for r in resp['Responses'][resp['significant_ROIs'],:]])
-    pt.scatter(resp['shifted_angle'], np.mean(tuning, axis=0),
-                sy = sem(tuning, axis=0), ax=AX[0], ms=3)
-    # add gaussian fit
-    C, func = fit_gaussian(resp['shifted_angle'], np.mean(tuning, axis=0))
-    x = np.linspace(-30, 180-30, 100)
-    AX[0].plot(x, func(x), lw=2, alpha=.5, color='dimgrey')
+        pt.plot(resp['shifted_angle'], 
+                np.mean(resp['Responses'][resp['significant_ROIs'],:], axis=0),
+                sy = np.std(resp['Responses'][resp['significant_ROIs'],:], axis=0), 
+                ax=AX[1], no_set=True)
+        pt.set_plot(AX[1], xticks_labels=[], ylabel='$\\Delta$F/F')
 
-    # selectivity index from fit
-    pt.annotate(AX[0], 'SI=%.2f' % (1-C[2]), (1., 0.9), ha='right', va='top')
+        tuning = np.array([r/r[1] for r in resp['Responses'][resp['significant_ROIs'],:]])
+        pt.scatter(resp['shifted_angle'], np.mean(tuning, axis=0),
+                    sy = sem(tuning, axis=0), ax=AX[0], ms=3)
+        # add gaussian fit
+        C, func = fit_gaussian(resp['shifted_angle'], np.mean(tuning, axis=0))
+        x = np.linspace(-30, 180-30, 100)
+        AX[0].plot(x, func(x), lw=2, alpha=.5, color='dimgrey')
 
-    pt.set_plot(AX[0], yticks=[0, 0.5, 1],
-                xlabel='angle from pref. ($^o$)', ylabel='n. $\\Delta$F/F')
+        # selectivity index from fit
+        pt.annotate(AX[0], 'SI=%.2f' % (1-C[2]), (1., 0.9), ha='right', va='top')
+
+        pt.set_plot(AX[0], yticks=[0, 0.5, 1],
+                    xlabel='angle from pref. ($^o$)', ylabel='n. $\\Delta$F/F')
 
 
 if __name__=='__main__':

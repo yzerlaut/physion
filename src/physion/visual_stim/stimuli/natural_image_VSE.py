@@ -33,8 +33,6 @@ def get_NaturalImages_as_array(screen):
 def generate_VSE(duration=5,
                  min_saccade_duration=0.5,# in s
                  max_saccade_duration=2.,# in s
-                 # mean_saccade_duration=2.,# in s
-                 # std_saccade_duration=1.,# in s
                  saccade_amplitude=200, # in pixels, TO BE PUT IN DEGREES
                  seed=0,
                  verbose=False):
@@ -74,6 +72,7 @@ class stim(visual_stim):
                                 min_saccade_duration=protocol['min-saccade-duration'],
                                 max_saccade_duration=protocol['max-saccade-duration'])
 
+
     def compute_shifted_image(self, img, ix, iy):
         sx, sy = img.shape
         new_im = np.zeros(img.shape)
@@ -82,6 +81,7 @@ class stim(visual_stim):
         new_im[:,:iy] = img[:,sy-iy:]
         new_im[:ix,:iy] = img[sx-ix:,sy-iy:]
         return new_im
+
 
     def get_image(self, index,
                   time_from_episode_start=0,

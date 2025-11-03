@@ -157,6 +157,7 @@ for contrast in [0.5, 1.0]:
                 Tuning['nROIs_original'] = data.original_nROIs
                 Tuning['nROIs_final'] = data.nROIs
                 Tuning['nROIs_responsive'] = np.sum(Tuning['significant_ROIs'])
+                Tuning['subject'] = data.nwbfile.subject.subject_id
 
                 Tunings.append(Tuning)
 
@@ -202,7 +203,8 @@ pt.set_plot(ax, xticks=Tunings[0]['shifted_angle'],
 
 # %%
 # --> plot above implemented in the orientation_tuning protocol
-import tempfile
+import tempfile, sys
+sys.path += ['../src']
 from physion.analysis.protocols.orientation_tuning\
         import plot_orientation_tuning_curve, plot_selectivity
 
@@ -210,15 +212,16 @@ fig, ax = plot_selectivity(\
                         ['WT_contrast-1.0', 
                          'WT_contrast-1.0', 
                          'WT_contrast-0.5'],
+                        #  average_by='subjects',
                         #  average_by='ROIs',
                         #  using='fit',
                         path=tempfile.tempdir)
     
-
 fig, ax = plot_orientation_tuning_curve(\
                                         ['WT_contrast-1.0', 
                                          'WT_contrast-1.0', 
                                          'WT_contrast-0.5'],
+                                        #   average_by='subjects',
                                         #  average_by='ROIs',
                                         path=tempfile.tempdir)
     
