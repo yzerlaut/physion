@@ -4,9 +4,7 @@
 # %% [markdown]
 # The core functions to analyze the orientation selectivity:
 #
-# - `selectivity_index`
-# - `shift_orientation_according_to_pref`
-# - `compute_tuning_response_per_cells`
+# - `compute_sensitivity_per_cells`
 #
 # are implemented in the script [src/physion/analysis/protocols/contrast_sensitivity.py](../../src/physion/analysis/protocols/contrast_sensitivity.py)
 
@@ -30,8 +28,29 @@ filename = os.path.join(os.path.expanduser('~'),
                         '2024_08_27-11-16-53.nwb')
 
 data = physion.analysis.read_NWB.Data(filename, verbose=False)
-data.build_dFoF(neuropil_correction_factor=0.9, percentile=10., verbose=False)
+data.build_dFoF(neuropil_correction_factor=0.9, 
+                percentile=10., 
+                verbose=False)
 
+# %%
+from physion.dataviz.raw import plot
+
+settings = {\
+ 'Locomotion': {'fig_fraction': 1, 'subsampling': 1, 'color': '#1f77b4'},
+ 'FaceMotion': {'fig_fraction': 1, 'subsampling': 1, 'color': 'purple'},
+#  'GazeMovement': {'fig_fraction': 0.5, 'subsampling': 1, 'color': '#ff7f0e'},
+ 'Pupil': {'fig_fraction': 1, 'subsampling': 1, 'color': '#d62728'},
+ 'CaImaging': {'fig_fraction': 4, 'subsampling': 1, 'subquantity': 'dFoF',
+  'color': '#2ca02c',
+  'roiIndices': np.random.choice(np.arange(data.nROIs), 10)},
+ 'CaImagingRaster': {'fig_fraction': 2, 'subsampling': 1,
+  'roiIndices': 'all', 'normalization': 'per-line', 'subquantity': 'dF/F'},
+ 'VisualStim': {'fig_fraction': 0.2, 'color': 'black'}}
+plot(data, tlim=[100,250], 
+     settings=settings,
+     figsize=(12,8))
+
+# %%
 Episodes = physion.analysis.process_NWB.EpisodeData(data,
                                                     quantities=['dFoF'],
                                                     protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
@@ -226,7 +245,7 @@ from physion.analysis.protocols.contrast_sensitivity\
 fig, ax = plot_contrast_sensitivity(\
                         ['WT_angle-0.0', 
                          'WT_angle-90.0'],
-                        #  average_by='sessions',
+                        #  average_by='ROIs',
                          average_by='subjects',
                         path=tempfile.tempdir)
 
