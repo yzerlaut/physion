@@ -23,7 +23,7 @@ def get_NaturalImages_as_array(screen):
     if os.path.isdir(NI_FOLDER):
         for filename in np.sort(os.listdir(NI_FOLDER)):
             img = load(os.path.join(NI_FOLDER, filename)).T
-            new_img = np.rot90(adapt_to_screen_resolution(img, screen), k=3)
+            new_img = np.rot90(adapt_to_screen_resolution(img, screen), k=1)
             NIarray.append(img_after_hist_normalization(new_img))
         return NIarray
     else:

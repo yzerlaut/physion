@@ -206,7 +206,8 @@ pt.set_plot(ax, xticks=Tunings[0]['shifted_angle'],
 import tempfile, sys
 sys.path += ['../src']
 from physion.analysis.protocols.orientation_tuning\
-        import plot_orientation_tuning_curve, plot_selectivity
+        import plot_orientation_tuning_curve, plot_selectivity,\
+        plot_responsiveness
 
 fig, ax = plot_selectivity(\
                         ['WT_contrast-1.0', 
@@ -225,4 +226,12 @@ fig, ax = plot_orientation_tuning_curve(\
                                         #  average_by='ROIs',
                                         path=tempfile.tempdir)
     
+# %%
+
+fig, ax = plot_responsiveness(\
+        ['WT_contrast-1.0', 
+                'WT_contrast-1.0', 
+                'WT_contrast-0.5'],
+        #  average_by='ROIs',
+        path=tempfile.tempdir)
 # %%
