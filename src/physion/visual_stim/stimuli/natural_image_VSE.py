@@ -12,6 +12,11 @@ from physion.visual_stim.preprocess_NI import load,\
 params = {"Image-ID":3,
           "min-saccade-duration":0.2,
           "max-saccade-duration":1.0,
+          "bg-color":0.5,
+          "contrast":0.05,
+          "radius":20,
+          "x-center":0,
+          "y-center":0,
           "seed":0}
 
 def get_NaturalImages_as_array(screen):
@@ -95,7 +100,16 @@ class stim(visual_stim):
         im0 = np.rot90(\
                 self.NIarray[int(self.experiment['Image-ID'][index])], 
                         k=1)
-        return self.compute_shifted_image(im0, ix, iy)
+        im1 = self.experiment['bg-color'][index]+\
+            self.experiment['contrast'][index]*\
+                    (self.compute_shifted_image(im0, ix, iy)-0.5)
+        
+        return self.blank_surround(im1, 
+                        bg_color=self.experiment['bg-color'][index],
+                          xcenter=self.experiment['x-center'][index],
+                          zcenter=self.experiment['y-center'][index],
+                          radius = self.experiment['radius'][index])
+                            
 
 
 if __name__=='__main__':
