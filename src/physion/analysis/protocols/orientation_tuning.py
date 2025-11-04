@@ -316,6 +316,7 @@ def plot_orientation_tuning_curve(keys,
 def plot_responsiveness(keys,
                         path=os.path.expanduser('~'),
                         average_by='sessions',
+                        reference_ROI_number='nROIs_final',
                         colors=None,
                         with_label=True,
                         fig_args={}):
@@ -335,7 +336,7 @@ def plot_responsiveness(keys,
                     np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
                             allow_pickle=True)
     
-            responsive_frac = [Tuning['nROIs_responsive']/Tuning['nROIs_final']\
+            responsive_frac = [Tuning['nROIs_responsive']/Tuning[reference_ROI_number]\
                                for Tuning in Tunings]
 
             ax.bar([i], [100*np.mean(responsive_frac)],
