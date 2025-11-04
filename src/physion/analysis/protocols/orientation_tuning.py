@@ -344,7 +344,7 @@ def plot_responsiveness(keys,
                    color=color)
  
             if with_label:
-                annot = i*'\n'+'%.2f$\pm$%.1f%%' %\
+                annot = i*'\n'+'%.2f$\pm$%.2f%%' %\
                          (np.mean(responsive_frac), stats.sem(responsive_frac))
                 if average_by=='sessions':
                     annot += ', N=%02d %s, ' % (len(responsive_frac), average_by) + key
