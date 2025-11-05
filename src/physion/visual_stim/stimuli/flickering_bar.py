@@ -109,6 +109,8 @@ if __name__=='__main__':
     params = get_default_params('flickering_bar')
     params['bar-center'] = -20
     params['bar-length'] = 30
+    params['units'] = 'cm'
+    params['Screen'] = 'LN-VR-3screens'
 
     import time
     import cv2 as cv
