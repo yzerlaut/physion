@@ -486,7 +486,6 @@ class visual_stim:
         ax.axis('equal')
 
         if label is not None:
-            print(label)
             _, nx = self.x.shape
             L, shift = nx/(self.z.max()-self.z.min())*label['size'], label['shift_factor']*nx
             ax.plot([-shift, -shift], [-shift,L-shift], 'k-', lw=label['lw'])
