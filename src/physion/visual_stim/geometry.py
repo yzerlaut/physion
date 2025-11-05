@@ -181,7 +181,7 @@ if __name__=='__main__':
     params['x-center'] = +0
     params['y-center'] = +0
     params['radius'] = 15
-    params['Screen'] = 'LN-VR-3screens'
+    # params['Screen'] = 'LN-VR-3screens'
 
     stim = physion.visual_stim.build.build_stim(params)
 
