@@ -233,6 +233,13 @@ class Acquisition:
         except BaseException:
             # print('no M-series card found')
             pass
+        try:
+            self.device = find_usb_devices()[0]
+            print('[ok] Usb-DAQ found:', self.device)
+            success = True
+        except BaseException:
+            # print('no USB card found')
+            pass
         if not success:
             print('Neither M-series nor X-series NI DAQ card found')
 
