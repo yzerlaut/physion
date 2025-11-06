@@ -106,9 +106,10 @@ def set_angle_meshgrid_U3Screens(self):
 
         # we convert to angles in the x and z directions
         self.x, self.z = 0*self.widths, 0*self.widths
-        #       screen by screen for the x-position
-        # 
 
+        # 
+        #       screen by screen for the angular positions
+        # 
         # - screen 1
         cond1 = (self.screen_ids==1)
         dX = self.widths[cond1]+L+(lF-L/2) # x-coordinates centered on -90 deg. angle

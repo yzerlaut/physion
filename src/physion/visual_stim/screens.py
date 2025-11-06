@@ -76,10 +76,10 @@ SCREENS = {
         'height_from_base':10.0, # in cm
         'fullscreen':True,
         'monitoring_square':{'size':56,
-                             'location':'top-right',
+                             'location':'bottom-left',
                              'screen_id':1},
-        'gamma_correction':{'k':1.03,
-                            'gamma':1.77},
+        'gamma_correction':{'k':1.0,
+                            'gamma':1.0},
     },
 }
 
