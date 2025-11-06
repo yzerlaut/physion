@@ -73,7 +73,7 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     folder = os.path.join('physion', 'acquisition', 'protocols', 'movies', args.protocol)
-    folder = './'
+    #folder = './'
 
     if args.protocol=='intrinsic':
         for period in [6, 12]:
@@ -91,7 +91,7 @@ if __name__=='__main__':
                                        bg_color=args.bg_color))
                 # build the movie
                 os.system('python -m physion.visual_stim.build temp.json')
-                if args.screen=='LN-VR-3screens':
+                if args.screen=='LN-U3screens':
                     for i in range(1,4):
                         os.rename(os.path.join('movies', 'temp', 'movie-%i.wmv' % i),
                                 os.path.join(folder,
@@ -102,10 +102,13 @@ if __name__=='__main__':
                             os.path.join(folder,
                                         'flickering-bars-period%is' % period,
                                         '%s.wmv' % direction))
-                os.rename('temp.json', 
-                            os.path.join(folder,
-                                        'flickering-bars-period%is' % period,
-                                        'protocol.json'))
+                try:
+                    os.rename('temp.json', 
+                                os.path.join(folder,
+                                            'flickering-bars-period%is' % period,
+                                            'protocol.json'))
+                except FileExistsError:
+                    pass
 
     elif args.protocol=='ocular-dominance':
         for period in [6, 12]:
