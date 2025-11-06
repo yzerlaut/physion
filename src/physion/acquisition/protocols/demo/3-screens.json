@@ -1,7 +1,7 @@
 {
   "Presentation": "Stimuli-Sequence",
   "Stimulus": "grating",
-  "Screen": "LN-VR-3screens",
+  "Screen": "LN-U3screens",
   "presentation-duration": 2,
   "presentation-prestim-period": 1,
   "presentation-poststim-period": 1,

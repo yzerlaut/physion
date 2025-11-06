@@ -65,9 +65,9 @@ SCREENS = {
         'gamma_correction':{'k':1.03,
                             'gamma':1.77},
     },
-    'LN-VR-3screens':{
+    'LN-U3screens':{
         'nScreens':3,
-        'name':'LN-VR-3screens',
+        'name':'LN-U3screens',
         'screen_id':1,
         'resolution':[1024, 1280],
         'width':29.0, # in cm

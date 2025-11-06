@@ -22,6 +22,7 @@ def init_stimWindows(self,
         # Set window properties such as title, size, and icon
         if ('fullscreen' in self.stim.screen) and\
             self.stim.screen['fullscreen']:
+
             if 'Bacci-2P' in self.config['Rig']:
                 self.stimWins[-1].setGeometry(-400, 400, 600, int(9./16*600))
                 self.stimWins[-1].showFullScreen()
@@ -32,7 +33,7 @@ def init_stimWindows(self,
                 self.stimWins[-1].setGeometry(2000, 400, 600, int(9./16*600))
                 self.stimWins[-1].showFullScreen()
             elif 'U3screens' in self.config['Rig']:
-                self.stimWins[s].setGeometry(1980+s*1024, 0, 1024, 1280)
+                self.stimWins[s].setGeometry(1920+s*1024+100, 100, 1024, 1280)
                 self.stimWins[s].showFullScreen()
         else:
             self.stimWins[-1].setGeometry(\
