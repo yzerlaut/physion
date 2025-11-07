@@ -19,7 +19,6 @@ from physion.visual_stim.main import visual_stim
 from physion.visual_stim.show import init_stimWindows
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
-from physion.acquisition.tools import base_path
 
 
 def gui(self,
