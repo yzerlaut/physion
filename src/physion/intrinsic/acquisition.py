@@ -551,6 +551,9 @@ def get_frame(self, force_HQ=False):
         img = frame.image_buffer
 
     elif (self.stim is not None) and (self.STIM is not None):
+        #############################################################
+        ###    synthetic data for troubleshooting of analysis     ###
+        #############################################################
 
         it = int((time.time()-self.t0_episode)/self.dt)%int(self.period/self.dt)
         protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
