@@ -22,7 +22,6 @@ def init_stimWindows(self,
         # Set window properties such as title, size, and icon
         if ('fullscreen' in self.stim.screen) and\
             self.stim.screen['fullscreen']:
-
             if 'Bacci-2P' in self.config['Rig']:
                 self.stimWins[-1].setGeometry(-400, 400, 600, int(9./16*600))
                 self.stimWins[-1].showFullScreen()
@@ -33,8 +32,12 @@ def init_stimWindows(self,
                 self.stimWins[-1].setGeometry(2000, 400, 600, int(9./16*600))
                 self.stimWins[-1].showFullScreen()
             elif 'U3screens' in self.config['Rig']:
-                self.stimWins[s].setGeometry(1920+s*1024+100, 100, 1024, 1280)
-                self.stimWins[s].showFullScreen()
+                self.stimWins[0].setGeometry(2000, 400, 600, int(9./16*600))
+                self.stimWins[0].showFullScreen()
+                self.stimWins[1].setGeometry(4000, 400, 600, int(9./16*600))
+                self.stimWins[1].showFullScreen()
+                self.stimWins[2].setGeometry(6000, 400, 600, int(9./16*600))
+                self.stimWins[2].showFullScreen()
         else:
             self.stimWins[-1].setGeometry(\
                     200+100*s, 400+100*s, 600, int(9./16*600))
@@ -67,21 +70,19 @@ def init_stimWindows(self,
                             QtCore.QUrl.fromLocalFile(\
                                 os.path.abspath(self.stim.movie_files[s]))))
 
-            # initialize the stimulation index
-            self.current_index= -1 
+        # Set the layout of the window
+        self.stimWins[s].setLayout(vboxLayout)
 
-            self.mediaPlayers[s].play()
-            self.mediaPlayers[s].pause()
+        self.mediaPlayers[s].play()
+        self.mediaPlayers[s].pause()
 
-            self.stimWins[s].show()
+        self.stimWins[s].show()
 
-        else:
-
-            print()
-            print(' ########################################## ')
-            print('    [!!]   movie file not found ! [!!]')
-            print(self.stim.movie_files[s])
-            print(' ########################################## ')
+        print()
+        print(' ########################################## ')
+        print('    [!!]   movie file not found ! [!!]')
+        print(self.stim.movie_files[s])
+        print(' ########################################## ')
 
 
 

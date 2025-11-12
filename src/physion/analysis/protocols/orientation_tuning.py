@@ -81,6 +81,7 @@ def fit_gaussian(angles, values,
 def compute_tuning_response_per_cells(data, Episodes,
                                       stat_test_props,
                                       response_significance_threshold = 0.05,
+                                      filtering_cond=None,
                                       quantity='dFoF',
                                       contrast=1.0,
                                       start_angle=-22.5, 
@@ -102,6 +103,8 @@ def compute_tuning_response_per_cells(data, Episodes,
     if verbose:
         print('  - shifted_angle correspond to : ', shifted_angle)
 
+    if filtering_cond is None:
+        filtering_cond = Episodes.find_episode_cond() # True everywhere
 
     selectivities, prefered_angles = [], []
     RESPONSES, semRESPONSES = [], []
@@ -109,7 +112,9 @@ def compute_tuning_response_per_cells(data, Episodes,
 
     for roi in np.arange(data.nROIs):
         
-        cond = Episodes.find_episode_cond(key='contrast', value=contrast)
+        cond = Episodes.find_episode_cond(key='contrast', 
+                                          value=contrast) &\
+                                          filtering_cond
         cell_resp = Episodes.compute_summary_data(stat_test_props,
                                                   episode_cond=cond,
                                                   exclude_keys=['repeat', 'contrast'],
@@ -118,6 +123,7 @@ def compute_tuning_response_per_cells(data, Episodes,
                                                   verbose=True)
         
 
+        # find preferred angle:
         ipref = np.argmax(cell_resp['value'])
 
         prefered_angles.append(cell_resp['angle'][ipref])
@@ -168,6 +174,21 @@ def get_tuning_responses(Tunings,
         Responses = [np.mean(Tuning['Responses'][Tuning['significant_ROIs'],:],
                         axis=0) for Tuning in Tunings]
 
+    elif average_by=='subjects':
+        subjects = np.array([Tuning['subject']\
+                                for Tuning in Tunings])
+        Responses = []
+        # mean significant responses per session
+        for subj in np.unique(subjects):
+            sCond = (subjects==subj)
+            Responses.append(\
+                np.mean(\
+                    np.concatenate([\
+                        Tunings[i]['Responses'][\
+                            Tunings[i]['significant_ROIs'],:]\
+                                 for i in np.arange(len(subjects))[sCond]]),
+                    axis=0))
+            
     elif average_by=='ROIs':
         # mean significant responses per session
         Responses = np.concatenate([\
@@ -176,7 +197,7 @@ def get_tuning_responses(Tunings,
 
     else:
         print()
-        print(' choose average_by either "sessions" or "ROIs"  ')
+        print(' choose average_by either "sessions", "subjects" or "ROIs"  ')
         print()
 
     return Responses
@@ -229,7 +250,7 @@ def plot_selectivity(keys,
             if with_label:
                 annot = i*'\n'+\
                     'SI=%.2f$\pm$%.2f' % (np.mean(Selectivities), stats.sem(Selectivities))
-                if average_by=='sessions':
+                if average_by in ['sessions', 'subjects']:
                     annot += ', N=%02d %s, ' % (len(Responses), average_by) + key
                 else:
                     annot += ', n=%04d %s, ' % (len(Responses), average_by) + key
@@ -280,7 +301,7 @@ def plot_orientation_tuning_curve(keys,
 
             if with_label:
                 annot = i*'\n'+'SI=%.2f' % SI_from_fit(C)
-                if average_by=='sessions':
+                if average_by in ['sessions', 'subjects']:
                     annot += ', N=%02d %s, ' % (len(Responses), average_by) + key
                 else:
                     annot += ', n=%04d %s, ' % (len(Responses), average_by) + key
@@ -289,6 +310,50 @@ def plot_orientation_tuning_curve(keys,
     pt.set_plot(ax, xticks=Tunings[0]['shifted_angle'], yticks=np.arange(3)*0.5, ylim=[-0.05, 1.05],
             ylabel='norm. $\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',
             xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tunings[0]['shifted_angle'] ])
+
+    return fig, ax
+
+def plot_responsiveness(keys,
+                        path=os.path.expanduser('~'),
+                        average_by='sessions',
+                        reference_ROI_number='nROIs_final',
+                        colors=None,
+                        with_label=True,
+                        fig_args={}):
+    
+    if colors is None:
+        colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+    if type(keys)==str:
+        keys, colors = [keys], [colors[0]]
+
+    fig, ax = pt.figure(**fig_args)
+
+    for i, (key, color) in enumerate(zip(keys, colors)):
+
+            # load data
+            Tunings = \
+                    np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
+                            allow_pickle=True)
+    
+            responsive_frac = [Tuning['nROIs_responsive']/Tuning[reference_ROI_number]\
+                               for Tuning in Tunings]
+
+            ax.bar([i], [100*np.mean(responsive_frac)],
+                   yerr=[100.*stats.sem(responsive_frac)],
+                   color=color)
+ 
+            if with_label:
+                annot = i*'\n'+'%.2f$\pm$%.2f%%' %\
+                         (np.mean(responsive_frac), stats.sem(responsive_frac))
+                if average_by=='sessions':
+                    annot += ', N=%02d %s, ' % (len(responsive_frac), average_by) + key
+                else:
+                    annot += ', n=%04d %s, ' % (len(responsive_frac), average_by) + key
+                pt.annotate(ax, annot, (1., 0.9), va='top', color=color)
+
+    pt.set_plot(ax, ['left'],
+            ylabel='$\%$ responsive')
 
     return fig, ax
 

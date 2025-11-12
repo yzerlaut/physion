@@ -12,7 +12,11 @@ from physion.visual_stim.preprocess_NI import load,\
 params = {"Image-ID":3,
           "min-saccade-duration":0.1,
           "max-saccade-duration":1.0,
-          "saccade-amplitude":200.0, # in pixels, to be put in degrees
+          "bg-color":0.5,
+          "contrast":0.3,
+          "radius":30,
+          "x-center":0,
+          "y-center":0,
           "seed":0}
 
 def get_NaturalImages_as_array(screen):
@@ -24,7 +28,7 @@ def get_NaturalImages_as_array(screen):
     if os.path.isdir(NI_FOLDER):
         for filename in np.sort(os.listdir(NI_FOLDER)):
             img = load(os.path.join(NI_FOLDER, filename)).T
-            new_img = np.rot90(adapt_to_screen_resolution(img, screen), k=3)
+            new_img = np.rot90(adapt_to_screen_resolution(img, screen), k=1)
             NIarray.append(img_after_hist_normalization(new_img))
         return NIarray
     else:
@@ -34,8 +38,6 @@ def get_NaturalImages_as_array(screen):
 def generate_VSE(duration=2,
                  min_saccade_duration=0.5,# in s
                  max_saccade_duration=2.,# in s
-                 # mean_saccade_duration=2.,# in s
-                 # std_saccade_duration=1.,# in s
                  saccade_amplitude=200, # in pixels, TO BE PUT IN DEGREES
                  seed=0,
                  verbose=False):
@@ -76,6 +78,7 @@ class stim(visual_stim):
                                 max_saccade_duration=protocol['max-saccade-duration'],
                                 saccade_amplitude=protocol['saccade-amplitude'])
 
+
     def compute_shifted_image(self, img, ix, iy):
         sx, sy = img.shape
         new_im = np.zeros(img.shape)
@@ -84,6 +87,7 @@ class stim(visual_stim):
         new_im[:,:iy] = img[:,sy-iy:]
         new_im[:ix,:iy] = img[sx-ix:,sy-iy:]
         return new_im
+
 
     def get_image(self, index,
                   time_from_episode_start=0,
@@ -97,7 +101,16 @@ class stim(visual_stim):
         im0 = np.rot90(\
                 self.NIarray[int(self.experiment['Image-ID'][index])], 
                         k=1)
-        return self.compute_shifted_image(im0, ix, iy)
+        im1 = self.experiment['bg-color'][index]+\
+            self.experiment['contrast'][index]*\
+                    (self.compute_shifted_image(im0, ix, iy)-0.5)
+        
+        return self.blank_surround(im1, 
+                        bg_color=self.experiment['bg-color'][index],
+                          xcenter=self.experiment['x-center'][index],
+                          zcenter=self.experiment['y-center'][index],
+                          radius = self.experiment['radius'][index])
+                            
 
 
 if __name__=='__main__':
