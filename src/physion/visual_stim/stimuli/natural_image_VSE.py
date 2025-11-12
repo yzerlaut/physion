@@ -12,11 +12,12 @@ from physion.visual_stim.preprocess_NI import load,\
 params = {"Image-ID":3,
           "min-saccade-duration":0.1,
           "max-saccade-duration":1.0,
+          "saccade-amplitude":200.0, # in pixels, to be put in degrees
           "bg-color":0.5,
           "contrast":0.3,
-          "radius":30,
           "x-center":0,
           "y-center":0,
+          "radius":30,
           "seed":0}
 
 def get_NaturalImages_as_array(screen):
