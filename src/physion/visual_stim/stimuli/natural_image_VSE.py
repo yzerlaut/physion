@@ -10,8 +10,9 @@ from physion.visual_stim.preprocess_NI import load,\
 #######################################
 
 params = {"Image-ID":3,
-          "min-saccade-duration":0.2,
+          "min-saccade-duration":0.1,
           "max-saccade-duration":1.0,
+          "saccade-amplitude":200.0, # in pixels, to be put in degrees
           "seed":0}
 
 def get_NaturalImages_as_array(screen):
@@ -30,7 +31,7 @@ def get_NaturalImages_as_array(screen):
         print(' [!!]  Natural Images folder not found !!! [!!]  ')
         return [np.ones((10,10))*0.5 for i in range(5)]
 
-def generate_VSE(duration=5,
+def generate_VSE(duration=2,
                  min_saccade_duration=0.5,# in s
                  max_saccade_duration=2.,# in s
                  # mean_saccade_duration=2.,# in s
@@ -72,7 +73,8 @@ class stim(visual_stim):
 
         self.vse = generate_VSE(seed=protocol['seed'],
                                 min_saccade_duration=protocol['min-saccade-duration'],
-                                max_saccade_duration=protocol['max-saccade-duration'])
+                                max_saccade_duration=protocol['max-saccade-duration'],
+                                saccade_amplitude=protocol['saccade-amplitude'])
 
     def compute_shifted_image(self, img, ix, iy):
         sx, sy = img.shape

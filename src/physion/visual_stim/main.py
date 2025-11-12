@@ -165,7 +165,7 @@ class visual_stim:
         N.B. when contrast=1, you need black background, otherwise it will saturate
              when contrast=0.5, you can start from the grey background to reach white in the center
         """
-        image += 2*np.exp(-((x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
+        image += 2*np.exp(-((self.x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
                      contrast*np.exp(-(t-t0)**2/2./sT**2)
 
 
@@ -586,9 +586,8 @@ class multiprotocol(visual_stim):
         else:
             # we generate a new multiprotocol
             while 'Protocol-%i'%i in protocol:
-                path_list = [pathlib.Path(__file__).resolve().parents[1],
-                            'acquisition', 
-                             'protocols']+protocol['Protocol-%i'%i].split('/')
+                path_list = [protocol['json_location']]+\
+                              protocol['Protocol-%i'%i].split('/')
                 Ppath = os.path.join(*path_list)
                 if not os.path.isfile(Ppath):
                     print(' [!!] "%s" not found in Protocol folder [!!]   ' %\

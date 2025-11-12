@@ -120,8 +120,9 @@ if __name__=='__main__':
                         action="store_true")
     args = parser.parse_args()
 
-    if os.path.isfile(args.protocol) and args.protocol.endswith('.json'):
-
+    if os.path.isfile(args.protocol) and (\
+        args.protocol.endswith('.json') or ('protocol-' in args.protocol)):
+            
             # create the associated protocol folder in the movies folder
             protocol_folder = \
                 os.path.join(os.path.dirname(args.protocol),
