@@ -40,6 +40,11 @@ def build_NWB_func(args, Subject=None):
     #################################################
 
     metadata = read_metadata(args.datafolder)
+    
+    key_not_included_session_desciription = ['date', 'time', 'protocol', 'experimenter', 
+                                             'lab', 'institution', 'notes']
+    session_description = str({k: metadata[k] for k in metadata.keys() 
+                               if k not in key_not_included_session_desciription}),
 
     # add visual stimulation protocol parameters to the metadata:
     if os.path.isfile(os.path.join(args.datafolder, 'protocol.json')):
@@ -106,10 +111,11 @@ def build_NWB_func(args, Subject=None):
     # --------------------------------------------------------------
     nwbfile = pynwb.NWBFile(\
                 identifier=identifier,
-                session_description=str(metadata),
+                session_description=str(session_description),
                 experiment_description=metadata['protocol'],
                 experimenter=metadata['experimenter'],
                 lab=metadata['lab'],
+                protocol=str({k: protocol[k] for k in protocol if len(k) <66}),
                 institution=metadata['institution'],
                 notes=metadata['notes'],
                 virus=subject_props['virus'],
