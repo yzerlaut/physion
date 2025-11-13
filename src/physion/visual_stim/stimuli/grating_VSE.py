@@ -36,7 +36,6 @@ class stim(visual_stim):
     def __init__(self, protocol):
 
         super().__init__(protocol, params)
-        print(self.experiment.keys())
         self.vse = vse.generate_sequence(seed=protocol['seed'],
                                 min_saccade_duration=protocol['min-saccade-duration'],
                                 max_saccade_duration=protocol['max-saccade-duration'],

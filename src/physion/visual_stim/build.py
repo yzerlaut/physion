@@ -146,6 +146,9 @@ if __name__=='__main__':
                 protocol['verbose'] = True
 
             Stim = build_stim(protocol)
+            print(Stim.experiment['time_start'])
+            print(Stim.experiment['time_duration'])
+            print(Stim.experiment['interstim'])
 
             #  copy the protocol infos
             with open(os.path.join(protocol_folder, 'protocol.json'), 'w') as f:
@@ -155,7 +158,11 @@ if __name__=='__main__':
                 if index<len(Stim.experiment['index']):
                     print(' - episode %i/%i ' % (\
                             index+1, len(Stim.experiment['index'])),
-                          '   protocol-id : ', 
+                          '   duration: ', 
+                        #   Stim.experiment['time_duration'][index],
+                        #   '   contrast: ', 
+                        #   Stim.experiment['contrast'][index],
+                        #   '   protocol-id : ', 
                           Stim.experiment['protocol_id'][index])
                     if 'verbose' in protocol:
                         for k in Stim.experiment:

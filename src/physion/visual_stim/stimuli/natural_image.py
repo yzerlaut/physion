@@ -59,10 +59,7 @@ class stim(visual_stim):
                           xcenter=self.experiment['x-center'][index],
                           zcenter=self.experiment['y-center'][index],
                           radius = self.experiment['radius'][index])
-        return np.rot90(\
-                self.NIarray[int(self.experiment['Image-ID'][index])], 
-                        k=1)
-
+    
 """
     def plot_stim_picture(self, episode, parent=None, 
                           vse=True, ax=None, label=None,

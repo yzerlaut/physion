@@ -431,7 +431,6 @@ class visual_stim:
                 for i, key in enumerate(default_params.keys()):
                     FULL_VECS[key].append(vec[i])
 
-
             #############################################
             ###    == build repetition sequence   ==  ### 
             #############################################
@@ -464,6 +463,7 @@ class visual_stim:
 
             for k in ['index', 'repeat', 'bg-color', 'interstim',
                       'time_start', 'time_stop', 'time_duration']:
+
                 self.experiment[k] = []
 
             for n, i, r in zip(range(len(indices)), indices, repeats):
@@ -812,27 +812,26 @@ class multiprotocol(visual_stim):
 
         # updating sequence
         for key in self.experiment:
-            if key not in ['time_start', 'time_stop', 
-                           'interstim', 'time_duration']:
-                print(key)
+            # all keys, including interstim and duration
+            if key not in ['time_start', 'time_stop']:
                 self.experiment[key] = \
                     np.array(self.experiment[key])[indices]
 
-        # rebuilding experiment time course
+        # rebuilding experiment time course, time_start and time_stop
         for n, i, isi, dur in zip(range(len(indices)), indices, 
-                               np.array(self.experiment['interstim'])[indices],
-                               np.array(self.experiment['time_duration'])[indices]):
+                               np.array(self.experiment['interstim']),
+                               np.array(self.experiment['time_duration'])):
 
             if n==0:
-                self.experiment['time_start'].append(\
-                        protocol['presentation-prestim-period'])
+                self.experiment['time_start'] =\
+                        [protocol['presentation-prestim-period']]
+                self.experiment['time_stop'] =\
+                        [self.experiment['time_start'][0]+dur]
             else:
                 self.experiment['time_start'].append(\
-                    self.experiment['time_stop'][-1]+isi)
-
-            self.experiment['time_stop'].append(\
-                                self.experiment['time_start'][-1]+dur)
-            self.experiment['interstim'].append(isi)
+                        self.experiment['time_stop'][-1]+isi)
+                self.experiment['time_stop'].append(\
+                        self.experiment['time_start'][-1]+dur)
 
     ##############################################
     ##  ----  MAPPING TO CHILD PROTOCOLS --- #####
@@ -854,9 +853,10 @@ class multiprotocol(visual_stim):
                        'plot_stim_picture')(self.experiment['index'][index],
                                             ax=ax, label=label, vse=vse)
 
-    def get_vse(self, index, ax=None, label=None, vse=False):
-        return getattr(self.STIM[self.experiment['protocol_id'][index]],
-                       'get_vse')(self.experiment['index'][index])
+    # DEPRECATED
+    # def get_vse(self, index, ax=None, label=None, vse=False):
+    #     return getattr(self.STIM[self.experiment['protocol_id'][index]],
+    #                    'get_vse')(self.experiment['index'][index])
 
 
 #####################################
@@ -888,7 +888,7 @@ if __name__=='__main__':
 
         stim = physion.visual_stim.build.build_stim(protocol)
 
-        print(stim)
+        # print(stim)
         # protocol['json_location'] = os.path.dirname(args.protocol)
 
         fig, AX = pt.figure(axes=(1,2), ax_scale=(2,2))
