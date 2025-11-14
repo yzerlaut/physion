@@ -313,6 +313,50 @@ def plot_orientation_tuning_curve(keys,
 
     return fig, ax
 
+def plot_responsiveness(keys,
+                        path=os.path.expanduser('~'),
+                        average_by='sessions',
+                        reference_ROI_number='nROIs_final',
+                        colors=None,
+                        with_label=True,
+                        fig_args={}):
+    
+    if colors is None:
+        colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+    if type(keys)==str:
+        keys, colors = [keys], [colors[0]]
+
+    fig, ax = pt.figure(**fig_args)
+
+    for i, (key, color) in enumerate(zip(keys, colors)):
+
+            # load data
+            Tunings = \
+                    np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
+                            allow_pickle=True)
+    
+            responsive_frac = [Tuning['nROIs_responsive']/Tuning[reference_ROI_number]\
+                               for Tuning in Tunings]
+
+            ax.bar([i], [100*np.mean(responsive_frac)],
+                   yerr=[100.*stats.sem(responsive_frac)],
+                   color=color)
+ 
+            if with_label:
+                annot = i*'\n'+'%.2f$\pm$%.2f%%' %\
+                         (np.mean(responsive_frac), stats.sem(responsive_frac))
+                if average_by=='sessions':
+                    annot += ', N=%02d %s, ' % (len(responsive_frac), average_by) + key
+                else:
+                    annot += ', n=%04d %s, ' % (len(responsive_frac), average_by) + key
+                pt.annotate(ax, annot, (1., 0.9), va='top', color=color)
+
+    pt.set_plot(ax, ['left'],
+            ylabel='$\%$ responsive')
+
+    return fig, ax
+
 if __name__=='__main__':
 
     from physion.analysis.read_NWB import Data

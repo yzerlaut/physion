@@ -201,16 +201,14 @@ class visual_stim:
     def add_gaussian(self, image,
                      t=0, t0=0, sT=1.,
                      radius=10,
-                     contrast=1.,
+                     amplitude=0.5,
                      xcenter=0,
                      zcenter=0):
         """
         add a gaussian luminosity increase
-        N.B. when contrast=1, you need black background, otherwise it will saturate
-             when contrast=0.5, you can start from the grey background to reach white in the center
         """
-        image += 2*np.exp(-((self.x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
-                     contrast*np.exp(-(t-t0)**2/2./sT**2)
+        image += np.exp(-((self.x-xcenter)**2+(self.z-zcenter)**2)/2./radius**2)*\
+                     amplitude*np.exp(-(t-t0)**2/2./sT**2)
 
 
     def add_dot(self, image, pos, size, color, type='square'):
@@ -224,6 +222,18 @@ class visual_stim:
             cond = np.sqrt((self.x-pos[0])**2+(self.z-pos[1])**2)<size
         image[cond] = color
 
+    def blank_surround(self, image,
+                      radius=10,
+                        xcenter=0,
+                          zcenter=0,
+                            bg_color=0.5):
+        """ blank surround """
+
+        cond = ((self.x-xcenter)**2+(self.z-zcenter)**2)<radius**2
+
+        image[~cond] = bg_color
+
+        return image
 
     ########################################################
     #  ---     Experiment (time course) properties     --- #

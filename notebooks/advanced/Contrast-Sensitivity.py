@@ -51,6 +51,10 @@ plot(data, tlim=[100,250],
      figsize=(12,8))
 
 # %%
+from physion.dataviz.imaging import show_CaImaging_FOV
+show_CaImaging_FOV(data, NL=4)
+
+# %%
 Episodes = physion.analysis.process_NWB.EpisodeData(data,
                                                     quantities=['dFoF'],
                                                     protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
