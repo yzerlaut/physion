@@ -106,7 +106,6 @@ def draw_movie(args, data,
                 AX['imgImaging'], 
                 AX['imgROI1'], AX['imgROI2']]
        
-
     ani = animation.FuncAnimation(fig, 
                                   update,
                                   np.arange(len(times)),

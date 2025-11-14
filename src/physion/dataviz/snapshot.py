@@ -20,6 +20,17 @@ plt.rcParams['figure.autolayout'] = False
 
 iMap = pt.get_linear_colormap('k','lightgreen')
 
+default_params = """
+{
+    "                                                ":"",
+    " ################# data location ############## ":"",
+    "nwbfile":"~/DATA/physion-Demo-Dataset/PYR-",
+    "raw_data_folder":"~/DATA/physion-Demo-Dataset/PYR-",
+    "                                                ":"",
+    " #############  data sample properties ######### ":"",
+}
+"""
+
 string_params = """
 params = {
 
@@ -98,7 +109,7 @@ def layout(args):
     AX['cbWhisking'] = fig.add_axes([0.68, height0+0.01, 0.13, 0.02])
     AX['axPupil'] = fig.add_axes([0.84, height0+0.02, 0.15, 0.2])
 
-    if (not 'layout' in args) or (not args['layout']):
+    if hasattr(args, 'layout') and not args.layout:
         for key in AX:
             AX[key].axis('off')
 
@@ -190,7 +201,8 @@ def draw_figure(args, data):
     # Face Camera
     if metadata['raw_Behavior_folder']!='':
 
-        loadCameraData(metadata, metadata['raw_Behavior_folder'])
+        loadCameraData(metadata, 
+                       metadata['raw_Behavior_folder'])
 
         # Rig Image
         imgRig = np.load(\
@@ -377,7 +389,12 @@ if __name__=='__main__':
     import argparse, physion
 
     parser=argparse.ArgumentParser()
-    parser.add_argument("datafile", type=str)
+
+    parser.add_argument('-f', "--params_file", 
+                        default = '',
+                        type=str)
+
+    # parser.add_argument("datafile", type=str)
 
     parser.add_argument("-v", "--verbose", 
                         help="increase output verbosity", 
@@ -396,7 +413,18 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-
+    if args.params_file=='':
+        import json
+        # we write a default params file
+        with open('visualization_params.json', 'w') as f:
+            f.write(default_params)
+        with open('visualization_params.json', 'r') as f:
+            params = json.load(f)
+        print(params)
+        # json.load()
+        
+        
+    """
     exec(string_params)
 
     if args.layout:
@@ -445,3 +473,4 @@ if __name__=='__main__':
         print('')
 
 
+    """
