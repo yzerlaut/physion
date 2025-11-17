@@ -23,6 +23,20 @@ SCREENS = {
         'gamma_correction':{'k':1.,
                             'gamma':1.},
     },
+    'Dell-2020-low-resolution':{
+        'nScreens':1,
+        'name':'Dell-2020-low-resolution',
+        'screen_id':1,
+        'resolution':[320, 180],
+        'width':48.0, # in cm
+        'height':27.0, # in cm
+        'distance_from_eye':15.0, # in cm
+        'fullscreen':True,
+        'monitoring_square':{'size':10.,
+                             'location':'top-right'},
+        'gamma_correction':{'k':1.,
+                            'gamma':1.},
+    },
     'Lilliput':{
         'nScreens':1,
         'name':'Lilliput',
