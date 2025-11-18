@@ -401,9 +401,9 @@ def initialize_stimWindow(self):
     # re-initializing
     protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
     if self.stim.screen['nScreens']==1:
-        self.stim.movie_files = os.path.join(self.movie_folder,
+        self.stim.movie_files = [os.path.join(self.movie_folder,
                                             'flickering-bars-period%ss' % self.periodBox.currentText(),
-                                            '%s.wmv' % protocol)
+                                            '%s.wmv' % protocol)]
     else:
         self.stim.movie_files = [\
             os.path.join(self.movie_folder,

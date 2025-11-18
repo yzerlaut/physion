@@ -24,7 +24,8 @@ if CameraInterface is None:
         os.add_dll_directory(absolute_path_to_dlls)
         CameraInterface = 'ThorCam'
         from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
-    except BaseException:
+    except BaseException as be:
+        # print(be)
         pass
 
 ### --------- None -> demo mode ------------- ###
@@ -38,6 +39,7 @@ if CameraInterface is None:
     print('------------------------------------')
     print()
 
+print(CameraInterface)
 camera_depth = 12 # 12-bit camera depth
 
 
