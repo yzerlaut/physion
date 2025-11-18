@@ -500,6 +500,7 @@ class visual_stim:
         # 0 by default for single protocols, overwritten for multiprotocols
         self.experiment['protocol_id'] = np.zeros(\
                 len(self.experiment['index']), dtype=int)
+                
         # we write a tstop 
         self.tstop = self.experiment['time_stop'][-1]+\
                             protocol['presentation-poststim-period']
@@ -832,6 +833,10 @@ class multiprotocol(visual_stim):
                         self.experiment['time_stop'][-1]+isi)
                 self.experiment['time_stop'].append(\
                         self.experiment['time_start'][-1]+dur)
+                        
+        # we write a tstop 
+        self.tstop = self.experiment['time_stop'][-1]+\
+                            protocol['presentation-poststim-period']
 
     ##############################################
     ##  ----  MAPPING TO CHILD PROTOCOLS --- #####
