@@ -26,13 +26,12 @@ try:
 except ModuleNotFoundError:
     from physion.hardware.Dummy.camera\
             import launch_Camera as launch_FlirCamera
-
-try:
-    from physion.hardware.LogitechWebcam.main\
-            import launch_Camera as launch_WebCam
-except ModuleNotFoundError:
-    from physion.hardware.Dummy.camera\
-            import launch_Camera as launch_WebCam
+# try:
+#     from physion.hardware.LogitechWebcam.main\
+#             import launch_Camera as launch_WebCam
+# except ModuleNotFoundError:
+#     from physion.hardware.Dummy.camera\
+#             import launch_Camera as launch_WebCam
 
 def init_VisualStim(self):
 
@@ -114,6 +113,7 @@ def run(self):
         self.metadata['datafolder'] = self.date_time_folder
         self.filename = os.path.join(self.date_time_folder,
                                      'metadata.npy')
+        self.current_index = 0
 
         self.max_time = 30*60 
         # ... 30min by default, so should be stopped manually
@@ -252,12 +252,17 @@ def toggle_RigCamera_process(self):
         # need to launch it
         self.statusBar.showMessage('  starting RigCamera stream [...] ')
         self.show()
-        self.RigCamera_process = multiprocessing.Process(target=launch_WebCam,
-                        args=(self.runEvent, self.quitEvent, self.datafolder,
-                              'RigCamera', 2,\
-                            {'frame_rate':self.config['RigCamera-frame-rate']}))
+        self.RigCamera_process =\
+                multiprocessing.Process(target=launch_FlirCamera,
+                        args=(self.runEvent, 
+                              self.quitEvent,
+                              self.datafolder,
+                              'RigCamera', 1, 
+                              {'frame_rate':\
+                                self.config['RigCamera-frame-rate']}))
         self.RigCamera_process.start()
-        self.statusBar.showMessage('[ok] RigCamera initialized ! (in 5-6s) ')
+        self.statusBar.showMessage(\
+                '[ok] FaceCamera initialized ! (in 5-6s) ')
         
     elif (not self.RigCameraButton.isChecked()) and (self.RigCamera_process is not None):
         # need to shut it down
