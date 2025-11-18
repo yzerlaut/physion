@@ -7,6 +7,7 @@ import os, sys
 CameraInterface = None
 ### --------- MicroManager Interface -------- ###
 try:
+    # pip uninstall pycromanager to be sure not use this camera
     from pycromanager import Core
     CameraInterface = 'MicroManager'
 except ModuleNotFoundError:
