@@ -70,19 +70,21 @@ def init_stimWindows(self,
                             QtCore.QUrl.fromLocalFile(\
                                 os.path.abspath(self.stim.movie_files[s]))))
 
-        # Set the layout of the window
-        self.stimWins[s].setLayout(vboxLayout)
+            # Set the layout of the window
+            self.stimWins[s].setLayout(vboxLayout)
 
-        self.mediaPlayers[s].play()
-        self.mediaPlayers[s].pause()
+            self.mediaPlayers[s].play()
+            self.mediaPlayers[s].pause()
 
-        self.stimWins[s].show()
+            self.stimWins[s].show()
 
-        print()
-        print(' ########################################## ')
-        print('    [!!]   movie file not found ! [!!]')
-        print(self.stim.movie_files[s])
-        print(' ########################################## ')
+        else:
+
+            print()
+            print(' ########################################## ')
+            print('    [!!]   movie file not found ! [!!]')
+            print(self.stim.movie_files[s])
+            print(' ########################################## ')
 
 
 
