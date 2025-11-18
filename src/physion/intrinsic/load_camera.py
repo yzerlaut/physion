@@ -39,7 +39,6 @@ if CameraInterface is None:
     print('------------------------------------')
     print()
 
-print(CameraInterface)
 camera_depth = 12 # 12-bit camera depth
 
 
