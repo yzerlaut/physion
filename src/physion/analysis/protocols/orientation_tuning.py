@@ -308,7 +308,7 @@ def plot_orientation_tuning_curve(keys,
                 pt.annotate(ax, annot, (1., 0.9), va='top', color=color)
 
     pt.set_plot(ax, xticks=Tunings[0]['shifted_angle'], yticks=np.arange(3)*0.5, ylim=[-0.05, 1.05],
-            ylabel='norm. $\delta$ $\\Delta$F/F',  xlabel='angle ($^o$) from pref.',
+            ylabel='norm. $\\delta$ $\\Delta$F/F',  xlabel='angle ($^o$) from pref.',
             xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tunings[0]['shifted_angle'] ])
 
     return fig, ax
