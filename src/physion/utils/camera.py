@@ -25,6 +25,7 @@ class CameraData:
                  folder = '.',
                  video_formats=['mp4', 'wmv', 'avi'],
                  force_video=False,
+                 t0=0,
                  verbose=True):
 
         
@@ -152,6 +153,9 @@ class CameraData:
             print('')
             print(' [!!] no camera data "%s" found ...' % name)
             print('')
+
+
+        self.times = np.array(self.times)-t0
 
 
     def get(self, index):

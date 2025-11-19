@@ -80,19 +80,6 @@ default_params = """
 }
 """
 
-string_params = """
-params = {
-
-    ############################################
-    ###         VIEW OPTIONS     ###############
-    ############################################
-    'tlim':[20,80],
-    'Ndiscret':100, # for movie only
-
-}
-"""
-
-
 def layout(show_axes=False):
     """
     default layout for the plot
@@ -146,14 +133,10 @@ def show_img(img, args,
 
     return img
 
-def draw_figure(params, data):
-
-    fig, AX = layout()
-
-    metadata = dict(data.metadata)
-    # metadata['raw_Behavior_folder'] = args['raw_Behavior_folder']
-    # metadata['raw_Imaging_folder'] = args['raw_Imaging_folder']
-
+def init_imaging(AX, params, data):
+    """
+    initialize imaging plot based on summary suite2p data
+    """
 
     if 'ophys' in data.nwbfile.processing:
 
@@ -200,98 +183,192 @@ def draw_figure(params, data):
             add_roi_ellipse(data, roi,
                             AX['axROI%i' % (i+1)],
                             size_factor=1.5, roi_lw=1)
+    else:
+        print("""
+            no ophys data in NWB
+            """)
+
+def update_imaging(AX, data, params, imagingData, t):
+
+    im_index = dv_tools.convert_time_to_index(t,
+                                        data.Fluorescence)
+    dS = int(3*params['imaging_temporal_filter'])
+    img = imagingData.data[\
+        max([im_index-dS,0]):min([im_index+dS+1,imagingData.shape[0]]),
+                        :,:].astype(np.uint16).mean(axis=0)
+    img = scipy.ndimage.gaussian_filter1d(img,
+                            params['imaging_spatial_filter'])
+    AX['imgImaging'].set_array(\
+            show_img(img, params, 'imaging'))
+
+    for n, roi in enumerate(params['zoomROIs']):
+        extent = params['ROI%i_extent'%n]
+        img_ROI = img[extent[0]:extent[1], extent[2]:extent[3]] 
+        AX['imgROI%i' % (n+1)].set_array(\
+                    show_img(img_ROI, params,
+                              'ROI%i'%n))
+
+
+def init_screen(AX, data):
 
     # screen inset
-    AX['imgScreen'] = data.visual_stim.show_frame(0,
+    AX['imgScreen'] = data.visual_stim.show_frame(0, 
                                                   ax=AX['axScreen'],
                                                   return_img=True,
                                                   label=None)
+def update_screen(AX, data, t):
 
-    # Face Camera
-    if True:
-
-        loadCameraData(params, 
-                       params['raw_data_folder'])
-
-        # Rig Image
-        if params['raw_Rig_FILES'] is not None:
-            imgRig = np.load(\
-                    params['raw_Rig_FILES'][0]).astype(float)
-            params['norm_Rig'] = np.max(imgRig)
-            AX['imgRig'] = AX['axRig'].imshow(\
-                            show_img(imgRig, params, 'Rig'),
-                vmin=params['Rig_clip'][0] if 'Rig_clip' in params else 0,
-                vmax=params['Rig_clip'][1] if 'Rig_clip' in params else 1,
-                            cmap='gray')
+    # visual stim
+    iEp = data.find_episode_from_time(t)
+    print(iEp)
+    if iEp==-1:
+        AX['imgScreen'].set_array(data.visual_stim.x*0+0.5)
     else:
-        print("""
-            FaceCamera movie not found !!!
-              """)
+        tEp = data.nwbfile.stimulus['time_start_realigned'].data[iEp]
+        data.visual_stim.update_frame(iEp, AX['imgScreen'],
+                                        time_from_episode_start=t-tEp)
 
-        # Face Image
-        if params['raw_Face_FILES'] is not None:
+def get_camera_img(camera, t=0):
 
-            imgFace = np.load(\
-                    params['raw_Face_FILES'][0]).astype(float)
-            params['norm_Face'] = np.max(imgFace)
-            AX['imgFace'] = AX['axFace'].imshow(\
-                            show_img(imgFace, params, 'Face'),
-            vmin=params['Face_clip'][0] if 'Face_clip' in params else 0,
-            vmax=params['Face_clip'][1] if 'Face_clip' in params else 1,
-                            cmap='gray')
+    index = np.argmin((camera.times-t)**2)
 
-            # pupil
-            if 'pupil' in params['fractions']:
-                x, y = np.meshgrid(np.arange(0,imgFace.shape[0]),
-                                np.arange(0,imgFace.shape[1]), 
-                                indexing='ij')
-                pupil_cond = (y>=params['pupil_xmin']) &\
-                            (y<=params['pupil_xmax']) &\
-                            (x>=params['pupil_ymin']) &\
-                            (x<=params['pupil_ymax'])
-                pupil_shape = len(np.unique(x[pupil_cond])),\
-                                        len(np.unique(y[pupil_cond]))
-                AX['imgPupil'] = AX['axPupil'].imshow(\
-                        imgFace[pupil_cond].reshape(*pupil_shape), cmap='gray')
-                params['pupil_cond'] = pupil_cond
-                params['pupil_shape'] = pupil_shape
-                pupil_fit = get_pupil_fit(0, data, params)
-                AX['pupil_fit'], = AX['axPupil'].plot(pupil_fit[0],
-                                                    pupil_fit[1],
-                                    '.', markersize=1, color='red')
+    return np.array(camera.get(index).T, dtype=float)/255.
 
-            AX['pupil_center'] = None
-            if 'gaze' in params['fractions']:
-                pupil_center = get_pupil_center(0, data, params)
-                AX['pupil_center'], = AX['axPupil'].plot(\
-                                [pupil_center[0]], [pupil_center[1]], '.',
-                                markersize=5, color='orange')
+def init_camera(AX, params, camera, name='Face'):
 
-            # whisking
-            if 'whisking' in params['fractions']:
-                whisking_cond = (x>=params['whisking_ROI'][0]) &\
-                (x<=(params['whisking_ROI'][0]+params['whisking_ROI'][2])) &\
-                (y>=params['whisking_ROI'][1]) &\
-                (y<=(params['whisking_ROI'][1]+params['whisking_ROI'][3]))
-                whisking_shape = len(np.unique(x[whisking_cond])),\
-                                        len(np.unique(y[whisking_cond]))
-                params['whisking_cond'] = whisking_cond
-                params['whisking_shape'] = whisking_shape
+    if camera is not None:
+        
+        img= get_camera_img(camera)
 
-                img1 = np.load(\
-                        params['raw_Face_FILES'][1]).astype(float)
-                img = np.load(\
-                        params['raw_Face_FILES'][0]).astype(float)
-                new_img = (img1-img)[whisking_cond].reshape(\
-                                                    *whisking_shape)
-                AX['imgWhisking'] = AX['axWhisking'].imshow(\
-                                    new_img,
-                                    vmin=-255/5., vmax=255/5.,
-                                    cmap=plt.cm.BrBG)
-                plt.colorbar(AX['imgWhisking'], 
-                            orientation='horizontal',
-                            cax=AX['cbWhisking'])
+        params['norm_%s' % name] = np.max(img)
+        AX['img%s' % name] = AX['ax%s' % name].imshow(\
+                        show_img(img, params, name),
+            vmin=params['%s_clip' % name][0] if '%s_clip'%name in params else 0,
+            vmax=params['%s_clip' % name][1] if '%s_clip'%name in params else 1,
+                        cmap='gray')
 
+    else:
+
+        AX['img%s' % name] = AX['ax%s' % name].imshow(np.zeros(2,2))
+
+def update_camera(AX, params, camera, t=0, name='Face'):
+
+    img= get_camera_img(camera, t)
+
+    AX['imgRig'].set_array(show_img(img, params, 'Rig'))
+
+def get_pupil_center(index, data):
+    coords = []
+    for key in ['cx', 'cy']:
+        coords.append(\
+            data.nwbfile.processing['Pupil'].data_interfaces[key].data[index]*data.FaceCamera_mm_to_pix)
+    return coords
+
+def get_pupil_fit(index, data):
+
+    coords = []
+
+    for key in ['cx', 'cy', 'sx', 'sy']:
+        coords.append(data.FaceCamera_mm_to_pix*\
+            data.nwbfile.processing['Pupil'].data_interfaces[key].data[index])
+
+    if 'angle' in data.nwbfile.processing['Pupil'].data_interfaces:
+        coords.append(\
+            data.nwbfile.processing['Pupil'].data_interfaces['angle'].data[index])
+    else:
+        coords.append(0)
+
+    return process.ellipse_coords(*coords, transpose=False)
+    
+
+def init_pupil(AX, data, params, faceCamera):
+
+    imgFace = faceCamera.get(0).T
+
+    x, y = np.meshgrid(np.arange(0,imgFace.shape[0]),
+                    np.arange(0,imgFace.shape[1]), 
+                    indexing='ij')
+
+    pupil_cond = (y>=data.pupil_ROI['xmin']) &\
+                (y<=data.pupil_ROI['xmax']) &\
+                (x>=data.pupil_ROI['ymin']) &\
+                (x<=data.pupil_ROI['ymax'])
+
+    pupil_shape = len(np.unique(x[pupil_cond])),\
+                            len(np.unique(y[pupil_cond]))
+    AX['imgPupil'] = AX['axPupil'].imshow(\
+            imgFace[pupil_cond].reshape(*pupil_shape), 
+            cmap='gray')
+
+    params['pupil_cond'] = pupil_cond
+    params['pupil_shape'] = pupil_shape
+    pupil_fit = get_pupil_fit(0, data)
+    AX['pupil_fit'], = AX['axPupil'].plot(\
+                            pupil_fit[0], pupil_fit[1],
+                            '.', markersize=1, color='red')
+
+    pupil_center = get_pupil_center(0, data)
+    AX['pupil_center'], = AX['axPupil'].plot(\
+                    [pupil_center[0]], [pupil_center[1]], '.',
+                    markersize=5, color='orange')
+
+def update_pupil(AX, data, params, faceCamera, t):
+
+    index = np.argmin((faceCamera.times-t)**2)
+
+    AX['imgPupil'].set_array(
+            faceCamera.get(index).T[params['pupil_cond']].reshape(*params['pupil_shape']))
+
+    pupil_fit = get_pupil_fit(index, data)
+    AX['pupil_fit'].set_data(pupil_fit[0], pupil_fit[1])
+
+    pupil_center = get_pupil_center(index, data)
+    AX['pupil_center'].set_data(\
+                    [pupil_center[0]], [pupil_center[1]])
+
+def init_whisking(AX, data, params, faceCamera):
+
+    imgFace = faceCamera.get(0).T
+
+    x, y = np.meshgrid(np.arange(0,imgFace.shape[0]),
+                    np.arange(0,imgFace.shape[1]), 
+                    indexing='ij')
+
+    whisking_cond = (x>=data.FaceMotion_ROI[0]) &\
+                (x<=(data.FaceMotion_ROI[0]+data.FaceMotion_ROI[2])) &\
+                (y>=data.FaceMotion_ROI[1]) &\
+                (y<=(data.FaceMotion_ROI[1]+data.FaceMotion_ROI[3]))
+
+    whisking_shape = len(np.unique(x[whisking_cond])),\
+                            len(np.unique(y[whisking_cond]))
+    params['whisking_cond'] = whisking_cond
+    params['whisking_shape'] = whisking_shape
+
+    img1 = faceCamera.get(1).astype(float).T
+    img = faceCamera.get(0).astype(float).T
+
+    new_img = (img1-img)[whisking_cond].reshape(\
+                                        *whisking_shape)
+    AX['imgWhisking'] = AX['axWhisking'].imshow(\
+                        new_img,
+                        vmin=-255/5., vmax=255/5.,
+                        cmap=plt.cm.BrBG)
+
+    plt.colorbar(AX['imgWhisking'], 
+                orientation='horizontal',
+                cax=AX['cbWhisking'])
+
+def update_whisking(AX, data, params, faceCamera, t):
+
+    index = np.argmin((faceCamera.times-t)**2)
+
+    img1 = faceCamera.get(index+1).astype(float).T
+    img = faceCamera.get(index).astype(float).T
+
+    AX['imgWhisking'].set_array(
+            (img1-img)[params['whisking_cond']].reshape(*params['whisking_shape']))
+
+def plot_traces(AX, params, data):
 
     #   ----  filling time plot
 
@@ -371,28 +448,13 @@ def draw_figure(params, data):
                                 (params['tlim'][0], 1.005*params['Tbar_loc']),
                                  ha='left', fontsize=8,)
     # AX['axTraces'].set_xlim(params['tlim'])
+    AX['axTraces'].set_xlim([params['tlim'][0], AX['axTraces'].get_xlim()[1]])
     AX['axTraces'].set_ylim([-0.01, 1.01])
 
-    return fig, AX, params
+def update_timer(AX, time):
+    AX['cursor'].set_data(np.ones(2)*time, np.arange(2))
+    AX['time'].set_text('     t=%.1fs\n' % time)
 
-
-def get_pupil_center(index, data, metadata):
-    coords = []
-    for key in ['cx', 'cy']:
-        coords.append(\
-            data.nwbfile.processing['Pupil'].data_interfaces[key].data[index]/metadata['pix_to_mm'])
-    return coords
-
-def get_pupil_fit(index, data, metadata):
-    coords = []
-    for key in ['cx', 'cy', 'sx', 'sy']:
-        coords.append(data.nwbfile.processing['Pupil'].data_interfaces[key].data[index]/metadata['pix_to_mm'])
-    if 'angle' in data.nwbfile.processing['Pupil'].data_interfaces:
-        coords.append(data.nwbfile.processing['Pupil'].data_interfaces['angle'].data[index])
-    else:
-        coords.append(0)
-    return process.ellipse_coords(*coords, transpose=False)
-    
 def load_Imaging(metadata):
     metadata['raw_Imaging_folder'] = params['raw_Imaging_folder']
 

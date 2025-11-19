@@ -17,8 +17,6 @@ def loadCameraData(metadata, raw_folder):
     # --- FaceCamera --- #
     ######################
 
-    faceCamera = CameraData('FaceCamera', raw_folder)
-    print(faceCamera.times)
     # imgfolder = os.path.join(raw_folder, 'FaceCamera-imgs')
 
     if os.path.isdir(imgfolder):
