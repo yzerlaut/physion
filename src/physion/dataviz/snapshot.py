@@ -32,7 +32,7 @@ default_params = """
     " ############################################## ":"",
     " ############  data sample properties ######### ":"",
     " ############################################## ":"",
-    "tlim":[20,120],
+    "tlim":[20,80],
     "zoomROIs":[0,1],
     "                                                ":"",
     " ############################################## ":"",
@@ -42,7 +42,7 @@ default_params = """
     "imaging_spatial_filter":0.8,
     "imaging_NL":3,
     "imaging_clip":[0.3, 0.9],
-    "trace_quantity":"rawFluo",
+    "trace_quantity":"dFoF",
     "dFoF_smoothing":0.1,
     "zoomROIs_factor":[3.0,2.5],
     "                                                ":"",
@@ -61,7 +61,7 @@ default_params = """
     " ############################################## ":"",
     " ##########  annotation properties ############ ":"",
     " ############################################## ":"",
-    "Tbar":2, 
+    "Tbar":5, 
     "Tbar_loc":1.0,
     "with_screen_inset":false,
     "                                                ":"",
@@ -93,7 +93,7 @@ params = {
 """
 
 
-def layout(args, show_axes=False):
+def layout(show_axes=False):
     """
     default layout for the plot
     """
@@ -146,9 +146,9 @@ def show_img(img, args,
 
     return img
 
-def draw_figure(args, params, data):
+def draw_figure(params, data):
 
-    fig, AX = layout(args)
+    fig, AX = layout()
 
     metadata = dict(data.metadata)
     # metadata['raw_Behavior_folder'] = args['raw_Behavior_folder']
@@ -201,7 +201,6 @@ def draw_figure(args, params, data):
                             AX['axROI%i' % (i+1)],
                             size_factor=1.5, roi_lw=1)
 
-
     # screen inset
     AX['imgScreen'] = data.visual_stim.show_frame(0,
                                                   ax=AX['axScreen'],
@@ -210,7 +209,6 @@ def draw_figure(args, params, data):
 
     # Face Camera
     if True:
-        # metadata['raw_Behavior_folder']!='':
 
         loadCameraData(params, 
                        params['raw_data_folder'])
@@ -225,6 +223,10 @@ def draw_figure(args, params, data):
                 vmin=params['Rig_clip'][0] if 'Rig_clip' in params else 0,
                 vmax=params['Rig_clip'][1] if 'Rig_clip' in params else 1,
                             cmap='gray')
+    else:
+        print("""
+            FaceCamera movie not found !!!
+              """)
 
         # Face Image
         if params['raw_Face_FILES'] is not None:
@@ -394,49 +396,20 @@ def get_pupil_fit(index, data, metadata):
 def load_Imaging(metadata):
     metadata['raw_Imaging_folder'] = params['raw_Imaging_folder']
 
-def fill_sheet_with_datafiles(nwbfile, args):
+def fill_sheet_with_datafiles(nwbfile):
     """
     """
 
 if __name__=='__main__':
 
-    import argparse, physion
+    import physion, tempfile
 
-    parser=argparse.ArgumentParser()
-
-    parser.add_argument('-f', "--params_file", 
-                        default = '',
-                        type=str)
-
-    # parser.add_argument("datafile", type=str)
-
-    parser.add_argument("-v", "--verbose", 
-                        help="increase output verbosity", 
-                        action="store_true")
-
-    parser.add_argument("--ROIs", default=[0,1,2,3,4],
-                        nargs='*', type=int)
-    parser.add_argument("--zoomROIs", default=[2,4],
-                        nargs=2, type=int)
-
-    parser.add_argument("--tlim", default=[10,100], 
-                        nargs=2, type=float)
-
-    parser.add_argument("--layout", help="show layout",
-                        action="store_true")
-
-    args = parser.parse_args()
-
-        
-        
-    # exec(string_params)
-
-    if args.layout:
+    if sys.argv[-1]=='show-layout':
         # just showing the current figure layout
-        fig, AX = layout(args, show_axes=True)
+        fig, AX = layout(show_axes=True)
         plt.show()
 
-    elif args.params_file=='':
+    elif sys.argv[-1]=='generate-template':
         # we write a default params file
         with open('visualization_params.json', 'w') as f:
             f.write(default_params)
@@ -448,10 +421,11 @@ if __name__=='__main__':
                 and run:
                     python -m physion.dataviz.snapshot ./visualization_params.json
               """)
-
-    elif '.json' in args.params_file and os.path.isfile(args.params_file):
-
-        with open(args.params_file, 'r') as f:
+    else:
+        fn = tempfile.mktemp(suffix='.json')
+        with open(fn, 'w') as f:
+            f.write(default_params)
+        with open(fn, 'r') as f:
             params = json.load(f)
 
         data = physion.analysis.read_NWB.Data(os.path.expanduser(params['nwbfile']),
@@ -459,19 +433,13 @@ if __name__=='__main__':
         
         # print('tlim: %s' % data.tlim)
 
-        fig, AX, metadata = draw_figure(args, params, data)    
+        fig, AX, metadata = draw_figure(params, data)    
 
         plt.show()
         # root_path = os.path.dirname(args.datafile)
         # subfolder = os.path.basename(\
         #         args.datafile).replace('.nwb','')[-8:]
 
-    else:
-        print("""
-        invalid input file
-            """)
-        
-        # json.load()
 
 
     """
