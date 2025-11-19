@@ -41,7 +41,7 @@ show_CaImaging_FOV(data, key='max_proj',
 show_CaImaging_FOV(data, key='meanImg', 
                    cmap=pt.get_linear_colormap('k', 'tab:green'),
                    NL=3,
-                   roiIndices=range(data.nROIs), 
+                   roiIndex=range(data.nROIs), 
                    ax=AX[2])
 
 # save on desktop

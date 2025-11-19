@@ -763,7 +763,19 @@ class multiprotocol(visual_stim):
                 self.STIM.append(build_stim(subprotocol))
                 i+=1
         else:
+            """
+            deprecated after 11/2025
+                all subprotocols information should lie in "protocol" (see above)
+
+                for backward compatibility, we keep the possibilit to rebuild  
+                from the subprotocol files in acquisition/protocols/subprotocols/...
+            """
             # we generate a new multiprotocol
+            if 'json_location' not in protocol:
+                protocol['json_location'] = os.path.join(\
+                    os.path.dirname(os.path.abspath(__file__)),
+                    '..', 'acquisition', 'protocols')
+                
             while 'Protocol-%i'%i in protocol:
                 path_list = [protocol['json_location']]+\
                               protocol['Protocol-%i'%i].split('/')
