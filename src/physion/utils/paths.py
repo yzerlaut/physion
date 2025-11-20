@@ -44,7 +44,8 @@ for key, val in zip(['~/DATA',
                      '~/UNPROCESSED/Joana',
                      '~/UNPROCESSED/Taddy',
                      '~/UNPROCESSED/Yann',
-                     '~/CURATED'],
+                     '~/CURATED', 
+                     'Adrianna'],
                     [os.path.join(os.path.expanduser('~'), 'DATA'),
                      "C:\\DATA",
                      os.path.join(os.path.expanduser('~'), 'UNPROCESSED'),
@@ -56,7 +57,8 @@ for key, val in zip(['~/DATA',
                      os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'Joana'),
                      os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'Taddy'),
                      os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'Yann'),
-                     os.path.join(os.path.expanduser('~'), 'CURATED')]):
+                     os.path.join(os.path.expanduser('~'), 'CURATED'), 
+                     r'\\iss\bacci\raw-imaging\Adrianna\experiments\NDNF']):
     if os.path.isdir(val):
         FOLDERS[key] = val
 
