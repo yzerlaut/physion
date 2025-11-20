@@ -4,12 +4,25 @@ import numpy as np
 
 import physion
 
-def build_stim(protocol):
+class visual_stim_from_file:
+    def __init__(self, protocol, visual_stim_file):
+        self.experiment = np.load(visual_stim_file,
+                                  allow_pickle=True).item()
+        
+def build_stim(protocol, 
+               from_file=None):
     """
     """
-    if (protocol['Presentation']=='multiprotocol'):
+    if from_file is not None:
+        # we only build the time course of the associated video
+        return visual_stim_from_file(protocol, from_file)
+
+    elif (protocol['Presentation']=='multiprotocol'):
+        #
         return physion.visual_stim.main.multiprotocol(protocol)
+
     else:
+        # single protocol
         protocol_name = protocol['Stimulus'].replace('-', '_').replace('+', '_')
         try:
             return getattr(getattr(physion.visual_stim.stimuli,\

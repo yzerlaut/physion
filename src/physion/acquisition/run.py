@@ -1,11 +1,11 @@
-import os, json, time, sys
+import os, json, time, sys, shutil
 import numpy as np
 import multiprocessing
 from PyQt5 import QtCore
 
 from physion.utils.files import get_time, get_date, generate_datafolders,\
         get_latest_file
-from physion.acquisition.tools import base_path,\
+from physion.acquisition.tools import \
         check_gui_to_init_metadata, NIdaq_metadata_init,\
         set_filename_and_folder, stimulus_movies_folder
 from physion.acquisition import recordings
@@ -52,12 +52,20 @@ def init_VisualStim(self):
     else:
         self.protocol['demo'] = False
 
-    # ---- storing visual stim  ---- #
+    # re-building visual-stim object to monitor time course of exp
+    stim = build_VisualStim(self.protocol, 
+            from_file=os.path.join(movie_folder, 
+                                   'visual-stim.npy'))
 
-    p = self.protocol.copy() # a copy of the protocol data for saving
-    p['no-window'] = True
-    stim = build_VisualStim(p)
-    stim.save(self.date_time_folder) # writes visual-stim.npy & protocol.json
+    # STORE visual-stim.npy & protocol.json
+    shutil.copy2(os.path.join(movie_folder, 'visual-stim.npy'),
+                 self.date_time_folder)
+    print('[ok] visual-stimulation protocol saved as "%s"' %\
+            os.path.join(self.date_time_folder, 'protocol.json'))
+    shutil.copy2(os.path.join(movie_folder, 'protocol.json'),
+                 self.date_time_folder)
+    print('[ok] visual-stimulation time course saved as "%s"' %\
+            os.path.join(self.date_time_folder, 'visual-stim.npy'))
 
     self.max_time = stim.experiment['time_stop'][-1]+\
             stim.experiment['time_start'][0]

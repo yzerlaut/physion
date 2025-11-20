@@ -20,66 +20,6 @@ plt.rcParams['figure.autolayout'] = False
 
 iMap = pt.get_linear_colormap('k','lightgreen')
 
-default_params = """
-{
-    "                                                ":"",
-    " ############################################## ":"",
-    " ################# data location ############## ":"",
-    " ############################################## ":"",
-    "nwbfile":"~/DATA/physion_Demo-Datasets/PYR-WT/NWBs/2025_11_14-13-54-32.nwb",
-    "raw_data_folder":"~/DATA/physion_Demo-Datasets/PYR-WT/processed/2025_11_14/13-54-32",
-    "                                                ":"",
-    " ############################################## ":"",
-    " ############  data sample properties ######### ":"",
-    " ############################################## ":"",
-    "tlim":[20,80],
-    "zoomROIs":[0,1],
-    "                                                ":"",
-    " ############################################## ":"",
-    " #############  imaging properties ############ ":"",
-    " ############################################## ":"",
-    "imaging_temporal_filter":3.0,
-    "imaging_spatial_filter":0.8,
-    "imaging_NL":3,
-    "imaging_clip":[0.3, 0.9],
-    "trace_quantity":"dFoF",
-    "dFoF_smoothing":0.1,
-    "zoomROIs_factor":[3.0,2.5],
-    "                                                ":"",
-    " ############################################## ":"",
-    " ##########  Face-camera properties ########### ":"",
-    " ############################################## ":"",
-    "Face_Lim":[0, 0, 10000, 10000],
-    "Face_clip":[0.3,1.0],
-    "                                                ":"",
-    " ############################################## ":"",
-    " ##########  Rig-camera properties ############ ":"",
-    " ############################################## ":"",
-    "Rig_Lim":[100, 100, 470, 750],
-    "Rig_NL":2,
-    "                                                ":"",
-    " ############################################## ":"",
-    " ##########  annotation properties ############ ":"",
-    " ############################################## ":"",
-    "Tbar":5, 
-    "Tbar_loc":1.0,
-    "with_screen_inset":false,
-    "                                                ":"",
-    " ############################################## ":"",
-    " ##########   layout properties  ############## ":"",
-    " ############################################## ":"",
-    "ROIs":[0,1,2,3,4,5],
-    "fractions": {"running":0.1, "running_start":0.89,
-                  "whisking":0.1, "whisking_start":0.78,
-                  "gaze":0.08, "gaze_start":0.7,
-                  "pupil":0.15, "pupil_start":0.55,
-                  "rois":0.29, "rois_start":0.29,
-                  "visual_stim":2, "visual_stim_start":2.0,
-                  "raster":0.28, "raster_start":0.0},
-    "                                                ":""
-}
-"""
-
 def layout(show_axes=False):
     """
     default layout for the plot
@@ -212,21 +152,28 @@ def update_imaging(AX, data, params, imagingData, t):
 def init_screen(AX, data):
 
     # screen inset
-    AX['imgScreen'] = data.visual_stim.show_frame(0, 
-                                                  ax=AX['axScreen'],
-                                                  return_img=True,
-                                                  label=None)
+    AX['imgScreen'] = AX['axScreen'].imshow(\
+                            0*data.visual_stim.x+0.5,
+                        extent=(0, data.visual_stim.x.shape[0],
+                                0, data.visual_stim.x.shape[1]),
+                        cmap='gray',
+                        vmin=0, vmax=1,
+                        origin='lower',
+                        aspect='equal')
+
+
 def update_screen(AX, data, t):
 
     # visual stim
     iEp = data.find_episode_from_time(t)
-    print(iEp)
     if iEp==-1:
         AX['imgScreen'].set_array(data.visual_stim.x*0+0.5)
     else:
         tEp = data.nwbfile.stimulus['time_start_realigned'].data[iEp]
-        data.visual_stim.update_frame(iEp, AX['imgScreen'],
-                                        time_from_episode_start=t-tEp)
+        AX['imgScreen'].set_array(data.visual_stim.get_image(iEp,
+                                        time_from_episode_start=t-tEp))
+        # data.visual_stim.update_frame(iEp, AX['imgScreen'],
+        #                                 time_from_episode_start=t-tEp)
 
 def get_camera_img(camera, t=0):
 

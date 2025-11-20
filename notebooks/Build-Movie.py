@@ -134,8 +134,7 @@ params =\
 
 time = 0
 
-"""
-for time in [10, 50, 100]:
+for time in [3.5, 4., 5., 6]:
 
     fig, AX = physion.dataviz.snapshot.layout()
 
@@ -154,19 +153,39 @@ for time in [10, 50, 100]:
     physion.dataviz.snapshot.update_imaging(AX, data, params, imagingData, time)
     physion.dataviz.snapshot.update_timer(AX, time)
     physion.utils.plot_tools.plt.show()
-"""
 
 # %% [markdown]
 # ## Build the movie
 
 # %%
-fig, AX = physion.dataviz.snapshot.layout()
-_, _, ani = physion.dataviz.movie.build(fig, AX, data, params,
-                                        faceCamera=faceCamera,
-                                        rigCamera=rigCamera,
-                                        imagingData=imagingData,
-                                        Ndiscret=1000)
+# fig, AX = physion.dataviz.snapshot.layout()
+# _, _, ani = physion.dataviz.movie.build(fig, AX, data, params,
+#                                         faceCamera=faceCamera,
+#                                         rigCamera=rigCamera,
+#                                         imagingData=imagingData,
+#                                         Ndiscret=200)
+# physion.dataviz.movie.write(ani, FPS=5)
 
 # %%
-physion.dataviz.movie.write(ani)
-
+from physion.utils import plot_tools as pt
+t0 = 4.5
+for t0 in np.linspace(3., 6., 12):
+    i0 = np.argmin((rigCamera.times-t0)**2)
+    print(i0, rigCamera.times[i0])
+    fig, ax = pt.figure(ax_scale=(3,3))
+    pt.matrix(
+        np.rot90(rigCamera.get(i0).T, k=3),
+        vmin=0,
+        vmax=255,
+        colormap='gray',
+        ax=ax,
+    )
+    ax.axis('off')
+    ax.set_title('t=%.1f' % t0)
+# %%
+# visual_stim = np.load(os.path.join(raw_data_folder, 'visual-stim.npy'),
+visual_stim = np.load(os.path.join('../../movies/full-protocol', 'visual-stim.npy'),
+                      allow_pickle=True).item()
+# %%
+visual_stim['time_duration'][0]
+# %%
