@@ -4,18 +4,14 @@ import numpy as np
 
 import physion
 
-class visual_stim_from_file:
-    def __init__(self, protocol, visual_stim_file):
-        self.experiment = np.load(visual_stim_file,
-                                  allow_pickle=True).item()
-        
 def build_stim(protocol, 
                from_file=None):
     """
     """
     if from_file is not None:
         # we only build the time course of the associated video
-        return visual_stim_from_file(protocol, from_file)
+        return physion.visual_stim.main.visual_stim(protocol, 
+                                                    from_file=from_file)
 
     elif (protocol['Presentation']=='multiprotocol'):
         #

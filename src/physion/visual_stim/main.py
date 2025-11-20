@@ -33,11 +33,11 @@ class visual_stim:
 
     def __init__(self,
                  protocol,
+                 from_file=None,
                  default_params={},
                  demo=False):
         """
         """
-
         self.protocol = protocol
 
         # initialize screen parameters
@@ -61,8 +61,17 @@ class visual_stim:
         # then we can initialize the angle
         self.set_angle_meshgrid()
 
-        ### INITIALIZE EXP ###
-        if not (self.protocol['Presentation']=='multiprotocol'):
+        if from_file is not None:
+
+            self.experiment = np.load(from_file,
+                                    allow_pickle=True).item()
+            self.tstop = self.experiment['time_stop'][-1]+\
+                                protocol['presentation-poststim-period']
+
+        elif not (self.protocol['Presentation']=='multiprotocol'):
+            ##################################
+            ### INITIALIZE EXP TIME COURSE ###
+            ##################################
             self.init_experiment(protocol, default_params)
 
 
