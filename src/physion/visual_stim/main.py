@@ -33,8 +33,8 @@ class visual_stim:
 
     def __init__(self,
                  protocol,
-                 from_file=None,
                  default_params={},
+                 from_file=None,
                  demo=False):
         """
         """

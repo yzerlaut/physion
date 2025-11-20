@@ -183,9 +183,21 @@ for t0 in np.linspace(3., 6., 12):
     ax.axis('off')
     ax.set_title('t=%.1f' % t0)
 # %%
-# visual_stim = np.load(os.path.join(raw_data_folder, 'visual-stim.npy'),
-visual_stim = np.load(os.path.join('../../movies/full-protocol', 'visual-stim.npy'),
-                      allow_pickle=True).item()
-# %%
-visual_stim['time_duration'][0]
+import cv2 as cv
+
+for t0 in np.linspace(3., 6., 12):
+    rigCamera.cap.set(cv.CAP_PROP_POS_MSEC, t0*1000)
+    fig, ax = pt.figure(ax_scale=(3,3))
+    hasFrame, img = rigCamera.cap.read()
+    if hasFrame:
+        pt.matrix(
+            # rigCamera.cap.read()[1][:,:,0].T,
+            np.rot90(img[:,:,0].T, k=2),
+            vmin=0,
+            vmax=255,
+            colormap='gray',
+            ax=ax,
+        )
+        ax.axis('off')
+        ax.set_title('t=%.1f' % t0)
 # %%
