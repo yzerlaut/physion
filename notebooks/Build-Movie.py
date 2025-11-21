@@ -41,13 +41,14 @@ data.build_running_speed()
 from scipy.ndimage import gaussian_filter1d
 
 data.build_facemotion()
-data.facemotion = gaussian_filter1d(data.facemotion, 3)
+# data.facemotion = gaussian_filter1d(data.facemotion, 3)
 data.build_pupil_diameter()
-data.pupil_diameter = gaussian_filter1d(data.pupil_diameter, 3)
+# data.pupil_diameter = gaussian_filter1d(data.pupil_diameter, 3)
 
-# from physion.dataviz.raw import plot as plot_raw, find_default_plot_settings
-# settings = find_default_plot_settings(data)
-# _ = plot_raw(data, settings=settings, tlim=[0,120])
+# %%
+from physion.dataviz.raw import plot as plot_raw, find_default_plot_settings
+settings = find_default_plot_settings(data)
+_ = plot_raw(data, settings=settings, tlim=[0,120])
 
 # %% [markdown]
 # ##  Load FaceCamera data
@@ -158,86 +159,12 @@ for time in [3.5, 4., 5., 6]:
 # ## Build the movie
 
 # %%
-# fig, AX = physion.dataviz.snapshot.layout()
-# _, _, ani = physion.dataviz.movie.build(fig, AX, data, params,
-#                                         faceCamera=faceCamera,
-#                                         rigCamera=rigCamera,
-#                                         imagingData=imagingData,
-#                                         Ndiscret=200)
-# physion.dataviz.movie.write(ani, FPS=5)
+fig, AX = physion.dataviz.snapshot.layout()
+_, _, ani = physion.dataviz.movie.build(fig, AX, data, params,
+                                        faceCamera=faceCamera,
+                                        rigCamera=rigCamera,
+                                        imagingData=imagingData,
+                                        Ndiscret=200)
+physion.dataviz.movie.write(ani, FPS=5)
 
-# %%
-from physion.utils import plot_tools as pt
-t0 = 4.5
-array = []
-for t0 in np.linspace(3., 6., 12):
-    i0 = np.argmin((rigCamera.times-t0)**2)
-    array.append(i0)
-    hasFrame, img = rigCamera.cap.read()
-    fig, ax = pt.figure(ax_scale=(3,3))
-    i1 = faceCamera.cap.get(cv.CAP_PROP_POS_FRAMES)
-    print(i0, i1, rigCamera.times[i0])
-    pt.matrix(
-        np.rot90(img[:,:,0].T, k=2),
-        vmin=0,
-        vmax=255,
-        colormap='gray',
-        ax=ax,
-    )
-    ax.axis('off')
-    ax.set_title('t=%.1f' % t0)
-# %%
-import cv2 as cv
-
-for t0 in np.linspace(3., 6., 12):
-    rigCamera.cap.set(cv.CAP_PROP_POS_MSEC, t0*1000)
-    fig, ax = pt.figure(ax_scale=(3,3))
-    hasFrame, img = rigCamera.cap.read()
-    i0 = faceCamera.cap.get(cv.CAP_PROP_POS_FRAMES)
-    print(i0)
-    if hasFrame:
-        pt.matrix(
-            np.rot90(img[:,:,0].T, k=2),
-            vmin=0,
-            vmax=255,
-            colormap='gray',
-            ax=ax,
-        )
-        ax.axis('off')
-        ax.set_title('t=%.1f' % t0)
-# %%
-import imageio, tempfile
-FILE = os.path.join(raw_data_folder, 'RigCamera.wmv')
-temp = tempfile.mktemp(suffix='.jpg')
-for i in array:
-    fig, ax = pt.figure(ax_scale=(3,3))
-    print(i)
-    img = imageio.imread(FILE, index=i) #, plugin='pyav')
-    pt.matrix(
-        # rigCamera.cap.read()[1][:,:,0].T,
-        np.rot90(img[:,:,0].T, k=2),
-        vmin=0,
-        vmax=255,
-        colormap='gray',
-        ax=ax,
-    )
-    
-
-
-# %%
-import ffmpeg, tempfile
-FILE = os.path.join(raw_data_folder, 'RigCamera.wmv')
-temp = tempfile.mktemp(suffix='.jpg')
-for i in array:
-    (
-        ffmpeg
-        .input(FILE, ss=30)
-        .filter('scale', width, -1)
-        .output(temp, vframes=1)
-        .run()
-    )
-
-
-# %%
-print(i)
 # %%

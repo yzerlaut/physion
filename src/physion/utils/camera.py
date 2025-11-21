@@ -235,14 +235,14 @@ class CameraData:
                 https://github.com/opencv/opencv/issues/9053
 
             """
+
             print("""
-                [!!] can not read specific frames from videos [!!]
-                convert to binary to use this video first !
+
+                [!!] be aware that you can not *precisely read* specific frames from videos [!!]
+                        -> for precision: convert to binary to use this video first !
                   
                   python -m physion.utils.camera /path/to/your/video to-binary
                   """)
-            raise BaseException
-
 
             # ---------------------------------------------
             #     transform to movie index (movies have low fps precision)
@@ -257,6 +257,7 @@ class CameraData:
                 print('movie index: ', movie_index, 
                       ' outside the range [0,%i]'%(self.nFrames_movie-1))
                 movie_index = 0
+                
             if movie_index>=self.nFrames_movie:
                 print('movie index: ', movie_index, 
                       ' outside the range [0,%i]'%(self.nFrames_movie-1))
