@@ -25,6 +25,8 @@ class CameraData:
                  folder = '.',
                  video_formats=['mp4', 'wmv', 'avi'],
                  force_video=False,
+                 t0=0,
+                 debug=True,
                  verbose=True):
 
         
@@ -34,6 +36,7 @@ class CameraData:
         self.times, self.original_times = [], []
         self.cap, self.nFrames = None, 0
         self.FRAMES, self.FILES = None, None
+        self.debug = debug
 
         if os.path.isdir(\
                 os.path.join(self.folder, '%s-imgs' % name))\
@@ -154,6 +157,9 @@ class CameraData:
             print('')
 
 
+        self.times = np.array(self.times)-t0
+
+
     def get(self, index):
 
         if self.cap is not None:
@@ -162,6 +168,10 @@ class CameraData:
             # 
             movie_index = round(1.0* index\
                     /self.nFrames*self.nFrames_movie)
+
+            if self.debug:
+                print('movie index %i/%i' % (movie_index, self.nFrames_movie))
+
             if movie_index<0:
                 print('movie index: ', movie_index, 
                       ' outside the range [0,%i]'%(self.nFrames_movie-1))

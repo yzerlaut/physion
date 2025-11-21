@@ -1,73 +1,86 @@
 import os
 from PyQt5 import QtWidgets, QtCore, QtMultimedia, QtMultimediaWidgets
 
-def init_stimWindow(self, 
+def init_stimWindows(self, 
                     demo=False):
     
     """
      [!!] NEED TO MODIFY THIS FUNCTION WHEN SETTING UP NEW SCREENS [!!]
     """
-    self.stimWin = QtWidgets.QWidget()
+
     # we prepare the stimulus table
     self.stim.prepare_stimProps_tables(verbose=False)
-    
-    # Set window properties such as title, size, and icon
-    if ('fullscreen' in self.stim.screen) and\
-          self.stim.screen['fullscreen']:
-        if 'Bacci-2P' in self.config['Rig']:
-            self.stimWin.setGeometry(-400, 400, 600, int(9./16*600))
-            self.stimWin.showFullScreen()
-        elif 'A1-2P' in self.config['Rig']:
-            self.stimWin.setGeometry(2000, 400, 600, int(9./16*600))
-            self.stimWin.showFullScreen()
-        elif 'Laptop' in self.config['Rig']:
-            self.stimWin.setGeometry(2000, 400, 600, int(9./16*600))
-            self.stimWin.showFullScreen()
-    else:
-        self.stimWin.setGeometry(\
-                200, 400, 600, int(9./16*600))
 
+    self.stimWins = []
+    self.mediaPlayers, self.videowidgets = [], []
 
-    # Create a QMediaPlayer object
-    self.mediaPlayer = QtMultimedia.QMediaPlayer(None, 
-                QtMultimedia.QMediaPlayer.VideoSurface)
+    for s in range(self.stim.screen['nScreens']):
 
-    # Create a QVideoWidget object to display video
-    self.videowidget = QtMultimediaWidgets.QVideoWidget()
+        # Create a Qt Window
+        self.stimWins.append(QtWidgets.QWidget())
 
-    vboxLayout = QtWidgets.QVBoxLayout()
-    vboxLayout.setContentsMargins(0,0,0,0)
-    vboxLayout.addWidget(self.videowidget)
+        # Set window properties such as title, size, and icon
+        if ('fullscreen' in self.stim.screen) and\
+            self.stim.screen['fullscreen']:
+            if 'Bacci-2P' in self.config['Rig']:
+                self.stimWins[-1].setGeometry(-400, 400, 600, int(9./16*600))
+                self.stimWins[-1].showFullScreen()
+            elif 'A1-2P' in self.config['Rig']:
+                self.stimWins[-1].setGeometry(2000, 400, 600, int(9./16*600))
+                self.stimWins[-1].showFullScreen()
+            elif 'Laptop' in self.config['Rig']:
+                self.stimWins[-1].setGeometry(2000, 400, 600, int(9./16*600))
+                self.stimWins[-1].showFullScreen()
+            elif 'U3screens' in self.config['Rig']:
+                self.stimWins[-1].setGeometry(1980+s*1024, 400, 600, int(9./16*600))
+                self.stimWins[-1].showFullScreen()
+        else:
+            self.stimWins[-1].setGeometry(\
+                    200+100*s, 400+100*s, 600, int(9./16*600))
 
-    # Set the layout of the window
-    self.stimWin.setLayout(vboxLayout)
+        # Create a QMediaPlayer objects
+        self.mediaPlayers.append(\
+            QtMultimedia.QMediaPlayer(None, 
+                    QtMultimedia.QMediaPlayer.VideoSurface))
 
-    # Set the video output for the media player
-    self.mediaPlayer.setVideoOutput(self.videowidget)
+        # Create a QVideoWidget object to display video
+        self.videowidgets.append(\
+            QtMultimediaWidgets.QVideoWidget())
 
-    # load the movie
-    if os.path.isfile(self.stim.movie_file):
+        vboxLayout = QtWidgets.QVBoxLayout()
+        vboxLayout.setContentsMargins(0,0,0,0)
+        vboxLayout.addWidget(self.videowidgets[-1])
 
-        self.mediaPlayer.setMedia(\
-                QtMultimedia.QMediaContent(\
-                        QtCore.QUrl.fromLocalFile(\
-                            os.path.abspath(self.stim.movie_file))))
+        # Set the layout of the window
+        self.stimWins[s].setLayout(vboxLayout)
 
-        # initialize the stimulation index
-        self.current_index= -1 
+        # Set the video output for the media player
+        self.mediaPlayers[s].setVideoOutput(\
+                                    self.videowidgets[s])
 
-        self.mediaPlayer.play()
-        self.mediaPlayer.pause()
+        # load the movie
+        if os.path.isfile(self.stim.movie_files[s]):
 
-        self.stimWin.show()
+            self.mediaPlayers[s].setMedia(\
+                    QtMultimedia.QMediaContent(\
+                            QtCore.QUrl.fromLocalFile(\
+                                os.path.abspath(self.stim.movie_files[s]))))
 
-    else:
+            # Set the layout of the window
+            self.stimWins[s].setLayout(vboxLayout)
 
-        print()
-        print(' ########################################## ')
-        print('    [!!]   movie file not found ! [!!]')
-        print(self.stim.movie_file)
-        print(' ########################################## ')
+            self.mediaPlayers[s].play()
+            self.mediaPlayers[s].pause()
+
+            self.stimWins[s].show()
+
+        else:
+
+            print()
+            print(' ########################################## ')
+            print('    [!!]   movie file not found ! [!!]')
+            print(self.stim.movie_files[s])
+            print(' ########################################## ')
 
 
 
@@ -113,11 +126,17 @@ if __name__=='__main__':
         valid = True
 
     else:
-        Format = 'wmv' if 'win32' in sys.platform else 'mp4'
-        if os.path.isfile(os.path.join(args.protocol, 'movie.%s' % Format)) and\
+        Format = 'mp4' if 'linux' in sys.platform else 'wmv'
+        if os.path.isfile(os.path.join(args.protocol, 'movie.%s' % Format)):
+            movie_files = [os.path.join(args.protocol, 'movie.%s' % Format)]
+        elif os.path.isfile(os.path.join(args.protocol, 'movie-1.%s' % Format)):
+            movie_files = [\
+                os.path.join(args.protocol, 'movie-%i.%s' % (i, Format)) for i in range(1,6)\
+                             if os.path.isfile(os.path.join(args.protocol, 'movie-%i.%s' % (i, Format)))]
+        else:
+            movie_files = None
+        if movie_files is not None and\
             os.path.isfile(os.path.join(args.protocol, 'protocol.json')):
-
-            movie_file = os.path.join(args.protocol, 'movie.%s' % Format)
             with open(os.path.join(args.protocol, 'protocol.json'), 'r') as fp:
                 protocol = json.load(fp)
             protocol['demo'] = True
@@ -137,7 +156,7 @@ if __name__=='__main__':
             def __init__(self):
                 super(MainWindow, self).__init__()
                 self.stim = build_stim(protocol)
-                self.stim.movie_file = movie_file
+                self.stim.movie_files = movie_files
                 self.setGeometry(100, 100, 400, 40)
                 self.runBtn = QtWidgets.QPushButton('Start/Stop')
                 self.runBtn.clicked.connect(self.run)
@@ -148,10 +167,12 @@ if __name__=='__main__':
             def run(self):
                 if not self.runEvent.is_set():
                     self.runEvent.set()
-                    init_stimWindow(self)
-                    self.mediaPlayer.play()
+                    init_stimWindows(self)
+                    for player in self.mediaPlayers:
+                        player.play()
                 else:
-                    self.stimWin.close()
+                    for win in self.stimWins:
+                        win.close()
                     self.runEvent.clear()
 
         app = QtWidgets.QApplication(sys.argv)

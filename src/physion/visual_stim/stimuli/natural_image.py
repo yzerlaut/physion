@@ -9,7 +9,13 @@ from physion.visual_stim.preprocess_NI import load,\
 ##  ----    NATURAL IMAGES    --- #####
 #######################################
 
-params = {"Image-ID":1}
+params = {"Image-ID":1,
+          "contrast":0.3,
+          "x-center":0,
+          "y-center":0,
+          "radius":30
+}
+
 
 def get_NaturalImages_as_array(screen):
     
@@ -41,10 +47,19 @@ class stim(visual_stim):
     def get_image(self, index,
                   time_from_episode_start=0,
                   parent=None):
-        return np.rot90(\
+
+        im0 = np.rot90(\
                 self.NIarray[int(self.experiment['Image-ID'][index])], 
                         k=1)
-
+        im1 = self.experiment['bg-color'][index]+\
+            self.experiment['contrast'][index]*(im0-0.5)
+        
+        return self.blank_surround(im1, 
+                        bg_color=self.experiment['bg-color'][index],
+                          xcenter=self.experiment['x-center'][index],
+                          zcenter=self.experiment['y-center'][index],
+                          radius = self.experiment['radius'][index])
+    
 """
     def plot_stim_picture(self, episode, parent=None, 
                           vse=True, ax=None, label=None,

@@ -16,10 +16,9 @@ from physion.intrinsic.load_camera import *
 from physion.utils.paths import FOLDERS
 from physion.acquisition.settings import get_config_list, update_config
 from physion.visual_stim.main import visual_stim
-from physion.visual_stim.show import init_stimWindow
+from physion.visual_stim.show import init_stimWindows
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
-from physion.acquisition.tools import base_path
 
 
 def gui(self,
@@ -361,15 +360,17 @@ def update_dt_intrinsic(self):
 
         if int(1e3*self.t)/int(1e3*self.period) > self.iRepeat:
             #print('re-init stim')
-            self.mediaPlayer.stop()
-            self.mediaPlayer.setPosition(0)
-            self.mediaPlayer.play()
+            for player in self.mediaPlayers:
+                player.stop()
+                player.setPosition(0)
+                player.play()
             self.iRepeat += 1
 
-        if (self.mediaPlayer.mediaStatus()!=6) and (self.t<(self.period*self.Nrepeat)):
+        if (self.mediaPlayers[0].mediaStatus()!=6) and (self.t<(self.period*self.Nrepeat)):
             # print(' relaunching ! ')
-            self.mediaPlayer.setPosition(tt) 
-            self.mediaPlayer.play()
+            for player in self.mediaPlayers:
+                player.setPosition(tt) 
+                player.play()
 
         # in demo mode, we show the image
         if self.demoBox.isChecked():
@@ -392,18 +393,27 @@ def update_dt_intrinsic(self):
 
 def initialize_stimWindow(self):
 
-    if hasattr(self, 'stimWindow'):
+    if hasattr(self, 'stimWindows'):
         # deleting the previous one
-        self.stimWin.close()
+        for win in self.stimWins:
+            win.close()
         
     # re-initializing
     protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
-    self.stim.movie_file = os.path.join(self.movie_folder,
-                                        'flickering-bars-period%ss' % self.periodBox.currentText(),
-                                        '%s.wmv' % protocol)
-    init_stimWindow(self)
+    if self.stim.screen['nScreens']==1:
+        self.stim.movie_files = [os.path.join(self.movie_folder,
+                                            'flickering-bars-period%ss' % self.periodBox.currentText(),
+                                            '%s.wmv' % protocol)]
+    else:
+        self.stim.movie_files = [\
+            os.path.join(self.movie_folder,
+                        'flickering-bars-period%ss' % self.periodBox.currentText(),
+                        '%s-%i.wmv' % (protocol,i)) for i in range(1, self.stim.screen['nScreens']+1)]
 
-    self.mediaPlayer.play()
+    init_stimWindows(self)
+
+    for player in self.mediaPlayers:
+        player.play()
 
 def write_data(self):
 
@@ -541,6 +551,9 @@ def get_frame(self, force_HQ=False):
         img = frame.image_buffer
 
     elif (self.stim is not None) and (self.STIM is not None):
+        #############################################################
+        ###    synthetic data for troubleshooting of analysis     ###
+        #############################################################
 
         it = int((time.time()-self.t0_episode)/self.dt)%int(self.period/self.dt)
         protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]

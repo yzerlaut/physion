@@ -279,10 +279,19 @@ class Data:
     def read_pupil(self):
 
         pd = str(self.nwbfile.processing['Pupil'].description)
+
+        # extract pupil scale
         if len(pd.split('pix_to_mm='))>1:
             self.FaceCamera_mm_to_pix = int(1./float(pd.split('pix_to_mm=')[-1]))
         else:
             self.FaceCamera_mm_to_pix = 1
+
+        # extract pupil ROI
+        self.pupil_ROI = {}
+        for key, val in zip(\
+            ['xmin','xmax','ymin','ymax'],
+            pd.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')')[0].split(',')):
+            self.pupil_ROI[key] = int(val)
 
     def build_pupil_diameter(self,
                              specific_time_sampling=None,
@@ -512,6 +521,8 @@ class Data:
         self.metadata['verbose'] = verbose
         if degree:
             self.metadata['units'] = 'deg'
+        import pprint
+        pprint.pprint(self.metadata)
 
         # build an initial visual_stim 
         self.visual_stim = build_stim(self.metadata)

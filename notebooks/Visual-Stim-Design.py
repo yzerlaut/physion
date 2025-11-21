@@ -2,7 +2,7 @@
 # # Visual Stimulation
 
 # %%
-import sys, os
+import sys, os, json
 import numpy as np
 
 sys.path += ['../src'] # add src code directory for physion
@@ -12,13 +12,16 @@ import physion.utils.plot_tools as pt
 from physion.visual_stim.build import get_default_params
 
 # %% [markdown]
+# ## Single Screen Configuration
+
+# %% [markdown]
 # ## Dealing with the transformation from angles to display on the screen
 #
 # We want to convert the angular space of animal vision to the coordinates on a flat screen.
 #
 # The angular coordinates of animal vision are $\theta_x$ and $\theta_z$ that are the relative angles with respect to the center of the visual field of coordinates ($\theta_x$=0, $\theta_z$=0). This means that $\theta_x \in [-\pi/2,\pi/2]$ and $\theta_z \in [-\pi/2,\pi/2]$ (vision covers only half of the 3d space).
 #
-# <img src="../docs/visual_stim/coordinates.svg" width=60 height=60 />
+# <img src="docs/visual_stim/coordinates.svg" width=260 height=260 />
 #
 # We start from the [spherical coordinates](https://en.wikipedia.org/wiki/Spherical_coordinate_system) with the physics convention: $\theta$ is the polar angle and $\phi$ is the azimuthal angle. 
 #
@@ -49,6 +52,13 @@ from physion.visual_stim.build import get_default_params
 #
 # $$ z = r \, \sin(\theta_z) $$
 #
+# %% [markdown]
+# # Single Screen Setting 
+# A single screen placed perpendicular to the 45 deg. axis of the mouse eye 
+# 
+# (i.e. the center of its visual field)
+
+# %% [markdown]
 # The screen corresponds to the coordinates: $$ y = C $$
 #
 # So this imposes the constraint:
@@ -65,7 +75,7 @@ from physion.visual_stim.build import get_default_params
 #
 # ------------------------
 #
-# ** This is implemented in the [visual_stim/main.py](../../visual_stim/main.py) in the function `set_angle_meshgrid` **
+# ** This is implemented in the [visual_stim/main.py](../../visual_stim/main.py) in the function `set_angle_meshgrid_1screen` **
 
 # %% [markdown]
 # ## Illustrating the space wrapping from angle-to-screen
@@ -124,6 +134,50 @@ for units, ax, title in zip(['deg', 'cm', 'lin-deg'], AX,
     stim = physion.visual_stim.stimuli.grating.stim(params)
     stim.plot_stim_picture(0, ax=ax, with_mask=True)
     ax.set_title(title)
+
+# %% [markdown]
+# # 3-Screens U-shaped Configuration
+
+# %% [markdown]
+# 
+# Screen 1:
+# $$ x=-\frac{L}{2} $$
+# Screen 2:
+# $$ y=l_F $$
+# Screen 3:
+# $$ x=-\frac{L}{2} $$
+# calculation [...]
+
+# %%
+import json
+import physion
+with open(os.path.join('..', 'src', 'physion', 'acquisition', 'protocols',
+                       'demo', '3-screens.json')) as j:
+    protocol = json.load(j)
+
+stim = physion.visual_stim.build.build_stim(protocol)
+
+fig, AX = pt.figure(axes=(1,2), ax_scale=(2,2))
+
+for s in range(stim.screen['nScreens']):
+    cond = stim.screen_ids.flatten()==(s+1)
+    pt.scatter(stim.widths.flatten()[cond][::200],
+                stim.heights.flatten()[cond][::200],
+                ax=AX[0], ms=0.1, color=pt.tab10(s))
+    pt.scatter(stim.x.flatten()[cond][::200],
+                stim.z.flatten()[cond][::200],
+                ax=AX[1], ms=0.2, color=pt.tab10(s))
+    pt.annotate(AX[0], 'screen %i' % (s+1),
+                (0.8-0.3*s, .99), ha='center',
+                color=pt.tab10(s))
+
+pt.set_plot(AX[0], xlabel='x (cm)', ylabel='y (cm)')
+pt.set_plot(AX[1], xticks=[-90,0,90],
+            ylabel='altitude (deg.)',
+            xlabel='azimuth (deg.)')
+for ax in AX:
+    ax.axis('equal')
+    ax.invert_xaxis()
 
 # %% [markdown]
 # ## 1) Properties

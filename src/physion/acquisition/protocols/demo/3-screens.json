@@ -1,21 +1,18 @@
 {
   "Presentation": "Stimuli-Sequence",
   "Stimulus": "grating",
-  "Screen": "Dell-2020",
-  "presentation-duration": 2,
+  "Screen": "LN-VR-3screens",
+  "presentation-duration": 1,
   "presentation-prestim-period": 1,
   "presentation-poststim-period": 1,
   "presentation-interstim-period": 1,
-  "N-repeat": 1,
+  "N-repeat": 2,
   "_______________________________________________________________________1":0,
   "angle": 0,
   "speed": 0,
-  "spatial-freq": 0.1,
-  "speed": 1,
-  "radius": 20,
+  "spatial-freq": 0.05,
+  "radius": 10,
   "contrast": 1.0,
-  "y-center": 10.0,
   "_______________________________________________________________________2":0,
-  "x-center-1": -30.0, "x-center-2": 30.0, "N-x-center": 5
+  "x-center-1": -100.0, "x-center-2": 100.0, "N-x-center": 11
 }
-

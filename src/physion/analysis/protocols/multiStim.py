@@ -74,7 +74,7 @@ def plot(fig, data, args,
                            AX=[[AXm[i]]])
         AXm[i].axis('off')
         pt.draw_bar_scales(AXm[i], Xbar=1, # Xbar_label='1s',
-                           Ybar=1, Ybar_label='1$\Delta$F/F')
+                           Ybar=1, Ybar_label='1$\\Delta$F/F')
         if i==0:
             pt.annotate(AXm[i], 'n=%i' % data.nROIs, (0,0),
                         ha='right')

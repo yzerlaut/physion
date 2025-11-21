@@ -14,10 +14,8 @@ def build_json(direction='Up',
                screen='Mouse-Goggles',
                bg_color=0.2,
                period=12,
-               center=0,
                size=7,
-               flicker_size=5,
-               length=200):
+               flicker_size=5):
 
 
     return """
@@ -33,9 +31,11 @@ def build_json(direction='Up',
     "presentation-poststim-period": 0,
     "presentation-interstim-period": 0,
     "N-repeat": 1,
+    "z-min": -40.0,
+    "z-max": 60.0,
+    "x-min": -120.0,
+    "x-max": 20.0,
     "direction": %(direction)s,
-    "bar-center": %(center)s,
-    "bar-length": %(length)s,
     "bar-size": %(size)s,
     "bg-color": %(bg_color)s,
     "flicker-size": %(flicker_size)s,
@@ -46,8 +46,6 @@ def build_json(direction='Up',
        'bg_color':bg_color,
        'size':size,
        'flicker_size':flicker_size,
-       'center':center,
-       'length':length,
        'screen':screen}
 
 if __name__=='__main__':
@@ -68,12 +66,14 @@ if __name__=='__main__':
                             - Dell-2020
                             - Mouse-Goggles
                             - Lilliput
+                            - LN-VR-3screens
                         """)
     parser.add_argument("--bg_color", type=float, default=0.2)
     
     args = parser.parse_args()
 
     folder = os.path.join('physion', 'acquisition', 'protocols', 'movies', args.protocol)
+    #folder = './'
 
     if args.protocol=='intrinsic':
         for period in [6, 12]:
@@ -91,10 +91,24 @@ if __name__=='__main__':
                                        bg_color=args.bg_color))
                 # build the movie
                 os.system('python -m physion.visual_stim.build temp.json')
-                os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
-                          os.path.join(folder,
-                                       'flickering-bars-period%is' % period,
-                                       '%s.wmv' % direction))
+                if args.screen=='LN-U3screens':
+                    for i in range(1,4):
+                        os.rename(os.path.join('movies', 'temp', 'movie-%i.wmv' % i),
+                                os.path.join(folder,
+                                            'flickering-bars-period%is' % period,
+                                            '%s-%i.wmv' % (direction,i)))
+                else:
+                    os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
+                            os.path.join(folder,
+                                        'flickering-bars-period%is' % period,
+                                        '%s.wmv' % direction))
+                try:
+                    os.rename('temp.json', 
+                                os.path.join(folder,
+                                            'flickering-bars-period%is' % period,
+                                            'protocol.json'))
+                except FileExistsError:
+                    pass
 
     elif args.protocol=='ocular-dominance':
         for period in [6, 12]:

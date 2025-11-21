@@ -249,7 +249,7 @@ def plot_selectivity(keys,
 
             if with_label:
                 annot = i*'\n'+\
-                    'SI=%.2f$\pm$%.2f' % (np.mean(Selectivities), stats.sem(Selectivities))
+                    'SI=%.2f$\\pm$%.2f' % (np.mean(Selectivities), stats.sem(Selectivities))
                 if average_by in ['sessions', 'subjects']:
                     annot += ', N=%02d %s, ' % (len(Responses), average_by) + key
                 else:
@@ -308,7 +308,7 @@ def plot_orientation_tuning_curve(keys,
                 pt.annotate(ax, annot, (1., 0.9), va='top', color=color)
 
     pt.set_plot(ax, xticks=Tunings[0]['shifted_angle'], yticks=np.arange(3)*0.5, ylim=[-0.05, 1.05],
-            ylabel='norm. $\delta$ $\Delta$F/F',  xlabel='angle ($^o$) from pref.',
+            ylabel='norm. $\\delta$ $\\Delta$F/F',  xlabel='angle ($^o$) from pref.',
             xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tunings[0]['shifted_angle'] ])
 
     return fig, ax
@@ -344,7 +344,7 @@ def plot_responsiveness(keys,
                    color=color)
  
             if with_label:
-                annot = i*'\n'+'%.2f$\pm$%.2f%%' %\
+                annot = i*'\n'+'%.2f$\\pm$%.2f%%' %\
                          (np.mean(responsive_frac), stats.sem(responsive_frac))
                 if average_by=='sessions':
                     annot += ', N=%02d %s, ' % (len(responsive_frac), average_by) + key
@@ -353,7 +353,7 @@ def plot_responsiveness(keys,
                 pt.annotate(ax, annot, (1., 0.9), va='top', color=color)
 
     pt.set_plot(ax, ['left'],
-            ylabel='$\%$ responsive')
+            ylabel='$\\%$ responsive')
 
     return fig, ax
 
