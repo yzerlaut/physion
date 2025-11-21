@@ -257,7 +257,7 @@ class CameraData:
                 print('movie index: ', movie_index, 
                       ' outside the range [0,%i]'%(self.nFrames_movie-1))
                 movie_index = 0
-                
+
             if movie_index>=self.nFrames_movie:
                 print('movie index: ', movie_index, 
                       ' outside the range [0,%i]'%(self.nFrames_movie-1))
@@ -368,6 +368,7 @@ class CameraData:
 
         self.original_times = self.summary['times']
         self.times = self.summary['times'] # potentially over-written
+        self.nFrames = len(self.times)
 
 if __name__=='__main__':
 
