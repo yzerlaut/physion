@@ -287,11 +287,15 @@ class Data:
             self.FaceCamera_mm_to_pix = 1
 
         # extract pupil ROI
-        self.pupil_ROI = {}
-        for key, val in zip(\
-            ['xmin','xmax','ymin','ymax'],
-            pd.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')')[0].split(',')):
-            self.pupil_ROI[key] = int(val)
+        try:
+            self.pupil_ROI = {}
+            for key, val in zip(\
+                ['xmin','xmax','ymin','ymax'],
+                pd.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')')[0].split(',')):
+                self.pupil_ROI[key] = int(val)
+        except BaseException as be:
+            self.pupil_ROI = None
+
 
     def build_pupil_diameter(self,
                              specific_time_sampling=None,
@@ -347,8 +351,12 @@ class Data:
     
     def read_facemotion(self):
         
-        fd = str(self.nwbfile.processing['FaceMotion'].description)
-        self.FaceMotion_ROI = [int(i) for i in fd.split('y0,dy)=(')[1].split(')')[0].split(',')]
+        try:
+            fd = str(self.nwbfile.processing['FaceMotion'].description)
+            self.FaceMotion_ROI = [int(i) for i in fd.split('y0,dy)=(')[1].split(')')[0].split(',')]
+        except BaseException as be:
+            self.FaceMotion_ROI = None
+
 
     def build_facemotion(self,
                          specific_time_sampling=None,

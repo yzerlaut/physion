@@ -48,8 +48,8 @@ data.build_pupil_diameter()
 # %%
 from physion.dataviz.raw import plot as plot_raw, find_default_plot_settings
 settings = find_default_plot_settings(data)
-_ = plot_raw(data, settings=settings, tlim=[0,120])
-
+_ = plot_raw(data, settings=settings, tlim=[50,130])
+roiIndex = [0,35,29,27]
 # %% [markdown]
 # ##  Load FaceCamera data
 
