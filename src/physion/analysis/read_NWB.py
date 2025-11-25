@@ -529,8 +529,8 @@ class Data:
         self.metadata['verbose'] = verbose
         if degree:
             self.metadata['units'] = 'deg'
-        import pprint
-        pprint.pprint(self.metadata)
+        # import pprint
+        # pprint.pprint(self.metadata)
 
         # build an initial visual_stim 
         self.visual_stim = build_stim(self.metadata)

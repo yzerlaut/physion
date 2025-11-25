@@ -5,20 +5,38 @@ from PIL import Image
 
 import physion.utils.plot_tools as pt
 
-from physion.analysis.read_NWB import Data
-from physion.analysis.summary_pdf import summary_pdf_folder,\
-        metadata_fig, generate_FOV_fig, generate_raw_data_figs, join_pdf
-from physion.dataviz.tools import format_key_value
-from physion.dataviz.episodes.trial_average import plot_trial_average
-from physion.analysis.process_NWB import EpisodeData
-from physion.utils.plot_tools import pie
+# from physion.analysis.read_NWB import Data
+# from physion.analysis.summary_pdf import summary_pdf_folder,\
+#         metadata_fig, generate_FOV_fig, generate_raw_data_figs, join_pdf
+# from physion.dataviz.tools import format_key_value
 
-tempfile.gettempdir()
+# from physion.analysis.process_NWB import EpisodeData
+# from physion.utils.plot_tools import pie
+
+import physion.utils.plot_tools as pt
+from physion.dataviz.episodes.trial_average import plot as plot_trial_average
 
 stat_test_props = dict(interval_pre=[-1,0],
                        interval_post=[0.5,1.5],
                        test='ttest',
                        positive=True)
+
+def plot_spatial_grid(episode, ax, args, roiIndex):
+
+    Nx = len(episode.varied_parameters['x-center'])
+    Ny = len(episode.varied_parameters['y-center'])
+    AX = [[\
+            pt.inset(ax, (i/Nx, j/Ny, 1/Nx, 1./Ny))\
+                    for i in range(Nx)]\
+                          for j in range(Ny)]
+    plot_trial_average(episode,
+                       roiIndex=roiIndex,
+                       column_key='x-center',
+                       row_key='y-center',
+                        with_std=False,
+                        AX=AX)
+    ax.axis('off')
+    print(args)
 
 def generate_pdf(args,
                  subject='Mouse'):
@@ -343,16 +361,16 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    args.unique_run_ID = np.random.randint(10000)
-    print('unique run ID', args.unique_run_ID)
+    # args.unique_run_ID = np.random.randint(10000)
+    # print('unique run ID', args.unique_run_ID)
 
-    if '.nwb' in args.datafile:
-        if args.debug:
-            generate_figs(args)
-            pt.plt.show()
-        else:
-            generate_pdf(args)
+    # if '.nwb' in args.datafile:
+    #     if args.debug:
+    #         generate_figs(args)
+    #         pt.plt.show()
+    #     else:
+    #         generate_pdf(args)
 
-    else:
-        print('[!!] Need to provide a NWB datafile as argument ')
+    # else:
+    #     print('[!!] Need to provide a NWB datafile as argument ')
 
