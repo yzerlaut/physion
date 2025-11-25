@@ -94,14 +94,16 @@ dFoF_options = dict(\
     method_for_F0='percentile',
     percentile=5.,
     roi_to_neuropil_fluo_inclusion_factor=1.15,
-    neuropil_correction_factor=1.)
+    neuropil_correction_factor=0.8,
+    with_computed_neuropil_fact=False,
+    roi_to_neuropil_fluo_inclusion_factor_metric='mean')
 
 # %%
 # we first perform the dFoF determination with the above params
 #    (this restrict the available ROIs in the future)
 data.build_dFoF(**dFoF_options, verbose=True)
 valid = data.valid_roiIndices
-rejected = [i for i in range(data.nROIs) if (i not in valid)]
+rejected = [i for i in range(data.Fluorescence.data.shape[1]) if (i not in valid)]
 # we re-initialize the fluo and neuropil to get back to all ROIs
 data.initialize_ROIs(valid_roiIndices=None)
 data.build_rawFluo()
@@ -119,9 +121,9 @@ for roi in np.concatenate([np.random.choice(valid, 7, replace=False),
 plt.xlabel('time (s)');
 
 # %%
-correctedFluo = data.rawFluo-dFoF_options['neuropil_correction_factor']*data.neuropil
+correctedFluo = data.rawFluo-data.neuropil_correction_factor*data.neuropil
 baseline = physion.imaging.Calcium.compute_F0(data, correctedFluo, 
-                                              method='sliding_percentile',
+                                              method=dFoF_options['method_for_F0'],
                                               percentile=dFoF_options['percentile'])
 np.random.seed(1)
 for roi in np.concatenate([np.random.choice(valid, 7, replace=False),

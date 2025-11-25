@@ -1,21 +1,26 @@
 import numpy as np
-from scipy.ndimage.filters import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 
-def process_binary_signal(binary_signal):
+def process_binary_signal(binary_signal, empirical=False):
 
     # ########################
     # ##### SIMPLE FIX  ######
     # ########################
-    A = binary_signal%2
-    B = np.concatenate([A[1:], [0]])
-    # ##############################################
-    # ##### BUT THIS SHOULD BE WORKING   ###########
-    # ##############################################
-    # A = binary_signal%2
-    # B = np.floor(binary_signal/2).astype(int)
+    if empirical :
+        A = binary_signal%2
+        B = np.concatenate([A[1:], [0]])
+
+    # ############# DECODING TABLE ###############
+    # ## NIDAQ DIGITAL SIGNAL | 0 | 1 | 2 | 3 ####
+    # ##                   A  | 0 | 1 | 0 | 1 ####
+    # ##                   B  | 0 | 0 | 1 | 1 ####
+    # ############################################
+    else :
+        A = binary_signal%2
+        B = np.floor(binary_signal/2).astype(int)
     return A, B
 
-def compute_position_from_binary_signals(A, B):
+def compute_position_from_binary_signals(A, B, forward='counterclockwise'):
     '''
     Takes traces A and B and converts it to a trace that has the same number of
     points but with positions points.
@@ -35,6 +40,8 @@ def compute_position_from_binary_signals(A, B):
     ################################
     ## positive_increment_cond #####
     ################################
+    # The A signal lead the B signal (counterclockwise)
+    # ... => 11 => 01 => 00 => 10 => 11 => ...
     PIC = ( (A[:-1]==1) & (B[:-1]==1) & (A[1:]==0) & (B[1:]==1) ) | \
         ( (A[:-1]==0) & (B[:-1]==1) & (A[1:]==0) & (B[1:]==0) ) | \
         ( (A[:-1]==0) & (B[:-1]==0) & (A[1:]==1) & (B[1:]==0) ) | \
@@ -44,24 +51,35 @@ def compute_position_from_binary_signals(A, B):
     ################################
     ## negative_increment_cond #####
     ################################
+    # The B signal lead the A signal (clockwise)
+    # ... => 11 => 10 => 00 => 01 => 11 => ...
     NIC = ( (A[:-1]==1) & (B[:-1]==1) & (A[1:]==1) & (B[1:]==0) ) | \
         ( (A[:-1]==1) & (B[:-1]==0) & (A[1:]==0) & (B[1:]==0) ) | \
         ( (A[:-1]==0) & (B[:-1]==0) & (A[1:]==0) & (B[1:]==1) ) | \
         ( (A[:-1]==0) & (B[:-1]==1) & (A[1:]==1) & (B[1:]==1) )
     Delta_position[NIC] = -1
 
+    if forward=='clockwise':
+        Delta_position = -Delta_position
+
     return np.cumsum(np.concatenate([[0], Delta_position]))
 
 def compute_speed(binary_signal, 
-			     acq_freq=1e4, 
-                       	     position_smoothing=10e-3, # s
-			     radius_position_on_disk=1,	# cm
-			     rotoencoder_value_per_rotation=1, # a.u.
-                             with_raw_position=False):
+                  acq_freq=1e4, 
+                  position_smoothing=10e-3, # s
+                  radius_position_on_disk=1,	# cm
+                  rotoencoder_value_per_rotation=1, # a.u.
+                  cpr=1000,
+                  forward='counterclockwise',
+                  empirical=False,
+                  with_raw_position=False):
 
-    A, B = process_binary_signal(binary_signal)
+    A, B = process_binary_signal(binary_signal, empirical)
     
-    position = compute_position_from_binary_signals(A, B)*2.*np.pi*radius_position_on_disk/rotoencoder_value_per_rotation
+    if empirical:
+        position = compute_position_from_binary_signals(A, B, forward)*2.*np.pi*radius_position_on_disk/rotoencoder_value_per_rotation
+    else :
+        position = compute_position_from_binary_signals(A, B, forward)*2.*np.pi*radius_position_on_disk/cpr/4.
 
     if position_smoothing>0:
         speed = np.diff(gaussian_filter1d(position, int(position_smoothing*acq_freq), mode='nearest'))
@@ -86,6 +104,8 @@ if __name__=='__main__':
 
     import matplotlib.pylab as plt
     import sys, os, pathlib
+    import json
+    from physion.analysis.tools import resample_signal
 
     import argparse
     # First a nice documentation 
@@ -102,34 +122,50 @@ if __name__=='__main__':
 
     if args.datafolder!='':
         
-        metadata = np.load(os.path.join(args.datafolder, 'metadata.npy'),
-                       allow_pickle=True).item()
+        with open(os.path.join(args.datafolder, 'metadata.json'), 'r') as file:
+            metadata = json.load(file)
         NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), allow_pickle=True).item()
         digital_inputs = NIdaq_data['digital']
         args.acq_time_step = 1./metadata['NIdaq-acquisition-frequency']
         t_array = np.arange(len(digital_inputs[0]))*args.acq_time_step
         print('computing position [...]')
-        plt.figure()
-        speed = compute_speed(digital_inputs[0],
-                                         acq_freq=metadata['NIdaq-acquisition-frequency'],
-                                         radius_position_on_disk=metadata['rotating-disk']['radius-position-on-disk-cm'],
-                                         rotoencoder_value_per_rotation=metadata['rotating-disk']['roto-encoder-value-per-rotation'])
-        t_array, speed = physion.analysis.tools.resample_signal(speed,
+        
+        speed_empirical = compute_speed(digital_inputs[0],
+                                        acq_freq=metadata['NIdaq-acquisition-frequency'],
+                                        radius_position_on_disk=metadata['rotating-disk']['radius-position-on-disk-cm'],
+                                        rotoencoder_value_per_rotation=metadata['rotating-disk']['roto-encoder-value-per-rotation'],
+                                        empirical=True)
+        t_array, speed_empirical = resample_signal(speed_empirical,
                                          original_freq=metadata['NIdaq-acquisition-frequency'],
-                                         new_freq=50.,
+                                         new_freq=30.,
                                          post_smoothing=2./50.,
                                          verbose=True)
-        print('mean speed: %.1f cm/s' % np.mean(speed))
-        plt.plot(t_array, speed)
+        
+        speed = compute_speed(digital_inputs[0],
+                                acq_freq=metadata['NIdaq-acquisition-frequency'],
+                                radius_position_on_disk=metadata['rotating-disk']['radius-position-on-disk-cm'],
+                                cpr=1000)
+        _, speed = resample_signal(speed,
+                                         original_freq=metadata['NIdaq-acquisition-frequency'],
+                                         new_freq=30.,
+                                         post_smoothing=2./50.,
+                                         verbose=True)
+        
+        print('mean speed empirical: %.2f cm/s' % np.mean(speed_empirical))
+        print('mean speed theoretical: %.2f cm/s' % np.mean(np.abs(speed)))
+        plt.figure()
+        plt.plot(t_array, speed_empirical, label='empirical')
+        plt.plot(t_array, np.abs(speed), label='theoretical', alpha=0.7, linestyle='--')
         plt.ylabel('speed (cm/s)')
         plt.xlabel('time (s)')
+        plt.legend()
         plt.show()
         
     else:
         import time
         from physion.hardware.NIdaq.main import Acquisition
         
-        acq = Acquisition(dt=args.acq_time_step,
+        acq = Acquisition(sampling_rate=1/args.acq_time_step,
                           Nchannel_analog_in=0,
                           Nchannel_digital_in=2,
                           max_time=args.recording_time)
@@ -150,20 +186,19 @@ if __name__=='__main__':
         plt.plot(t_array, 4+digital_inputs[0,:])
         plt.show()
         
-        speed, position = compute_speed(digital_inputs[0],
-                                                   acq_freq=1./args.acq_time_step,
-                                                   position_smoothing=100e-3,
-                                                   with_raw_position=True)
+        posititon_cumul = compute_position_from_binary_signals(A, B)
+        speed_empirical = np.diff(posititon_cumul)
+        speed_empirical /= args.acq_time_step
 
-        print('The roto-encoder value for a round is: ', (position[-1]-position[0])/5.,  '(N.B. evaluated over 5 rotations)')
+        print('The roto-encoder value for a round is: ', (posititon_cumul[-1]-posititon_cumul[0])/5.,  '(N.B. evaluated over 5 rotations)')
         import matplotlib.pylab as plt
         plt.figure()
-        plt.plot(t_array, position)
+        plt.plot(t_array, posititon_cumul)
         plt.ylabel('travel distance (a.u.)')
         plt.xlabel('time (s)')
         plt.figure()
-        plt.plot(t_array[1:], speed)
-        plt.ylabel('speed (cm/s)')
+        plt.plot(t_array[1:], speed_empirical)
+        plt.ylabel('speed (a.u./s)')
         plt.xlabel('time (s)')
         plt.show()
 
