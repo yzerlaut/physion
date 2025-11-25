@@ -91,7 +91,7 @@ def compute_sliding_minimum(array, Window,
     else:
         Flow = array
 
-    Flow = minimum_filter1d(Flow, Window, mode='wrap')
+    Flow = minimum_filter1d(Flow, Window, mode='reflect')
 
     if with_smoothing:
         Flow = gaussian_filter1d(Flow, Window, axis=1)
@@ -105,8 +105,8 @@ def compute_sliding_minmax(array, Window,
     else:
         Flow = array
 
-    Flow = minimum_filter1d(Flow, Window, mode='wrap')
-    Flow = maximum_filter1d(Flow, Window, mode='wrap')
+    Flow = minimum_filter1d(Flow, Window, mode='reflect')
+    Flow = maximum_filter1d(Flow, Window, mode='reflect')
 
     return Flow
 
