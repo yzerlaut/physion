@@ -631,14 +631,15 @@ def build_NWB_func(args, Subject=None):
     #################################################
     # see: add_ophys.py script
     # look for 'TSeries' folder 
-    TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
-    if len(TSeries)==1:
-        args.imaging = os.path.join(args.datafolder, TSeries[0])
+    if metadata['CaImaging'] and ('processed_CaImaging' in args.modalities):
+        TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
+        if len(TSeries)==1:
+            args.imaging = os.path.join(args.datafolder, TSeries[0])
 
-        add_ophys(nwbfile, args,
-                  metadata=metadata)
-    else:
-        print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
+            add_ophys(nwbfile, args,
+                    metadata=metadata)
+        else:
+            print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
     
     #################################################
     ####    add Intrinsic Imaging MAPS         ######

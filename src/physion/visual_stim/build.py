@@ -155,9 +155,6 @@ if __name__=='__main__':
                 protocol['verbose'] = True
 
             Stim = build_stim(protocol)
-            print(Stim.experiment['time_start'])
-            print(Stim.experiment['time_duration'])
-            print(Stim.experiment['interstim'])
 
             #  copy the protocol infos
             with open(os.path.join(protocol_folder, 'protocol.json'), 'w') as f:

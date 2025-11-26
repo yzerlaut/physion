@@ -251,7 +251,7 @@ class EpisodeData:
                     full_data.build_facemotion(**quantity_args)
                 QUANTITY_VALUES.append(full_data.facemotion)
                 QUANTITY_TIMES.append(full_data.t_facemotion)
-                QUANTITIES.append('faceMotion')
+                QUANTITIES.append('facemotion')
 
             else:
                 if quantity in full_data.nwbfile.acquisition:

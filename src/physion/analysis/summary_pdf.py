@@ -19,7 +19,8 @@ def generate_pdf(args,
     if args.datafile!='':
 
         data = physion.analysis.read_NWB.Data(args.datafile)
-        if hasattr(args, 'dFoF_options'):
+
+        if ('ophys' in data.nwbfile.processing)  and hasattr(args, 'dFoF_options'):
             print(' [!!] applying dFoF options: ')
             for k, v in args.dFoF_options.items():
                 print(10*' ', '- %s : %s ' % (k, v))
@@ -29,9 +30,10 @@ def generate_pdf(args,
         ax = pt.inset(fig, [0.07, 0.85, 0.4, 0.1])
         metadata_fig(ax, data)
 
-        # FOVs:
-        AX = [pt.inset(fig, [0.42+i*0.17, 0.82, 0.16, 0.15]) for i in range(3)]
-        generate_FOV_fig(AX, data, args)
+        if ('ophys' in data.nwbfile.processing):
+            # FOVs:
+            AX = [pt.inset(fig, [0.42+i*0.17, 0.82, 0.16, 0.15]) for i in range(3)]
+            generate_FOV_fig(AX, data, args)
 
         # raw data full view:
         ax = pt.inset(fig, [0.07, 0.625, 0.84, 0.2])
@@ -68,6 +70,8 @@ def metadata_fig(ax, data, short=True):
     else:
         s += ' \n \n'
     s+='- %s \n' % data.metadata['protocol']
+    if hasattr(data.nwbfile, 'virus'):
+        s += '- virus: %s \n' % data.nwbfile.virus
     for key in ['notes', 'FOV']:
         if key in data.metadata:
             s+='- %s : "%s" \n' % (key, data.metadata[key])
@@ -123,16 +127,17 @@ def generate_raw_data_figs(data, ax, args,
 
     # ## --- FULL VIEW ---
 
-    nROIs = data.nROIs
 
-    args.imaging_quantity = 'dFoF'
-    if not hasattr(data, 'dFoF'):
-        data.build_dFoF()
+    if 'ophys' in data.nwbfile.processing:
+        args.imaging_quantity = 'dFoF'
+        if not hasattr(data, 'dFoF'):
+            data.build_dFoF()
 
-    if not hasattr(args, 'nROIs'):
-        args.nROIs = np.min([12, nROIs])
+        if not hasattr(args, 'nROIs'):
+            args.nROIs = np.min([12, data.nROIs])
  
     settings={}
+
     if 'Running-Speed' in data.nwbfile.acquisition:
         settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
     if 'FaceMotion' in data.nwbfile.processing:
@@ -140,7 +145,7 @@ def generate_raw_data_figs(data, ax, args,
     if 'Pupil' in data.nwbfile.processing:
         settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
-        settings['CaImaging']= dict(fig_fraction=4./5.*args.nROIs, 
+        settings['CaImaging']= dict(fig_fraction=4./7.*args.nROIs, 
                                     subsampling=2, 
                                     subquantity=args.imaging_quantity, color='green',
                                     annotation_side='right',

@@ -20,6 +20,10 @@ def zoom_view(ax, data, args, tlim=[300,420]):
     settings={}
     if 'Running-Speed' in data.nwbfile.acquisition:
         settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
+    # if 'FaceMotion' in data.nwbfile.processing:
+    #     settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
+    # if 'Pupil' in data.nwbfile.processing:
+    #     settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=6,
                                     subsampling=1, 
@@ -72,7 +76,6 @@ def plot(fig, data, args,
                               np.arange(data.nROIs))
 
         else:
-
 
             if 'repeat' in params:
                 params.remove('repeat')
