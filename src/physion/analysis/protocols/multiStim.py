@@ -4,7 +4,8 @@ import physion.utils.plot_tools as pt
 from physion.dataviz.raw import plot as plot_raw
 from physion.analysis.process_NWB import EpisodeData
 from physion.dataviz.episodes.trial_average import plot as plot_trial_average
-from .contrast_sensitivity import compute_sensitivity_per_cells
+from physion.analysis.protocols.spatial_mapping import \
+    plot_spatial_grid
 
 stat_test = dict(interval_pre=[-1.5,-0.5],
                  interval_post=[0.5,1.5],
@@ -19,6 +20,10 @@ def zoom_view(ax, data, args, tlim=[300,420]):
     settings={}
     if 'Running-Speed' in data.nwbfile.acquisition:
         settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
+    # if 'FaceMotion' in data.nwbfile.processing:
+    #     settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
+    # if 'Pupil' in data.nwbfile.processing:
+    #     settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=6,
                                     subsampling=1, 
@@ -62,22 +67,28 @@ def plot(fig, data, args,
 
         Eps.append(\
             EpisodeData(data, 
-                         quantities=['dFoF'],
-                         protocol_name=p))
+                        quantities=['dFoF'],
+                        protocol_name=p))
         params = list(Eps[-1].varied_parameters.keys())
 
-        if 'repeat' in params:
-            params.remove('repeat')
-        plot_trial_average(Eps[-1],
-                           color_keys=params,
-                           with_std=False,
-                           AX=[[AXm[i]]])
-        AXm[i].axis('off')
-        pt.draw_bar_scales(AXm[i], Xbar=1, # Xbar_label='1s',
-                           Ybar=1, Ybar_label='1$\\Delta$F/F')
-        if i==0:
-            pt.annotate(AXm[i], 'n=%i' % data.nROIs, (0,0),
-                        ha='right')
+        if ('spatial-mapping' in p):
+            plot_spatial_grid(Eps[-1], AXm[i], args,
+                              np.arange(data.nROIs))
+
+        else:
+
+            if 'repeat' in params:
+                params.remove('repeat')
+            plot_trial_average(Eps[-1],
+                            color_keys=params,
+                            with_std=False,
+                            AX=[[AXm[i]]])
+            AXm[i].axis('off')
+            pt.draw_bar_scales(AXm[i], Xbar=1, # Xbar_label='1s',
+                            Ybar=1, Ybar_label='1$\\Delta$F/F')
+            if i==0:
+                pt.annotate(AXm[i], 'n=%i' % data.nROIs, (0,0),
+                            ha='right')
 
     for n, roi in enumerate(\
             np.random.choice(data.nROIs, 
@@ -91,17 +102,21 @@ def plot(fig, data, args,
 
             params = list(Eps[i].varied_parameters.keys())
 
-            if 'repeat' in params:
-                params.remove('repeat')
+            if ('spatial-mapping' in p):
+                plot_spatial_grid(Eps[-1], AXm[i], args, roi)
+                                  
+            else:
+                if 'repeat' in params:
+                    params.remove('repeat')
 
-            plot_trial_average(Eps[i],
-                            roiIndex=roi,
-                            color_keys=params,
-                            with_std=False,
-                            AX=[[AXm[i]]])
-            AXm[i].axis('off')
-            pt.draw_bar_scales(AXm[i], Xbar=1, # Xbar_label='1s',
-                               Ybar=0.5, Ybar_label='0.5')
+                plot_trial_average(Eps[i],
+                                roiIndex=roi,
+                                color_keys=params,
+                                with_std=False,
+                                AX=[[AXm[i]]])
+                AXm[i].axis('off')
+                pt.draw_bar_scales(AXm[i], Xbar=1, # Xbar_label='1s',
+                                Ybar=0.5, Ybar_label='0.5')
             if i==0:
                 pt.annotate(AXm[i], 'roi#%i' % (1+roi), (0,0),
                             ha='right')

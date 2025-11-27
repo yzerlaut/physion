@@ -1,14 +1,10 @@
-import sys, time, tempfile, os, pathlib, json,\
-      datetime, string, subprocess
+import os, json
 import numpy as np
-# from matplotlib.backends.backend_pdf import PdfPages
-# import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
 import physion
 import physion.utils.plot_tools as pt
 
-    
 def generate_pdf(args,
                  filename=None,
                  debug=False,
@@ -24,13 +20,20 @@ def generate_pdf(args,
 
         data = physion.analysis.read_NWB.Data(args.datafile)
 
+        if ('ophys' in data.nwbfile.processing)  and hasattr(args, 'dFoF_options'):
+            print(' [!!] applying dFoF options: ')
+            for k, v in args.dFoF_options.items():
+                print(10*' ', '- %s : %s ' % (k, v))
+            data.build_dFoF(**args.dFoF_options)
+
         # metadata annotations:
         ax = pt.inset(fig, [0.07, 0.85, 0.4, 0.1])
         metadata_fig(ax, data)
 
-        # FOVs:
-        AX = [pt.inset(fig, [0.42+i*0.17, 0.82, 0.16, 0.15]) for i in range(3)]
-        generate_FOV_fig(AX, data, args)
+        if ('ophys' in data.nwbfile.processing):
+            # FOVs:
+            AX = [pt.inset(fig, [0.42+i*0.17, 0.82, 0.16, 0.15]) for i in range(3)]
+            generate_FOV_fig(AX, data, args)
 
         # raw data full view:
         ax = pt.inset(fig, [0.07, 0.625, 0.84, 0.2])
@@ -67,6 +70,8 @@ def metadata_fig(ax, data, short=True):
     else:
         s += ' \n \n'
     s+='- %s \n' % data.metadata['protocol']
+    if hasattr(data.nwbfile, 'virus'):
+        s += '- virus: %s \n' % data.nwbfile.virus
     for key in ['notes', 'FOV']:
         if key in data.metadata:
             s+='- %s : "%s" \n' % (key, data.metadata[key])
@@ -99,7 +104,7 @@ def metadata_fig(ax, data, short=True):
 def generate_FOV_fig(AX, data, args):
 
     physion.dataviz.imaging.show_CaImaging_FOV(\
-            data,key='meanImg', ax=AX[0], NL=4,with_annotation=False)
+            data, key='meanImg', ax=AX[0], NL=4,with_annotation=False)
     physion.dataviz.imaging.show_CaImaging_FOV(\
             data, key='max_proj', ax=AX[1], NL=4, with_annotation=False)
     physion.dataviz.imaging.show_CaImaging_FOV(\
@@ -113,7 +118,6 @@ def generate_FOV_fig(AX, data, args):
 
 
 def generate_raw_data_figs(data, ax, args,
-                           TLIMS=[],
                            return_figs=False):
 
     """
@@ -123,14 +127,17 @@ def generate_raw_data_figs(data, ax, args,
 
     # ## --- FULL VIEW ---
 
-    nROIs = data.nROIs
-    args.imaging_quantity = 'dFoF'
-    data.build_dFoF()
 
-    if not hasattr(args, 'nROIs'):
-        args.nROIs = np.min([12, nROIs])
+    if 'ophys' in data.nwbfile.processing:
+        args.imaging_quantity = 'dFoF'
+        if not hasattr(data, 'dFoF'):
+            data.build_dFoF()
+
+        if not hasattr(args, 'nROIs'):
+            args.nROIs = np.min([12, data.nROIs])
  
     settings={}
+
     if 'Running-Speed' in data.nwbfile.acquisition:
         settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
     if 'FaceMotion' in data.nwbfile.processing:
@@ -138,7 +145,7 @@ def generate_raw_data_figs(data, ax, args,
     if 'Pupil' in data.nwbfile.processing:
         settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
-        settings['CaImaging']= dict(fig_fraction=4./5.*args.nROIs, 
+        settings['CaImaging']= dict(fig_fraction=4./7.*args.nROIs, 
                                     subsampling=2, 
                                     subquantity=args.imaging_quantity, color='green',
                                     annotation_side='right',
@@ -192,51 +199,6 @@ def summary_fig(CELL_RESPS):
 
     return fig
 
-
-# def summary_pdf_folder(filename):
-
-    # folder = os.path.join(os.path.dirname(filename),
-            # 'pdfs', os.path.basename(filename).replace('.nwb', ''))
-    # pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
-
-    # return folder
-
-# def join_pdf(PAGES, pdf):
-    # """
-    # Using PDFTK, only on linux for now
-    # """
-    # cmd = '/usr/bin/pdftk ' 
-    # for page in PAGES:
-        # cmd += '%s '%page
-    # cmd += 'cat output %s' % pdf
-
-    # subprocess.Popen(cmd,
-                     # shell=True,
-                     # stdout=subprocess.PIPE,
-                     # stderr=subprocess.STDOUT)
-
-
-# def open_pdf(args,
-             # Nmax=1000000,
-             # include=['exp', 'raw', 'behavior', 'rois', 'protocols'],
-             # verbose=True):
-    # """
-    # works only on linux
-    # """
-    # if args.datafile!='':
-
-        # pdf_folder = summary_pdf_folder(args.datafile)
-        # if os.path.isdir(pdf_folder):
-            # PDFS = os.listdir(pdf_folder)
-            # for pdf in PDFS:
-                # print(' - opening: "%s"' % pdf)
-                # os.system('$(basename $(xdg-mime query default application/pdf) .desktop) %s & ' % os.path.join(pdf_folder, pdf))
-        # else:
-            # print('no PDF summary files found !')
-
-    # else:
-        # print('\n \n Need to pick a datafile')
-
 def process_file_for_parallel(i, filename, output_folder):
     args.datafile = filename
 
@@ -248,16 +210,20 @@ if __name__=='__main__':
     parser.add_argument("datafile", type=str)
     parser.add_argument('-p', "--for_protocol", default='')
     parser.add_argument('-s', "--sorted_by", default='')
-    parser.add_argument('-o', "--ops", type=str, nargs='*',
-                        # default=['exp', 'raw', 'behavior', 'rois', 'protocols'],
-                        # default=['raw'],
-                        default=['protocols'],
-                        help='')
-    parser.add_argument("--remove_all_pdfs", help="remove all pdfs of previous analysis in folder", action="store_true")
-    parser.add_argument('-nmax', "--Nmax", type=int, default=1000000)
-    parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true")
+    parser.add_argument("--remove_all_pdfs", 
+                        help="remove all pdfs of previous analysis in folder", action="store_true")
+    parser.add_argument('-dFoF', "--dFoF_options_file", default='')
+    parser.add_argument('-nmax', "--Nmax", 
+                        type=int, default=1000000)
+    parser.add_argument("-v", "--verbose", action="store_true",
+                        help="increase output verbosity") 
 
     args = parser.parse_args()
+
+    if args.dFoF_options_file!='':
+        import json
+        with open(args.dFoF_options_file) as f:
+            args.dFoF_options = json.load(f)
 
     if '.xlsx' in args.datafile:
 

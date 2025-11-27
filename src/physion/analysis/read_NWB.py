@@ -8,7 +8,7 @@ from physion.visual_stim.build import build_stim
 from physion.analysis import tools
 from physion.imaging.Calcium import compute_dFoF,\
         ROI_TO_NEUROPIL_INCLUSION_FACTOR, METHOD,\
-        T_SLIDING, PERCENTILE, NEUROPIL_CORRECTION_FACTOR
+        T_SLIDING, PERCENTILE, NEUROPIL_CORRECTION_FACTOR, ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC
 from physion.imaging.dcnv import oasis
 
 class Data:
@@ -83,13 +83,19 @@ class Data:
 
         space = '        '
         self.description = '\n - Subject: %s %s \n' % (space,
-                                        self.metadata['subject_ID'])
+                                        self.nwbfile.subject.subject_id)
+
+        if 'protocol' not in self.metadata.keys():
+            self.metadata['protocol'] = self.nwbfile.experiment_description
 
         if self.metadata['protocol']=='None':
             self.description += '\n - Spont. Act. (no visual stim.)\n'
         else:
             self.description += '\n - Visual-Stim: \n %s' % space
 
+
+        if self.nwbfile.protocol is not None:
+            self.metadata |= ast.literal_eval(self.nwbfile.protocol)
 
         # deal with multi-protocols
         if ('Presentation' in self.metadata) and\
@@ -117,7 +123,7 @@ class Data:
                 
         self.description += '\n - Intervention: %s %s\n' % (space, self.metadata['intervention'] if 'intervention' in self.metadata else 'None')
 
-        self.description += '\n - Notes: %s %s\n' % (space, self.metadata['notes'])
+        self.description += '\n - Notes: %s %s\n' % (space, self.nwbfile.notes)
 
         if hasattr(self.nwbfile.subject, 'age') and self.nwbfile.subject.age!=None:
             self.age = int(str(self.nwbfile.subject.age).replace('P','').replace('D',''))
@@ -287,11 +293,15 @@ class Data:
             self.FaceCamera_mm_to_pix = 1
 
         # extract pupil ROI
-        self.pupil_ROI = {}
-        for key, val in zip(\
-            ['xmin','xmax','ymin','ymax'],
-            pd.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')')[0].split(',')):
-            self.pupil_ROI[key] = int(val)
+        try:
+            self.pupil_ROI = {}
+            for key, val in zip(\
+                ['xmin','xmax','ymin','ymax'],
+                pd.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')')[0].split(',')):
+                self.pupil_ROI[key] = int(val)
+        except BaseException as be:
+            self.pupil_ROI = None
+
 
     def build_pupil_diameter(self,
                              specific_time_sampling=None,
@@ -347,8 +357,12 @@ class Data:
     
     def read_facemotion(self):
         
-        fd = str(self.nwbfile.processing['FaceMotion'].description)
-        self.FaceMotion_ROI = [int(i) for i in fd.split('y0,dy)=(')[1].split(')')[0].split(',')]
+        try:
+            fd = str(self.nwbfile.processing['FaceMotion'].description)
+            self.FaceMotion_ROI = [int(i) for i in fd.split('y0,dy)=(')[1].split(')')[0].split(',')]
+        except BaseException as be:
+            self.FaceMotion_ROI = None
+
 
     def build_facemotion(self,
                          specific_time_sampling=None,
@@ -390,6 +404,9 @@ class Data:
                    specific_time_sampling=None,
                    smoothing=None,
                    interpolation='linear',
+                   with_computed_neuropil_fact=False,
+                   roi_to_neuropil_fluo_inclusion_factor_metric=\
+                    ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC,
                    verbose=True):
         """
         creates self.dFoF, self.t_dFoF
@@ -417,6 +434,9 @@ class Data:
                             with_correctedFluo_and_F0=\
                                     with_correctedFluo_and_F0,
                             smoothing=smoothing,
+                            with_computed_neuropil_fact=with_computed_neuropil_fact,
+                            roi_to_neuropil_fluo_inclusion_factor_metric=\
+                                    roi_to_neuropil_fluo_inclusion_factor_metric,
                             verbose=verbose)
         
 
@@ -521,8 +541,8 @@ class Data:
         self.metadata['verbose'] = verbose
         if degree:
             self.metadata['units'] = 'deg'
-        import pprint
-        pprint.pprint(self.metadata)
+        # import pprint
+        # pprint.pprint(self.metadata)
 
         # build an initial visual_stim 
         self.visual_stim = build_stim(self.metadata)

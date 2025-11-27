@@ -1,7 +1,7 @@
 from . import orientation_tuning, contrast_sensitivity,\
         ff_gratings_8orientations_2contrasts,\
         ff_gratings_2orientations_8contrasts,\
-        multiStim
+        asahi, multiStim
 
 GluN3_BlankFirst=ff_gratings_8orientations_2contrasts
 GluN3_BlankLast=ff_gratings_8orientations_2contrasts
@@ -9,4 +9,13 @@ ff_gratings_2orientations_8contrasts_15repeats=ff_gratings_2orientations_8contra
 ff_gratings_8orientation_2contrasts_15repeats=ff_gratings_8orientations_2contrasts
 ff_gratings_8orientations_2contrasts_15repeats=ff_gratings_8orientations_2contrasts
 vision_survey=multiStim
+vision_survey_looming_short=multiStim
 NDNF_protocol=multiStim
+# Asahi
+Asahi_classical=asahi
+Asahi_unorthodox=asahi
+Asahi_unorthodox_SIZE_vars=asahi
+# other
+surround_mod=multiStim
+vision_survey_looming_short_20degreepatch=multiStim
+surround_mod_nathan_2CenterRadius=multiStim

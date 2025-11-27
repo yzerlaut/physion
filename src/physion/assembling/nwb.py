@@ -40,6 +40,11 @@ def build_NWB_func(args, Subject=None):
     #################################################
 
     metadata = read_metadata(args.datafolder)
+    
+    key_not_included_session_desciription = ['date', 'time', 'protocol', 'experimenter', 
+                                             'lab', 'institution', 'notes']
+    session_description = str({k: metadata[k] for k in metadata.keys() 
+                               if k not in key_not_included_session_desciription})
 
     # add visual stimulation protocol parameters to the metadata:
     if os.path.isfile(os.path.join(args.datafolder, 'protocol.json')):
@@ -106,10 +111,11 @@ def build_NWB_func(args, Subject=None):
     # --------------------------------------------------------------
     nwbfile = pynwb.NWBFile(\
                 identifier=identifier,
-                session_description=str(metadata),
+                session_description=session_description,
                 experiment_description=metadata['protocol'],
                 experimenter=metadata['experimenter'],
                 lab=metadata['lab'],
+                protocol=str({k: protocol[k] for k in protocol if len(k) <66}) if metadata['protocol'] != 'None' else None,
                 institution=metadata['institution'],
                 notes=metadata['notes'],
                 virus=subject_props['virus'],
@@ -447,7 +453,9 @@ def build_NWB_func(args, Subject=None):
                     
                 pupil_module = nwbfile.create_processing_module(name='Pupil', 
                             description='processed quantities of Pupil dynamics,\n'+\
-                                ' pix_to_mm=%.3f' % pix_to_mm)
+                    ' pupil ROI: (xmin,xmax,ymin,ymax)=(%i,%i,%i,%i)\n' % (\
+                            0, 0, 0, 0)+\
+                    ' pix_to_mm=%.3f' % pix_to_mm)
 
                 for key, key2, coef in zip(['cx', 'cy', 'sx', 'sy', 'blinking', 'area'],
                                      ['pupil_center_X', 'pupil_center_y', 'width', 'height', 
@@ -560,7 +568,9 @@ def build_NWB_func(args, Subject=None):
 
                 faceMotion_module = nwbfile.create_processing_module(\
                         name='FaceMotion', 
-                        description='face motion dynamics,\n')
+                        description='face motion dynamics,\n'+\
+                            ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n'\
+                                        % (0,0,0,0))
                 FaceMotionProp = pynwb.TimeSeries(name='face-motion',
                                       data = np.reshape(dataF['motion_energy'],
                                                         (len(FC_timesF),1)),
@@ -621,14 +631,15 @@ def build_NWB_func(args, Subject=None):
     #################################################
     # see: add_ophys.py script
     # look for 'TSeries' folder 
-    TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
-    if len(TSeries)==1:
-        args.imaging = os.path.join(args.datafolder, TSeries[0])
+    if metadata['CaImaging'] and ('processed_CaImaging' in args.modalities):
+        TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
+        if len(TSeries)==1:
+            args.imaging = os.path.join(args.datafolder, TSeries[0])
 
-        add_ophys(nwbfile, args,
-                  metadata=metadata)
-    else:
-        print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
+            add_ophys(nwbfile, args,
+                    metadata=metadata)
+        else:
+            print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
     
     #################################################
     ####    add Intrinsic Imaging MAPS         ######
