@@ -93,6 +93,10 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
         nwbfile.add_acquisition(image_series) # otherwise, were added
 
     # processing
+    ophys_module = nwbfile.create_processing_module(
+        name='ophys', 
+        description='optical physiology processed data\n TSeries-folder=%s' % save_folder)
+    
     img_seg = ImageSegmentation()
     ps = img_seg.create_plane_segmentation(
         name='PlaneSegmentation',
@@ -100,9 +104,6 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
         imaging_plane=imaging_plane,
         reference_images=image_series
     )
-    ophys_module = nwbfile.create_processing_module(
-        name='ophys', 
-        description='optical physiology processed data\n TSeries-folder=%s' % save_folder)
     ophys_module.add(img_seg)
 
     # file_strs = ['F_chan2.npy', 'Fneu_chan2.npy', 'spks.npy']
@@ -110,6 +111,7 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
     traces = []
 
     iscell = np.load(os.path.join(pData_folder, 'iscell.npy')).astype(bool)
+    suite2p_roi_ids = np.where(iscell[:, 0])[0]
 
     if ops['nchannels']>1:
         if os.path.isfile(os.path.join(pData_folder, 'redcell_manual.npy')):
@@ -140,6 +142,7 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
     if ops['nchannels']>1:
         ps.add_column('redcell', 'two columns - redcell & probcell', redcell)
     ps.add_column('plane', 'one column - plane ID', plane_ID)
+    ps.add_column('suite2p_roi_ID', 'one column - suite2p roi ID', suite2p_roi_ids)
 
     rt_region = ps.create_roi_table_region(
         region=list(np.arange(0, ncells)),
