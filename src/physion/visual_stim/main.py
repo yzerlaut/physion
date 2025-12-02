@@ -659,7 +659,6 @@ class multiprotocol(visual_stim):
         for key in self.experiment:
             if key not in ['time_start', 'time_stop', 
                            'interstim', 'time_duration']:
-                print(key)
                 self.experiment[key] = \
                     np.array(self.experiment[key])[indices]
 

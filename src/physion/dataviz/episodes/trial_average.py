@@ -15,7 +15,7 @@ from physion.visual_stim.build import build_stim
 
 def plot(episodes,
            # episodes props
-           quantity='dFoF', roiIndex=None, roiIndices='all',
+           quantity='dFoF', roiIndex=None,
            condition=None,
            COL_CONDS=None, column_keys=[], column_key='',
            ROW_CONDS=None, row_keys=[], row_key='',
@@ -31,7 +31,7 @@ def plot(episodes,
            stat_test_props=dict(interval_pre=[-1,0],
                                 interval_post=[1,2],
                                 test='wilcoxon',
-                                positive=True),
+                                sign='positive'),
            with_annotation=False,
            color=None,
            label='',
@@ -206,9 +206,8 @@ def plot(episodes,
                 for icolor, color_cond in enumerate(COLOR_CONDS):
 
                     cond = np.array(condition & col_cond & row_cond & color_cond)#[:response.shape[0]]
-                    results = episodes.stat_test_for_evoked_responses(quantity=quantity,
-                                                                      episode_cond=cond,
-                                                                      response_args=dict(roiIndex=roiIndex, roiIndices=roiIndices),
+                    results = episodes.stat_test_for_evoked_responses(episode_cond=cond,
+                                                                      response_args=dict(quantity=quantity, roiIndex=roiIndex),
                                                                       **stat_test_props)
 
                     ps, size = results.pval_annot()
@@ -286,8 +285,8 @@ if __name__=='__main__':
                 protocol_id=args.protocol_id)
         episodes.init_visual_stim(data)
 
-        plot_trial_average(episodes,
-                           with_screen_inset=True)
+        plot(episodes, 
+             with_screen_inset=True)
         pt.plt.show()
 
     else:

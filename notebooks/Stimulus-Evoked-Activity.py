@@ -56,7 +56,6 @@ fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
 # %%
 fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
                                                       quantity='dFoF',
-                                                      roiIndices='all',
                                                       **plot_props)
 
 # %% [markdown]
