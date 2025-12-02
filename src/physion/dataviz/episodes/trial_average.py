@@ -126,7 +126,7 @@ def plot(episodes,
                 my = response.mean(axis=0) # mean response
 
                 if with_std:
-                    sy = response.mean(axis=0)
+                    sy = response.std(axis=0)
                     pt.plot(episodes.t, my, sy=sy,
                             ax=AX[irow][icol], color=COLORS[icolor], lw=1)
                     episodes.ylim = [min([episodes.ylim[0], np.min(my-sy)]),
