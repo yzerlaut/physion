@@ -10,19 +10,24 @@ def build_stim(protocol,
     """
     if from_file is not None:
         # we only build the time course of the associated video
-        return physion.visual_stim.main.visual_stim(protocol, 
-                                                    from_file=from_file)
+        return physion.visual_stim.main.visual_stim(\
+                                                protocol, 
+                                        from_file=from_file)
 
     elif (protocol['Presentation']=='multiprotocol'):
         #
-        return physion.visual_stim.main.multiprotocol(protocol)
+        return physion.visual_stim.main.multiprotocol(\
+                                                protocol)
 
     else:
         # single protocol
         protocol_name = protocol['Stimulus'].replace('-', '_').replace('+', '_')
         try:
-            return getattr(getattr(physion.visual_stim.stimuli,\
-                                protocol_name), 'stim')(protocol)
+            return getattr(\
+                        getattr(\
+                            physion.visual_stim.stimuli,\
+                                            protocol_name),
+                                              'stim')(protocol)
         except ModuleNotFoundError:
             print('\n [!!] Protocol not recognized ! [!!] \n ')
             return None
@@ -30,7 +35,8 @@ def build_stim(protocol,
 def get_default_params(protocol_name):
     """
     """
-    protocol_name = protocol_name.replace('-', '_').replace('+', '_')
+    protocol_name = protocol_name.replace('-',
+                                    '_').replace('+', '_')
 
     try:
         Dparams = getattr(\

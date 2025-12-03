@@ -533,16 +533,14 @@ class Data:
     
     def init_visual_stim(self, 
                          verbose=True, 
-                         degree=False):
+                         force_degree=False):
         """
         ability to force degrees when re-initializing from data
                             (for plots in degrees)
         """
         self.metadata['verbose'] = verbose
-        if degree:
+        if force_degree:
             self.metadata['units'] = 'deg'
-        # import pprint
-        # pprint.pprint(self.metadata)
 
         # build an initial visual_stim 
         self.visual_stim = build_stim(self.metadata)
@@ -553,6 +551,10 @@ class Data:
                     self.visual_stim.experiment[key][i]=\
                         self.nwbfile.stimulus[key].data[i,0]
 
+        if force_degree and\
+              hasattr(self.visual_stim, 'STIM'):
+            for s in self.visual_stim.STIM:
+                s.set_angle_meshgrid(force_degree=True)
         
     def get_protocol_id(self, protocol_name):
         cond = np.argwhere(self.protocols==protocol_name).flatten()

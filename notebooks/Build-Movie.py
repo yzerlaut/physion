@@ -9,10 +9,10 @@
 #                                       suite2p/
 #                                              plane0/
 #                                                    data.bin
-#                  FaceCamera.mp4 # or .wmv
+#                  FaceCamera.bin 
 #                  FaceCamera-summary.npy
 #                  # optional
-#                  RigCamera.mp4 # or .wmv
+#                  RigCamera.bin 
 #                  RigCamera-summary.npy
 # ```
 # %%
@@ -33,7 +33,8 @@ raw_data_folder =\
 
 # %%
 data = physion.analysis.read_NWB.Data(nwbfile)
-data.init_visual_stim()
+data.init_visual_stim(force_degree=True)
+
 data.build_dFoF()
 data.build_running_speed()
 
@@ -50,6 +51,7 @@ from physion.dataviz.raw import plot as plot_raw, find_default_plot_settings
 settings = find_default_plot_settings(data)
 _ = plot_raw(data, settings=settings, tlim=[50,130])
 roiIndex = [0,35,29,27]
+
 # %% [markdown]
 # ##  Load FaceCamera data
 
@@ -84,7 +86,7 @@ params =\
     " ############################################## ":"",
     " ############  data sample properties ######### ":"",
     " ############################################## ":"",
-    "tlim":[0,100],
+    "tlim":[10,100],
     "zoomROIs":[0,1],
     "                                                ":"",
     " ############################################## ":"",
@@ -124,9 +126,9 @@ params =\
     " ############################################## ":"",
     "fractions": {"running":0.1, "running_start":0.89,
                   "whisking":0.1, "whisking_start":0.78,
-                  "gaze":0.08, "gaze_start":0.7,
-                  "pupil":0.15, "pupil_start":0.55,
-                  "rois":0.29, "rois_start":0.29,
+                #   "gaze":0.08, "gaze_start":0.7,
+                  "pupil":0.1, "pupil_start":0.68,
+                  "rois":0.4, "rois_start":0.29,
                   "visual_stim":2, "visual_stim_start":2.0,
                   "raster":0.28, "raster_start":0.0},
     "                                                ":""
@@ -135,7 +137,7 @@ params =\
 
 time = 0
 
-for time in [3.5, 4., 5., 6]:
+for time in [67]:
 
     fig, AX = physion.dataviz.snapshot.layout()
 
@@ -153,7 +155,7 @@ for time in [3.5, 4., 5., 6]:
     physion.dataviz.snapshot.update_whisking(AX, data, params, faceCamera, time)
     physion.dataviz.snapshot.update_imaging(AX, data, params, imagingData, time)
     physion.dataviz.snapshot.update_timer(AX, time)
-    physion.utils.plot_tools.plt.show()
+    # physion.utils.plot_tools.plt.show()
 
 # %% [markdown]
 # ## Build the movie
@@ -166,5 +168,3 @@ _, _, ani = physion.dataviz.movie.build(fig, AX, data, params,
                                         imagingData=imagingData,
                                         Ndiscret=200)
 physion.dataviz.movie.write(ani, FPS=5)
-
-# %%
