@@ -113,7 +113,7 @@ def plot_contrast_sensitivity(keys,
                 keys, colors = [keys], [colors[0]]
 
         fig, ax = pt.figure(**fig_args)
-        inset = pt.inset(ax, [1.6,0.1,0.5,0.8])
+        inset = pt.inset(ax, [1.8,0.1,0.5,0.8])
 
         for i, (key, color) in enumerate(zip(keys, colors)):
 
@@ -136,14 +136,14 @@ def plot_contrast_sensitivity(keys,
                 pt.bar([np.mean(Gains)], x=[i], color=color, ax=inset,alpha=0.1)
 
                 if with_label:
-                        annot = i*'\\n'+' %.1f$\\pm$%.1f, ' %(\
+                        annot = i*'\n'+' %.2f$\\pm$%.2f, ' %(\
                                np.mean(Gains), stats.sem(Gains))
                         if average_by in ['sessions', 'subjects']:
                                 annot += 'N=%02d %s, ' % (len(Responses), average_by) + key
                         else:
                                 annot += 'n=%04d %s, ' % (len(Responses), average_by) + key
 
-                pt.annotate(inset, annot, (1., 0.9), va='top', color=color)
+                pt.annotate(inset, annot, (1., 1.), va='top', color=color)
 
         pt.set_plot(ax, 
             ylabel='$\\delta$ $\\Delta$F/F',  
