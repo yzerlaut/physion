@@ -80,3 +80,5 @@ fig, AX = \
     plot_raw(data, 
              tlim=[100, data.t_dFoF[-1]], 
              settings=settings)
+
+# %%
