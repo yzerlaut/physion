@@ -26,12 +26,13 @@ def plot_response_dynamics(keys,
             Responses = \
                     np.load(os.path.join(path, 'Deconvolved_%s.npy' % key), 
                             allow_pickle=True)
-            
+
             if average_by=='sessions':
                 # mean significant responses per session
                 if significantly_responsive:
                     Deconvolved = [np.mean(Response['Deconvolved'][Response['significant'],:],
-                                    axis=0) for Response in Responses]
+                                    axis=0) for Response in Responses\
+                                        if np.sum(Response['significant'])>0]
                 else:
                     Deconvolved = [np.mean(Response['Deconvolved'],
                                             axis=0) for Response in Responses]
@@ -41,8 +42,9 @@ def plot_response_dynamics(keys,
                 # mean significant responses per session
                 if significantly_responsive:
                     Deconvolved = np.concatenate([\
-                                    Response['Deconvolved'][Response['significant'],:]\
-                                                            for Response in Responses])
+                            Response['Deconvolved'][Response['significant'],:]\
+                                        for Response in Responses\
+                                                if np.sum(Response['significant'])>0])
                 else:
                     Deconvolved = np.concatenate([\
                                     Response['Deconvolved'] for Response in Responses])
@@ -59,7 +61,8 @@ def plot_response_dynamics(keys,
                             np.mean(\
                                 np.concatenate(\
                                     [Responses[i]['Deconvolved'][Responses[i]['significant'],:]\
-                                        for i in np.arange(len(subjects))[sCond]]),
+                                        for i in np.arange(len(subjects))[sCond]\
+                                                if np.sum(Responses[i]['significant'])>0]),
                                 axis=0))
                     else:
                         Deconvolved.append(\
@@ -93,3 +96,12 @@ def plot_response_dynamics(keys,
     pt.set_plot(ax, ylabel='$\\Delta$F/F',  xlabel='time (s)')
 
     return fig, ax
+
+if __name__=='__main__':
+    import sys
+    filename = sys.argv[-1]
+    plot_response_dynamics([os.path.basename(filename).replace(\
+                                '.npy','').replace('Deconvolved_','')],
+                                average_by='subjects',
+                            path=os.path.dirname(filename))
+    pt.plt.show()

@@ -80,30 +80,3 @@ fig, AX = \
     plot_raw(data, 
              tlim=[100, data.t_dFoF[-1]], 
              settings=settings)
-
-
-# %%
-Matrix = np.corrcoef(data.dFoF)
-# %%
-
-# filter the matrix for unique pairs
-triu = np.array(np.triu(np.ones(Matrix.shape), k=1),
-                dtype=bool)
-# 
-Npairs = np.sum(triu.flatten()) # number of unique pairs
-
-# %%
-Matrix = np.triu(Matrix, k=1)
-pt.matrix(Matrix, vmin=0, vmax=1)
-
-# %%
-from scipy import stats
-fig, ax = pt.figure()
-ax.hist(Matrix[triu])
-pt.set_plot(ax, xlabel='corr. coef.', ylabel='# pairs',
-            title= '%.2f $\pm$ %.2f ' % (\
-                    np.mean(Matrix[triu]),
-                    stats.sem(Matrix[triu])),
-                    xlim=[-0.5,1])
-
-# %%
