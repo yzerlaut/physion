@@ -3,9 +3,14 @@ use as python convert datafolder
 """
 import os, sys
 import numpy as np
+import pandas as pd
 import pynwb
 import datetime
 from dateutil.tz import tzlocal
+import pyabf
+from scipy.ndimage import gaussian_filter1d
+from scipy.signal import resample
+
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.to_nwb import add_ophys_processing_from_suite2p
 from physion.utils.files import get_files_with_extension
@@ -25,10 +30,99 @@ def get_facemotion(Tseries_folder):
     t, pupil_diameter = None, None
     return t, pupil_diameter
 
-def get_running_speed(Tseries_folder):
-    t, speed = None, None
+def get_running_speed(Tseries_folder, 
+                      bin_conversion_th=1.5,
+                      perimeter_cm=29,
+                      cpr=1000,
+                      new_freq=30,
+                      position_smoothing=10e-3):
+
+    fn = get_files_with_extension(Tseries_folder, extension='.abf')[0]
+    abf = pyabf.ABF(fn)
+
+    # Get acquisition frequency
+    acq_freq = abf.sampleRate
+
+    # Get channels
+    trace_A, trace_B = get_abf_channels(abf, ['RE1', 'RE2'])
+
+    # Concert to binary
+    bin_A = np.where(trace_A >= bin_conversion_th, 1, 0)
+    bin_B = np.where(trace_B >= bin_conversion_th, 1, 0)
+
+    # Compute position
+    position = compute_position_from_binary_signals(bin_A, bin_B, forward='counterclockwise')*perimeter_cm/cpr/4. #counts per revolution is cpr * 4
+    if position_smoothing>0:
+        position = gaussian_filter1d(position, int(position_smoothing*acq_freq), mode='nearest')
+
+    # Compute position
+    speed_vector = np.gradient(position, 1./acq_freq)
+    speed = np.abs(speed_vector) #get the norm of the speed vector
+    
+    rec_duration = len(position) / acq_freq
+    speed = resample(speed, round(new_freq*rec_duration)) #downsample the speed
+
+    # Get downsampled timestamps
+    t = np.linspace(0, rec_duration, len(speed))
+
     return t, speed
 
+def get_abf_channels(abf: pyabf.ABF, channels_names: list[str]=['RE1', 'RE2']):
+    
+    channel_a_idx = abf.adcNames.index(channels_names[0])
+    channel_b_idx = abf.adcNames.index(channels_names[1])
+    
+    abf.setSweep(sweepNumber=0, channel=channel_a_idx)
+    ch_A = abf.sweepY
+
+    abf.setSweep(sweepNumber=0, channel=channel_b_idx)
+    ch_B = abf.sweepY
+
+    return ch_A, ch_B
+
+def compute_position_from_binary_signals(A, B, forward='counterclockwise'):
+    '''
+    Takes traces A and B and converts it to a trace that has the same number of
+    points but with positions points.
+
+    Algorithm based on the schematic of cases shown in the doc
+    ---------------
+    Input:
+        A, B - traces to convert
+   
+    Output:
+        Positions through time
+
+    '''
+
+    Delta_position = np.zeros(len(A)-1, dtype=float) # N-1 elements
+
+    ################################
+    ## positive_increment_cond #####
+    ################################
+    # The A signal lead the B signal (counterclockwise)
+    # ... => 11 => 01 => 00 => 10 => 11 => ...
+    PIC = ( (A[:-1]==1) & (B[:-1]==1) & (A[1:]==0) & (B[1:]==1) ) | \
+        ( (A[:-1]==0) & (B[:-1]==1) & (A[1:]==0) & (B[1:]==0) ) | \
+        ( (A[:-1]==0) & (B[:-1]==0) & (A[1:]==1) & (B[1:]==0) ) | \
+        ( (A[:-1]==1) & (B[:-1]==0) & (A[1:]==1) & (B[1:]==1) )
+    Delta_position[PIC] = 1
+
+    ################################
+    ## negative_increment_cond #####
+    ################################
+    # The B signal lead the A signal (clockwise)
+    # ... => 11 => 10 => 00 => 01 => 11 => ...
+    NIC = ( (A[:-1]==1) & (B[:-1]==1) & (A[1:]==1) & (B[1:]==0) ) | \
+        ( (A[:-1]==1) & (B[:-1]==0) & (A[1:]==0) & (B[1:]==0) ) | \
+        ( (A[:-1]==0) & (B[:-1]==0) & (A[1:]==0) & (B[1:]==1) ) | \
+        ( (A[:-1]==0) & (B[:-1]==1) & (A[1:]==1) & (B[1:]==1) )
+    Delta_position[NIC] = -1
+
+    if forward=='clockwise':
+        Delta_position = -Delta_position
+
+    return np.cumsum(np.concatenate([[0], Delta_position]))
 
 def convert(Tseries_folder, 
             subject_props=None):
