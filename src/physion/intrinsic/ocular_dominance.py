@@ -34,7 +34,7 @@ from physion.intrinsic.load_camera import *
 from physion.utils.paths import FOLDERS
 from physion.acquisition.settings import get_config_list, update_config
 from physion.visual_stim.main import visual_stim
-from physion.visual_stim.show import init_stimWindow
+from physion.visual_stim.show import init_stimWindows
 from physion.utils.files import generate_filename_path
 from physion.acquisition.tools import base_path
 from physion.intrinsic.acquisition import take_fluorescence_picture,\

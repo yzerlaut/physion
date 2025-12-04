@@ -4,6 +4,11 @@ Some presets for our recording conditions
 
 presets = {\
         "":{},
+        "hsyn-pyramidal":{\
+                           # functional detection
+                           "high_pass":300,
+                           # cell detection settings with cellpose 
+                           "diameter": 12},\
         "hsyn-Ventricle-inj":{\
                            # registration
                            "nonrigid": False,

@@ -194,7 +194,7 @@ def multimodal(self,
     tab.layout.addWidget(self.fovPick,
                          ip, 10, 1, 4)
     ip+=1
-    self.cmdPick= QtWidgets.QLineEdit('cmd (V): 0')
+    self.cmdPick= QtWidgets.QLineEdit('cmd (V): 5')
     tab.layout.addWidget(self.cmdPick,
                          ip, 10, 1, 4)
 

@@ -13,10 +13,10 @@ params = {"movie_refresh_freq":30,
           "radius":5,
           "x-center":0,
           "y-center":0,
-          "center-time": 2.,
-          "extent-time": 1.,
-          "contrast":1.,
-          "bg-color":0., # not thought to be varied
+          "center-time": 2.0,
+          "extent-time": 1.0,
+          "amplitude":-0.5,
+          "bg-color":0.5, # not thought to be varied
         }
 
 class stim(visual_stim):
@@ -33,10 +33,11 @@ class stim(visual_stim):
 
 
     def get_image(self, index, time_from_episode_start=0, parent=None):
+
         img = init_bg_image(self, index)
         self.add_gaussian(img,
                           t=time_from_episode_start, 
-                          contrast = self.experiment['contrast'][index],
+                          amplitude= self.experiment['amplitude'][index],
                           xcenter=self.experiment['x-center'][index],
                           zcenter=self.experiment['y-center'][index],
                           radius = self.experiment['radius'][index],
