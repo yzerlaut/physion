@@ -8,7 +8,7 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 from dateutil.tz import tzlocal
 
 from physion.behavior.locomotion import compute_speed
-from physion.analysis.tools import resample_signal
+from physion.analysis.tools import resample, resample_signal
 from physion.utils.paths import python_path
 from physion.visual_stim.build import build_stim as build_visualStim
 
@@ -156,7 +156,8 @@ def build_NWB_func(args, Subject=None):
     if args.verbose:
         print('=> Loading NIdaq data for "%s" [...]' % args.datafolder)
     try:
-        NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), allow_pickle=True).item()
+        NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), 
+                             allow_pickle=True).item()
     except FileNotFoundError:
         print('\n   [!!] No NI-DAQ data found [!!] \n')
         NIdaq_data = None
@@ -167,23 +168,39 @@ def build_NWB_func(args, Subject=None):
 
     if metadata['Locomotion'] and ('Locomotion' in args.modalities):
         # compute running speed from binary NI-daq signal
-        if args.verbose:
-            print('=> Computing and storing running-speed for "%s" [...]' % args.datafolder)
 
-        speed = compute_speed(NIdaq_data['digital'][0],
-                              acq_freq=float(metadata['NIdaq-acquisition-frequency']),
-                              radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
-                              rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']),
-                              empirical=True)
-        _, speed = resample_signal(speed,
-                                   original_freq=float(metadata['NIdaq-acquisition-frequency']),
-                                   new_freq=args.running_sampling,
-                                   pre_smoothing=2./args.running_sampling)
+        if (not args.force_recalculation_of_speed) and\
+            os.path.isfile(os.path.join(args.datafolder, 'locomotion.npy')):
+
+            if args.verbose:
+                print('=> Using pre-computed running-speed for "%s" [...]' % args.datafolder)
+
+            L = np.load(os.path.join(args.datafolder, 'locomotion.npy'), 
+                         allow_pickle=True).item()
+            speed, running_sampling = L['speed'], L['running_sampling']
+
+        else:
+
+            if args.verbose:
+                print('=> Computing and storing running-speed for "%s" [...]' % args.datafolder)
+
+            speed = compute_speed(NIdaq_data['digital'][0],
+                    acq_freq=float(metadata['NIdaq-acquisition-frequency']),
+                    radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
+                    rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']))
+            _, speed = resample_signal(speed,
+                                    original_freq=float(metadata['NIdaq-acquisition-frequency']),
+                                    new_freq=args.running_sampling,
+                                    pre_smoothing=2./args.running_sampling)
+            running_sampling = args.running_sampling
+            np.save(os.path.join(args.datafolder, 'locomotion.npy'),
+                    dict(speed=speed, running_sampling=running_sampling))
+
         running = pynwb.TimeSeries(name='Running-Speed',
                                    data = np.reshape(speed, (len(speed),1)),
                                    starting_time=0.,
                                    unit='cm/s',
-                                   rate=args.running_sampling)
+                                   rate=running_sampling)
         nwbfile.add_acquisition(running)
 
     # #################################################
@@ -354,7 +371,6 @@ def build_NWB_func(args, Subject=None):
             print('     --> no raw_FaceCamera added !! ' )
 
             
-
         #################################################
         ####         Pupil from FaceCamera        #######
         #################################################
@@ -368,7 +384,6 @@ def build_NWB_func(args, Subject=None):
                     
                 dataP = np.load(os.path.join(args.datafolder, 'pupil.npy'),
                                 allow_pickle=True).item()
-                FC_timesP = FC_times[:len(dataP['cx'])]
 
                 if 'FaceCamera-1cm-in-pix' in metadata:
                     pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
@@ -384,11 +399,14 @@ def build_NWB_func(args, Subject=None):
                 for key, scale in zip(['cx', 'cy', 'sx', 'sy', 'angle', 'blinking'],
                                       [pix_to_mm for i in range(4)]+[1,1]):
                     if type(dataP[key]) is np.ndarray:
+                        signal = dataP[key]*scale
+                        signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                          signal, FC_times)
                         PupilProp = pynwb.TimeSeries(name=key,
-                                 data = np.reshape(dataP[key]*scale, 
-                                                   (len(FC_timesP),1)),
+                                 data = np.reshape(signal,
+                                                   (len(FC_times),1)),
                                  unit='seconds',
-                                 timestamps=FC_timesP)
+                                 timestamps=FC_times)
                         pupil_module.add(PupilProp)
 
                 # then add the frames subsampled
@@ -419,7 +437,7 @@ def build_NWB_func(args, Subject=None):
                                                            timestamps=FC_times[PUPIL_SUBSAMPLING])
                     nwbfile.add_acquisition(Pupil_frames)
 
-            if os.path.isfile(os.path.join(args.datafolder, 'FaceIt','faceit.npz')):
+            elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt','faceit.npz')):
                 
                 if args.verbose:
                     print('=> Adding processed pupil data for "%s" [...]' % args.datafolder)
@@ -472,27 +490,31 @@ def build_NWB_func(args, Subject=None):
                                 allow_pickle=True).item()
                 FC_timesF = FC_times[:len(dataF['motion'])]
 
-                # print(len(FC_times), len(dataF['motion']))
-
                 faceMotion_module = nwbfile.create_processing_module(\
                         name='FaceMotion', 
                         description='face motion dynamics,\n'+\
                             ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n'\
                                         % (dataF['ROI'][0],dataF['ROI'][1],
                                            dataF['ROI'][2],dataF['ROI'][3]))
+                signal = dataF['motion']
+                signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                    signal, FC_times)
                 FaceMotionProp = pynwb.TimeSeries(name='face-motion',
-                                      data = np.reshape(dataF['motion'],
-                                                        (len(FC_timesF),1)),
+                                      data = np.reshape(signal,
+                                                        (len(FC_times),1)),
                                                   unit='seconds',
-                                                  timestamps=FC_timesF)
+                                                  timestamps=FC_times)
                 faceMotion_module.add(FaceMotionProp)
 
                 if 'grooming' in dataF:
+                    signal = dataF['grooming']
+                    signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                        signal, FC_times)
                     GroomingProp = pynwb.TimeSeries(name='grooming',
-                                        data = np.reshape(dataF['grooming'],
-                                                        (len(FC_timesF),1)),
+                                        data = np.reshape(signal,
+                                                        (len(FC_times),1)),
                                                     unit='seconds',
-                                                  timestamps=FC_timesF)
+                                                  timestamps=FC_times)
                     faceMotion_module.add(GroomingProp)
 
                 # then add the motion frames subsampled
@@ -609,14 +631,15 @@ def build_NWB_func(args, Subject=None):
     #################################################
     # see: add_ophys.py script
     # look for 'TSeries' folder 
-    TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
-    if len(TSeries)==1:
-        args.imaging = os.path.join(args.datafolder, TSeries[0])
+    if metadata['CaImaging'] and ('processed_CaImaging' in args.modalities):
+        TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
+        if len(TSeries)==1:
+            args.imaging = os.path.join(args.datafolder, TSeries[0])
 
-        add_ophys(nwbfile, args,
-                  metadata=metadata)
-    else:
-        print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
+            add_ophys(nwbfile, args,
+                    metadata=metadata)
+        else:
+            print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
     
     #################################################
     ####    add Intrinsic Imaging MAPS         ######
@@ -701,6 +724,7 @@ if __name__=='__main__':
     # or we just simply force the timestamps to the ones desired by visualStim
     parser.add_argument("--force_to_visualStimTimestamps", action="store_true")
     parser.add_argument("--reverse_photodiodeSignal", action="store_true")
+    parser.add_argument("--force_recalculation_of_speed", action="store_true")
 
     parser.add_argument('-rs', "--running_sampling", default=50., type=float)
     parser.add_argument('-ps', "--photodiode_sampling", default=1000., type=float)
@@ -736,7 +760,8 @@ if __name__=='__main__':
 
         filename, directory = args.datafolder, os.path.dirname(args.datafolder)
         dataset, subjects, _ = read_spreadsheet(filename)
-        args.destination_folder = os.path.join(directory, 'NWBs')
+        if args.destination_folder=='':
+            args.destination_folder = os.path.join(directory, 'NWBs')
         for i in np.arange(args.files_indices[0], 
                            min([len(dataset), args.files_indices[1]])):
             print('\n \n     [%i] -- %s \n ' % (i+1, dataset['datafolder'][i]))

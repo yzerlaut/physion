@@ -31,7 +31,7 @@ dFoF_options = {'roi_to_neuropil_fluo_inclusion_factor' : 1.0, # ratio to discar
                  'percentile' : 10. , # for baseline (used only if METHOD= 'percentile' | 'sliding_percentile')
                  'neuropil_correction_factor' : 0.8 }# fraction of neuropil substracted to fluorescence
 
-index = 2  #for example this file 
+index = 0  #for example this file 
 filename = SESSIONS['files'][index]
 data = Data(filename,
             verbose=False)
@@ -198,3 +198,4 @@ for key in summary:
 # does not return anything <br>
 #%%
 ep.init_visual_stim(ep.data)
+# %%

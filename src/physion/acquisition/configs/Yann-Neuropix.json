@@ -1,0 +1,18 @@
+{
+    "NIdaq-acquisition-frequency":1000,
+    "NIdaq-analog-input-channels":1,
+    "NIdaq-digital-input-channels":2,
+    "Rig":"Neuropix-LN-U3screens",
+    "Screen":"LN-U3screens",
+    "Z-sign-correction-for-rig":-1,
+    "FaceCamera-frame-rate":30,
+    "FaceCamera-1cm-in-pix":480,
+    "RigCamera-frame-rate":20,
+    "RigCamera-1cm-in-pix":33,
+    "Height-of-Microscope-Camera-Image-in-mm":2.7,
+    "root_datafolder":"DATA",
+    "experimenter":"Yann Zerlaut",
+    "lab":"Rebola and Bacci labs",
+    "institution":"Paris Brain Institute",
+    "protocols":"all"
+}

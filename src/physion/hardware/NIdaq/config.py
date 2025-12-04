@@ -1,4 +1,4 @@
-import nidaqmx, collections
+import nidaqmx
 
 from nidaqmx.constants import ProductCategory, UsageTypeAI
 
@@ -21,7 +21,8 @@ def find_x_series_devices():
 
     DEVICES = []
     for device in system.devices:
-        if (not device.dev_is_simulated and
+        # if (not device.dev_is_simulated and
+        if (not device.is_simulated and
                 device.product_category == ProductCategory.X_SERIES_DAQ and
                 len(device.ao_physical_chans) >= 2 and
                 len(device.ai_physical_chans) >= 4 and
@@ -36,10 +37,22 @@ def find_m_series_devices():
 
     DEVICES = []
     for device in system.devices:
-        if (not device.dev_is_simulated and
+        # if (not device.dev_is_simulated and
+        if (not device.is_simulated and
                 device.product_category == ProductCategory.M_SERIES_DAQ and
                 len(device.ao_physical_chans) >= 2 and
                 len(device.ai_physical_chans) >= 4):
+            DEVICES.append(device)
+    return DEVICES
+
+def find_usb_devices():
+    system = nidaqmx.system.System.local()
+
+    DEVICES = []
+    for device in system.devices:
+        # if (not device.dev_is_simulated and
+        if (not device.is_simulated and
+                device.product_category == ProductCategory.USBDAQ):
             DEVICES.append(device)
     return DEVICES
 
@@ -49,10 +62,19 @@ if __name__=='__main__':
     print('looking for M-series devices [...]')
     DEVICES = find_m_series_devices()
     print(DEVICES)
+    print()
     print('----------------------')
     print('looking for X-series devices [...]')
     DEVICES = find_x_series_devices()
     print(DEVICES)
+    print()
+    print('----------------------')
+    print('looking for USB devices [...]')
+    DEVICES = find_usb_devices()
+    print(DEVICES)
+    print()
+
+
     # device = DEVICES[0]
     # print(dir(device))
     system = nidaqmx.system.System.local()
