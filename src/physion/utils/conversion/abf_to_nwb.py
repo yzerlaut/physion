@@ -9,11 +9,11 @@ import datetime
 from dateutil.tz import tzlocal
 import pyabf
 from scipy.ndimage import gaussian_filter1d
-from scipy.signal import resample
 
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.to_nwb import add_ophys_processing_from_suite2p
 from physion.utils.files import get_files_with_extension
+from physion.analysis.tools import resample_signal
 
 def read_table(filename):
 
@@ -21,6 +21,19 @@ def read_table(filename):
                             # sheet_name='Recordings')
 
     return dataset
+
+def get_face_metrics(Tseries_folder):
+
+    fn = get_files_with_extension(os.path.join(Tseries_folder, 'FaceIt'), extension='.npz')[0]
+    faceitOutput = np.load(fn, allow_pickle=True)
+
+    # Get pupil diameter
+    pupil_diameter = 2*np.max([faceitOutput['width'], faceitOutput['height']], axis=0)
+
+    # Get face motion
+    facemotion = faceitOutput['motion_energy_without_grooming']
+
+    return pupil_diameter, facemotion
 
 def get_pupil_diameter(Tseries_folder):
     t, pupil_diameter = None, None
@@ -44,7 +57,7 @@ def get_running_speed(Tseries_folder,
     acq_freq = abf.sampleRate
 
     # Get channels
-    trace_A, trace_B = get_abf_channels(abf, ['RE1', 'RE2'])
+    trace_A, trace_B, t = get_abf_channels(abf, ['RE1', 'RE2'])
 
     # Concert to binary
     bin_A = np.where(trace_A >= bin_conversion_th, 1, 0)
@@ -59,13 +72,17 @@ def get_running_speed(Tseries_folder,
     speed_vector = np.gradient(position, 1./acq_freq)
     speed = np.abs(speed_vector) #get the norm of the speed vector
     
-    rec_duration = len(position) / acq_freq
-    speed = resample(speed, round(new_freq*rec_duration)) #downsample the speed
+    # Downsample the speed
+    t, speed = resample_signal(speed, 
+                               t_sample=t,
+                               new_freq=new_freq)
+    
+    # Get start time of calcium imaging recording relative to rotary encoder recording
+    abf.setSweep(sweepNumber=0, channel=0)
+    epoch_idx = abf.sweepEpochs.types.index('Pulse')
+    dt_start = abf.sweepEpochs.p1s[epoch_idx] / abf.sampleRate
 
-    # Get downsampled timestamps
-    t = np.linspace(0, rec_duration, len(speed))
-
-    return t, speed
+    return t, speed, dt_start
 
 def get_abf_channels(abf: pyabf.ABF, channels_names: list[str]=['RE1', 'RE2']):
     
@@ -78,7 +95,9 @@ def get_abf_channels(abf: pyabf.ABF, channels_names: list[str]=['RE1', 'RE2']):
     abf.setSweep(sweepNumber=0, channel=channel_b_idx)
     ch_B = abf.sweepY
 
-    return ch_A, ch_B
+    t = abf.sweepX
+
+    return ch_A, ch_B, t
 
 def compute_position_from_binary_signals(A, B, forward='counterclockwise'):
     '''
@@ -127,11 +146,6 @@ def compute_position_from_binary_signals(A, B, forward='counterclockwise'):
 def convert(Tseries_folder, 
             subject_props=None):
 
-    fn = get_files_with_extension(Tseries_folder, extension='.xml')[0]
-    xml = bruker_xml_parser(fn) # metadata
-
-    # t_imaging = xml['relativeTime']+abf.sweepEpochs.p1s[epoch_idx]
-
     if subject_props is not None:
         # --------------------------------------------------------------
         #    ---------  building the pynwb subject object   ----------
@@ -176,7 +190,58 @@ def convert(Tseries_folder,
 
     manager = pynwb.get_manager() # we need a manager to link raw and processed data
 
-    filename = 'temp.nwb'
+    # #################################################
+    # ####         Locomotion                   #######
+    # #################################################
+
+    t_speed, speed, dt_start = get_running_speed(Tseries_folder)
+
+    running = pynwb.TimeSeries(name='Running-Speed',
+                               data = np.reshape(speed, (len(speed),1)),
+                               timestamps=t_speed,
+                               unit='cm/s')
+    nwbfile.add_acquisition(running)
+
+
+    #################################################
+    #### Pupil and Facemotion from FaceCamera #######
+    #################################################
+
+    fn = get_files_with_extension(Tseries_folder, extension='.xml')[0]
+    xml = bruker_xml_parser(fn) # metadata
+
+    t_imaging = xml['Green']['relativeTime'] + dt_start
+
+    pupil_diameter, facemotion = get_face_metrics(Tseries_folder)
+    t_facedata = np.linspace(t_imaging[0], t_imaging[-1], len(pupil_diameter))
+
+    # Pupil
+    pupil_module = nwbfile.create_processing_module(name='Pupil',
+                                                  description='')
+    
+    PupilProp = pynwb.TimeSeries(name='pupil_diameter',
+                                 data = np.reshape(pupil_diameter, 
+                                                   (len(t_facedata),1)),
+                                 unit='seconds',     
+                                 timestamps=t_facedata)
+    pupil_module.add(PupilProp)
+
+    # FaceMotion
+    faceMotion_module = nwbfile.create_processing_module(name='FaceMotion', 
+                                                         description='')
+    
+    FaceMotionProp = pynwb.TimeSeries(name='face-motion',
+                                      data = np.reshape(facemotion,
+                                                        (len(t_facedata),1)),
+                                      unit='seconds',
+                                      timestamps=t_facedata)
+    faceMotion_module.add(FaceMotionProp)
+
+    #################################################
+    ####         Writing NWB file             #######
+    #################################################
+
+    filename = os.path.join(os.path.dirname(Tseries_folder),'temp.nwb')
     io = pynwb.NWBHDF5IO(filename,
                          mode='w', manager=manager)
 
