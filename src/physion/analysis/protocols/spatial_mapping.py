@@ -10,7 +10,7 @@ from physion.analysis.summary_pdf import summary_pdf_folder,\
         metadata_fig, generate_FOV_fig, generate_raw_data_figs, join_pdf
 from physion.dataviz.tools import format_key_value
 from physion.dataviz.episodes.trial_average import plot_trial_average
-from physion.analysis.process_NWB import EpisodeData
+from physion.analysis.episodes.build import EpisodeData
 from physion.utils.plot_tools import pie
 
 tempfile.gettempdir()

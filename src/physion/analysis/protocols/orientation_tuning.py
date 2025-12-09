@@ -295,7 +295,7 @@ def plot_orientation_tuning_curve(keys,
 if __name__=='__main__':
 
     from physion.analysis.read_NWB import Data
-    from physion.analysis.process_NWB import EpisodeData
+    from physion.analysis.episodes.build import EpisodeData
     from physion.utils import plot_tools as pt
 
     if False:

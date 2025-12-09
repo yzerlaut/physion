@@ -32,10 +32,10 @@ filename = os.path.join(os.path.expanduser('~'),
 data = physion.analysis.read_NWB.Data(filename, verbose=False)
 data.build_dFoF(neuropil_correction_factor=0.9, percentile=10., verbose=False)
 
-Episodes = physion.analysis.process_NWB.EpisodeData(data,
-                                                    quantities=['dFoF'],
-                                                    protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
-                                                    verbose=False)
+Episodes = physion.analysis.episodes.build.EpisodeData(data,
+                                                       quantities=['dFoF'],
+                                                       protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
+                                                       verbose=False)
 
 # %% [markdown]
 # ## Compute Responses of Cells (all, not only signtificantly-modulated)
@@ -172,10 +172,10 @@ for angle in [0, 90]:
                 nROIs_final = data.nROIs # ROIs after dFoF criterion
 
                 protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0]
-                Episodes = physion.analysis.process_NWB.EpisodeData(data, 
-                                                                        quantities=['dFoF'], 
-                                                                        protocol_name=protocol_name, 
-                                                                        verbose=False)
+                Episodes = physion.analysis.episodes.build.EpisodeData(data, 
+                                                                       quantities=['dFoF'], 
+                                                                       protocol_name=protocol_name, 
+                                                                       verbose=False)
                 Sensitivity = compute_sensitivity_per_cells(data, Episodes, 
                                                             quantity='dFoF', 
                                                             stat_test_props=stat_test_props, 

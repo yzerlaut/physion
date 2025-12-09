@@ -28,10 +28,10 @@ data = physion.analysis.read_NWB.Data(filename,
 
 # find protocol of full-field gratings
 p_name = [p for p in data.protocols if 'ff-gratings' in p][0]
-episodes = physion.analysis.process_NWB.EpisodeData(data, 
-                                                    quantities=['dFoF',
-                                                                'pupil_diameter'],
-                                                    protocol_name=p_name)
+episodes = physion.analysis.episodes.build.EpisodeData(data, 
+                                                       quantities=['dFoF',
+                                                                   'pupil_diameter'],
+                                                       protocol_name=p_name)
 
 # %% [markdown]
 # ## Plot properties

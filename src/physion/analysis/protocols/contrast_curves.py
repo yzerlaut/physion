@@ -7,7 +7,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 import physion.utils.plot_tools as pt
 
 from physion.analysis.read_NWB import Data
-from physion.analysis.process_NWB import EpisodeData
+from physion.analysis.episodes.build import EpisodeData
+from physion.analysis.episodes import trial_statistics
 # from analysis import stat_tools
 
 
@@ -52,8 +53,9 @@ def ROI_analysis(FullData,
         for ic, contrast in enumerate(EPISODES.varied_parameters['contrast']):
 
             # stat test "pre" vs "post"
-            stats = EPISODES.stat_test_for_evoked_responses(episode_cond=EPISODES.find_episode_cond(['angle', 'contrast'], [ia, ic]),
-                                                            **stat_test_props)
+            stats = trial_statistics.stat_test_for_evoked_responses(EPISODES,
+                                                                    episode_cond=EPISODES.find_episode_cond(['angle', 'contrast'], [ia, ic]),
+                                                                    **stat_test_props)
             
             resp.append(np.mean(stats.y-stats.x)) # "post"-"pre"
             contrasts.append(contrast)
@@ -125,8 +127,8 @@ def Ephys_analysis(FullData,
     #     for ic, contrast in enumerate(EPISODES.varied_parameters['contrast']):
 
     #         # stat test "pre" vs "post"
-    #         stats = EPISODES.stat_test_for_evoked_responses(episode_cond=EPISODES.find_episode_cond(['angle', 'contrast'], [ia, ic]),
-    #                                                         **stat_test_props)
+    #         stats = trial_statistics.stat_test_for_evoked_responses(EPISODES, episode_cond=EPISODES.find_episode_cond(['angle', 'contrast'], [ia, ic]),
+    #                                                                 **stat_test_props)
             
     #         resp.append(np.mean(stats.y-stats.x)) # "post"-"pre"
     #         contrasts.append(contrast)
