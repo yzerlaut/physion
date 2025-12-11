@@ -4,6 +4,7 @@ use as python convert datafolder
 import os, sys, pathlib
 import numpy as np
 import pandas as pd
+import pandas as pd
 import pynwb
 import datetime
 from dateutil.tz import tzlocal
@@ -13,6 +14,7 @@ from scipy.ndimage import gaussian_filter1d
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.to_nwb import add_ophys_processing_from_suite2p
 from physion.utils.files import get_files_with_extension
+from physion.analysis.tools import resample_signal
 from physion.analysis.tools import resample_signal
 
 def read_table(filename):
