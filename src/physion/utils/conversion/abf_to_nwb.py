@@ -1,25 +1,27 @@
 """
 use as python convert datafolder
 """
-import os, sys
+import os, sys, pathlib
 import numpy as np
+import pandas as pd
 import pandas as pd
 import pynwb
 import datetime
 from dateutil.tz import tzlocal
-import pyabf
+import pyabf, json
 from scipy.ndimage import gaussian_filter1d
 
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.to_nwb import add_ophys_processing_from_suite2p
 from physion.utils.files import get_files_with_extension
 from physion.analysis.tools import resample_signal
+from physion.analysis.tools import resample_signal
 
 def read_table(filename):
 
-    dataset = pd.read_excel(filename)
-                            # sheet_name='Recordings')
-
+    dataset = pd.read_excel(filename,
+                            sheet_name='Recordings')
+    
     return dataset
 
 def get_face_metrics(Tseries_folder):
@@ -27,21 +29,19 @@ def get_face_metrics(Tseries_folder):
     fn = get_files_with_extension(os.path.join(Tseries_folder, 'FaceIt'), extension='.npz')[0]
     faceitOutput = np.load(fn, allow_pickle=True)
 
-    # Get pupil diameter
-    pupil_diameter = 2*np.max([faceitOutput['width'], faceitOutput['height']], axis=0)
+    output = {}
+    output['cx'] = faceitOutput['pupil_center_X']
+    output['cy'] = faceitOutput['pupil_center_y']
 
-    # Get face motion
-    facemotion = faceitOutput['motion_energy_without_grooming']
+    # WE TRICK THE PUPIL COORDINATES TO HAVE SOMETHING CORRECTED:
+    output['sx'] = faceitOutput['pupil_dilation_blinking_corrected']/2./np.pi # faceitOutput['width']
+    output['sy'] = np.ones(len(output['cx'])) # faceitOutput['height']
+    output['blinking'] = faceitOutput['blinking_ids']
 
-    return pupil_diameter, facemotion
+    output['grooming'] = faceitOutput['grooming_ids']
+    output['face-motion'] = faceitOutput['motion_energy_without_grooming']
 
-def get_pupil_diameter(Tseries_folder):
-    t, pupil_diameter = None, None
-    return t, pupil_diameter
-
-def get_facemotion(Tseries_folder):
-    t, pupil_diameter = None, None
-    return t, pupil_diameter
+    return output
 
 def get_running_speed(Tseries_folder, 
                       bin_conversion_th=1.5,
@@ -143,48 +143,55 @@ def compute_position_from_binary_signals(A, B, forward='counterclockwise'):
 
     return np.cumsum(np.concatenate([[0], Delta_position]))
 
-def convert(Tseries_folder, 
-            subject_props=None):
+def convert(Tseries_folder, day, 
+            subject, genotype, virus):
 
-    if subject_props is not None:
-        # --------------------------------------------------------------
-        #    ---------  building the pynwb subject object   ----------
-        # --------------------------------------------------------------
-        if metadata['genotype']=='knockout':
-            virus=''
-            genotype='NDNF::CB1-KD'
+    # load metadata:
+    fn = get_files_with_extension(Tseries_folder, extension='.txt')[0]
+    with open(fn, 'r') as f:
+        metadata = json.load(f)
 
-        subject = pynwb.file.Subject(description=subject_props['description'],
-                                     age=subject_props['age'],
-                                     subject_id=subject_props['subject_id'],
-                                     sex=subject_props['sex'],
-                                     genotype=subject_props['genotype'],
-                                     species=subject_props['species'],
-                                     weight=subject_props['weight'],
-                                     strain=subject_props['strain'],
-                                     date_of_birth=\
-            datetime.datetime(*subject_props['Date-of-Birth'], tzinfo=tzlocal()))
+    # load Prairie file
+    fn = get_files_with_extension(Tseries_folder, extension='.xml')[0]
+    xml = bruker_xml_parser(fn)
+    time = [int(t[:2]) for t in xml['StartTime'].split(':')]
+    day = [int(d) for d in day.split('_')]
+
+    nwb_filename = '%i_%.2d_%.2d-%i-%i-%i.nwb' % (*day, *time)
+
+    # --------------------------------------------------------------
+    #    ---------  building the pynwb subject object   ----------
+    # --------------------------------------------------------------
+
+    subject = pynwb.file.Subject(description=subject,
+                                    age='P90',
+                                    subject_id=metadata['Mouse_Code'],
+                                    sex=metadata['Sex'],
+                                    genotype=genotype,
+                                    species='mus musculus',
+                                    strain='C57BL6')
                                  
 
-    start_time = datetime.datetime(2025, 12, 4, 15, 15, 15, tzinfo=tzlocal())
+    start_time = datetime.datetime(day[0], day[1], day[2], 
+                                   time[0], time[1], time[2], 
+                                   tzinfo=tzlocal())
     # -------------    
     #    ---------  building the pynwb NWBfile object   ----------
     # --------------------------------------------------------------
     nwbfile = pynwb.NWBFile(\
                 identifier=Tseries_folder,
-                session_description='imaging during spontaneous behavior',
-                experiment_description='',
+                session_description=str(metadata),
+                experiment_description='imaging during spontaneous behavior',
                 experimenter='Adrianna Nozownik',
-                lab='ICM Bacci lab',
-                # protocol=str({k: protocol[k] for k in protocol if len(k) <66}) if metadata['protocol'] != 'None' else None,
-                # institution=metadata['institution'],
-                # notes=metadata['notes'],
-                # virus=subject_props['virus'],
-                # surgery=subject_props['surgery'],
+                lab='Bacci lab',
+                # protocol='spontaneous-activity',
+                institution='Paris Brain Institute',
+                virus=virus,
+                surgery='Viral-Injection+Headplate-Implantation',
                 session_start_time=start_time,
-                # subject=subject,
-                # source_script=str(pathlib.Path(__file__).resolve()),
-                # source_script_file_name=str(pathlib.Path(__file__).resolve()),
+                subject=subject,
+                source_script=str(pathlib.Path(__file__).resolve()),
+                source_script_file_name=str(pathlib.Path(__file__).resolve()),
                 file_create_date=\
                    datetime.datetime.now(datetime.UTC).replace(tzinfo=tzlocal()))
 
@@ -212,36 +219,94 @@ def convert(Tseries_folder,
 
     t_imaging = xml['Green']['relativeTime'] + dt_start
 
-    pupil_diameter, facemotion = get_face_metrics(Tseries_folder)
-    t_facedata = np.linspace(t_imaging[0], t_imaging[-1], len(pupil_diameter))
+    faceMetrics = get_face_metrics(Tseries_folder)
+    t_facedata = np.linspace(t_imaging[0], t_imaging[-1], len(faceMetrics['cx']))
 
     # Pupil
     pupil_module = nwbfile.create_processing_module(name='Pupil',
-                                                  description='')
+                                                    description='')
     
-    PupilProp = pynwb.TimeSeries(name='pupil_diameter',
-                                 data = np.reshape(pupil_diameter, 
-                                                   (len(t_facedata),1)),
-                                 unit='seconds',     
-                                 timestamps=t_facedata)
-    pupil_module.add(PupilProp)
+    for key in ['cx', 'cy', 'sx', 'sy', 'blinking']:
+        print(key)
+        PupilProp = pynwb.TimeSeries(name=key,
+                    data = np.reshape(faceMetrics[key],
+                                    (len(t_facedata),1)),
+                    unit='seconds',
+                    timestamps=t_facedata)
+        pupil_module.add(PupilProp)
 
     # FaceMotion
     faceMotion_module = nwbfile.create_processing_module(name='FaceMotion', 
                                                          description='')
     
-    FaceMotionProp = pynwb.TimeSeries(name='face-motion',
-                                      data = np.reshape(facemotion,
-                                                        (len(t_facedata),1)),
-                                      unit='seconds',
-                                      timestamps=t_facedata)
-    faceMotion_module.add(FaceMotionProp)
+    for key in ['face-motion', 'grooming']:
+        faceMotionProp = pynwb.TimeSeries(name=key,
+                    data = np.reshape(faceMetrics[key],
+                                    (len(t_facedata),1)),
+                    unit='seconds',
+                    timestamps=t_facedata)
+        faceMotion_module.add(faceMotionProp)
+
+
+    #################################################
+    ####         Adding Imaging               #######
+    #################################################
+    functional_chan = 'Ch1'
+    laser_key = 'Excitation 1'
+    Depth = float(xml['settings']['positionCurrent']['ZAxis'])
+
+    device = pynwb.ophys.Device(\
+        'Imaging device with settings %s' %\
+         str(xml['settings']).replace(': ','= '))
+    nwbfile.add_device(device)
+    optical_channel = pynwb.ophys.OpticalChannel(\
+            'excitation_channel 1',
+             laser_key,
+             float(xml['settings']['laserWavelength'][laser_key]))
+
+    imaging_plane = nwbfile.create_imaging_plane(\
+            'my_imgpln', optical_channel,
+                description='Depth=%.1f[um]' % Depth,
+                device=device,
+                excitation_lambda=float(xml['settings']['laserWavelength'][laser_key]),
+                imaging_rate=1./float(xml['settings']['framePeriod']),
+                indicator='GCamp',
+                location='V1', # ADD METADATA HERE
+                # reference_frame='A frame to refer to',
+                grid_spacing=(\
+                        float(xml['settings']['micronsPerPixel']['YAxis']),
+                        float(xml['settings']['micronsPerPixel']['XAxis'])))
+
+    image_series = pynwb.ophys.TwoPhotonSeries(\
+           name='CaImaging-TimeSeries',
+           dimension=[2], 
+           data=np.ones((2,2,2)),
+           imaging_plane=imaging_plane, 
+           unit='s', 
+           timestamps=1.*np.arange(2), # ADD UPDATE OF starting_time
+           comments='raw-data-folder=%s' % Tseries_folder.replace('/', '**')) # TEMPORARY
+    
+    nwbfile.add_acquisition(image_series)
+
+    if os.path.isdir(os.path.join(Tseries_folder, 'suite2p')):
+        print('=> Adding the suite2p processing for "%s" [...]' % Tseries_folder)
+        add_ophys_processing_from_suite2p(os.path.join(Tseries_folder, 'suite2p'),
+                                          nwbfile, xml,
+                                          TwoP_trigger_delay=dt_start,
+                                          device=device,
+                                          optical_channel=optical_channel,
+                                          imaging_plane=imaging_plane,
+                                          image_series=image_series) 
+    else:
+        print('\n [!!]  no "suite2p" folder found in "%s"  [!!] ' % Tseries_folder)
 
     #################################################
     ####         Writing NWB file             #######
     #################################################
 
-    filename = os.path.join(os.path.dirname(Tseries_folder),'temp.nwb')
+    filename = os.path.join(os.path.dirname(Tseries_folder), 
+                            '..', '..',
+                            'NWBs', nwb_filename)
     io = pynwb.NWBHDF5IO(filename,
                          mode='w', manager=manager)
 
@@ -253,8 +318,27 @@ def convert(Tseries_folder,
 
 if __name__=='__main__':
 
-    for df in os.listdir(sys.argv[-1]):
-        if 'TSeries' in df:
+    if '.xlsx' in sys.argv[-1]:
 
-            convert(os.path.join(sys.argv[-1], df))
+        dataset = read_table(sys.argv[-1])    
+
+        for f, subject, virus, genotype in zip(\
+                            dataset['filepath'],
+                            dataset['subject'],
+                            dataset['virus'],
+                            dataset['genotype']):
+
+            day, tseries = f.split('\\')[-2:]
+            tS = os.path.join(os.path.dirname(sys.argv[-1]), 
+                              'processed', day, tseries)
+
+            convert(tS, day, subject, virus, genotype)
+
+    else:
+
+        print("""
+
+        [!!] need to provide a DataTable.xlsx file as argument [!!]
+
+              """)
 
