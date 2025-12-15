@@ -3,7 +3,7 @@
     "NIdaq-analog-input-channels":1,
     "NIdaq-digital-input-channels":2,
     "Rig":"Neuropix-LN-U3screens",
-    "Screen":"LN-U3screens",
+    "Screen":"LN-VR-3screens",
     "Z-sign-correction-for-rig":-1,
     "FaceCamera-frame-rate":30,
     "FaceCamera-1cm-in-pix":480,
