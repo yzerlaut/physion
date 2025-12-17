@@ -75,6 +75,11 @@ def plot(fig, data, args,
             plot_spatial_grid(Eps[-1], AXm[i], args,
                               np.arange(data.nROIs))
 
+        elif ('drifting-surround' in p) and (len(params)>1):
+            print(params)
+            plot_spatial_grid(Eps[-1], AXm[i], args,
+                              np.arange(data.nROIs))
+
         else:
 
             if 'repeat' in params:

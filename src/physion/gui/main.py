@@ -5,7 +5,7 @@ from PyQt5 import QtWidgets
 
 Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv)
 Intrinsic = ('all' in sys.argv) or ('intrinsic' in sys.argv)
-OD = ('all' in sys.argv) or ('OD' in sys.argv)
+OD = ('all' in sys.argv) or ('OD' in sys.argv) or ('ocular-dominance' in sys.argv)
 
 class MainWindow(QtWidgets.QMainWindow):
     """

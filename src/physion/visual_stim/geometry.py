@@ -1,6 +1,7 @@
 import numpy as np
 
-def set_angle_meshgrid_1screen(self):
+def set_angle_meshgrid_1screen(self, 
+                               force_degree=False):
     """
     """
 
@@ -19,13 +20,7 @@ def set_angle_meshgrid_1screen(self):
     self.screen_ids = np.ones(self.widths.shape, dtype=int)
     self.mask = np.ones(self.widths.shape, dtype=bool) # stim mask, True by default
 
-    if self.units=='cm':
-
-        # we convert to angles in the x and z directions
-        self.x = np.arctan(self.widths/self.screen['distance_from_eye'])
-        self.z = np.arctan(self.heights*np.cos(self.x)/self.screen['distance_from_eye'])
-
-    elif self.units=='deg':
+    if force_degree or (self.units=='deg'):
 
         altitudeMax = np.arctan(self.screen['height']/2./self.screen['distance_from_eye'])
         azimuthMax = self.screen['resolution'][0]\
@@ -44,6 +39,12 @@ def set_angle_meshgrid_1screen(self):
 
         self.mask = (np.abs(self.widths)<=self.screen['width']/2.) &\
                         (np.abs(self.heights)<=self.screen['height']/2.)
+
+    elif self.units=='cm':
+
+        # we convert to angles in the x and z directions
+        self.x = np.arctan(self.widths/self.screen['distance_from_eye'])
+        self.z = np.arctan(self.heights*np.cos(self.x)/self.screen['distance_from_eye'])
 
     elif self.units=='lin-deg':
 
@@ -66,7 +67,8 @@ def set_angle_meshgrid_1screen(self):
     self.x *= 180./np.pi
     self.z *= 180./np.pi
 
-def set_angle_meshgrid_U3Screens(self):
+def set_angle_meshgrid_U3Screens(self, 
+                                 force_degree=False):
     """
     """
 
@@ -100,8 +102,20 @@ def set_angle_meshgrid_U3Screens(self):
     self.mask = np.ones(self.widths.shape, 
                         dtype=bool) # stim mask, True by default
 
-    # if self.units=='cm':
-    if True:
+    if force_degree or (self.units=='deg'):
+
+        altitudeMax, altitudeMin = np.max(self.z), np.min(self.z)
+        dZ = altitudeMax-altitudeMin
+        azimuthMax = dZ*self.x.shape[0]/self.x.shape[1]/2.
+
+        self.x, self.z = np.meshgrid(\
+                     np.linspace(-azimuthMax, azimuthMax,
+                                 self.x.shape[0]),
+                     np.linspace(altitudeMin, altitudeMax,
+                                  self.x.shape[1]),
+                              indexing='ij')
+
+    elif self.units=='cm':
         # by default, we go through the cm unit
 
         # we convert to angles in the x and z directions
@@ -131,18 +145,6 @@ def set_angle_meshgrid_U3Screens(self):
         self.x[cond3] = np.pi/2.+aX
         self.z[cond3] = np.arctan(np.sin(aX)*self.heights[cond3]/dX)
 
-    if self.units=='deg':
-
-        altitudeMax, altitudeMin = np.max(self.z), np.min(self.z)
-        dZ = altitudeMax-altitudeMin
-        azimuthMax = dZ*self.x.shape[0]/self.x.shape[1]/2.
-
-        self.x, self.z = np.meshgrid(\
-                     np.linspace(-azimuthMax, azimuthMax,
-                                 self.x.shape[0]),
-                     np.linspace(altitudeMin, altitudeMax,
-                                  self.x.shape[1]),
-                              indexing='ij')
 
     # convert back to angles in degrees
     self.x *= 180./np.pi

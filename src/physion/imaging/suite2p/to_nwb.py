@@ -42,10 +42,12 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
 
     CaImaging_timestamps = xml[functional_chan]['relativeTime']
 
+    # CaImaging_timestamps = np.arange(\
+    #       len(CaImaging_timestamps))*0.033730723 # FOR WEIRD CASES WHERE PRAIRIE DOESN'T STORE TIMESTAMPS !!
+
     if verbose:
         print('    - Functional channel set to:', functional_chan)
         print('    - timestamps :', len(CaImaging_timestamps))
-
 
     # [!!] Add the 2P trigger delay
     if TwoP_trigger_delay>0:

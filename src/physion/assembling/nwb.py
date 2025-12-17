@@ -41,10 +41,10 @@ def build_NWB_func(args, Subject=None):
 
     metadata = read_metadata(args.datafolder)
     
-    key_not_included_session_desciription = ['date', 'time', 'protocol', 'experimenter', 
+    key_not_included_session_description = ['date', 'time', 'protocol', 'experimenter', 
                                              'lab', 'institution', 'notes']
     session_description = str({k: metadata[k] for k in metadata.keys() 
-                               if k not in key_not_included_session_desciription})
+                               if k not in key_not_included_session_description})
 
     # add visual stimulation protocol parameters to the metadata:
     if os.path.isfile(os.path.join(args.datafolder, 'protocol.json')):

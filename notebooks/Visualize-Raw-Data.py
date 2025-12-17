@@ -81,5 +81,4 @@ fig, AX = \
              tlim=[100, data.t_dFoF[-1]], 
              settings=settings)
 
-
 # %%

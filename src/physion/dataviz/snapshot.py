@@ -28,18 +28,19 @@ def layout(show_axes=False):
     AX = {}
     fig = plt.figure(figsize=(8,4))
 
-    AX['axTraces'] = fig.add_axes([0.42, 0.02, 0.54, 0.63])
+    AX['axTraces'] = fig.add_axes([0.42, 0.01, 0.54, 0.63])
 
-    AX['axImaging'] = fig.add_axes([0.01, 0.1, 0.3, 0.5])
+    AX['axImaging'] = fig.add_axes([0., 0.1, 0.3, 0.5])
 
     AX['axTime'] = fig.add_axes([0.1, 0.01, 0.1, 0.05])
 
     height0 = 0.68
-    AX['axROI1'] = fig.add_axes([0.3, 0.15, 0.1, 0.2])
-    AX['axROI2'] = fig.add_axes([0.3, 0.4, 0.1, 0.2])
+    AX['axROI1'] = fig.add_axes([0.28, 0.15, 0.1, 0.2])
+    AX['axROI2'] = fig.add_axes([0.28, 0.4, 0.1, 0.2])
     height0 += 0.02
     AX['axScreen'] = fig.add_axes([0.01, height0, 0.2, 0.25])
-    AX['axRig'] = fig.add_axes([0.25, height0+0.03, 0.17, 0.2])
+    # AX['axRig'] = fig.add_axes([0.25, height0+0.03, 0.17, 0.2])
+    AX['axRig'] = fig.add_axes([0.24, height0, 0.2, 0.25])
     AX['axFace'] = fig.add_axes([0.45, height0, 0.2, 0.25])
 
     AX['axWhisking'] = fig.add_axes([0.67, height0+0.04, 0.15, 0.2])
@@ -153,7 +154,7 @@ def init_screen(AX, data):
 
     # screen inset
     AX['imgScreen'] = AX['axScreen'].imshow(\
-                            0*data.visual_stim.x+0.5,
+                            0*data.visual_stim.x.T+0.5,
                         extent=(0, data.visual_stim.x.shape[0],
                                 0, data.visual_stim.x.shape[1]),
                         cmap='gray',
@@ -171,7 +172,7 @@ def update_screen(AX, data, t):
     else:
         tEp = data.nwbfile.stimulus['time_start_realigned'].data[iEp]
         AX['imgScreen'].set_array(data.visual_stim.get_image(iEp,
-                                        time_from_episode_start=t-tEp))
+                                        time_from_episode_start=t-tEp).T)
         # data.visual_stim.update_frame(iEp, AX['imgScreen'],
         #                                 time_from_episode_start=t-tEp)
 
