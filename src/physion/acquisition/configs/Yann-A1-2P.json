@@ -1,8 +1,8 @@
 {
+    "Rig":"ICM-A1-2P-setup",
     "NIdaq-acquisition-frequency":10000,
     "NIdaq-analog-input-channels":1,
     "NIdaq-digital-input-channels":2,
-    "Rig":"ICM-A1-2P-setup",
     "Screen":"Dell-2020",
     "Z-sign-correction-for-rig":-1,
     "FaceCamera-frame-rate":30,

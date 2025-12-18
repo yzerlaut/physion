@@ -53,7 +53,8 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.acquisition.gui import multimodal 
         from physion.acquisition.run import run_update, run, stop,\
                 send_CaImaging_Stop_signal,\
-                toggle_FaceCamera_process, toggle_RigCamera_process
+                toggle_FaceCamera_process, toggle_RigCamera_process,\
+                toggle_ImagingCamera_process
     else:
         from physion.gui.parts import inactivated as multimodal
 
