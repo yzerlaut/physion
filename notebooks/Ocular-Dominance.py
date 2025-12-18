@@ -53,35 +53,31 @@ def preprocess(datafolder,
 
     return output
 
-contra = preprocess(\
-               os.path.expanduser(
-      '~/DATA/Taddy/troubleshooting-17dec-2025/17-31-31'))
-
-ipsi = preprocess(\
-               os.path.expanduser(
-      '~/DATA/Taddy/troubleshooting-17dec-2025/17-18-35'))
-
 blind = preprocess(\
-               os.path.expanduser(
-      '~/DATA/Taddy/troubleshooting-17dec-2025/17-07-41'))
+        #        os.path.expanduser('~/DATA/2025_12_18/14-06-53'))
+               os.path.expanduser('~/DATA/2025_12_18/14-31-14'))
 
-none = preprocess(\
-               os.path.expanduser(
-      '~/DATA/Taddy/troubleshooting-17dec-2025/16-55-03'))
+ipsi2 = preprocess(\
+               os.path.expanduser('~/DATA/2025_12_18/15-03-55'))
 
+contra2 = preprocess(\
+               os.path.expanduser('~/DATA/2025_12_18/14-52-05'))
 
 
 # %%
-fig, AX = pt.figure(axes=(4, 6), right=5., 
+fig, AX = pt.figure(axes=(3, 6), right=5., 
                     hspace=0.6, wspace=0.1)
 
-mean_bound = [0, 7]
+bounds = [(0,3000), 
+          (0,200), 
+          (0,40),
+          (0.,0.15),
+          (0, .1),
+          (0, .03)]
 
-bounds = [(50,250), (0,10), (0,5),
-          (0.,0.15), (0, .1), (0, .02)]
-for d, data, title in zip(range(4),
-     [none, blind, ipsi, contra],
-     ['no-stim', 'blind', 'ipsi-eye', 'contra-eye']):
+for d, data, title in zip(range(3),
+     [ipsi, ipsi2, contra2],
+     ['ipsi-eye', 'ipsi-2', 'contra-2']):
 
         for k, key in enumerate(['Fluo', 'DFoF']):
 
@@ -95,8 +91,8 @@ for d, data, title in zip(range(4),
                                         vmin=bounds[3*k+i][0],
                                         vmax=bounds[3*k+i][1])
 
-                        if d==3:
-                                fig.colorbar(im, ax=AX[3*k+i][3],
+                        if d==2:
+                                fig.colorbar(im, ax=AX[3*k+i][2],
                                                 shrink=0.8, aspect=10,
                                                 label='Fluo. (a.u.)' if k==0 else '$\Delta$F/F')
 
@@ -162,7 +158,7 @@ def make_fig(IMAGES):
     return fig, AX
 
 
-threshOD = 0.45
+threshOD = 0.5
 
 
 # ----------------------------------- #
