@@ -15,12 +15,12 @@ params = {\
       # ------------------------------------
       # grating properties:
       "angle":90, # orientation in degree
-      "speed":1, # cycle/second   .       -- 0 speed = static (default)
+      "speed":2, # cycle/second   .       -- 0 speed = static (default)
       "spatial-freq":0.06, # cycle/degree 
       "phase":90.,
       "contrast":1.0,
       # ----------------------------------- 
-      "bg-color":0.
+      "bg-color":0.5
 }
     
 
@@ -41,21 +41,20 @@ class stim(visual_stim):
 
         img = init_bg_image(self, episode)
 
-
         self.add_grating_patch(img,
                             #    screen_id=screen_id,
                angle=self.experiment['angle'][episode],
                radius=200,
                spatial_freq=self.experiment['spatial-freq'][episode],
-               contrast=self.experiment['contrast'][episode],
+            #    contrast=self.experiment['contrast'][episode],
                xcenter=self.experiment['x-center'][episode],
                zcenter=self.experiment['y-center'][episode],
-               phase_shift_Deg=self.experiment['phase'][episode]\
-                       if 'phase' in self.experiment else 90.,
+            #    phase_shift_Deg=self.experiment['phase'][episode]\
+            #            if 'phase' in self.experiment else 90.,
                time_phase=self.experiment['speed'][episode]*time_from_episode_start)
 
-        img[self.x>(self.experiment['x-center'][episode]+self.experiment['width'][episode]/2.)] = self.experiment['bg-color'][episode]
-        img[self.x<(self.experiment['x-center'][episode]-self.experiment['width'][episode]/2.)] = self.experiment['bg-color'][episode]
+        img[self.x>(self.experiment['x-center'][episode]+self.experiment['width'][episode]/2.)] = 0 #self.experiment['bg-color'][episode]
+        img[self.x<(self.experiment['x-center'][episode]-self.experiment['width'][episode]/2.)] = 0 #self.experiment['bg-color'][episode]
 
         return img
 

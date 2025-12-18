@@ -164,7 +164,7 @@ def multimodal(self,
                          self.nWidgetCol-self.side_wdgt_length)
     # image choice box
     self.imgButton = QtWidgets.QComboBox()
-    self.imgButton.addItems([' *pick camera* ', 'FaceCamera', 'RigCamera'])
+    self.imgButton.addItems([' *pick camera* ', 'FaceCamera', 'RigCamera', 'ImagingCamera'])
     tab.layout.addWidget(self.imgButton,
                          ip, self.nWidgetCol-2,
                          1, 2)
