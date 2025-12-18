@@ -93,14 +93,14 @@ if __name__=='__main__':
                         action="store_true")
     args = parser.parse_args()
 
-    for name in ['FaceCamera', 'RigCamera']:
+    for name in ['FaceCamera', 'RigCamera', 'ImagingCamera']:
         for f in find_subfolders(args.folder, name):
             success = False
             try:
                 camData = CameraData(name, 
-                                     folder=f, 
-                                     force_video=False)
-                camData.convert_to_movie()
+                                     folder=f)
+                camData.convert_to_binary()
+                # camData.convert_to_movie()
                 success = True
             except BaseException as be:
                 print('')

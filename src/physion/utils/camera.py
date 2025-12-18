@@ -375,12 +375,17 @@ if __name__=='__main__':
     import sys
     folder = sys.argv[1]
 
-
     if sys.argv[-1]=='to-binary':
 
-        for cam in ['FaceCamera', 'RigCamera']:
+        for cam in ['FaceCamera', 'RigCamera', 'ImagingCamera']:
             camData = CameraData(cam, folder)
             camData.convert_to_binary()
+
+    if sys.argv[-1]=='to-movie':
+
+        for cam in ['FaceCamera', 'RigCamera', 'ImagingCamera']:
+            camData = CameraData(cam, folder)
+            camData.convert_to_movie()
 
     else:
         print('test')
