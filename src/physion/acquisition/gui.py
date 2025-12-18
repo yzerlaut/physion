@@ -46,6 +46,7 @@ def multimodal(self,
     self.screen, self.stop_flag = None, False
     self.FaceCamera_process = None
     self.RigCamera_process = None
+    self.ImagingCamera_process = None
     self.RigView_process = None
     self.params_window = None
 
@@ -75,6 +76,7 @@ def multimodal(self,
 
     self.FaceCameraButton.clicked.connect(self.toggle_FaceCamera_process)
     self.RigCameraButton.clicked.connect(self.toggle_RigCamera_process)
+    self.ImagingCameraButton.clicked.connect(self.toggle_ImagingCamera_process)
 
     # -------------------------------------------------------
     # self.add_side_widget(tab.layout,

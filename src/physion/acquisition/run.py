@@ -22,10 +22,10 @@ except ModuleNotFoundError:
 
 try:
    from physion.hardware.Thorlabs.main\
-            import launch_Camera as launch_ThorlabsCamera
+            import launch_Camera as launch_ImagingCamera
 except ModuleNotFoundError:
     from physion.hardware.Dummy.camera\
-            import launch_Camera as launch_ThorlabsCamera
+            import launch_Camera as launch_ImagingCamera
     
 try:
     from physion.hardware.FLIRcamera.main\
@@ -299,7 +299,7 @@ def toggle_ImagingCamera_process(self):
                         args=(self.runEvent, 
                               self.quitEvent,
                               self.datafolder,
-                              'ImagingCamera', 1, 
+                              'ImagingCamera', 
                               {'frame_rate':20.}))
         self.ImagingCamera_process.start()
         self.statusBar.showMessage(\

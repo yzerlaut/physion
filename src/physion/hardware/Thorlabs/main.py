@@ -35,7 +35,7 @@ class CameraAcquisition:
         camera_list = self.sdk.discover_available_cameras()
         self.cam = self.sdk.open_camera(camera_list[0])
 
-        self.cam.exposure_time_us = 1e6/settings['frame_rate']
+        self.cam.exposure_time_us = int(1e6/settings['frame_rate'])
         self.cam.frames_per_trigger_zero_for_unlimited = 0
         self.cam.operation_mode = 0
 
@@ -83,9 +83,10 @@ class CameraAcquisition:
                 
 
             # after the update
-            if self.running and image is not None:
+            if self.running and (image is not None):
                 try:
-                    np.save(os.path.join(self.imgs_folder, '%s.npy' % Time), image)
+                    #np.save(os.path.join(self.imgs_folder, '%s.npy' % Time), image.image_buffer.astype(np.uint8))
+                    np.save(os.path.join(self.imgs_folder, '%s.npy' % Time), image.image_buffer)
                 except BaseException as be:
                     # print(be)
                     print('[X] problem SAVING image', os.path.join(self.imgs_folder, '%s.npy' % Time), ' -> not saved ! ')
