@@ -89,7 +89,7 @@ class CameraAcquisition:
             if self.running and (frame is not None):
                 try:
                     #np.save(os.path.join(self.imgs_folder, '%s.npy' % Time), image.image_buffer.astype(np.uint8))
-                    image = gaussian_filter(frame.image_buffer, 10)[::8,::8]
+                    image = gaussian_filter(frame.image_buffer, 5)[::4,::4]
                     np.save(os.path.join(self.imgs_folder, '%s.npy' % Time),
                             image)
                 except BaseException as be:
