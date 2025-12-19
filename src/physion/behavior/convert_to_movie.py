@@ -1,15 +1,10 @@
-import sys, shutil, os, pathlib
-import cv2 as cv
-import numpy as np
+import shutil, os
+from PyQt5 import QtWidgets
 
-from PyQt5 import QtGui, QtWidgets, QtCore
-
-from physion.assembling.tools import load_FaceCamera_data
-from physion.utils.progressBar import printProgressBar
 from physion.utils.paths import FOLDERS
 from physion.utils.camera import CameraData
 
-def behav_to_movie_gui(self,
+def cameraData_to_movie_gui(self,
                        tab_id=3):
 
     self.source_folder = ''
@@ -42,13 +37,14 @@ def behav_to_movie_gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
 
     self.gen = QtWidgets.QPushButton(' -= RUN =-  ', self)
-    self.gen.clicked.connect(self.run_behav_to_movie)
+    self.gen.clicked.connect(self.convert_cameraData_to_movie
+    )
     self.add_side_widget(tab.layout, self.gen)
     
     self.refresh_tab(tab)
     self.show()
 
-def run_behav_to_movie(self):
+def convert_cameraData_to_movie(self):
     for name in ['FaceCamera', 'RigCamera', 'ImagingCamera']:
         Fs = find_subfolders(self.source_folder, name)
         for f in Fs:

@@ -27,9 +27,6 @@ def load_Camera_data(imgfolder, t0=0):
     return times, FILES, nframes, Lx, Ly
 
 
-smoothing = 2
-from scipy.ndimage import gaussian_filter
-
 def compute_resp(datafolder):
 
     # load visual stim
@@ -59,7 +56,6 @@ def compute_resp(datafolder):
         for ts, file in zip(new_time[cond], FILES[cond]):
             i0 = np.argmin((t-ts)**2)
             img = np.load(os.path.join(datafolder, 'ImagingCamera-imgs', file))
-            # Response[i0,:,:] += gaussian_filter(img, smoothing)
             Response[i0,:,:] += img
             Ns[i0] +=1
     for i in range(nt):
@@ -71,6 +67,9 @@ def compute_resp(datafolder):
 datafolder = os.path.expanduser(\
             '~/DATA/2025_12_18/18-52-50')
 t, Ipsi = compute_resp(datafolder)
+datafolder = os.path.expanduser(\
+            '~/DATA/2025_12_18/18-52-50')
+t, Blank= compute_resp(datafolder)
 datafolder = os.path.expanduser(\
             '~/DATA/2025_12_18/18-41-27')
 t, Contra = compute_resp(datafolder)
@@ -94,31 +93,32 @@ def compute_resp_map(Resp,
 
 ipsi_map = compute_resp_map(Ipsi)
 contra_map = compute_resp_map(Contra)
+blank_map = compute_resp_map(Blank)
 
-bounds = [0, 0.2]
+bounds = [0, 0.2] # ADJUST BOUNDS IF NEEDED
 
-fig, AX = pt.figure(axes=(2,1), ax_scale=(1,1), wspace=0.3, right=5)
+fig, AX = pt.figure(axes=(3,1), ax_scale=(1,1), wspace=0.3, right=5)
 
 for ax, Map, title in zip(AX, 
-                          [ipsi_map, contra_map],
-                          ['ipsi', 'contra']):
+                          [ipsi_map, contra_map, blank_map],
+                          ['ipsi', 'contra', 'blank']):
     im = ax.imshow(Map, cmap=pt.plt.cm.binary,
                     vmin=bounds[0], vmax=bounds[1])
     ax.axis('off')
     ax.set_title(title)
 
-fig.colorbar(im, ax=AX[1],
+fig.colorbar(im, ax=AX[2],
                shrink=0.9, aspect=10,
                 label='$\\Delta$F/F\n mean [0,1]s ')
 
 # %%
-fig, AX = pt.figure(axes=(2,1), ax_scale=(1,1), wspace=0.8, right=5)
+fig, AX = pt.figure(axes=(3,1), ax_scale=(1,1), wspace=0.8, right=5)
 
 W = 5
 for ax, Resp, map, title in zip(AX, 
-                                [Ipsi, Contra],
-                                [ipsi_map, contra_map],
-                                ['ipsi', 'contra']):
+                                [Ipsi, Contra, Blank],
+                                [ipsi_map, contra_map, blank_map],
+                                ['ipsi', 'contra', 'blank']):
 
     i0, i1 = np.unravel_index(np.argmax(map), np.array(map).shape)
 
