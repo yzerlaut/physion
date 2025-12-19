@@ -1,15 +1,10 @@
-import sys, shutil, os, pathlib
-import cv2 as cv
-import numpy as np
+import shutil, os
+from PyQt5 import QtWidgets
 
-from PyQt5 import QtGui, QtWidgets, QtCore
-
-from physion.assembling.tools import load_FaceCamera_data
-from physion.utils.progressBar import printProgressBar
 from physion.utils.paths import FOLDERS
 from physion.utils.camera import CameraData
 
-def behav_to_movie_gui(self,
+def cameraData_to_movie_gui(self,
                        tab_id=3):
 
     self.source_folder = ''
@@ -42,21 +37,21 @@ def behav_to_movie_gui(self,
     self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
 
     self.gen = QtWidgets.QPushButton(' -= RUN =-  ', self)
-    self.gen.clicked.connect(self.run_behav_to_movie)
+    self.gen.clicked.connect(self.convert_cameraData_to_movie
+    )
     self.add_side_widget(tab.layout, self.gen)
     
     self.refresh_tab(tab)
     self.show()
 
-def run_behav_to_movie(self):
-    for name in ['FaceCamera', 'RigCamera']:
+def convert_cameraData_to_movie(self):
+    for name in ['FaceCamera', 'RigCamera', 'ImagingCamera']:
         Fs = find_subfolders(self.source_folder, name)
         for f in Fs:
             print(name, ' :', f)
             try:
                 camData = CameraData(name, 
-                                     folder=f, 
-                                     force_video=False)
+                                     folder=f)
                 camData.convert_to_movie()
 
                 # then remove if asked:
@@ -93,14 +88,14 @@ if __name__=='__main__':
                         action="store_true")
     args = parser.parse_args()
 
-    for name in ['FaceCamera', 'RigCamera']:
+    for name in ['FaceCamera', 'RigCamera', 'ImagingCamera']:
         for f in find_subfolders(args.folder, name):
             success = False
             try:
                 camData = CameraData(name, 
-                                     folder=f, 
-                                     force_video=False)
-                camData.convert_to_movie()
+                                     folder=f)
+                camData.convert_to_binary()
+                # camData.convert_to_movie()
                 success = True
             except BaseException as be:
                 print('')

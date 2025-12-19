@@ -464,6 +464,9 @@ def save_intrinsic_metadata(self):
                 'headplate-angle-from-rig-axis':'15.0',
                 'Height-of-Microscope-Camera-Image-in-mm':\
             str(self.config['Height-of-Microscope-Camera-Image-in-mm'])}
+    
+    if hasattr(self, 'eyeBox'):
+        metadata["eye"] = self.eyeBox.currentText()
 
     with open(filename, 'w', encoding='utf-8') as f:
         json.dump(metadata, f,

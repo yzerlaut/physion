@@ -13,9 +13,8 @@ from PIL import Image
 import numpy as np
 import ffmpeg
 
-from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
-from physion.assembling.tools import load_FaceCamera_data
 from physion.utils.files import get_files_with_extension,\
         get_TSeries_folders
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
@@ -70,7 +69,7 @@ def imaging_to_movie_gui(self,
     self.show()
 
 def run_imaging_to_movie(self):
-    Fs = find_subfolders(self.source_folder)
+    Fs = find_TSeries_folders(self.source_folder)
     for f in Fs:
 
         if '16bit' in self.typeBox.currentText():
@@ -98,7 +97,8 @@ def convert_to_16bit_avi(TS_folder):
    
         print('    --> Channel: ', chan)
 
-        vid_name = os.path.join(TS_folder, '%s.avi' % chan.replace(' ','-'))
+        vid_name = os.path.join(TS_folder.replace('TSeries', 'compressed'),
+                                '%s.avi' % chan.replace(' ','-'))
 
         cmd  = 'ffmpeg -i %s' % os.path.join(TS_folder,\
                     xml[chan]['tifFile'][0].replace('000001', '%06d'))+\
@@ -132,7 +132,8 @@ def convert_to_log8bit_mp4(TS_folder):
         
         for p in np.unique(xml[chan]['depth_index']):
 
-            vid_name = os.path.join(TS_folder, 'LOG-%s-plane%i.%s' %\
+            vid_name = os.path.join(TS_folder.replace('TSeries', 'compressed'),
+                                     'LOG-%s-plane%i.%s' %\
                                     (chan.replace(' ','-'), p, Format))
             out = cv.VideoWriter(vid_name,
                                  cv.VideoWriter_fourcc(*'mp4v'), 
@@ -163,7 +164,8 @@ def convert_to_log8bit_mp4(TS_folder):
             print(' [ok] "%s" succesfully created !' % vid_name)
             DICT['Frames_succesfully_in_movie-plane%i'%p]= success
 
-        np.save(os.path.join(TS_folder, 'LOG-%s-summary.npy'%chan.replace(' ','-')),
+        np.save(os.path.join(TS_folder.replace('TSeries', 'compressed'), 
+                             'LOG-%s-summary.npy'%chan.replace(' ','-')),
                 DICT)
         print(' [ok] Frames-summary.npy succesfully created !')
 
@@ -250,9 +252,28 @@ def reconvert_to_tiffs_from_16bit(vid_name):
             printProgressBar(i, nframes)
             
 
-def find_subfolders(folder):
+def create_compressed_folder(folder):
+
+    pathlib.Path(folder.replace('TSeries', 'compressed')).mkdir(parents=True, exist_ok=True)
+
+    shutil.copytree(os.path.join(folder), 
+                    folder.replace('TSeries', 'compressed'),
+                    dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns('*.ome.tif', 'Reference*', 
+                                                  'CYCLE*', '*.bin', '*.env'))
+
+    shutil.move(os.path.join(folder.replace('TSeries', 'compressed'), 'suite2p'),
+                os.path.join(folder.replace('TSeries', 'compressed'), 'original_suite2p'))
+
+
+
+def find_TSeries_folders(folder):
     return [f[0] for f in os.walk(folder)\
                     if 'TSeries' in f[0].split(os.path.sep)[-1]]
+
+def find_compressed_folders(folder):
+    return [f[0] for f in os.walk(folder)\
+                    if 'compressed' in f[0].split(os.path.sep)[-1]]
 
 
 ##################  hjk
@@ -327,11 +348,13 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     print('')
-    for folder in find_subfolders(args.folder):
+    if args.convert:
 
-        print(' - processing', folder, ' [...]')
+        for folder in find_TSeries_folders(args.folder):
 
-        if args.convert:
+            print(' - processing', folder, ' [...]')
+
+            create_compressed_folder(folder)
 
             if args.lossless:
                 convert_to_16bit_avi(folder)
@@ -344,7 +367,9 @@ if __name__=='__main__':
                 remove_tiff_and_binary_files(folder)
                 
 
-        elif args.restore:
+    elif args.restore:
+            
+        for folder in find_compressed_folders(args.folder):
 
             xml_file = get_files_with_extension(folder,
                                                 extension='.xml')[0]

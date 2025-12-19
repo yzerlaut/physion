@@ -84,9 +84,9 @@ def build_menu(self):
     # --
     self.otherMenu.addAction('&Transfer Data',
                               self.transfer_gui)
-    self.otherMenu.addAction('&Convert Behavior to Movies',
+    self.otherMenu.addAction('&Convert Camera to Movies',
                               self.behav_to_movie_gui)
-    self.otherMenu.addAction('&Convert Imaging to Movies',
+    self.otherMenu.addAction('&Convert 2P-Imaging to Movies',
                               self.imaging_to_movie_gui)
     #self.otherMenu.addAction('&Delete Data',
     #                          self.in_progress)

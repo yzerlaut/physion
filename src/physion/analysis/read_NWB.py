@@ -149,12 +149,17 @@ class Data:
         
         self.tlim, safety_counter = None, 0
         
-        while (self.tlim is None) and (safety_counter<10):
+        while (self.tlim is None) and (safety_counter<20):
             for key in self.nwbfile.acquisition:
                 try:
                     self.tlim = [self.nwbfile.acquisition[key].starting_time,
                                  self.nwbfile.acquisition[key].starting_time+\
                                  (self.nwbfile.acquisition[key].data.shape[0]-1)/self.nwbfile.acquisition[key].rate]
+                except BaseException as be:
+                    safety_counter += 1
+                try:
+                    self.tlim = [self.nwbfile.acquisition[key].timestamps[0],
+                                 self.nwbfile.acquisition[key].timestamps[-1]]
                 except BaseException as be:
                     safety_counter += 1
 

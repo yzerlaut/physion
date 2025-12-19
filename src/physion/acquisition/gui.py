@@ -46,6 +46,7 @@ def multimodal(self,
     self.screen, self.stop_flag = None, False
     self.FaceCamera_process = None
     self.RigCamera_process = None
+    self.ImagingCamera_process = None
     self.RigView_process = None
     self.params_window = None
 
@@ -75,6 +76,7 @@ def multimodal(self,
 
     self.FaceCameraButton.clicked.connect(self.toggle_FaceCamera_process)
     self.RigCameraButton.clicked.connect(self.toggle_RigCamera_process)
+    self.ImagingCameraButton.clicked.connect(self.toggle_ImagingCamera_process)
 
     # -------------------------------------------------------
     # self.add_side_widget(tab.layout,
@@ -164,7 +166,7 @@ def multimodal(self,
                          self.nWidgetCol-self.side_wdgt_length)
     # image choice box
     self.imgButton = QtWidgets.QComboBox()
-    self.imgButton.addItems([' *pick camera* ', 'FaceCamera', 'RigCamera'])
+    self.imgButton.addItems([' *pick camera* ', 'FaceCamera', 'RigCamera', 'ImagingCamera'])
     tab.layout.addWidget(self.imgButton,
                          ip, self.nWidgetCol-2,
                          1, 2)
@@ -218,5 +220,3 @@ def build_NWB_for_last():
         p = subprocess.Popen(cmd,
                              cwd=cwd,
                              shell=True)
-
-
