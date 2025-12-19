@@ -9,7 +9,7 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 params = {\
       # ------------------------------------
       # patch grating center/size:
-      "x-center":5., # degree
+      "x-center":-5., # degree
       "y-center":0., # degree
       "width":20., # size in deg        -- 200 deg. = full screen (default)
       # ------------------------------------
