@@ -46,12 +46,15 @@ class stim(visual_stim):
                angle=self.experiment['angle'][episode],
                radius=200,
                spatial_freq=self.experiment['spatial-freq'][episode],
-            #    contrast=self.experiment['contrast'][episode],
+               contrast=self.experiment['contrast'][episode],
                xcenter=self.experiment['x-center'][episode],
                zcenter=self.experiment['y-center'][episode],
-            #    phase_shift_Deg=self.experiment['phase'][episode]\
-            #            if 'phase' in self.experiment else 90.,
+               phase_shift_Deg=self.experiment['phase'][episode]\
+                       if 'phase' in self.experiment else 90.,
                time_phase=self.experiment['speed'][episode]*time_from_episode_start)
+
+        if img.min()<0:
+            img += 0.5
 
         img[self.x>(self.experiment['x-center'][episode]+self.experiment['width'][episode]/2.)] = 0 #self.experiment['bg-color'][episode]
         img[self.x<(self.experiment['x-center'][episode]-self.experiment['width'][episode]/2.)] = 0 #self.experiment['bg-color'][episode]
