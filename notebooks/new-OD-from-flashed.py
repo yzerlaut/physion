@@ -9,13 +9,10 @@ sys.path += ['../src'] # add src code directory for physion
 import physion.utils.plot_tools as pt
 pt.set_style()#'dark')
 
-
-
 # %%
 
 def load_Camera_data(imgfolder, t0=0):
 
-    
     file_list = [f for f in os.listdir(imgfolder) if f.endswith('.npy')]
     _times = np.array([float(f.replace('.npy', '')) for f in file_list])
     _isorted = np.argsort(_times)

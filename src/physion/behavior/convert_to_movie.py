@@ -49,14 +49,13 @@ def behav_to_movie_gui(self,
     self.show()
 
 def run_behav_to_movie(self):
-    for name in ['FaceCamera', 'RigCamera']:
+    for name in ['FaceCamera', 'RigCamera', 'ImagingCamera']:
         Fs = find_subfolders(self.source_folder, name)
         for f in Fs:
             print(name, ' :', f)
             try:
                 camData = CameraData(name, 
-                                     folder=f, 
-                                     force_video=False)
+                                     folder=f)
                 camData.convert_to_movie()
 
                 # then remove if asked:
