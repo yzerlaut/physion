@@ -13,9 +13,8 @@ from PIL import Image
 import numpy as np
 import ffmpeg
 
-from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt5 import QtWidgets
 
-from physion.assembling.tools import load_FaceCamera_data
 from physion.utils.files import get_files_with_extension,\
         get_TSeries_folders
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
@@ -70,7 +69,8 @@ def imaging_to_movie_gui(self,
     self.show()
 
 def run_imaging_to_movie(self):
-    Fs = find_subfolders(self.source_folder)
+
+    Fs = find_TSeries_folders(self.source_folder)
     for f in Fs:
 
         if '16bit' in self.typeBox.currentText():
@@ -98,13 +98,17 @@ def convert_to_16bit_avi(TS_folder):
    
         print('    --> Channel: ', chan)
 
-        vid_name = os.path.join(TS_folder, '%s.avi' % chan.replace(' ','-'))
+        vid_name = os.path.join(TS_folder.replace('TSeries', 'lossless'),
+                                '%s.avi' % chan.replace(' ','-'))
 
         cmd  = 'ffmpeg -i %s' % os.path.join(TS_folder,\
                     xml[chan]['tifFile'][0].replace('000001', '%06d'))+\
                     ' -c:v ffv1 '+vid_name
         print('\n  [...] Building the video: "%s" ' % vid_name)
+        print()
+        print('  command to execute: ')
         print(cmd)
+        print()
 
 
 
@@ -132,7 +136,8 @@ def convert_to_log8bit_mp4(TS_folder):
         
         for p in np.unique(xml[chan]['depth_index']):
 
-            vid_name = os.path.join(TS_folder, 'LOG-%s-plane%i.%s' %\
+            vid_name = os.path.join(TS_folder.replace('TSeries', 'log8bit'),
+                                     '%s-plane%i.%s' %\
                                     (chan.replace(' ','-'), p, Format))
             out = cv.VideoWriter(vid_name,
                                  cv.VideoWriter_fourcc(*'mp4v'), 
@@ -163,7 +168,8 @@ def convert_to_log8bit_mp4(TS_folder):
             print(' [ok] "%s" succesfully created !' % vid_name)
             DICT['Frames_succesfully_in_movie-plane%i'%p]= success
 
-        np.save(os.path.join(TS_folder, 'LOG-%s-summary.npy'%chan.replace(' ','-')),
+        np.save(os.path.join(TS_folder.replace('TSeries', 'log8bit'), 
+                             '%s-summary.npy'%chan.replace(' ','-')),
                 DICT)
         print(' [ok] Frames-summary.npy succesfully created !')
 
@@ -179,14 +185,14 @@ def reconvert_to_tiffs_from_log8bit(TS_folder):
     for chan in xml['channels']:
 
         summary = np.load(\
-            os.path.join(TS_folder, 'LOG-%s-summary.npy'%chan.replace(' ','-')),
+            os.path.join(TS_folder, '%s-summary.npy'%chan.replace(' ','-')),
                           allow_pickle=True).item()
 
         for p in np.unique(xml[chan]['depth_index']):
 
             plane_cond = (xml[chan]['depth_index']==p)
 
-            vid_name = os.path.join(TS_folder, 'LOG-%s-plane%i.%s' %\
+            vid_name = os.path.join(TS_folder, '%s-plane%i.%s' %\
                                     (chan.replace(' ','-'), p, Format))
 
             cap = cv.VideoCapture(vid_name)
@@ -250,9 +256,32 @@ def reconvert_to_tiffs_from_16bit(vid_name):
             printProgressBar(i, nframes)
             
 
-def find_subfolders(folder):
+def create_compressed_folder(folder,
+                             key='log8bit'):
+
+    pathlib.Path(folder.replace('TSeries', key)).mkdir(parents=True, exist_ok=True)
+
+    shutil.copytree(os.path.join(folder), 
+                    folder.replace('TSeries', key),
+                    dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns('*.ome.tif', 'Reference*', 
+                                                  'CYCLE*', '*.bin', '*.env'))
+
+    if os.path.isdir(\
+            os.path.join(folder.replace('TSeries', key), 'original_suite2p')):
+        shutil.rmtree(os.path.join(folder.replace('TSeries', key), 'original_suite2p'))
+
+    shutil.move(os.path.join(folder.replace('TSeries', key), 'suite2p'),
+                os.path.join(folder.replace('TSeries', key), 'original_suite2p'))
+
+
+def find_TSeries_folders(folder):
     return [f[0] for f in os.walk(folder)\
                     if 'TSeries' in f[0].split(os.path.sep)[-1]]
+
+def find_compressed_folders(folder, key='log8bit'):
+    return [f[0] for f in os.walk(folder)\
+                    if key in f[0].split(os.path.sep)[-1]]
 
 
 ##################  hjk
@@ -315,8 +344,10 @@ if __name__=='__main__':
     parser.add_argument("--wmv", 
                         help="protocol a json file", 
                         action="store_true")
-    parser.add_argument("--convert", 
+    parser.add_argument("--compress", 
                         action="store_true")
+    parser.add_argument('-c', "--compression", 
+                        default='log8bit')
     parser.add_argument("--lossless", 
                         action="store_true")
     parser.add_argument("--restore", 
@@ -327,15 +358,18 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     print('')
-    for folder in find_subfolders(args.folder):
 
-        print(' - processing', folder, ' [...]')
+    if args.compress:
 
-        if args.convert:
+        for folder in find_TSeries_folders(args.folder):
 
-            if args.lossless:
+            print(' - processing', folder, ' [...]')
+
+            create_compressed_folder(folder, 
+                                     key=args.compression)
+
+            if args.compression=='lossless':
                 convert_to_16bit_avi(folder)
-
             else:
                 convert_to_log8bit_mp4(folder)
             
@@ -343,30 +377,31 @@ if __name__=='__main__':
                 print(' - deleting tiffs and binary in ', folder, ' [...]')
                 remove_tiff_and_binary_files(folder)
                 
+    elif args.restore:
+            
+        folders  = find_compressed_folders(args.folder, 
+                                          key=args.compression)
+        if len(folders)>0:
 
-        elif args.restore:
+            for folder in folders:
 
-            xml_file = get_files_with_extension(folder,
-                                                extension='.xml')[0]
-            xml = bruker_xml_parser(xml_file)
+                xml_file = get_files_with_extension(folder,
+                                                    extension='.xml')[0]
+                xml = bruker_xml_parser(xml_file)
 
-            for chan in xml['channels']:
+                for chan in xml['channels']:
 
-                if os.path.isfile(\
-                        os.path.join(folder,
-                                     'LOG-%s-summary.npy'%(chan.replace(' ','-')))):
-                    reconvert_to_tiffs_from_log8bit(folder)
+                    if args.compression=='log8bit':
+                        reconvert_to_tiffs_from_log8bit(folder)
 
-                elif os.path.isfile(\
-                        os.path.join(folder,
-                                     '%s-summary.npy'%(chan.replace(' ','-')))):
-                    reconvert_to_tiffs_from_16bit(folder)
-
-                else:
-                    print('\n no video file to restore was found ! \n ')
+                    elif args.compression=='lossless':
+                        reconvert_to_tiffs_from_16bit(folder)
 
         else:
-            print('')
-            print(10*' '+\
-    ' [!!] need to choose either the "--convert" or the "--restore" option')
-            print('')
+            print('\n no video file to restore was found ! \n ')
+
+    else:
+        print('')
+        print(10*' '+\
+' [!!] need to choose either the "--convert" or the "--restore" option')
+        print('')

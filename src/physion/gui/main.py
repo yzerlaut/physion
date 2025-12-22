@@ -5,7 +5,7 @@ from PyQt5 import QtWidgets
 
 Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv)
 Intrinsic = ('all' in sys.argv) or ('intrinsic' in sys.argv)
-OD = ('all' in sys.argv) or ('OD' in sys.argv)
+OD = ('all' in sys.argv) or ('OD' in sys.argv) or ('ocular-dominance' in sys.argv)
 
 class MainWindow(QtWidgets.QMainWindow):
     """
@@ -53,7 +53,8 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.acquisition.gui import multimodal 
         from physion.acquisition.run import run_update, run, stop,\
                 send_CaImaging_Stop_signal,\
-                toggle_FaceCamera_process, toggle_RigCamera_process
+                toggle_FaceCamera_process, toggle_RigCamera_process,\
+                toggle_ImagingCamera_process
     else:
         from physion.gui.parts import inactivated as multimodal
 
@@ -189,9 +190,9 @@ class MainWindow(QtWidgets.QMainWindow):
                 set_source_folder, set_destination_folder,\
                 run_transfer
         # -- Behavior to Movie Files conversion
-        from physion.behavior.convert_to_movie import behav_to_movie_gui,\
-                run_behav_to_movie
-        from physion.imaging.convert_to_movie import imaging_to_movie_gui,\
+        from physion.behavior.convert_to_movie import cameraData_to_movie_gui,\
+                convert_cameraData_to_movie
+        from physion.utils.compression.twoP import imaging_to_movie_gui,\
                 run_imaging_to_movie
         # -- File Deletion
         from physion.utils.management.delete import deletion_gui, run_deletion

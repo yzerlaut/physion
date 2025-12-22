@@ -21,6 +21,13 @@ except ModuleNotFoundError:
     # print(' [!!] Problem with the NIdaq module [!!] ')
 
 try:
+   from physion.hardware.Thorlabs.main\
+            import launch_Camera as launch_ImagingCamera
+except ModuleNotFoundError:
+    from physion.hardware.Dummy.camera\
+            import launch_Camera as launch_ImagingCamera
+    
+try:
     from physion.hardware.FLIRcamera.main\
             import launch_Camera as launch_FlirCamera
 except ModuleNotFoundError:
@@ -278,6 +285,31 @@ def toggle_RigCamera_process(self):
         self.RigCamera_process.terminate()
         self.RigCamera_process = None
 
+def toggle_ImagingCamera_process(self):
+
+    if self.config is None:
+        self.statusBar.showMessage(' no config selected -> pick a config first !')
+        self.ImagingCameraButton.setChecked(False)
+    elif self.ImagingCameraButton.isChecked() and (self.ImagingCamera_process is None):
+        # need to launch it
+        self.statusBar.showMessage('  starting ImagingCamera stream [...] ')
+        self.show()
+        self.ImagingCamera_process =\
+                multiprocessing.Process(target=launch_ImagingCamera,
+                        args=(self.runEvent, 
+                              self.quitEvent,
+                              self.datafolder,
+                              'ImagingCamera', 
+                              {'frame_rate':20.}))
+        self.ImagingCamera_process.start()
+        self.statusBar.showMessage(\
+                '[ok] ImagingCamera initialized ! (in 5-6s) ')
+        
+    elif (not self.ImagingCameraButton.isChecked()) and (self.ImagingCamera_process is not None):
+        # need to shut it down
+        self.statusBar.showMessage(' ImagingCamera stream interupted !')
+        self.ImagingCamera_process.terminate()
+        self.ImagingCamera_process = None
 
 def run_update(self):
 
@@ -319,6 +351,11 @@ def run_update(self):
                     (self.imgButton.currentText()=='RigCamera'):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'RigCamera-imgs')))
+        self.pCamImg.setImage(image.T)
+    elif (self.ImagingCamera_process is not None) and\
+                    (self.imgButton.currentText()=='ImagingCamera'):
+        image = np.load(get_latest_file(\
+                os.path.join(str(self.datafolder.get()), 'ImagingCamera-imgs')))
         self.pCamImg.setImage(image.T)
 
     # ----- while loop with qttimer object ----- #

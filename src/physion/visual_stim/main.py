@@ -329,8 +329,15 @@ class visual_stim:
                     self.experiment['time_start'][-1]+\
                             protocol['presentation-duration'])
 
-                self.experiment['interstim'].append(\
-                        protocol['presentation-interstim-period'])
+                if 'presentation-interstim-jitter' in protocol:
+                    self.experiment['interstim'].append(\
+                        np.random.uniform(-1, 1)*protocol['presentation-interstim-jitter']+\
+                            protocol['presentation-interstim-period'])
+
+                else:
+                    self.experiment['interstim'].append(\
+                            protocol['presentation-interstim-period'])
+
                 self.experiment['time_duration'].append(\
                         protocol['presentation-duration'])
 

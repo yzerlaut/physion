@@ -1,12 +1,9 @@
 # general modules
-import pynwb, os, sys, pathlib, itertools
 import numpy as np
 import matplotlib.pylab as plt
 
 # custom modules
 import physion.utils.plot_tools as pt
-from physion.analysis import tools
-from physion.visual_stim.build import build_stim
 
 def plot_evoked_pattern(self, 
                         pattern_cond, 
@@ -18,7 +15,7 @@ def plot_evoked_pattern(self,
                         raster_norm='full',
                         Tbar=1,
                         min_dFof_range=4,
-                        figsize=(1.3,.3), axR=None, axT=None):
+                        ax_scale=(1.3,.3), axR=None, axT=None):
 
     resp = np.array(getattr(self, quantity))
 
@@ -28,7 +25,7 @@ def plot_evoked_pattern(self,
     if (axR is None) or (axT is None):
         fig, [axR, axT] = pt.figure(axes_extents=[[[1,3]],
                                                   [[1,int(3*factor_for_traces)]]], 
-                                    figsize=figsize, left=0.3,
+                                    ax_scale=ax_scale, left=0.3,
                                     top=(12 if with_stim_inset else 1),
                                     right=3)
     else:
@@ -64,11 +61,11 @@ def plot_evoked_pattern(self,
                          0, resp.shape[1]))
 
     pt.set_plot(axR, [], xlim=[self.t[0], self.t[-1]])
-    pt.annotate(axR, '1 ', (0,0), ha='right', va='center', size='small')
-    pt.annotate(axR, '%i ' % resp.shape[1], (0,1), ha='right', va='center', size='small')
-    pt.annotate(axR, 'ROIs', (0,0.5), ha='right', va='center', size='small', rotation=90)
-    pt.annotate(axR, 'n=%i trials' % np.sum(pattern_cond), (self.t[-1], resp.shape[1]),
-                xycoords='data', ha='right', size='x-small')
+    # pt.annotate(axR, '1 ', (0,0), ha='right', va='center', size='small')
+    # pt.annotate(axR, '%i ' % resp.shape[1], (0,1), ha='right', va='center', size='small')
+    # pt.annotate(axR, 'ROIs', (0,0.5), ha='right', va='center', size='small', rotation=90)
+    # pt.annotate(axR, 'n=%i trials' % np.sum(pattern_cond), (self.t[-1], resp.shape[1]),
+    #             xycoords='data', ha='right', size='x-small')
 
     # raster_bar_inset = pt.inset(axR, [0.2,1.3,0.6,0.6])
     pt.bar_legend(axR, 
@@ -92,14 +89,14 @@ def plot_evoked_pattern(self,
         if with_mean_trace:
             pt.plot(self.t, ir+roi_resp.mean(axis=0), 
                     sy=roi_resp.std(axis=0),ax=axT, no_set=True)
-        pt.annotate(axT, 'roi#%i' % (r+1), (self.t[0], ir), xycoords='data',
-                    #rotation=90, 
-                    ha='right', size='xx-small')
+        # pt.annotate(axT, 'roi#%i' % (r+1), (self.t[0], ir), xycoords='data',
+        #             #rotation=90, 
+        #             ha='right', size='xx-small')
         for iep in range(np.sum(pattern_cond)):
             axT.plot(self.t, ir+roi_resp[iep,:], color=pt.tab10(iep/(np.sum(pattern_cond)-1)), lw=.5)
 
-    pt.annotate(axT, '1$\\Delta$F/F', (self.t[-1], 0), xycoords='data',
-                rotation=90, size='small')
+    # pt.annotate(axT, '1$\\Delta$F/F', (self.t[-1], 0), xycoords='data',
+    #             rotation=90, size='small')
     pt.set_plot(axT, [], xlim=[self.t[0], self.t[-1]])
     pt.draw_bar_scales(axT, Xbar=Tbar, Xbar_label=str(Tbar)+'s', Ybar=1e-12)
 
@@ -117,3 +114,20 @@ def plot_evoked_pattern(self,
             axT.plot([t,t], axT.get_ylim(), 'r-', lw=0.3)
             
     return fig
+
+
+if __name__=='__main__':
+
+    import physion, sys
+    data = physion.analysis.read_NWB.Data(sys.argv[-1])
+    data.build_dFoF()
+    data.init_visual_stim()
+    ep = physion.analysis.process_NWB.EpisodeData(data,
+                                                  protocol_name='drifting-gratings',
+                                                  quantities=['dFoF'])
+    ep.init_visual_stim(data)
+    plot_evoked_pattern(ep, ep.find_episode_cond(),
+                        quantity='dFoF')
+    pt.plt.show()
+
+
