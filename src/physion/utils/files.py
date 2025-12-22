@@ -135,14 +135,25 @@ def get_TSeries_folders(folder, frame_limit=-1, limit_to_subdirectories=False):
     """ get files of a given extension and sort them..."""
     FOLDERS = []
     if limit_to_subdirectories:
-        FOLDERS = [f for f in next(os.walk(folder))[1] if ('TSeries' in str(f)) and (len(os.listdir(f))>frame_limit)]
+        FOLDERS = [f for f in next(os.walk(folder))[1]\
+                    if (\
+                        ('TSeries' in str(f)) or \
+                        ('log8bit-' in str(f)) or \
+                        ('lossless-' in str(f)))\
+                          and (len(os.listdir(f))>frame_limit)]
     else:
         for root, subdirs, files in os.walk(folder):
-            if 'TSeries' in root.split(os.path.sep)[-1] and len(files)>frame_limit:
+            if (len(files)>frame_limit) and\
+                (\
+                    ('TSeries' in str(root.split(os.path.sep)[-1])) or \
+                    ('log8bit-' in str(root.split(os.path.sep)[-1])) or \
+                    ('lossless-' in str(root.split(os.path.sep)[-1]))\
+                    ):
                 FOLDERS.append(os.path.join(folder, root))
             elif 'TSeries' in root.split(os.path.sep)[-1]:
                 print('"%s" ignored' % root)
                 print('   ----> data should be at least %i frames !' % frame_limit)
+    # print(np.sort(np.array(FOLDERS))
     return np.sort(np.array(FOLDERS))
 
 def insure_ordered_frame_names(df):

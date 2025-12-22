@@ -101,7 +101,10 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     if os.path.isdir(str(args.CaImaging_folder)) and\
-            ('TSeries' in str(args.CaImaging_folder)):
+        (\
+            ('TSeries' in str(args.CaImaging_folder)) or
+            ('log8bit' in str(args.CaImaging_folder)) or
+            ('lossless' in str(args.CaImaging_folder)) ):
         run_preprocessing(args)
         print('--> preprocessing of "%s" done !' % args.CaImaging_folder)
     elif os.path.isdir(str(args.CaImaging_folder)):

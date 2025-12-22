@@ -192,7 +192,7 @@ class MainWindow(QtWidgets.QMainWindow):
         # -- Behavior to Movie Files conversion
         from physion.behavior.convert_to_movie import cameraData_to_movie_gui,\
                 convert_cameraData_to_movie
-        from physion.imaging.convert_to_movie import imaging_to_movie_gui,\
+        from physion.utils.compression.twoP import imaging_to_movie_gui,\
                 run_imaging_to_movie
         # -- File Deletion
         from physion.utils.management.delete import deletion_gui, run_deletion
