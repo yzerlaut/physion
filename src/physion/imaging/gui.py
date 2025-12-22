@@ -9,7 +9,7 @@ from physion.imaging.suite2p.preprocessing import build_suite2p_options,\
         default_ops
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.presets import presets
-from physion.imaging.convert_to_movie import reconvert_to_tiffs_from_log8bit
+from physion.utils.compression.twoP import reconvert_to_tiffs_from_log8bit
 
 def suite2p_preprocessing_UI(self, tab_id=1):
 
@@ -175,7 +175,8 @@ def load_TSeries_folder(self):
     
     if folder!='':
 
-        if 'TSeries-' in folder:
+        print('log8bit' in folder)
+        if ('TSeries-' in folder) or ('log8bit-' in folder) or ('lossless' in folder):
             print('"%s" is a recognize as a single TSeries folder' % folder)
             folders = [folder]
         else:
