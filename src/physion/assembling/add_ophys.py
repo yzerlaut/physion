@@ -320,9 +320,7 @@ def add_ophys(nwbfile, args,
             (xml['xcenter-position-um'], xml['ycenter-position-um'])
     else:
         Location = 'V1'
-    print()
-    print()
-    print(Location)
+
     if not multiplane:
         corrected_depth =(float(metadata['Z-sign-correction-for-rig'])*Depth if ('Z-sign-correction-for-rig' in metadata) else Depth) 
         imaging_plane = nwbfile.create_imaging_plane(\
