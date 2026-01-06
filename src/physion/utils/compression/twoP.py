@@ -155,7 +155,7 @@ def convert_to_log8bit_mp4(TS_folder):
                     img = np.array(Image.open(os.path.join(TS_folder, f)),
                                    dtype='uint16')
                     # log and convert to 8-bit
-                    img = np.array(np.log(img+1.)/np.log(2**16)*2**8, 
+                    img = np.array(np.log(img+1.)/np.log(2**16)*(2**8-1), 
                                    dtype='uint8')
                     # write in movie
                     out.write(img)
@@ -209,7 +209,7 @@ def reconvert_to_tiffs_from_log8bit(TS_folder):
                 if success:
                     # load the 8-bit frame
                     ret, frame = cap.read()
-                    frame = np.exp(frame*np.log(2**16)/2**8)
+                    frame = np.exp(frame*np.log(2**16-1)/(2**8-1))-1
                     # convert to 16-bit
                     frame = np.array(frame[:,:,0], dtype='uint16')
                     im = Image.fromarray(frame)
@@ -264,8 +264,8 @@ def create_compressed_folder(folder,
     shutil.copytree(os.path.join(folder), 
                     folder.replace('TSeries', key),
                     dirs_exist_ok=True,
-                    ignore=shutil.ignore_patterns('*.ome.tif', 'Reference*', 
-                                                  'CYCLE*', '*.bin', '*.env'))
+                    ignore=shutil.ignore_patterns('*.ome.tif', #'Reference*', 
+                                                  'CYCLE*', '*.bin'))
 
     if os.path.isdir(\
             os.path.join(folder.replace('TSeries', key), 'original_suite2p')):

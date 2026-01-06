@@ -47,11 +47,11 @@ data.build_dFoF(**dFoF_parameters)
 # %%
 data.build_Deconvolved(Tau=TAU_DECONVOLUTION)
 
-Episodes = physion.analysis.process_NWB.EpisodeData(data,
-                                                    quantities=['Deconvolved'],
-                                                    protocol_name=[p for p\
+Episodes = physion.analysis.episodes.build.EpisodeData(data,
+                                                       quantities=['Deconvolved'],
+                                                       protocol_name=[p for p\
                                                          in data.protocols if 'ff-gratings' in p][0],
-                                                    verbose=False)
+                                                       verbose=False)
 epCond = Episodes.find_episode_cond(key=['contrast', 'angle'], 
                                     value=[contrast, orientation])
 
@@ -136,7 +136,7 @@ for angle in [0, 90]:
                 nROIs_final = data.nROIs # ROIs after dFoF criterion
 
                 protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0]
-                Episodes = physion.analysis.process_NWB.EpisodeData(data, 
+                Episodes = physion.analysis.episodes.build.EpisodeData(data, 
                                                         quantities=['Deconvolved'], 
                                                         protocol_name=protocol_name, 
                                                         verbose=False)

@@ -32,10 +32,11 @@ filename = os.path.join(os.path.expanduser('~'),
 data = physion.analysis.read_NWB.Data(filename, verbose=False)
 data.build_dFoF(neuropil_correction_factor=0.9, percentile=10., verbose=False)
 
-Episodes = physion.analysis.process_NWB.EpisodeData(data,
-                                                    quantities=['dFoF', 'running_speed'],
-                                                    protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
-                                                    verbose=False)
+Episodes = physion.analysis.episodes.build.EpisodeData(data,
+                                                       quantities=['dFoF', 'running_speed'],
+                                                       protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
+                                                       verbose=False)
+
 # %% [markdown]
 # ## Compute Responses of Visually-Reponsive Cells (i.e. Significantly-Modulated)
 #
@@ -144,10 +145,10 @@ for contrast in [0.5, 1.0]:
                                 verbose=False)
 
                 protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0]
-                Episodes = physion.analysis.process_NWB.EpisodeData(data, 
-                                                                        quantities=['dFoF'], 
-                                                                        protocol_name=protocol_name, 
-                                                                        verbose=False)
+                Episodes = physion.analysis.episodes.build.EpisodeData(data, 
+                                                                       quantities=['dFoF'], 
+                                                                       protocol_name=protocol_name, 
+                                                                       verbose=False)
 
                 Tuning = compute_tuning_response_per_cells(data, Episodes, 
                                                         quantity='dFoF', 

@@ -8,6 +8,7 @@ import physion.utils.plot_tools as pt
 from physion.analysis import tools
 from physion.dataviz.raw import format_key_value
 from physion.visual_stim.build import build_stim
+from physion.analysis.episodes import trial_statistics
 
 ### ---------------------------------
 ###  -- Trial Average response  --
@@ -15,7 +16,7 @@ from physion.visual_stim.build import build_stim
 
 def plot(episodes,
            # episodes props
-           quantity='dFoF', roiIndex=None, 
+           quantity='dFoF', roiIndex=None,
            condition=None,
            COL_CONDS=None, column_keys=[], column_key='',
            ROW_CONDS=None, row_keys=[], row_key='',
@@ -126,7 +127,7 @@ def plot(episodes,
                 my = response.mean(axis=0) # mean response
 
                 if with_std:
-                    sy = response.mean(axis=0)
+                    sy = response.std(axis=0)
                     pt.plot(episodes.t, my, sy=sy,
                             ax=AX[irow][icol], color=COLORS[icolor], lw=1)
                     episodes.ylim = [min([episodes.ylim[0], np.min(my-sy)]),
@@ -206,10 +207,10 @@ def plot(episodes,
                 for icolor, color_cond in enumerate(COLOR_CONDS):
 
                     cond = np.array(condition & col_cond & row_cond & color_cond)#[:response.shape[0]]
-                    results = episodes.stat_test_for_evoked_responses(episode_cond=cond,
-                                                                      response_args=dict(quantity=quantity,
-                                                                                         roiIndex=roiIndex),
-                                                                      **stat_test_props)
+                    results = trial_statistics.stat_test_for_evoked_responses(episodes,
+                                                                              episode_cond=cond,
+                                                                              response_args=dict(quantity=quantity, roiIndex=roiIndex),
+                                                                              **stat_test_props)
 
                     ps, size = results.pval_annot()
                     AX[irow][icol].annotate(icolor*'\n'+ps, ((stat_test_props['interval_post'][0]+stat_test_props['interval_pre'][1])/2.,
@@ -281,13 +282,13 @@ if __name__=='__main__':
     if os.path.isfile(args.datafile):
         data = physion.analysis.read_NWB.Data(args.datafile)
         data.init_visual_stim()
-        episodes = physion.analysis.process_NWB.EpisodeData(data,
+        episodes = physion.analysis.episodes.build.EpisodeData(data,
                 quantities=['dFoF'],
                 protocol_id=args.protocol_id)
         episodes.init_visual_stim(data)
 
-        plot_trial_average(episodes,
-                           with_screen_inset=True)
+        plot(episodes, 
+             with_screen_inset=True)
         pt.plt.show()
 
     else:
