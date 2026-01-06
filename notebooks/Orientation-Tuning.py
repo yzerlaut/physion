@@ -33,7 +33,7 @@ data = physion.analysis.read_NWB.Data(filename, verbose=False)
 data.build_dFoF(neuropil_correction_factor=0.9, percentile=10., verbose=False)
 
 Episodes = physion.analysis.episodes.build.EpisodeData(data,
-                                                       quantities=['dFoF'],
+                                                       quantities=['dFoF', 'running_speed'],
                                                        protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
                                                        verbose=False)
 
@@ -50,13 +50,17 @@ stat_test_props = dict(interval_pre=[-1.,0],
 
 response_significance_threshold = 0.001 # very very conservative
 
+# possibility to **FILTER THE EPISODES**:
+# stim_cond = (Episodes.t>0) & (Episodes.t<Episodes.time_duration[0])
+# filtering_cond = Episodes.running_speed[:,stim_cond].mean(axis=1)<0.1
+
 Tuning = compute_tuning_response_per_cells(data, Episodes,
+                                        #    filtering_cond=filtering_cond,
                                            quantity='dFoF',
                                            stat_test_props=stat_test_props,
                                            response_significance_threshold = response_significance_threshold,
                                            contrast=1,
                                            verbose=True)
-
 
 # %% [markdown]
 # ## Plot Individual Responses
@@ -76,7 +80,8 @@ for i, ax in enumerate(pt.flatten(AX)):
         pt.set_plot(ax, xticks=Tuning['shifted_angle'], 
                     ylabel='(post - pre)\n$\\delta$ $\\Delta$F/F' if i%5==0 else '',
                     xlabel='angle ($^o$) from preferred orientation' if i==(data.nROIs-1) else '',
-                    xticks_labels=['%i' % a if (a in [0, 90]) else '' for a in Tuning['shifted_angle'] ])
+                    xticks_labels=['%i' % a if (a in [0, 90])\
+                                    else '' for a in Tuning['shifted_angle'] ])
     else:
         ax.axis('off')
 
@@ -135,11 +140,9 @@ for contrast in [0.5, 1.0]:
         for f in DATASET['files']:
                 print(' - analyzing file: %s  [...] ' % f)
                 data = physion.analysis.read_NWB.Data(f, verbose=False)
-                nROIs_original = data.nROIs # manually-selected ROIs
                 data.build_dFoF(neuropil_correction_factor=0.9,
                                 percentile=10., 
                                 verbose=False)
-                nROIs_final = data.nROIs # ROIs after dFoF criterion
 
                 protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0]
                 Episodes = physion.analysis.episodes.build.EpisodeData(data, 
@@ -152,9 +155,10 @@ for contrast in [0.5, 1.0]:
                                                         stat_test_props=stat_test_props, 
                                                         response_significance_threshold = response_significance_threshold, 
                                                         contrast=contrast)
-                Tuning['nROIs_original'] = nROIs_original
-                Tuning['nROIs_final'] = nROIs_final
+                Tuning['nROIs_original'] = data.original_nROIs
+                Tuning['nROIs_final'] = data.nROIs
                 Tuning['nROIs_responsive'] = np.sum(Tuning['significant_ROIs'])
+                Tuning['subject'] = data.nwbfile.subject.subject_id
 
                 Tunings.append(Tuning)
 
@@ -200,26 +204,35 @@ pt.set_plot(ax, xticks=Tunings[0]['shifted_angle'],
 
 # %%
 # --> plot above implemented in the orientation_tuning protocol
-import tempfile
+import tempfile, sys
+sys.path += ['../src']
 from physion.analysis.protocols.orientation_tuning\
-        import plot_orientation_tuning_curve, plot_selectivity
+        import plot_orientation_tuning_curve, plot_selectivity,\
+        plot_responsiveness
 
 fig, ax = plot_selectivity(\
                         ['WT_contrast-1.0', 
                          'WT_contrast-1.0', 
                          'WT_contrast-0.5'],
+                        #  average_by='subjects',
                         #  average_by='ROIs',
                         #  using='fit',
                         path=tempfile.tempdir)
     
-
 fig, ax = plot_orientation_tuning_curve(\
                                         ['WT_contrast-1.0', 
                                          'WT_contrast-1.0', 
                                          'WT_contrast-0.5'],
+                                        #   average_by='subjects',
                                         #  average_by='ROIs',
                                         path=tempfile.tempdir)
     
+# %%
 
-
+fig, ax = plot_responsiveness(\
+        ['WT_contrast-1.0', 
+                'WT_contrast-1.0', 
+                'WT_contrast-0.5'],
+        #  average_by='ROIs',
+        path=tempfile.tempdir)
 # %%

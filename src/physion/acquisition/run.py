@@ -1,17 +1,17 @@
-import os, json, time, sys
+import os, json, time, sys, shutil
 import numpy as np
 import multiprocessing
 from PyQt5 import QtCore
 
 from physion.utils.files import get_time, get_date, generate_datafolders,\
         get_latest_file
-from physion.acquisition.tools import base_path,\
+from physion.acquisition.tools import \
         check_gui_to_init_metadata, NIdaq_metadata_init,\
         set_filename_and_folder, stimulus_movies_folder
 from physion.acquisition import recordings
 
 from physion.visual_stim.main import build_stim as build_VisualStim
-from physion.visual_stim.show import init_stimWindow
+from physion.visual_stim.show import init_stimWindows
 
 try:
     from physion.hardware.NIdaq.main import Acquisition
@@ -21,18 +21,24 @@ except ModuleNotFoundError:
     # print(' [!!] Problem with the NIdaq module [!!] ')
 
 try:
+   from physion.hardware.Thorlabs.main\
+            import launch_Camera as launch_ImagingCamera
+except ModuleNotFoundError:
+    from physion.hardware.Dummy.camera\
+            import launch_Camera as launch_ImagingCamera
+    
+try:
     from physion.hardware.FLIRcamera.main\
             import launch_Camera as launch_FlirCamera
 except ModuleNotFoundError:
     from physion.hardware.Dummy.camera\
             import launch_Camera as launch_FlirCamera
-
-try:
-    from physion.hardware.LogitechWebcam.main\
-            import launch_Camera as launch_WebCam
-except ModuleNotFoundError:
-    from physion.hardware.Dummy.camera\
-            import launch_Camera as launch_WebCam
+# try:
+#     from physion.hardware.LogitechWebcam.main\
+#             import launch_Camera as launch_WebCam
+# except ModuleNotFoundError:
+#     from physion.hardware.Dummy.camera\
+#             import launch_Camera as launch_WebCam
 
 def init_VisualStim(self):
 
@@ -53,18 +59,32 @@ def init_VisualStim(self):
     else:
         self.protocol['demo'] = False
 
-    # ---- storing visual stim  ---- #
+    # re-building visual-stim object to monitor time course of exp
+    stim = build_VisualStim(self.protocol, 
+            from_file=os.path.join(movie_folder, 
+                                   'visual-stim.npy'))
 
-    p = self.protocol.copy() # a copy of the protocol data for saving
-    p['no-window'] = True
-    stim = build_VisualStim(p)
-    stim.save(self.date_time_folder) # writes visual-stim.npy & protocol.json
+    # STORE visual-stim.npy & protocol.json
+    shutil.copy2(os.path.join(movie_folder, 'visual-stim.npy'),
+                 self.date_time_folder)
+    print('[ok] visual-stimulation protocol saved as "%s"' %\
+            os.path.join(self.date_time_folder, 'protocol.json'))
+    shutil.copy2(os.path.join(movie_folder, 'protocol.json'),
+                 self.date_time_folder)
+    print('[ok] visual-stimulation time course saved as "%s"' %\
+            os.path.join(self.date_time_folder, 'visual-stim.npy'))
 
     self.max_time = stim.experiment['time_stop'][-1]+\
             stim.experiment['time_start'][0]
 
     Format = 'wmv' if 'win' in sys.platform else 'mp4'
-    stim.movie_file = os.path.join(movie_folder, 'movie.%s' % Format)
+    if stim.screen['nScreens']==1:
+        stim.movie_files = [\
+            os.path.join(movie_folder, 'movie.%s' % Format)]
+    else:
+        stim.movie_files = [\
+            os.path.join(movie_folder, 'movie-%i.%s' % (s+1,Format))\
+            for s in range(stim.screen['nScreens'])]
 
     return stim
 
@@ -108,6 +128,7 @@ def run(self):
         self.metadata['datafolder'] = self.date_time_folder
         self.filename = os.path.join(self.date_time_folder,
                                      'metadata.npy')
+        self.current_index = 0
 
         self.max_time = 30*60 
         # ... 30min by default, so should be stopped manually
@@ -117,9 +138,9 @@ def run(self):
                     '[...] initializing acquisition & stimulation')
             # ---- init visual stim ---- #
             self.stim = init_VisualStim(self) # (this also sets "self.max_time")
-            init_stimWindow(self) # creates self.stimWin -> for stim display !
+            init_stimWindows(self) # creates self.stimWins -> for stim display !
         else:
-            self.stimWin = None
+            self.stimWins = None
             self.statusBar.showMessage('[...] initializing acquisition')
 
         print('[ok] max_time of NIdaq recording set to: %.2dh:%.2dm:%.2ds' %\
@@ -185,8 +206,9 @@ def run(self):
             self.t0 = time.time()
 
         self.runEvent.set()
-        if self.stimWin is not None:
-            self.mediaPlayer.play()
+        if self.stimWins is not None:
+            for mediaPlayer in self.mediaPlayers:
+                mediaPlayer.play()
 
         print('')
         print(' -> acquisition launched !  ')
@@ -245,12 +267,17 @@ def toggle_RigCamera_process(self):
         # need to launch it
         self.statusBar.showMessage('  starting RigCamera stream [...] ')
         self.show()
-        self.RigCamera_process = multiprocessing.Process(target=launch_WebCam,
-                        args=(self.runEvent, self.quitEvent, self.datafolder,
-                              'RigCamera', 2,\
-                            {'frame_rate':self.config['RigCamera-frame-rate']}))
+        self.RigCamera_process =\
+                multiprocessing.Process(target=launch_FlirCamera,
+                        args=(self.runEvent, 
+                              self.quitEvent,
+                              self.datafolder,
+                              'RigCamera', 1, 
+                              {'frame_rate':\
+                                self.config['RigCamera-frame-rate']}))
         self.RigCamera_process.start()
-        self.statusBar.showMessage('[ok] RigCamera initialized ! (in 5-6s) ')
+        self.statusBar.showMessage(\
+                '[ok] FaceCamera initialized ! (in 5-6s) ')
         
     elif (not self.RigCameraButton.isChecked()) and (self.RigCamera_process is not None):
         # need to shut it down
@@ -258,6 +285,31 @@ def toggle_RigCamera_process(self):
         self.RigCamera_process.terminate()
         self.RigCamera_process = None
 
+def toggle_ImagingCamera_process(self):
+
+    if self.config is None:
+        self.statusBar.showMessage(' no config selected -> pick a config first !')
+        self.ImagingCameraButton.setChecked(False)
+    elif self.ImagingCameraButton.isChecked() and (self.ImagingCamera_process is None):
+        # need to launch it
+        self.statusBar.showMessage('  starting ImagingCamera stream [...] ')
+        self.show()
+        self.ImagingCamera_process =\
+                multiprocessing.Process(target=launch_ImagingCamera,
+                        args=(self.runEvent, 
+                              self.quitEvent,
+                              self.datafolder,
+                              'ImagingCamera', 
+                              {'frame_rate':20.}))
+        self.ImagingCamera_process.start()
+        self.statusBar.showMessage(\
+                '[ok] ImagingCamera initialized ! (in 5-6s) ')
+        
+    elif (not self.ImagingCameraButton.isChecked()) and (self.ImagingCamera_process is not None):
+        # need to shut it down
+        self.statusBar.showMessage(' ImagingCamera stream interupted !')
+        self.ImagingCamera_process.terminate()
+        self.ImagingCamera_process = None
 
 def run_update(self):
 
@@ -273,7 +325,8 @@ def run_update(self):
             self.current_index = self.stim.next_index_table[iT]
 
             # at each interstim, we re-align the stimulus presentation
-            self.mediaPlayer.setPosition(int(1e3*t))
+            for mediaPlayer in self.mediaPlayers:
+                mediaPlayer.setPosition(int(1e3*t))
 
             # -*- now we update the stimulation display in the terminal -*-
             protocol_id = self.stim.experiment['protocol_id'][\
@@ -299,6 +352,11 @@ def run_update(self):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'RigCamera-imgs')))
         self.pCamImg.setImage(image.T)
+    elif (self.ImagingCamera_process is not None) and\
+                    (self.imgButton.currentText()=='ImagingCamera'):
+        image = np.load(get_latest_file(\
+                os.path.join(str(self.datafolder.get()), 'ImagingCamera-imgs')))
+        self.pCamImg.setImage(image.T)
 
     # ----- while loop with qttimer object ----- #
     if self.runEvent.is_set() and ((time.time()-self.t0)<self.max_time):
@@ -316,14 +374,16 @@ def stop(self):
         self.acq.close()
 
     if self.CaImagingButton.isChecked():
+        time.sleep(0.5) # need to wait that the NIdaq process is released to create a new one
         # stop the Ca imaging recording
         self.send_CaImaging_Stop_signal()
 
     self.statusBar.showMessage('acquisition/stimulation stopped !')
     print('\n -> acquisition stopped !  \n')
 
-    if self.stimWin is not None:
-        self.stimWin.close()
+    if self.stimWins is not None:
+        for stimWin in self.stimWins:
+            stimWin.close()
 
     if self.animate_buttons:
         self.runButton.setEnabled(True)

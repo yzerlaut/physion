@@ -37,7 +37,10 @@ class Acquisition:
         self.Nchannel_analog_in = Nchannel_analog_in
         self.Nchannel_digital_in = Nchannel_digital_in
         self.filename = filename
-        self.select_device()
+        if device is None:
+            self.select_device()
+        else:
+            self.device = device
 
         # preparing input channels
         # - analog:
@@ -120,6 +123,7 @@ class Acquisition:
             self.read_analog_task.ai_channels.add_ai_voltage_chan(
                 flatten_channel_string(self.analog_input_channels),
                 max_val=10, min_val=-10)
+            
         if self.Nchannel_digital_in>0:
             self.read_digital_task.di_channels.add_di_chan(
                 flatten_channel_string(self.digital_input_channels))
@@ -128,6 +132,7 @@ class Acquisition:
             self.read_analog_task.timing.cfg_samp_clk_timing(
                 self.sampling_rate, source=self.samp_clk_terminal,
                 active_edge=Edge.FALLING, samps_per_chan=int(self.Nsamples))
+            
         if self.Nchannel_digital_in>0:
             self.read_digital_task.timing.cfg_samp_clk_timing(
                 self.sampling_rate, source=self.samp_clk_terminal,
@@ -233,6 +238,7 @@ class Acquisition:
         except BaseException:
             # print('no M-series card found')
             pass
+
         if not success:
             print('Neither M-series nor X-series NI DAQ card found')
 

@@ -175,23 +175,26 @@ if __name__=='__main__':
 
         recordings, _, _ = read_spreadsheet(filename)
 
-        fns, protocol, protocols, age = [], [], [], []
+        fns, protocol, protocols, age, subjects= [], [], [], [], []
 
-        for day, time in zip(recordings['day'],
-                             recordings['time']):
+        for day, time, subject\
+              in zip(recordings['day'],
+                     recordings['time'],
+                     recordings['subject']):
             
             data = Data(os.path.join(filename.replace('DataTable.xlsx', ''),
                                      'NWBs', '%s-%s.nwb' % (day, time)),
                                      metadata_only=True)
             fns.append('%s-%s.nwb' % (day, time))
             
+            subjects.append(subject)
             protocol.append(data.metadata['protocol'])
             protocols.append(str(data.protocols).replace('[','').replace(']','').replace("'",'').replace(' ','+'))
 
             age.append(data.age)
 
-        for col, array in zip(['protocols', 'protocol', 'age', 'recordings'],
-                              [protocols, protocol, age, fns]):
+        for col, array in zip(['protocols', 'protocol', 'age', 'recording', 'subject'],
+                              [protocols, protocol, age, fns, subjects]):
             add_to_table(filename, 
                         data=array,
                         column=col,

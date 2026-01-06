@@ -68,6 +68,20 @@ def get_responses(Sensitivities,
         # mean significant responses per session
         Responses = [np.mean(S['Responses'], axis=0) for S in Sensitivities]
 
+    elif average_by=='subjects':
+        subjects = np.array([Sensitivitie['subject']\
+                                for Sensitivitie in Sensitivities])
+        Responses = []
+        # mean significant responses per session
+        for subj in np.unique(subjects):
+            sCond = (subjects==subj)
+            Responses.append(\
+                np.mean(\
+                    np.concatenate([\
+                        Sensitivities[i]['Responses']\
+                          for i in np.arange(len(subjects))[sCond]]),
+                    axis=0))
+
     elif average_by=='ROIs':
         # mean significant responses per session
         Responses = np.concatenate([\
@@ -99,7 +113,7 @@ def plot_contrast_sensitivity(keys,
                 keys, colors = [keys], [colors[0]]
 
         fig, ax = pt.figure(**fig_args)
-        inset = pt.inset(ax, [1.6,0.1,0.5,0.8])
+        inset = pt.inset(ax, [1.8,0.1,0.5,0.8])
 
         for i, (key, color) in enumerate(zip(keys, colors)):
 
@@ -108,7 +122,8 @@ def plot_contrast_sensitivity(keys,
                     np.load(os.path.join(path, 'Sensitivities_%s.npy' % key), 
                             allow_pickle=True)
 
-                Responses = get_responses(Sensitivities, average_by=average_by)
+                Responses = get_responses(Sensitivities, 
+                                          average_by=average_by)
                 pt.plot(Sensitivities[0]['contrast'], 
                         np.mean(Responses, axis=0), 
                         sy=stats.sem(Responses, axis=0), 
@@ -121,23 +136,23 @@ def plot_contrast_sensitivity(keys,
                 pt.bar([np.mean(Gains)], x=[i], color=color, ax=inset,alpha=0.1)
 
                 if with_label:
-                        annot = i*'\n'+' %.1f$\pm$%.1f, ' %(\
+                        annot = i*'\n'+' %.2f$\\pm$%.2f, ' %(\
                                np.mean(Gains), stats.sem(Gains))
-                        if average_by=='sessions':
+                        if average_by in ['sessions', 'subjects']:
                                 annot += 'N=%02d %s, ' % (len(Responses), average_by) + key
                         else:
                                 annot += 'n=%04d %s, ' % (len(Responses), average_by) + key
 
-                pt.annotate(inset, annot, (1., 0.9), va='top', color=color)
+                pt.annotate(inset, annot, (1., 1.), va='top', color=color)
 
         pt.set_plot(ax, 
-            ylabel='$\delta$ $\Delta$F/F',  
+            ylabel='$\\delta$ $\\Delta$F/F',  
             xlabel='contrast',
             xticks=np.arange(3)*0.5)        
 
         pt.set_plot(inset, ['left'],
                     title='gain',
-            ylabel='$\Delta$F/F / contrast')
+            ylabel='$\\Delta$F/F / contrast')
 
         return fig, ax
 
@@ -175,9 +190,10 @@ def plot_contrast_responsiveness(keys,
                                np.sum(S['significant_'+sign[:3]], axis=0)/S['nROIs_%s' % nROIs]\
                                         for S in Sensitivities])
 
-                pt.plot(Sensitivities[0]['contrast'], 
-                        np.mean(Responsive, axis=0), 
+                pt.bar(np.mean(Responsive, axis=0), 
                         sy=stats.sem(Responsive, axis=0), 
+                        x = np.arange(Responsive.shape[1])+0.8*i/len(keys) , 
+                        width=0.7/len(keys),
                         color=color,
                         ax=ax)
                 
@@ -190,16 +206,16 @@ def plot_contrast_responsiveness(keys,
                 pt.bar([np.mean(Gains)], x=[i], color=color, ax=inset,alpha=0.1)
 
                 if with_label:
-                        annot = i*'\n'+' %.1f$\pm$%.1f, ' %(\
+                        annot = i*'\\n'+' %.1f$\\pm$%.1f, ' %(\
                                np.mean(Gains), stats.sem(Gains))
                         annot += 'N=%02d %s, ' % (len(Responsive), 'sessions') + key
 
                 pt.annotate(inset, annot, (1., 0.9), va='top', color=color)
 
         pt.set_plot(ax, 
-            ylabel='%% responsive \n %s' % sign,
-            xlabel='contrast',
-            xticks=np.arange(3)*0.5)        
+            ylabel='%% responsive \\n %s' % sign,
+            xlabel='contrast', 
+            xticks=[0, Responsive.shape[1]-1], xticks_labels=[0,1])
 
         pt.set_plot(inset, ['left'],
                     title='gain',

@@ -149,12 +149,17 @@ class Data:
         
         self.tlim, safety_counter = None, 0
         
-        while (self.tlim is None) and (safety_counter<10):
+        while (self.tlim is None) and (safety_counter<20):
             for key in self.nwbfile.acquisition:
                 try:
                     self.tlim = [self.nwbfile.acquisition[key].starting_time,
                                  self.nwbfile.acquisition[key].starting_time+\
                                  (self.nwbfile.acquisition[key].data.shape[0]-1)/self.nwbfile.acquisition[key].rate]
+                except BaseException as be:
+                    safety_counter += 1
+                try:
+                    self.tlim = [self.nwbfile.acquisition[key].timestamps[0],
+                                 self.nwbfile.acquisition[key].timestamps[-1]]
                 except BaseException as be:
                     safety_counter += 1
 
@@ -285,10 +290,23 @@ class Data:
     def read_pupil(self):
 
         pd = str(self.nwbfile.processing['Pupil'].description)
+
+        # extract pupil scale
         if len(pd.split('pix_to_mm='))>1:
             self.FaceCamera_mm_to_pix = int(1./float(pd.split('pix_to_mm=')[-1]))
         else:
             self.FaceCamera_mm_to_pix = 1
+
+        # extract pupil ROI
+        try:
+            self.pupil_ROI = {}
+            for key, val in zip(\
+                ['xmin','xmax','ymin','ymax'],
+                pd.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')')[0].split(',')):
+                self.pupil_ROI[key] = int(val)
+        except BaseException as be:
+            self.pupil_ROI = None
+
 
     def build_pupil_diameter(self,
                              specific_time_sampling=None,
@@ -344,11 +362,12 @@ class Data:
     
     def read_facemotion(self):
         
-        fd = str(self.nwbfile.processing['FaceMotion'].description)
-        try :
+        try:
+            fd = str(self.nwbfile.processing['FaceMotion'].description)
             self.FaceMotion_ROI = [int(i) for i in fd.split('y0,dy)=(')[1].split(')')[0].split(',')]
-        except:
-            self.FaceMotion_ROI = [0, 0, 0, 0]
+        except BaseException as be:
+            self.FaceMotion_ROI = None
+
 
     def build_facemotion(self,
                          specific_time_sampling=None,
@@ -517,10 +536,30 @@ class Data:
     #       episodes and visual stim protocols     #
     ################################################
     
-    def init_visual_stim(self, verbose=True):
+    def init_visual_stim(self, 
+                         verbose=True, 
+                         force_degree=False):
+        """
+        ability to force degrees when re-initializing from data
+                            (for plots in degrees)
+        """
         self.metadata['verbose'] = verbose
-        self.visual_stim = build_stim(self.metadata)
+        if force_degree:
+            self.metadata['units'] = 'deg'
 
+        # build an initial visual_stim 
+        self.visual_stim = build_stim(self.metadata)
+        # then force to what was really shown (NWB file)
+        for i in range(self.nwbfile.stimulus['time_start_realigned'].num_samples):
+            for key in self.visual_stim.experiment:
+                if key in self.nwbfile.stimulus:
+                    self.visual_stim.experiment[key][i]=\
+                        self.nwbfile.stimulus[key].data[i,0]
+
+        if force_degree and\
+              hasattr(self.visual_stim, 'STIM'):
+            for s in self.visual_stim.STIM:
+                s.set_angle_meshgrid(force_degree=True)
         
     def get_protocol_id(self, protocol_name):
         cond = np.argwhere(self.protocols==protocol_name).flatten()

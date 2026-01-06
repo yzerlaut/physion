@@ -3,6 +3,7 @@
 
 # %%
 import os, sys
+import numpy as np
 sys.path += ['../src'] # add src code directory for physion
 import physion
 import physion.utils.plot_tools as pt
@@ -56,6 +57,7 @@ fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
 # %%
 fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
                                                       quantity='dFoF',
+                                                      roiIndex=range(data.nROIs),
                                                       **plot_props)
 
 # %% [markdown]
@@ -71,4 +73,22 @@ fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
                                                       roiIndex=2,
                                                       **plot_props)
 
+# %%
+# find significantly-responsive cells
+stat_test_props = dict(interval_pre=[-1.,0],                                   
+                       interval_post=[1.,2.],                                   
+                       test='ttest',                                            
+                       sign='positive')
+
+significant = np.zeros(data.nROIs, dtype=bool)
+for n in range(data.nROIs):
+  summary = episodes.compute_summary_data(\
+                  stat_test_props,
+                  response_args=dict(quantity='dFoF',
+                                     roiIndex=n),
+                  response_significance_threshold=0.01,
+      )
+  significant[n] = np.sum(summary['significant'])
+  
+print(np.sum(significant), len(significant))
 # %%

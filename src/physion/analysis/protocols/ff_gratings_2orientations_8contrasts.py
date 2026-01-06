@@ -9,7 +9,7 @@ from .contrast_sensitivity import compute_sensitivity_per_cells
 stat_test = dict(interval_pre=[-1.5,-0.5],
                  interval_post=[0.5,1.5],
                  test='anova',
-                 positive=True)
+                 sign='positive')
 
 response_significance_threshold=0.01
 
@@ -22,7 +22,7 @@ def zoom_view(ax, data, args, tlim=[300,420]):
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=6,
                                     subsampling=1, 
-                                    subquantity=args.imaging_quantity, 
+                                    subquantity='dFoF',
                                     color='green',
                                     annotation_side='right',
                                     roiIndices=np.random.choice(data.nROIs,
@@ -43,7 +43,7 @@ def zoom_view(ax, data, args, tlim=[300,420]):
 
 
 
-def plot(fig, data, args, 
+def plot(fig, data, args=None, 
          stat_test=stat_test):
 
     Episodes = EpisodeData(data,
@@ -80,11 +80,11 @@ def plot(fig, data, args,
                                              response_significance_threshold=\
                                                 response_significance_threshold/8.) # adjusted for multiple comp.
 
-        r = np.sum(resp['significant_ROIs'])/data.nROIs
+        r = np.sum(resp['significant_pos'][:,-1])/data.nROIs
         pt.pie([100*r, 100*(1-r)],
            COLORS=['green', 'lightcoral'], ax=ax)
         pt.annotate(ax, 'a=%.1f$^o$ \n  %.1f%%\n  (n=%i)'%(\
-                    angle, 100*r, np.sum(resp['significant_ROIs'])),
+                    angle, 100*r, np.sum(resp['significant_pos'][:,-1])),
                     (0,1), va='top', ha='right', fontsize=7)
 
         if len(resp['Responses'])>0:
@@ -122,3 +122,20 @@ def plot(fig, data, args,
 
         pt.annotate(AX[-1][-1], 'roi #%i' % n, (1,0.5), va='center')
         # color='tab:green' if n in responsive['c=1.0'] else 'lightcoral')
+
+if __name__=='__main__':
+
+    import sys
+
+    from physion.analysis.read_NWB import Data
+    from physion.analysis.process_NWB import EpisodeData
+    from physion.utils import plot_tools as pt
+
+    fig = pt.plt.figure(figsize=(8.27, 11.7), dpi=75)
+
+    data = Data(sys.argv[-1])
+    data.build_dFoF(verbose=False)
+
+    plot(fig, data)
+
+    pt.plt.show()

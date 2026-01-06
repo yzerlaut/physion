@@ -1,6 +1,6 @@
 # Installation Steps
 
-> *installation instructions on an experimental setup*
+> *installation instructions on an experimental setup
 
 > *so far tested in Windows 10 and Windows 11, Need to use `Python 3.10`*
 
@@ -21,6 +21,14 @@ With the following settings:
 ```
 cd work/physion/docs/install
 conda env create -n acquisition -f acquisition.yml
+```
+
+For the packages (**After** the NIdaq, ... below settings), install them in the following order:
+```
+pip install nidaqmx
+pip install Downloads\spinnaker_python-4.2.0.83-cp310-cp310-win_amd64.whl # assumes you extracted in ~/Downloads
+pip install git+https://github.com/yzerlaut/simple_pyspin
+pip install opencv-python numpy scipy scikit-image PyQt5 pyqtgraph==0.13.3 natsort pyqtdarktheme ffmpeg==1.4 pynwb==2.5.0 hdmf==3.11.0 numba matplotlib
 ```
 
 ### A.3) Install other useful packages

@@ -312,7 +312,15 @@ def add_ophys(nwbfile, args,
              float(xml['settings']['laserWavelength'][laser_key]))
 
     multiplane = (True if len(np.unique(xml['depth_shift']))>1 else False)
-    
+
+
+    if ('xcenter-position-um' in xml) and \
+            ('ycenter-position-um' in xml):
+        Location = 'coords from 0-ref: (x=%s, y=%s)' % \
+            (xml['xcenter-position-um'], xml['ycenter-position-um'])
+    else:
+        Location = 'V1'
+
     if not multiplane:
         corrected_depth =(float(metadata['Z-sign-correction-for-rig'])*Depth if ('Z-sign-correction-for-rig' in metadata) else Depth) 
         imaging_plane = nwbfile.create_imaging_plane(\
@@ -322,7 +330,7 @@ def add_ophys(nwbfile, args,
                  excitation_lambda=float(xml['settings']['laserWavelength'][laser_key]),
                  imaging_rate=1./float(xml['settings']['framePeriod']),
                  indicator='GCamp',
-                 location='V1', # ADD METADATA HERE
+                 location=Location,
                  # reference_frame='A frame to refer to',
                  grid_spacing=(\
                          float(xml['settings']['micronsPerPixel']['YAxis']),
@@ -337,7 +345,7 @@ def add_ophys(nwbfile, args,
              excitation_lambda=float(xml['settings']['laserWavelength'][laser_key]),
              imaging_rate=1./float(xml['settings']['framePeriod']),
              indicator='GCamp',
-             location='V1', # ADD METADATA HERE
+             location=Location,
              # reference_frame='A frame to refer to',
              grid_spacing=(float(xml['settings']['micronsPerPixel']['YAxis']),
                            float(xml['settings']['micronsPerPixel']['XAxis'])))

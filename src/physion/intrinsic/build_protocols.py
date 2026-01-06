@@ -34,6 +34,7 @@ def build_json(direction='Up',
     "presentation-interstim-period": 0,
     "N-repeat": 1,
     "direction": %(direction)s,
+    "contrast": 0.4,
     "bar-center": %(center)s,
     "bar-length": %(length)s,
     "bar-size": %(size)s,
@@ -75,6 +76,8 @@ if __name__=='__main__':
 
     folder = os.path.join('physion', 'acquisition', 'protocols', 'movies', args.protocol)
 
+    from physion.visual_stim.screens import SCREENS
+
     if args.protocol=='intrinsic':
         for period in [6, 12]:
             if not os.path.isdir(folder):
@@ -90,11 +93,18 @@ if __name__=='__main__':
                                        period=period, 
                                        bg_color=args.bg_color))
                 # build the movie
-                os.system('python -m physion.visual_stim.build temp.json --wmv')
-                os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
-                          os.path.join(folder,
-                                       'flickering-bars-period%is' % period,
-                                       '%s.wmv' % direction))
+                os.system('python -m physion.visual_stim.build temp.json')
+                if SCREENS[args.screen]['nScreens']==1:
+                    os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
+                        os.path.join(folder,
+                                    'flickering-bars-period%is' % period,
+                                    '%s.wmv' % direction))
+                else:
+                    for i in range(1, SCREENS[args.screen]['nScreens']+1):
+                        os.rename(os.path.join('movies', 'temp', 'movie-%i.wmv' % i),
+                            os.path.join(folder,
+                                    'flickering-bars-period%is' % period,
+                                    '%s.wmv' % direction))
 
     elif args.protocol=='ocular-dominance':
         for period in [6, 12]:
@@ -116,11 +126,19 @@ if __name__=='__main__':
                                            flicker_size=2,
                                            bg_color=args.bg_color))
                     # build the movie
-                    os.system('python -m physion.visual_stim.build temp.json --wmv')
-                    os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
-                          os.path.join(folder,
-                                       'flickering-bars-period%is' % period,
-                                       '%s-%s.wmv' % (side, direction)))
+                    os.system('python -m physion.visual_stim.build temp.json')
+                    if SCREENS[args.screen]['nScreens']==1:
+                        os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
+                            os.path.join(folder,
+                                        'flickering-bars-period%is' % period,
+                                        '%s-%s.wmv' % (side, direction)))
+                    else:
+                        for i in range(1, SCREENS[args.screen]['nScreens']+1):
+                            os.rename(os.path.join('movies', 'temp', 'movie-%i.wmv' % i),
+                                os.path.join(folder,
+                                            'flickering-bars-period%is' % period,
+                                            '%s-%s-%i.wmv' % (side, direction, i)))
+
 
         os.remove('temp.json')
     shutil.rmtree('movies')
