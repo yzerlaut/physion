@@ -7,15 +7,12 @@ from scipy import stats
 sys.path += ['../src'] # add src code directory for physion
 
 import physion.utils.plot_tools as pt
-pt.set_style('dark')
-
-
+pt.set_style()#'dark')
 
 # %%
 
 def load_Camera_data(imgfolder, t0=0):
 
-    
     file_list = [f for f in os.listdir(imgfolder) if f.endswith('.npy')]
     _times = np.array([float(f.replace('.npy', '')) for f in file_list])
     _isorted = np.argsort(_times)
@@ -29,9 +26,6 @@ def load_Camera_data(imgfolder, t0=0):
        
     return times, FILES, nframes, Lx, Ly
 
-
-smoothing = 2
-from scipy.ndimage import gaussian_filter
 
 def compute_resp(datafolder):
 
@@ -62,7 +56,6 @@ def compute_resp(datafolder):
         for ts, file in zip(new_time[cond], FILES[cond]):
             i0 = np.argmin((t-ts)**2)
             img = np.load(os.path.join(datafolder, 'ImagingCamera-imgs', file))
-            # Response[i0,:,:] += gaussian_filter(img, smoothing)
             Response[i0,:,:] += img
             Ns[i0] +=1
     for i in range(nt):
@@ -72,55 +65,87 @@ def compute_resp(datafolder):
 
 
 datafolder = os.path.expanduser(\
-            '~/DATA/2025_12_18/17-22-17')
+            '~/DATA/2025_12_18/18-52-50')
 t, Ipsi = compute_resp(datafolder)
 datafolder = os.path.expanduser(\
-            '~/DATA/2025_12_18/18-16-29')
+            '~/DATA/2025_12_18/18-52-50')
+t, Blank= compute_resp(datafolder)
+datafolder = os.path.expanduser(\
+            '~/DATA/2025_12_18/18-41-27')
 t, Contra = compute_resp(datafolder)
 
 
 
 # %%
 
-def compute_resp_map(Resp,
-                     response_window = [1,2]):
+F0_percentile = 30
 
-    F0 = Resp[t<0,:,:].mean(axis=0)
+def compute_resp_map(Resp,
+                     response_window = [0.5,1],
+                     smoothing=4):
+
+    F0 = np.percentile(Resp[t<0,:,:], F0_percentile, axis=0)
     #
     cond = (t>response_window[0]) & (t<response_window[1])
-    return (Resp[cond, :,:].mean(axis=0)-F0)/F0
-
+    return gaussian_filter(\
+        (Resp[cond, :,:].mean(axis=0)-F0)/F0,
+        smoothing)
 
 ipsi_map = compute_resp_map(Ipsi)
 contra_map = compute_resp_map(Contra)
+blank_map = compute_resp_map(Blank)
 
-bounds = [0, 0.1]
+bounds = [0, 0.2] # ADJUST BOUNDS IF NEEDED
 
-fig, AX = pt.figure(axes=(2,1), ax_scale=(1,1), wspace=0.3, right=5)
+fig, AX = pt.figure(axes=(3,1), ax_scale=(1,1), wspace=0.3, right=5)
 
-for ax, Map in zip(AX, [ipsi_map, contra_map]):
+for ax, Map, title in zip(AX, 
+                          [ipsi_map, contra_map, blank_map],
+                          ['ipsi', 'contra', 'blank']):
     im = ax.imshow(Map, cmap=pt.plt.cm.binary,
                     vmin=bounds[0], vmax=bounds[1])
     ax.axis('off')
+    ax.set_title(title)
 
-fig.colorbar(im, ax=AX[1],
+fig.colorbar(im, ax=AX[2],
                shrink=0.9, aspect=10,
-                label='mean $\Delta$F/F in [+1,+2]s ')
+                label='$\\Delta$F/F\n mean [0,1]s ')
 
 # %%
-fig, ax = pt.figure()
+fig, AX = pt.figure(axes=(3,1), ax_scale=(1,1), wspace=0.8, right=5)
 
-W = 500
-for Resp, map in zip([Ipsi, Contra], [ipsi_map, contra_map]):
-    # i0, i1 = np.unravel_index(np.argmax(map), np.array(map).shape)
-    # i0, i1 = 1000,1000
-    # print(i0, i1)
-    # ax.plot(t[1:], Resp[1:,i0-W:i0+W,i1-W:i1+W].mean(axis=(1,2)))
+W = 5
+for ax, Resp, map, title in zip(AX, 
+                                [Ipsi, Contra, Blank],
+                                [ipsi_map, contra_map, blank_map],
+                                ['ipsi', 'contra', 'blank']):
 
-    ax.plot(t[1:50], Resp[1:50,:,:].mean(axis=(1,2)))
+    i0, i1 = np.unravel_index(np.argmax(map), np.array(map).shape)
+
+    resp = Resp[:,i0-W:i0+W,i1-W:i1+W].mean(axis=(1,2))
+    F0 = np.percentile(resp[1:][t[1:]<0], F0_percentile)
+    resp = (resp-F0)/F0
+    ax.plot(t[1:-1], resp[1:-1], color='tab:red')
+
+    resp = Resp[:,:,:].mean(axis=(1,2))
+    F0 = np.percentile(resp[1:][t[1:]<0], F0_percentile)
+    resp = (resp-F0)/F0
+    ax.plot(t[1:-1], resp[1:-1], color='tab:blue')
+
+    ax.set_title(title)
+
+    pt.set_plot(ax, xlabel='time (s)',
+                ylabel='$\\Delta$F/F' if ax==AX[0] else '')
+
+pt.set_common_ylims(AX)
+pt.annotate(ax, 'max. resp. pix.', (1,.6), color='tab:red')
+pt.annotate(ax, 'mean all pix.', (1., .2), color='tab:blue')
+
 # %%
+import matplotlib.pylab as plt
+
 def plot_power_map(ax, fig, Map,
-                   bounds=[0.,0.05]):
+                   bounds=[0.,0.2]):
 
     im = ax.imshow(Map, cmap=plt.cm.binary,
                    vmin=bounds[0], vmax=bounds[1])
@@ -167,21 +192,15 @@ def make_fig(IMAGES):
     return fig, AX
 
 
-
-
 # ----------------------------------- #
 #               power maps            #
 # ----------------------------------- #
 maps = {}
-maps['ipsi-power'] = 0.5*(\
-        ipsi['powerDFoF_up']+\
-        ipsi['powerDFoF_down'])
 
-maps['contra-power'] = 0.5*(\
-        contra['powerDFoF_up']+\
-        contra['powerDFoF_down'])
+maps['ipsi-power'] = ipsi_map
+maps['contra-power'] = contra_map
 
-threshOD = 0.35
+threshOD = 0.7
 
 # ----------------------------------- #
 #           threshold power           #
@@ -215,3 +234,5 @@ fig, AX = make_fig(maps)
 print(' --> ok')
 
 
+
+# %%

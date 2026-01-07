@@ -2,7 +2,7 @@ import numpy as np
 
 import physion.utils.plot_tools as pt
 from physion.dataviz.raw import plot as plot_raw
-from physion.analysis.process_NWB import EpisodeData
+from physion.analysis.episodes.build import EpisodeData
 from physion.dataviz.episodes.trial_average import plot as plot_trial_average
 from physion.analysis.protocols.spatial_mapping import \
     plot_spatial_grid

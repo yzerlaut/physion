@@ -3,7 +3,7 @@ from scipy.stats import sem
 
 import physion.utils.plot_tools as pt
 from physion.dataviz.raw import plot as plot_raw
-from physion.analysis.process_NWB import EpisodeData
+from physion.analysis.episodes.build import EpisodeData
 from physion.dataviz.episodes.trial_average\
       import plot as plot_trial_average
 from .orientation_tuning import\
@@ -184,7 +184,7 @@ if __name__=='__main__':
     import sys
 
     from physion.analysis.read_NWB import Data
-    from physion.analysis.process_NWB import EpisodeData
+    from physion.analysis.episodes.build import EpisodeData
     from physion.utils import plot_tools as pt
 
     fig = pt.plt.figure(figsize=(8.27, 11.7), dpi=75)

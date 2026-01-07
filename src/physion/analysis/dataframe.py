@@ -1,7 +1,8 @@
 import os, sys, itertools, pandas
 import numpy as np
 
-from physion.analysis import read_NWB, process_NWB
+from physion.analysis import read_NWB
+from physion.analysis.episodes.build import EpisodeData
 
 from warnings import simplefilter
 simplefilter(action="ignore", category=pandas.errors.PerformanceWarning)
@@ -190,9 +191,9 @@ def NWB_to_dataframe(nwbfile,
 
         if (protocol not in exclude_from_stim):
 
-            episodes = process_NWB.EpisodeData(data, 
-                                               protocol_id=p,
-                                               verbose=verbose)
+            episodes = EpisodeData(data, 
+                                   protocol_id=p,
+                                   verbose=verbose)
 
             protocol_cond = data.get_protocol_cond(p)
 

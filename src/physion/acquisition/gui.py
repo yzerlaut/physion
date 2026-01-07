@@ -220,5 +220,3 @@ def build_NWB_for_last():
         p = subprocess.Popen(cmd,
                              cwd=cwd,
                              shell=True)
-
-

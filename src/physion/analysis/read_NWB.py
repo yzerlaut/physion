@@ -269,8 +269,11 @@ class Data:
         if 'Running-Speed' in self.nwbfile.acquisition:
 
             self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:,0]
-            self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time+\
-                np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)\
+            if self.nwbfile.acquisition['Running-Speed'].timestamps is not None :
+                self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].timestamps[()]
+            else :
+                self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time+\
+                    np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)\
                                         /self.nwbfile.acquisition['Running-Speed'].rate
 
             if specific_time_sampling is not None:

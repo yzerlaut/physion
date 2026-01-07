@@ -1,11 +1,14 @@
 import numpy as np
 import os, time, os
 from pathlib import Path
+from scipy.ndimage import gaussian_filter
+
 absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
                                   'work', 'physion', 'src', 'physion',
                                   'hardware', 'Thorlabs', 'camera_dlls')
 os.environ['PATH'] = absolute_path_to_dlls + os.pathsep + os.environ['PATH']
-os.add_dll_directory(absolute_path_to_dlls)
+if os.name not in ['posix']:
+    os.add_dll_directory(absolute_path_to_dlls)
 
 from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
 
@@ -54,9 +57,9 @@ class CameraAcquisition:
             Time = time.time()
 
             try:
-                image = self.cam.get_pending_frame_or_null()
+                frame = self.cam.get_pending_frame_or_null()
 
-                if debug and image is not None:
+                if debug and frame is not None:
                     toc = time.time()
                     if (toc-tic)>10:
                         print(' %s seemingly working fine, current image:', (self.name, image[:5,:5]))
@@ -65,7 +68,7 @@ class CameraAcquisition:
             except BaseException as be:
                 print(be)
                 print('[X] problem FETCHING image', os.path.join(self.imgs_folder, '%s.npy' % Time), ' -> not saved ! ')
-                image = None
+                frame = None
 
 
             if not self.running and run_flag.is_set() : # not running and need to start  !
@@ -83,10 +86,12 @@ class CameraAcquisition:
                 
 
             # after the update
-            if self.running and (image is not None):
+            if self.running and (frame is not None):
                 try:
                     #np.save(os.path.join(self.imgs_folder, '%s.npy' % Time), image.image_buffer.astype(np.uint8))
-                    np.save(os.path.join(self.imgs_folder, '%s.npy' % Time), image.image_buffer)
+                    image = gaussian_filter(frame.image_buffer, 5)[::4,::4]
+                    np.save(os.path.join(self.imgs_folder, '%s.npy' % Time),
+                            image)
                 except BaseException as be:
                     # print(be)
                     print('[X] problem SAVING image', os.path.join(self.imgs_folder, '%s.npy' % Time), ' -> not saved ! ')

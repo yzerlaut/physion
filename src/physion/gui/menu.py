@@ -45,7 +45,7 @@ def build_menu(self):
                                      self.OD_analysis)
     self.preprocessingMenu.addAction('&Whisker Maps',
                                      self.SS_intrinsic)
-    self.preprocessingMenu.addAction('&Suite2P Preprocessing',
+    self.preprocessingMenu.addAction('&Suite2P',
                                      self.suite2p_preprocessing_UI)
     self.preprocessingMenu.addAction('&Red Channel Labelling',
                                      self.red_channel_labelling)
@@ -84,9 +84,9 @@ def build_menu(self):
     # --
     self.otherMenu.addAction('&Transfer Data',
                               self.transfer_gui)
-    self.otherMenu.addAction('&Convert Behavior to Movies',
-                              self.behav_to_movie_gui)
-    self.otherMenu.addAction('&Convert Imaging to Movies',
+    self.otherMenu.addAction('&Convert Camera to Movies',
+                              self.cameraData_to_movie_gui)
+    self.otherMenu.addAction('&Convert 2P-Imaging to Movies',
                               self.imaging_to_movie_gui)
     #self.otherMenu.addAction('&Delete Data',
     #                          self.in_progress)

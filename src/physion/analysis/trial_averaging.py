@@ -3,7 +3,7 @@ from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
 from matplotlib import cm
 
-from physion.analysis.process_NWB import EpisodeData
+from physion.analysis.episodes.build import EpisodeData
 
 NMAX_PARAMS=7 # max number of parameters varied
 

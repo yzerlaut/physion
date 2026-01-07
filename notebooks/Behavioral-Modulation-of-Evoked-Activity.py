@@ -24,7 +24,7 @@ data.build_dFoF(method_for_F0='sliding_percentile',
                 percentile=10., 
                 verbose=False)
 
-Episodes = physion.analysis.process_NWB.EpisodeData(data,
+Episodes = physion.analysis.episodes.build.EpisodeData(data,
                                                     quantities=['dFoF', 'running_speed', 'pupil_diameter'],
                                                     protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
                                                     verbose=False,
@@ -241,7 +241,7 @@ for f in DATASET['files']:
     data = physion.analysis.read_NWB.Data(f, verbose=False)
     data.build_dFoF(method_for_F0='sliding_percentile', neuropil_correction_factor=0.7, percentile=10., verbose=False)
 
-    Episodes = physion.analysis.process_NWB.EpisodeData(data, 
+    Episodes = physion.analysis.episodes.build.EpisodeData(data, 
                                                     quantities=['dFoF', 'running_speed', 'pupil_diameter'],
                                                     protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
                                                     verbose=False, prestim_duration=3,

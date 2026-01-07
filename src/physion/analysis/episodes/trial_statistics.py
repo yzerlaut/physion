@@ -1,0 +1,113 @@
+# general modules
+import pynwb, os, sys, pathlib, itertools
+import numpy as np
+import matplotlib.pylab as plt
+from scipy.stats import pearsonr
+import random
+
+# custom modules
+import physion.utils.plot_tools as pt
+from physion.analysis import stat_tools
+
+def stat_test_for_evoked_responses(episodes,
+                                   episode_cond=None,
+                                   response_args={},
+                                   interval_pre=[-2,0], interval_post=[1,3],
+                                   test='wilcoxon',
+                                   sign='positive',
+                                   verbose=True):
+        """
+        Takes EpisodeData
+        Choose quantity from where you want to do a statistical test. Check possibilities with ep.quantities
+        Choose the test you want . default wilcoxon . 
+
+        It performs a test between the values from interval_pre and interval_post
+        
+        returns pvalue and statistic 
+        """
+
+        response = episodes.get_response2D(episode_cond = episode_cond,
+                                       **response_args)
+
+        pre_cond  = episodes.compute_interval_cond(interval_pre)
+        post_cond  = episodes.compute_interval_cond(interval_post)
+
+        # print(response[episode_cond,:][:,pre_cond].mean(axis=1))
+        # print(response[episode_cond,:][:,post_cond].mean(axis=1))
+        # print(len(response.shape)>1,(np.sum(episode_cond)>1))
+
+        if len(response.shape)>1:
+            return stat_tools.StatTest(response[:,pre_cond].mean(axis=1),
+                                       response[:,post_cond].mean(axis=1),
+                                       test=test, 
+                                       sign=sign,
+                                       verbose=verbose)
+        else:
+            return stat_tools.StatTest(None, None,
+                                       test=test, sign=sign,
+                                       verbose=verbose)
+        
+def reliability(episodes, 
+                episode_cond=None,
+                roiIndex=None,
+                n_samples=500, 
+                percentile=99, 
+                with_plot=False):
+    """
+    Compute the reliability using the method from T.D. Marks (2021) and C.G. Sweeney (2025). 
+    To compute reliability, the function splits the trials randomly in two halves, trial-averages the two groups and calculates the Pearson's correlation. 
+    The process is done n_samples times and averaged to get the reliability measure.
+    """
+
+    corr_list = []
+    null_corr_list = []
+    response = episodes.get_response2D(quantity='dFoF',
+                                       episode_cond=episode_cond,
+                                       roiIndex=roiIndex,
+                                       averaging_dimension='ROIs')
+    
+    set_trials = list(range(response.shape[0]))
+    split = len(set_trials) // 2
+
+    for _ in range(n_samples):
+
+        # Divide randomly the trials in 2 groups
+        random.shuffle(set_trials)
+        group1 = set_trials[:split]
+        group2 = set_trials[split:]
+        
+        # Shuffle circularly
+        time_shifts = np.random.choice(np.arange(0, response.shape[1]), len(response), replace=True)
+        shifted_traces = np.array([np.roll(response[j], dt) for j, dt in enumerate(time_shifts)])
+
+        averaged_group1 = np.mean(response[group1, :], axis=0)
+        averaged_group2 = np.mean(response[group2, :], axis=0)
+
+        averaged_group1_null = np.mean(shifted_traces[group1, :], axis=0)
+        averaged_group2_null = np.mean(shifted_traces[group2, :], axis=0)
+
+        corr = pearsonr(averaged_group1, averaged_group2)[0]
+        corr_list.append(corr)
+
+        corr_null = pearsonr(averaged_group1_null, averaged_group2_null)[0]
+        null_corr_list.append(corr_null)
+
+    r = np.mean(corr_list)
+    perc_threshold = np.percentile(null_corr_list, percentile)
+
+    significant = r > perc_threshold
+    p_value = np.sum(np.array(null_corr_list) >= r) / len(null_corr_list)
+
+    if with_plot:
+        fig, ax = plt.subplots(1, 1, figsize=(3,3))
+        ax.hist(corr_list, bins=30, alpha=0.7, label='True correlations')
+        ax.hist(null_corr_list, bins=30, alpha=0.7, label='Null correlations')
+        ax.axvline(r, color='green' if significant else 'red', linestyle='--', label='Reliability r=%.2f' % r)
+        ax.axvline(perc_threshold, color='black', linestyle='--', label='%.0fth percentile of null dist=%.2f' %(percentile, perc_threshold))
+        ax.set_xlabel('Correlation coefficient')
+        ax.set_ylabel('Count')
+        ax.annotate(f'r={r:.3f}, p-value: {p_value:.3f}', xy=(0.05, 1.), xycoords='axes fraction')
+        ax.legend(loc='best', fontsize='small')
+        plt.show()
+
+    return r, significant, p_value

@@ -10,7 +10,7 @@ from physion.analysis.summary_pdf import summary_pdf_folder,\
         metadata_fig
 from physion.dataviz.raw import plot as plot_raw
 from physion.dataviz.imaging import show_CaImaging_FOV
-from physion.analysis.process_NWB import EpisodeData
+from physion.analysis.episodes.build import EpisodeData
 from physion.utils.plot_tools import pie
 
 tempfile.gettempdir()
