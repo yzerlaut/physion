@@ -258,30 +258,48 @@ class Data:
         
     ######################
     #    LOCOMOTION
-    ######################
+    ######################    
     def build_running_speed(self,
-                            specific_time_sampling=None,
-                            interpolation='linear',
-                            verbose=False):
+                        specific_time_sampling=None,
+                        interpolation='linear',
+                        verbose=False, 
+                        absolute=True):
         """
-        build distance from mean (x,y) position of pupil
+        Build running speed from NWB acquisition.
+        
+        Parameters
+        ----------
+        specific_time_sampling : array-like or None - If provided, resample running speed to these time points.
+        interpolation : str - Interpolation method for resampling ('linear', 'nearest', etc.).
+        verbose : bool - If True, print progress messages.
+        absolute : bool - If True, running speed values are converted to absolute values.
+
+        Returns
+        -------
+        running_speed_resampled : np.ndarray - Resampled running speed if specific_time_sampling is provided, otherwise None.
         """
         if 'Running-Speed' in self.nwbfile.acquisition:
 
-            self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:,0]
-            if self.nwbfile.acquisition['Running-Speed'].timestamps is not None :
+            if absolute:
+                self.running_speed = np.abs(self.nwbfile.acquisition['Running-Speed'].data[:, 0])
+            else : 
+                self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:, 0]
+
+            if self.nwbfile.acquisition['Running-Speed'].timestamps is not None:
                 self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].timestamps[()]
-            else :
-                self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time+\
-                    np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)\
-                                        /self.nwbfile.acquisition['Running-Speed'].rate
+            else:
+                self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time + \
+                    np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples) / \
+                    self.nwbfile.acquisition['Running-Speed'].rate
 
             if specific_time_sampling is not None:
-                return tools.resample(self.t_running_speed, 
-                                      self.running_speed, 
-                                      specific_time_sampling, 
-                                      interpolation=interpolation,
-                                      verbose=verbose)
+                return tools.resample(self.t_running_speed,
+                                    self.running_speed,
+                                    specific_time_sampling,
+                                    interpolation=interpolation,
+                                    verbose=verbose)
+            else:
+                return None
         else:
             return None
 
@@ -400,11 +418,9 @@ class Data:
 
         
     def build_dFoF(self,
-                   roiIndex=None, roiIndices='all',
-                   roi_to_neuropil_fluo_inclusion_factor=\
-                           ROI_TO_NEUROPIL_INCLUSION_FACTOR,
-                   neuropil_correction_factor=\
-                           NEUROPIL_CORRECTION_FACTOR,
+                   roiIndex=None, 
+                   roi_to_neuropil_fluo_inclusion_factor=ROI_TO_NEUROPIL_INCLUSION_FACTOR,
+                   neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
                    method_for_F0=METHOD,
                    percentile=PERCENTILE,
                    sliding_window=T_SLIDING,
@@ -413,8 +429,7 @@ class Data:
                    smoothing=None,
                    interpolation='linear',
                    with_computed_neuropil_fact=False,
-                   roi_to_neuropil_fluo_inclusion_factor_metric=\
-                    ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC,
+                   roi_to_neuropil_fluo_inclusion_factor_metric=ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC,
                    verbose=True):
         """
         creates self.dFoF, self.t_dFoF
@@ -431,6 +446,9 @@ class Data:
                             verbose=verbose)
         self.t_dFoF = self.t_rawFluo
 
+        print("default ncf: ", NEUROPIL_CORRECTION_FACTOR)
+        print("value ncf taken : ", neuropil_correction_factor)
+
         return compute_dFoF(self,
                             roi_to_neuropil_fluo_inclusion_factor=\
                                     roi_to_neuropil_fluo_inclusion_factor,
@@ -444,7 +462,8 @@ class Data:
                             smoothing=smoothing,
                             with_computed_neuropil_fact=with_computed_neuropil_fact,
                             roi_to_neuropil_fluo_inclusion_factor_metric=\
-                                    roi_to_neuropil_fluo_inclusion_factor_metric,
+                                    ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC,
+                                    #roi_to_neuropil_fluo_inclusion_factor_metric,
                             verbose=verbose)
         
 
