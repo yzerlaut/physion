@@ -446,9 +446,6 @@ class Data:
                             verbose=verbose)
         self.t_dFoF = self.t_rawFluo
 
-        print("default ncf: ", NEUROPIL_CORRECTION_FACTOR)
-        print("value ncf taken : ", neuropil_correction_factor)
-
         return compute_dFoF(self,
                             roi_to_neuropil_fluo_inclusion_factor=\
                                     roi_to_neuropil_fluo_inclusion_factor,
