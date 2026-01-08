@@ -3,9 +3,11 @@ import os, time, os
 from pathlib import Path
 from scipy.ndimage import gaussian_filter
 
-absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
-                                  'work', 'physion', 'src', 'physion',
-                                  'hardware', 'Thorlabs', 'camera_dlls')
+#absolute_path_to_dlls = os.path.join(os.path.expanduser('~'),
+#                                  'work', 'physion', 'src', 'physion',
+#                                  'hardware', 'Thorlabs', 'camera_dlls')
+absolute_path_to_dlls = os.path.join(Path(__file__).parent, 'camera_dlls')
+
 os.environ['PATH'] = absolute_path_to_dlls + os.pathsep + os.environ['PATH']
 if os.name not in ['posix']:
     os.add_dll_directory(absolute_path_to_dlls)

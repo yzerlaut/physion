@@ -462,8 +462,7 @@ class Data:
                             smoothing=smoothing,
                             with_computed_neuropil_fact=with_computed_neuropil_fact,
                             roi_to_neuropil_fluo_inclusion_factor_metric=\
-                                    ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC,
-                                    #roi_to_neuropil_fluo_inclusion_factor_metric,
+                                    roi_to_neuropil_fluo_inclusion_factor_metric,
                             verbose=verbose)
         
 
