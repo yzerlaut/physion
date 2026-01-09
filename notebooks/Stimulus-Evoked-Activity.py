@@ -82,7 +82,7 @@ stat_test_props = dict(interval_pre=[-1.,0],
 
 significant = np.zeros(data.nROIs, dtype=bool)
 for n in range(data.nROIs):
-  summary = episodes.compute_summary_data(\
+  summary = episodes.pre_post_statistics(\
                   stat_test_props,
                   response_args=dict(quantity='dFoF',
                                      roiIndex=n),
@@ -91,4 +91,37 @@ for n in range(data.nROIs):
   significant[n] = np.sum(summary['significant'])
   
 print(np.sum(significant), len(significant))
+# %%
+summary = episodes.reliability(\
+                episodes.find_episode_cond(),
+                # stat_test_props,
+                roiIndex=0,
+                return_samples=True)
+
+# %%
+fig, [ax0, ax]= pt.figure(axes=(1,2))
+pt.plot(episodes.t, 
+        np.mean(summary['real'], axis=0), 
+        sy=np.std(summary['real'], axis=0), 
+        ax=ax0, color='tab:blue', label='real')
+pt.plot(episodes.t, 
+        np.mean(summary['shuffled'], axis=0), 
+        sy=np.std(summary['shuffled'], axis=0), 
+        ax=ax0, color='tab:grey', label='shuffled')
+pt.set_plot(ax0, 
+            xlabel='time (s)',
+            ylabel='$\\Delta$F/F')
+ax.hist(summary['null_corr_list'], bins=np.linspace(-1,1,20),
+        label='Null correlations', color='tab:grey', density=True)
+ax.hist(summary['corr_list'], bins=np.linspace(-1,1,20),
+        label='True correlations', color='tab:blue', density=True)
+ax.axvline(summary['r'], color='green' if summary['significant'] else 'red', linestyle='--', label='Reliability r=%.2f' % summary['r'])
+ax.axvline(perc_threshold, color='black', linestyle='--', label='%.0fth percentile of null dist=%.2f' %(percentile, perc_threshold))
+pt.set_plot(ax, 
+            xlabel='Correlation coefficient',
+            ylabel='Count')
+ax.annotate(f'r={r:.3f}, %(pval)%f: {p_value:.3f}', xy=(0.05, 1.), xycoords='axes fraction')
+pt.legend(ax, loc=(1.,.2))
+
+
 # %%
