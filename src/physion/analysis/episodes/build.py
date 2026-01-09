@@ -475,7 +475,8 @@ class EpisodeData:
         if len(VARIED_KEYS)>0:
 
             for indices in itertools.product(*VARIED_INDICES):
-                stats = episodes.trial_statistics.stat_test_for_evoked_responses(episode_cond=self.find_episode_cond(VARIED_KEYS,
+                stats = episodes.trial_statistics.stat_test_for_evoked_responses(self, 
+                                                                                 episode_cond=self.find_episode_cond(VARIED_KEYS,
                                                                                                             list(indices)) &\
                                                                                  episode_cond,
                                                                                  response_args=response_args,
@@ -499,7 +500,8 @@ class EpisodeData:
                                'significant', 'relative_value']:
                         summary_data[kk].append(np.nan)
         else:
-            stats = episodes.trial_statistics.stat_test_for_evoked_responses(response_args=response_args,
+            stats = episodes.trial_statistics.stat_test_for_evoked_responses(self, 
+                                                                             response_args=response_args,
                                                                              **stat_test_props)
 
             # if (stats.x is not None) and (stats.y is not None):
@@ -569,12 +571,12 @@ if __name__=='__main__':
     print("Protocols : ", data.protocols)
 
     print("Protocol name : ", data.protocols[2])
-    Episodes = EpisodeData(data, quantities=['dFoF'], protocol_id=2)
-    print("Varied parameters : ", Episodes.varied_parameters)
+    ep = EpisodeData(data, quantities=['dFoF'], protocol_id=2)
+    print("Varied parameters : ", ep.varied_parameters)
 
-    for ia, angle in enumerate(Episodes.varied_parameters['angle']):
-        ep_cond = Episodes.find_episode_cond('angle', ia)
-        stats = episodes.trial_statistics.stat_test_for_evoked_responses(Episodes,
+    for ia, angle in enumerate(episodes.varied_parameters['angle']):
+        ep_cond = episodes.find_episode_cond('angle', ia)
+        stats = episodes.trial_statistics.stat_test_for_evoked_responses(ep,
                                                                 episode_cond=ep_cond,
                                                                 response_args={'quantity':'dFoF', 'roiIndex':3})
         print(ia, angle, stats.significant())
