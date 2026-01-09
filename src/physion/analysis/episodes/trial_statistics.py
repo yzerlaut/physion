@@ -9,7 +9,7 @@ import random
 import physion.utils.plot_tools as pt
 from physion.analysis import stat_tools
 
-def stat_test_for_evoked_responses(episodes,
+def stat_test_for_evoked_responses(ep,
                                    episode_cond=None,
                                    response_args={},
                                    interval_pre=[-2,0], interval_post=[1,3],
@@ -26,11 +26,11 @@ def stat_test_for_evoked_responses(episodes,
         returns pvalue and statistic 
         """
 
-        response = episodes.get_response2D(episode_cond = episode_cond,
+        response = ep.get_response2D(episode_cond = episode_cond,
                                        **response_args)
 
-        pre_cond  = episodes.compute_interval_cond(interval_pre)
-        post_cond  = episodes.compute_interval_cond(interval_post)
+        pre_cond  = ep.compute_interval_cond(interval_pre)
+        post_cond  = ep.compute_interval_cond(interval_post)
 
         # print(response[episode_cond,:][:,pre_cond].mean(axis=1))
         # print(response[episode_cond,:][:,post_cond].mean(axis=1))
@@ -47,7 +47,7 @@ def stat_test_for_evoked_responses(episodes,
                                        test=test, sign=sign,
                                        verbose=verbose)
         
-def reliability(episodes, 
+def reliability(ep, 
                 episode_cond=None,
                 roiIndex=None,
                 n_samples=500, 
@@ -61,7 +61,7 @@ def reliability(episodes,
 
     corr_list = []
     null_corr_list = []
-    response = episodes.get_response2D(quantity='dFoF',
+    response = ep.get_response2D(quantity='dFoF',
                                        episode_cond=episode_cond,
                                        roiIndex=roiIndex,
                                        averaging_dimension='ROIs')

@@ -286,8 +286,11 @@ def plot(data,
     ax.set_xlim([dv_tools.shifted_start(tlim)-0.01*(tlim[1]-tlim[0]),tlim[1]+0.01*(tlim[1]-tlim[0])])
     ax.set_ylim([-0.05,1.05])
 
+    
+
     if zoom_area is not None:
-        ax.fill_between(zoom_area, [0,0], [1,1],  color='k', alpha=.2, lw=0)
+        for (x0, x1) in zoom_area:
+            ax.axvspan(x0, x1, color='k', alpha=.2, lw=0)
 
     return fig, ax
 

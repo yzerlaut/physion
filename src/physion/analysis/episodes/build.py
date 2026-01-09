@@ -79,7 +79,7 @@ class EpisodeData:
                     print("Protocol name is not None -> get protocol ID")
                 protocol_id = full_data.get_protocol_id(protocol_name)
             else:
-                print("  [!!] protocol_name & protocol_id not specified [!!] "
+                print("  [!!] protocol_name & protocol_id not specified [!!] ")
                 print("          --> taking the first protocol of protocol_id=0")
                 protocol_id = 0
 
@@ -477,12 +477,13 @@ class EpisodeData:
         if len(VARIED_KEYS)>0:
 
             for indices in itertools.product(*VARIED_INDICES):
-                stats = self.stat_test_for_evoked_responses(\
-                    episode_cond=self.find_episode_cond(VARIED_KEYS,
-                                                        list(indices)) & episode_cond,
-                                                            response_args=response_args,
-                                                            verbose=verbose,
-                                                            **stat_test_props)
+                stats = episodes.trial_statistics.stat_test_for_evoked_responses(self, 
+                                                                                 episode_cond=self.find_episode_cond(VARIED_KEYS,
+                                                                                                            list(indices)) &\
+                                                                                 episode_cond,
+                                                                                 response_args=response_args,
+                                                                                 verbose=verbose,
+                                                                                 **stat_test_props)
                 for key, index in zip(VARIED_KEYS, indices):
                     summary_data[key].append(self.varied_parameters[key][index])
                     summary_data[key+'-index'].append(index)
@@ -501,7 +502,8 @@ class EpisodeData:
                                'significant', 'relative_value']:
                         summary_data[kk].append(np.nan)
         else:
-            stats = episodes.trial_statistics.stat_test_for_evoked_responses(response_args=response_args,
+            stats = episodes.trial_statistics.stat_test_for_evoked_responses(self, 
+                                                                             response_args=response_args,
                                                                              **stat_test_props)
 
             # if (stats.x is not None) and (stats.y is not None):
@@ -571,12 +573,12 @@ if __name__=='__main__':
     print("Protocols : ", data.protocols)
 
     print("Protocol name : ", data.protocols[2])
-    Episodes = EpisodeData(data, quantities=['dFoF'], protocol_id=2)
-    print("Varied parameters : ", Episodes.varied_parameters)
+    ep = EpisodeData(data, quantities=['dFoF'], protocol_id=2)
+    print("Varied parameters : ", ep.varied_parameters)
 
-    for ia, angle in enumerate(Episodes.varied_parameters['angle']):
-        ep_cond = Episodes.find_episode_cond('angle', ia)
-        stats = episodes.trial_statistics.stat_test_for_evoked_responses(Episodes,
+    for ia, angle in enumerate(episodes.varied_parameters['angle']):
+        ep_cond = episodes.find_episode_cond('angle', ia)
+        stats = episodes.trial_statistics.stat_test_for_evoked_responses(ep,
                                                                 episode_cond=ep_cond,
                                                                 response_args={'quantity':'dFoF', 'roiIndex':3})
         print(ia, angle, stats.significant())
