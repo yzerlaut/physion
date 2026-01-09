@@ -1,5 +1,5 @@
 # general modules
-import pynwb, os, sys, pathlib, itertools
+import os, sys, pathlib, itertools
 import numpy as np
 import matplotlib.pylab as plt
 from scipy.stats import pearsonr

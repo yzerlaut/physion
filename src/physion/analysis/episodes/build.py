@@ -1,7 +1,6 @@
 import sys, time, os, pathlib, string, itertools
 
 import numpy as np
-from scipy.stats import sem
 from scipy.interpolate import interp1d
 
 from physion.analysis import stat_tools
@@ -73,12 +72,15 @@ class EpisodeData:
         # because "protocol_id" and "protocol_name" are over-written by self.set_quantities
 
         if (protocol_id is None):
-            print("Protocol ID is None")
+            if verbose:
+                print("Protocol ID is None")
             if (protocol_name is not None):
-                print("Protocol name is not None -> get protocol ID")
+                if verbose:
+                    print("Protocol name is not None -> get protocol ID")
                 protocol_id = full_data.get_protocol_id(protocol_name)
             else:
-                print("Protocol name is also None -> default id 0")
+                print("  [!!] protocol_name & protocol_id not specified [!!] "
+                print("          --> taking the first protocol of protocol_id=0")
                 protocol_id = 0
 
         # we overwrite those to single values
@@ -118,8 +120,8 @@ class EpisodeData:
             print(' [!!] need to explicit the "protocol_id" or "protocol_name" [!!] ')
             print('         ---->   set to protocol_id=0 by default \n ')
         
-
-        self.protocol_cond_in_full_data = full_data.get_protocol_cond(protocol_id)
+        self.protocol_cond_in_full_data = \
+            full_data.get_protocol_cond(protocol_id)
 
     def set_quantities(self, full_data, quantities,
                        quantities_args=None,
@@ -475,12 +477,12 @@ class EpisodeData:
         if len(VARIED_KEYS)>0:
 
             for indices in itertools.product(*VARIED_INDICES):
-                stats = episodes.trial_statistics.stat_test_for_evoked_responses(episode_cond=self.find_episode_cond(VARIED_KEYS,
-                                                                                                            list(indices)) &\
-                                                                                 episode_cond,
-                                                                                 response_args=response_args,
-                                                                                 verbose=verbose,
-                                                                                 **stat_test_props)
+                stats = self.stat_test_for_evoked_responses(\
+                    episode_cond=self.find_episode_cond(VARIED_KEYS,
+                                                        list(indices)) & episode_cond,
+                                                            response_args=response_args,
+                                                            verbose=verbose,
+                                                            **stat_test_props)
                 for key, index in zip(VARIED_KEYS, indices):
                     summary_data[key].append(self.varied_parameters[key][index])
                     summary_data[key+'-index'].append(index)
