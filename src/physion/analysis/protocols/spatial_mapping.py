@@ -33,8 +33,8 @@ def plot_spatial_grid(episode, ax, args, roiIndex):
                        roiIndex=roiIndex,
                        column_key='x-center',
                        row_key='y-center',
-                        with_std=False,
-                        AX=AX)
+                       with_std=False,
+                       AX=AX)
     ax.axis('off')
 
 # def generate_pdf(args,

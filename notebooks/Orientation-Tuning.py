@@ -231,8 +231,8 @@ fig, ax = plot_orientation_tuning_curve(\
 
 fig, ax = plot_responsiveness(\
         ['WT_contrast-1.0', 
-                'WT_contrast-1.0', 
-                'WT_contrast-0.5'],
+         'WT_contrast-1.0', 
+         'WT_contrast-0.5'],
         #  average_by='ROIs',
         path=tempfile.tempdir)
 # %%

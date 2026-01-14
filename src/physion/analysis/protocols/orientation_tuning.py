@@ -106,50 +106,55 @@ def compute_tuning_response_per_cells(data, Episodes,
     if filtering_cond is None:
         filtering_cond = Episodes.find_episode_cond() # True everywhere
 
-    selectivities, prefered_angles = [], []
-    RESPONSES, semRESPONSES = [], []
     significant = np.zeros(data.nROIs, dtype=bool)
 
-    for roi in np.arange(data.nROIs):
+    cond = Episodes.find_episode_cond(key='contrast', 
+                                        value=contrast) &\
+                                        filtering_cond
+    summary = Episodes.pre_post_statistics(stat_test_props,
+                                                episode_cond=cond,
+                                                repetition_keys=['repeat', 'contrast'],
+                                                response_args=dict(quantity=quantity),
+                                                response_significance_threshold=response_significance_threshold,
+                                                multiple_comparison_correction=True,
+                                                loop_over_cells=True,
+                                                verbose=True)
         
-        cond = Episodes.find_episode_cond(key='contrast', 
-                                          value=contrast) &\
-                                          filtering_cond
-        cell_resp = Episodes.compute_summary_data(stat_test_props,
-                                                  episode_cond=cond,
-                                                  exclude_keys=['repeat', 'contrast'],
-                                                  response_args=dict(quantity=quantity, roiIndex=roi),
-                                                  response_significance_threshold=response_significance_threshold,
-                                                  verbose=True)
-        
+    # if significant in at least one orientation
+    significant = (np.sum(summary['significant'], axis=1)>0)
 
-        # find preferred angle:
-        ipref = np.argmax(cell_resp['value'])
+    # find preferred angle:
+    ipref = np.argmax(summary['value'], axis=1).flatten()
+    print(ipref)
 
-        prefered_angles.append(cell_resp['angle'][ipref])
-        selectivities.append(selectivity_index(cell_resp['angle'],
-                                               cell_resp['value']))
+    prefered_angles = np.array(\
+            [summary['angle'][i] for i in ipref])
+
+    selectivities = np.array([\
+        selectivity_index(summary['angle'],
+                          summary['value'][roi, :])\
+                            for roi in range(data.nROIs)])
+
+    RESPONSES, semRESPONSES = [], []
+    for roi in range(data.nROIs):
 
         RESPONSES.append(np.zeros(len(shifted_angle)))
         semRESPONSES.append(np.zeros(len(shifted_angle)))
 
-        for angle, value, sem in zip(cell_resp['angle'],
-                        cell_resp['value'], cell_resp['sem-value']):
+        for angle, value, std, ntrials in zip(\
+            summary['angle'],
+            summary['value'][roi,:], 
+            summary['std-value'][roi,:],
+            summary['ntrials']):
 
             new_angle = shift_orientation_according_to_pref(angle,
-                                                    pref_angle=prefered_angles[-1],
+                                                    pref_angle=prefered_angles[roi],
                                                     start_angle=start_angle,
                                                     angle_range=angle_range)
             iangle = np.flatnonzero(shifted_angle==new_angle)[0]
 
             RESPONSES[-1][iangle] = value
-            semRESPONSES[-1][iangle] = sem 
-
-        # if significant in at least one orientation
-        if np.sum(cell_resp['significant'])>0:
-
-            significant[roi] = True
-
+            semRESPONSES[-1][iangle] = std/np.sqrt(ntrials)
 
     return {'Responses':np.array(RESPONSES),
             'semResponses':np.array(semRESPONSES),
@@ -344,8 +349,9 @@ def plot_responsiveness(keys,
                    color=color)
  
             if with_label:
-                annot = i*'\n'+'%.2f$\\pm$%.2f%%' %\
-                         (np.mean(responsive_frac), stats.sem(responsive_frac))
+                annot = i*'\n'+'%.1f$\\pm$%.1f%%' %\
+                         (100*np.mean(responsive_frac), 
+                          100*stats.sem(responsive_frac))
                 if average_by=='sessions':
                     annot += ', N=%02d %s, ' % (len(responsive_frac), average_by) + key
                 else:

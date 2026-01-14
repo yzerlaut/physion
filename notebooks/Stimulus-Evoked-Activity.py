@@ -74,32 +74,57 @@ fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
                                                       **plot_props)
 
 # %%
-# find significantly-responsive cells
+
+# statisical test of evoked responses:
 stat_test_props = dict(interval_pre=[-1.,0],                                   
                        interval_post=[1.,2.],                                   
                        test='ttest',                                            
                        sign='positive')
 
-significant = np.zeros(data.nROIs, dtype=bool)
-for n in range(data.nROIs):
-  summary = episodes.pre_post_statistics(\
-                  stat_test_props,
-                  response_args=dict(quantity='dFoF',
-                                     roiIndex=n),
-                  response_significance_threshold=0.01,
-      )
-  significant[n] = np.sum(summary['significant'])
-  
-print(np.sum(significant), len(significant))
+summary = episodes.pre_post_statistics(\
+                stat_test_props,
+                # repetition_keys=['repeat', 'angle', 'contrast'],
+                response_args=dict(quantity='dFoF',
+                                   roiIndex=0),
+                response_significance_threshold=0.01,
+                verbose=True)
+
+for key in summary:
+    print('- %s : %s' % (key, summary[key]))
+
 # %%
-summary = episodes.reliability(\
-                episodes.find_episode_cond(),
-                # stat_test_props,
-                roiIndex=0,
+# now LOOPING over cells
+summary = episodes.pre_post_statistics(\
+                stat_test_props,
+                response_args=dict(quantity='dFoF'),
+                response_significance_threshold=0.01,
+                loop_over_cells=True,
+                verbose=False)
+
+
+# %%
+summary = episodes.reliability(
+        response_args=dict(quantity='dFoF'),
+        stat_test_props=dict(n_samples=500, seed=2),
+        loop_over_cells=True,
+        verbose=False,
+)
+
+# %%
+# visualizing the computation of reliability:
+
+from physion.analysis.episodes.trial_statistics \
+        import run_reliability_test
+summary = run_reliability_test(episodes,
+                episodes.find_episode_cond(key=['contrast', 'angle'],
+                                           value=[0.5, 0]),
+                dict(quantity='dFoF', roiIndex=1),
+                stat_test_props=dict(n_samples=100, seed=2),
+                response_significance_threshold=0.05,
                 return_samples=True)
 
 # %%
-fig, [ax0, ax]= pt.figure(axes=(1,2))
+fig, [ax0, ax]= pt.figure(axes=(2,1), wspace=3.)
 pt.plot(episodes.t, 
         np.mean(summary['real'], axis=0), 
         sy=np.std(summary['real'], axis=0), 
@@ -116,12 +141,11 @@ ax.hist(summary['null_corr_list'], bins=np.linspace(-1,1,20),
 ax.hist(summary['corr_list'], bins=np.linspace(-1,1,20),
         label='True correlations', color='tab:blue', density=True)
 ax.axvline(summary['r'], color='green' if summary['significant'] else 'red', linestyle='--', label='Reliability r=%.2f' % summary['r'])
-ax.axvline(perc_threshold, color='black', linestyle='--', label='%.0fth percentile of null dist=%.2f' %(percentile, perc_threshold))
-pt.set_plot(ax, 
-            xlabel='Correlation coefficient',
-            ylabel='Count')
-ax.annotate(f'r={r:.3f}, %(pval)%f: {p_value:.3f}', xy=(0.05, 1.), xycoords='axes fraction')
-pt.legend(ax, loc=(1.,.2))
+# ax.axvline(perc_threshold, color='black', linestyle='--', label='%.0fth percentile of null dist=%.2f' %(percentile, perc_threshold))
+pt.set_plot(ax, xlabel='Correlation coefficient', ylabel='Count')
+ax.set_title('r=%(r).2f, p%(pval).1e' % summary)
+ax0.legend(loc=(1.,.2), frameon=False)
+ax.legend(loc=(1.,.2), frameon=False)
 
 
 # %%
