@@ -4,52 +4,94 @@ import numpy as np
 def compute_sensitivity_per_cells(data, Episodes,
                                   stat_test_props,
                                   response_significance_threshold = 0.05,
+                                  filtering_cond=None,
                                   quantity='dFoF',
                                   angle=0.0,
-                                  verbose=True):
+                                  verbose=False):
     """
 
     """
 
-    selectivities, significant_waveforms = [], []
-    RESPONSES, semRESPONSES = [], []
-    posSIGNIFICANT = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
-                               dtype=bool)
-    negSIGNIFICANT = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
-                               dtype=bool)
-    RESPONSES = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
-                            dtype=float)
-    semRESPONSES = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
-                            dtype=float)
+    if filtering_cond is None:
+        filtering_cond = Episodes.find_episode_cond() # True everywhere
 
-    for roi in np.arange(data.nROIs):
+    cond = Episodes.find_episode_cond(key='angle', 
+                                        value=angle) &\
+                                        filtering_cond
 
-        # first for positive responses
-        stat_test_props['sign'] = 'positive'
-        cell_resp = Episodes.compute_summary_data(stat_test_props,
-                        response_significance_threshold=response_significance_threshold,
-                        response_args=dict(quantity=quantity, roiIndex=roi))
-        # second for negative responses
-        stat_test_props['sign'] = 'negative'
-        cell_resp_neg = Episodes.compute_summary_data(stat_test_props,
-                        response_significance_threshold=response_significance_threshold,
-                        response_args=dict(quantity=quantity, roiIndex=roi))
+    # summary = Episodes.pre_post_statistics(stat_test_props,
+    #                                             episode_cond=cond,
+    #                                             repetition_keys=['repeat', 'angle'],
+    #                                             response_args=dict(quantity=quantity),
+    #                                             response_significance_threshold=response_significance_threshold,
+    #                                             multiple_comparison_correction=True,
+    #                                             loop_over_cells=True,
+    #                                             verbose=verbose)
 
-        condition = (cell_resp['angle']==angle)
-        for c, cont in enumerate(np.unique(cell_resp['contrast'][condition])):
-            cond = condition & (cell_resp['contrast']==cont)
-            posSIGNIFICANT[roi, c] = bool(cell_resp['significant'][cond])
-            negSIGNIFICANT[roi, c] = bool(cell_resp_neg['significant'][cond])
-            RESPONSES[roi, c] = float(cell_resp['value'][cond])
-            semRESPONSES[roi, c] = float(cell_resp['sem-value'][cond])
+    # selectivities, significant_waveforms = [], []
+    # RESPONSES, semRESPONSES = [], []
+    # posSIGNIFICANT = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
+    #                            dtype=bool)
+    # negSIGNIFICANT = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
+    #                            dtype=bool)
+    # RESPONSES = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
+    #                         dtype=float)
 
-        contrast = cell_resp['contrast'][condition]
+    # semRESPONSES = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
+    #                         dtype=float)
 
-    output = {'Responses':RESPONSES,
+    # first for positive responses
+    stat_test_props['sign'] = 'positive'
+    summary_positive= Episodes.pre_post_statistics(\
+                                stat_test_props,
+                                episode_cond=cond,
+                                repetition_keys=['repeat', 'angle'],
+                                response_args=dict(quantity=quantity),
+                                response_significance_threshold=response_significance_threshold,
+                                multiple_comparison_correction=True,
+                                loop_over_cells=True,
+                                verbose=verbose)
+    
+    # second for negative responses
+    stat_test_props['sign'] = 'negative'
+    summary_negative = Episodes.pre_post_statistics(\
+                            stat_test_props,
+                            episode_cond=cond,
+                            repetition_keys=['repeat', 'angle'],
+                            response_args=dict(quantity=quantity),
+                            response_significance_threshold=response_significance_threshold,
+                            multiple_comparison_correction=True,
+                            loop_over_cells=True,
+                            verbose=verbose)
+
+    # for roi in np.arange(data.nROIs):
+
+    #     stat_test_props['sign'] = 'negative'
+    #     cell_resp_neg = Episodes.compute_summary_data(stat_test_props,
+    #                     response_significance_threshold=response_significance_threshold,
+    #                     response_args=dict(quantity=quantity, roiIndex=roi))
+
+    #     condition = (summary_positive['angle']==angle)
+
+    #     for c, cont in enumerate(np.unique(cell_resp['contrast'][condition])):
+    #         cond = condition & (cell_resp['contrast']==cont)
+    #         posSIGNIFICANT[roi, c] = bool(cell_resp['significant'][cond])
+    #         negSIGNIFICANT[roi, c] = bool(cell_resp_neg['significant'][cond])
+    #         RESPONSES[roi, c] = float(cell_resp['value'][cond])
+    #         semRESPONSES[roi, c] = float(cell_resp['sem-value'][cond])
+
+    #     contrast = cell_resp['contrast'][condition]
+
+    
+    semRESPONSES = np.array([
+        summary_positive['value'][roi,:]/np.sqrt(summary_positive['ntrials'])
+        for roi in range(data.nROIs)])
+
+    output = {'Responses':summary_positive['value'],
               'semResponses':semRESPONSES,
-              'contrast':np.unique(Episodes.contrast),
-              'significant_pos':posSIGNIFICANT,
-              'significant_neg':negSIGNIFICANT}
+              'contrast':summary_positive['contrast'],
+              'significant_pos':summary_positive['significant'],
+              'significant_neg':summary_negative['significant']}
 
     return output
 
@@ -206,14 +248,14 @@ def plot_contrast_responsiveness(keys,
                 pt.bar([np.mean(Gains)], x=[i], color=color, ax=inset,alpha=0.1)
 
                 if with_label:
-                        annot = i*'\\n'+' %.1f$\\pm$%.1f, ' %(\
+                        annot = i*'\n'+' %.1f$\\pm$%.1f, ' %(\
                                np.mean(Gains), stats.sem(Gains))
                         annot += 'N=%02d %s, ' % (len(Responsive), 'sessions') + key
 
                 pt.annotate(inset, annot, (1., 0.9), va='top', color=color)
 
         pt.set_plot(ax, 
-            ylabel='%% responsive \\n %s' % sign,
+            ylabel='%% responsive \n %s' % sign,
             xlabel='contrast', 
             xticks=[0, Responsive.shape[1]-1], xticks_labels=[0,1])
 

@@ -106,8 +106,6 @@ def compute_tuning_response_per_cells(data, Episodes,
     if filtering_cond is None:
         filtering_cond = Episodes.find_episode_cond() # True everywhere
 
-    significant = np.zeros(data.nROIs, dtype=bool)
-
     cond = Episodes.find_episode_cond(key='contrast', 
                                         value=contrast) &\
                                         filtering_cond
@@ -118,7 +116,7 @@ def compute_tuning_response_per_cells(data, Episodes,
                                                 response_significance_threshold=response_significance_threshold,
                                                 multiple_comparison_correction=True,
                                                 loop_over_cells=True,
-                                                verbose=True)
+                                                verbose=verbose)
         
     # if significant in at least one orientation
     significant = (np.sum(summary['significant'], axis=1)>0)

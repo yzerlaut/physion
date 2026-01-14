@@ -77,6 +77,7 @@ Sensitivity = compute_sensitivity_per_cells(data, Episodes,
                                         angle=0, # 0 or 90 here !
                                         verbose=False)
 
+
 # %% [markdown]
 # ## Plot Individual Responses
 
@@ -203,7 +204,8 @@ for angle in [0, 90]:
                                                             quantity='dFoF', 
                                                             stat_test_props=stat_test_props, 
                                                             response_significance_threshold = response_significance_threshold, 
-                                                            angle=angle)
+                                                            angle=angle,
+                                                            verbose=False)
                 Sensitivity['nROIs_original'] = nROIs_original
                 Sensitivity['nROIs_final'] = nROIs_final
                 Sensitivity['subject'] = data.nwbfile.subject.subject_id
