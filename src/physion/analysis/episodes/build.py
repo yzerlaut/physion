@@ -466,19 +466,52 @@ class EpisodeData:
             stim_data[key]=full_data.metadata[key]
             # if subprotocol, removes the "Protocol-i" from the key
             if ('Protocol-%i-' % (self.protocol_id+1)) in key:
-                stim_data[key.replace('Protocol-%i-' % (self.protocol_id+1), '')]=full_data.metadata[key]
+                stim_data[key.replace('Protocol-%i-' % (self.protocol_id+1), '')] = full_data.metadata[key]
 
         self.visual_stim = build_stim(stim_data)
 
-        # we overwrite the episode values to force it to those of the recording:
-        ##
-        ## CHECK WHY THE visual_stim CAN HAVE DIFFERENT VALUES THAN THE DATA
-        ## is it the seed that is not passed well ?
-        ## (not crucial because it is just for stim visualization purpose, but still...)
-        ##
+        # WE REBUILD THE TIME COURSE FROM THE FULL DATA
+        #   (and we limit the episodes to those actually recorded/realigned, see full_data.get_protocol_cond() )
+        all_eps = np.arange(len(self.protocol_cond_in_full_data))
+
         for key in self.visual_stim.experiment:
-            if hasattr(self, key):
-                self.visual_stim.experiment[key] = getattr(self, key)
+            for i, data_i in enumerate(all_eps[self.protocol_cond_in_full_data]):
+                self.visual_stim.experiment[key][i] = full_data.visual_stim.experiment[key][data_i]
+
+        
+    
+    def get_image(self, key=None, index=None, value=None):
+
+        if hasattr(self, 'visual_stim'):
+
+            all_eps = np.arange(len(self.index))
+            cond = all_eps[self.find_episode_cond(key=key, index=index, value=value)]
+
+            if len(cond)>0:
+                iStim = cond[0]
+                
+            
+            I = all_eps[ep.protocol_cond_in_full_data]
+
+            
+            self.plot_stim_picture(I)
+            
+            pass
+
+        else:
+            print('init visual stim!!')
+
+    
+    def plot_stim_picture(self):
+
+        '''
+        Overwrites self.visual_stim.plot_stim_picture'
+        '''
+        print("plot stim function to do")
+        
+
+        return 0
+    
 
 
 if __name__=='__main__':

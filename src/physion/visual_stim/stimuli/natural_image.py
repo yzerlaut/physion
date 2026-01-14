@@ -10,10 +10,10 @@ from physion.visual_stim.preprocess_NI import load,\
 #######################################
 
 params = {"Image-ID":1,
-          "contrast":0.3,
+          "contrast":1.0,
           "x-center":0,
           "y-center":0,
-          "radius":30
+          "radius":300
 }
 
 
