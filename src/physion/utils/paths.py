@@ -31,7 +31,7 @@ else:
         
 python_path_suite2p_env = check_path('suite2p')
 
-LAB = ['Cibele', 'Joana', 'Taddy', 'Sally', 'Sofia', 'Yann']:
+LAB = ['Cibele', 'Joana', 'Taddy', 'Sally', 'Sofia', 'Yann']
 
 FOLDERS = {}
 
