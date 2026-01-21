@@ -83,7 +83,7 @@ stat_test_props = dict(interval_pre=[-1.,0],
 
 summary = episodes.pre_post_statistics(\
                 stat_test_props,
-                # repetition_keys=['repeat', 'angle', 'contrast'],
+                #repetition_keys=['repeat', 'angle', 'contrast'],
                 response_args=dict(quantity='dFoF',
                                    roiIndex=0),
                 response_significance_threshold=0.01,

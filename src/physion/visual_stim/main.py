@@ -357,6 +357,7 @@ class visual_stim:
         # we write a tstop 
         self.tstop = self.experiment['time_stop'][-1]+\
                             protocol['presentation-poststim-period']
+        
 
 
     def prepare_stimProps_tables(self,

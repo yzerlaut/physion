@@ -49,26 +49,33 @@ class stim(visual_stim):
 
         img = init_bg_image(self, episode)
 
-        if self.experiment['radius-surround'][episode]>0:
+        if self.experiment['radius-surround'][episode] is not None : 
+            
+            if self.experiment['radius-surround'][episode]>0:
 
-            self.add_grating_patch(img,
-                                #    screen_id=screen_id,
-                       angle=self.experiment['angle-surround'][episode],
-                       radius=self.experiment['radius-surround'][episode],
-                       phase_shift_Deg=self.experiment['phase-surround'][episode]\
-                               if 'phase-surround' in self.experiment else 90.,
-                       spatial_freq=self.experiment['spatial-freq-surround'][episode],
-                       contrast=self.experiment['contrast-surround'][episode],
-                       xcenter=self.experiment['x-center'][episode],
-                       zcenter=self.experiment['y-center'][episode],
-                       time_phase=self.experiment['speed-surround'][episode]*time_from_episode_start)
+                self.add_grating_patch(img,
+                                    #    screen_id=screen_id,
+                        angle=self.experiment['angle-surround'][episode],
+                        radius=self.experiment['radius-surround'][episode],
+                        phase_shift_Deg=self.experiment['phase-surround'][episode]\
+                                if 'phase-surround' in self.experiment else 90.,
+                        spatial_freq=self.experiment['spatial-freq-surround'][episode],
+                        contrast=self.experiment['contrast-surround'][episode],
+                        xcenter=self.experiment['x-center'][episode],
+                        zcenter=self.experiment['y-center'][episode],
+                        time_phase=self.experiment['speed-surround'][episode]*time_from_episode_start)
 
-            self.add_dot(img,
-                        #  screen_id=screen_id,
-                         (self.experiment['x-center'][episode],
-                           self.experiment['y-center'][episode]),
-                           self.experiment['radius'][episode],
-                           self.experiment['bg-color'][episode], type='circle')
+                self.add_dot(img,
+                            #  screen_id=screen_id,
+                            (self.experiment['x-center'][episode],
+                            self.experiment['y-center'][episode]),
+                            self.experiment['radius'][episode],
+                            self.experiment['bg-color'][episode], type='circle')
+
+        # quick fix - change and rebuild NWB? 
+        if self.experiment['phase'][episode]==None:
+            self.experiment['phase'][episode]=np.float64(90.0)
+        #end quick fix
 
         self.add_grating_patch(img,
                             #    screen_id=screen_id,

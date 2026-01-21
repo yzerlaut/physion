@@ -46,13 +46,12 @@ def stat_test_for_evoked_responses(ep,
         else:
             return None
 
-
 def run_pre_post_stat(ep,
-        response_args,
-        merged_episode_cond = None,
-        response_significance_threshold=0.05,
-        stat_test_props={},
-        verbose=True):
+                      merged_episode_cond = None,
+                      response_args = {},
+                      response_significance_threshold=0.05,
+                      stat_test_props={},
+                      verbose=True):
     """
     Docstring for run_pre_post_stat
 
@@ -60,11 +59,10 @@ def run_pre_post_stat(ep,
     so that it returns a dictionary
     """
 
-    stats = ep.stat_test_for_evoked_responses(\
-                            episode_cond=merged_episode_cond,
-                                    response_args=response_args,
-                                            verbose=verbose,
-                                                **stat_test_props)
+    stats = ep.stat_test_for_evoked_responses(episode_cond=merged_episode_cond,
+                                              response_args=response_args,
+                                              verbose=verbose,
+                                              **stat_test_props)
     
     if stats is not None:
         return {
@@ -72,13 +70,10 @@ def run_pre_post_stat(ep,
             'std-value' : np.std(stats.y-stats.x),
             'ntrials' : len(stats.x),
             'pval' : stats.pvalue,
-            'significant': stats.significant(\
-                                threshold=response_significance_threshold),
+            'significant': stats.significant(threshold=response_significance_threshold),
         }
-
     else:
         return {}
-
 
 def build_episode_params_variations(ep, repetition_keys):
     """
@@ -98,7 +93,6 @@ def build_episode_params_variations(ep, repetition_keys):
             "angle" (i.e. stim. orientation) values
     
     """
-
     VARIED_KEYS, VARIED_VALUES = [], []
     for key in ep.varied_parameters:
         if key not in repetition_keys:
@@ -106,7 +100,6 @@ def build_episode_params_variations(ep, repetition_keys):
             VARIED_VALUES.append(ep.varied_parameters[key])
 
     return VARIED_KEYS, VARIED_VALUES
-
 
 def calc_pval_factor(VARIED_VALUES, 
                      multiple_comparison_correction):
@@ -132,7 +125,7 @@ def calc_pval_factor(VARIED_VALUES,
 def run_analysis_splitting_by_stim_params(ep, 
                                           stat_func,
                                           response_args,  
-                                          episode_cond=None,
+                                          episode_cond= None,
                                           stat_test_props={},
                                           repetition_keys=['repeat'],
                                           multiple_comparison_correction=True,
@@ -152,6 +145,7 @@ def run_analysis_splitting_by_stim_params(ep,
     :param nMin_episodes: Description
     :param verbose: Description
     """
+
 
     VARIED_KEYS, VARIED_VALUES = \
         build_episode_params_variations(ep, 
@@ -175,8 +169,10 @@ def run_analysis_splitting_by_stim_params(ep,
             print('    running stat analysis one by one [...]')
             print()
 
-        for values in itertools.product(*VARIED_VALUES):
+        if episode_cond is None:
+            episode_cond = ep.find_episode_cond()
 
+        for values in itertools.product(*VARIED_VALUES):
             merged_episode_cond = episode_cond &\
                         ep.find_episode_cond(key=VARIED_KEYS, 
                                              value=values)
@@ -188,13 +184,13 @@ def run_analysis_splitting_by_stim_params(ep,
                     full_summary[key].append(value)
 
                 # perform stat analysis, from "stat_func" argument
+
                 summary = stat_func(ep,
-                    merged_episode_cond,
-                    response_args,
-                    response_significance_threshold=pval_factor*\
-                                    response_significance_threshold,
-                    stat_test_props=stat_test_props,
-                    verbose=verbose)
+                                    merged_episode_cond,
+                                    response_args,
+                                    response_significance_threshold=pval_factor*response_significance_threshold,
+                                    stat_test_props=stat_test_props,
+                                    verbose=verbose)
 
                 # store statistics values
                 for key in summary:
@@ -227,15 +223,17 @@ def run_analysis_splitting_by_stim_params(ep,
 
     return full_summary
 
-def pre_post_statistics(ep, stat_test_props,
-                        episode_cond=None,
+def pre_post_statistics(ep,
+                        episode_cond,
+                        response_args,
+                        response_significance_threshold=0.05,
+                        stat_test_props={},
                         repetition_keys=['repeat'],
                         nMin_episodes=5,
-                        response_args={},
-                        response_significance_threshold=0.05,
                         multiple_comparison_correction=True,
                         loop_over_cells=False,
                         verbose=True):
+    
     '''
     return all the statistic values organized in a dictionary (str keys and arrays of values). 
     dictionnary keys : 
@@ -303,7 +301,6 @@ def pre_post_statistics(ep, stat_test_props,
 
 
         return summary
-
 
 def run_reliability_test(ep,
                      merged_episode_cond,
@@ -379,15 +376,14 @@ def run_reliability_test(ep,
 
     return summary
 
-
 def reliability(ep,
                 episode_cond=None,
                 response_args={},
+                response_significance_threshold=0.05,
+                stat_test_props=dict(seed=1, n_samples=500),
                 repetition_keys=['repeat'],
                 nMin_episodes=5,
-                response_significance_threshold=0.05,
                 multiple_comparison_correction=True,
-                stat_test_props=dict(seed=1, n_samples=500),
                 loop_over_cells=False,
                 verbose=True):
 
