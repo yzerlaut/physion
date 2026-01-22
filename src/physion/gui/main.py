@@ -401,7 +401,7 @@ class MainWindow(QtWidgets.QMainWindow):
         if not hasattr(self, 'roiIndices'):
             self.roiIndices = [0]
         if len(self.roiIndices)==1:
-            self.roiIndices = [min([self.data.iscell.sum()-1,
+            self.roiIndices = [min([self.data.nROIs-1,
                                self.roiIndices[0]+1])]
         else:
             self.roiIndices = [0]
