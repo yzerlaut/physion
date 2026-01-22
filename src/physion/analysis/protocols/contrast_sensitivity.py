@@ -19,27 +19,6 @@ def compute_sensitivity_per_cells(data, Episodes,
                                         value=angle) &\
                                         filtering_cond
 
-    # summary = Episodes.pre_post_statistics(stat_test_props,
-    #                                             episode_cond=cond,
-    #                                             repetition_keys=['repeat', 'angle'],
-    #                                             response_args=dict(quantity=quantity),
-    #                                             response_significance_threshold=response_significance_threshold,
-    #                                             multiple_comparison_correction=True,
-    #                                             loop_over_cells=True,
-    #                                             verbose=verbose)
-
-    # selectivities, significant_waveforms = [], []
-    # RESPONSES, semRESPONSES = [], []
-    # posSIGNIFICANT = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
-    #                            dtype=bool)
-    # negSIGNIFICANT = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
-    #                            dtype=bool)
-    # RESPONSES = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
-    #                         dtype=float)
-
-    # semRESPONSES = np.zeros((data.nROIs, len(np.unique(Episodes.contrast))), 
-    #                         dtype=float)
-
     # first for positive responses
     stat_test_props['sign'] = 'positive'
     summary_positive= Episodes.pre_post_statistics(\
@@ -64,25 +43,6 @@ def compute_sensitivity_per_cells(data, Episodes,
                             loop_over_cells=True,
                             verbose=verbose)
 
-    # for roi in np.arange(data.nROIs):
-
-    #     stat_test_props['sign'] = 'negative'
-    #     cell_resp_neg = Episodes.compute_summary_data(stat_test_props,
-    #                     response_significance_threshold=response_significance_threshold,
-    #                     response_args=dict(quantity=quantity, roiIndex=roi))
-
-    #     condition = (summary_positive['angle']==angle)
-
-    #     for c, cont in enumerate(np.unique(cell_resp['contrast'][condition])):
-    #         cond = condition & (cell_resp['contrast']==cont)
-    #         posSIGNIFICANT[roi, c] = bool(cell_resp['significant'][cond])
-    #         negSIGNIFICANT[roi, c] = bool(cell_resp_neg['significant'][cond])
-    #         RESPONSES[roi, c] = float(cell_resp['value'][cond])
-    #         semRESPONSES[roi, c] = float(cell_resp['sem-value'][cond])
-
-    #     contrast = cell_resp['contrast'][condition]
-
-    
     semRESPONSES = np.array([
         summary_positive['value'][roi,:]/np.sqrt(summary_positive['ntrials'])
         for roi in range(data.nROIs)])
@@ -146,7 +106,7 @@ def plot_contrast_sensitivity(keys,
                               average_by='sessions',
                               colors=None,
                               with_label=True,
-                              fig_args={'right':4}):
+                              fig_args={'right':25}):
 
         if colors is None:
             colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -204,7 +164,7 @@ def plot_contrast_responsiveness(keys,
                                  colors=None,
                                  nROIs='final',
                                  with_label=True,
-                                 fig_args={'right':4}):
+                                 fig_args={'right':25}):
         
         """
 

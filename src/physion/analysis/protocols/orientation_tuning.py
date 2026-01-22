@@ -219,14 +219,13 @@ def compute_selectivities(Responses,
     return SIs 
 
 
-
 def plot_selectivity(keys,
                      path=os.path.expanduser('~'),
                      average_by='sessions',
                      using='orth-resp',
                      colors=None,
                      with_label=True,
-                     fig_args={}):
+                     fig_args={'right':20}):
 
     if colors is None:
         colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -266,12 +265,68 @@ def plot_selectivity(keys,
 
     return fig, ax
 
+def plot_selectivity_distrib(keys,
+                        path=os.path.expanduser('~'),
+                        average_by='ROIs',
+                        using='orth-resp',
+                        plot='hist',
+                        bins=np.linspace(0, 1, 50),
+                        colors=None,
+                        with_label=True,
+                        fig_args={'right':20}):
+
+    if colors is None:
+        colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
+
+    if type(keys)==str:
+        keys, colors = [keys], [colors[0]]
+
+    fig, ax = pt.figure(**fig_args)
+
+    for i, (key, color) in enumerate(zip(keys, colors)):
+
+            # load data
+            Tunings = \
+                    np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
+                            allow_pickle=True)
+    
+            Responses = get_tuning_responses(Tunings,
+                                             average_by=average_by)
+            Selectivities = compute_selectivities(Responses,
+                                                  angles=Tunings[0]['shifted_angle'],
+                                                  using=using)
+            hist, be = np.histogram(Selectivities, 
+                                    bins=bins, density=True)
+            if plot=='hist':
+                ax.plot(.5*(be[1:]+be[:-1]), hist, color=color)
+            else:
+                cum_prob = np.cumsum(hist) 
+                ax.plot(.5*(be[1:]+be[:-1]), cum_prob/cum_prob[-1],
+                        color=color)
+
+            if with_label:
+                annot = i*'\n'+\
+                    'SI=%.2f$\\pm$%.2f' % (np.mean(Selectivities), stats.sem(Selectivities))
+                if average_by in ['sessions', 'subjects']:
+                    annot += ', N=%02d %s, ' % (len(Responses), average_by) + key
+                else:
+                    annot += ', n=%04d %s, ' % (len(Responses), average_by) + key
+
+                pt.annotate(ax, annot, (1., 0.9), va='top', color=color)
+
+    pt.set_plot(ax, 
+                xticks=np.arange(3)*0.5,
+                xlabel='Select. Index',
+                ylabel='hist' if plot=='hist' else 'cum. frac.')
+
+    return fig, ax
+
 def plot_orientation_tuning_curve(keys,
                       path=os.path.expanduser('~'),
                       average_by='sessions',
                       colors=None,
                       with_label=True,
-                      fig_args={}):
+                      fig_args={'right':20}):
     
     if colors is None:
         colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -322,7 +377,7 @@ def plot_responsiveness(keys,
                         reference_ROI_number='nROIs_final',
                         colors=None,
                         with_label=True,
-                        fig_args={}):
+                        fig_args={'right':20}):
     
     if colors is None:
         colors = pt.plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -360,6 +415,9 @@ def plot_responsiveness(keys,
             ylabel='$\\%$ responsive')
 
     return fig, ax
+
+
+
 
 if __name__=='__main__':
 

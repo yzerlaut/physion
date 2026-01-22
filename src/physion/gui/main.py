@@ -322,9 +322,11 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.bot_spatial_maps()
             # self.OD_analysis()
             # self.lastBox.setChecked(False)
-            self.intrinsic()
-            self.datafolder = os.path.expanduser('~/DATA/physion_Demo-Datasets/PV-WT/retinotopic_mapping/PVTOM_BB_5')
-            self.load_intrinsic_data()
+
+            # self.intrinsic()
+            # self.datafolder = os.path.expanduser('~/DATA/physion_Demo-Datasets/PV-WT/retinotopic_mapping/PVTOM_BB_5')
+            # self.load_intrinsic_data()
+
             # self.SS_intrinsic()
             # self.facemotion()
             # self.pupil()
@@ -340,7 +342,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # from physion.analysis import read_NWB
             # self.data = read_NWB.Data(self.datafile)
             # self.visualization()
-            # self.trial_averaging()
+            self.trial_averaging()
             # self.FOV()
             # self.multimodal()
             # self.intrinsic()
