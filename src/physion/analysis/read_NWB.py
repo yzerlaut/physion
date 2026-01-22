@@ -79,7 +79,9 @@ class Data:
                         ' ---- '+self.nwbfile.experiment_description
         
         self.metadata = ast.literal_eval(\
-                self.nwbfile.session_description)
+            # self.nwbfile.session_description # DOESN'T WORK ANYMORE, tuple instead of string ??? need to replace with below...
+            self.nwbfile.session_description.replace('("', '').replace('",)','')
+        )
 
         space = '        '
         self.description = '\n - Subject: %s %s \n' % (space,

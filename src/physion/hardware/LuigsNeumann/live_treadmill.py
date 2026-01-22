@@ -1,6 +1,5 @@
 import numpy as np
-import time
-import sys
+import time, sys
 import nidaqmx
 
 # sys.path += ["C:\LuigsNeumann_Treadmill\IO\ReadWriteNI\PyDAQmx-1.2.3"]
@@ -19,7 +18,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import nidaqmx
 from nidaqmx.constants import AcquisitionType, LineGrouping
-from collections import deque
 import time
 
 from physion.hardware.NIdaq.config import find_usb_devices, get_digital_input_channels

@@ -1,3 +1,7 @@
+"""
+Interface for M-Series and X-Series NIdaq cards
+
+"""
 import nidaqmx, time
 import numpy as np
 
