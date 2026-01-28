@@ -9,7 +9,7 @@ from physion.hardware.NIdaq.main import Acquisition
 
 import numpy as np
 import matplotlib.pylab as plt
-tstop = 10.     # max time (seconds)
+tstop = 5.     # max time (seconds)
 T = 30e-3       # period (seconds)
 fs = 10e3       # sampling frequency (Hz)
 dt = 1/fs
@@ -20,8 +20,8 @@ t = np.arange(int(tstop/dt)+1)*dt
 
 def build_start_stop_signal(t):
 
-    cond = ((t>0.1) & (t<0.15)) |\
-          ((t>(t[-1]-0.1)) & (t<(t[-1]-0.05)))
+    cond = ((t>0.1) & (t<0.35)) |\
+          ((t>(t[-1]-0.3)) & (t<(t[-1]-0.05)))
     output = np.zeros_like(t)
     output[cond] = 5
     return output
@@ -53,12 +53,13 @@ acq.close()
 
 # %%
 # zoom properties
-plt.plot(1e3*t[::10], acq.analog_data[0][::10], label='start')
-plt.plot(1e3*t[::10], acq.analog_data[1][::10], label='stop')
+plt.plot(1e3*t[::10], acq.analog_data[0][::10], color='chan0')
+plt.plot(1e3*t[::10], acq.analog_data[1][::10], label='chan1')
 plt.xlabel("Time (ms)")
 plt.ylabel("Amplitude")
 plt.grid(True)
 plt.legend(loc=(1.,0.2))
+
 # %%
 # now ZOOM on data
 t0, width =0.1, 0.1
