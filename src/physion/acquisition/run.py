@@ -6,8 +6,7 @@ from PyQt5 import QtCore
 from physion.utils.files import get_time, get_date, generate_datafolders,\
         get_latest_file
 from physion.acquisition.tools import \
-        check_gui_to_init_metadata, NIdaq_metadata_init,\
-        set_filename_and_folder, stimulus_movies_folder
+        check_gui_to_init_metadata, set_filename_and_folder, stimulus_movies_folder
 from physion.acquisition import recordings
 
 from physion.visual_stim.main import build_stim as build_VisualStim
@@ -166,31 +165,36 @@ def run(self):
         if len(output_funcs)==0:
             output_funcs.append(recordings.trigger2P)
 
-        NIdaq_metadata_init(self)
+        if self.metadata['NIdaq']:
 
-        if self.onlyDemoButton.isChecked():
-            np.save(os.path.join(self.date_time_folder, 'NIdaq.start.npy'),
-                    time.time()*np.ones(1))
-            np.save(os.path.join(self.date_time_folder, 'NIdaq.npy'),
-                    {'analog':np.zeros((1,20000)),
-                     'digital':np.zeros((1,20000)),
-                     'dt':1e-2})
-        else:
-            try:
-                self.acq = Acquisition(\
-                    sampling_rate=\
-                        self.metadata['NIdaq-acquisition-frequency'],
-                    Nchannel_analog_in=\
-                            self.metadata['NIdaq-analog-input-channels'],
-                    Nchannel_digital_in=\
-                            self.metadata['NIdaq-digital-input-channels'],
-                    max_time=self.max_time,
-                    output_funcs=output_funcs,
-                    filename= self.filename.replace('metadata', 'NIdaq'))
-            except BaseException as e:
-                print(e)
-                print('\n [!!] PB WITH NI-DAQ [!!] \n')
-                self.acq = None
+            if self.onlyDemoButton.isChecked():
+                np.save(os.path.join(self.date_time_folder, 'NIdaq.start.npy'),
+                        time.time()*np.ones(1))
+                np.save(os.path.join(self.date_time_folder, 'NIdaq.npy'),
+                        {'analog':np.random.randn(1,20000),
+                        'digital':np.zeros((2,20000), dtype=bool),
+                        'dt':1e-2})
+
+            else:
+                try:
+                    self.acq = Acquisition(\
+                        # time settings
+                        sampling_rate=\
+                            self.metadata['NIdaq']['acquisition-frequency'],
+                        max_time=self.max_time,
+                        # recorded inputs
+                        Nchannel_analog_in=\
+                                self.metadata['NIdaq']['analog-input']['N-channels'],
+                        Nchannel_digital_in=\
+                                self.metadata['NIdaq-digital-input-channels'],
+                        #
+                        analog_output_funcs=output_funcs,
+                        #
+                        filename= self.filename.replace('metadata', 'NIdaq'))
+                except BaseException as e:
+                    print(e)
+                    print('\n [!!] PB WITH NI-DAQ [!!] \n')
+                    self.acq = None
         
 
         # saving all metadata after full initialization:

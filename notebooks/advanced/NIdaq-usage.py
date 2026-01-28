@@ -38,9 +38,8 @@ import matplotlib.pylab as plt
 tstop = 5.     # max time (seconds)
 T = 30e-3       # period (seconds)
 fs = 10e3       # sampling frequency (Hz)
-dt = 1/fs
 
-t = np.arange(int(tstop/dt)+1)*dt
+t = np.arange(int(tstop*fs)+1)/fs
 
 # %%
 
@@ -78,6 +77,10 @@ while (time.time()-tic)<tstop:
         tac = time.time()
     pass
 acq.close()
+
+# %%
+fig, ax = plt.subplots(1, figsize=(6,2))
+ax.plot(acq.analog_data[0,:])
 
 # %%
 tstop = 6

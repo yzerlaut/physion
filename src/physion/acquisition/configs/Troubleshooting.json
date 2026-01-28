@@ -1,11 +1,14 @@
 {
+    "Rig":"Test", "physion-version":2.0,
+    "-----------------------------------------":"",
+    "Screen":"Dell-2020",
     "-----------------------------------------":"",
     "NIdaq":{
         "acquisition-frequency":5000,
         "analog-outputs":{
             "N-channels":1,
             "channel-labels":[
-                "photodiode-signal-from-screen"
+                "trigger-for-2P-start"
             ]
         },
         "analog-inputs":{
@@ -25,23 +28,28 @@
         "digital-inputs":{
             "lines":"port0/line4-7",
             "line-labels":[
-                "photodiode-signal-from-screen",
-                "",
+                "locomotion-channel1",
+                "locomotion-channel2",
+                "copy-visual-stim-start",
                 ""
             ]
         }
     },
     "-----------------------------------------":"",
-    "FaceCamera-frame-rate":30,
-    "FaceCamera-1cm-in-pix":480,
+    "FaceCamera":{
+        "frame-rate":30,
+        "1cm-in-pix":480
+    },
     "-----------------------------------------":"",
-    "RigCamera-frame-rate":20,
-    "RigCamera-1cm-in-pix":33,
+    "RigCamera":{
+        "frame-rate":20,
+        "1cm-in-pix":33
+    },
     "-----------------------------------------":"",
-    "ImagingCamera-frame-rate":20,
-    "ImagingCamera-1cm-in-pix":33, 
-    "-----------------------------------------":"",
-    "Screen":"Dell-2020",
+    "ImagingCamera":{
+        "frame-rate":20,
+        "1cm-in-pix":33
+    },
     "Height-of-Microscope-Camera-Image-in-mm":2.7,
     "-----------------------------------------":"",
     "rotating-disk":{
@@ -50,7 +58,7 @@
     },
     "-----------------------------------------":"",
     "root_datafolder":"DATA",
-    "experimenter":"Yann Zerlaut",
     "lab":"Rebola and Bacci labs",
-    "institution":"Institut du Cerveau et de la Moelle, Paris"
+    "institution":"Institut du Cerveau et de la Moelle, Paris",
+    "protocols":"all"
 }

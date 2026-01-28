@@ -1,11 +1,9 @@
 from . import settings, tools, run, recordings
 
-MODALITIES = ['Locomotion',
+MODALITIES = ['NIdaq',
               'FaceCamera',
               'RigCamera',
               'ImagingCamera',
-              # 'EphysLFP',
-              # 'EphysVm',
               'Neuropixels',
               'CaImaging',
               'onlyDemo']
