@@ -11,7 +11,7 @@ from nidaqmx.utils import flatten_channel_string
 from nidaqmx.constants import Edge, WAIT_INFINITELY, LineGrouping
 from nidaqmx.stream_readers import (
     AnalogMultiChannelReader,
-    DigitalSingleChannelReader
+    DigitalMultiChannelReader
 )
 from nidaqmx.stream_writers import (
     AnalogMultiChannelWriter,
@@ -25,38 +25,67 @@ from physion.hardware.NIdaq.config import (
 
 class Acquisition:
     """
+
     sets up hardware-timed clock on the analog and digital output channels
 
-    Adds hardware-timed DIGITAL OUTPUT on port0 (P0.0..P0.7) using DigitalMultiChannelWriter.
+    by default, you can initialize outputs (digital and analog) by passing
+    either a set of step dictionaries, or a set of functions (of time)
 
-    - Digital OUT (binary):  DevX/port0   (uint8 samples, bits map to P0.0..P0.7)
-    - Digital IN (loopback): DevX/PFI0    (bool samples)
+    DIGITAL data: np.uint32
+    ANALOG data: np.float64
+
+    for digital channels, **only "port0" supports buffered data** 
+        --> only this can be used with this interface !!
+    PUT the DIGITAL OUTPUTS on the first lines, e.g. line0-3
+    and the DIGITAL INPUTS on the remaining ones, e.g. line4-7
+    
+    Usage:
+
+        acq = Acquisition(...)
+
+        # if needed, here you can modify the output values after initialization
+        acq.analog_outputs = ...
+        acq.digital_outputs = ...
+
+        # launch the acquisition
+        acq.launch()    
+
+        # wait that acquisition finishes...
+        while acq.running:
+            time.sleep(1)
+
+        # here you 
+        print(acq.analog_data)
+        print(acq.digital_data)
+
+        # close the process and free up memory
+        acq.close()
+
     """
 
     def __init__(self,
                  sampling_rate=10000,
-                 Nchannel_analog_in=2,
                  max_time=10,
                  buffer_time=0.5,
                  filename=None,
                  device=None,
 
-                 # ---- Analog outputs (existing behavior) ----
-                 outputs=None,
-                 output_steps=[],      # [{'channel':0,'onset':2.3,'duration':1.,'value':5}]
-                 output_funcs=None,    # func(t) -> waveform
+                 # ---- Analog inputs ---- #
+                 Nchannel_analog_in=0,
 
-                 # ---- NEW: Digital output (binary port0) ----
-                 digital_out_port="port0",      # set None to disable digital out
-                 digital_out_waveform=None,     # shape (1, Nsamples) uint8, each sample is 0..255 for port bits
-                 sync_bit=0,                    # bit index for sync TTL (P0.0 default)
-                 sync_hz=5,                     # default sync frequency if waveform not provided
-                 start_bit=1,                   # optional start marker bit (P0.1 default)
-                 start_time=0.2,                # seconds
-                 start_width=0.01,              # seconds
+                 # ---- Analog outputs ----- #
+                 analog_outputs=None,
+                 analog_output_funcs=None,      # [func(t)] -> waveform (-10, 10)V range !!
+                 analog_output_steps=[],        # [{'channel':0,'onset':2.3,'duration':1.,'value':5}]
 
-                 # ---- NEW: Digital input line (for loopback recording) ----
-                 digital_in_line="PFI0",        # set None to disable DI
+                 # ---- Digital inputs ---- #
+                 digital_input_port="port0/line0:1",    # set to None to disable DI
+
+                 # ---- Digital output ---- #
+                 digital_output_port="port0/line2:3",   # set None to disable digital out
+                 digital_output_funcs=None,     # [func(t)] -> waveform (0, 1) binary func
+                 digital_output_steps=[],       # [{'channel':0,'onset':2.3,'duration':1.}]
+
                  verbose=False):
 
         self.verbose = verbose
@@ -83,174 +112,191 @@ class Acquisition:
         devname = self.device.name  # e.g. "Dev1"
 
         # ---- Analog IN channels ----
-        self.analog_data = np.zeros((self.Nchannel_analog_in, 1), dtype=np.float64)
-        self.analog_input_channels = []
         if self.Nchannel_analog_in > 0:
+            self.analog_data = np.zeros((self.Nchannel_analog_in, 1), dtype=np.float64)
             self.analog_input_channels = get_analog_input_channels(self.device)[:self.Nchannel_analog_in]
+        else:
+            self.analog_data = None
 
-        # ---- Digital IN (loopback) ----
-        self.digital_in_line = digital_in_line
-        self.digital_data = np.zeros((1, 1), dtype=np.uint8)  # store as 0/1
-        self.digital_in_chan = None
-        if self.digital_in_line is not None:
-            self.digital_in_chan = f"{devname}/{self.digital_in_line}"  # e.g. "Dev1/PFI0"
+        # ---- Digital IN channels ---- #
+        if digital_input_port is not None:
+            self.digital_in_chan = f"{devname}/{digital_input_port}"  # e.g. "Dev1/line0:7"
+            self.digital_data = np.zeros((1, 1), dtype=np.uint32)  # store as 0/1 in 8 channels, using 8 bit encoding
 
-        # ---- Analog OUT (existing behavior) ----
-        self.outputs = None
-        self.output_channels = None
+        else:
+            self.digital_data = None
 
-        if outputs is not None:
-            self.outputs = outputs
-            self.output_channels = get_analog_output_channels(self.device)[:outputs.shape[0]]
+        # ---- Analog OUT channels ---- #
+        analog_output_channels = get_analog_output_channels(self.device)
 
-        elif output_funcs is not None:
-            Nch = len(output_funcs)
-            self.output_channels = get_analog_output_channels(self.device)[:Nch]
+        if analog_output_funcs is not None:
+
+            if len(analog_output_funcs)>len(analog_output_channels):
+                print(' too many functions for the number of available analog output',
+                      '(n=%i)' % len(self.analog_output_channels))
+                print('    ----> ignoring the additional channels ! ')
+
+            Nch = min([len(analog_output_funcs), len(analog_output_channels)])
             t = np.arange(self.Nsamples) * self.dt
             out = np.zeros((Nch, len(t)), dtype=np.float64)
-            for i, func in enumerate(output_funcs):
+            for i, func in enumerate(analog_output_funcs[:Nch]):
                 out[i] = func(t)
-            self.outputs = out
+            self.output_channels = analog_output_channels[:Nch] 
+            self.analog_outputs = out
 
-        elif len(output_steps) > 0:
-            Nch = max([d['channel'] for d in output_steps]) + 1
+        elif len(analog_output_steps) > 0:
+
+            Nch = max([d['channel'] for d in analog_output_steps]) + 1
+
+            if Nch>len(analog_output_channels):
+                print(' too many step channels for the number of available analog output',
+                      '(n=%i)' % len(analog_output_channels))
+                print('    ----> ignoring the additional channels ! ')
+                Nch = len(analog_output_channels) 
+
             t = np.arange(self.Nsamples) * self.dt
             out = np.zeros((Nch, len(t)), dtype=np.float64)
-            for step in output_steps:
+            for step in analog_output_steps:
                 cond = (t > step['onset']) & (t <= step['onset'] + step['duration'])
                 out[step['channel']][cond] = step['value']
-            self.output_channels = get_analog_output_channels(self.device)[:out.shape[0]]
-            self.outputs = out
+            self.output_channels = analog_output_channels[:Nch] 
+            self.analog_outputs = out
+
+        else:
+            self.analog_outputs = None
 
         # ---- Digital OUT (binary port waveform) ----
-        self.digital_out_port = digital_out_port
-        self.digital_out_chan = None
-        self.digital_out = None
 
-        if self.digital_out_port is not None:
-            self.digital_out_chan = f"{devname}/{self.digital_out_port}"  # e.g. "Dev1/port0"
+        if digital_output_port is not None:
 
-            if digital_out_waveform is None:
-                self.digital_out = self._build_default_port_waveform(
-                    sync_bit=sync_bit,
-                    sync_hz=sync_hz,
-                    start_bit=start_bit,
-                    start_time=start_time,
-                    start_width=start_width
-                )
+            self.digital_out_chan = f"{devname}/{digital_output_port}"  # e.g. "Dev1/port0/line4:6"
+
+            if digital_output_funcs is not None:
+
+                Nch = len(digital_output_funcs)
+                t = np.arange(self.Nsamples) * self.dt
+                out = np.zeros((1, len(t)), dtype=np.uint32)
+                for i, func in enumerate(digital_output_funcs[:Nch]):
+                    out[0,:] += func(t)*(2**i) # func should be [0,1] uint32 output
+                self.digital_outputs = out
+
+            elif len(digital_output_steps) > 0:
+
+                Nch = max([d['channel'] for d in digital_output_steps]) + 1
+
+                t = np.arange(self.Nsamples) * self.dt
+                out = np.zeros((1, len(t)), dtype=np.uint32)
+                for step in digital_output_steps:
+                    cond = (t > step['onset']) & (t <= step['onset'] + step['duration'])
+                    out[0,cond] += 2**step['channel']
+                self.digital_outputs = out
+
             else:
-                arr = np.asarray(digital_out_waveform, dtype=np.uint8)
-                if arr.ndim == 1:
-                    arr = arr.reshape(1, -1)
-                if arr.shape[0] != 1 or arr.shape[1] != self.Nsamples:
-                    raise ValueError(f"digital_out_waveform must be shape (1, Nsamples={self.Nsamples}) uint8")
-                self.digital_out = arr
+                self.digital_outputs = None
 
-    def _build_default_port_waveform(self, sync_bit=0, sync_hz=5, start_bit=1, start_time=0.2, start_width=0.01):
-        """
-        Returns shape (1, Nsamples) uint8. Each sample is 0..255 representing port bits.
-        bit0 -> P0.0, bit1 -> P0.1, ...
-        """
-        N = self.Nsamples
-        fs = self.sampling_rate
-        t = np.arange(N) / fs
+        else:
+            self.digital_outputs = None
 
-        port = np.zeros(N, dtype=np.uint8)
-
-        # Sync square wave on sync_bit
-        if sync_hz is not None and sync_hz > 0:
-            period = 1.0 / sync_hz
-            phase = np.mod(t, period)
-            high = (phase < (period / 2.0))
-            port[high] |= (1 << int(sync_bit))
-
-        # Start marker pulse on start_bit
-        if start_bit is not None:
-            s0 = int(start_time * fs)
-            s1 = min(N, s0 + int(start_width * fs))
-            if s0 < N:
-                port[s0:s1] |= (1 << int(start_bit))
-
-        return port.reshape(1, -1)
 
     def launch(self):
         devname = self.device.name
 
         # Tasks
-        self.sample_clk_task = nidaqmx.Task()
+        self.sample_clk_task = nidaqmx.Task('clock')
 
-        self.read_analog_task = nidaqmx.Task() if self.Nchannel_analog_in > 0 else None
-        self.read_digital_task = nidaqmx.Task() if self.digital_in_chan is not None else None
+        self.read_analog_task = nidaqmx.Task('analog-read')\
+                                 if self.Nchannel_analog_in > 0 else None
+        self.read_digital_task = nidaqmx.Task('digital-read')\
+                                 if self.digital_in_chan is not None else None
 
-        self.write_analog_task = nidaqmx.Task() if self.outputs is not None else None
-        self.write_digital_task = nidaqmx.Task() if self.digital_out is not None else None
+        self.write_analog_task = nidaqmx.Task('analog-write')\
+                                 if self.analog_outputs is not None else None
+        self.write_digital_task = nidaqmx.Task('digital-write')\
+                                 if self.digital_outputs is not None else None
 
         # --- Sample clock from counter (ctr0) ---
         self.sample_clk_task.co_channels.add_co_pulse_chan_freq(
             f"{devname}/ctr0", freq=self.sampling_rate
         )
-        self.sample_clk_task.timing.cfg_implicit_timing(samps_per_chan=int(self.Nsamples))
+        self.sample_clk_task.timing.cfg_implicit_timing(\
+                                        samps_per_chan=int(self.Nsamples))
         self.samp_clk_terminal = f"/{devname}/Ctr0InternalOutput"
 
-        # --- OUTPUTS ---
+        # --- ANALOG OUTPUTS ---
         if self.write_analog_task is not None:
             self.write_analog_task.ao_channels.add_ao_voltage_chan(
                 flatten_channel_string(self.output_channels),
                 max_val=10, min_val=-10
             )
             self.write_analog_task.timing.cfg_samp_clk_timing(
-                self.sampling_rate, source=self.samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=int(self.Nsamples)
+                self.sampling_rate, 
+                source=self.samp_clk_terminal,
+                active_edge=Edge.FALLING, 
+                samps_per_chan=int(self.Nsamples)
             )
 
+        # --- DIGITAL OUTPUTS ---
         if self.write_digital_task is not None:
-            # Binary port output: one channel = port0, 8 lines packed into uint8
+            # Binary port output: one channel = port0, 32 lines packed into uint32
             self.write_digital_task.do_channels.add_do_chan(
                 self.digital_out_chan,
                 line_grouping=LineGrouping.CHAN_FOR_ALL_LINES
             )
             self.write_digital_task.timing.cfg_samp_clk_timing(
-                self.sampling_rate, source=self.samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=int(self.Nsamples)
+                self.sampling_rate, 
+                source=self.samp_clk_terminal,
+                active_edge=Edge.FALLING, 
+                samps_per_chan=int(self.Nsamples)
             )
 
-        # --- INPUTS ---
+        # --- ANALOG INPUTS ---
         if self.read_analog_task is not None:
             self.read_analog_task.ai_channels.add_ai_voltage_chan(
                 flatten_channel_string(self.analog_input_channels),
                 max_val=10, min_val=-10
             )
             self.read_analog_task.timing.cfg_samp_clk_timing(
-                self.sampling_rate, source=self.samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=int(self.Nsamples)
+                self.sampling_rate, 
+                source=self.samp_clk_terminal,
+                active_edge=Edge.FALLING, 
+                samps_per_chan=int(self.Nsamples)
             )
 
+        # --- DIGITAL INPUTS ---
         if self.read_digital_task is not None:
             # Read single TTL line (PFI0) as DI
-            self.read_digital_task.di_channels.add_di_chan(self.digital_in_chan)
+            self.read_digital_task.di_channels.add_di_chan(\
+                                                self.digital_in_chan)
             self.read_digital_task.timing.cfg_samp_clk_timing(
                 self.sampling_rate, source=self.samp_clk_terminal,
-                active_edge=Edge.FALLING, samps_per_chan=int(self.Nsamples)
+                active_edge=Edge.FALLING, 
+                samps_per_chan=int(self.Nsamples)
             )
 
         # Readers
         self.analog_reader = None
         if self.read_analog_task is not None:
             self.analog_reader = AnalogMultiChannelReader(self.read_analog_task.in_stream)
+            # self.read_analog_task.register_every_n_samples_acquired_into_buffer_event(self.buffer_size,
+                                                                                    #   self.reading_task_callback)
 
         self.digital_reader = None
         if self.read_digital_task is not None:
-            self.digital_reader = DigitalSingleChannelReader(self.read_digital_task.in_stream)
+            self.digital_reader = DigitalMultiChannelReader(self.read_digital_task.in_stream)
+            # self.read_digital_task.register_every_n_samples_acquired_into_buffer_event(self.buffer_size,
+                                                                                    #    self.reading_task_callback)
 
         # Writers (preload buffers before starting sample clock)
         if self.write_analog_task is not None:
-            self.analog_writer = AnalogMultiChannelWriter(self.write_analog_task.out_stream, auto_start=False)
-            self.analog_writer.write_many_sample(self.outputs)
+            self.analog_writer = AnalogMultiChannelWriter(self.write_analog_task.out_stream, 
+                                                          auto_start=False)
+            self.analog_writer.write_many_sample(self.analog_outputs)
 
         if self.write_digital_task is not None:
-            self.digital_writer = DigitalMultiChannelWriter(self.write_digital_task.out_stream, auto_start=False)
-            # shape (1, N) uint8
-            self.digital_writer.write_many_sample_port_uint8(self.digital_out)
+            self.digital_writer = DigitalMultiChannelWriter(self.write_digital_task.out_stream, 
+                                                            auto_start=False)
+            # shape (1, N) uint32
+            self.digital_writer.write_many_sample_port_uint32(self.digital_outputs)
 
         # Register callback ONLY ON ONE PRIMARY TASK (avoids double-reading)
         primary = None
@@ -285,7 +331,21 @@ class Acquisition:
 
         self.running, self.data_saved = True, False
 
-    def close(self, return_data=False):
+    def reformat_digital_data(self):
+        """"
+        converts back the uint32 encoding of multiple lines into a set of booleans
+        """
+        n0 = int(self.digital_in_chan.split('line')[1].split(':')[0])
+        n1 = int(self.digital_in_chan.split(':')[1])
+        digital_rf = np.zeros((n1-n0+1, self.digital_data.shape[1]), 
+                               dtype=bool)
+        for i, n in enumerate(range(n0, n1+1)):
+            digital_rf[i,:] = np.bool_(\
+                 (self.digital_data[0,:] >> n) % 2 )
+        self.digital_data = digital_rf
+
+    def close(self):
+
         if self.running:
             for task in [self.read_digital_task, self.read_analog_task,
                          self.write_digital_task, self.write_analog_task,
@@ -294,21 +354,29 @@ class Acquisition:
                     task.close()
 
         if self.filename is not None:
+
             if not self.data_saved:
+
+                if self.digital_data is not None:
+                    self.reformat_digital_data()
+                    digital = self.digital_data[:,1:]
+                else:
+                    digital = None
+
                 np.save(self.filename, {
-                    'analog': self.analog_data[:, 1:],
-                    'digital_in': self.digital_data[:, 1:],   # 0/1 from PFI0
+                    'analog': self.analog_data[:, 1:] if self.analog_data is not None else None,
+                    'digital': digital,
                     'dt': self.dt
                 })
                 print('[ok] NIdaq data saved as:', self.filename)
+
             self.data_saved = True
 
         self.running = False
 
-        if return_data:
-            return self.analog_data[:, 1:], self.digital_data[:, 1:], self.dt
 
     def reading_task_callback(self, task_idx, event_type, num_samples, callback_data=None):
+
         if not self.running:
             self.close()
             return 0
@@ -316,14 +384,18 @@ class Acquisition:
         try:
             if self.read_analog_task is not None:
                 analog_buffer = np.zeros((self.Nchannel_analog_in, num_samples), dtype=np.float64)
-                self.analog_reader.read_many_sample(analog_buffer, num_samples, timeout=WAIT_INFINITELY)
+                self.analog_reader.read_many_sample(analog_buffer, num_samples, 
+                                                    timeout=WAIT_INFINITELY)
                 self.analog_data = np.append(self.analog_data, analog_buffer, axis=1)
 
             if self.read_digital_task is not None:
-                dig = np.zeros(num_samples, dtype=np.bool_)
-                self.digital_reader.read_many_sample_bool(dig, num_samples, timeout=WAIT_INFINITELY)
-                dig_u8 = dig.astype(np.uint8).reshape(1, -1)
-                self.digital_data = np.append(self.digital_data, dig_u8, axis=1)
+                digital_buffer = np.zeros((1,num_samples), dtype=np.uint32)
+                self.digital_reader.read_many_sample_port_uint32(digital_buffer, 
+                                                                 num_samples, 
+                                                                 timeout=WAIT_INFINITELY)
+                dig_u8 = digital_buffer.astype(np.uint8).reshape(1, -1)
+                self.digital_data = np.append(self.digital_data, dig_u8, 
+                                              axis=1)
 
         except nidaqmx.errors.DaqError:
             pass
@@ -350,39 +422,37 @@ class Acquisition:
 
 
 if __name__ == '__main__':
-    # Example:
-    # - Output sync on P0.0 (bit0) as 5 Hz square
-    # - Output start pulse on P0.1 (bit1)
-    # - Record loopback on PFI0 as digital_in
-    # - Record analog on AI0 (e.g. photodiode) if configured by physion config
+
+    tstop = 3
     acq = Acquisition(
         sampling_rate=1000,
         Nchannel_analog_in=1,
-        max_time=3,
-        digital_out_port="port0",
-        digital_in_line="PFI0",
-        sync_bit=0,
-        sync_hz=5,
-        start_bit=1,
-        start_time=0.2,
-        start_width=0.01,
-        filename='data.npy'
+        max_time=tstop,
+        digital_output_port="port0/line0:1",
+        digital_input_port="port0/line3:4",
+        digital_output_steps=[
+            {'channel':0, 'onset':0.1, 'duration':0.1},
+            {'channel':1, 'onset':0.5, 'duration':0.1},
+            {'channel':0, 'onset':1.1, 'duration':0.5},
+            {'channel':0, 'onset':2.1, 'duration':0.5},
+        ],
+        filename='data.npy',
+        verbose=True
     )
     acq.launch()
-    time.sleep(3.1)
+    t0 = time.time()
+    while (time.time()-t0)<tstop:
+        time.sleep(0.2)
     acq.close()
     
-    
-
-
-    acq.launch()
-    tstart = time.time()
-    while (time.time()-tstart)<3.:
-        pass
-    acq.close()
+    print(acq.digital_data)
+    print(acq.analog_data)
     # --> should appear in AI0:
     import matplotlib.pylab as plt
-    plt.plot(acq.analog_data[0])
+    fig, ax = plt.subplots(1, figsize=(8,4))
+    plt.plot(acq.analog_data[0,:])
+    fig, ax = plt.subplots(1, figsize=(8,4))
+    plt.plot(acq.digital_data[0])
     plt.show()
     
     # print(acq.digital_data.shape)

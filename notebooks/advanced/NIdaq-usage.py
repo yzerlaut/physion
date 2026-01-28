@@ -23,7 +23,8 @@ if len(devices)>0:
 
 # %%
 from physion.hardware.NIdaq.config import (
-    get_analog_input_channels, get_analog_output_channels
+    get_analog_input_channels, get_analog_output_channels,
+    get_digital_input_channels, get_digital_output_channels
 )
 get_analog_input_channels(device)
 get_digital_input_channels(device)
@@ -42,7 +43,6 @@ dt = 1/fs
 t = np.arange(int(tstop/dt)+1)*dt
 
 # %%
-
 
 def build_start_stop_signal(t,
                             width=0.3):
@@ -63,8 +63,9 @@ plt.grid(True)
 acq = Acquisition(\
                  sampling_rate=fs,
                  Nchannel_analog_in=2,
-                 outputs=np.array([output],
-                                  dtype=np.float64),
+                 analog_output_funcs=[build_start_stop_signal],
+                #  analog_outputs=np.array([output],
+                #                          dtype=np.float64),
                  max_time=tstop)
 
 # %%
@@ -77,6 +78,37 @@ while (time.time()-tic)<tstop:
         tac = time.time()
     pass
 acq.close()
+
+# %%
+tstop = 6
+DT = 0.5 # pulse at 2Hz in chan2
+acq = Acquisition(
+    sampling_rate=1000,
+    Nchannel_analog_in=1,
+    max_time=tstop,
+    digital_output_port="port0/line0:2",
+    digital_input_port="port0/line3:7",
+    digital_output_steps=[
+        {'channel':0, 'onset':0.1, 'duration':0.1},
+        {'channel':1, 'onset':0.5, 'duration':0.1},
+        {'channel':0, 'onset':1.1, 'duration':0.5},
+        {'channel':0, 'onset':2.1, 'duration':0.5},
+        ] + [ {'channel':2, 'onset':t+DT/2., 'duration':0.1}\
+                 for t in np.arange(int(tstop/DT)+1)*DT],
+    filename='data.npy',
+    verbose=True
+)
+acq.launch()
+t0 = time.time()
+while (time.time()-t0)<tstop:
+    time.sleep(0.2)
+acq.close()
+
+# %%
+fig, ax = plt.subplots(1, figsize=(6,2))
+for i in range(acq.digital_data.shape[0]):
+    ax.plot(1.1*i+acq.digital_data[i,:])
+# ax.plot(self.digital_data[0,:])
 
 # %%
 # zoom properties
