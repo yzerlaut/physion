@@ -200,6 +200,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.gui.parts import inactivated as behav_to_movie_gui
         from physion.gui.parts import inactivated as imaging_to_movie_gui
         from physion.gui.parts import inactivated as transfer_gui 
+        from physion.gui.parts import inactivated as cameraData_to_movie_gui
 
 
     def __init__(self, app,

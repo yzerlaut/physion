@@ -15,22 +15,54 @@ The interface is minimal:
    Each file should be a JSON file, it specifies some key metadata related to the experiment:
    ```
    {
-    "NIdaq-acquisition-frequency":1000,
-    "NIdaq-analog-input-channels":1,
-    "NIdaq-digital-input-channels":2,
-    "Screen":"Dell-P2018H",
-    "FaceCamera-frame-rate":10,
-    "STEP_FOR_CA_IMAGING_TRIGGER":{"channel":0,
-				   "onset": 0.1,
-				   "duration":0.3,
-				   "value":5.0},
-    "root_datafolder":"DATA",
-    "subjects_file":"mice_yann.json",
-    "experimenter":"Yann Zerlaut",
-    "lab":"Rebola and Bacci labs",
-    "institution":"Institut du Cerveau et de la Moelle, Paris",
-    "protocols":"all" # can be a subset of protocols: ["Pakan-et-al-Elife-2016","sparse-noise-30-min-large-square"]
-    }
+      "-----------------------------------------":"",
+      "NIdaq":{
+         "acquisition-frequency":5000,
+         "analog-outputs":{
+               "N-channels":1,
+               "channel-labels":[
+                  "photodiode-signal-from-screen"
+               ]
+         },
+         "analog-inputs":{
+               "N-channels":1,
+               "channel-labels":[
+                  "photodiode-signal-from-screen"
+               ]
+         },
+         "digital-outputs":{
+               "lines":"port0/line0-3",
+               "line-labels":[
+                  "trigger-for-2P-start",
+                  "visual-stim-episode-start",
+                  ""
+               ]
+         },
+         "digital-inputs":{
+               "lines":"port0/line4-7",
+               "line-labels":[
+                  "photodiode-signal-from-screen",
+                  "",
+                  ""
+               ]
+         }
+      },
+      "-----------------------------------------":"",
+      "FaceCamera-frame-rate":30,
+      "FaceCamera-1cm-in-pix":480,
+      "-----------------------------------------":"",
+      "Screen":"Dell-2020",
+      "Height-of-Microscope-Camera-Image-in-mm":2.7,
+      "-----------------------------------------":"",
+      "rotating-disk":{
+         "radius-position-on-disk-cm":5.5,
+         "roto-encoder-value-per-rotation": -12563.0
+      },
+      "-----------------------------------------":"",
+      "root_datafolder":"DATA",
+      "lab":"Rebola and Bacci labs",
+      "institution":"Institut du Cerveau et de la Moelle, Paris"
+   }
    ```
 
 #### 2. Pick the modalities that you want to have by checking the upper boxes.
