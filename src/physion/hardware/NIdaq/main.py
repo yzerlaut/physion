@@ -25,6 +25,8 @@ from physion.hardware.NIdaq.config import (
 
 class Acquisition:
     """
+    sets up hardware-timed clock on the analog and digital output channels
+
     Adds hardware-timed DIGITAL OUTPUT on port0 (P0.0..P0.7) using DigitalMultiChannelWriter.
 
     - Digital OUT (binary):  DevX/port0   (uint8 samples, bits map to P0.0..P0.7)

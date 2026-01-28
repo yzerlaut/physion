@@ -1,10 +1,35 @@
 # %% [markdown]
-### Be sure to pick the 
-
+# Interface for NIdaq usage
 
 # %%
 import sys, time
 sys.path += ['../../src']
+from physion.hardware.NIdaq.config import (
+    find_x_series_devices, find_m_series_devices, find_usb_devices
+)
+
+devices = find_x_series_devices()
+if len(devices)>0:
+    for device in devices:
+        print('[ok] X-series card found:', device)
+devices = find_m_series_devices()
+if len(devices)>0:
+    for device in devices:
+        print('[ok] M-series card found:', device)
+devices = find_usb_devices()
+if len(devices)>0:
+    for device in devices:
+        print('[ok] USB-series card found:', device)
+
+# %%
+from physion.hardware.NIdaq.config import (
+    get_analog_input_channels, get_analog_output_channels
+)
+get_analog_input_channels(device)
+get_digital_input_channels(device)
+
+
+# %%
 from physion.hardware.NIdaq.main import Acquisition
 
 import numpy as np
@@ -18,10 +43,12 @@ t = np.arange(int(tstop/dt)+1)*dt
 
 # %%
 
-def build_start_stop_signal(t):
 
-    cond = ((t>0.1) & (t<0.35)) |\
-          ((t>(t[-1]-0.3)) & (t<(t[-1]-0.05)))
+def build_start_stop_signal(t,
+                            width=0.3):
+
+    cond = ((t>0.1) & (t<(0.1+width))) |\
+          ((t>(t[-1]-0.1-width)) & (t<(t[-1]-0.1)))
     output = np.zeros_like(t)
     output[cond] = 5
     return output
@@ -53,7 +80,7 @@ acq.close()
 
 # %%
 # zoom properties
-plt.plot(1e3*t[::10], acq.analog_data[0][::10], color='chan0')
+plt.plot(1e3*t[::10], acq.analog_data[0][::10], label='chan0')
 plt.plot(1e3*t[::10], acq.analog_data[1][::10], label='chan1')
 plt.xlabel("Time (ms)")
 plt.ylabel("Amplitude")
