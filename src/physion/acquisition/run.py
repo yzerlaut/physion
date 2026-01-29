@@ -90,7 +90,7 @@ def init_VisualStim(self):
 
 def run(self):
 
-    init_ok = False
+    init_ok = True
 
     # 1) INSURING THAT AT LEAST ONE MODALITY IS SELECTED
     # for i, k in enumerate(self.MODALITIES):
