@@ -95,6 +95,20 @@ SCREENS = {
         'gamma_correction':{'k':1.03,
                             'gamma':1.77},
     },
+    'Dell-4220':{
+        'nScreens':1,
+        'name':'Dell-4220',
+        'screen_id':1,
+        'resolution':[1920, 1080],
+        'width':43.8, # in cm
+        'height':33.0, # in cm
+        'distance_from_eye':15.0, # in cm
+        'fullscreen':True,
+        'monitoring_square':{'size':60.,
+                             'location':'top-right'},
+        'gamma_correction':{'k':1.,
+                            'gamma':1.},
+    },
 }
 
 if __name__=='__main__':
