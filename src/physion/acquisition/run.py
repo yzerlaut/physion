@@ -148,6 +148,8 @@ def run(self):
                     (self.max_time%60)))
 
         output_funcs= []
+        if self.metadata['extracEphys']:
+            output_funcs.append(recordings.ephysSynch)
         if self.metadata['CaImaging']:
             output_funcs.append(recordings.trigger2P)
 
