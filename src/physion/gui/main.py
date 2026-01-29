@@ -68,125 +68,126 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     # # -- Intrinsic Imaging -- acquisition
-    # if Intrinsic:
-    #     # visual intrinsic
-    #     from physion.intrinsic.acquisition import gui as intrinsic_acq
-    #     from physion.intrinsic.acquisition import launch_intrinsic,\
-    #             stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
-    #             take_vasculature_picture, take_fluorescence_picture
-    #     # somatosensory intrinsic
-    #     from physion.intrinsic.somatosensory import gui as SS_intrinsic_acq
-    #     from physion.intrinsic.somatosensory import launch_SS_intrinsic,\
-    #             stop_SS_intrinsic, update_dt_SS_intrinsic
-    # elif OD:
-    #     from physion.intrinsic.ocular_dominance import gui as intrinsic_acq
-    #     from physion.intrinsic.ocular_dominance import launch_intrinsic,\
-    #             stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
-    #             take_vasculature_picture, take_fluorescence_picture
-    #     from physion.gui.parts import inactivated as SS_intrinsic_acq
-    # else:
-    #     from physion.gui.parts import inactivated as intrinsic_acq
-    #     from physion.gui.parts import inactivated as SS_intrinsic_acq
+    if Intrinsic:
+        # visual intrinsic
+        from physion.intrinsic.acquisition import gui as intrinsic_acq
+        from physion.intrinsic.acquisition import launch_intrinsic,\
+                stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
+                take_vasculature_picture, take_fluorescence_picture
+        # somatosensory intrinsic [DEPRACTED]
+        from physion.gui.parts import inactivated as SS_intrinsic_acq
+        # from physion.intrinsic.somatosensory import gui as SS_intrinsic_acq
+        # from physion.intrinsic.somatosensory import launch_SS_intrinsic,\
+        #         stop_SS_intrinsic, update_dt_SS_intrinsic
+    elif OD:
+        from physion.intrinsic.ocular_dominance import gui as intrinsic_acq
+        from physion.intrinsic.ocular_dominance import launch_intrinsic,\
+                stop_intrinsic, live_intrinsic, update_dt_intrinsic,\
+                take_vasculature_picture, take_fluorescence_picture
+        from physion.gui.parts import inactivated as SS_intrinsic_acq
+    else:
+        from physion.gui.parts import inactivated as intrinsic_acq
+        from physion.gui.parts import inactivated as SS_intrinsic_acq
 
     # # -- Intrinsic Imaging -- analysis
     # # visual & somatosensory
-    # if not Acquisition:
-    #     # intrinsic
-    #     from physion.intrinsic.analysis import gui as intrinsic
-    #     from physion.intrinsic.analysis import open_intrinsic_folder,\
-    #             moved_pixels, load_intrinsic_data, compute_phase_maps,\
-    #             compute_retinotopic_maps, perform_area_segmentation,\
-    #             update_img1, update_img2, save_intrinsic, pdf_intrinsic,\
-    #             reset_ROI
-    #     # ocular dominance
-    #     from physion.intrinsic.ocular_dominance import analysis_gui\
-    #             as OD_analysis
-    #     from physion.intrinsic.ocular_dominance import calc_OD, save_OD
-    #     # somatosensory
-    #     from physion.intrinsic.SS_analysis import gui as SS_intrinsic
-    #     from physion.intrinsic.SS_analysis import load_SS_intrinsic_data,\
-    #             compute_SS_power_maps, save_SS_intrinsic
-    # else:
-    #     from physion.gui.parts import inactivated as intrinsic
-    #     from physion.gui.parts import inactivated as OD_analysis 
-    #     from physion.gui.parts import inactivated as SS_intrinsic
+    if (not Acquisition) and (not Intrinsic):
+        # intrinsic
+        from physion.intrinsic.analysis import gui as intrinsic
+        from physion.intrinsic.analysis import open_intrinsic_folder,\
+                moved_pixels, load_intrinsic_data, compute_phase_maps,\
+                compute_retinotopic_maps, perform_area_segmentation,\
+                update_img1, update_img2, save_intrinsic, pdf_intrinsic,\
+                reset_ROI
+        # ocular dominance
+        from physion.intrinsic.ocular_dominance import analysis_gui\
+                as OD_analysis
+        from physion.intrinsic.ocular_dominance import calc_OD, save_OD
+        # somatosensory
+        from physion.intrinsic.SS_analysis import gui as SS_intrinsic
+        from physion.intrinsic.SS_analysis import load_SS_intrinsic_data,\
+                compute_SS_power_maps, save_SS_intrinsic
+    else:
+        from physion.gui.parts import inactivated as intrinsic
+        from physion.gui.parts import inactivated as OD_analysis 
+        from physion.gui.parts import inactivated as SS_intrinsic
 
     # # -- FaceMotion tracking
-    # if not Acquisition:
-    #     from physion.facemotion.gui import gui as facemotion 
-    #     from physion.facemotion.gui import open_facemotion_data,\
-    #             reset_facemotion, load_last_facemotion_gui_settings,\
-    #             save_facemotion_data, refresh_facemotion,\
-    #             process_facemotion, process_grooming, add_facemotion_ROI,\
-    #             update_grooming_threshold
-    # else:
-    #     from physion.gui.parts import inactivated as facemotion 
+    if (not Acquisition) and (not Intrinsic):
+        from physion.facemotion.gui import gui as facemotion 
+        from physion.facemotion.gui import open_facemotion_data,\
+                reset_facemotion, load_last_facemotion_gui_settings,\
+                save_facemotion_data, refresh_facemotion,\
+                process_facemotion, process_grooming, add_facemotion_ROI,\
+                update_grooming_threshold
+    else:
+        from physion.gui.parts import inactivated as facemotion 
 
     # # -- Pupil tracking
-    # if not Acquisition:
-    #     from physion.pupil.gui import gui as pupil
-    #     from physion.pupil.gui import open_pupil_data,\
-    #             jump_to_frame, add_blankROI, add_reflectROI,\
-    #             save_pupil_data, fit_pupil, process_pupil,\
-    #             process_outliers_pupil,\
-    #             interpolate_pupil, find_outliers_pupil,\
-    #             reset_pupil, set_cursor_1_pupil, set_cursor_2_pupil,\
-    #             set_precise_time_pupil, go_to_frame_pupil, add_ROI_pupil,\
-    #             load_last_gui_settings_pupil, save_pupil_data
-    # else:
-    #     from physion.gui.parts import inactivated as pupil 
+    if (not Acquisition) and (not Intrinsic):
+        from physion.pupil.gui import gui as pupil
+        from physion.pupil.gui import open_pupil_data,\
+                jump_to_frame, add_blankROI, add_reflectROI,\
+                save_pupil_data, fit_pupil, process_pupil,\
+                process_outliers_pupil,\
+                interpolate_pupil, find_outliers_pupil,\
+                reset_pupil, set_cursor_1_pupil, set_cursor_2_pupil,\
+                set_precise_time_pupil, go_to_frame_pupil, add_ROI_pupil,\
+                load_last_gui_settings_pupil, save_pupil_data
+    else:
+        from physion.gui.parts import inactivated as pupil 
 
 
     # # -- Suite2P Preprocesssing
-    # if not Acquisition:
-    #     from physion.imaging.gui import suite2p_preprocessing_UI,\
-    #             load_TSeries_folder, run_TSeries_analysis, change_presets
-    # else:
-    #     from physion.gui.parts import inactivated as suite2p_preprocessing_UI
+    if (not Acquisition) and (not Intrinsic):
+        from physion.imaging.gui import suite2p_preprocessing_UI,\
+                load_TSeries_folder, run_TSeries_analysis, change_presets
+    else:
+        from physion.gui.parts import inactivated as suite2p_preprocessing_UI
 
 
     # # -- Assembling
-    # if not Acquisition:
-    #     from physion.assembling.gui import build_NWB_UI, runBuildNWB,\
-    #             load_NWB_folder
-    #     # from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
-    #         # loadNWBfolder, loadCafolder, runAddOphys, check_ordered
-    #     from physion.assembling.FOV_coordinates import gui as FOV_coords_UI,\
-    #             load_intrinsic_maps_FOV
-    # else:
-    #     from physion.gui.parts import inactivated as add_imaging
-    #     from physion.gui.parts import inactivated as build_NWB_UI 
-    #     from physion.gui.parts import inactivated as FOV_coords_UI
+    if (not Acquisition) and (not Intrinsic):
+        from physion.assembling.gui import build_NWB_UI, runBuildNWB,\
+                load_NWB_folder
+        # from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
+            # loadNWBfolder, loadCafolder, runAddOphys, check_ordered
+        from physion.assembling.FOV_coordinates import gui as FOV_coords_UI,\
+                load_intrinsic_maps_FOV
+    else:
+        from physion.gui.parts import inactivated as add_imaging
+        from physion.gui.parts import inactivated as build_NWB_UI 
+        from physion.gui.parts import inactivated as FOV_coords_UI
 
 
     # # -- Data Analysis 
-    # if not Acquisition:
-    #     from physion.analysis.trial_averaging import trial_averaging,\
-    #         update_protocol_TA, update_quantity_TA, select_ROI_TA,\
-    #         compute_episodes, refresh_TA, next_ROI_TA, prev_ROI_TA,\
-    #         next_and_plot_TA
-    # else:
-    #     from physion.gui.parts import inactivated as trial_averaging
+    if (not Acquisition) and (not Intrinsic):
+        from physion.analysis.trial_averaging import trial_averaging,\
+            update_protocol_TA, update_quantity_TA, select_ROI_TA,\
+            compute_episodes, refresh_TA, next_ROI_TA, prev_ROI_TA,\
+            next_and_plot_TA
+    else:
+        from physion.gui.parts import inactivated as trial_averaging
 
     # # -- Imaging - BOT Spatial Maps
-    # if not Acquisition:
-    #     from physion.imaging.bot_spatial_maps \
-    #             import gui as bot_spatial_maps
-    #     from physion.imaging.bot_spatial_maps import run_bot_analysis
-    # else:
-    #     from physion.gui.parts import inactivated as bot_spatial_maps
+    if (not Acquisition) and (not Intrinsic):
+        from physion.imaging.bot_spatial_maps \
+                import gui as bot_spatial_maps
+        from physion.imaging.bot_spatial_maps import run_bot_analysis
+    else:
+        from physion.gui.parts import inactivated as bot_spatial_maps
 
     # # -- Imaging - Red Label GUI 
-    # if not Acquisition:
-    #     from physion.imaging.red_label import red_channel_labelling,\
-    #         load_RCL, next_roi_RCL, prev_roi_RCL, save_RCL,\
-    #         preprocess_RCL, switch_roi_RCL, reset_all_to_green,\
-    #         toggle_RCL, draw_image_RCL
-    # else:
-    #     from physion.gui.parts import inactivated as red_channel_labelling
+    if (not Acquisition) and (not Intrinsic):
+        from physion.imaging.red_label import red_channel_labelling,\
+            load_RCL, next_roi_RCL, prev_roi_RCL, save_RCL,\
+            preprocess_RCL, switch_roi_RCL, reset_all_to_green,\
+            toggle_RCL, draw_image_RCL
+    else:
+        from physion.gui.parts import inactivated as red_channel_labelling
 
 
-    if not Acquisition:
+    if (not Acquisition) and (not Intrinsic):
         # -- File Transfer
         from physion.utils.transfer.gui import transfer_gui,\
                 set_source_folder, set_destination_folder,\

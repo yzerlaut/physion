@@ -12,25 +12,22 @@ else:
 
 
 ### --------- MicroManager Interface -------- ###
-if CameraInterface == 'pycromanager':
-    try:
-        from pycromanager import Core
-        CameraInterface = 'MicroManager'
-        camera_depth = 8
+if CameraInterface == 'MicroManager':
+    camera_depth = 12 
     except BaseException as be:
         CameraInterface = None
 
 
 ### ------------ Toupcam Interface ---------- ###
-if CameraInterface == 'Toupcam':
-    try:
-        from physion.hardware.toupcam import toupcam
-        print('starting to load Toupcam interface [...]')
-        toupcam.Toupcam.EnumV2()  # force DLL load
-        CameraInterface = 'Toupcam'
-        camera_depth = 8
-    except BaseException as be:
-        CameraInterface = None
+# if CameraInterface == 'Toupcam':
+#     try:
+#         from physion.hardware.toupcam import toupcam
+#         print('starting to load Toupcam interface [...]')
+#         toupcam.Toupcam.EnumV2()  # force DLL load
+#         CameraInterface = 'Toupcam'
+#         camera_depth = 8
+#     except BaseException as be:
+#         CameraInterface = None
 
 
 ### ------------ ThorCam Interface ---------- ###
