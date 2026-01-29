@@ -31,36 +31,24 @@ else:
         
 python_path_suite2p_env = check_path('suite2p')
 
+LAB = ['Cibele', 'Joana', 'Taddy', 'Sally', 'Sofia', 'Yann']:
 
 FOLDERS = {}
-for key, val in zip(['~/DATA',
-                     'C:\\DATA',
-                     '~/UNPROCESSED',
-                     '~/DATA/Cibele',
-                     '~/DATA/Joana',
-                     '~/DATA/Taddy',
-                     '~/DATA/Yann',
-                     '~/UNPROCESSED/Cibele',
-                     '~/UNPROCESSED/Joana',
-                     '~/UNPROCESSED/Taddy',
-                     '~/UNPROCESSED/Yann',
-                     '~/CURATED', 
-                     'Adrianna'],
+
+for key, val in zip(['~/DATA', 'C:\\DATA', '~/UNPROCESSED', '~/CURATED'],
                     [os.path.join(os.path.expanduser('~'), 'DATA'),
                      "C:\\DATA",
                      os.path.join(os.path.expanduser('~'), 'UNPROCESSED'),
-                     os.path.join(os.path.expanduser('~'), 'DATA', 'Cibele'),
-                     os.path.join(os.path.expanduser('~'), 'DATA', 'Joana'),
-                     os.path.join(os.path.expanduser('~'), 'DATA', 'Taddy'),
-                     os.path.join(os.path.expanduser('~'), 'DATA', 'Yann'),
-                     os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'Cibele'),
-                     os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'Joana'),
-                     os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'Taddy'),
-                     os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'Yann'),
-                     os.path.join(os.path.expanduser('~'), 'CURATED'), 
-                     r'\\iss\bacci\raw-imaging\Adrianna\experiments\NDNF']):
+                     os.path.join(os.path.expanduser('~'), 'CURATED')]):
     if os.path.isdir(val):
         FOLDERS[key] = val
+
+for person in LAB:
+    for k in ['DATA', 'UNPROCESSED', 'CURATED']:
+        key = '~/%s/%s' % (k, person)
+        val  = os.path.join(os.path.expanduser('~'), k, person)
+        if os.path.isdir(val):
+            FOLDERS[key] = val
 
 for key, val in zip(['D:/', 'E:/', 'F:/', 'G:/', 'H:/'],
                     ['D:\\', 'E:\\', 'F:\\', 'G:\\', 'H:\\']):
@@ -69,27 +57,6 @@ for key, val in zip(['D:/', 'E:/', 'F:/', 'G:/', 'H:/'],
         for person in ['Yann', 'Taddy', 'Joana']:
             if os.path.isdir(os.path.join(val, person)):
                 FOLDERS[key+person] = os.path.join(val, person)
-
-for user in ['yann', 'yann.zerlaut']:
-    for key, val in zip(['storage-curated', 
-                         'storage-data',
-                         'usb (YANN)',
-                         'usb (Yann)',
-                         'usb (code)'],
-                        ['/media/%s/DATADRIVE1/CURATED/' % user,
-                         '/media/%s/DATADRIVE1/DATA/' % user,
-                         '/media/%s/YANN/' % user,
-                         '/media/%s/Yann/' % user,
-                         '/media/%s/CODE_YANN/']):
-        if os.path.isdir(val):
-            FOLDERS[key] = val
-        
-# FOLDERS['10.0.0.1:curated'] = 'yann@10.0.0.1:/media/yann/DATADRIVE1/CURATED'
-# FOLDERS['MsWin-data'] = '/media/yann/Windows/home/yann/DATA/'
-# FOLDERS['MsWin-cygwin'] = '/media/yann/Windows/Users/yann.zerlaut/DATA/'
-# FOLDERS['10.0.0.1:~/DATA'] = 'yann@10.0.0.1:/home/yann/DATA/'
-# FOLDERS['10.0.0.2:~/DATA'] = 'yann@10.0.0.2:/home/yann/DATA/'
-
 
     
 if __name__=='__main__':

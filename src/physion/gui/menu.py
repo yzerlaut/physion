@@ -1,4 +1,7 @@
-from PyQt5 import QtWidgets
+"""
+Docstring for physion.gui.menu
+"""
+
 
 def build_menu(self):
 

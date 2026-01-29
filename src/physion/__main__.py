@@ -1,6 +1,7 @@
-import sys, os
+import sys, os, time
 from PyQt5 import QtWidgets
 
+tic0 = time.time()
 from physion.gui.main import MainWindow
 app = QtWidgets.QApplication(sys.argv)
 
@@ -17,4 +18,5 @@ GUI = MainWindow(app,
             os.path.isdir(sys.argv[-1])) else None)
 
 sys.exit(app.exec_())
+print(' -> full init took: %.1fs' % (time.time()-tic0))
 

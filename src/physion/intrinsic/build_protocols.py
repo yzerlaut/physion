@@ -69,6 +69,7 @@ if __name__=='__main__':
                             - Dell-2020
                             - Mouse-Goggles
                             - Lilliput
+                            - LN-VR-3screens
                         """)
     parser.add_argument("--bg_color", type=float, default=0.2)
     
@@ -104,7 +105,7 @@ if __name__=='__main__':
                         os.rename(os.path.join('movies', 'temp', 'movie-%i.wmv' % i),
                             os.path.join(folder,
                                     'flickering-bars-period%is' % period,
-                                    '%s.wmv' % direction))
+                                    '%s-%i.wmv' % (direction, i)))
 
     elif args.protocol=='ocular-dominance':
         for period in [6, 12]:

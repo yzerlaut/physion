@@ -1,16 +1,13 @@
-import json, os, shutil, pathlib, pandas
-import numpy as np
+import json, os, pathlib, datetime
 
 # path to reach the 'physion/acquisition' folder:
 base_path = str(pathlib.Path(__file__).resolve().parents[0])
 
-from physion.utils.files import generate_filename_path,\
-        get_date, get_time, generate_datafolders
+from physion.utils.files import generate_datafolders, get_date, get_time
 from physion.utils.paths import FOLDERS
 
 stimulus_movies_folder = os.path.join(base_path, 
                                       'protocols', 'movies')
-
 
 def set_filename_and_folder(self):
 

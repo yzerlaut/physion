@@ -1,7 +1,7 @@
-import sys, os, shutil, glob, time, pathlib, json, tempfile, datetime
+import os, time, pathlib, json, datetime
 import numpy as np
-import pandas, pynwb, PIL
-from PyQt5 import QtGui, QtCore, QtWidgets
+import pynwb, PIL
+from PyQt5 import QtCore, QtWidgets
 import pyqtgraph as pg
 from dateutil.tz import tzlocal
 
@@ -26,9 +26,8 @@ def gui(self,
         tab_id=0):
 
     self.windows[tab_id] = 'ISI_acquisition'
-    self.movie_folder = os.path.join(os.path.expanduser('~'),
-                                     'work', 'physion', 'src',
-         	                         'physion', 'acquisition', 'protocols',
+    self.movie_folder = os.path.join(pathlib.Path(__file__).parent.resolve(),
+         	                         '..', 'acquisition', 'protocols',
                                      'movies', 'intrinsic')
 
     tab = self.tabs[tab_id]
@@ -51,6 +50,8 @@ def gui(self,
     try:
         if CameraInterface=='ThorCam':
             init_thorlab_cam(self)
+        if CameraInterface=='Toupcam':
+            init_toupcam(self)
         if CameraInterface=='MicroManager':
             # we initialize the camera
             self.core = Core()
@@ -483,7 +484,8 @@ def launch_intrinsic(self, live_only=False):
 
     self.live_only = live_only
 
-    if (self.cam is not None) and not self.demoBox.isChecked():
+    if (CameraInterface=='ThorCam') and\
+        (self.cam is not None) and not self.demoBox.isChecked():
         self.cam.exposure_time_us = int(1e3*int(self.exposureBox.text()))
         self.cam.arm(2)
         self.cam.issue_software_trigger()
@@ -552,6 +554,21 @@ def get_frame(self, force_HQ=False):
         while frame is None:
             frame = self.cam.get_pending_frame_or_null()
         img = frame.image_buffer
+
+    elif (CameraInterface == 'Toupcam') and self.camBox.isChecked():
+        # Pull a frame from Toupcam
+        while True:
+            try:
+                self.cam.PullImageV4(self.buf, 0, 24, 0, None)
+                # Convert to numpy array and reshape to H x W x 3 (RGB)
+                img = np.frombuffer(self.buf, dtype=np.uint8)
+                img = img.reshape((self.height, self.width, 3)).mean(axis=2)
+                break
+            except toupcam.HRESULTException:
+                # fallback to random frame if camera not ready
+                time.sleep(0.001)
+                #img = np.random.uniform(0, 2**8, size=(self.height, self.width))
+
 
     elif (self.stim is not None) and (self.STIM is not None):
         #############################################################
