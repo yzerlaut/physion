@@ -88,6 +88,12 @@ conda activate acquisition
 pip install spinnaker_python-3.1.0.79-cp310-cp310-win_amd64.whl
 ```
 
+### D.3 Install the `simple_pyspin` API
+
+```
+pip install git+https://github.com/yzerlaut/simple_pyspin
+```
+
 ### D.3) Install the FlyCapture software
 
 Current version is: `FlyCapture_2.13.3.61_x64.exe`

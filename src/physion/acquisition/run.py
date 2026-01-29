@@ -148,7 +148,7 @@ def run(self):
                     (self.max_time%60)))
 
         output_funcs= []
-        if self.metadata['extracEphys']:
+        if self.metadata['Neuropixels']:
             output_funcs.append(recordings.ephysSynch)
         if self.metadata['CaImaging']:
             output_funcs.append(recordings.trigger2P)
@@ -251,7 +251,7 @@ def toggle_FaceCamera_process(self):
                               self.datafolder,
                               'FaceCamera', 0, 
                               {'frame_rate':\
-                                self.config['FaceCamera-frame-rate']}))
+                                self.config['FaceCamera']['frame-rate']}))
         self.FaceCamera_process.start()
         self.statusBar.showMessage(\
                 '[ok] FaceCamera initialized ! (in 5-6s) ')
@@ -280,7 +280,7 @@ def toggle_RigCamera_process(self):
                               self.datafolder,
                               'RigCamera', 1, 
                               {'frame_rate':\
-                                self.config['RigCamera-frame-rate']}))
+                                self.config['RigCamera']['frame-rate']}))
         self.RigCamera_process.start()
         self.statusBar.showMessage(\
                 '[ok] FaceCamera initialized ! (in 5-6s) ')
@@ -306,7 +306,8 @@ def toggle_ImagingCamera_process(self):
                               self.quitEvent,
                               self.datafolder,
                               'ImagingCamera', 
-                              {'frame_rate':20.}))
+                              {'frame_rate':\
+                                self.config['ImagingCamera']['frame-rate']}))
         self.ImagingCamera_process.start()
         self.statusBar.showMessage(\
                 '[ok] ImagingCamera initialized ! (in 5-6s) ')
