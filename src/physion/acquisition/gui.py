@@ -13,7 +13,7 @@ from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import load_settings
 from physion.assembling.gui import build_cmd
 
-from physion.acquisition import MODALITIES
+from physion.acquisition import MODALITIES, EXPERIMENTERS
 
 def multimodal(self,
                tab_id=0):
@@ -98,8 +98,8 @@ def multimodal(self,
     # self.saveSetB.clicked.connect(self.save_settings)
     # self.add_side_widget(tab.layout, self.saveSetB)
 
-    self.buildNWB = QtWidgets.QPushButton('build NWB for last', self)
-    self.buildNWB.clicked.connect(build_NWB_for_last)
+    self.buildNWB = QtWidgets.QPushButton('plot NIdaq of last', self)
+    self.buildNWB.clicked.connect(plot_NIdaq_of_last)
     self.add_side_widget(tab.layout, self.buildNWB)
 
     # ========================================================
@@ -108,16 +108,25 @@ def multimodal(self,
     #------------------- THEN MAIN PANEL   -------------------
     ip, width = 0, 4
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Configuration **', self),
+        QtWidgets.QLabel(40*' '+'** Setup **', self),
                          ip, self.side_wdgt_length, 
-                         1, width)
+                         1, int(width/2))
+    tab.layout.addWidget(\
+        QtWidgets.QLabel(40*' '+'** Experimenter **', self),
+                         ip, self.side_wdgt_length+int(width/2), 
+                         1, int(width/2))
     ip+=1
     # -
     self.configBox = QtWidgets.QComboBox(self)
     self.configBox.activated.connect(self.update_config)
     tab.layout.addWidget(self.configBox,\
                          ip, self.side_wdgt_length+1, 
-                         1, width)
+                         1, int(width/2))
+    self.experimenterBox = QtWidgets.QComboBox(self)
+    self.experimenterBox.addItems(EXPERIMENTERS)
+    tab.layout.addWidget(self.experimenterBox,\
+                         ip, self.side_wdgt_length+int(width/2)+1, 
+                         1, int(width/2))
     ip+=1
     # -
     tab.layout.addWidget(\
@@ -210,13 +219,16 @@ def multimodal(self,
         self.runButton.setEnabled(False)
         self.stopButton.setEnabled(False)
 
-def build_NWB_for_last():
+def plot_NIdaq_of_last():
     # last folder
     folder = last_datafolder_in_dayfolder(day_folder(FOLDERS[list(FOLDERS.keys())[0]]))
-    print('[ ] build NWB file for recording: ', folder)
-    if os.path.isdir(folder):
-        cmd, cwd = build_cmd(folder)
-        print('\n launching the command \n :  %s \n ' % cmd)
-        p = subprocess.Popen(cmd,
-                             cwd=cwd,
-                             shell=True)
+    print()
+    print('[ ] loading NIdaq data of recording: ', folder)
+    print()
+    print('             WIP (to be done)')
+    # if os.path.isdir(folder):
+    #     cmd, cwd = build_cmd(folder)
+    #     print('\n launching the command \n :  %s \n ' % cmd)
+    #     p = subprocess.Popen(cmd,
+    #                          cwd=cwd,
+    #                          shell=True)

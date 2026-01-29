@@ -1,0 +1,64 @@
+{
+    "Rig":"Bacci-Neuropix", "physion-version":2.0,
+    "-----------------------------------------":"",
+    "Screen":"Dell-4220",
+    "-----------------------------------------":"",
+    "NIdaq":{
+        "acquisition-frequency":5000,
+        "analog-outputs":{
+            "N-channels":1,
+            "channel-labels":[
+                "trigger-for-2P-start"
+            ]
+        },
+        "analog-inputs":{
+            "N-channels":1,
+            "channel-labels":[
+                "photodiode-signal-from-screen"
+            ]
+        },
+        "digital-outputs":{
+            "lines":"port0/line0-3",
+            "line-labels":[
+                "trigger-for-2P-start",
+                "visual-stim-episode-start",
+                ""
+            ]
+        },
+        "digital-inputs":{
+            "lines":"port0/line4-7",
+            "line-labels":[
+                "locomotion-channel1",
+                "locomotion-channel2",
+                "copy-visual-stim-start",
+                ""
+            ]
+        }
+    },
+    "-----------------------------------------":"",
+    "FaceCamera":{
+        "frame-rate":30,
+        "1cm-in-pix":480
+    },
+    "-----------------------------------------":"",
+    "RigCamera":{
+        "frame-rate":20,
+        "1cm-in-pix":33
+    },
+    "-----------------------------------------":"",
+    "ImagingCamera":{
+        "frame-rate":20,
+        "1cm-in-pix":33
+    },
+    "Height-of-Microscope-Camera-Image-in-mm":2.7,
+    "-----------------------------------------":"",
+    "rotating-disk":{
+        "radius-position-on-disk-cm":5.5,
+		"roto-encoder-value-per-rotation": -12563.0
+    },
+    "-----------------------------------------":"",
+    "root_datafolder":"DATA",
+    "lab":"Rebola and Bacci labs",
+    "institution":"Institut du Cerveau et de la Moelle, Paris",
+    "protocols":"all"
+}
