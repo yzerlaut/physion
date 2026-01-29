@@ -93,15 +93,15 @@ def run(self):
     init_ok = False
 
     # 1) INSURING THAT AT LEAST ONE MODALITY IS SELECTED
-    for i, k in enumerate(self.MODALITIES):
-        if getattr(self,k+'Button').isChecked():
-            init_ok = True
-    if not init_ok:
-        print('------------------------------------------------')
-        print('-- [!!] Need to pick at least one modality [!!] --')
-        print('------------------------------------------------')
-        self.statusBar.showMessage(\
-                ' [!!] Need to pick at least one modality [!!] ')
+    # for i, k in enumerate(self.MODALITIES):
+    #     if getattr(self,k+'Button').isChecked():
+    #         init_ok = True
+    # if not init_ok:
+    #     print('------------------------------------------------')
+    #     print('-- [!!] Need to pick at least one modality [!!] --')
+    #     print('------------------------------------------------')
+    #     self.statusBar.showMessage(\
+    #             ' [!!] Need to pick at least one modality [!!] ')
 
     # 2) INSURING THAT A CONFIG IS SELECTED
     if self.config is None:
@@ -212,6 +212,11 @@ def run(self):
             self.t0 = time.time()
 
         self.runEvent.set()
+
+        # we leave a timestamp for the start of the visual-stim
+        np.save(os.path.join(self.date_time_folder, 'visual-stim.start.npy'),
+                time.time() * np.ones(1))
+        # --> and we start playing the video...
         if self.stimWins is not None:
             for mediaPlayer in self.mediaPlayers:
                 mediaPlayer.play()
