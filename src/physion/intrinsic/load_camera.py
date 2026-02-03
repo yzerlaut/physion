@@ -14,9 +14,6 @@ else:
 ### --------- MicroManager Interface -------- ###
 if CameraInterface == 'MicroManager':
     camera_depth = 12 
-    except BaseException as be:
-        CameraInterface = None
-
 
 ### ------------ Toupcam Interface ---------- ###
 # if CameraInterface == 'Toupcam':
@@ -31,7 +28,7 @@ if CameraInterface == 'MicroManager':
 
 
 ### ------------ ThorCam Interface ---------- ###
-if CameraInterface=='ThorCam':
+if CameraInterface == 'ThorCam':
     try:
         absolute_path_to_dlls= os.path.join(os.path.expanduser('~'),
                             'work', 'physion', 'src', 'physion',
