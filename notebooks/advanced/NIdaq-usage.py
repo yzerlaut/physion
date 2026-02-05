@@ -1,5 +1,8 @@
 # %% [markdown]
 # Interface for NIdaq usage
+#
+# everything in SI units (seconds, volts, hertz)
+
 
 # %%
 import sys, time
@@ -7,6 +10,10 @@ sys.path += ['../../src']
 from physion.hardware.NIdaq.config import (
     find_x_series_devices, find_m_series_devices, find_usb_devices
 )
+from physion.hardware.NIdaq.main import Acquisition
+
+import numpy as np
+import matplotlib.pylab as plt
 
 devices = find_x_series_devices()
 if len(devices)>0:
@@ -27,8 +34,37 @@ from physion.hardware.NIdaq.config import (
     get_digital_input_channels, get_digital_output_channels
 )
 get_analog_input_channels(device)
-get_digital_input_channels(device)
+#get_digital_input_channels(device)
 
+# %%
+import numpy as np
+tstop = 4
+DT = 0.25 # pulse at 4Hz in chan2
+acq = Acquisition(
+    sampling_rate=1000,
+    Nchannel_analog_in=1,
+    max_time=tstop,
+    digital_output_port="port0/line0:3",
+    digital_input_port="port0/line4:7",
+    digital_output_steps=\
+        [{'channel':0, 'onset':t+DT/2., 'duration':0.1}\
+                 for t in np.arange(int(tstop/DT)+1)*DT]+\
+        [{'channel':1, 'onset':t+DT/2., 'duration':0.1}\
+                 for t in np.arange(int(tstop/DT)+1)*DT],
+    filename='data.npy',
+    verbose=True
+)
+acq.launch()
+t0 = time.time()
+while (time.time()-t0)<tstop:
+    time.sleep(0.2)
+acq.close()
+
+# %%
+import matplotlib.pylab as plt
+fig, ax = plt.subplots(1, figsize=(6,2))
+for i in range(acq.digital_data.shape[0]):
+    ax.plot(1.1*i+acq.digital_data[i,:])
 
 # %%
 from physion.hardware.NIdaq.main import Acquisition
@@ -49,7 +85,7 @@ def build_start_stop_signal(t,
     cond = ((t>0.1) & (t<(0.1+width))) |\
           ((t>(t[-1]-0.1-width)) & (t<(t[-1]-0.1)))
     output = np.zeros_like(t)
-    output[cond] = 5
+    output[cond] = -5
     return output
 output = build_start_stop_signal(t)
 
@@ -59,15 +95,19 @@ plt.ylabel("Amplitude")
 plt.grid(True)
 
 # %%
+
+def null(t):
+    return 0*t
+
 acq = Acquisition(\
                  sampling_rate=fs,
-                 Nchannel_analog_in=2,
-                 analog_output_funcs=[build_start_stop_signal],
-                #  analog_outputs=np.array([output],
-                #                          dtype=np.float64),
+                 Nchannel_analog_in=3,
+                 analog_output_funcs=[\
+                     build_start_stop_signal,
+                     build_start_stop_signal,
+                 ],
                  max_time=tstop)
 
-# %%
 acq.launch()
 tic = time.time()
 tac = tic
@@ -80,10 +120,26 @@ acq.close()
 
 # %%
 fig, ax = plt.subplots(1, figsize=(6,2))
-ax.plot(acq.analog_data[0,:])
+for i in range(acq.analog_data.shape[0]):
+    ax.plot(acq.analog_data[i,10:]+5)
 
 # %%
-tstop = 6
+tstop =3
+acq = Acquisition(
+    sampling_rate=1000,
+    Nchannel_analog_in=3,
+    max_time=tstop,
+    verbose=True
+)
+acq.launch()
+t0 = time.time()
+while (time.time()-t0)<tstop:
+    time.sleep(0.2)
+acq.close()
+
+
+# %%
+tstop = 20 
 DT = 0.5 # pulse at 2Hz in chan2
 acq = Acquisition(
     sampling_rate=1000,
@@ -92,11 +148,11 @@ acq = Acquisition(
     digital_output_port="port0/line0:2",
     digital_input_port="port0/line3:7",
     digital_output_steps=[
-        {'channel':0, 'onset':0.1, 'duration':0.1},
+        {'channel':2, 'onset':0.1, 'duration':0.1},
         {'channel':1, 'onset':0.5, 'duration':0.1},
-        {'channel':0, 'onset':1.1, 'duration':0.5},
-        {'channel':0, 'onset':2.1, 'duration':0.5},
-        ] + [ {'channel':2, 'onset':t+DT/2., 'duration':0.1}\
+        {'channel':2, 'onset':1.1, 'duration':0.5},
+        {'channel':2, 'onset':2.1, 'duration':0.5},
+        ] + [ {'channel':0, 'onset':t+DT/2., 'duration':0.1}\
                  for t in np.arange(int(tstop/DT)+1)*DT],
     filename='data.npy',
     verbose=True
@@ -106,6 +162,14 @@ t0 = time.time()
 while (time.time()-t0)<tstop:
     time.sleep(0.2)
 acq.close()
+
+# %%
+f = "C:\\Users\\info\\OneDrive\\Documents\\Open Ephys\\2026-02-03_16-04-25\\Record Node 103\\experiment1\\recording1\continuous\OneBox-102.OneBox-ADC\\timestamps.npy"
+f = "C:\\Users\\info\\OneDrive\\Documents\\Open Ephys\\2026-02-03_16-04-25\\Record Node 103\\experiment1\\recording1\events\MessageCenter\\timestamps.npy"
+
+folder = "C:\\Users\info\DATA\\2026-02-03_17-47-23\Record Node 101\experiment1\\recording1\events\OneBox-100.ProbeA\TTL"
+print(' timestamps: ',  np.load(os.path.join(folder, 'timestamps.npy')))
+print(' sample numbers: ',  np.load(os.path.join(folder, 'sample_numbers.npy')))
 
 # %%
 fig, ax = plt.subplots(1, figsize=(6,2))
