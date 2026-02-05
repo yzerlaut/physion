@@ -1,6 +1,6 @@
 from . import settings, tools, run, recordings
 
-MODALITIES = ['NIdaq',
+MODALITIES = ['NIDAQ',
               'FaceCamera',
               'RigCamera',
               'ImagingCamera',

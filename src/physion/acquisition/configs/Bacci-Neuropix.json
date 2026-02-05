@@ -20,18 +20,19 @@
         "digital-outputs":{
             "lines":"port0/line0-3",
             "line-labels":[
-                "trigger-for-2P-start",
+                "ephys-synch-signal-irregular-5Hz",
                 "visual-stim-episode-start",
-                ""
+                "LED-optogenetics-activation"
             ]
         },
         "digital-inputs":{
-            "lines":"port0/line4-7",
+            "lines":"port0/line4-8",
             "line-labels":[
                 "locomotion-channel1",
                 "locomotion-channel2",
-                "copy-visual-stim-start",
-                ""
+                "copy-ephys-synch-signal-irregular-5Hz",
+                "copy-visual-stim-episode-start",
+                "copy-LED-optogenetics-activation"
             ]
         }
     },
@@ -52,7 +53,7 @@
     },
     "Height-of-Microscope-Camera-Image-in-mm":2.7,
     "-----------------------------------------":"",
-    "rotating-disk":{
+    "linear-treadmill":{
         "radius-position-on-disk-cm":5.5,
 		"roto-encoder-value-per-rotation": -12563.0
     },

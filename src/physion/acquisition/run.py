@@ -147,11 +147,28 @@ def run(self):
                   (self.max_time%3600)/60,
                     (self.max_time%60)))
 
-        output_funcs= []
+        ################################################
+        ###   build the different signals   ############
+        ################################################
+
+        digital_output_steps = []
         if self.metadata['Neuropixels']:
-            output_funcs.append(recordings.ephysSynch)
+            # 
+            chan = np.flatnonzero(\
+                np.array(self.metadata['NIdaq']['digital-outputs']['line-labels'])\
+                                    =='ephys-synch-signal')[0]
+            print(chan)
+            events = recordings.ephysSynch(self.max_time) 
+            digital_output_steps += [{'channel':chan, 'onset':e, 'duration':0.1}\
+                                            for e in events]
         if self.metadata['CaImaging']:
-            output_funcs.append(recordings.trigger2P)
+            chan = 0 # CHECK
+            digital_output_steps += [\
+                {'channel':chan, 'onset':0.1, 'duration':0.1},
+                {'channel':chan, 'onset':self.max_time - 0.2, 'duration':0.1}
+            ]
+
+            # output_funcs.append(recordings.trigger2P)
 
         if self.metadata['recording']!='':
             other_funcs = []
@@ -161,13 +178,9 @@ def run(self):
                     return func(t, 
                                 self.stim, 
                                 float(self.cmdPick.text().split(":")[1]))
-                output_funcs.append(new_func)
+                # output_funcs.append(new_func)
 
-        ## QUICK FIX: need to put something, otherwise the empty channel bugs
-        if len(output_funcs)==0:
-            output_funcs.append(recordings.trigger2P)
-
-        if self.metadata['NIdaq']:
+        if self.metadata['NIDAQ']:
 
             if self.onlyDemoButton.isChecked():
                 np.save(os.path.join(self.date_time_folder, 'NIdaq.start.npy'),
@@ -180,18 +193,30 @@ def run(self):
             else:
                 try:
                     self.acq = Acquisition(\
-                        # time settings
+                        # ------------------------
+                        # -- sampling settings
                         sampling_rate=\
                             self.metadata['NIdaq']['acquisition-frequency'],
                         max_time=self.max_time,
-                        # recorded inputs
+                        # ------------------------
+                        # -- sent outputs
+                        # - analog
+                        # analog_output_funcs=output_funcs,
+                        # - digital
+                        digital_output_port=\
+                            self.metadata['NIdaq']['digital-outputs']['lines'],
+                        digital_output_steps=\
+                            digital_output_steps,
+                        # ------------------------
+                        # -- recorded inputs
+                        # - analog
                         Nchannel_analog_in=\
-                                self.metadata['NIdaq']['analog-input']['N-channels'],
-                        Nchannel_digital_in=\
-                                self.metadata['NIdaq-digital-input-channels'],
-                        #
-                        analog_output_funcs=output_funcs,
-                        #
+                                self.metadata['NIdaq']['analog-inputs']['N-channels'],
+                        # - digital
+                        digital_input_port=\
+                            self.metadata['NIdaq']['digital-inputs']['lines'],
+                        # ------------------------
+                        # -- data writing:
                         filename= self.filename.replace('metadata', 'NIdaq'))
                 except BaseException as e:
                     print(e)
