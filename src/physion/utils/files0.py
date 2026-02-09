@@ -99,7 +99,7 @@ def last_datafolder_in_dayfolder(day_folder, with_NIdaq=True):
     
     folders = list_dayfolder(day_folder, with_NIdaq=with_NIdaq)
 
-    if folders[-1][-1] in string.digits:
+    if len(folders)>0 and (folders[-1][-1] in string.digits):
         return folders[-1]
     else:
         print('No datafolder found, returning "./" ')

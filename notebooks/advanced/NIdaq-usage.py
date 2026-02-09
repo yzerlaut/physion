@@ -44,10 +44,10 @@ acq = Acquisition(
     sampling_rate=1000,
     Nchannel_analog_in=1,
     max_time=tstop,
-    digital_output_port="port0/line0:3",
-    digital_input_port="port0/line4:7",
+    digital_output_port="port0/line0:2",
+    digital_input_port="port0/line3:7",
     digital_output_steps=\
-        [{'channel':0, 'onset':t+DT/2., 'duration':0.1}\
+        [{'channel':0, 'onset':t, 'duration':0.1}\
                  for t in np.arange(int(tstop/DT)+1)*DT]+\
         [{'channel':1, 'onset':t+DT/2., 'duration':0.1}\
                  for t in np.arange(int(tstop/DT)+1)*DT],
@@ -60,7 +60,6 @@ while (time.time()-t0)<tstop:
     time.sleep(0.2)
 acq.close()
 
-# %%
 import matplotlib.pylab as plt
 fig, ax = plt.subplots(1, figsize=(6,2))
 for i in range(acq.digital_data.shape[0]):

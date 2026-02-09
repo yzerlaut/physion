@@ -15,7 +15,7 @@
             ]
         },
         "digital-outputs":{
-            "lines":"port0/line0-3",
+            "lines":"port0/line0:2",
             "line-labels":[
                 "ephys-synch-signal",
                 "visual-stim-episode-start",
@@ -23,11 +23,11 @@
             ]
         },
         "digital-inputs":{
-            "lines":"port0/line4-8",
+            "lines":"port0/line3:7",
             "line-labels":[
+                "copy-ephys-synch-signal-irregular-5Hz",
                 "locomotion-channel1",
                 "locomotion-channel2",
-                "copy-ephys-synch-signal-irregular-5Hz",
                 "copy-visual-stim-episode-start",
                 "copy-LED-optogenetics-activation"
             ]

@@ -130,7 +130,6 @@ class Acquisition:
         analog_output_channels = get_analog_output_channels(self.device)
 
         if analog_output_funcs is not None:
-
             if len(analog_output_funcs)>len(analog_output_channels):
                 print(' too many functions for the number of available analog output',
                       '(n=%i)' % len(self.analog_output_channels))
@@ -145,9 +144,7 @@ class Acquisition:
             self.analog_outputs = out
 
         elif len(analog_output_steps) > 0:
-
             Nch = max([d['channel'] for d in analog_output_steps]) + 1
-
             if Nch>len(analog_output_channels):
                 print(' too many step channels for the number of available analog output',
                       '(n=%i)' % len(analog_output_channels))
@@ -183,13 +180,20 @@ class Acquisition:
             elif len(digital_output_steps) > 0:
 
                 Nch = max([d['channel'] for d in digital_output_steps]) + 1
+                # print('max channel: ', Nch)
 
-                t = np.arange(self.Nsamples) * self.dt
-                out = np.zeros((1, len(t)), dtype=np.uint32)
+                self.digital_outputs =\
+                      np.zeros((1, self.Nsamples), dtype=np.uint32)
+
                 for step in digital_output_steps:
-                    cond = (t > step['onset']) & (t <= step['onset'] + step['duration'])
-                    out[0,cond] += 2**step['channel']
-                self.digital_outputs = out
+                    i0 = int(step['onset']/self.dt) 
+                    i1 = int( (step['onset'] + step['duration']) / self.dt )
+                    self.digital_outputs[0, i0:i1] +=\
+                             np.uint8(2**step['channel'])
+
+                # force start and stop to be zeros
+                self.digital_outputs[0, 0] = 0
+                self.digital_outputs[0, -1] = 0
 
             else:
                 self.digital_outputs = None

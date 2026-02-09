@@ -152,15 +152,27 @@ def run(self):
         ################################################
 
         digital_output_steps = []
+        if self.stim is not None:
+            #  means WITH VisualStim -- find channel
+            chan = np.flatnonzero(\
+                np.array(self.metadata['NIdaq']['digital-outputs']['line-labels'])\
+                                    =='visual-stim-episode-start')[0]
+            print('visual-stim-episode-start signal on channel:', chan)
+            #  -- fill channel
+            digital_output_steps += [{'channel':chan, 'onset':e, 'duration':0.05}\
+                                        for e in self.stim.experiment['time_start']]
+
         if self.metadata['Neuropixels']:
-            # 
+            #  -- find channel
             chan = np.flatnonzero(\
                 np.array(self.metadata['NIdaq']['digital-outputs']['line-labels'])\
                                     =='ephys-synch-signal')[0]
-            print(chan)
+            # print('Ephys-synch-signal on channel:', chan)
+            #  -- fill channel
             events = recordings.ephysSynch(self.max_time) 
-            digital_output_steps += [{'channel':chan, 'onset':e, 'duration':0.1}\
+            digital_output_steps += [{'channel':chan, 'onset':e, 'duration':0.05}\
                                             for e in events]
+
         if self.metadata['CaImaging']:
             chan = 0 # CHECK
             digital_output_steps += [\
@@ -218,8 +230,8 @@ def run(self):
                         # ------------------------
                         # -- data writing:
                         filename= self.filename.replace('metadata', 'NIdaq'))
-                except BaseException as e:
-                    print(e)
+                except BaseException as be:
+                    print(be)
                     print('\n [!!] PB WITH NI-DAQ [!!] \n')
                     self.acq = None
         
@@ -251,6 +263,7 @@ def run(self):
         print('')
         print('                 running [...]')
         print('')
+
         self.run_update() # while loop
         # ========================
         # ---- HERE IT RUNS [...]
@@ -350,6 +363,7 @@ def toggle_ImagingCamera_process(self):
 
 def run_update(self):
 
+    # --- monitoring of visual stimulation --- #
     if self.protocolBox.currentText()!='None':
 
         t = (time.time()-self.t0)
@@ -384,11 +398,13 @@ def run_update(self):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'FaceCamera-imgs')))
         self.pCamImg.setImage(image.T)
+
     elif (self.RigCamera_process is not None) and\
                     (self.imgButton.currentText()=='RigCamera'):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'RigCamera-imgs')))
         self.pCamImg.setImage(image.T)
+
     elif (self.ImagingCamera_process is not None) and\
                     (self.imgButton.currentText()=='ImagingCamera'):
         image = np.load(get_latest_file(\
@@ -396,8 +412,10 @@ def run_update(self):
         self.pCamImg.setImage(image.T)
 
     # ----- while loop with qttimer object ----- #
-    if self.runEvent.is_set() and ((time.time()-self.t0)<self.max_time):
+    if self.runEvent.is_set() and\
+          ((time.time()-self.t0)<self.max_time):
         QtCore.QTimer.singleShot(1, self.run_update)
+
     else:
         # we reached the end
         self.stop()

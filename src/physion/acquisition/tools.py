@@ -55,7 +55,7 @@ def check_gui_to_init_metadata(self):
                 'recording':self.recordingBox.currentText(),
                 'notes':self.qmNotes.toPlainText(),
                 'FOV':self.fovPick.text(),
-                'cmd':self.cmdPick.text(),
+                # 'cmd':self.cmdPick.text(),
                 'subject_ID':self.subjectBox.text()}
 
     if self.protocolBox.currentText()!='None':

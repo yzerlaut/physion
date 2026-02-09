@@ -11,7 +11,6 @@ from physion.utils.files import last_datafolder_in_dayfolder, day_folder
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import load_settings
-from physion.assembling.gui import build_cmd
 
 from physion.acquisition import MODALITIES, EXPERIMENTERS
 
@@ -204,10 +203,10 @@ def multimodal(self,
     self.fovPick= QtWidgets.QLineEdit('FOV : X')
     tab.layout.addWidget(self.fovPick,
                          ip, 10, 1, 4)
-    ip+=1
-    self.cmdPick= QtWidgets.QLineEdit('cmd (V): 5')
-    tab.layout.addWidget(self.cmdPick,
-                         ip, 10, 1, 4)
+    # ip+=1
+    # self.cmdPick= QtWidgets.QLineEdit('cmd (V): 5')
+    # tab.layout.addWidget(self.cmdPick,
+    #                      ip, 10, 1, 4)
 
     self.refresh_tab(tab)
 
@@ -221,11 +220,32 @@ def multimodal(self,
 
 def plot_NIdaq_of_last():
     # last folder
-    folder = last_datafolder_in_dayfolder(day_folder(FOLDERS[list(FOLDERS.keys())[0]]))
+    folder = last_datafolder_in_dayfolder(\
+                # day_folder(FOLDERS[list(FOLDERS.keys())[0]]))
+                # day_folder(FOLDERS[self.folderBox.currentText()])
+                day_folder(os.path.expanduser('~/DATA')))
     print()
     print('[ ] loading NIdaq data of recording: ', folder)
     print()
-    print('             WIP (to be done)')
+    import matplotlib.pylab as plt
+
+    fig, AX = plt.subplots(2, 1, figsize=(8,4))
+    plt.subplots_adjust(left=0.1, bottom=0.1)
+
+    data = np.load(os.path.join(folder, 'NIdaq.npy'),
+                   allow_pickle=True).item()
+
+    print(data.keys()) 
+
+    for i in range(data['analog'].shape[0]):
+        AX[0].plot(data['analog'][i][::10])
+
+    for i in range(data['digital'].shape[0]):
+        AX[1].plot(data['digital'][i]+1.1*i)
+    AX[0].set_ylabel('analog (V)')
+    AX[1].set_ylabel('digital')
+    AX[1].set_xlabel('time samples (::10)')
+    plt.show()
     # if os.path.isdir(folder):
     #     cmd, cwd = build_cmd(folder)
     #     print('\n launching the command \n :  %s \n ' % cmd)
