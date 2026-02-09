@@ -171,10 +171,10 @@ if __name__=='__main__':
                     print(' - episode %i/%i ' % (\
                             index+1, len(Stim.experiment['index'])),
                           '   duration: ', 
-                        #   Stim.experiment['time_duration'][index],
+                          Stim.experiment['time_duration'][index],
                         #   '   contrast: ', 
                         #   Stim.experiment['contrast'][index],
-                        #   '   protocol-id : ', 
+                          '   protocol-id : ', 
                           Stim.experiment['protocol_id'][index])
                     if 'verbose' in protocol:
                         for k in Stim.experiment:
