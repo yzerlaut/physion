@@ -52,8 +52,7 @@ class visual_stim:
 
         self.units = self.protocol['units']
         self.movie_refresh_freq = self.protocol['movie_refresh_freq']
-        self.blank_color=self.gamma_correction(\
-                self.protocol['presentation-blank-screen-color'])
+        self.blank_color=self.protocol['presentation-blank-screen-color']
 
         if demo or (('demo' in self.protocol) and self.protocol['demo']):
             self.screen['fullscreen'] = False
@@ -93,6 +92,8 @@ class visual_stim:
     #  ---   Gamma correction  --- #
     ################################
 
+    # N.B. do only when building the video on 
+    #     use as stim.gamma_correction(stim.get_image())
     def gamma_correction(self, lum):
         return np.power(lum/self.k, 1./self.gamma)
 
@@ -402,10 +403,6 @@ class visual_stim:
 
     def get_null_image(self,
                        screen_id=None):
-        # if screen_id is not None:
-        #     cond = self.screen_ids==screen_id
-        #     return 0*self.x[cond].reshape(self.screen['resolution'])
-        # else:
         return 0*self.x
 
     def get_image(self, episode, 
@@ -415,28 +412,6 @@ class visual_stim:
         """
         return 0.5+\
             self.get_null_image()
-
-    def get_prestim_image(self,
-                          screen_id=None):
-        if 'presentation-prestim-screen' in self.protocol:
-            return (1+self.protocol['presentation-prestim-screen'])/2.+\
-                    self.get_null_image(screen_id=screen_id)
-        else:
-            return self.get_null_image(screen_id=screen_id)
-
-    def get_interstim_image(self):
-        if 'presentation-interstim-screen' in self.protocol:
-            return (1+self.protocol['presentation-interstim-screen'])/2.+\
-                    self.get_null_image(screen_id=screen_id)
-        else:
-            return self.get_null_image(screen_id=screen_id)
-
-    def get_poststim_image(self):
-        if 'presentation-poststim-screen' in self.protocol:
-            return (1+self.protocol['presentation-poststim-screen'])/2.+\
-                    self.get_null_image(screen_id=screen_id)
-        else:
-            return self.get_null_image(screen_id=screen_id)
 
     def image_to_frame(self, img, 
                        norm=False, 

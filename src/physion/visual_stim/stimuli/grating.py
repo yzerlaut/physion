@@ -106,7 +106,7 @@ if __name__=='__main__':
 
     params = get_default_params('grating')
     params['radius'] = 20.
-    params['speed'] = 2.
+    params['speed'] = 1.
     params['angle-surround'] = 90.
     params['radius-surround'] = 50.
     params['speed-surround'] = 2.

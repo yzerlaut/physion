@@ -103,7 +103,7 @@ class MonitoringSquare:
                              dtype=bool)
 
         S = int(Stim.screen['monitoring_square']['size'])
-        X, Y = Stim.screen['resolution'] # x,y sizes
+        X, Y = self.mask.shape
 
         if Stim.screen['monitoring_square']['location']=='top-right':
             self.mask[X-S:,Y-S:] = True
@@ -205,10 +205,10 @@ if __name__=='__main__':
                     Screen %i, %s""" % (s+1, filename))
                 
                 out.append(cv.VideoWriter(filename,
-                                cv.VideoWriter_fourcc(*'mp4v'), 
-                                Stim.movie_refresh_freq,
-                                Stim.screen['resolution'],
-                                False))
+                              cv.VideoWriter_fourcc(*'mp4v'), 
+                                 Stim.movie_refresh_freq,
+                                     Stim.screen['resolution'],
+                                         False))
             print()
             # prepare the loop
             t, tend = 0, Stim.experiment['time_stop'][-1]+\
@@ -224,12 +224,14 @@ if __name__=='__main__':
                     tstart, tstop = update(Stim, index)
                     
                 # data in [0,1]
+                # GAMMA CORRECTION ONLY AT THAT POINT !
                 if (t>=tstart) and (t<tstop):
                     data = Stim.gamma_correction(\
                             Stim.get_image(index, t-tstart))
                 else:
-                    data = Stim.blank_color+\
-                                Stim.get_null_image()
+                    data = Stim.gamma_correction(\
+                                Stim.blank_color+\
+                                    Stim.get_null_image())
 
                 # put the monitoring square
                 if 'monitoring_square' in Stim.screen:
@@ -248,7 +250,9 @@ if __name__=='__main__':
 
             np.save(os.path.join(protocol_folder, 'visual-stim.npy'), 
                     Stim.experiment)
+
             print('\n [ok] video file and metadata saved in: "%s" \n ' % protocol_folder)
 
     else:
+
         print('\nERROR: need to provide a valid json file as argument\n')
