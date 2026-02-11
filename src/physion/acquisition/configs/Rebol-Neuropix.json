@@ -4,7 +4,7 @@
     "Screen":"LN-VR-3screens",
     "-----------------------------------------":"",
     "NIdaq":{
-        "acquisition-frequency":5000,
+        "acquisition-frequency":10000,
         "analog-outputs":{
             "N-channels":0
         },

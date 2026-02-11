@@ -235,8 +235,6 @@ def plot_NIdaq_of_last():
     data = np.load(os.path.join(folder, 'NIdaq.npy'),
                    allow_pickle=True).item()
 
-    print(data.keys()) 
-
     for i in range(data['analog'].shape[0]):
         AX[0].plot(data['analog'][i][::10])
 
@@ -245,6 +243,10 @@ def plot_NIdaq_of_last():
     AX[0].set_ylabel('analog (V)')
     AX[1].set_ylabel('digital')
     AX[1].set_xlabel('time samples (::10)')
+
+    from behavior.locomotion import compute_speed
+    fig, ax = plt.subplots(1)
+    ax.plot(compute_speed(data['digital'][1], acq_freq=5e3, empirical=True))
     plt.show()
     # if os.path.isdir(folder):
     #     cmd, cwd = build_cmd(folder)
