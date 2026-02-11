@@ -4,7 +4,7 @@
     "Screen":"LN-VR-3screens",
     "-----------------------------------------":"",
     "NIdaq":{
-        "acquisition-frequency":10000,
+        "acquisition-frequency":5000,
         "analog-outputs":{
             "N-channels":0
         },
@@ -50,9 +50,8 @@
     },
     "Height-of-Microscope-Camera-Image-in-mm":2.7,
     "-----------------------------------------":"",
-    "linear-treadmill":{
-        "radius-position-on-disk-cm":5.5,
-		"roto-encoder-value-per-rotation": -12563.0
+    "treadmill":{
+        "radius-position-on-disk-cm":5
     },
     "-----------------------------------------":"",
     "root_datafolder":"DATA",

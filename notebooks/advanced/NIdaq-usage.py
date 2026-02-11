@@ -1,8 +1,12 @@
 # %% [markdown]
-# Interface for NIdaq usage
+# # Interface for NIdaq usage
 #
 # everything in SI units (seconds, volts, hertz)
 
+
+# %% [markdown]
+# ## Finding NI devices
+#
 
 # %%
 import sys, time
@@ -15,6 +19,10 @@ from physion.hardware.NIdaq.main import Acquisition
 import numpy as np
 import matplotlib.pylab as plt
 
+devices = find_usb_devices()
+if len(devices)>0:
+    for device in devices:
+        print('[ok] USB-series card found:', device)
 devices = find_x_series_devices()
 if len(devices)>0:
     for device in devices:
@@ -23,18 +31,24 @@ devices = find_m_series_devices()
 if len(devices)>0:
     for device in devices:
         print('[ok] M-series card found:', device)
-devices = find_usb_devices()
-if len(devices)>0:
-    for device in devices:
-        print('[ok] USB-series card found:', device)
 
+# %% [markdown]
+# ## See the available channels
+# [!!] those are the channels from the API  
+#
+#   --> check each device property to see if available [!!]
+#
 # %%
 from physion.hardware.NIdaq.config import (
     get_analog_input_channels, get_analog_output_channels,
     get_digital_input_channels, get_digital_output_channels
 )
 get_analog_input_channels(device)
-#get_digital_input_channels(device)
+get_digital_input_channels(device)
+
+# %% [markdown]
+# ## Run an Acquisition/Stim. with digital data
+# map some outputs to inputs to check that things are working fine
 
 # %%
 import numpy as np
@@ -42,7 +56,7 @@ tstop = 4
 DT = 0.25 # pulse at 4Hz in chan2
 acq = Acquisition(
     sampling_rate=1000,
-    Nchannel_analog_in=1,
+    # Nchannel_analog_in=1,
     max_time=tstop,
     digital_output_port="port0/line0:2",
     digital_input_port="port0/line3:7",
@@ -65,8 +79,51 @@ fig, ax = plt.subplots(1, figsize=(6,2))
 for i in range(acq.digital_data.shape[0]):
     ax.plot(1.1*i+acq.digital_data[i,:])
 
+# %% [markdown]
+# ## Run an Acquisition/Stim. with **analog** data
+# map some outputs to inputs to check that things are working fine !
+#
+# output waveforms are best provided as functions of the time array `t`
+
 # %%
-from physion.hardware.NIdaq.main import Acquisition
+import numpy as np
+
+def fancy_time_func1(t):
+    output = np.sin(2*np.pi*t)
+    return output
+
+def fancy_time_func2(t):
+    output = np.cos(2*np.pi*t)
+    return output
+
+tstop = 4
+DT = 0.25 # pulse at 4Hz in chan2
+acq = Acquisition(
+    sampling_rate=1000,
+    Nchannel_analog_in=5,
+    analog_output_funcs=[\
+        fancy_time_func1,
+        fancy_time_func2,
+    ],
+    max_time=tstop,
+    verbose=True
+)
+acq.launch()
+t0 = time.time()
+while (time.time()-t0)<tstop:
+    time.sleep(0.2)
+acq.close()
+
+import matplotlib.pylab as plt
+fig, ax = plt.subplots(1, figsize=(6,2))
+for i in range(acq.analog_data.shape[0]):
+    ax.plot(acq.analog_data[i,:], label='AI%i' %i)
+ax.legend(frameon=False, loc=(1,0.2))
+
+# %%
+# [markdown]
+# ### Pulses
+
 
 import numpy as np
 import matplotlib.pylab as plt
@@ -84,25 +141,15 @@ def build_start_stop_signal(t,
     cond = ((t>0.1) & (t<(0.1+width))) |\
           ((t>(t[-1]-0.1-width)) & (t<(t[-1]-0.1)))
     output = np.zeros_like(t)
-    output[cond] = -5
+    output[cond] = 5
     return output
-output = build_start_stop_signal(t)
-
-plt.plot(t[::10], output[::10])
-plt.xlabel("Time (s)")
-plt.ylabel("Amplitude")
-plt.grid(True)
 
 # %%
-
-def null(t):
-    return 0*t
 
 acq = Acquisition(\
                  sampling_rate=fs,
                  Nchannel_analog_in=3,
                  analog_output_funcs=[\
-                     build_start_stop_signal,
                      build_start_stop_signal,
                  ],
                  max_time=tstop)
@@ -117,125 +164,9 @@ while (time.time()-tic)<tstop:
     pass
 acq.close()
 
-# %%
 fig, ax = plt.subplots(1, figsize=(6,2))
 for i in range(acq.analog_data.shape[0]):
-    ax.plot(acq.analog_data[i,10:]+5)
+    ax.plot(acq.analog_data[i,:], label='AI%i' %i)
+ax.legend(frameon=False, loc=(1,0.2))
 
-# %%
-tstop =3
-acq = Acquisition(
-    sampling_rate=1000,
-    Nchannel_analog_in=3,
-    max_time=tstop,
-    verbose=True
-)
-acq.launch()
-t0 = time.time()
-while (time.time()-t0)<tstop:
-    time.sleep(0.2)
-acq.close()
-
-
-# %%
-tstop = 20 
-DT = 0.5 # pulse at 2Hz in chan2
-acq = Acquisition(
-    sampling_rate=1000,
-    Nchannel_analog_in=1,
-    max_time=tstop,
-    digital_output_port="port0/line0:2",
-    digital_input_port="port0/line3:7",
-    digital_output_steps=[
-        {'channel':2, 'onset':0.1, 'duration':0.1},
-        {'channel':1, 'onset':0.5, 'duration':0.1},
-        {'channel':2, 'onset':1.1, 'duration':0.5},
-        {'channel':2, 'onset':2.1, 'duration':0.5},
-        ] + [ {'channel':0, 'onset':t+DT/2., 'duration':0.1}\
-                 for t in np.arange(int(tstop/DT)+1)*DT],
-    filename='data.npy',
-    verbose=True
-)
-acq.launch()
-t0 = time.time()
-while (time.time()-t0)<tstop:
-    time.sleep(0.2)
-acq.close()
-
-# %%
-f = "C:\\Users\\info\\OneDrive\\Documents\\Open Ephys\\2026-02-03_16-04-25\\Record Node 103\\experiment1\\recording1\continuous\OneBox-102.OneBox-ADC\\timestamps.npy"
-f = "C:\\Users\\info\\OneDrive\\Documents\\Open Ephys\\2026-02-03_16-04-25\\Record Node 103\\experiment1\\recording1\events\MessageCenter\\timestamps.npy"
-
-folder = "C:\\Users\info\DATA\\2026-02-03_17-47-23\Record Node 101\experiment1\\recording1\events\OneBox-100.ProbeA\TTL"
-print(' timestamps: ',  np.load(os.path.join(folder, 'timestamps.npy')))
-print(' sample numbers: ',  np.load(os.path.join(folder, 'sample_numbers.npy')))
-
-# %%
-fig, ax = plt.subplots(1, figsize=(6,2))
-for i in range(acq.digital_data.shape[0]):
-    ax.plot(1.1*i+acq.digital_data[i,:])
-# ax.plot(self.digital_data[0,:])
-
-# %%
-# zoom properties
-plt.plot(1e3*t[::10], acq.analog_data[0][::10], label='chan0')
-plt.plot(1e3*t[::10], acq.analog_data[1][::10], label='chan1')
-plt.xlabel("Time (ms)")
-plt.ylabel("Amplitude")
-plt.grid(True)
-plt.legend(loc=(1.,0.2))
-
-# %%
-# now ZOOM on data
-t0, width =0.1, 0.1
-cond = (t>t0) & (t<(t0+width))
-plt.plot(1e3*(t[cond]-t0), acq.analog_data[0][cond], label='start')
-plt.plot(1e3*(t[cond]-t0), acq.analog_data[1][cond], label='stop')
-plt.xlabel("Time (ms)")
-plt.ylabel("Amplitude")
-plt.grid(True)
-plt.legend(loc=(1.,0.2))
-
-# %%
-# performing multiple recordings
-
-for i in range(1,4):
-        
-    fs = 50e3
-    tstop = 3 # 60*60
-    t = np.arange(int(tstop*fs)+1)/fs
-    output = build_start_stop_signal(t)
-    acq = Acquisition(\
-                sampling_rate=fs,
-                Nchannel_analog_in=2,
-                outputs=np.array([output], dtype=np.float64),
-                filename=os.path.expanduser('~/Desktop/Sample%i.npy' % i),
-                max_time=tstop)
-    acq.launch()
-    tic = time.time()
-    while (time.time()-tic)<tstop:
-        pass
-    acq.close()
-    time.sleep(4)
-
-# %%
-import os
-fig, ax = plt.subplots(2, figsize=(7,4))
-for i in range(1, 4):
-        
-    data = np.load(\
-        os.path.expanduser('~/Desktop/Sample%i.npy' % i),
-        allow_pickle=True).item()
-    t = np.arange(len(data['analog'][0]))*data['dt']
-    t0 =0.132
-    cond = (t>t0) & (t<(t0+0.003))
-
-    ax[0].plot(1e3*(t[cond]-t0), data['analog'][0][cond], label='start')
-    ax[1].plot(1e3*(t[cond]-t0), data['analog'][1][cond], label='stop')
-    #plt.xlabel("Time (ms)")
-    #plt.ylabel("Amplitude")
-    plt.grid(True)
-#plt.legend(loc=(1.,0.2))
-# %%
-data
 # %%

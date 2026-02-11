@@ -229,7 +229,7 @@ def plot_NIdaq_of_last():
     print()
     import matplotlib.pylab as plt
 
-    fig, AX = plt.subplots(2, 1, figsize=(8,4))
+    fig, AX = plt.subplots(3, 1, figsize=(8,5))
     plt.subplots_adjust(left=0.1, bottom=0.1)
 
     data = np.load(os.path.join(folder, 'NIdaq.npy'),
@@ -245,12 +245,12 @@ def plot_NIdaq_of_last():
     AX[1].set_xlabel('time samples (::10)')
 
     from behavior.locomotion import compute_speed
-    fig, ax = plt.subplots(1)
-    ax.plot(compute_speed(data['digital'][1], acq_freq=5e3, empirical=True))
+    # HARDCODED - binary signals on channels 1 & 2 
+    # HARDCODED - acq. freq. / position on disk
+    binary = data['digital'][1]*1+2*data['digital'][2]
+    AX[2].plot(compute_speed(binary, 
+                             acq_freq=5e3,
+                             radius_position_on_disk=5.))
+    AX[2].set_ylabel('speed (cm/s)') 
+
     plt.show()
-    # if os.path.isdir(folder):
-    #     cmd, cwd = build_cmd(folder)
-    #     print('\n launching the command \n :  %s \n ' % cmd)
-    #     p = subprocess.Popen(cmd,
-    #                          cwd=cwd,
-    #                          shell=True)
