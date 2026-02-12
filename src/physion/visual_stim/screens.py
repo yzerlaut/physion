@@ -89,11 +89,11 @@ SCREENS = {
         'distance_front':17.0, # in cm
         'height_from_base':10.0, # in cm
         'fullscreen':True,
-        'monitoring_square':{'size':56,
+        'monitoring_square':{'size':80,
                              'location':'top-right',
                              'screen_id':1},
-        'gamma_correction':{'k':1.03,
-                            'gamma':1.77},
+        'gamma_correction':{'k':1.0,
+                            'gamma':1.0},
     },
     'Dell-4220':{
         'nScreens':1,
