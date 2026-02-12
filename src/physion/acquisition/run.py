@@ -166,12 +166,13 @@ def run(self):
             #  -- find channel
             chan = np.flatnonzero(\
                 np.array(self.metadata['NIdaq']['digital-outputs']['line-labels'])\
-                                    =='ephys-synch-signal')[0]
+                                    =='ephys-synch-signal-5Hz')[0]
             # print('Ephys-synch-signal on channel:', chan)
             #  -- fill channel
-            events = recordings.ephysSynch(self.max_time) 
+            # events = recordings.ephysSynch(self.max_time) 
+            freq = 5
             digital_output_steps += [{'channel':chan, 'onset':e, 'duration':0.05}\
-                                            for e in events]
+                            for e in np.arange(1, int(self.max_time*freq+10))/freq]
 
         if self.metadata['CaImaging']:
             chan = 0 # CHECK
