@@ -10,7 +10,7 @@ params = {"presentation-duration":10, "bg-color":0.5}
 
 class stim(visual_stim):
     """
-    stimulus specific visual stimulation object
+    stimulus-specific visual stimulation object
 
     all functions should accept a "parent" argument that can be the 
     multiprotocol holding this protocol
