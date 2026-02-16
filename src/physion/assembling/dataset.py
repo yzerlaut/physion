@@ -9,7 +9,7 @@ def read_spreadsheet(filename,
                      verbose=True):
     """
     get_metadata_from can have the value:
-            - "file"
+            - "files"
             - "nwb"
             - "table"
     
@@ -121,14 +121,26 @@ if __name__=='__main__':
 
         folder = sys.argv[-1]
 
-        import pathlib, shutil
-
         days, times, mice = [], [], []
-        for day in [day for day in os.listdir(folder) if (len(day.split('_'))==3)]:
-            for time in [t for t in os.listdir(os.path.join(folder,day)) if (len(t.split('-'))==3)]:
+        if (len(folder.split('_'))==3):
+
+            print(' folder recognized as a day folder')
+            day = folder.split(os.path.sep)[-1]
+            for time in [t for t in os.listdir(folder) if (len(t.split('-'))==3)]:
                 days.append(day)
                 times.append(time)
                 mice.append('demo-Mouse') # by default
+
+        else:
+
+            print(' folder should be a set of day folders')
+            for day in [day for day in os.listdir(folder) if (len(day.split('_'))==3)]:
+                for time in [t for t in os.listdir(os.path.join(folder,day)) if (len(t.split('-'))==3)]:
+                    days.append(day)
+                    times.append(time)
+                    mice.append('demo-Mouse') # by default
+
+        import pathlib, shutil
 
         base_path = str(pathlib.Path(__file__).resolve().parents[2])
         dest = os.path.join(pathlib.Path(folder).resolve().parent, 'DataTable0.xlsx')
