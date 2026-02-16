@@ -157,7 +157,7 @@ def run(self):
             chan = np.flatnonzero(\
                 np.array(self.metadata['NIdaq']['digital-outputs']['line-labels'])\
                                     =='visual-stim-episode-start')[0]
-            print('visual-stim-episode-start signal on channel:', chan)
+            # print('visual-stim-episode-start signal on channel:', chan)
             #  -- fill channel
             digital_output_steps += [{'channel':chan, 'onset':e, 'duration':0.05}\
                                         for e in self.stim.experiment['time_start']]
@@ -368,7 +368,9 @@ def run_update(self):
     if self.protocolBox.currentText()!='None':
 
         t = (time.time()-self.t0)
-        iT = int(t*self.stim.movie_refresh_freq)
+        iT = min([\
+                int(t*self.stim.movie_refresh_freq),
+                    len(self.stim.is_interstim)-1])
 
         if self.stim.is_interstim[iT] and\
                 (self.current_index<self.stim.next_index_table[iT]):
@@ -430,8 +432,6 @@ def stop(self):
         self.acq.close()
 
     if self.CaImagingButton.isChecked():
-        time.sleep(0.5) # need to wait that the NIdaq process is released to create a new one
-        # stop the Ca imaging recording
         self.send_CaImaging_Stop_signal()
 
     self.statusBar.showMessage('acquisition/stimulation stopped !')
@@ -450,9 +450,9 @@ def stop(self):
 def send_CaImaging_Stop_signal(self):
     self.statusBar.showMessage(\
             'sending stop signal for 2-Photon acq.')
+    time.sleep(1.0) # need to wait that the NIdaq process is released to create a new one
+    # stop the Ca imaging recording
     acq = Acquisition(sampling_rate=1000, # 1kHz
-                      Nchannel_analog_in=1, 
-                      Nchannel_digital_in=0,
                       max_time=0.7,
                       buffer_time=0.1,
                       output_funcs= [recordings.trigger2P],
