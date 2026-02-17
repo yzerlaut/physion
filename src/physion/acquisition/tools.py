@@ -42,6 +42,16 @@ def save_experiment(self, metadata):
     print('[ok] Metadata data saved as: %s ' % filename)
     self.statusBar.showMessage('Metadata saved as: "%s" ' % filename)
 
+def find_line_props(line_labels,
+                    string='ephys-synch-signal'):
+
+    couples = [(i,l) for i,l in enumerate(line_labels) if string in l]
+    if len(couples)==1:
+        props = {'chan':couples[0][0]}
+        if couples[0][1][-2:]=='Hz':
+            props['freq'] = float(\
+                couples[0][1].split('-')[-1].replace('Hz', ''))
+        return props
 
 
 def check_gui_to_init_metadata(self):

@@ -3,9 +3,8 @@ import numpy as np
 import multiprocessing
 from PyQt5 import QtCore
 
-from physion.utils.files import get_time, get_date, generate_datafolders,\
-        get_latest_file
-from physion.acquisition.tools import \
+from physion.utils.files import get_latest_file
+from physion.acquisition.tools import find_line_props,\
         check_gui_to_init_metadata, set_filename_and_folder, stimulus_movies_folder
 from physion.acquisition import recordings
 
@@ -154,25 +153,19 @@ def run(self):
         digital_output_steps = []
         if self.stim is not None:
             #  means WITH VisualStim -- find channel
-            chan = np.flatnonzero(\
-                np.array(self.metadata['NIdaq']['digital-outputs']['line-labels'])\
-                                    =='visual-stim-episode-start')[0]
-            # print('visual-stim-episode-start signal on channel:', chan)
-            #  -- fill channel
-            digital_output_steps += [{'channel':chan, 'onset':e, 'duration':0.05}\
+            props = find_line_props(\
+                self.metadata['NIdaq']['digital-outputs']['line-labels'],
+                                    'visual-stim-episode-start')
+            digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.05}\
                                         for e in self.stim.experiment['time_start']]
 
         if self.metadata['Neuropixels']:
             #  -- find channel
-            chan = np.flatnonzero(\
-                np.array(self.metadata['NIdaq']['digital-outputs']['line-labels'])\
-                                    =='ephys-synch-signal-5Hz')[0]
-            # print('Ephys-synch-signal on channel:', chan)
-            #  -- fill channel
-            # events = recordings.ephysSynch(self.max_time) 
-            freq = 5
-            digital_output_steps += [{'channel':chan, 'onset':e, 'duration':0.05}\
-                            for e in np.arange(1, int(self.max_time*freq+10))/freq]
+            props = find_line_props(\
+                self.metadata['NIdaq']['digital-outputs']['line-labels'],
+                                    'ephys-synch-signal')
+            digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.05}\
+                    for e in np.arange(1, int(self.max_time*props['freq']+10))/props['freq']]
 
         if self.metadata['CaImaging']:
             chan = 0 # CHECK
