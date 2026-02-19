@@ -148,8 +148,8 @@ for i, ax in enumerate(AX[0]):
     pt.set_plot(ax, xlabel='NIdaq time (s)', ylabel='TTL\n(from NIdaq)' if i==0 else None)
 
 # open-ephys
-AX[1][0].plot(props[iRec]['sn'][:70], props[iRec]['ttl'][:70], 'o-', lw=0.4, ms=0.9)
-AX[1][1].plot(props[iRec]['sn'][-70:], props[iRec]['ttl'][-70:], 'o-', lw=0.4, ms=0.9)
+AX[1][0].plot(props[iRec]['sn'][1:70], props[iRec]['ttl'][1:70], 'o-', lw=0.4, ms=0.9)
+AX[1][1].plot(props[iRec]['sn'][-70:-1], props[iRec]['ttl'][-70:-1], 'o-', lw=0.4, ms=0.9)
 for i, ax in enumerate(AX[1]):
     pt.set_plot(ax, xlabel='N, sample number (Npx Probe)      ', ylabel='TTL\n(on Probe)' if i==0 else None)
 # fig.savefig(os.path.expanduser('~/Desktop/fig.png'))
@@ -209,6 +209,8 @@ def sampling_match(iRec,
 
     probe_signal = func(wide_t)
 
+    width=1
+
     if with_fig:
 
         fig, AX = pt.figure(axes=(4,2), ax_scale=(1.6,.7), top=1.5, hspace=1.4, wspace=0.3)
@@ -225,7 +227,7 @@ def sampling_match(iRec,
             # open-ephys
             cond = (wide_t>(t0-width)) & (wide_t<(t0+width))
             AX[1][i].plot(wide_t[cond][::10], probe_signal[cond][::10])
-            pt.set_plot(AX[1][i], xlabel='$F \\cdot (N- N_0) $ time (s)', ylabel='TTL\n(from NIdaq)' if i==0 else None)
+            pt.set_plot(AX[1][i], xlabel='$F \\cdot (N- N_0) $ time (s)', ylabel='TTL\n(on Probe)' if i==0 else None)
 
             pt.set_common_xlims([AX[0][i], AX[1][i]])
 
