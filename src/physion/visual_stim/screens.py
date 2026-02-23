@@ -106,8 +106,8 @@ SCREENS = {
         'fullscreen':True,
         'monitoring_square':{'size':60.,
                              'location':'top-right'},
-        'gamma_correction':{'k':1.,
-                            'gamma':1.},
+        'gamma_correction':{'k':1.01,
+                            'gamma':2.17},
     },
 }
 
