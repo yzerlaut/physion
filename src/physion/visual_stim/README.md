@@ -1,64 +1,54 @@
 # Visual stimulation
 
-The stimulus presentation relies on `PyQt5` (QMultimedia module) for the display on the screen.
+## Overview 
 
-The custom code for the set of stimuli lies in the ["main.py" script](./main.py) and in the ["stimuli/" folder](./stimuli).
+This module handles the presentation of visual stimuli on a given screen. Vision neuroscience expresses [visual stimuli in angular dimensions](#mouse-visual-field-and-screen-position) and mouse vision is investigated under specific luminosity conditions. Those two aspects require some [calibration steps (see below)](#screen-calibration) for each screen setup.
 
-To use the visual stimulation feature, be sure to follow the installation steps and screen settings described in the [installation instructions](../../docs/install/README.md)
+To use the visual stimulation feature, be sure to follow the installation steps and screen settings described in the [installation instructions for an acquisition setup](../../../docs/install/acquisition.md)
 
-## Description of visual stimulation protocols
+_**Implementation**_. The custom `visual_stim` object at the basis of the visual stimulation implementation lies is defined in [main.py](./main.py). Its children objects with stimulus-specific features are found in the [stimuli/](./stimuli) folder.
 
-The protocol files have to be in the [../acquisition/protocols/](../acquisition/protocols/) folder.
+_**Under the hood**_.  The stimulus presentation relies on `PyQt5` (`QMultimedia` module) for the display on the screen, see [show.py](./show.py)
 
-A given protocol is described by a `json` file. It can be a single sitmulus type or a "multiprotocol" see below.
+## Usage
 
-### Single Stimulus Type with Parameters Variations
+### 1. Prepare a Visual Stimulation Protocol
+
+A given protocol is described by a `json` file.   
+It can be a single stimulus type or a "multiprotocol" (see below).
+
+#### 1.a) Single Stimulus Protocol (with parameters variations)
 
 The syntax for a single stimulus with parameter variations is the following:
 
 ```
 {
-  "Presentation": "Stimuli-Sequence",
-  "Stimulus": "center-drifting-grating",
-  "Screen": "Dell-2020",
-  "movie_refresh_freq":30,
-  "units":"cm",
-  "presentation-blank-screen-color": 0.5,
-  "presentation-prestim-period": 6.0,
-  "presentation-poststim-period": 6.0,
-  "presentation-interstim-period": 6.0,
-  "presentation-duration": 3.0,
-  "angle-1": 0.0,
-  "angle-2": 270.0,
-  "N-angle": 4,
-  "spatial-freq-1": 0.1,
-  "spatial-freq-2": 0.1,
-  "N-spatial-freq": 0,
-  "speed-1": 2.0,
-  "speed-2": 2.0,
-  "N-speed": 0,
-  "radius-1": 200,
-  "radius-2": 200,
-  "N-radius": 0,
-  "x-center-1": 0.0,
-  "x-center-2": 0.0,
-  "N-x-center": 0,
-  "y-center-1": 0.0,
-  "y-center-2": 0.0,
-  "N-y-center": 0,
-  "contrast-1": 1.0,
-  "contrast-2": 1.0,
-  "N-contrast": 0,
-  "bg-color-1": 0.5,
-  "bg-color-2": 0.5,
-  "N-bg-color": 0,
-  "N-repeat": 10
+    "Presentation": "Stimuli-Sequence",
+    "Stimulus": "grating",
+    "Screen": "Dell-4220",
+    "-------------------------------------------- 1": 0,
+    "presentation-duration": 1,
+    "presentation-prestim-period": 4,
+    "presentation-poststim-period": 4,
+    "presentation-interstim-period": 2,
+    "presentation-blank-screen-color": 0.5,
+    "N-repeat": 10,
+    "-------------------------------------------- 2": 0,
+    "x-center-1": -40.0, "x-center-2": 40.0, "N-x-center": 5,
+    "y-center-1": -20.0, "y-center-2": 20.0, "N-y-center": 4,
+    "angle-1": 0.0, "angle-2": 135.0, "N-angle":4,
+    "-------------------------------------------- 3": 0,
+    "spatial-freq": 0.06,
+    "speed": 0, "radius": 10,
+    "json_location": "/Users/yann/Desktop/Visual-Stim-Bacci-Npx"
 }
 ```
 
-### Protocols of Multiple Stimulus Types
+[ [!!] ]() N.B. make sure that your screen is correctly described in the [screens.py](./screens.py) script.
 
-Multiprotocols are built as a list of single protocols with the following syntax:
+#### 1.b) Protocols made of Multiple Stimulus Types
+
+Multiprotocols can be build as a list of single protocols with the following syntax:
 
 ```
 {
@@ -74,20 +64,23 @@ Multiprotocols are built as a list of single protocols with the following syntax
   "presentation-interstim-period": 3,
   "Screen": "Dell-2020",
   "movie_refresh_freq":30,
-  "units":"cm"
 }
 ```
 
-## Preparing a visual stimulation protocol
+## 2. Build the Protocol Video
 
 A protocol need to be converted to a set binary movies befire being displayed.
 This is achieved via the following command:
 
 ```
-python -m physion.visual_stim.build physion/acquisition/protocols/drifting-gratings.json
+python -m physion.visual_stim.build ~/Desktop/protocol-folder/drifting-gratings.json
 ```
+The generated movie will be either `movie.mp4` or `movie.wmv` depending on the platform (unix vs MsWin).
 
-The generated movie (either `movie.mp4` or `movie.wmv` depending on the platform) is available at the location `physion/acquisition/protocols/movies/drifting-gratings/movie.wmv`.
+To be used in the acquisition UI the protocol folder needs to be moved (the full folder, i.e. video+metadata) at the location `physion/acquisition/protocols/movies`.
+
+
+[ [!!] ]() don't forget to move the video after building it !
 
 
 ## Mouse visual field and screen position
@@ -105,7 +98,38 @@ The calculation using the spherical coordinates of angular view:
 
 into screen positions is available on the [VisualStim-design notebook](../../../notebooks/visual_stim/Visual-Stim-Design.ipynb).
 
-## Gamma correction
+## Screen calibration
+
+### 1. Luminosity setting (brightness & contrast)
+
+The overall idea is to maximize the contrast on the screen while adjusting the brightness to get to the desired luminosity value.
+
+The desired value of illumination on the mouse eye position is:
+
+- 20-25 lux (i.e. lumens/m2) for the white screen
+
+To reach this, use a light-meter and monitor illumination while presenting a white screen on the stimulation display.
+
+To build a simple protocol that shows a full-screen at the three screen colors black=0, grey=0.5 and white=1, you can use the protocol:
+```
+{
+    "Presentation": "Stimuli-Sequence",
+    "Stimulus": "uniform-bg",
+    "Screen": "Dell-2020",
+    "----------------------------------------1": 0,
+    "presentation-duration": 5,
+    "presentation-prestim-period": 1,
+    "presentation-poststim-period": 1,
+    "presentation-interstim-period": 1,
+    "N-repeat": 1,
+    "----------------------------------------2": 0,
+    "screen-color-1": 0.0,
+    "screen-color-2": 1.0,
+    "N-screen-color": 3,
+}
+```
+
+### 2. Gamma correction
 
 We present a uniform full-screen at different levels of luminance, we use a photometer to measure the true light intensity in the center of the screen.
 
@@ -116,18 +140,9 @@ The gamma correction parameters have to be inserted in the [./screens.py](screen
 
 We show below the measurements before and after the correction
 
-### Before correction
-
 <p align="center">
-  <img src="../../../docs/visual_stim/gamma-correction-before.png" />
+  <img src="../../../docs/visual_stim/gamma-correction.png" />
 </p>
-
-### After correction
-<p align="center">
-  <img src="../../../docs/visual_stim/gamma-correction-after.png"/>
-</p>
-
-The measurements and fitting procedure are described in the script: [gamma-correction.py](./gamma-correction.py).
 
 ## Making Stimulus Schematic for Figures
 

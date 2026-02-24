@@ -24,7 +24,7 @@ defaults = {\
     'presentation-blank-screen-color':0.5,
     'movie_refresh_freq':30.,
     # 'units':'lin-deg',
-    'units':'cm',
+    'units':'cm', # not super explicit, change its name later...
 }
 
 class visual_stim:
