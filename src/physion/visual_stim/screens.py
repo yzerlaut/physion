@@ -79,6 +79,22 @@ SCREENS = {
         'gamma_correction':{'k':1.03,
                             'gamma':1.77},
     },
+    'LN-2screens':{
+        'nScreens':2,
+        'name':'LN-2screens',
+        'screen_id':1,
+        'resolution':[1280, 1024],
+        'width':34.0, # in cm
+        'height':29.0, # in cm
+        'distance_front':20.0, # in cm
+        'height_from_base':14.0, # in cm
+        'fullscreen':True,
+        'monitoring_square':{'size':80,
+                             'location':'top-left',
+                             'screen_id':1},
+        'gamma_correction':{'k':1.0,
+                            'gamma':1.0},
+    },
     'LN-VR-3screens':{
         'nScreens':3,
         'name':'LN-VR-3screens',
