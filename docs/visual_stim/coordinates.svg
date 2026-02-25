@@ -2,39 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="379.00098mm"
-   height="142.61369mm"
-   viewBox="0 0 379.001 142.6137"
+   width="403.7731mm"
+   height="136.39256mm"
+   viewBox="0 0 403.77313 136.39257"
    version="1.1"
    id="svg1"
-   inkscape:version="1.3.1 (91b66b0, 2023-11-16)"
-   sodipodi:docname="coordinates.svg"
-   inkscape:export-filename="coordinates.png"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview1"
-     pagecolor="#ffffff"
-     bordercolor="#000000"
-     borderopacity="0.25"
-     inkscape:showpageshadow="2"
-     inkscape:pageopacity="0.0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#d1d1d1"
-     inkscape:document-units="mm"
-     inkscape:zoom="0.60067634"
-     inkscape:cx="908.97537"
-     inkscape:cy="249.71851"
-     inkscape:window-width="1424"
-     inkscape:window-height="765"
-     inkscape:window-x="0"
-     inkscape:window-y="38"
-     inkscape:window-maximized="0"
-     inkscape:current-layer="layer1" />
   <defs
      id="defs1">
     <rect
@@ -55,12 +29,9 @@
        refX="0"
        refY="0"
        orient="auto-start-reverse"
-       inkscape:stockid="Dart arrow"
        markerWidth="1"
        markerHeight="1"
        viewBox="0 0 1 1"
-       inkscape:isstock="true"
-       inkscape:collect="always"
        preserveAspectRatio="xMidYMid">
       <path
          style="fill:context-stroke;fill-rule:evenodd;stroke:none"
@@ -80,12 +51,9 @@
        refX="0"
        refY="0"
        orient="auto-start-reverse"
-       inkscape:stockid="Dart arrow"
        markerWidth="1"
        markerHeight="1"
        viewBox="0 0 1 1"
-       inkscape:isstock="true"
-       inkscape:collect="always"
        preserveAspectRatio="xMidYMid">
       <path
          style="fill:context-stroke;fill-rule:evenodd;stroke:none"
@@ -369,42 +337,74 @@
        width="213.08331"
        height="97.663185"
        id="rect81" />
+    <rect
+       x="-374.67148"
+       y="470.55896"
+       width="213.08331"
+       height="97.663185"
+       id="rect1" />
+    <rect
+       x="-374.67148"
+       y="470.55896"
+       width="213.08331"
+       height="97.663185"
+       id="rect2" />
+    <rect
+       x="-374.67148"
+       y="470.55896"
+       width="213.08331"
+       height="97.663185"
+       id="rect10" />
+    <rect
+       x="-374.67148"
+       y="470.55896"
+       width="213.08331"
+       height="97.663185"
+       id="rect11" />
+    <rect
+       x="-374.67148"
+       y="470.55896"
+       width="213.08331"
+       height="97.663185"
+       id="rect12" />
+    <rect
+       x="-374.67148"
+       y="470.55896"
+       width="213.08331"
+       height="97.663185"
+       id="rect13" />
   </defs>
   <g
-     inkscape:label="Layer 1"
-     inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-43.094661,-3.514149)">
+     transform="translate(-14.53944,-6.159999)">
     <path
        style="fill:#666666;stroke:#808080;stroke-width:1.2;stroke-linejoin:bevel;stroke-dasharray:none;marker-end:url(#DartArrow);paint-order:markers fill stroke"
-       d="M 80.883244,101.29559 106.44359,80.050433"
-       id="path2"
-       sodipodi:nodetypes="cc" />
+       d="M 117.55402,72.194011 52.791341,124.27247"
+       id="path2" />
     <path
        style="fill:#666666;stroke:#808080;stroke-width:1.2;stroke-linejoin:bevel;stroke-dasharray:none;marker-end:url(#DartArrow);paint-order:markers fill stroke"
        d="M 80,101.55414 V 22.104055"
-       id="path3"
-       sodipodi:nodetypes="cc" />
+       id="path3" />
     <text
        xml:space="preserve"
-       transform="matrix(0.97944692,0,0,0.97944692,48.466925,-248.53421)"
+       transform="matrix(0.97944692,0,0,0.97944692,-70.461515,-223.42709)"
        id="text3"
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect3);display:inline;fill:#808080;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="138.34863"
          y="354.4261"
-         id="tspan2"><tspan
+         id="tspan4"><tspan
            style="font-style:italic"
-           id="tspan1">x</tspan></tspan></text>
+           id="tspan2">x</tspan></tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.97944692,0,0,0.97944692,-45.844555,-262.94528)"
+       transform="matrix(0.97944692,0,0,0.97944692,57.22676,-235.63579)"
        id="text4"
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect5);display:inline;fill:#808080;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="138.34863"
          y="354.4261"
-         id="tspan4"><tspan
+         id="tspan6"><tspan
            style="font-style:italic"
-           id="tspan3">y</tspan></tspan></text>
+           id="tspan5">y</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.97944692,0,0,0.97944692,-64.844186,-329.55334)"
@@ -412,24 +412,21 @@
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect6);display:inline;fill:#808080;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="138.34863"
          y="354.4261"
-         id="tspan6"><tspan
+         id="tspan8"><tspan
            style="font-style:italic"
-           id="tspan5">z</tspan></tspan></text>
+           id="tspan7">z</tspan></tspan></text>
     <path
        style="fill:#1a1a1a;stroke:#666666;stroke-width:0.4;stroke-linejoin:bevel;stroke-dasharray:0.8, 0.4;stroke-dashoffset:0;paint-order:markers fill stroke"
        d="M 196.0713,37.656486 V 78.623122"
-       id="path8"
-       sodipodi:nodetypes="cc" />
+       id="path8" />
     <path
        style="fill:#1a1a1a;stroke:#666666;stroke-width:0.4;stroke-linejoin:bevel;stroke-dasharray:0.8, 0.4;stroke-dashoffset:0;paint-order:markers fill stroke"
        d="m 111.1827,78.774905 h 84.48854"
-       id="path9"
-       sodipodi:nodetypes="cc" />
+       id="path9" />
     <path
        style="fill:none;stroke:#800000;stroke-width:0.6;stroke-linejoin:bevel;stroke-dasharray:none;stroke-dashoffset:0;paint-order:markers fill stroke"
        d="M 195.75266,37.210907 80.364403,101.50089"
-       id="path13"
-       sodipodi:nodetypes="cc" />
+       id="path13" />
     <text
        xml:space="preserve"
        transform="matrix(0.97944692,0,0,0.97944692,18.98814,-292.70167)"
@@ -437,45 +434,41 @@
        style="font-size:12px;font-family:Arial;-inkscape-font-specification:Arial;text-align:center;white-space:pre;shape-inside:url(#rect14);display:inline;fill:#800000;stroke:none;stroke-width:2.26772;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="139.35059"
          y="354.4261"
-         id="tspan10"><tspan
+         id="tspan13"><tspan
            style="font-style:italic"
-           id="tspan7">r</tspan></tspan></text>
+           id="tspan9">r</tspan></tspan></text>
     <path
        style="fill:#1a1a1a;stroke:#666666;stroke-width:0.4;stroke-linejoin:bevel;stroke-dasharray:0.8, 0.4;stroke-dashoffset:0;paint-order:markers fill stroke"
        d="M 80.440369,101.13344 195.57439,79.67515"
-       id="path16"
-       sodipodi:nodetypes="cc" />
+       id="path16" />
     <path
        style="fill:#800000;fill-opacity:0;stroke:#800000;stroke-width:0.600001;stroke-linejoin:bevel;stroke-dasharray:none;stroke-dashoffset:0;marker-end:url(#marker19);paint-order:markers fill stroke"
        d="m 81.799498,55.359376 c 12.578521,-1.475855 36.409482,2.158031 42.539692,15.729882"
-       id="path18"
-       sodipodi:nodetypes="cc" />
+       id="path18" />
     <path
        style="fill:#666666;stroke:#808080;stroke-width:1.2;stroke-linejoin:bevel;stroke-dasharray:none;marker-end:url(#DartArrow);paint-order:markers fill stroke"
        d="M 80.254397,101.55414 H 207.026"
-       id="path5"
-       sodipodi:nodetypes="cc" />
+       id="path5" />
     <text
        xml:space="preserve"
-       transform="matrix(0.9704582,0,0,0.9704582,336.49482,-347.25142)"
+       transform="matrix(0.9704582,0,0,0.9704582,305.22105,-381.16805)"
        id="text6"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect7);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-300.15137"
          y="481.3968"
-         id="tspan11">eye location</tspan></text>
+         id="tspan14">eye location</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,282.79978,-299.87504)"
+       transform="matrix(0.84267602,0,0,0.84267602,283.68073,-305.60123)"
        id="text23"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect23);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-285.4707"
          y="481.3968"
-         id="tspan12">(0,0,0)</tspan></text>
+         id="tspan15">(0,0,0)</tspan></text>
     <path
        style="fill:#1a1a1a;stroke:#666666;stroke-width:0.4;stroke-linejoin:bevel;stroke-dasharray:0.8, 0.4;stroke-dashoffset:0;paint-order:markers fill stroke"
        d="M 169.08461,101.7897 196.29943,79.032538"
-       id="path1"
-       sodipodi:nodetypes="cc" />
+       id="path1" />
     <circle
        style="fill:#1a1a1a;stroke:#ececec;stroke-width:1.435;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"
        id="circle7"
@@ -495,9 +488,9 @@
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect8);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-300.81641"
          y="481.3968"
-         id="tspan14"><tspan
+         id="tspan17"><tspan
            style="font-style:normal"
-           id="tspan13">screen point</tspan></tspan></text>
+           id="tspan16">screen point</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.72969931,0,0,0.72969931,428.889,-338.74002)"
@@ -505,17 +498,15 @@
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect9);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-287.34863"
          y="481.3968"
-         id="tspan15">(x, y, z)</tspan></text>
+         id="tspan18">(x, y, z)</tspan></text>
     <path
        style="fill:#800000;fill-opacity:0;stroke:#800000;stroke-width:0.600001;stroke-linejoin:bevel;stroke-dasharray:none;stroke-dashoffset:0;marker-end:url(#marker19);paint-order:markers fill stroke"
-       d="m 158.07475,100.30451 c 3.96801,-1.479962 4.22322,-7.194688 2.94132,-9.585849"
-       id="path15"
-       sodipodi:nodetypes="cc" />
+       d="m 71.049323,113.34578 c 20.330474,5.73831 58.090587,-5.23959 59.871497,-16.608069"
+       id="path15" />
     <path
        style="fill:none;fill-opacity:0;stroke:#ff00ff;stroke-width:0.600001;stroke-linejoin:bevel;stroke-dasharray:none;stroke-dashoffset:0;marker-end:url(#marker19);paint-order:markers fill stroke"
        d="m 144.81123,87.910763 c 0.3418,-7.351383 -2.2468,-11.783761 -4.58765,-14.09883"
-       id="path17"
-       sodipodi:nodetypes="cc" />
+       id="path17" />
     <text
        xml:space="preserve"
        transform="matrix(0.72969931,0,0,0.72969931,428.889,-321.69363)"
@@ -523,19 +514,19 @@
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect17);display:inline;fill:#aa0000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-287.05273"
          y="481.3968"
-         id="tspan16">(r, ϕ, θ)</tspan></text>
+         id="tspan19">(r, ϕ, θ)</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.72969931,0,0,0.72969931,428.889,-305.30329)"
+       transform="matrix(0.72969931,0,0,0.72969931,431.88963,-305.30329)"
        id="text18"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect18);display:inline;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-296.5417"
+         x="-291.7584"
          y="481.3968"
-         id="tspan21">(x, θ<tspan
+         id="tspan22">(y, θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan17">az</tspan>, θ<tspan
+   id="tspan20">x</tspan>, θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan20">alt</tspan>)</tspan></text>
+   id="tspan21">z</tspan>)</tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.84267602,0,0,0.84267602,340.09023,-348.10533)"
@@ -543,193 +534,234 @@
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect37);display:inline;fill:#aa0000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-271.38477"
          y="481.3968"
-         id="tspan22">θ</tspan></text>
+         id="tspan23">θ</tspan></text>
     <path
        style="fill:#800000;fill-opacity:0;stroke:#ff00ff;stroke-width:0.648108;stroke-linejoin:bevel;stroke-dasharray:none;stroke-dashoffset:0;marker-end:url(#marker19);paint-order:markers fill stroke"
        d="m 163.59015,99.934624 c 4.28615,-1.598627 4.6967,-6.974728 3.14543,-10.053495"
-       id="path37"
-       sodipodi:nodetypes="cc" />
+       id="path37" />
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,361.60893,-276.44981)"
+       transform="matrix(0.84267602,0,0,0.84267602,369.0811,-280.55167)"
        id="text39"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect39);display:inline;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-284.01157"
+         x="-292.86406"
          y="481.3968"
-         id="tspan24">θ<tspan
+         id="tspan25">θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan23">az</tspan>= ϕ</tspan></text>
+   id="tspan24">x</tspan>= ϕ-π/2</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,381.2723,-321.56965)"
+       transform="matrix(0.84267602,0,0,0.84267602,329.60879,-295.98869)"
        id="text40"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect40);display:inline;fill:#aa0000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-268.12988"
          y="481.3968"
-         id="tspan25">
+         id="tspan26">
 </tspan><tspan
          x="-271.4668"
          y="496.3968"
-         id="tspan26">ϕ</tspan></text>
+         id="tspan27">ϕ</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84034987,0,0,0.84034987,529.85042,-390.95025)"
+       transform="matrix(0.84034987,0,0,0.84034987,540.96293,-390.95025)"
        id="text41"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect42);display:inline;fill:#000000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-325.16211"
          y="481.3968"
-         id="tspan28"><tspan
+         id="tspan29"><tspan
            style="font-style:normal"
-           id="tspan27">cartesian coordinates</tspan></tspan></text>
+           id="tspan28">cartesian coordinates</tspan></tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84034987,0,0,0.84034987,530.17842,-374.55007)"
+       transform="matrix(0.84034987,0,0,0.84034987,540.23262,-374.55007)"
        id="text42"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect43);display:inline;fill:#aa0000;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-324.82812"
          y="481.3968"
-         id="tspan30"><tspan
+         id="tspan31"><tspan
            style="font-style:normal"
-           id="tspan29">spherical coordinates</tspan></tspan></text>
+           id="tspan30">spherical coordinates</tspan></tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84034987,0,0,0.84034987,527.22639,-358.84521)"
+       transform="matrix(0.84034987,0,0,0.84034987,550.49486,-358.84521)"
        id="text43"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect45);display:inline;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-320.83203"
+         x="-337.83887"
          y="481.3968"
-         id="tspan32"><tspan
+         id="tspan33"><tspan
            style="font-style:normal"
-           id="tspan31">angular coordinates</tspan></tspan></text>
+           id="tspan32">angular vision coordinates</tspan></tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,478.83847,-278.96937)"
+       transform="matrix(0.84267602,0,0,0.84267602,478.83847,-284.26104)"
        id="text45"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect47);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-301.06616"
          y="481.3968"
-         id="tspan37">r<tspan
+         id="tspan38">r<tspan
    style="font-size:65%;baseline-shift:super"
-   id="tspan33">2 </tspan>= x<tspan
+   id="tspan34">2 </tspan>= x<tspan
    style="font-size:65%;baseline-shift:super"
-   id="tspan34">2</tspan>+y<tspan
+   id="tspan35">2</tspan>+y<tspan
    style="font-size:65%;baseline-shift:super"
-   id="tspan35">2</tspan>+z<tspan
+   id="tspan36">2</tspan>+z<tspan
    style="font-size:65%;baseline-shift:super"
-   id="tspan36">2</tspan></tspan></text>
+   id="tspan37">2</tspan></tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,490.65095,-320.88537)"
+       transform="matrix(0.84267602,0,0,0.84267602,490.65095,-326.17704)"
        id="text47"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect48);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-314.66797"
          y="481.3968"
-         id="tspan38">x = r.sin(θ).cos(ϕ)</tspan></text>
+         id="tspan39">x = r.sin(θ).cos(ϕ)</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,490.63614,-308.2832)"
+       transform="matrix(0.84267602,0,0,0.84267602,489.23141,-313.57487)"
        id="text51"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect51);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-314.66797"
+         x="-313.00098"
          y="481.3968"
-         id="tspan39">y = r.sin(θ).cos(ϕ)</tspan></text>
+         id="tspan40">y = r.sin(θ).sin(ϕ)</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,475.05569,-295.68198)"
+       transform="matrix(0.84267602,0,0,0.84267602,476.39129,-300.97365)"
        id="text52"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect52);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-296.41309"
+         x="-297.99805"
          y="481.3968"
-         id="tspan40">z = r.sin(ϕ)</tspan></text>
+         id="tspan41">z = r.cos(θ)</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,400.87419,-317.1488)"
+       transform="matrix(0.84267602,0,0,0.84267602,382.81704,-309.1234)"
        id="text54"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect54);display:inline;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-275.50376"
+         x="-273.33477"
          y="481.3968"
-         id="tspan42">θ<tspan
+         id="tspan43">θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan41">az</tspan></tspan></text>
+   id="tspan42">x</tspan></tspan></text>
     <text
        xml:space="preserve"
        transform="matrix(0.84267602,0,0,0.84267602,376.38308,-331.01727)"
        id="text55"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect55);display:inline;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-275.50376"
+         x="-273.33477"
          y="481.3968"
-         id="tspan44">θ<tspan
+         id="tspan45">θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan43">alt</tspan></tspan></text>
+   id="tspan44">z</tspan></tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,533.74446,-340.52433)"
+       transform="matrix(0.84267602,0,0,0.84267602,539.03613,-342.11184)"
        id="text68"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect68);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-294.46777"
+         x="-314.02344"
          y="481.3968"
-         id="tspan46"><tspan
+         id="tspan47"><tspan
            style="font-weight:bold"
-           id="tspan45">Identities</tspan></tspan></text>
+           id="tspan46">Transformation:</tspan></tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,370.82734,-261.63314)"
+       transform="matrix(0.84267602,0,0,0.84267602,369.01197,-265.735)"
        id="text71"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect71);display:inline;fill:#ff00ff;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-294.95103"
+         x="-292.78203"
          y="481.3968"
-         id="tspan48">θ<tspan
+         id="tspan49">θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan47">alt</tspan>= π/2-θ </tspan></text>
+   id="tspan48">z</tspan>= π/2-θ </tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,575.74909,-278.96937)"
+       transform="matrix(0.84267602,0,0,0.84267602,575.74909,-284.26104)"
        id="text75"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect78);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
          x="-301.06616"
          y="481.3968"
-         id="tspan53">r<tspan
+         id="tspan54">r<tspan
    style="font-size:65%;baseline-shift:super"
-   id="tspan49">2 </tspan>= x<tspan
+   id="tspan50">2 </tspan>= x<tspan
    style="font-size:65%;baseline-shift:super"
-   id="tspan50">2</tspan>+y<tspan
+   id="tspan51">2</tspan>+y<tspan
    style="font-size:65%;baseline-shift:super"
-   id="tspan51">2</tspan>+z<tspan
+   id="tspan52">2</tspan>+z<tspan
    style="font-size:65%;baseline-shift:super"
-   id="tspan52">2</tspan></tspan></text>
+   id="tspan53">2</tspan></tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,595.83914,-320.88537)"
+       transform="matrix(0.84267602,0,0,0.84267602,592.18362,-326.17704)"
        id="text76"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect79);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-324.49092"
+         x="-323.65684"
          y="481.3968"
-         id="tspan56">x = r.cos(θ<tspan
+         id="tspan57">x = + r.cos(θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan54">alt</tspan>).cos(θ<tspan
+   id="tspan55">z</tspan>).sin(θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan55">az</tspan>)</tspan></text>
+   id="tspan56">x</tspan>)</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,595.82432,-308.2832)"
+       transform="matrix(0.84267602,0,0,0.84267602,592.30459,-313.57487)"
        id="text77"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect80);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-324.49092"
+         x="-323.81797"
          y="481.3968"
-         id="tspan59">y = r.cos(θ<tspan
+         id="tspan60">y = - r.cos(θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan57">alt</tspan>).cos(θ<tspan
+   id="tspan58">z</tspan>).cos(θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan58">az</tspan>)</tspan></text>
+   id="tspan59">x</tspan>)</tspan></text>
     <text
        xml:space="preserve"
-       transform="matrix(0.84267602,0,0,0.84267602,575.36816,-295.68198)"
+       transform="matrix(0.84267602,0,0,0.84267602,574.94513,-300.97365)"
        id="text78"
        style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect81);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
-         x="-300.45005"
+         x="-303.45195"
          y="481.3968"
-         id="tspan61">z = r.sin(θ<tspan
+         id="tspan62">z = + r.sin(θ<tspan
    style="font-size:65%;baseline-shift:sub"
-   id="tspan60">az</tspan>)</tspan></text>
+   id="tspan61">z</tspan>)</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.48636276,0,0,0.48636276,384.31827,-92.809175)"
+       id="text1"
+       style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect1);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
+         x="-314.32812"
+         y="481.3968"
+         id="tspan63">sin(π/2-a)=cos(a)</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.48636276,0,0,0.48636276,482.21925,-92.809175)"
+       id="text7"
+       style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect10);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
+         x="-305.63574"
+         y="481.3968"
+         id="tspan64">sin(-a)=-sin(a)</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.48636276,0,0,0.48636276,528.46183,-92.809175)"
+       id="text10"
+       style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect11);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
+         x="-310.47559"
+         y="481.3968"
+         id="tspan65">cos(-a)=+cos(a)</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.48636276,0,0,0.48636276,436.39325,-92.809175)"
+       id="text11"
+       style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect12);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
+         x="-314.32812"
+         y="481.3968"
+         id="tspan66">cos(π/2-a)=sin(a)</tspan></text>
+    <text
+       xml:space="preserve"
+       transform="matrix(0.48636276,0,0,0.48636276,339.32548,-92.809175)"
+       id="text12"
+       style="font-style:italic;font-size:12px;font-family:Arial;-inkscape-font-specification:'Arial Italic';text-align:center;white-space:pre;shape-inside:url(#rect13);display:inline;fill:#999999;fill-opacity:1;stroke:none;stroke-width:11.3386;stroke-linejoin:bevel;stroke-dasharray:none;paint-order:markers fill stroke"><tspan
+         x="-296.46582"
+         y="481.3968"
+         id="tspan68"><tspan
+           style="font-weight:bold"
+           id="tspan67">Identities:</tspan></tspan></text>
   </g>
 </svg>

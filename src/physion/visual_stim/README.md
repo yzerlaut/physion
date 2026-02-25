@@ -96,7 +96,12 @@ The calculation using the spherical coordinates of angular view:
   <img src="../../../docs/visual_stim/coordinates.svg" width="60%" />
 </p>
 
-into screen positions is available on the [VisualStim-design notebook](../../../notebooks/visual_stim/Visual-Stim-Design.ipynb).
+The transformation into screen positions is available on the [VisualStim-design notebook](../../../notebooks/Visual-Stim-Design.py-Stim-Design.py).
+
+Note that the conventions for the different screen setups are the following:
+<p align="center">
+  <img src="../../../docs/visual_stim/screen-configurations.svg" width="60%" />
+</p>
 
 ## Screen calibration
 

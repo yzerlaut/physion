@@ -35,20 +35,16 @@ from physion.visual_stim.build import get_default_params
 #
 # $$ z = r \, \cos(\theta) $$
 #
-# The relationship with our coordinates are: $\theta_z = \pi/2 - \theta$ and $\theta_x = \pi/2 - \phi$, so:
+# where $\theta$ is the zenith angle, $r$ the radius and $\phi$ the azimuth angle.
 #
+# The relationship with our coordinates are: $\theta_z = \pi/2 - \theta$ (the altitude angle) and $\theta_x = \phi - \pi / 2$ (the azimuth angle).
 #
-# $$ x = r \, \sin(\pi/2 - \theta_z) \, \cos(\pi/2 - \theta_x) $$
-#
-# $$ y = r \, \sin(\pi/2 - \theta_z) \, \sin(\pi/2 - \theta_x) $$
-#
-# $$ z = r \, \cos(\pi/2 - \theta_z) $$
 #
 # Using [trigonometric identities](https://en.wikipedia.org/wiki/List_of_trigonometric_identities), we get:
 #
 # $$ x = r \, \cos(\theta_z) \, \sin(\theta_x) $$
 #
-# $$ y = r \, \cos(\theta_z) \, \cos(\theta_x) $$
+# $$ y = - r \, \cos(\theta_z) \, \cos(\theta_x) $$
 #
 # $$ z = r \, \sin(\theta_z) $$
 #
@@ -64,14 +60,14 @@ from physion.visual_stim.build import get_default_params
 # So this imposes the constraint:
 #
 # $$
-# r = \frac{C}{ \cos(\theta_z) \, \cos(\theta_x) }
+# r = - \frac{C}{ \cos(\theta_z) \, \cos(\theta_x) }
 # $$
 #
 # So:
 #
-# $$ x = \frac{C}{ \cos(\theta_z) \, \cos(\theta_x)} \, \cos(\theta_z) \, \sin(\theta_x)  = C \, \tan(\theta_x) $$
+# $$ x = - \frac{C}{ \cos(\theta_z) \, \cos(\theta_x)} \, \cos(\theta_z) \, \sin(\theta_x)  = C \, \tan(\theta_x) $$
 #
-# $$ z = \frac{C}{ \cos(\theta_z) \, \cos(\theta_x)} \, \sin(\theta_z)  = C \, \frac{\tan(\theta_z)}{\cos(\theta_x)} $$
+# $$ z = - \frac{C}{ \cos(\theta_z) \, \cos(\theta_x)} \, \sin(\theta_z)  = C \, \frac{\tan(\theta_z)}{\cos(\theta_x)} $$
 #
 # ------------------------
 #
@@ -141,7 +137,7 @@ for units, ax, title in zip(['deg', 'cm', 'lin-deg'], AX,
 # %% [markdown]
 # 
 # Screen 1:
-# $$ x=-\frac{L}{2} $$
+# $$ y=-\frac{L}{2} $$
 # Screen 2:
 # $$ y=l_F $$
 # Screen 3:
