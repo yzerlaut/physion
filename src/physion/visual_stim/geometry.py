@@ -150,6 +150,90 @@ def set_angle_meshgrid_U3Screens(self,
     self.x *= 180./np.pi
     self.z *= 180./np.pi
 
+def set_angle_meshgrid_V2Screens(self, 
+                                 force_degree=False):
+    """
+    adapted to use the calculations of U3Screens
+    """
+
+    X, Z = np.meshgrid(\
+                np.linspace(-self.screen['width']/2., 
+                            self.screen['width']/2., 
+                            self.screen['resolution'][0]),
+                    -self.screen['height_from_base']+\
+                            np.linspace(0, self.screen['height'], 
+                                    self.screen['resolution'][1]),
+                        indexing='xy')
+
+    L = self.screen['width']
+    lF = np.sqrt(self.screen['distance_front']**2/2.)
+
+    # we transpose given our coordinate system:
+    X, Z = X.T, Z.T
+
+    widths = np.concatenate([X+i*L\
+                                for i in range(self.screen['nScreens'])],
+                                axis=0)
+    heights = np.concatenate([Z for i in range(self.screen['nScreens'])],
+                                axis=0)
+    screen_ids = np.concatenate([np.array((i+1)+0*X, dtype=int)\
+                                    for i in range(self.screen['nScreens'])],
+                                axis=0)
+
+    self.widths, self.heights = widths, heights
+    self.screen_ids = screen_ids
+
+    self.mask = np.ones(self.widths.shape, 
+                        dtype=bool) # stim mask, True by default
+
+    if force_degree or (self.units=='deg'):
+
+        altitudeMax, altitudeMin = np.max(self.z), np.min(self.z)
+        dZ = altitudeMax-altitudeMin
+        azimuthMax = dZ*self.x.shape[0]/self.x.shape[1]/2.
+
+        self.x, self.z = np.meshgrid(\
+                     np.linspace(-azimuthMax, azimuthMax,
+                                 self.x.shape[0]),
+                     np.linspace(altitudeMin, altitudeMax,
+                                  self.x.shape[1]),
+                              indexing='ij')
+
+    elif self.units=='cm':
+        # by default, we go through the cm unit
+
+        # we convert to angles in the x and z directions
+        self.x, self.z = 0*self.widths, 0*self.widths
+
+        # 
+        #       screen by screen for the angular positions
+        # 
+        # - screen 1
+        # cond1 = (self.screen_ids==1)
+        # dX = self.widths[cond1]+L+(lF-L/2) # x-coordinates centered on -90 deg. angle
+        # self.x[cond1] = np.arctan(-L/2/dX)
+        # self.x[cond1] = (self.x[cond1]-np.pi)%np.pi-np.pi
+        # self.z[cond1] = np.arctan(\
+        #     -2*self.heights[cond1]/L*np.sin(self.x[cond1]))
+
+        # - screen 1
+        cond2 = (self.screen_ids==1)
+        self.x[cond2] = np.arctan(self.widths[cond2]/lF)
+        self.z[cond2] = np.arctan(\
+            self.heights[cond2]*np.cos(self.x[cond2])/lF)
+
+        # - screen 2
+        cond3 = (self.screen_ids==2)
+        dX = self.widths[cond3]-L-(lF-L/2) # x-coordinates centered on 90 deg. angle
+        aX = np.arctan(dX/(L/2.)) # alphaX angle
+        self.x[cond3] = np.pi/2.+aX
+        self.z[cond3] = np.arctan(np.sin(aX)*self.heights[cond3]/dX)
+
+
+    # convert back to angles in degrees
+    self.x *= 180./np.pi
+    self.z *= 180./np.pi
+
 if __name__=='__main__':
 
     import argparse, os, pathlib, json

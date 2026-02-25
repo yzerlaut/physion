@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 import physion.utils.plot_tools as pt
-# pt.set_style('dark')
+pt.set_style('dark')
 from scipy.optimize import minimize 
 
 # %%
