@@ -17,7 +17,7 @@
         "digital-outputs":{
             "lines":"port0/line0:2",
             "line-labels":[
-                "ephys-synch-signal-5Hz",
+                "ephys-synch-signal-2Hz",
                 "visual-stim-episode-start",
                 "LED-optogenetics-activation"
             ]

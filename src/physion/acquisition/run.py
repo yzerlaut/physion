@@ -164,8 +164,9 @@ def run(self):
             props = find_line_props(\
                 self.metadata['NIdaq']['digital-outputs']['line-labels'],
                                     'ephys-synch-signal')
-            digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.05}\
-                    for e in np.arange(1, int(self.max_time*props['freq']+10))/props['freq']]
+            sequence = recordings.ephysSynch(self.max_time, freq=props['freq'])
+            digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.1}\
+                                                    for e in sequence[:-1]]
 
         if self.metadata['CaImaging']:
             chan = 0 # CHECK

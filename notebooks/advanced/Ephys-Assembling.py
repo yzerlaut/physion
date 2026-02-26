@@ -36,8 +36,8 @@ pt.set_style('dark')
 # ## Load Table data
 
 # %%
-datafolder = os.path.expanduser(\
-                '~/DATA/2026_02_13').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/2026_02_13').replace('/', os.path.sep)
+# datafolder = os.path.expanduser('~/DATA/2026_02_20').replace('/', os.path.sep)
 
 datatable, _, analysis = read_spreadsheet(\
                         os.path.join(datafolder, 'DataTable0.xlsx'),
@@ -59,17 +59,27 @@ def load_nidaq_synch_signal(folder):
     props = find_line_props(
                 metadata['NIdaq']['digital-outputs']['line-labels'])
     ephysSynch_signal = NIdaq['digital'][props['chan']]
-    nSteps = len(np.flatnonzero(ephysSynch_signal[1:]>ephysSynch_signal[:-1]))
     t = np.arange(len(ephysSynch_signal))*NIdaq['dt']
-    return t, ephysSynch_signal, nSteps
+    pulse_onsets = t[:-1][np.flatnonzero(ephysSynch_signal[1:]>ephysSynch_signal[:-1])]
+    return t, ephysSynch_signal, pulse_onsets
+
+INTERPROTOCOL_WINDOW = 10. # 
+PROBE_NAME = 'ProbeA'
+
+DF = pd.DataFrame(columns=['NIdaq rec.', 'daq-nEpisodes', 'OpenEphys rec.', 'ephys-nEpisodes'])
+DF['NIdaq rec.'] = datatable['time']
 
 # loop over protocols
-print(' ==== PROTOCOLS FROM NIDAQ DATA ====  ')
+# print(' ==== PROTOCOLS FROM NIDAQ DATA ====  ')
 for iRec, protocol in enumerate(datatable['protocol']):
-    _, _, nSteps = load_nidaq_synch_signal(
-                        os.path.join(datafolder, datatable['time'][iRec]))
-    print(' rec #%i) n=%i episodes, %s' % (iRec+1, nSteps, protocol))
+    _, _, onsets = load_nidaq_synch_signal(
+                                os.path.join(datafolder, datatable['time'][iRec]))
+    # print(' rec #%i) n=%i episodes, %s' % (iRec+1, len(onsets), protocol))
+    DF.loc[iRec, 'daq-nEpisodes'] = len(onsets)
 
+print()
+print(' ==== CORRESPONDANCE : NIDAQ DATA & OPENEPHYS DATA  ====  ')
+DF
 
 # %% [markdown]
 #
@@ -78,30 +88,15 @@ for iRec, protocol in enumerate(datatable['protocol']):
 
 # %%
 
-INTERPROTOCOL_WINDOW = 10. # 
-
 node = 0 # change if you have several record nodes and you want to consider another one
 
 session = Session(os.path.join(datafolder, 
                                datatable['Npx-Folder'][0]))
 
-print(' ==== PROTOCOLS FROM OPEN-EPHYS DATA ====  ')
-props = []
-iRec = 0
-for r, rec in enumerate(session.recordnodes[node].recordings):
-
-    fig, ax = pt.figure(axes=(1,2), ax_scale=(2.5, 1.5), hspace=0)
-    fig.suptitle('Recording #%i' % (r+1))
-    ax[1].set_xlabel('N, sample number (Npx Probe)')
-    ax[0].set_ylabel('TTL (all)'); ax[1].set_ylabel('splitted')
-
-    # find TTL events on Probe A
-    cond = (rec.events['stream_name']=='ProbeA')
-
-    # build the time array from the set of events
-    State = np.array(rec.events['state'][cond])
-    Sample = np.array(rec.events['sample_number'][cond])
+def build_ttl_from_events(State, Sample):
+    # we start at 0
     SN, TTL = [Sample[0]-30000], [0]
+    # loop over events
     for state, sample in zip(State, Sample):
         if state==1:
             SN.append(sample); TTL.append(0)
@@ -109,8 +104,36 @@ for r, rec in enumerate(session.recordnodes[node].recordings):
         if state==0:
             SN.append(sample); TTL.append(1)
             SN.append(sample); TTL.append(0)
+    # we force ending at 0
+    SN.append(sample); TTL.append(0)
     SN.append(sample+30000); TTL.append(0)
-    SN, TTL = np.array(SN, dtype=np.int32), np.array(TTL, dtype=np.uint8)
+    return np.array(SN, dtype=np.int32), np.array(TTL, dtype=np.uint8)
+
+def load_OpenEphys(rec):
+
+    # find TTL events on Probe A
+    cond = (rec.events['stream_name']=='ProbeA')
+
+    # load the events
+    State = np.array(rec.events['state'][cond])
+    Sample = np.array(rec.events['sample_number'][cond])
+    pulse_onsets = Sample[State==1]
+
+    # build the time array from the set of events
+    SN, TTL = build_ttl_from_events(State, Sample)
+    return pulse_onsets, SN, TTL 
+
+print(' ==== PROTOCOLS FROM OPEN-EPHYS DATA ====  ')
+props = []
+iRec = 0
+for r, rec in enumerate(session.recordnodes[node].recordings):
+
+    pulse_onsets, SN, TTL = load_OpenEphys(rec)
+
+    fig, ax = pt.figure(axes=(1,2), ax_scale=(2.5, 1.5), hspace=0)
+    fig.suptitle('Recording #%i' % (r+1))
+    ax[1].set_xlabel('N, sample number (Npx Probe)')
+    ax[0].set_ylabel('TTL (all)'); ax[1].set_ylabel('splitted')
     pt.plot(SN, TTL, ax=ax[0])
 
     # tracking different protocols
@@ -122,12 +145,14 @@ for r, rec in enumerate(session.recordnodes[node].recordings):
     for i0, i1 in zip(iStarts[:-1], iStarts[1:]):
 
         irange=np.arange(i0, np.min([i1+2,len(SN)]))
+        pulse_cond = (pulse_onsets>=SN[irange[0]]) & (pulse_onsets<=SN[irange[-1]])
         props.append({'node':node, 'rec':r, 
-                        'i0':i0, 'i1':i1,
-                        'sn':SN[irange], 'ttl':TTL[irange]})
+                      'pulse_onsets':pulse_onsets[pulse_cond],
+                      'i0':i0, 'i1':i1,
+                      'sn':SN[irange], 'ttl':TTL[irange]})
         props[-1]['nsteps']=np.sum((props[-1]['ttl'][1:]==1)&(props[-1]['ttl'][:-1]==0))
         iRec +=1
-        print(' rec #%i) n=%i episodes' % (iRec, props[-1]['nsteps']))
+        print(' rec #%i) n=%i episodes' % (iRec, len(props[-1]['pulse_onsets'])))
 
         ax[1].plot(props[-1]['sn'], props[-1]['ttl'], color=pt.tab10(iRec%10))
         pt.annotate(ax[1], 'protocol #%i'%iRec +iRec*'\n', (1,0), va='bottom', color=pt.tab10(iRec%10))
@@ -139,7 +164,7 @@ for r, rec in enumerate(session.recordnodes[node].recordings):
 # %%
 # VISUALIZE THE TWO SIGNALS
 
-iRec = 1
+iRec = 0
 
 fig, AX = pt.figure(axes=(2,2), ax_scale=(1.5,1), hspace=1.4, wspace=0.4, top=.5)
 # nidaq
@@ -151,8 +176,8 @@ for i, ax in enumerate(AX[0]):
     pt.set_plot(ax, xlabel='NIdaq time (s)', ylabel='TTL\n(from NIdaq)' if i==0 else None)
 
 # open-ephys
-AX[1][0].plot(props[iRec]['sn'][1:70], props[iRec]['ttl'][1:70], 'o-', lw=0.4, ms=0.9)
-AX[1][1].plot(props[iRec]['sn'][-70:-1], props[iRec]['ttl'][-70:-1], 'o-', lw=0.4, ms=0.9)
+AX[1][0].plot(props[iRec]['sn'][1:50], props[iRec]['ttl'][1:50], 'o-', lw=0.4, ms=0.9)
+AX[1][1].plot(props[iRec]['sn'][-50:-1], props[iRec]['ttl'][-50:-1], 'o-', lw=0.4, ms=0.9)
 for i, ax in enumerate(AX[1]):
     pt.set_plot(ax, xlabel='N, sample number (Npx Probe)      ', ylabel='TTL\n(on Probe)' if i==0 else None)
 # fig.savefig(os.path.expanduser('~/Desktop/fig.png'))
@@ -165,7 +190,7 @@ from scipy.optimize import minimize
 from scipy.optimize import least_squares
 
 
-def find_sampling_match(t, nidaqTTL, sn, ttl):
+def find_sampling_match(t, nidaq_pulses, sn, openephys_pulses):
     """
     ADD SUBSAMPLING OF TIME ARRAY FOR THE FIT
     """
@@ -177,7 +202,10 @@ def find_sampling_match(t, nidaqTTL, sn, ttl):
     # dT = np.mean(np.diff(t[1:][nidaqTTL[1:]>nidaqTTL[:-1]]))
 
 
-    dN = sn[-4]-sn[1]
+    if False:
+        dN = sn[-4]-sn[1]
+    else:
+        dN = sn[-6]-sn[1]
     nidaqJump = np.flatnonzero(nidaqTTL[1:]>nidaqTTL[:-1])
     dT = t[nidaqJump[-1]]-t[nidaqJump[0]]
 
@@ -207,16 +235,16 @@ def sampling_match(iRec,
 
     T = (props[iRec]['sn']-N0)*F0+t0 # new time sampling
     func = interp1d(T, props[iRec]['ttl'])
-    wide_t = -0.5+np.arange(len(t)+20000)*t[1]
+    wide_t = np.arange(len(t)+20000)*t[1]
     wide_t = wide_t[wide_t<T[-1]]
 
     probe_signal = func(wide_t)
 
-    width=1
+    width=1.5
 
     if with_fig:
 
-        fig, AX = pt.figure(axes=(4,2), ax_scale=(1.6,.7), top=1.5, hspace=1.4, wspace=0.3)
+        fig, AX = pt.figure(axes=(4,2), ax_scale=(1.6,.7), top=1.5, hspace=1.6, wspace=0.3)
         fig.suptitle('protocol #%i (%i episodes)' % (iRec+1, nSteps))
 
         for i, t0 in enumerate([0.5, t[-1]/2+1, 3.*t[-1]/4., t[-1]]):
@@ -238,7 +266,7 @@ def sampling_match(iRec,
     else:
         return t0, N0, F0
 
-sampling_match(7, with_fig=True)
+sampling_match(1, with_fig=True)
 
 # %%
 #
