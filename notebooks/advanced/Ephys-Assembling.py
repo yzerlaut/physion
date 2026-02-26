@@ -67,7 +67,7 @@ def load_nidaq_synch_signal(folder):
 print(' ==== PROTOCOLS FROM NIDAQ DATA ====  ')
 for iRec, protocol in enumerate(datatable['protocol']):
     _, _, nSteps = load_nidaq_synch_signal(
-                                os.path.join(datafolder, datatable['time'][iRec]))
+                        os.path.join(datafolder, datatable['time'][iRec]))
     print(' rec #%i) n=%i episodes, %s' % (iRec+1, nSteps, protocol))
 
 
