@@ -108,6 +108,9 @@ class visual_stim:
         if self.screen['nScreens']==1:
             geometry.set_angle_meshgrid_1screen(self, 
                                     force_degree=force_degree)
+        elif self.screen['nScreens']==2:
+            geometry.set_angle_meshgrid_V2Screens(self, 
+                                    force_degree=force_degree)
         else:
             geometry.set_angle_meshgrid_U3Screens(self, 
                                     force_degree=force_degree)

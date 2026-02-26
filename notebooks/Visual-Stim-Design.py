@@ -21,8 +21,12 @@ from physion.visual_stim.build import get_default_params
 #
 # The angular coordinates of animal vision are $\theta_x$ and $\theta_z$ that are the relative angles with respect to the center of the visual field of coordinates ($\theta_x$=0, $\theta_z$=0). This means that $\theta_x \in [-\pi/2,\pi/2]$ and $\theta_z \in [-\pi/2,\pi/2]$ (vision covers only half of the 3d space).
 #
-# <img src="../docs/visual_stim/coordinates.svg" width=260 height=260 />
-#
+
+# %%
+from IPython.display import SVG, display
+display(SVG("../docs/visual_stim/coordinates.svg"))
+
+# %% [markdown]
 # We start from the [spherical coordinates](https://en.wikipedia.org/wiki/Spherical_coordinate_system) with the physics convention: $\theta$ is the polar angle and $\phi$ is the azimuthal angle. 
 #
 # The eye is the (0,0,0) reference point, the screen is perpendicular to the (x,y) axis and is placed at a distance y=C.
@@ -65,13 +69,13 @@ from physion.visual_stim.build import get_default_params
 #
 # So:
 #
-# $$ x = - \frac{C}{ \cos(\theta_z) \, \cos(\theta_x)} \, \cos(\theta_z) \, \sin(\theta_x)  = C \, \tan(\theta_x) $$
+# $$ x = - \frac{C}{ \cos(\theta_z) \, \cos(\theta_x)} \, \cos(\theta_z) \, \sin(\theta_x)  = - C \, \tan(\theta_x) $$
 #
-# $$ z = - \frac{C}{ \cos(\theta_z) \, \cos(\theta_x)} \, \sin(\theta_z)  = C \, \frac{\tan(\theta_z)}{\cos(\theta_x)} $$
+# $$ z = - \frac{C}{ \cos(\theta_z) \, \cos(\theta_x)} \, \sin(\theta_z)  = - C \, \frac{\tan(\theta_z)}{\cos(\theta_x)} $$
 #
 # ------------------------
 #
-# ** This is implemented in the [visual_stim/main.py](../../visual_stim/main.py) in the function `set_angle_meshgrid_1screen` **
+# This is implemented in [visual_stim/geometry.py](../../visual_stim/geometry.py) in the function `set_angle_meshgrid_1screen`
 
 # %% [markdown]
 # ## Illustrating the space wrapping from angle-to-screen
@@ -136,44 +140,65 @@ for units, ax, title in zip(['deg', 'cm', 'lin-deg'], AX,
 
 # %% [markdown]
 # 
-# Screen 1:
-# $$ y=-\frac{L}{2} $$
-# Screen 2:
-# $$ y=l_F $$
-# Screen 3:
-# $$ x=-\frac{L}{2} $$
-# calculation [...]
+# ### For both screens
+#
+# $$ z \in [-h_B, L-h_B] $$
+# ##### To find $\theta_z$, we use the expression:
+# $$ \theta_z = \arcsin( \frac{z}{r} ) $$
+# with: $$ r = \sqrt{ x^2 + y^2 + z^2 } $$
+#
+# 
+# ### Screen 1: (x<0)
+# $$ x \in [- l_F - \frac{1}{\sqrt{2}} \cdot \sqrt{ (L-\frac{ l_F }{ \sqrt{2} })^2 }, 0] $$
+# with :
+# $$ y=x + d_f  $$
+# ##### To find $\theta_x$, we use the expression:
+# $$ \theta_x = \arctan(-\frac{x}{x+l_F}) $$
+#
+# ### Screen 2: (x>0)
+# $$ x \in [0, l_F + \frac{1}{\sqrt{2}} \cdot \sqrt{ (L-\frac{ l_F }{ \sqrt{2} })^2 }] $$
+# with:
+# $$ y= d_f -x $$
+# ##### To find $\theta_x$, we use the expression:
+# $$ \theta_x = \arctan(-\frac{x}{l_F-x}) $$
+#
+# This is implemented in [visual_stim/geometry.py](../../visual_stim/geometry.py) in the function `set_angle_meshgrid_V2screens`
 
 # %%
-import json
-import physion
+import json, sys, os
+sys.path += ['../src']
+from physion.visual_stim.build import build_stim
+import physion.utils.plot_tools as pt
 with open(os.path.join('..', 'src', 'physion', 'acquisition', 'protocols',
                        'demo', '2-screens.json')) as j:
     protocol = json.load(j)
 
-stim = physion.visual_stim.build.build_stim(protocol)
+stim = build_stim(protocol)
 
 fig, AX = pt.figure(axes=(1,2), ax_scale=(2,2))
 
 for s in range(stim.screen['nScreens']):
     cond = stim.screen_ids.flatten()==(s+1)
+    # screen pixels
     pt.scatter(stim.widths.flatten()[cond][::200],
                 stim.heights.flatten()[cond][::200],
                 ax=AX[0], ms=0.1, color=pt.tab10(s))
+    # screen angles
     pt.scatter(stim.x.flatten()[cond][::200],
                 stim.z.flatten()[cond][::200],
                 ax=AX[1], ms=0.2, color=pt.tab10(s))
     pt.annotate(AX[0], 'screen %i' % (s+1),
-                (0.8-0.3*s, .99), ha='center',
+                (0.3+0.3*s, .99), ha='center',
                 color=pt.tab10(s))
 
-pt.set_plot(AX[0], xlabel='x (cm)', ylabel='y (cm)')
-pt.set_plot(AX[1], xticks=[-90,0,90],
+pt.set_plot(AX[0], xlabel='x (cm)', ylabel='z (cm)')
+pt.set_plot(AX[1], xticks=[-90, -45, 0, 45, 90],
             ylabel='altitude (deg.)',
             xlabel='azimuth (deg.)')
 for ax in AX:
     ax.axis('equal')
-    ax.invert_xaxis()
+AX[1].invert_xaxis()
+
 
 # %% [markdown]
 # # 3-Screens U-shaped Configuration
@@ -219,119 +244,6 @@ for ax in AX:
     ax.axis('equal')
     ax.invert_xaxis()
 
-# %% [markdown]
-# ## 1) Properties
-
-# %%
-"""
-Screen Dimension and Screen Placement Parameters for the Visual Stimulation
-"""
-screen_width = 48. # cm
-screen_height = 27. # cm
-distance_from_eye = 15. # cm
-
-# %%
-import sys
-sys.path.append('../src')
-from physion.utils import plot_tools as pt
-import matplotlib.pylab as plt
-import numpy as np
-
-"""
-Functions implementing basic trigonometric calculations
-"""
-
-def cm_to_angle(distance,
-                distance_from_eye=15.):
-    # distance_from_eye in cm
-    return 180./np.pi*np.arctan(distance/distance_from_eye)
-
-def cm_to_angle_lin(distance, distance_from_eye=15.):
-    # the derivative of arctan in 0 is 1
-    return distance/distance_from_eye*180./np.pi
-    #return cm_to_angle(1, distance_from_eye=distance_from_eye)*distance
-
-def angle_to_cm(angle,
-                distance_from_eye=15.):
-    # distance_from_eye in cm
-    return distance_from_eye*np.tan(np.pi*angle/180.)
-
-"""
-plot
-"""
-
-max_height = cm_to_angle(screen_height/2.)
-max_width = cm_to_angle(screen_width/2.)
-
-angles = np.linspace(0, 1.3*max_width, 100) #
-positions = angle_to_cm(angles, distance_from_eye=distance_from_eye)
-
-fig, [ax, ax2, ax3] = plt.subplots(1, 3, figsize=(7,1.2))
-plt.subplots_adjust(wspace=0.9)
-ax.plot(angles, positions, color='k')
-pt.plot(angles, angle_to_cm(1)*angles, ls='--', ax=ax, no_set=True, color='tab:red')
-ax.annotate('lin.\napprox.', (0.99,0.35), color='tab:red', xycoords='axes fraction')
-
-ax2.plot(positions, angles, color='k')
-pt.plot(angle_to_cm(1)*angles, angles, ls='--', ax=ax2, no_set=True, color='tab:red')
-
-ax.plot(np.ones(2)*max_height, [0,positions.max()], ':', color='tab:green', lw=1)
-ax.annotate('max. \naltitude ', (max_height,positions.max()), color='tab:green', xycoords='data', va='top', ha='right')
-
-ax.plot(np.ones(2)*max_width, [0,.98*positions.max()], ':', color='tab:blue', lw=1)
-ax.annotate('max.\nazimuth', (max_width, positions.max()), color='tab:blue', xycoords='data', ha='center')
-
-pt.set_plot(ax, 
-            ylabel='distance (cm) \nfrom center',
-            xlabel='angle (deg)\nfrom center',
-            ylim=[0,positions.max()])
-pt.set_plot(ax2, 
-            xlabel='distance (cm) \nfrom center',
-            ylabel='angle (deg)')
-
-x = np.linspace(0, screen_width/2.)
-ax3.plot(cm_to_angle_lin(x), cm_to_angle(x), 'k-')
-ax3.plot(np.ones(2)*cm_to_angle_lin(x[-1]), [0,cm_to_angle(x[-1])], 'k:', lw=1)
-ax3.plot([0,cm_to_angle_lin(x[-1])], np.ones(2)*cm_to_angle(x[-1]), 'k:', lw=1)
-ax3.annotate('%.1f$^{o}$' % cm_to_angle_lin(x[-1]),
-             (1, 0), xycoords='axes fraction')
-ax3.annotate('%.1f$^{o}$' % cm_to_angle(x[-1]),
-             (1, 1), xycoords='axes fraction', ha='right')
-
-def angle_lin_to_true_angle(angle):
-    return 180./np.pi*np.arctan(angle/180.*np.pi)
-
-x = np.linspace(0, 90, 10)
-ax3.plot(x, angle_lin_to_true_angle(x), 'ro')
-
-pt.set_plot(ax3, 
-            xlabel='lin. approx. angle (deg)',
-            ylabel='true angle (deg)',
-            num_xticks=5)
-
-#ge.save_on_desktop(fig)
-
-# %% [markdown]
-# ### Plotting the screen with its angle scales:
-
-# %%
-import matplotlib.pylab as plt
-fig, ax = plt.subplots(figsize=(screen_width/20.,screen_height/20.))
-pt.draw_bar_scales(ax, Ybar=angle_to_cm(20), Xbar=angle_to_cm(20), Xbar_label='20$^o$', Ybar_label='20$^o$')
-ax.set_xlim(np.arange(-1,3,2)*screen_width/2.)
-ax.set_ylim(np.arange(-1,3,2)*screen_height/2.)
-ax.set_xlabel('x-coord (cm)')
-ax.set_ylabel('z-coord (cm)')
-ax.set_title('screen coordinates')
-#ge.save_on_desktop(fig)
-
-# %% [markdown]
-# ### Screen Dimensions in terms of Angles:
-
-# %%
-print('visual field covered:')
-print('azimuth:', cm_to_angle(screen_width/2.))
-print('altitude:', cm_to_angle(screen_height/2.))
 
 # %% [markdown]
 # ## 2) Plotting Visual Stimuli for Figures

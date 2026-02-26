@@ -153,35 +153,49 @@ def set_angle_meshgrid_U3Screens(self,
 def set_angle_meshgrid_V2Screens(self, 
                                  force_degree=False):
     """
-    adapted to use the calculations of U3Screens
+    see the notebook for the calculation
     """
 
-    X, Z = np.meshgrid(\
-                np.linspace(-self.screen['width']/2., 
-                            self.screen['width']/2., 
-                            self.screen['resolution'][0]),
-                    -self.screen['height_from_base']+\
-                            np.linspace(0, self.screen['height'], 
-                                    self.screen['resolution'][1]),
-                        indexing='xy')
+    L, H = self.screen['width'], self.screen['height']
+    lF = self.screen['distance_front']
+    hB = self.screen['height_from_base']
 
-    L = self.screen['width']
-    lF = np.sqrt(self.screen['distance_front']**2/2.)
+    xMax = lF+1./np.sqrt(2)*\
+                    np.sqrt((L-lF/np.sqrt(2))**2)
+    
+    X, Z = np.meshgrid(\
+                np.linspace(0, 1,
+                            self.screen['resolution'][0]),
+                np.linspace(0, 1,
+                            self.screen['resolution'][1]),
+                        indexing='xy')
 
     # we transpose given our coordinate system:
     X, Z = X.T, Z.T
 
-    widths = np.concatenate([X+i*L\
+    # X, Z = np.meshgrid(\
+    #             np.linspace(-xMax, 0, 
+    #                         self.screen['resolution'][0]),
+    #                 -self.screen['height_from_base']+\
+    #                         np.linspace(0, H,
+    #                                 self.screen['resolution'][1]),
+    #                     indexing='xy')
+
+    self.X = np.concatenate([-xMax+i*xMax+xMax*X\
                                 for i in range(self.screen['nScreens'])],
                                 axis=0)
-    heights = np.concatenate([Z for i in range(self.screen['nScreens'])],
+    self.Z = np.concatenate([-hB+H*Z\
+                                for i in range(self.screen['nScreens'])],
                                 axis=0)
-    screen_ids = np.concatenate([np.array((i+1)+0*X, dtype=int)\
+    self.widths = np.concatenate([-L+i*L+L*X\
+                                for i in range(self.screen['nScreens'])],
+                                axis=0)
+    self.heights = np.concatenate([-hB+H*Z\
+                                for i in range(self.screen['nScreens'])],
+                                axis=0)
+    self.screen_ids = np.concatenate([np.array((i+1)+0*X, dtype=int)\
                                     for i in range(self.screen['nScreens'])],
                                 axis=0)
-
-    self.widths, self.heights = widths, heights
-    self.screen_ids = screen_ids
 
     self.mask = np.ones(self.widths.shape, 
                         dtype=bool) # stim mask, True by default
@@ -198,6 +212,9 @@ def set_angle_meshgrid_V2Screens(self,
                      np.linspace(altitudeMin, altitudeMax,
                                   self.x.shape[1]),
                               indexing='ij')
+        
+        # for this, we get back to widths, height screen coords
+        self.widths, self.heights = X, Z
 
     elif self.units=='cm':
         # by default, we go through the cm unit
@@ -208,27 +225,38 @@ def set_angle_meshgrid_V2Screens(self,
         # 
         #       screen by screen for the angular positions
         # 
-        # - screen 1
-        # cond1 = (self.screen_ids==1)
-        # dX = self.widths[cond1]+L+(lF-L/2) # x-coordinates centered on -90 deg. angle
-        # self.x[cond1] = np.arctan(-L/2/dX)
-        # self.x[cond1] = (self.x[cond1]-np.pi)%np.pi-np.pi
-        # self.z[cond1] = np.arctan(\
-        #     -2*self.heights[cond1]/L*np.sin(self.x[cond1]))
 
         # - screen 1
-        cond2 = (self.screen_ids==1)
-        self.x[cond2] = np.arctan(self.widths[cond2]/lF)
-        self.z[cond2] = np.arctan(\
-            self.heights[cond2]*np.cos(self.x[cond2])/lF)
+        cond1 = (self.screen_ids==1)
+        # radius
+        r = np.sqrt(
+           self.X[cond1]**2 +\
+            (self.X[cond1]+lF)**2 +\
+                self.Z[cond1]**2 )
+        # altitude angle
+        self.z[cond1] = np.arcsin(self.Z[cond1]/r)
+        # azimuth angle
+        self.x[cond1] =\
+            np.arctan(-self.X[cond1]/(self.X[cond1]+lF))
+        # [0,2pi] -> [-pi,pi]  
+        cond1h = cond1 & (self.x<0)
+        self.x[cond1h] += np.pi
 
         # - screen 2
-        cond3 = (self.screen_ids==2)
-        dX = self.widths[cond3]-L-(lF-L/2) # x-coordinates centered on 90 deg. angle
-        aX = np.arctan(dX/(L/2.)) # alphaX angle
-        self.x[cond3] = np.pi/2.+aX
-        self.z[cond3] = np.arctan(np.sin(aX)*self.heights[cond3]/dX)
-
+        cond2 = (self.screen_ids==2)
+        # radius
+        r = np.sqrt(
+           self.X[cond2]**2 +\
+            (lF-self.X[cond2])**2 +\
+                self.Z[cond2]**2 )
+        # altitude angle
+        self.z[cond2] = np.arcsin(self.Z[cond2]/r)
+        # azimuth angle
+        self.x[cond2] =\
+            np.arctan(-self.X[cond2]/(lF-self.X[cond2]))
+        # [0,2pi] -> [-pi,pi]  
+        cond2h = cond2 & (self.x>0)
+        self.x[cond2h] -= np.pi
 
     # convert back to angles in degrees
     self.x *= 180./np.pi

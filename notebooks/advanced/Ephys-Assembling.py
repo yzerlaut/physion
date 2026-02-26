@@ -36,9 +36,11 @@ pt.set_style('dark')
 # ## Load Table data
 
 # %%
-datafolder = os.path.expanduser('~/DATA/2026_02_13').replace('/', os.path.sep)
+datafolder = os.path.expanduser(\
+                '~/DATA/2026_02_13').replace('/', os.path.sep)
 
-datatable, _, analysis = read_spreadsheet(os.path.join(datafolder, 'DataTable0.xlsx'),
+datatable, _, analysis = read_spreadsheet(\
+                        os.path.join(datafolder, 'DataTable0.xlsx'),
                                    get_metadata_from='files')
 datatable
 
@@ -80,7 +82,8 @@ INTERPROTOCOL_WINDOW = 10. #
 
 node = 0 # change if you have several record nodes and you want to consider another one
 
-session = Session(os.path.join(datafolder, datatable['Npx-Folder'][0]))
+session = Session(os.path.join(datafolder, 
+                               datatable['Npx-Folder'][0]))
 
 print(' ==== PROTOCOLS FROM OPEN-EPHYS DATA ====  ')
 props = []
