@@ -24,6 +24,8 @@ import sys, time
 sys.path += [os.path.expanduser('~/physion/src'), '../../src']
 import json
 import numpy as np
+import pandas as pd
+
 from open_ephys.analysis import Session
 
 from physion.assembling.dataset import read_spreadsheet
@@ -31,18 +33,25 @@ from physion.acquisition.tools import find_line_props
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
+datafolder = os.path.expanduser('~/DATA/2026_02_13').replace('/', os.path.sep)
+
+INTERPROTOCOL_WINDOW = 10. # 
+PROBE_NAME = 'ProbeA'
+NODE = 0 # change if you have several record nodes and you want to consider another one
+EXP = 1 # 
+
+
 # %% [markdown]
 #
 # ## Load Table data
 
 # %%
-datafolder = os.path.expanduser('~/DATA/2026_02_13').replace('/', os.path.sep)
 # datafolder = os.path.expanduser('~/DATA/2026_02_20').replace('/', os.path.sep)
 
 datatable, _, analysis = read_spreadsheet(\
                         os.path.join(datafolder, 'DataTable0.xlsx'),
                                    get_metadata_from='files')
-datatable
+#datatable
 
 # %% [markdown]
 #
@@ -63,11 +72,8 @@ def load_nidaq_synch_signal(folder):
     pulse_onsets = t[:-1][np.flatnonzero(ephysSynch_signal[1:]>ephysSynch_signal[:-1])]
     return t, ephysSynch_signal, pulse_onsets
 
-INTERPROTOCOL_WINDOW = 10. # 
-PROBE_NAME = 'ProbeA'
-
-DF = pd.DataFrame(columns=['NIdaq rec.', 'daq-nEpisodes', 'OpenEphys rec.', 'ephys-nEpisodes'])
-DF['NIdaq rec.'] = datatable['time']
+DF = pd.DataFrame(columns=['time', 'Npx-Rec', 'daq-nEpisodes', 'ephys-nEpisodes', 'i0', 'i1', 'nStart', 'nStop'])
+DF['time'] = datatable['time']
 
 # loop over protocols
 # print(' ==== PROTOCOLS FROM NIDAQ DATA ====  ')
@@ -77,18 +83,12 @@ for iRec, protocol in enumerate(datatable['protocol']):
     # print(' rec #%i) n=%i episodes, %s' % (iRec+1, len(onsets), protocol))
     DF.loc[iRec, 'daq-nEpisodes'] = len(onsets)
 
-print()
-print(' ==== CORRESPONDANCE : NIDAQ DATA & OPENEPHYS DATA  ====  ')
-DF
-
 # %% [markdown]
 #
 # ## Load Open-Ephys data
 
 
 # %%
-
-node = 0 # change if you have several record nodes and you want to consider another one
 
 session = Session(os.path.join(datafolder, 
                                datatable['Npx-Folder'][0]))
@@ -112,7 +112,7 @@ def build_ttl_from_events(State, Sample):
 def load_OpenEphys(rec):
 
     # find TTL events on Probe A
-    cond = (rec.events['stream_name']=='ProbeA')
+    cond = (rec.events['stream_name']==PROBE_NAME)
 
     # load the events
     State = np.array(rec.events['state'][cond])
@@ -126,7 +126,7 @@ def load_OpenEphys(rec):
 print(' ==== PROTOCOLS FROM OPEN-EPHYS DATA ====  ')
 props = []
 iRec = 0
-for r, rec in enumerate(session.recordnodes[node].recordings):
+for r, rec in enumerate(session.recordnodes[NODE].recordings):
 
     pulse_onsets, SN, TTL = load_OpenEphys(rec)
 
@@ -144,44 +144,22 @@ for r, rec in enumerate(session.recordnodes[node].recordings):
 
     for i0, i1 in zip(iStarts[:-1], iStarts[1:]):
 
+
         irange=np.arange(i0, np.min([i1+2,len(SN)]))
         pulse_cond = (pulse_onsets>=SN[irange[0]]) & (pulse_onsets<=SN[irange[-1]])
-        props.append({'node':node, 'rec':r, 
-                      'pulse_onsets':pulse_onsets[pulse_cond],
-                      'i0':i0, 'i1':i1,
-                      'sn':SN[irange], 'ttl':TTL[irange]})
-        props[-1]['nsteps']=np.sum((props[-1]['ttl'][1:]==1)&(props[-1]['ttl'][:-1]==0))
-        iRec +=1
-        print(' rec #%i) n=%i episodes' % (iRec, len(props[-1]['pulse_onsets'])))
+       
+        ax[1].plot(SN[irange], TTL[irange], lw=0.3, color=pt.tab10(iRec%10))
+        pt.annotate(ax[1], 'protocol #%i'%(1+iRec) +iRec*'\n', (1,0), va='bottom', color=pt.tab10(iRec%10))
 
-        ax[1].plot(props[-1]['sn'], props[-1]['ttl'], color=pt.tab10(iRec%10))
-        pt.annotate(ax[1], 'protocol #%i'%iRec +iRec*'\n', (1,0), va='bottom', color=pt.tab10(iRec%10))
+        DF.loc[iRec, 'i0'] = i0
+        DF.loc[iRec, 'i1'] = i1
+        DF.loc[iRec, 'Npx-Rec'] = 'node%i/exp%i/rec%i' % (NODE, EXP, r+1)
+        DF.loc[iRec, 'ephys-nEpisodes'] = len(pulse_onsets[pulse_cond])
+
+        iRec += 1
 
     pt.set_common_xlims(ax)
-
-
-                  
-# %%
-# VISUALIZE THE TWO SIGNALS
-
-iRec = 0
-
-fig, AX = pt.figure(axes=(2,2), ax_scale=(1.5,1), hspace=1.4, wspace=0.4, top=.5)
-# nidaq
-t, ephysSynch_signal, _ = load_nidaq_synch_signal(
-                            os.path.join(datafolder, datatable['time'][iRec]))
-AX[0][0].plot(t[:10000:10], ephysSynch_signal[:10000:10])
-AX[0][1].plot(t[-10000:][::10], ephysSynch_signal[-10000:][::10])
-for i, ax in enumerate(AX[0]):
-    pt.set_plot(ax, xlabel='NIdaq time (s)', ylabel='TTL\n(from NIdaq)' if i==0 else None)
-
-# open-ephys
-AX[1][0].plot(props[iRec]['sn'][1:50], props[iRec]['ttl'][1:50], 'o-', lw=0.4, ms=0.9)
-AX[1][1].plot(props[iRec]['sn'][-50:-1], props[iRec]['ttl'][-50:-1], 'o-', lw=0.4, ms=0.9)
-for i, ax in enumerate(AX[1]):
-    pt.set_plot(ax, xlabel='N, sample number (Npx Probe)      ', ylabel='TTL\n(on Probe)' if i==0 else None)
-# fig.savefig(os.path.expanduser('~/Desktop/fig.png'))
-fig.savefig('fig.png')
+DF
 
 
 # %%
@@ -190,333 +168,201 @@ from scipy.optimize import minimize
 from scipy.optimize import least_squares
 
 
-def find_sampling_match(t, nidaq_pulses, sn, openephys_pulses):
+def find_sampling_match(t, nidaq_onsets, ephys_onsets):
     """
-    ADD SUBSAMPLING OF TIME ARRAY FOR THE FIT
+    we find the sample numbers that match the limits of the NIdaq acquisition,
+    then, the samples in [nStart, nStop]
+        have the time sampling:
+            np.linspace(t[0], t[-1], nStop-nStart)
+
+    where t is the nidaq time sampling array
     """
 
-    N0 = sn[1] # - 3000
-    t0 = t[np.flatnonzero(nidaqTTL==1)][0]
-    
-    # dN = np.median(np.diff(sn[1::4]))
-    # dT = np.mean(np.diff(t[1:][nidaqTTL[1:]>nidaqTTL[:-1]]))
+    N0 = ephys_onsets[0]
+    t0 = nidaq_onsets[0]
 
+    nMax = np.min([len(nidaq_onsets), len(ephys_onsets)])-1
+
+    nMax=-1 # TO REMOVE 
+
+    dN = ephys_onsets[nMax]-N0
+    dT = nidaq_onsets[nMax]-t0
 
     if False:
-        dN = sn[-4]-sn[1]
+        # IN CASE YOU WANT TO MAKE A MINIMIZATION FUNCTION, BUT FOR NOW not necessary...
+        def to_minimize(x):
+            T = (sn-x[0])*x[1]+t0
+            func = interp1d(T, ttl) 
+            probe_signal = func(np.clip(t, T.min(), T.max()))
+            return np.mean((probe_signal-nidaqTTL)**2)
+
+        res = least_squares(to_minimize, [N0, F0],
+                            # max_nfev=10000, method='dogbox',
+                            # ftol=None, xtol=None, verbose=True,
+                            bounds=[(N0-3000, 0.99*F0), (N0+3000, 1.01*F0)])
+        N0, F0 = res.x
     else:
-        dN = sn[-6]-sn[1]
-    nidaqJump = np.flatnonzero(nidaqTTL[1:]>nidaqTTL[:-1])
-    dT = t[nidaqJump[-1]]-t[nidaqJump[0]]
+        F0 = dT/dN
 
-    F0 = dT/dN
+    nStart = N0-int(t0/F0)
+    nStop = N0+dN+int((t[-1]-dT-t0)/F0) # we add dN to limit precision loss
 
-    # def to_minimize(x):
-    #     T = (sn-x[0])*x[1]+t0
-    #     func = interp1d(T, ttl) 
-    #     probe_signal = func(np.clip(t, T.min(), T.max()))
-    #     return np.mean((probe_signal-nidaqTTL)**2)
-
-    # res = least_squares(to_minimize, [N0, F0],
-    #                     # max_nfev=10000, method='dogbox',
-    #                     # ftol=None, xtol=None, verbose=True,
-    #                     bounds=[(N0-3000, 0.99*F0), (N0+3000, 1.01*F0)])
-    # N0, F0 = res.x
-
-    return t0, N0, F0
+    return nStart, nStop
 
 def sampling_match(iRec,
                    with_fig=False):
 
-    t, ephysSynch_signal, nSteps = load_nidaq_synch_signal(
+    t, ephysSynch_signal, ephys_onsets = load_nidaq_synch_signal(
                                 os.path.join(datafolder, datatable['time'][iRec]))
+    
 
-    t0, N0, F0 = find_sampling_match(t, ephysSynch_signal, props[iRec]['sn'], props[iRec]['ttl'])
+    # reload the open-ephys data:
+    node = int(DF['Npx-Rec'][iRec].split('node')[1].split('/')[0])
+    rec_id = int(DF['Npx-Rec'][iRec].split('rec')[1])-1
+    rec = session.recordnodes[NODE].recordings[rec_id]
+    # prepared ---> load
+    pulse_onsets, SN, TTL = load_OpenEphys(rec)
 
-    T = (props[iRec]['sn']-N0)*F0+t0 # new time sampling
-    func = interp1d(T, props[iRec]['ttl'])
-    wide_t = np.arange(len(t)+20000)*t[1]
-    wide_t = wide_t[wide_t<T[-1]]
+    # restrict to previously identified range:
+    irange=np.arange(DF['i0'][iRec], np.min([DF['i1'][iRec],len(SN)]))
+    pulse_cond = (pulse_onsets>=SN[irange[0]]) & (pulse_onsets<=SN[irange[-1]])
 
-    probe_signal = func(wide_t)
+    # find the matching sample range
+    nStart, nStop = find_sampling_match(t, ephys_onsets, pulse_onsets[pulse_cond])
 
-    width=1.5
+    # we now match the time sampling in the data
+    cond = (SN>=nStart) & (SN<=nStop)
+    T = (SN[cond]-nStart)*(t[-1]-t[0])/(nStop-nStart)
+    func = interp1d(T, TTL[cond], 
+                    bounds_error=False,
+                    fill_value=0)
+    # we build a probe signal from the interpolation of the data
+    probe_signal = func(t)
 
+    width = 1.5
     if with_fig:
 
         fig, AX = pt.figure(axes=(4,2), ax_scale=(1.6,.7), top=1.5, hspace=1.6, wspace=0.3)
-        fig.suptitle('protocol #%i (%i episodes)' % (iRec+1, nSteps))
+        fig.suptitle('protocol #%i (%i episodes)' % (iRec+1, np.sum(pulse_cond)))
 
         for i, t0 in enumerate([0.5, t[-1]/2+1, 3.*t[-1]/4., t[-1]]):
 
             pt.annotate(AX[0][i], 't=%.1fs' % t0, (0.1,1))
+
             # nidaq
             cond = (t>(t0-width)) & (t<(t0+width))
             AX[0][i].plot(t[cond][::10], ephysSynch_signal[cond][::10])
             pt.set_plot(AX[0][i], xlabel='NIdaq time (s)', ylabel='TTL\n(from NIdaq)' if i==0 else None)
 
             # open-ephys
-            cond = (wide_t>(t0-width)) & (wide_t<(t0+width))
-            AX[1][i].plot(wide_t[cond][::10], probe_signal[cond][::10])
+            AX[1][i].plot(t[cond][::10], probe_signal[cond][::10])
             pt.set_plot(AX[1][i], xlabel='$F \\cdot (N- N_0) $ time (s)', ylabel='TTL\n(on Probe)' if i==0 else None)
 
             pt.set_common_xlims([AX[0][i], AX[1][i]])
 
-        return t0, N0, F0, fig
+        return nStart, nStop, fig
     else:
-        return t0, N0, F0
+        return nStart, nStop
 
-sampling_match(1, with_fig=True)
+# sampling_match(1, with_fig=True)
 
 # %%
 #
 for iRec, time in enumerate(datatable['time']):
 
-    sampling_match(iRec, with_fig=True)
-
-
-# %%
-fig, AX = pt.figure(axes=(1,2), ax_scale=(2,1), hspace=1.4, top=.5)
-# nidaq
-t, ephysSynch_signal, _ = load_nidaq_synch_signal(
-                            os.path.join(datafolder, datatable['time'][iRec]))
-AX[0].plot(t[::100], ephysSynch_signal[::100])
-pt.set_plot(AX[0], xlabel='NIdaq time (s)', ylabel='TTL\n(from NIdaq)')
-# open-ephys
-AX[1].plot(props[iRec]['sn'], props[iRec]['ttl'], 'o-', lw=0.4, ms=0.9)
+    DF.loc[iRec, 'nStart'], DF.loc[iRec, 'nStop'], _ =\
+            sampling_match(iRec, with_fig=True)
+DF
 
 # %%
 
-def find_openephys_in(dayfolder, verbose=True):
+from physion.assembling.dataset import add_to_table
 
-    day = dayfolder.split(os.path.sep)[-1].replace('_', '-')
-    # print(day, os.listdir(dayfolder))
-    folders = [f for f in os.listdir(dayfolder) if day in f]
-    if len(folders)==1:
-        return os.path.join(dayfolder, folders[0])
-    else:
-        print()
-        print('  [!!] Not a single open-Ephys recording found [!!]')
-        print('             list of folders:', folders)
-        print()
-
-session = Session(find_openephys_in(root_datafolder))
+for key in ['Npx-Rec', 'nStart', 'nStop']:
+    add_to_table(
+        os.path.join(datafolder, 'DataTable0.xlsx'),
+        sheet='Recordings',
+        column=key,
+        data=DF[key],
+        insert_at=16 if 'nS' in key else 0)
 
 # %%
-# for rec in session.recordnodes[0].recordings:
-    # print(rec.events)
-rec = session.recordnodes[0].recordings[0]
+#######################################################################################################
 
-condUp = (rec.events['stream_name']=='ProbeA') & (rec.events['state']==1)
-condDown = (rec.events['stream_name']=='ProbeA') & (rec.events['state']==0)
 
-rec.events['timestamp']
-
-iStarts = np.concatenate([[0], np.flatnonzero(np.diff(rec.events['timestamp'])>2.0), [-1]]) # more than two seconds between protocols
-print(len(iStarts))
 
 # %%
-sync_samples = []
-for i0, i1 in zip(iStarts[:-1], iStarts[1:]):
-    sync_samples.append(sn[i0:i1][::2])
+datafolder = os.path.expanduser('~/DATA/2026_02_13').replace('/', os.path.sep)
 
-for s0, s1 in zip(condUp)
-ttlEphys = np.zeros(len())
-# start from timestamps
-ts = rec.events['timestamp'][cond]
-sn = rec.events['sample_number'][cond]
-# convert to intervals + s --> ms
-intervals = np.diff(sn)
-intervals 
-import matplotlib.pylab as plt
+datatable
+
+class Data:
+
+    def __init__(self, datafolder, iRec):
+
+        datatable, _, _ = read_spreadsheet(\
+                                os.path.join(datafolder, 'DataTable0.xlsx'),
+                                        get_metadata_from='files')
+
+        nidaq = np.load(os.path.join(datafolder, datatable['time'][iRec], 'Nidaq.npy'),
+                        allow_pickle=True).item()
+        self.t_nidaq = np.arange(0, len(nidaq['digital'][0]))*nidaq['dt']
+        self.visStim = nidaq['digital'][3]
+
+        nStart, nStop = datatable['nStart'][iRec], datatable['nStop'][iRec]
+        self.t_probe = np.linspace(0, self.t_nidaq[-1], nStop-nStart)
+
+        # load the open-ephys data:
+        session = Session(os.path.join(datafolder, datatable['Npx-Folder'][iRec]))
+
+        node = int(DF['Npx-Rec'][iRec].split('node')[1].split('/')[0])
+        rec_id = int(DF['Npx-Rec'][iRec].split('rec')[1])-1
+        rec = session.recordnodes[NODE].recordings[rec_id]
+
+        self.LFP = rec.continuous['ProbeA'].samples[nStart:nStop,:]
+
+        # @Sally
+        # self.spikes = ...
+
+
+# %%
+data = Data(datafolder, 3)
+
+t0, length = 0, 60
+fig, AX = pt.figure(axes_extents=[[[1,3]],[[1,1]]], ax_scale=(3,1))
+
+SHIFT = 1000 # 1mV between each channel
+cond = (data.t_probe>t0) & (data.t_probe<(t0+length))
+
+for chan in range(10):
+    lfp = data.LFP[cond,chan]
+    lfp = lfp-lfp.mean()
+    AX[0].plot(data.t_probe[cond], lfp+chan*SHIFT, lw=0.5, color=pt.plt.cm.tab20(chan))
+pt.set_plot(AX[0], ['bottom'], ylabel='LFP')
+pt.draw_bar_scales(AX[0], Xbar=1e-3, Ybar=2000, Ybar_label='2mv')
+
+cond = (data.t_nidaq>t0) & (data.t_nidaq<(t0+length))
+AX[1].plot(data.t_nidaq[cond], data.visStim[cond])
+pt.set_plot(AX[1], ['bottom'], xlabel='time (s)', ylabel='vis. stim.\n onset')
+
+# %%
 from scipy.ndimage import gaussian_filter1d
-# plt.hist(intervals[:200])
-plt.plot(gaussian_filter1d(intervals[:150], 10))
-plt.yscale('log')
-# print(\
-#      rec.events['timestamp'][cond])
+events = data.t_nidaq[np.flatnonzero(data.visStim[1:]>data.visStim[:-1])]
 
-# rec.add_sync_line(1,            # TTL line number
-#                     100,          # processor ID
-#                         'ProbeA',   # stream name
-#                             main=True)   # align to the main stream
-# rec.compute_global_timestamps()
-# print(rec.sync_lines)
+lfp_events = []
+for e in events:
+    cond = (data.t_probe>(e-1)) & (data.t_probe<(e+2))
+    # lfp = gaussian_filter1d(data.LFP[cond,:].mean(axis=-1), 500)
+    lfp = gaussian_filter1d(data.LFP[cond,0], 500)
+    pre = (data.t_probe[cond]>(e-1)) & (data.t_probe[cond]<e)
+    lfp_events.append(lfp-lfp[pre].mean())
+t = data.t_probe[cond]-e
 
-# %%
-
-def load_nidaq_and_metadata(folder):
-    """ """
-    with open(os.path.join(folder, 'metadata.json')) as f:
-        metadata = json.load(f)
-    NIdaq = np.load(os.path.join(folder, 'NIdaq.npy'),
-                    allow_pickle=True).item()
-    return metadata, NIdaq
-
-for day, time in zip(datatable['day'], datatable['time']):
-    metadata, NIdaq = load_nidaq_and_metadata(os.path.join(root_datafolder, time))
-    props = find_line_props(
-                metadata['NIdaq']['digital-outputs']['line-labels'])
-    ephysSynch_signal = NIdaq['digital'][props['chan']]
-    steps = np.flatnonzero(ephysSynch_signal[1:]>ephysSynch_signal[:-1])
-    print(len(steps))
-    # with open(os.path.join(folder, 'NIdaq.npy')) as f:
-    #     metadata = json.load(f)
+fig, ax = pt.figure(ax_scale=(2,3))
+pt.plot(t, 1e-3*np.mean(lfp_events, axis=0), sy=1e-3*np.std(lfp_events, axis=0), ax=ax)
+pt.set_plot(ax, xlabel='time from stim. (s)', ylabel='LFP (mV)')
 
 # %%
-np.unique(datatable['Npx-Rec'])
+datatable
 
-# %%
-import os
-import numpy as np
-
-dayfolder = os.path.expanduser('~/DATA/2026_02_13').replace('/', os.path.sep)
-
-
-def extract_ephys_string(rec):
-    node = int(rec.split('/')[0].replace('node',''))
-    exp = int(rec.split('/')[1].replace('exp',''))
-    rec = int(rec.split('/')[2].replace('rec',''))
-    return node, exp, rec
-
-def find_set_of_sample_numbers(folder):
-
-    folder = os.path.join(folder, 
-                          'events', 'OneBox-100.ProbeA', 'TTL')
-    
-    if os.path.isdir(folder):
-        ts = np.load(os.path.join(folder, 'timestamps.npy'))
-        sn = np.load(os.path.join(folder, 'sample_numbers.npy'))
-        
-        iStarts = np.concatenate([[0], np.flatnonzero(np.diff(ts)>2.0), [-1]]) # more than two seconds between protocols
-
-        sync_samples = []
-        for i0, i1 in zip(iStarts[:-1], iStarts[1:]):
-            sync_samples.append(sn[i0:i1][::2])
-
-        return sync_samples
-    else:
-        return None
-
-def load(dayfolder, 
-         rec='node101/exp1/rec1'):
-
-    ephysFolder = os.path.join(datafolder, datatable['Npx-Folder'][0]) 
-    node, exp, rec = extract_ephys_string(rec)
-
-    rec_folder = os.path.join(dayfolder, 
-                          ephysFolder,
-                          'Record Node %i' % node,
-                          'experiment%i' % exp,
-                          'recording%i' % rec)
-
-    if os.path.isdir(rec_folder):
-        return find_set_of_sample_numbers(rec_folder)
-    else:
-        return None
-
-# %%
-
-
-# %%
-import itertools
-
-nProtocols = 0
-protocols_in_ephys = []
-
-for node, exp, rec in itertools.product([101], range(1, 5), range(1, 10)):
-
-    sync_samples = load(dayfolder, 'node%i/exp%i/rec%i' % (node, exp, rec))
-    if sync_samples is not None:
-        for i in range(len(sync_samples)):
-            print(' - node%i/exp%i/rec%i ' % (node, exp, rec), ' -->  n=%i synch. pulses' % len(sync_samples[i]))
-        nProtocols += len(sync_samples)
-
-print(nProtocols)
-# sync_samples = load(dayfolder, 'node101/exp1/rec1')
-
-# %%
-
-
-f = "C:\\Users\\info\\OneDrive\\Documents\\Open Ephys\\2026-02-03_16-04-25\\Record Node 103\\experiment1\\recording1\continuous\OneBox-102.OneBox-ADC\\timestamps.npy"
-f = "C:\\Users\\info\\OneDrive\\Documents\\Open Ephys\\2026-02-03_16-04-25\\Record Node 103\\experiment1\\recording1\events\MessageCenter\\timestamps.npy"
-
-folder = "C:\\Users\info\DATA\\2026-02-03_17-47-23\Record Node 101\experiment1\\recording1\events\OneBox-100.ProbeA\TTL"
-print(' timestamps: ',  np.load(os.path.join(folder, 'timestamps.npy')))
-print(' sample numbers: ',  np.load(os.path.join(folder, 'sample_numbers.npy')))
-
-# %%
-fig, ax = plt.subplots(1, figsize=(6,2))
-for i in range(acq.digital_data.shape[0]):
-    ax.plot(1.1*i+acq.digital_data[i,:])
-# ax.plot(self.digital_data[0,:])
-
-# %%
-# zoom properties
-plt.plot(1e3*t[::10], acq.analog_data[0][::10], label='chan0')
-plt.plot(1e3*t[::10], acq.analog_data[1][::10], label='chan1')
-plt.xlabel("Time (ms)")
-plt.ylabel("Amplitude")
-plt.grid(True)
-plt.legend(loc=(1.,0.2))
-
-# %%
-# now ZOOM on data
-t0, width =0.1, 0.1
-cond = (t>t0) & (t<(t0+width))
-plt.plot(1e3*(t[cond]-t0), acq.analog_data[0][cond], label='start')
-plt.plot(1e3*(t[cond]-t0), acq.analog_data[1][cond], label='stop')
-plt.xlabel("Time (ms)")
-plt.ylabel("Amplitude")
-plt.grid(True)
-plt.legend(loc=(1.,0.2))
-
-# %%
-# performing multiple recordings
-
-for i in range(1,4):
-        
-    fs = 50e3
-    tstop = 3 # 60*60
-    t = np.arange(int(tstop*fs)+1)/fs
-    output = build_start_stop_signal(t)
-    acq = Acquisition(\
-                sampling_rate=fs,
-                Nchannel_analog_in=2,
-                outputs=np.array([output], dtype=np.float64),
-                filename=os.path.expanduser('~/Desktop/Sample%i.npy' % i),
-                max_time=tstop)
-    acq.launch()
-    tic = time.time()
-    while (time.time()-tic)<tstop:
-        pass
-    acq.close()
-    time.sleep(4)
-
-import matplotlib.pylab as plt
-fig, ax = plt.subplots(1, figsize=(6,2))
-for i in range(acq.analog_data.shape[0]):
-    ax.plot(acq.analog_data[i,:], label='AI%i' %i)
-ax.legend(frameon=False, loc=(1,0.2))
-
-# %%
-import os
-fig, ax = plt.subplots(2, figsize=(7,4))
-for i in range(1, 4):
-        
-    data = np.load(\
-        os.path.expanduser('~/Desktop/Sample%i.npy' % i),
-        allow_pickle=True).item()
-    t = np.arange(len(data['analog'][0]))*data['dt']
-    t0 =0.132
-    cond = (t>t0) & (t<(t0+0.003))
-
-    ax[0].plot(1e3*(t[cond]-t0), data['analog'][0][cond], label='start')
-    ax[1].plot(1e3*(t[cond]-t0), data['analog'][1][cond], label='stop')
-    #plt.xlabel("Time (ms)")
-    #plt.ylabel("Amplitude")
-    plt.grid(True)
-#plt.legend(loc=(1.,0.2))
-# %%
-data
 # %%
