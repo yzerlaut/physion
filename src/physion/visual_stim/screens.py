@@ -93,7 +93,7 @@ SCREENS = {
                              'location':'bottom-left',
                              'screen_id':1},
         'gamma_correction':{'k':1.0,
-                            'gamma':1.0},
+                            'gamma':1.5},
     },
     'LN-VR-3screens':{
         'nScreens':3,
