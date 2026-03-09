@@ -85,12 +85,12 @@ SCREENS = {
         'screen_id':1,
         'resolution':[1280, 1024],
         'width':34.0, # in cm
-        'height':29.0, # in cm
-        'distance_front':18.0, # in cm
-        'height_from_base':10.0, # in cm
+        'height':27.5, # in cm
+        'distance_front':20.0, # in cm
+        'height_from_base':9.0, # in cm
         'fullscreen':True,
         'monitoring_square':{'size':80,
-                             'location':'top-left',
+                             'location':'bottom-left',
                              'screen_id':1},
         'gamma_correction':{'k':1.0,
                             'gamma':1.0},

@@ -21,7 +21,7 @@
 
 # %%
 import sys, time
-sys.path += [os.path.expanduser('~/physion/src')]
+sys.path += [os.path.expanduser('~/physion/src'), '../../src']
 import json
 import numpy as np
 from open_ephys.analysis import Session
