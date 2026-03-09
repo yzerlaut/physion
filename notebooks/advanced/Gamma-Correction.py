@@ -19,7 +19,7 @@ x = np.linspace(0, 1, len(data['Value']))
 fig, ax = pt.figure()
 ax.plot(x, data['Value'], 'o-', ms=2, lw=0.2)
 pt.set_plot(ax, xticks=[0., 0.5, 1.],
-            xlabel='screen color', ylabel='Candela')
+            xlabel='screen color', ylabel='Lux \n (lumen/m2)')
 
 # %%
 
@@ -51,14 +51,14 @@ pt.set_plot(ax,
 fig, ax = pt.figure()
 ax.plot(x, data['After'], 'o-', ms=2)
 pt.set_plot(ax, xticks=[0., 0.5, 1.],
-            xlabel='screen color', ylabel='Candela',
+            xlabel='screen color', ylabel='Lux \n (lumen/m2)',
             title='After Gamma Correction')
 
 # %%
 fig, AX = pt.figure(axes=(3,1), wspace=2)
 AX[0].plot(x, data['Value'], 'o-', ms=2, lw=0.2)
 pt.set_plot(AX[0], xticks=[0., 0.5, 1.],
-            xlabel='screen color', ylabel='Candela',
+            xlabel='screen color', ylabel='Lux \n (lumen/m2)',
             title='Before Correction')
 AX[1].scatter(x, normed_data, label='data', s=2)
 pt.set_plot(AX[1],
@@ -73,7 +73,7 @@ pt.set_plot(AX[1],
 
 AX[2].plot(x, data['After'], 'o-', ms=2)
 pt.set_plot(AX[2], xticks=[0., 0.5, 1.],
-            xlabel='screen color', ylabel='Candela',
+            xlabel='screen color', ylabel='Lux \n (lumen/m2)',
             title='After Gamma Correction')
 fig.savefig('../../docs/visual_stim/gamma-correction.png')
 # %%
