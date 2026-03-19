@@ -1,11 +1,21 @@
 from . import settings, tools, run, recordings
 
-MODALITIES = ['Locomotion',
+MODALITIES = ['NIDAQ',
               'FaceCamera',
               'RigCamera',
               'ImagingCamera',
-              # 'EphysLFP',
-              # 'EphysVm',
               'Neuropixels',
               'CaImaging',
               'onlyDemo']
+
+EXPERIMENTERS = [
+    '',
+    'Adrianna Nozownik',
+    'Cibele Martins Pinho',
+    'Dhanasak Dhanasobhon',
+    'Joana Lourenco',
+    'Laura Sofia Gonzalez',
+    'Pan Sally Zhang',
+    'Valentin Ritou',
+    'Yann Zerlaut',
+]

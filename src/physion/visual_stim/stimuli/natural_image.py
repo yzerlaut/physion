@@ -51,6 +51,11 @@ class stim(visual_stim):
         im0 = np.rot90(\
                 self.NIarray[int(self.experiment['Image-ID'][index])], 
                         k=1)
+
+        if self.screen['nScreens']>1:
+            im0 = np.concatenate(\
+                [im0 for i in range(self.screen['nScreens'])])
+
         im1 = self.experiment['bg-color'][index]+\
             self.experiment['contrast'][index]*(im0-0.5)
         

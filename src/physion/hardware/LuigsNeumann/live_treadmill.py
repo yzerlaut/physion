@@ -1,6 +1,5 @@
 import numpy as np
-import time
-import sys
+import time, sys
 import nidaqmx
 
 # sys.path += ["C:\LuigsNeumann_Treadmill\IO\ReadWriteNI\PyDAQmx-1.2.3"]
@@ -19,7 +18,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import nidaqmx
 from nidaqmx.constants import AcquisitionType, LineGrouping
-from collections import deque
 import time
 
 from physion.hardware.NIdaq.config import find_usb_devices, get_digital_input_channels
@@ -52,6 +50,23 @@ val2=0          # value prior to val1
 counter = 0
 lastwrite = time.time()
 
+def compute_speed(A, B):
+
+    val = 2**A+2**B
+    position = np.zeros(len(val))
+
+    for i in range(2, len(A)):
+        if val[i]!=val[i-1]:
+            if val[i]==3:
+                if val[-2]==0 and val[-1]==1:
+                    position[i] = position[i-1]+1
+                elif val[-2]==0 and val[-1]==2:
+                    position[i] = position[i-1]-1
+
+    # return both position and speed
+    return position, np.diff(position)
+
+    
 while True:
     try:
 

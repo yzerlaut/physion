@@ -3,11 +3,9 @@ import numpy as np
 import multiprocessing
 from PyQt5 import QtCore
 
-from physion.utils.files import get_time, get_date, generate_datafolders,\
-        get_latest_file
-from physion.acquisition.tools import \
-        check_gui_to_init_metadata, NIdaq_metadata_init,\
-        set_filename_and_folder, stimulus_movies_folder
+from physion.utils.files import get_latest_file
+from physion.acquisition.tools import find_line_props,\
+        check_gui_to_init_metadata, set_filename_and_folder, stimulus_movies_folder
 from physion.acquisition import recordings
 
 from physion.visual_stim.main import build_stim as build_VisualStim
@@ -91,18 +89,18 @@ def init_VisualStim(self):
 
 def run(self):
 
-    init_ok = False
+    init_ok = True
 
     # 1) INSURING THAT AT LEAST ONE MODALITY IS SELECTED
-    for i, k in enumerate(self.MODALITIES):
-        if getattr(self,k+'Button').isChecked():
-            init_ok = True
-    if not init_ok:
-        print('------------------------------------------------')
-        print('-- [!!] Need to pick at least one modality [!!] --')
-        print('------------------------------------------------')
-        self.statusBar.showMessage(\
-                ' [!!] Need to pick at least one modality [!!] ')
+    # for i, k in enumerate(self.MODALITIES):
+    #     if getattr(self,k+'Button').isChecked():
+    #         init_ok = True
+    # if not init_ok:
+    #     print('------------------------------------------------')
+    #     print('-- [!!] Need to pick at least one modality [!!] --')
+    #     print('------------------------------------------------')
+    #     self.statusBar.showMessage(\
+    #             ' [!!] Need to pick at least one modality [!!] ')
 
     # 2) INSURING THAT A CONFIG IS SELECTED
     if self.config is None:
@@ -148,9 +146,36 @@ def run(self):
                   (self.max_time%3600)/60,
                     (self.max_time%60)))
 
-        output_funcs= []
+        ################################################
+        ###   build the different signals   ############
+        ################################################
+
+        digital_output_steps = []
+        if self.stim is not None:
+            #  means WITH VisualStim -- find channel
+            props = find_line_props(\
+                self.metadata['NIdaq']['digital-outputs']['line-labels'],
+                                    'visual-stim-episode-start')
+            digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.05}\
+                                        for e in self.stim.experiment['time_start']]
+
+        if self.metadata['Neuropixels']:
+            #  -- find channel
+            props = find_line_props(\
+                self.metadata['NIdaq']['digital-outputs']['line-labels'],
+                                    'ephys-synch-signal')
+            sequence = recordings.ephysSynch(self.max_time, freq=props['freq'])
+            digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.1}\
+                                                    for e in sequence[:-1]]
+
         if self.metadata['CaImaging']:
-            output_funcs.append(recordings.trigger2P)
+            chan = 0 # CHECK
+            digital_output_steps += [\
+                {'channel':chan, 'onset':0.1, 'duration':0.1},
+                {'channel':chan, 'onset':self.max_time - 0.2, 'duration':0.1}
+            ]
+
+            # output_funcs.append(recordings.trigger2P)
 
         if self.metadata['recording']!='':
             other_funcs = []
@@ -160,37 +185,50 @@ def run(self):
                     return func(t, 
                                 self.stim, 
                                 float(self.cmdPick.text().split(":")[1]))
-                output_funcs.append(new_func)
+                # output_funcs.append(new_func)
 
-        ## QUICK FIX: need to put something, otherwise the empty channel bugs
-        if len(output_funcs)==0:
-            output_funcs.append(recordings.trigger2P)
+        if self.metadata['NIDAQ']:
 
-        NIdaq_metadata_init(self)
+            if self.onlyDemoButton.isChecked():
+                np.save(os.path.join(self.date_time_folder, 'NIdaq.start.npy'),
+                        time.time()*np.ones(1))
+                np.save(os.path.join(self.date_time_folder, 'NIdaq.npy'),
+                        {'analog':np.random.randn(1,20000),
+                        'digital':np.zeros((2,20000), dtype=bool),
+                        'dt':1e-2})
 
-        if self.onlyDemoButton.isChecked():
-            np.save(os.path.join(self.date_time_folder, 'NIdaq.start.npy'),
-                    time.time()*np.ones(1))
-            np.save(os.path.join(self.date_time_folder, 'NIdaq.npy'),
-                    {'analog':np.zeros((1,20000)),
-                     'digital':np.zeros((1,20000)),
-                     'dt':1e-2})
-        else:
-            try:
-                self.acq = Acquisition(\
-                    sampling_rate=\
-                        self.metadata['NIdaq-acquisition-frequency'],
-                    Nchannel_analog_in=\
-                            self.metadata['NIdaq-analog-input-channels'],
-                    Nchannel_digital_in=\
-                            self.metadata['NIdaq-digital-input-channels'],
-                    max_time=self.max_time,
-                    output_funcs=output_funcs,
-                    filename= self.filename.replace('metadata', 'NIdaq'))
-            except BaseException as e:
-                print(e)
-                print('\n [!!] PB WITH NI-DAQ [!!] \n')
-                self.acq = None
+            else:
+                try:
+                    self.acq = Acquisition(\
+                        # ------------------------
+                        # -- sampling settings
+                        sampling_rate=\
+                            self.metadata['NIdaq']['acquisition-frequency'],
+                        max_time=self.max_time,
+                        # ------------------------
+                        # -- sent outputs
+                        # - analog
+                        # analog_output_funcs=output_funcs,
+                        # - digital
+                        digital_output_port=\
+                            self.metadata['NIdaq']['digital-outputs']['lines'],
+                        digital_output_steps=\
+                            digital_output_steps,
+                        # ------------------------
+                        # -- recorded inputs
+                        # - analog
+                        Nchannel_analog_in=\
+                                self.metadata['NIdaq']['analog-inputs']['N-channels'],
+                        # - digital
+                        digital_input_port=\
+                            self.metadata['NIdaq']['digital-inputs']['lines'],
+                        # ------------------------
+                        # -- data writing:
+                        filename= self.filename.replace('metadata', 'NIdaq'))
+                except BaseException as be:
+                    print(be)
+                    print('\n [!!] PB WITH NI-DAQ [!!] \n')
+                    self.acq = None
         
 
         # saving all metadata after full initialization:
@@ -206,6 +244,11 @@ def run(self):
             self.t0 = time.time()
 
         self.runEvent.set()
+
+        # we leave a timestamp for the start of the visual-stim
+        np.save(os.path.join(self.date_time_folder, 'visual-stim.start.npy'),
+                time.time() * np.ones(1))
+        # --> and we start playing the video...
         if self.stimWins is not None:
             for mediaPlayer in self.mediaPlayers:
                 mediaPlayer.play()
@@ -215,6 +258,7 @@ def run(self):
         print('')
         print('                 running [...]')
         print('')
+
         self.run_update() # while loop
         # ========================
         # ---- HERE IT RUNS [...]
@@ -245,7 +289,7 @@ def toggle_FaceCamera_process(self):
                               self.datafolder,
                               'FaceCamera', 0, 
                               {'frame_rate':\
-                                self.config['FaceCamera-frame-rate']}))
+                                self.config['FaceCamera']['frame-rate']}))
         self.FaceCamera_process.start()
         self.statusBar.showMessage(\
                 '[ok] FaceCamera initialized ! (in 5-6s) ')
@@ -274,7 +318,7 @@ def toggle_RigCamera_process(self):
                               self.datafolder,
                               'RigCamera', 1, 
                               {'frame_rate':\
-                                self.config['RigCamera-frame-rate']}))
+                                self.config['RigCamera']['frame-rate']}))
         self.RigCamera_process.start()
         self.statusBar.showMessage(\
                 '[ok] FaceCamera initialized ! (in 5-6s) ')
@@ -300,7 +344,8 @@ def toggle_ImagingCamera_process(self):
                               self.quitEvent,
                               self.datafolder,
                               'ImagingCamera', 
-                              {'frame_rate':20.}))
+                              {'frame_rate':\
+                                self.config['ImagingCamera']['frame-rate']}))
         self.ImagingCamera_process.start()
         self.statusBar.showMessage(\
                 '[ok] ImagingCamera initialized ! (in 5-6s) ')
@@ -313,10 +358,13 @@ def toggle_ImagingCamera_process(self):
 
 def run_update(self):
 
+    # --- monitoring of visual stimulation --- #
     if self.protocolBox.currentText()!='None':
 
         t = (time.time()-self.t0)
-        iT = int(t*self.stim.movie_refresh_freq)
+        iT = min([\
+                int(t*self.stim.movie_refresh_freq),
+                    len(self.stim.is_interstim)-1])
 
         if self.stim.is_interstim[iT] and\
                 (self.current_index<self.stim.next_index_table[iT]):
@@ -347,11 +395,13 @@ def run_update(self):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'FaceCamera-imgs')))
         self.pCamImg.setImage(image.T)
+
     elif (self.RigCamera_process is not None) and\
                     (self.imgButton.currentText()=='RigCamera'):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'RigCamera-imgs')))
         self.pCamImg.setImage(image.T)
+
     elif (self.ImagingCamera_process is not None) and\
                     (self.imgButton.currentText()=='ImagingCamera'):
         image = np.load(get_latest_file(\
@@ -359,8 +409,10 @@ def run_update(self):
         self.pCamImg.setImage(image.T)
 
     # ----- while loop with qttimer object ----- #
-    if self.runEvent.is_set() and ((time.time()-self.t0)<self.max_time):
+    if self.runEvent.is_set() and\
+          ((time.time()-self.t0)<self.max_time):
         QtCore.QTimer.singleShot(1, self.run_update)
+
     else:
         # we reached the end
         self.stop()
@@ -374,8 +426,6 @@ def stop(self):
         self.acq.close()
 
     if self.CaImagingButton.isChecked():
-        time.sleep(0.5) # need to wait that the NIdaq process is released to create a new one
-        # stop the Ca imaging recording
         self.send_CaImaging_Stop_signal()
 
     self.statusBar.showMessage('acquisition/stimulation stopped !')
@@ -394,9 +444,9 @@ def stop(self):
 def send_CaImaging_Stop_signal(self):
     self.statusBar.showMessage(\
             'sending stop signal for 2-Photon acq.')
+    time.sleep(1.0) # need to wait that the NIdaq process is released to create a new one
+    # stop the Ca imaging recording
     acq = Acquisition(sampling_rate=1000, # 1kHz
-                      Nchannel_analog_in=1, 
-                      Nchannel_digital_in=0,
                       max_time=0.7,
                       buffer_time=0.1,
                       output_funcs= [recordings.trigger2P],

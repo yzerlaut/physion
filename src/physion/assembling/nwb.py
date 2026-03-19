@@ -23,7 +23,7 @@ from .tools import load_FaceCamera_data,\
 
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   'raw_FaceCamera', 'Pupil', 'FaceMotion',
-                  # 'EphysLFP', 'EphysVm',
+                  # 'EphysLFP', 'EphysUnits', 'EphysVm',
                   'VisualStim',
                   'Locomotion'] 
 
@@ -126,6 +126,11 @@ def build_NWB_func(args, Subject=None):
                 source_script_file_name=str(pathlib.Path(__file__).resolve()),
                 file_create_date=\
                    datetime.datetime.now(datetime.UTC).replace(tzinfo=tzlocal()))
+    nwbfile = pynwb.NWBFile(\
+                identifier='36',
+                session_description='test',
+                session_start_time=start_time,
+                subject=subject)
 
     if not hasattr(args, 'filename') or args.filename=='':
         if args.destination_folder=='':
@@ -294,7 +299,10 @@ def build_NWB_func(args, Subject=None):
                 nwbfile.add_stimulus(VisualStimProp)
                 
             for key in VisualStim:
-                None_cond = np.array([isinstance(e, type(None)) for e in VisualStim[key]]) # just checks for 'None' values
+
+                # Dealing with None conds (replacing with 666 in nwb):
+                None_cond = np.array(\
+                    [isinstance(e, type(None)) for e in VisualStim[key]]) # just checks for 'None' values
                 if key in ['protocol_id', 'index']:
                     array = np.array(VisualStim[key])
                 elif key in ['protocol-name']:
@@ -303,14 +311,16 @@ def build_NWB_func(args, Subject=None):
                     # need to remove the None elements
                     for i in np.arange(len(VisualStim[key]))[None_cond]:
                         VisualStim[key][i] = 666 # 666 means None !!
-                    array = np.array(VisualStim[key], dtype=type(np.array(VisualStim[key])[~None_cond][0]))
+                    array = np.array(VisualStim[key],\
+                            dtype=type(np.array(VisualStim[key])[~None_cond][0]))
                 else:
                     array = VisualStim[key]
+
                 VisualStimProp = pynwb.TimeSeries(name=key,
                         data = np.reshape(array[:len(timestamps)], 
                                             (len(timestamps),1)),
-                                  unit='NA',
-                                  timestamps=timestamps)
+                                unit='NA',
+                                timestamps=timestamps)
                 nwbfile.add_stimulus(VisualStimProp)
                 
         else:

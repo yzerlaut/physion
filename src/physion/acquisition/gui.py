@@ -11,9 +11,8 @@ from physion.utils.files import last_datafolder_in_dayfolder, day_folder
 from physion.utils.paths import FOLDERS
 from physion.visual_stim.screens import SCREENS
 from physion.acquisition.settings import load_settings
-from physion.assembling.gui import build_cmd
 
-from physion.acquisition import MODALITIES
+from physion.acquisition import MODALITIES, EXPERIMENTERS
 
 def multimodal(self,
                tab_id=0):
@@ -98,8 +97,8 @@ def multimodal(self,
     # self.saveSetB.clicked.connect(self.save_settings)
     # self.add_side_widget(tab.layout, self.saveSetB)
 
-    self.buildNWB = QtWidgets.QPushButton('build NWB for last', self)
-    self.buildNWB.clicked.connect(build_NWB_for_last)
+    self.buildNWB = QtWidgets.QPushButton('plot NIdaq of last', self)
+    self.buildNWB.clicked.connect(plot_NIdaq_of_last)
     self.add_side_widget(tab.layout, self.buildNWB)
 
     # ========================================================
@@ -108,16 +107,25 @@ def multimodal(self,
     #------------------- THEN MAIN PANEL   -------------------
     ip, width = 0, 4
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Configuration **', self),
+        QtWidgets.QLabel(40*' '+'** Setup **', self),
                          ip, self.side_wdgt_length, 
-                         1, width)
+                         1, int(width/2))
+    tab.layout.addWidget(\
+        QtWidgets.QLabel(40*' '+'** Experimenter **', self),
+                         ip, self.side_wdgt_length+int(width/2), 
+                         1, int(width/2))
     ip+=1
     # -
     self.configBox = QtWidgets.QComboBox(self)
     self.configBox.activated.connect(self.update_config)
     tab.layout.addWidget(self.configBox,\
                          ip, self.side_wdgt_length+1, 
-                         1, width)
+                         1, int(width/2))
+    self.experimenterBox = QtWidgets.QComboBox(self)
+    self.experimenterBox.addItems(EXPERIMENTERS)
+    tab.layout.addWidget(self.experimenterBox,\
+                         ip, self.side_wdgt_length+int(width/2)+1, 
+                         1, int(width/2))
     ip+=1
     # -
     tab.layout.addWidget(\
@@ -195,10 +203,10 @@ def multimodal(self,
     self.fovPick= QtWidgets.QLineEdit('FOV : X')
     tab.layout.addWidget(self.fovPick,
                          ip, 10, 1, 4)
-    ip+=1
-    self.cmdPick= QtWidgets.QLineEdit('cmd (V): 5')
-    tab.layout.addWidget(self.cmdPick,
-                         ip, 10, 1, 4)
+    # ip+=1
+    # self.cmdPick= QtWidgets.QLineEdit('cmd (V): 5')
+    # tab.layout.addWidget(self.cmdPick,
+    #                      ip, 10, 1, 4)
 
     self.refresh_tab(tab)
 
@@ -210,13 +218,39 @@ def multimodal(self,
         self.runButton.setEnabled(False)
         self.stopButton.setEnabled(False)
 
-def build_NWB_for_last():
+def plot_NIdaq_of_last():
     # last folder
-    folder = last_datafolder_in_dayfolder(day_folder(FOLDERS[list(FOLDERS.keys())[0]]))
-    print('[ ] build NWB file for recording: ', folder)
-    if os.path.isdir(folder):
-        cmd, cwd = build_cmd(folder)
-        print('\n launching the command \n :  %s \n ' % cmd)
-        p = subprocess.Popen(cmd,
-                             cwd=cwd,
-                             shell=True)
+    folder = last_datafolder_in_dayfolder(\
+                # day_folder(FOLDERS[list(FOLDERS.keys())[0]]))
+                # day_folder(FOLDERS[self.folderBox.currentText()])
+                day_folder(os.path.expanduser('~/DATA')))
+    print()
+    print('[ ] loading NIdaq data of recording: ', folder)
+    print()
+    import matplotlib.pylab as plt
+
+    fig, AX = plt.subplots(3, 1, figsize=(8,5))
+    plt.subplots_adjust(left=0.1, bottom=0.1)
+
+    data = np.load(os.path.join(folder, 'NIdaq.npy'),
+                   allow_pickle=True).item()
+
+    for i in range(data['analog'].shape[0]):
+        AX[0].plot(data['analog'][i][::10])
+
+    for i in range(data['digital'].shape[0]):
+        AX[1].plot(data['digital'][i]+1.1*i)
+    AX[0].set_ylabel('analog (V)')
+    AX[1].set_ylabel('digital')
+    AX[1].set_xlabel('time samples (::10)')
+
+    from behavior.locomotion import compute_speed
+    # HARDCODED - binary signals on channels 1 & 2 
+    # HARDCODED - acq. freq. / position on disk
+    binary = data['digital'][1]*1+2*data['digital'][2]
+    AX[2].plot(compute_speed(binary, 
+                             acq_freq=5e3,
+                             radius_position_on_disk=5.))
+    AX[2].set_ylabel('speed (cm/s)') 
+
+    plt.show()

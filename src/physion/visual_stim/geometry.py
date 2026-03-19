@@ -150,6 +150,118 @@ def set_angle_meshgrid_U3Screens(self,
     self.x *= 180./np.pi
     self.z *= 180./np.pi
 
+def set_angle_meshgrid_V2Screens(self, 
+                                 force_degree=False):
+    """
+    see the notebook for the calculation
+    """
+
+    L, H = self.screen['width'], self.screen['height']
+    lF = self.screen['distance_front']
+    hB = self.screen['height_from_base']
+
+    xMax = lF+1./np.sqrt(2)*\
+                    np.sqrt((L-lF/np.sqrt(2))**2)
+    
+    X, Z = np.meshgrid(\
+                np.linspace(0, 1,
+                            self.screen['resolution'][0]),
+                np.linspace(0, 1,
+                            self.screen['resolution'][1]),
+                        indexing='xy')
+
+    # we transpose given our coordinate system:
+    X, Z = X.T, Z.T
+
+    # X, Z = np.meshgrid(\
+    #             np.linspace(-xMax, 0, 
+    #                         self.screen['resolution'][0]),
+    #                 -self.screen['height_from_base']+\
+    #                         np.linspace(0, H,
+    #                                 self.screen['resolution'][1]),
+    #                     indexing='xy')
+
+    self.X = np.concatenate([-xMax+i*xMax+xMax*X\
+                                for i in range(self.screen['nScreens'])],
+                                axis=0)
+    self.Z = np.concatenate([-hB+H*Z\
+                                for i in range(self.screen['nScreens'])],
+                                axis=0)
+    self.widths = np.concatenate([-L+i*L+L*X\
+                                for i in range(self.screen['nScreens'])],
+                                axis=0)
+    self.heights = np.concatenate([-hB+H*Z\
+                                for i in range(self.screen['nScreens'])],
+                                axis=0)
+    self.screen_ids = np.concatenate([np.array((i+1)+0*X, dtype=int)\
+                                    for i in range(self.screen['nScreens'])],
+                                axis=0)
+
+    self.mask = np.ones(self.widths.shape, 
+                        dtype=bool) # stim mask, True by default
+
+    if force_degree or (self.units=='deg'):
+
+        altitudeMax, altitudeMin = np.max(self.z), np.min(self.z)
+        dZ = altitudeMax-altitudeMin
+        azimuthMax = dZ*self.x.shape[0]/self.x.shape[1]/2.
+
+        self.x, self.z = np.meshgrid(\
+                     np.linspace(-azimuthMax, azimuthMax,
+                                 self.x.shape[0]),
+                     np.linspace(altitudeMin, altitudeMax,
+                                  self.x.shape[1]),
+                              indexing='ij')
+        
+        # for this, we get back to widths, height screen coords
+        self.widths, self.heights = X, Z
+
+    elif self.units=='cm':
+        # by default, we go through the cm unit
+
+        # we convert to angles in the x and z directions
+        self.x, self.z = 0*self.widths, 0*self.widths
+
+        # 
+        #       screen by screen for the angular positions
+        # 
+
+        # - screen 1
+        cond1 = (self.screen_ids==1)
+        # radius
+        r = np.sqrt(
+           self.X[cond1]**2 +\
+            (self.X[cond1]+lF)**2 +\
+                self.Z[cond1]**2 )
+        # altitude angle
+        self.z[cond1] = np.arcsin(self.Z[cond1]/r)
+        # azimuth angle
+        self.x[cond1] =\
+            np.arctan(-self.X[cond1]/(self.X[cond1]+lF))
+        # [0,2pi] -> [-pi,pi]  
+        cond1h = cond1 & (self.x<0)
+        self.x[cond1h] += np.pi
+
+        # - screen 2
+        cond2 = (self.screen_ids==2)
+        # radius
+        r = np.sqrt(
+           self.X[cond2]**2 +\
+            (lF-self.X[cond2])**2 +\
+                self.Z[cond2]**2 )
+        # altitude angle
+        self.z[cond2] = np.arcsin(self.Z[cond2]/r)
+        # azimuth angle
+        self.x[cond2] =\
+            np.arctan(-self.X[cond2]/(lF-self.X[cond2]))
+        # [0,2pi] -> [-pi,pi]  
+        cond2h = cond2 & (self.x>0)
+        self.x[cond2h] -= np.pi
+
+    # convert back to angles in degrees
+    self.x *= 180./np.pi
+    self.z *= 180./np.pi
+
 if __name__=='__main__':
 
     import argparse, os, pathlib, json

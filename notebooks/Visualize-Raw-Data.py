@@ -7,8 +7,8 @@ import sys, pathlib, os
 import numpy as np
 
 sys.path += ['../src'] # add src code directory for physion
-import physion
 import physion.utils.plot_tools as pt
+from physion.analysis.read_NWB import Data
 pt.set_style('dark')
 
 # %%
@@ -16,10 +16,12 @@ pt.set_style('dark')
 filename = os.path.join(os.path.expanduser('~'), 
                         'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
                         '2023_02_15-13-30-47.nwb')
-data = physion.analysis.read_NWB.Data(filename,
-                                      verbose=False)
+data = Data(filename, verbose=False)
 data.build_rawFluo(verbose=False)
-data.build_dFoF(verbose=False)
+data.build_dFoF(\
+    # roi_to_neuropil_fluo_inclusion_factor=0.0,
+    # neuropil_correction_factor=0.0,
+    verbose=False)
 
 # %% [markdown]
 # ## Showing Field of View
@@ -46,6 +48,7 @@ show_CaImaging_FOV(data, key='meanImg',
 
 # save on desktop
 fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'FOV.png'))
+
 
 # %% [markdown]
 # # Show Raw Data

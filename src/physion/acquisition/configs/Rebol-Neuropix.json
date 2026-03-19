@@ -1,15 +1,12 @@
 {
-    "Rig":"Test", "physion-version":2.0,
+    "Rig":"Neuropix-LN-U3screens", "physion-version":2.0,
     "-----------------------------------------":"",
-    "Screen":"Dell-2020",
+    "Screen":"LN-VR-3screens",
     "-----------------------------------------":"",
     "NIdaq":{
         "acquisition-frequency":5000,
         "analog-outputs":{
-            "N-channels":1,
-            "channel-labels":[
-                "trigger-for-2P-start"
-            ]
+            "N-channels":0
         },
         "analog-inputs":{
             "N-channels":1,
@@ -18,20 +15,21 @@
             ]
         },
         "digital-outputs":{
-            "lines":"port0/line0-3",
+            "lines":"port0/line0:2",
             "line-labels":[
-                "trigger-for-2P-start",
+                "ephys-synch-signal-2Hz",
                 "visual-stim-episode-start",
-                ""
+                "LED-optogenetics-activation"
             ]
         },
         "digital-inputs":{
-            "lines":"port0/line4-7",
+            "lines":"port0/line3:7",
             "line-labels":[
+                "copy-ephys-synch-signal-5Hz",
                 "locomotion-channel1",
                 "locomotion-channel2",
-                "copy-visual-stim-start",
-                ""
+                "copy-visual-stim-episode-start",
+                "copy-LED-optogenetics-activation"
             ]
         }
     },
@@ -52,9 +50,8 @@
     },
     "Height-of-Microscope-Camera-Image-in-mm":2.7,
     "-----------------------------------------":"",
-    "rotating-disk":{
-        "radius-position-on-disk-cm":5.5,
-		"roto-encoder-value-per-rotation": -12563.0
+    "treadmill":{
+        "radius-position-on-disk-cm":5
     },
     "-----------------------------------------":"",
     "root_datafolder":"DATA",

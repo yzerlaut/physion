@@ -79,6 +79,22 @@ SCREENS = {
         'gamma_correction':{'k':1.03,
                             'gamma':1.77},
     },
+    'LN-2screens':{
+        'nScreens':2,
+        'name':'LN-2screens',
+        'screen_id':1,
+        'resolution':[1280, 1024],
+        'width':34.0, # in cm
+        'height':27.5, # in cm
+        'distance_front':20.0, # in cm
+        'height_from_base':9.0, # in cm
+        'fullscreen':True,
+        'monitoring_square':{'size':80,
+                             'location':'bottom-left',
+                             'screen_id':1},
+        'gamma_correction':{'k':1.0,
+                            'gamma':1.5},
+    },
     'LN-VR-3screens':{
         'nScreens':3,
         'name':'LN-VR-3screens',
@@ -86,14 +102,28 @@ SCREENS = {
         'resolution':[1024, 1280],
         'width':29.0, # in cm
         'height':34.0, # in cm
-        'distance_front':17.0, # in cm
-        'height_from_base':10.0, # in cm
+        'distance_front':20.0, # in cm
+        'height_from_base':14.0, # in cm
         'fullscreen':True,
-        'monitoring_square':{'size':56,
-                             'location':'top-right',
+        'monitoring_square':{'size':80,
+                             'location':'top-left',
                              'screen_id':1},
-        'gamma_correction':{'k':1.03,
-                            'gamma':1.77},
+        'gamma_correction':{'k':1.0,
+                            'gamma':1.0},
+    },
+    'Dell-4220':{
+        'nScreens':1,
+        'name':'Dell-4220',
+        'screen_id':1,
+        'resolution':[1920, 1080],
+        'width':43.8, # in cm
+        'height':33.0, # in cm
+        'distance_from_eye':15.0, # in cm
+        'fullscreen':True,
+        'monitoring_square':{'size':60.,
+                             'location':'top-right'},
+        'gamma_correction':{'k':1.01,
+                            'gamma':2.17},
     },
 }
 

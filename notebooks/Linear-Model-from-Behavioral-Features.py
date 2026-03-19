@@ -16,6 +16,7 @@ from sklearn import linear_model, model_selection
 sys.path += ['../src'] # add src code directory for physion
 import physion
 import physion.utils.plot_tools as pt
+from physion.analysis.dataframe import NWB_to_dataframe
 pt.set_style('dark')
 
 # %%
@@ -23,10 +24,10 @@ filename = os.path.join(os.path.expanduser('~'),
                         'DATA', 'physion_Demo-Datasets', 'NDNF-WT', 'NWBs',
                         '2022_12_14-13-27-41.nwb')
 
-data = physion.analysis.dataframe.NWB_to_dataframe(filename,
-                                                   visual_stim_features='', # no need of stimulus features here
-                                                   subsampling = 1,
-                                                   verbose=False)
+data = NWB_to_dataframe(filename,
+                    visual_stim_features='', # no need of stimulus features here
+                    subsampling = 1,
+                    verbose=False)
 
 # %% [markdown]
 # ## Visualization per ROI
@@ -54,7 +55,7 @@ for i in range(N):
     # train the linear model
     model = linear_model.RidgeCV(alphas=[1e-3, 1e-2, 1e-1, 1, 10, 100], 
                                  cv=3).fit(X_train, y_train)
-    
+
     # plot & annotate
     AX[i].plot(data['time'], data['dFoF-ROI%i' % i], 'g-')
     AX[i].plot(data['time'], model.predict(data[bhv_keys]), '-', lw=0.5)
