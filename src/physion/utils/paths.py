@@ -7,7 +7,9 @@ possible_conda_dir_lists = [os.path.join(os.path.expanduser('~'), 'miniforge3'),
                             os.path.join(os.path.expanduser('~'), 'anaconda3'),
                             os.path.join(os.path.expanduser('~'), '.conda'),
                             os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'Continuum', 'anaconda3'),
-                            os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'Continuum', 'miniconda3')]
+                            os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'Continuum', 'miniconda3'),
+                            os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'miniconda3'),
+                            os.path.join(os.path.expanduser('~'), 'AppData', 'Local', 'miniforge3')]
                        
 def check_path(env='physion'):
     i, success, path = 0, False, python_path

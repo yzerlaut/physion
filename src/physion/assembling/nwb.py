@@ -126,11 +126,6 @@ def build_NWB_func(args, Subject=None):
                 source_script_file_name=str(pathlib.Path(__file__).resolve()),
                 file_create_date=\
                    datetime.datetime.now(datetime.UTC).replace(tzinfo=tzlocal()))
-    nwbfile = pynwb.NWBFile(\
-                identifier='36',
-                session_description='test',
-                session_start_time=start_time,
-                subject=subject)
 
     if not hasattr(args, 'filename') or args.filename=='':
         if args.destination_folder=='':
