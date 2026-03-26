@@ -109,14 +109,15 @@ def compute_tuning_response_per_cells(data, Episodes,
     cond = Episodes.find_episode_cond(key='contrast', 
                                         value=contrast) &\
                                         filtering_cond
-    summary = Episodes.pre_post_statistics(stat_test_props,
-                                                episode_cond=cond,
-                                                repetition_keys=['repeat', 'contrast'],
-                                                response_args=dict(quantity=quantity),
-                                                response_significance_threshold=response_significance_threshold,
-                                                multiple_comparison_correction=True,
-                                                loop_over_cells=True,
-                                                verbose=verbose)
+    
+    summary = Episodes.pre_post_statistics(episode_cond=cond,
+                                           stat_test_props=stat_test_props,
+                                           repetition_keys=['repeat', 'contrast'],
+                                           response_args=dict(quantity=quantity),
+                                           response_significance_threshold=response_significance_threshold,
+                                           multiple_comparison_correction=True,
+                                           loop_over_cells=True,
+                                           verbose=verbose)
         
     # if significant in at least one orientation
     significant = (np.sum(summary['significant'], axis=1)>0)

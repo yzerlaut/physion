@@ -256,6 +256,7 @@ def show_CaImaging_FOV(data,
                        with_ROI_annotation=False,
                        with_annotation=True,
                        fig_args=dict(ax_scale=(1.4,2.4)),
+                       roi_colors = None
                        ):
 
     # set up axes 
@@ -284,10 +285,14 @@ def show_CaImaging_FOV(data,
 
         for roi in roiIndex:
             x, y = find_full_roi_coords(data, roi)
+            if roi_colors==None:
+                # color=plt.cm.tab10(roiIndex%10), 
+                # color=plt.cm.hsv(np.random.uniform(0,1)),
+                color = plt.cm.autumn(np.random.uniform(0,1))
+            else: 
+                color = roi_colors[roi]
             ax.plot(x, y, '.', 
-                    # color=plt.cm.tab10(roiIndex%10), 
-                    # color=plt.cm.hsv(np.random.uniform(0,1)),
-                    color=plt.cm.autumn(np.random.uniform(0,1)),
+                    color=color,
                     alpha=0.5,
                     ms=0.1)
 
