@@ -48,8 +48,8 @@ def stat_test_for_evoked_responses(ep,
 
 
 def run_pre_post_stat(ep,
-        merged_episode_cond,
         response_args,
+        merged_episode_cond = None,
         response_significance_threshold=0.05,
         stat_test_props={},
         verbose=True):
