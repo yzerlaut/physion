@@ -459,7 +459,6 @@ class EpisodeData:
         test in dataviz.episodes.trial_average.plot
 
         """
-
         stim_data = {'no-window':True}
 
         for key in full_data.metadata:
@@ -477,7 +476,7 @@ class EpisodeData:
         for key in self.visual_stim.experiment:
             for i, data_i in enumerate(all_eps[self.protocol_cond_in_full_data]):
                 self.visual_stim.experiment[key][i] = full_data.visual_stim.experiment[key][data_i]
-
+        return 0
         
     
     def get_image(self, key=None, index=None, value=None):
@@ -490,10 +489,8 @@ class EpisodeData:
             if len(cond)>0:
                 iStim = cond[0]
                 
-            
             I = all_eps[ep.protocol_cond_in_full_data]
 
-            
             self.plot_stim_picture(I)
             
             pass

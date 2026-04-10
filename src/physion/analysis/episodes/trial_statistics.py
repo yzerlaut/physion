@@ -125,7 +125,7 @@ def calc_pval_factor(VARIED_VALUES,
 def run_analysis_splitting_by_stim_params(ep, 
                                           stat_func,
                                           response_args,  
-                                          episode_cond= None,
+                                          episode_cond = None,
                                           stat_test_props={},
                                           repetition_keys=['repeat'],
                                           multiple_comparison_correction=True,
@@ -145,7 +145,6 @@ def run_analysis_splitting_by_stim_params(ep,
     :param nMin_episodes: Description
     :param verbose: Description
     """
-
 
     VARIED_KEYS, VARIED_VALUES = \
         build_episode_params_variations(ep, 
@@ -224,8 +223,8 @@ def run_analysis_splitting_by_stim_params(ep,
     return full_summary
 
 def pre_post_statistics(ep,
-                        episode_cond,
-                        response_args,
+                        episode_cond=None,
+                        response_args={},
                         response_significance_threshold=0.05,
                         stat_test_props={},
                         repetition_keys=['repeat'],

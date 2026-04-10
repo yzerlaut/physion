@@ -13,7 +13,7 @@ params = {"Image-ID":1,
           "contrast":0.3,
           "x-center":0,
           "y-center":0,
-          "radius":30
+          "radius":200
 }
 
 

@@ -560,26 +560,38 @@ class Data:
                          verbose=True, 
                          force_degree=False):
         """
-        ability to force degrees when re-initializing from data
-                            (for plots in degrees)
+        Builds an initial visual stim  - well built?
+        Overwrites it by: 
+        Looping for each episode: 
+            Looks for keys that are both in the experiment keys and the stimulus keys and 
+            for each one : 
+                the value from the NWB file is stored in the good place in self.visual_stim.experiment
+
+        if force_degree=True : forces degrees when re-initializing from data (for plots in degrees)
+
         """
+        print("init_visual_stim start")
+
         self.metadata['verbose'] = verbose
         if force_degree:
             self.metadata['units'] = 'deg'
 
         # build an initial visual_stim 
-        self.visual_stim = build_stim(self.metadata)
+        self.visual_stim = build_stim(protocol=self.metadata)
+        
         # then force to what was really shown (NWB file)
         for i in range(self.nwbfile.stimulus['time_start_realigned'].num_samples):
-            for key in self.visual_stim.experiment:
+            for key in self.visual_stim.experiment: 
                 if key in self.nwbfile.stimulus:
                     self.visual_stim.experiment[key][i]=\
                         self.nwbfile.stimulus[key].data[i,0]
-
+                
         if force_degree and\
               hasattr(self.visual_stim, 'STIM'):
             for s in self.visual_stim.STIM:
                 s.set_angle_meshgrid(force_degree=True)
+
+        return 0
         
     def get_protocol_id(self, protocol_name):
         cond = np.argwhere(self.protocols==protocol_name).flatten()

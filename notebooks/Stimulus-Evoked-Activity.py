@@ -6,6 +6,9 @@ import os, sys
 import numpy as np
 sys.path += ['../src'] # add src code directory for physion
 import physion
+from physion.analysis.read_NWB import Data
+from physion.analysis.episodes.build import EpisodeData
+from physion.dataviz.episodes.trial_average import plot
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
@@ -19,20 +22,17 @@ filename = os.path.join(os.path.expanduser('~'), 'DATA',
                         'physion_Demo-Datasets', 'SST-WT', 'NWBs',
                         '2023_02_15-13-30-47.nwb')
 
-data = physion.analysis.read_NWB.Data(filename,
-                                     verbose=False)
+data = Data(filename, verbose=False)
 
 # %% [markdown]
 # ## Build episodes (stimulus-aligned)
 
 # %%
-
 # find protocol of full-field gratings
 p_name = [p for p in data.protocols if 'ff-gratings' in p][0]
-episodes = physion.analysis.episodes.build.EpisodeData(data, 
-                                                       quantities=['dFoF',
-                                                                   'pupil_diameter'],
-                                                       protocol_name=p_name)
+episodes = EpisodeData(data, 
+                        quantities=['dFoF','pupil_diameter'],
+                        protocol_name=p_name)
 
 # %% [markdown]
 # ## Plot properties
@@ -47,31 +47,31 @@ plot_props = dict(column_key='angle',
 # ## Pupil variations
 
 # %%
-fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
-                                                      quantity='pupil_diameter',
-                                                    #   with_std=False,
-                                                      **plot_props)
+fig, AX = plot(episodes,
+                quantity='pupil_diameter',
+                #   with_std=False,
+                **plot_props)
 # %% [markdown]
 # ## Average over all ROIs 
 
 # %%
-fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
-                                                      quantity='dFoF',
-                                                      roiIndex=range(data.nROIs),
-                                                      **plot_props)
+fig, AX = plot(episodes,
+                quantity='dFoF',
+                roiIndex=range(data.nROIs),
+                **plot_props)
 
 # %% [markdown]
 # ## Single ROIs 
 
 # %%
-fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
-                                                      roiIndex=0,
-                                                      **plot_props)
+fig, AX = plot(episodes,
+                roiIndex=0,
+                **plot_props)
 
 # %%
-fig, AX = physion.dataviz.episodes.trial_average.plot(episodes,
-                                                      roiIndex=2,
-                                                      **plot_props)
+fig, AX = plot(episodes,
+                roiIndex=2,
+                **plot_props)
 
 # %%
 
@@ -82,7 +82,7 @@ stat_test_props = dict(interval_pre=[-1.,0],
                        sign='positive')
 
 summary = episodes.pre_post_statistics(\
-                stat_test_props,
+                stat_test_props=stat_test_props,
                 # repetition_keys=['repeat', 'angle', 'contrast'],
                 response_args=dict(quantity='dFoF',
                                    roiIndex=0),
@@ -95,20 +95,23 @@ for key in summary:
 # %%
 # now LOOPING over cells
 summary = episodes.pre_post_statistics(\
-                stat_test_props,
+                stat_test_props=stat_test_props,
                 response_args=dict(quantity='dFoF'),
                 response_significance_threshold=0.01,
                 loop_over_cells=True,
                 verbose=False)
-
+for key in summary:
+    print('- %s : %s' % (key, summary[key]))
 
 # %%
 summary = episodes.reliability(
         response_args=dict(quantity='dFoF'),
         stat_test_props=dict(n_samples=500, seed=2),
         loop_over_cells=True,
-        verbose=False,
-)
+        verbose=False)
+
+for key in summary:
+    print('- %s : %s' % (key, summary[key]))
 
 # %%
 # visualizing the computation of reliability:
