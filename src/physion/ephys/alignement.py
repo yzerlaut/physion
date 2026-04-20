@@ -4,6 +4,7 @@ import json
 from scipy.interpolate import interp1d
 
 from physion.acquisition.tools import find_line_props
+from open_ephys.analysis import Session as OpenEphysSession
 
 def load_nidaq_synch_signal(folder):
     """ 
@@ -61,7 +62,7 @@ def load_OpenEphys(rec,
 
 
 def find_sampling_match(t, nidaq_Onsets, ephys_Onsets,
-                        Nshift=4, verbose=False):
+                        Nshift=20, verbose=False):
     """
     we find the sample numbers that match the limits of the NIdaq acquisition,
     then, the samples in [nStart, nStop]
@@ -77,13 +78,17 @@ def find_sampling_match(t, nidaq_Onsets, ephys_Onsets,
 
     # varying the shift and computing correlations
     CC, nMax = [], len(nidaq_Onsets)-int(2*Nshift)
+    nMax = np.min([len(nidaq_Onsets), len(ephys_Onsets)])-int(2*Nshift)
+
+    # print(len(nidaq_Onsets), len(ephys_Onsets))
     for i in range(2*Nshift):
-        CC.append(np.corrcoef(nidaq_Onsets[Nshift:-Nshift], ephys_Onsets[i:nMax+i])[0,1])
+        CC.append(np.corrcoef(nidaq_Onsets[:nMax], ephys_Onsets[i:nMax+i])[0,1])
+
     # finding the best correlation between times:
     i = int(np.argmax(CC))
     if verbose:
         print('best shift found for, i=', i-Nshift)
-    nidaq_onsets, ephys_onsets = nidaq_Onsets[Nshift:-Nshift], ephys_Onsets[i:nMax+i]
+    nidaq_onsets, ephys_onsets = nidaq_Onsets[:nMax], ephys_Onsets[i:nMax+i]
 
     N0 = ephys_onsets[0]
     t0 = nidaq_onsets[0]
@@ -92,22 +97,7 @@ def find_sampling_match(t, nidaq_Onsets, ephys_Onsets,
 
     dN = ephys_onsets[-1]-N0
     dT = nidaq_onsets[-1]-t0
-
-    if False:
-        # IN CASE YOU WANT TO MAKE A MINIMIZATION FUNCTION, BUT FOR NOW not necessary...
-        def to_minimize(x):
-            T = (sn-x[0])*x[1]+t0
-            func = interp1d(T, ttl) 
-            probe_signal = func(np.clip(t, T.min(), T.max()))
-            return np.mean((probe_signal-nidaqTTL)**2)
-
-        res = least_squares(to_minimize, [N0, F0],
-                            # max_nfev=10000, method='dogbox',
-                            # ftol=None, xtol=None, verbose=True,
-                            bounds=[(N0-3000, 0.99*F0), (N0+3000, 1.01*F0)])
-        N0, F0 = res.x
-    else:
-        F0 = dT/dN
+    F0 = dT/dN
 
     nStart = N0-int(t0/F0)
     nStop = N0+dN+int((t[-1]-dT-t0)/F0) # we add dN to limit precision loss
@@ -116,11 +106,12 @@ def find_sampling_match(t, nidaq_Onsets, ephys_Onsets,
 
 
 def sampling_match(iRec,
-                   session,
                    datafolder,
                    DF,
                    with_fig=False,
                    verbose=False):
+
+    session = OpenEphysSession(os.path.join(datafolder, DF['Npx-Folder'][iRec]))
 
     t, ephysSynch_signal, nidaq_onsets = load_nidaq_synch_signal(
                                 os.path.join(datafolder, DF['time'][iRec]))
