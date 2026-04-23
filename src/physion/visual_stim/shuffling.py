@@ -18,43 +18,45 @@ def shuffle_from_protocol_info(indices, repeats, protocol_ids,
     # -----------------------------------------------------------------
     # TO REMOVE WHEN NOT USING "Randomized-Sequence" ANYMORE
     #   backward compatbility, sometimes no "shuffling" key anymore
-    if 'shuffling' not in protocol:
-        # this means that protocol['Presentation']=='Randomized-Sequence'
-        protocol['shuffling'] = 'full'
+    # if 'shuffling' not in protocol:
+    #     # this means that protocol['Presentation']=='Randomized-Sequence'
+    #     protocol['shuffling'] = 'full'
     # -----------------------------------------------------------------
 
     # DEFAULT --> NO SHUFFLING !!
     full_indices = np.arange(len(indices))
 
-    if (protocol['shuffling']=='full'):
+    if 'shuffling' in protocol:
 
-        np.random.shuffle(full_indices)
+        if (protocol['shuffling']=='full'):
 
-    elif (protocol['shuffling']==\
-            'full-with-alternate-even-odd-repeats'):
+            np.random.shuffle(full_indices)
 
-        # extracting even and odd full indices
-        full_indices_even = full_indices[repeats%2==0]
-        full_indices_odd = full_indices[repeats%2==1]
+        elif (protocol['shuffling']==\
+                'full-with-alternate-even-odd-repeats'):
 
-        # shuffle them
-        np.random.shuffle(full_indices_even)
-        np.random.shuffle(full_indices_odd)
+            # extracting even and odd full indices
+            full_indices_even = full_indices[repeats%2==0]
+            full_indices_odd = full_indices[repeats%2==1]
 
-        # refill full_indices by alternating even and odd episodes
-        for i in range(int(len(indices)/2)):
+            # shuffle them
+            np.random.shuffle(full_indices_even)
+            np.random.shuffle(full_indices_odd)
 
-            full_indices[2*i] = full_indices_even[i]
-            full_indices[2*i+1] = full_indices_odd[i]
-    else:
-        print()
-        print("""
-            ###############################################
-            ###  [!!] shuffling key not recognized [!!] ### 
-            ###        ---> data won't be shuffled !!   ### 
-            ###############################################
-        """)
-        print()
+            # refill full_indices by alternating even and odd episodes
+            for i in range(int(len(indices)/2)):
+
+                full_indices[2*i] = full_indices_even[i]
+                full_indices[2*i+1] = full_indices_odd[i]
+        else:
+            print()
+            print("""
+                ###############################################
+                ###  [!!] shuffling key not recognized [!!] ### 
+                ###        ---> data won't be shuffled !!   ### 
+                ###############################################
+            """)
+            print()
 
     return full_indices
 

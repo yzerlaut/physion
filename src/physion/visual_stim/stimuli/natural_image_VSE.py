@@ -5,6 +5,8 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 from physion.visual_stim.preprocess_NI import load,\
         img_after_hist_normalization, adapt_to_screen_resolution
 from physion.visual_stim.stimuli import virtual_scene_exploration as vse
+from physion.visual_stim.stimuli.natural_image\
+                        import get_NaturalImages_as_array
 
 #######################################
 ##  ----    NATURAL IMAGES    --- #####
@@ -21,22 +23,6 @@ params = {"Image-ID":0,
           "radius":30,
           "seed":0}
 
-def get_NaturalImages_as_array(screen):
-    
-    NI_FOLDER = os.path.join(str(pathlib.Path(__file__).resolve().parents[1]), 'NI_bank')
-    
-    NIarray = []
-
-    if os.path.isdir(NI_FOLDER):
-        for filename in np.sort(os.listdir(NI_FOLDER)):
-            img = load(os.path.join(NI_FOLDER, filename)).T
-            new_img = np.rot90(adapt_to_screen_resolution(img, screen), k=3)
-            NIarray.append(img_after_hist_normalization(new_img))
-        return NIarray
-    else:
-        print(' [!!]  Natural Images folder not found !!! [!!]  ')
-        return [np.ones((10,10))*0.5 for i in range(5)]
-
 
 class stim(visual_stim):
     """
@@ -46,8 +32,16 @@ class stim(visual_stim):
 
         super().__init__(protocol, params)
 
+        if not 'NI_FOLDER' in protocol or not os.path.isdir(protocol['NI_FOLDER']):
+            print()
+            print("""
+                [!!] need to add a valid "NI_FOLDER" folder location containing natural images
+                            in the protocol [!!]
+                  """)
+            print()
+
         # initializing set of NI
-        self.NIarray = get_NaturalImages_as_array(self.screen)
+        self.NIarray = get_NaturalImages_as_array(protocol['NI_FOLDER'], self.screen)
 
         self.vse = vse.generate_sequence(seed=protocol['seed'],
                                 min_saccade_duration=protocol['min-saccade-duration'],
