@@ -14,7 +14,8 @@ import json
 from physion.visual_stim.screens import SCREENS
 from physion.visual_stim.build import build_stim
 from physion.visual_stim import geometry 
-from physion.visual_stim.shuffling import *
+from physion.visual_stim.shuffling import\
+                        shuffle_from_protocol_info
 
 defaults = {\
     'presentation-duration': 2,
@@ -296,12 +297,12 @@ class visual_stim:
             ###    ======     SHUFFLING ?      =====  ### 
             #############################################
 
-            if ('shuffling' in protocol) or\
-                    (protocol['Presentation']=='Randomized-Sequence'):
-
-                indices, repeats = shuffle_single_protocol(indices, 
-                                                           repeats,
-                                                           protocol)
+            # no shuffling if no info in protocol file:
+            full_indices =\
+                shuffle_from_protocol_info(indices, 
+                                            repeats,
+                                              None,
+                                                protocol)
 
             #############################################
             ###    ==  building the time course   ==  ### 
@@ -312,14 +313,16 @@ class visual_stim:
 
                 self.experiment[k] = []
 
-            for n, i, r in zip(range(len(indices)), indices, repeats):
+            for n, i, r in zip(range(len(indices)), 
+                               indices[full_indices], 
+                               repeats[full_indices]):
 
                 for key in default_params:
                     self.experiment[key].append(FULL_VECS[key][i])
 
                 self.experiment['index'].append(i) # shuffled
                 self.experiment['bg-color'].append(self.blank_color)
-                self.experiment['repeat'].append(repeats[i])
+                self.experiment['repeat'].append(r)
 
                 if n==0:
                     self.experiment['time_start'].append(\
@@ -641,25 +644,32 @@ class multiprotocol(visual_stim):
                         self.experiment[key].append(None)
                 self.experiment['protocol_id'].append(IS)
 
-        # ---------------------------- #
-        # # SHUFFLING IF NECESSARY
-        # ---------------------------- #
+        #############################################
+        ###    ======     SHUFFLING ?      =====  ### 
+        #############################################
 
-        indices = shuffle_multiprotocol(\
-             np.arange(len(self.experiment['index'])),
-                    self.experiment['repeat'], 
-                              self.experiment['protocol_id'],
-                                    protocol) # nothing if no shuffling key
+        full_indices =\
+                shuffle_from_protocol_info(\
+                    np.array(self.experiment['index']),
+                        np.array(self.experiment['repeat']), 
+                                np.array(self.experiment['protocol_id']),
+                                        protocol) # nothing if no shuffling key
+
+
+        ##########################################
+        ###  =====  Building Time Course ====  ### 
+        ##########################################
 
         # updating sequence
         for key in self.experiment:
             # all keys, including interstim and duration
             if key not in ['time_start', 'time_stop']:
+                print(key)
                 self.experiment[key] = \
-                    np.array(self.experiment[key])[indices]
+                    np.array(self.experiment[key])[full_indices]
 
         # rebuilding experiment time course, time_start and time_stop
-        for n, i, isi, dur in zip(range(len(indices)), indices, 
+        for n, isi, dur in zip(range(len(self.experiment['index'])), 
                                np.array(self.experiment['interstim']),
                                np.array(self.experiment['time_duration'])):
 
@@ -730,6 +740,8 @@ if __name__=='__main__':
 
         with open(args.protocol, 'r') as f:
             protocol = json.load(f)
+            protocol['json_location'] =\
+                os.path.dirname(os.path.abspath(args.protocol))
 
         stim = physion.visual_stim.build.build_stim(protocol)
 

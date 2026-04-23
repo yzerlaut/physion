@@ -174,6 +174,8 @@ if __name__=='__main__':
                           Stim.experiment['time_duration'][index],
                         #   '   contrast: ', 
                         #   Stim.experiment['contrast'][index],
+                          '   repeat: ', 
+                          Stim.experiment['repeat'][index],
                           '   protocol-id : ', 
                           Stim.experiment['protocol_id'][index])
                     if 'verbose' in protocol:

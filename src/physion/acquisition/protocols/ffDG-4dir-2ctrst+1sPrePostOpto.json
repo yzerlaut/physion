@@ -20,7 +20,6 @@
     "spatial-freq": 0.06,
     "speed": 1,
     "radius": 400,
-    "json_location": "./",
     "presentation-prestim-period": 6,
     "presentation-poststim-period": 6,
     "presentation-blank-screen-color": 0.5,
