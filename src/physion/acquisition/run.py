@@ -177,15 +177,22 @@ def run(self):
 
             # output_funcs.append(recordings.trigger2P)
 
-        if self.metadata['recording']!='':
-            other_funcs = []
-            for func in getattr(recordings, self.metadata['recording']).output_funcs:
-                # the function passed should only depend on time
-                def new_func(t):
-                    return func(t, 
-                                self.stim, 
-                                float(self.cmdPick.text().split(":")[1]))
-                # output_funcs.append(new_func)
+        if 'Opto' in self.protocolBox.currentText():
+            ## --------- OPTOGENETIC STEP STIMULATION !!! --------- ##
+            print('Opto')
+            print(self.protocolBox.currentText().split('+')[1].split('sPrePost')[0])
+            prepost_duration = float(self.protocolBox.currentText().split('+')[1].split('sPrePost')[0])
+            #  means WITH VisualStim -- find channel
+            props = find_line_props(\
+                self.metadata['NIdaq']['digital-outputs']['line-labels'],
+                                    'LED-optogenetics-activation')
+            digital_output_steps += [{'channel':props['chan'], 
+                                      'onset':e-prepost_duration, 
+                                      'duration':d+2*prepost_duration}\
+                                        for e, d, r in zip(\
+                                            self.stim.experiment['time_start'],
+                                            self.stim.experiment['time_duration'],
+                                            self.stim.experiment['repeat']) if (r%2==1)]
 
         if self.metadata['NIDAQ']:
 

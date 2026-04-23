@@ -117,3 +117,6 @@ pt.plot(t, 1e-3*np.mean(lfp_events, axis=0), sy=1e-3*np.std(lfp_events, axis=0),
 pt.set_plot(ax, xlabel='time from stim. (s)', ylabel='LFP (mV)')
 
 # %%
+import numpy as np
+np.load(os.path.join(os.path.expanduser('~'), 'physion', 'src', 'physion', 'acquisition', 'protocols', 'movies', 'ffDG-2contrasts+1sPrePostOpto', 'visual-stim.npy'), allow_pickle=True)
+# %%
