@@ -17,7 +17,7 @@ from physion.assembling.dataset import read_spreadsheet
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
-datafolder = os.path.expanduser('~/DATA/2026_03_19').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/2026_04_10').replace('/', os.path.sep)
 
 # datatable, _, analysis = read_spreadsheet(\
 #                         os.path.join(datafolder, 'DataTable0.xlsx'),
@@ -81,8 +81,27 @@ pt.set_plot(AX[1], ['bottom'], xlabel='time (s)', ylabel='vis. stim.\n onset')
 from scipy.ndimage import gaussian_filter1d
 events = data.t_nidaq[np.flatnonzero(data.visStim[1:]>data.visStim[:-1])]
 
+channel = 100
 lfp_events = []
-window = [-1,2] # temporal window
+window = [-0.4,2] # temporal window
+for e in events:
+    cond = (data.t_probe>(e+window[0])) & (data.t_probe<(e+window[1]))
+    # lfp = gaussian_filter1d(data.LFP[cond,:].mean(axis=-1), 500)
+    lfp = gaussian_filter1d(data.LFP[cond,channel], 500)
+    pre = (data.t_probe[cond]>(e+window[0])) & (data.t_probe[cond]<e)
+    lfp_events.append(lfp-lfp[pre].mean())
+minLength = min([len(l) for l in lfp_events])
+lfp_events = [l[:minLength] for l in lfp_events]
+t = data.t_probe[:minLength]+window[0]
+
+fig, ax = pt.figure(ax_scale=(2,3))
+pt.plot(t, 1e-3*np.mean(lfp_events, axis=0), sy=1e-3*np.std(lfp_events, axis=0), ax=ax)
+pt.set_plot(ax, xlabel='time from stim. (s)', ylabel='LFP (mV)')
+
+# %%
+# CSD analysis
+csd_events = []
+window = [-0.4,2] # temporal window
 for e in events:
     cond = (data.t_probe>(e+window[0])) & (data.t_probe<(e+window[1]))
     # lfp = gaussian_filter1d(data.LFP[cond,:].mean(axis=-1), 500)

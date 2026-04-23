@@ -156,5 +156,5 @@ for key in ['Npx-Rec', 'nStart', 'nStop']:
         column=key,
         data=DF[key],
         insert_at=16 if 'nS' in key else 0)
-
+DF
 # %%
