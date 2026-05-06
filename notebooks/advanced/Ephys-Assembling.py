@@ -39,7 +39,7 @@ from physion.ephys.alignement import load_nidaq_synch_signal,\
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
-datafolder = os.path.expanduser('~/DATA/2026_04_10').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/2026_04_24').replace('/', os.path.sep)
 
 INTERPROTOCOL_WINDOW = 10. # 
 PROBE_NAME = 'ProbeA'
@@ -53,7 +53,7 @@ NODE=0
 # %%
 
 datatable, _, analysis = read_spreadsheet(\
-                        os.path.join(datafolder, 'DataTable0.xlsx'),
+                        os.path.join(datafolder, 'DataTable.xlsx'),
                                    get_metadata_from='files')
 #datatable
 
@@ -130,7 +130,7 @@ DF
 
 
 # %%
-_, _, fig, ephys_onsets, nidaq_onsets = sampling_match(11, 
+_, _, fig, ephys_onsets, nidaq_onsets = sampling_match(2, 
                                                        datafolder, DF,
                                                        with_fig=True, verbose=True)
 
@@ -151,7 +151,7 @@ from physion.assembling.dataset import add_to_table
 
 for key in ['Npx-Rec', 'nStart', 'nStop']:
     add_to_table(
-        os.path.join(datafolder, 'DataTable0.xlsx'),
+        os.path.join(datafolder, 'DataTable.xlsx'),
         sheet='Recordings',
         column=key,
         data=DF[key],
