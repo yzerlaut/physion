@@ -600,9 +600,15 @@ def build_NWB_func(args, Subject=None):
     ####    Electrophysiological Recording    #######
     #################################################
 
-    """
-    iElectrophy = 1 # start on channel 1
+    if ('Neuropix' in metadata) and metadata['Neuropix'] and ('Neuropix' in args.modalities):
     
+        if args.verbose:
+            print('=> Storing Neuropixels data for "%s" [...]' % args.datafolder)
+            
+        add_ephys(nwbfile, args,
+                    metadata=metadata)
+
+    """
     if metadata['EphysVm'] and ('EphysVm' in args.modalities):
     
         if args.verbose:
