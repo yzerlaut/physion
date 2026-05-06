@@ -16,6 +16,7 @@ from physion.utils.camera import CameraData
 
 from .subject import reformat_props, cleanup_keys, subject_template
 from .add_ophys import add_ophys
+from .add_ephys import add_ephys
 from .realign_from_photodiode import realign_from_photodiode
 from .dataset import read_spreadsheet, read_metadata
 from .tools import load_FaceCamera_data,\

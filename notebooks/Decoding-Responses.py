@@ -97,8 +97,8 @@ y_test.value_counts()
 
 # %%
 # possiblity --> denoising the training set by averaging
-denoising = True
-if denoising:
+averaging = False
+if averaging:
     X_train = pd.DataFrame(\
         np.array([X_train[y_train['image-ID']==id].mean(axis=0)\
                         for id in y_train['image-ID'].unique()]),
@@ -152,3 +152,4 @@ ax.bar([0], [score], label='single NN-decoder')
 ax.plot([-1, 1], [chance, chance], ':', label='chance')
 ax.legend(loc=(1., 0.0), frameon=False)
 pt.set_plot(ax, xticks=[], ylabel='accuracy')
+# %%
