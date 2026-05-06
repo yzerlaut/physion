@@ -114,7 +114,7 @@ def build_NWB_func(args, Subject=None):
                 identifier=identifier,
                 session_description=session_description,
                 experiment_description=metadata['protocol'],
-                experimenter=metadata['experimenter'],
+                experimenter=metadata['experimenter'] if ('experimenter' in protocol) else '',
                 lab=metadata['lab'],
                 protocol=str({k: protocol[k] for k in protocol if len(k) <66}) if metadata['protocol'] != 'None' else None,
                 institution=metadata['institution'],
@@ -166,10 +166,12 @@ def build_NWB_func(args, Subject=None):
     # #################################################
     # ####         Locomotion                   #######
     # #################################################
+    if ('Locomotion' in args.modalities) and\
+        ( ('Locomotion' in metadata) and (metadata['Locomotion'] )
+                    or ( ('NIdaq' in metadata) and metadata['NIdaq'] ) ):
+        # --> compute running speed from binary NI-daq signal and storing it
 
-    if metadata['Locomotion'] and ('Locomotion' in args.modalities):
-        # compute running speed from binary NI-daq signal
-
+        # can we use a previously calculated speed ? (because that's a bit long...)
         if (not args.force_recalculation_of_speed) and\
             os.path.isfile(os.path.join(args.datafolder, 'locomotion.npy')):
 
@@ -181,19 +183,32 @@ def build_NWB_func(args, Subject=None):
             speed, running_sampling = L['speed'], L['running_sampling']
 
         else:
+            # --> compute the speed !
 
             if args.verbose:
                 print('=> Computing and storing running-speed for "%s" [...]' % args.datafolder)
 
-            speed = compute_speed(NIdaq_data['digital'][0],
-                    acq_freq=float(metadata['NIdaq-acquisition-frequency']),
-                    radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
-                    rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']))
-            _, speed = resample_signal(speed,
-                                    original_freq=float(metadata['NIdaq-acquisition-frequency']),
-                                    new_freq=args.running_sampling,
-                                    pre_smoothing=2./args.running_sampling)
-            running_sampling = args.running_sampling
+            if 'NIdaq-acquisition-frequency' in metadata:
+                # OLD WAY FOR BACKWARD COMPATIBILITY
+                from physion.behavior.locomotion import legacy_speed_calculation 
+                running_sampling, speed = legacy_speed_calculation(NIdaq_data, metadata, args)
+            else:
+
+                # find the two digital channels of the rotary encoder for locomotion
+                chan1 = np.flatnonzero(np.array(metadata['NIdaq']['digital-inputs']['line-labels'])=='locomotion-channel1')[0]
+                chan2 = np.flatnonzero(np.array(metadata['NIdaq']['digital-inputs']['line-labels'])=='locomotion-channel2')[0]
+
+                binary = NIdaq_data['digital'][chan1]*1+2*NIdaq_data['digital'][chan2]
+
+                speed = compute_speed(binary,
+                        acq_freq=float(metadata['NIdaq']['acquisition-frequency']),
+                        radius_position_on_disk=float(metadata['treadmill']['radius-position-on-disk-cm']))
+                _, speed = resample_signal(speed,
+                                        original_freq=float(metadata['NIdaq']['acquisition-frequency']),
+                                        new_freq=args.running_sampling,
+                                        pre_smoothing=2./args.running_sampling)
+                running_sampling = args.running_sampling
+
             np.save(os.path.join(args.datafolder, 'locomotion.npy'),
                     dict(speed=speed, running_sampling=running_sampling))
 
@@ -232,10 +247,19 @@ def build_NWB_func(args, Subject=None):
 
         if NIdaq_data is not None:
             # preprocessing photodiode signal
-            _, Psignal = resample_signal(NIdaq_data['analog'][0],
-                                         original_freq=float(metadata['NIdaq-acquisition-frequency']),
-                                         pre_smoothing=2./float(metadata['NIdaq-acquisition-frequency']),
-                                         new_freq=args.photodiode_sampling)
+            if 'NIdaq-acquisition-frequency' in metadata:
+                # OLD WAY FOR BACKWARD COMPATIBILITY
+                _, Psignal = resample_signal(NIdaq_data['analog'][0],
+                                            original_freq=float(metadata['NIdaq-acquisition-frequency']), pre_smoothing=2./float(metadata['NIdaq-acquisition-frequency']),
+                                            new_freq=args.photodiode_sampling)
+            else:
+
+                chan = np.flatnonzero(np.array(metadata['NIdaq']['analog-inputs']['channel-labels'])=='photodiode-signal-from-screen')[0]
+                _, Psignal = resample_signal(NIdaq_data['analog'][chan],
+                                            original_freq=float(metadata['NIdaq']['acquisition-frequency']),
+                                            pre_smoothing=2./float(metadata['NIdaq']['acquisition-frequency']),
+                                            new_freq=args.photodiode_sampling)
+
             if args.reverse_photodiodeSignal:
                Psignal *=-1 # reversing sign on the setup
 	
@@ -773,7 +797,9 @@ if __name__=='__main__':
         filename, directory = args.datafolder, os.path.dirname(args.datafolder)
         dataset, subjects, _ = read_spreadsheet(filename)
         if args.destination_folder=='':
-            args.destination_folder = os.path.join(directory, 'NWBs')
+            args.destination_folder = os.path.join(directory, 'NWBs')\
+                     if os.path.isdir(os.path.join(directory, 'NWBs')) else directory
+
         for i in np.arange(args.files_indices[0], 
                            min([len(dataset), args.files_indices[1]])):
             print('\n \n     [%i] -- %s \n ' % (i+1, dataset['datafolder'][i]))

@@ -94,7 +94,22 @@ def compute_speed(binary_signal,
         return speed, position
     else:
         return speed
- 	
+
+
+def legacy_speed_calculation(NIdaq_data, metadata, args):
+    """
+    old way to calculate speed
+    """
+    speed = compute_speed(NIdaq_data['digital'][0],
+            acq_freq=float(metadata['NIdaq-acquisition-frequency']),
+            radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
+            rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']))
+    _, speed = resample_signal(speed,
+                            original_freq=float(metadata['NIdaq-acquisition-frequency']),
+                            new_freq=args.running_sampling,
+                            pre_smoothing=2./args.running_sampling)
+
+    return args.running_sampling, speed
 
 if __name__=='__main__':
 
