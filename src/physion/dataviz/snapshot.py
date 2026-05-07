@@ -20,23 +20,30 @@ plt.rcParams['figure.autolayout'] = False
 
 iMap = pt.get_linear_colormap('k','lightgreen')
 
-def layout(show_axes=False):
+def layout(show_axes=False,
+           imaging=False):
     """
     default layout for the plot
     """
 
     AX = {}
-    fig = plt.figure(figsize=(8,4))
 
-    AX['axTraces'] = fig.add_axes([0.42, 0.01, 0.54, 0.63])
-
-    AX['axImaging'] = fig.add_axes([0., 0.1, 0.3, 0.5])
-
-    AX['axTime'] = fig.add_axes([0.1, 0.01, 0.1, 0.05])
+    if imaging:
+        fig = plt.figure(figsize=(8,4))
+        AX['axTraces'] = fig.add_axes([0.42, 0.01, 0.54, 0.63])
+        AX['axImaging'] = fig.add_axes([0., 0.1, 0.3, 0.5])
+        AX['axTime'] = fig.add_axes([0.1, 0.01, 0.1, 0.05])
+    else:
+        fig = plt.figure(figsize=(8,4.5))
+        AX['axTraces'] = fig.add_axes([0.15, 0.47, 0.8, 0.2])
+        AX['axEphys'] = fig.add_axes([0.25, 0.01, 0.7, 0.45])
+        AX['axTime'] = fig.add_axes([0.1, 0.01, 0.1, 0.05])
 
     height0 = 0.68
-    AX['axROI1'] = fig.add_axes([0.28, 0.15, 0.1, 0.2])
-    AX['axROI2'] = fig.add_axes([0.28, 0.4, 0.1, 0.2])
+    if imaging:
+        AX['axROI1'] = fig.add_axes([0.28, 0.15, 0.1, 0.2])
+        AX['axROI2'] = fig.add_axes([0.28, 0.4, 0.1, 0.2])
+
     height0 += 0.02
     AX['axScreen'] = fig.add_axes([0.01, height0, 0.2, 0.25])
     # AX['axRig'] = fig.add_axes([0.25, height0+0.03, 0.17, 0.2])
@@ -361,6 +368,12 @@ def plot_traces(AX, params, data):
                     fig_fraction_start=params['fractions']['pupil_start'], 
                     fig_fraction=params['fractions']['pupil'], 
                     scale_side='right', subsampling=1, name='')
+
+    if 'LED' in params['fractions']:
+        add_Optogenetics(data, params['tlim'], AX['axTraces'], 
+                    fig_fraction_start=params['fractions']['LED_start'], 
+                    fig_fraction=params['fractions']['LED'], 
+                    subsampling=10, name='')
 
     # rois 
     if 'ophys' in data.nwbfile.processing:

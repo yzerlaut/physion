@@ -50,6 +50,12 @@
     },
     "Height-of-Microscope-Camera-Image-in-mm":2.7,
     "-----------------------------------------":"",
+    "LED":{
+        "wavelength":455.0,
+        "description":"TTL-controlled LED-driver",
+        "manufacturer":"Thorlabs",
+    },
+    "-----------------------------------------":"",
     "treadmill":{
         "radius-position-on-disk-cm":5
     },

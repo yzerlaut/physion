@@ -220,6 +220,34 @@ def build_NWB_func(args, Subject=None):
         nwbfile.add_acquisition(running)
 
     # #################################################
+    # ####            OPTOGENETICS              #######
+    # #################################################
+    
+    if 'Opto' in metadata['protocol']:
+
+        chan = np.flatnonzero(np.array(metadata['NIdaq']['digital-inputs']['line-labels'])=='copy-LED-optogenetics-activation')[0]
+
+        led = nwbfile.create_device(name="LED",
+                                    description=metadata['LED']['description'] if 'LED' in metadata else '',
+                                    manufacturer=metadata['LED']['manufacturer'] if 'LED' in metadata else '')
+        ogen_stim_site = pynwb.ogen.OptogeneticStimulusSite(
+                        name="OptogeneticStimulusSite",
+                        device=led,
+                        description=" ",
+                        excitation_lambda=metadata['LED']['wavelength'] if 'LED' in metadata else 0.0,
+                        location="VIS")
+        nwbfile.add_ogen_site(ogen_stim_site)
+
+        ogen_series = pynwb.ogen.OptogeneticSeries(
+                            name="OptogeneticSeries",
+                            data=NIdaq_data['digital'][chan].astype(int),
+                            site=ogen_stim_site,
+                            rate=float(metadata['NIdaq']['acquisition-frequency']))
+
+        nwbfile.add_stimulus(ogen_series)
+
+            
+    # #################################################
     # ####         Visual Stimulation           #######
     # #################################################
     

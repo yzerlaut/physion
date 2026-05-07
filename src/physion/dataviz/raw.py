@@ -138,6 +138,24 @@ def add_FaceMotion(data, tlim, ax,
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
 
+def add_Optogenetics(data, tlim, ax,
+                   scale_side='left',
+                   fig_fraction_start=0., fig_fraction=1., subsampling=5, 
+                   color='#9467bd', name='LED'):
+
+    i1, i2 = dv_tools.convert_times_to_indices(*tlim,
+                            data.nwbfile.stimulus['OptogeneticSeries'])
+
+    t = dv_tools.convert_index_to_time(range(i1,i2),
+            data.nwbfile.stimulus['OptogeneticSeries'])[::subsampling]
+    y = data.nwbfile.stimulus['OptogeneticSeries'].data[i1:i2][::subsampling]
+
+    ax.fill_between(t, fig_fraction_start+0*t+.1*fig_fraction, 
+                    fig_fraction_start+(.1+.8*y)*fig_fraction,
+                    color=color, lw=0)
+    dv_tools.add_name_annotation(data, ax, name, tlim,
+            fig_fraction, fig_fraction_start, color=color)
+
 
 def add_VisualStim(data, tlim, ax,
                    fig_fraction_start=0., fig_fraction=0.05, size=0.1,
@@ -212,7 +230,12 @@ def find_default_plot_settings(data,
                                       subsampling=100 if with_subsampling else 1, 
                                       color='grey')
 
-    if data.metadata['Locomotion']:
+    if 'OptogeneticSeries' in data.nwbfile.stimulus:
+        settings['Optogenetics'] = dict(fig_fraction=0.8, 
+                                        subsampling=10 if with_subsampling else 1, 
+                                        color='blue')
+
+    if 'Running-Speed' in data.nwbfile.acquisition:
         settings['Locomotion'] = dict(fig_fraction=1, 
                                       subsampling=10 if with_subsampling else 1, 
                                       color='#1f77b4')
