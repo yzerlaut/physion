@@ -402,7 +402,9 @@ class EpisodeData:
 
     def find_episode_cond(self, key=None, index=None, value=None):
         """
-        Conditions can be key (check ep.varied_parameters), index (which option of the varied parameters) or value (??)
+        Conditions can be key (check ep.varied_parameters), 
+                          index (which option of the varied parameters) or 
+                          value (actual value parameter)
         'key' and 'index' can be either lists of values
 
         Returns a list of bool, False when episode does not meet conditions, True if passes conditions. Size # episodes
@@ -410,9 +412,9 @@ class EpisodeData:
 
         example for a 
 
-        data.find_episode_cond(key='orientation', index=0)
+        data.find_episode_cond(key='angle', index=0)
 
-        data.find_episode_cond(key='orientation', value=90.0)
+        data.find_episode_cond(key='angle', value=90.0)
         
         """
 

@@ -11,12 +11,55 @@ except ModuleNotFoundError:
     print('"skimage" module not found')
 
 
+from skimage import exposure
+
+
 def load(image_path):
 
     img = color.rgb2gray(io.imread(image_path))
     
     return np.rot90(np.array(img).T, k=1) # needs transpose + rotation
+
+
+def img_after_hist_normalization(img, verbose=False):
+    """
+    for NATURAL IMAGES:
+    histogram normalization to get comparable images
+    """
+    if verbose:
+        print("Performing histogram equalization")
+
+    new_img = exposure.equalize_hist(img)
+
+    return new_img.reshape(img.shape)
+
+
+'''
+def img_after_hist_normalization(img, verbose=False):
+    """
+    for NATURAL IMAGES:
+    histogram normalization to get comparable images
+    """
+    if verbose:
+        print("Performing histogram equalization")
+
+    img = img.astype(float)
+
+    # normalization between 0 and 1
+    img_norm = (img - np.min(img)) / (np.max(img) - np.min(img))
     
+    flat = img_norm.flatten()
+
+    # histogram
+    hist, bins = np.histogram(flat, bins=256, range=[0, 1])
+    cdf = hist.cumsum()
+    cdf = cdf / cdf[-1]  # normalisation
+
+    # interpolation
+    new_flat = np.interp(flat, bins[:-1], cdf)
+
+    return new_flat.reshape(img.shape)
+
 def img_after_hist_normalization(img, verbose=False):
     """
     for NATURAL IMAGES:
@@ -33,8 +76,7 @@ def img_after_hist_normalization(img, verbose=False):
     new_img = np.array([norm_cs[f]/1000. for f in flat])
 
     return new_img.reshape(img.shape)
-
-
+'''
 def adapt_to_screen_resolution(img, new_screen, verbose=False):
 
     if verbose:

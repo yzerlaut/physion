@@ -395,21 +395,33 @@ def plot_responsiveness(keys,
                     np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
                             allow_pickle=True)
     
-            responsive_frac = [Tuning['nROIs_responsive']/Tuning[reference_ROI_number]\
+            if average_by=="sessions":
+                responsive_frac = [Tuning['nROIs_responsive']/Tuning[reference_ROI_number]\
                                for Tuning in Tunings]
-
+                
+                
+            elif average_by=="ROIs":
+                responsive_frac = [np.sum(Tuning['nROIs_responsive'] for Tuning in Tunings)/np.sum([Tuning[reference_ROI_number] for Tuning in Tunings])]
+               
+            
             ax.bar([i], [100*np.mean(responsive_frac)],
-                   yerr=[100.*stats.sem(responsive_frac)],
-                   color=color)
+                    yerr=[100.*stats.sem(responsive_frac)],
+                    color=color)
  
             if with_label:
-                annot = i*'\n'+'%.1f$\\pm$%.1f%%' %\
+                if average_by=='sessions':
+                    annot = i*'\n'+'%.1f$\\pm$%.1f%%' %\
                          (100*np.mean(responsive_frac), 
                           100*stats.sem(responsive_frac))
-                if average_by=='sessions':
                     annot += ', N=%02d %s, ' % (len(responsive_frac), average_by) + key
-                else:
-                    annot += ', n=%04d %s, ' % (len(responsive_frac), average_by) + key
+
+                elif average_by=='ROIs':
+                    annot = i*'\n'+'%.1f%%' % (100*np.mean(responsive_frac))
+                    annot += ', n=%03d %s, ' % (np.sum([Tuning[reference_ROI_number] for Tuning in Tunings]), average_by) + key
+
+                elif average_by=='subjects':
+                    print("to do ")
+                    #annot += ', n=%04d %s, ' % (np.sum([len(Tuning['Responses']) for Tuning in Tunings]), average_by) + key
                 pt.annotate(ax, annot, (1., 0.9), va='top', color=color)
 
     pt.set_plot(ax, ['left'],
