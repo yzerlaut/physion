@@ -570,8 +570,7 @@ class Data:
         if force_degree=True : forces degrees when re-initializing from data (for plots in degrees)
 
         """
-        print("init_visual_stim start")
-
+        
         self.metadata['verbose'] = verbose
         if force_degree:
             self.metadata['units'] = 'deg'

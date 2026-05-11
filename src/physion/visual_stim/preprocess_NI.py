@@ -33,50 +33,6 @@ def img_after_hist_normalization(img, verbose=False):
 
     return new_img.reshape(img.shape)
 
-
-'''
-def img_after_hist_normalization(img, verbose=False):
-    """
-    for NATURAL IMAGES:
-    histogram normalization to get comparable images
-    """
-    if verbose:
-        print("Performing histogram equalization")
-
-    img = img.astype(float)
-
-    # normalization between 0 and 1
-    img_norm = (img - np.min(img)) / (np.max(img) - np.min(img))
-    
-    flat = img_norm.flatten()
-
-    # histogram
-    hist, bins = np.histogram(flat, bins=256, range=[0, 1])
-    cdf = hist.cumsum()
-    cdf = cdf / cdf[-1]  # normalisation
-
-    # interpolation
-    new_flat = np.interp(flat, bins[:-1], cdf)
-
-    return new_flat.reshape(img.shape)
-
-def img_after_hist_normalization(img, verbose=False):
-    """
-    for NATURAL IMAGES:
-    histogram normalization to get comparable images
-    """
-    if verbose:
-        print('Performing histogram normalization [...]')
-
-    flat = np.array(1000*img.flatten(), dtype=int)
-
-    cumsum = np.cumsum(np.histogram(flat, bins=np.arange(1001))[0])
-
-    norm_cs = np.concatenate([(cumsum-cumsum.min())/(cumsum.max()-cumsum.min())*1000, [1]])
-    new_img = np.array([norm_cs[f]/1000. for f in flat])
-
-    return new_img.reshape(img.shape)
-'''
 def adapt_to_screen_resolution(img, new_screen, verbose=False):
 
     if verbose:

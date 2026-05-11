@@ -70,7 +70,8 @@ def run_pre_post_stat(ep,
             'std-value' : np.std(stats.y-stats.x),
             'ntrials' : len(stats.x),
             'pval' : stats.pvalue,
-            'significant': stats.significant(threshold=response_significance_threshold),
+            'significant': stats.significant(\
+                        threshold=response_significance_threshold),
         }
     else:
         return {}

@@ -72,13 +72,6 @@ class stim(visual_stim):
                             self.experiment['radius'][episode],
                             self.experiment['bg-color'][episode], type='circle')
 
-        # quick fix - change and rebuild NWB? 
-        if self.experiment['phase'][episode]==None:
-            self.experiment['phase'][episode]=np.float64(90.0)
-        #end quick fix
-
-
-
         '''
         if self.experiment['radius-surround'][episode]>0:
 
