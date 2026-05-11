@@ -87,7 +87,7 @@ def build_NWB_func(args, Subject=None):
     else:
 
         subject_props = subject_template.copy()
-        #to check if other metadata values are being forgotten
+        # in case if was filled in the "metadata.json" --> keep !
         if metadata['subject_ID'] != "demo-Mouse":
             subject_props['subject_id'] = metadata["subject_ID"]
         
