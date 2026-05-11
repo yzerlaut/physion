@@ -23,10 +23,13 @@ import physion
 
 # %%
 # example data from physion_Demo-Datasets:
-nwbfile = os.path.expanduser(\
-    '~/DATA/physion_Demo-Datasets/PYR-WT/NWBs/2025_11_14-13-54-32.nwb')
+
+nwbfile = os.path.join(os.path.expanduser('~'), 
+                        'DATA', 'physion_Demo-Datasets', 'PV-WT', 'NWBs',
+                        '2024_12_11-15-50-46.nwb')
+
 raw_data_folder =\
-    os.path.expanduser('~/DATA/physion_Demo-Datasets/PYR-WT/processed/2025_11_14/13-54-32')
+    os.path.expanduser('~/DATA/physion_Demo-Datasets/PV-WT/processed/2024_12_11/15-50-46')
 
 # %% [markdown]
 # ##  Load NWB data and build data modalities
@@ -168,3 +171,4 @@ _, _, ani = physion.dataviz.movie.build(fig, AX, data, params,
                                         imagingData=imagingData,
                                         Ndiscret=200)
 physion.dataviz.movie.write(ani, FPS=5)
+#%%
