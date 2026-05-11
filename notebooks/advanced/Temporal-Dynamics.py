@@ -13,6 +13,11 @@ pt.set_style('dark')
 
 import physion
 
+from physion.analysis.read_NWB import Data
+from physion.analysis.episodes.build import EpisodeData
+
+#%%
+
 dFoF_parameters = dict(\
         roi_to_neuropil_fluo_inclusion_factor=1.15,
         neuropil_correction_factor = 0.7,
@@ -38,7 +43,7 @@ filename = os.path.join(os.path.expanduser('~'),
                         'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
                         '2024_08_27-11-16-53.nwb')
 
-data = physion.analysis.read_NWB.Data(filename, verbose=False)
+data = Data(filename, verbose=False)
 data.build_dFoF(**dFoF_parameters)
 
 # %% [markdown]
@@ -47,11 +52,11 @@ data.build_dFoF(**dFoF_parameters)
 # %%
 data.build_Deconvolved(Tau=TAU_DECONVOLUTION)
 
-Episodes = physion.analysis.episodes.build.EpisodeData(data,
-                                                       quantities=['Deconvolved'],
-                                                       protocol_name=[p for p\
-                                                         in data.protocols if 'ff-gratings' in p][0],
-                                                       verbose=False)
+Episodes = EpisodeData(data,
+                        quantities=['Deconvolved'],
+                        protocol_name=[p for p\
+                                in data.protocols if 'ff-gratings' in p][0],
+                        verbose=False)
 epCond = Episodes.find_episode_cond(key=['contrast', 'angle'], 
                                     value=[contrast, orientation])
 
@@ -65,8 +70,10 @@ fig, AX = pt.figure(axes=(5, int(data.nROIs/5)+1), ax_scale=(1,.7), hspace=1.5)
 significant = np.zeros(data.nROIs, dtype=bool)
 for i, ax in enumerate(pt.flatten(AX)):
     if i<data.nROIs:
-        cell_resp = Episodes.compute_summary_data(stat_test_props,
-                                                  response_args=dict(roiIndex=i))
+
+        cell_resp = Episodes.pre_post_statistics(stat_test_props=stat_test_props,
+                                                 response_args=dict(roiIndex=i))
+                                                    
         cond = (cell_resp['angle']==orientation) &\
                         (cell_resp['contrast']==contrast)
         significant[i] = cell_resp['significant'][cond][0]
@@ -146,8 +153,8 @@ for angle in [0, 90]:
 
                 significant = np.zeros(data.nROIs, dtype=bool)
                 for i in range(data.nROIs):
-                        cell_resp = Episodes.compute_summary_data(stat_test_props,
-                                                                response_args=dict(roiIndex=i))
+                        cell_resp = Episodes.pre_post_statistics(stat_test_props=stat_test_props,
+                                                 response_args=dict(roiIndex=i))
                         cond = (cell_resp['angle']==orientation) &\
                                         (cell_resp['contrast']==contrast)
                         significant[i] = cell_resp['significant'][cond][0]
