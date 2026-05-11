@@ -322,7 +322,16 @@ def add_ophys(nwbfile, args,
         Location = 'V1'
 
     if not multiplane:
-        corrected_depth =(float(metadata['Z-sign-correction-for-rig'])*Depth if ('Z-sign-correction-for-rig' in metadata) else Depth) 
+
+        # depth correction (sign of the microscope)
+        if ('2P'  in metadata):
+            corrected_depth =float(metadata['2P']['Z-sign-correction-for-rig'])*Depth
+        elif ('Z-sign-correction-for-rig' in metadata):
+            # DEPRECATED SOON
+            corrected_depth =float(metadata['Z-sign-correction-for-rig'])*Depth 
+        else:
+            corrected_depth = Depth 
+
         imaging_plane = nwbfile.create_imaging_plane(\
                 'my_imgpln', optical_channel,
                  description='Depth=%.1f[um]' % corrected_depth,

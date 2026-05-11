@@ -236,7 +236,7 @@ def build_NWB_func(args, Subject=None):
                         device=led,
                         description=" ",
                         excitation_lambda=metadata['LED']['wavelength'] if 'LED' in metadata else 0.0,
-                        location="VIS")
+                        location=metadata['LED']['fiber-location'])
         nwbfile.add_ogen_site(ogen_stim_site)
 
         ogen_series = pynwb.ogen.OptogeneticSeries(

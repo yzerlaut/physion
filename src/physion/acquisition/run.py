@@ -169,10 +169,12 @@ def run(self):
                                                     for e in sequence[:-1]]
 
         if self.metadata['CaImaging']:
-            chan = 0 # CHECK
+            props = find_line_props(\
+                self.metadata['NIdaq']['digital-outputs']['line-labels'],
+                                    '2P-start-stop-trigger')
             digital_output_steps += [\
-                {'channel':chan, 'onset':0.1, 'duration':0.1},
-                {'channel':chan, 'onset':self.max_time - 0.2, 'duration':0.1}
+                {'channel':props['chan'], 'onset':self.metadata['2P']['onset-delay'], 'duration':0.1},
+                {'channel':props['chan'], 'onset':self.max_time - self.metadata['2P']['offset-advance'], 'duration':0.1}
             ]
 
             # output_funcs.append(recordings.trigger2P)

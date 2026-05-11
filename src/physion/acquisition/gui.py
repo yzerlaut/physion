@@ -154,17 +154,17 @@ def multimodal(self,
                          1, width)
     ip+=1
     # -
-    tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Rec. Settings **'+40*' ', self),
-                         ip, self.side_wdgt_length, 
-                         1, width)
-    ip+=1
-    # -
-    self.recordingBox = QtWidgets.QComboBox(self)
-    tab.layout.addWidget(self.recordingBox,\
-                         ip, self.side_wdgt_length+1, 
-                         1, width)
-    ip+=1
+    # tab.layout.addWidget(\
+    #     QtWidgets.QLabel(40*' '+'** Rec. Settings **'+40*' ', self),
+    #                      ip, self.side_wdgt_length, 
+    #                      1, width)
+    # ip+=1
+    # # -
+    # self.recordingBox = QtWidgets.QComboBox(self)
+    # tab.layout.addWidget(self.recordingBox,\
+    #                      ip, self.side_wdgt_length+1, 
+    #                      1, width)
+    # ip+=1
 
     # image panels layout:
     self.winImg = pg.GraphicsLayoutWidget()
