@@ -25,7 +25,7 @@
         "digital-inputs":{
             "lines":"port0/line3:7",
             "line-labels":[
-                "copy-ephys-synch-signal-5Hz",
+                "copy-ephys-synch-signal",
                 "locomotion-channel1",
                 "locomotion-channel2",
                 "copy-visual-stim-episode-start",
@@ -53,12 +53,16 @@
     "LED":{
         "wavelength":455.0,
         "description":"TTL-controlled LED-driver",
-        "manufacturer":"Thorlabs"
+        "manufacturer":"Thorlabs",
+        "fiber-location": "VIS"
     },
     "-----------------------------------------":"",
     "treadmill":{
         "radius-position-on-disk-cm":5
     },
+    "-----------------------------------------":"",
+    "default-modalities":["NIDAQ",  
+                          "Neuropixels"],
     "-----------------------------------------":"",
     "root_datafolder":"DATA",
     "lab":"Rebola and Bacci labs",
