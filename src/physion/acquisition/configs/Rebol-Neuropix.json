@@ -53,7 +53,7 @@
     "LED":{
         "wavelength":455.0,
         "description":"TTL-controlled LED-driver",
-        "manufacturer":"Thorlabs",
+        "manufacturer":"Thorlabs"
     },
     "-----------------------------------------":"",
     "treadmill":{

@@ -503,15 +503,10 @@ class EpisodeData:
 
     
     def plot_stim_picture(self):
-
         '''
         Overwrites self.visual_stim.plot_stim_picture'
         '''
-        print("plot stim function to do")
         
-
-        return 0
-    
 
 
 if __name__=='__main__':

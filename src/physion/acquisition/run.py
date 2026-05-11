@@ -178,9 +178,11 @@ def run(self):
             # output_funcs.append(recordings.trigger2P)
 
         if 'Opto' in self.protocolBox.currentText():
-            ## --------- OPTOGENETIC STEP STIMULATION !!! --------- ##
-            print('Opto')
-            print(self.protocolBox.currentText().split('+')[1].split('sPrePost')[0])
+            ## -------------------------------------------------- ##
+            ## --------- OPTOGENETIC STEP STIMULATION !!! ------- ##
+            ##          the protocol name should have the suffix  ##
+            ##          of the form +1sPrePost, +0.5sPrePost, ... ##
+            ## -------------------------------------------------- ##
             prepost_duration = float(self.protocolBox.currentText().split('+')[1].split('sPrePost')[0])
             #  means WITH VisualStim -- find channel
             props = find_line_props(\

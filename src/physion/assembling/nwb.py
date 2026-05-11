@@ -1,10 +1,9 @@
-import os, sys, pathlib, shutil, time, datetime, tempfile, json
+import os, sys, pathlib, shutil, datetime, tempfile, json
 from PIL import Image
 import numpy as np
 
 import pynwb
 from hdmf.data_utils import DataChunkIterator
-from hdmf.backends.hdf5.h5_utils import H5DataIO
 from dateutil.tz import tzlocal
 
 from physion.behavior.locomotion import compute_speed
@@ -15,12 +14,11 @@ from physion.visual_stim.build import build_stim as build_visualStim
 from physion.utils.camera import CameraData
 
 from .subject import reformat_props, cleanup_keys, subject_template
-from .add_ophys import add_ophys
-from .add_ephys import add_ephys
+from .add_ophys import add_ophys # optical physiology
+from .add_ephys import add_ephys # electrophysiology
 from .realign_from_photodiode import realign_from_photodiode
 from .dataset import read_spreadsheet, read_metadata
-from .tools import load_FaceCamera_data,\
-        build_subsampling_from_freq, StartTime_to_day_seconds
+from .tools import build_subsampling_from_freq, StartTime_to_day_seconds
 
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   'raw_FaceCamera', 'Pupil', 'FaceMotion',
@@ -225,6 +223,7 @@ def build_NWB_func(args, Subject=None):
     
     if 'Opto' in metadata['protocol']:
 
+        # find the channel that has the LED copy
         chan = np.flatnonzero(np.array(metadata['NIdaq']['digital-inputs']['line-labels'])=='copy-LED-optogenetics-activation')[0]
 
         led = nwbfile.create_device(name="LED",
