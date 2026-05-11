@@ -454,13 +454,19 @@ def stop(self):
 
 def send_CaImaging_Stop_signal(self):
     self.statusBar.showMessage(\
-            'sending stop signal for 2-Photon acq.')
-    time.sleep(1.0) # need to wait that the NIdaq process is released to create a new one
-    # stop the Ca imaging recording
+            'sending stop signal for 2-Photon acq. (>2s)')
+    time.sleep(2.0) # need to wait that the NIdaq process is released to create a new one
+    # stop the Ca imaging recording --> a NIdaq process with a single step
+    props = find_line_props(\
+        self.metadata['NIdaq']['digital-outputs']['line-labels'],
+                            '2P-start-stop-trigger')
     acq = Acquisition(sampling_rate=1000, # 1kHz
-                      max_time=0.7,
+                      max_time=0.5,
                       buffer_time=0.1,
-                      output_funcs= [recordings.trigger2P],
+                      digital_output_steps=[
+                            {'channel':props['chan'], 
+                             'onset': 0.1, 
+                             'duration':0.1}]
                       filename=None)
     acq.launch()
     time.sleep(0.7)
