@@ -402,7 +402,9 @@ class EpisodeData:
 
     def find_episode_cond(self, key=None, index=None, value=None):
         """
-        Conditions can be key (check ep.varied_parameters), index (which option of the varied parameters) or value (??)
+        Conditions can be key (check ep.varied_parameters), 
+                          index (which option of the varied parameters) or 
+                          value (actual value parameter)
         'key' and 'index' can be either lists of values
 
         Returns a list of bool, False when episode does not meet conditions, True if passes conditions. Size # episodes
@@ -410,9 +412,9 @@ class EpisodeData:
 
         example for a 
 
-        data.find_episode_cond(key='orientation', index=0)
+        data.find_episode_cond(key='angle', index=0)
 
-        data.find_episode_cond(key='orientation', value=90.0)
+        data.find_episode_cond(key='angle', value=90.0)
         
         """
 
@@ -459,7 +461,6 @@ class EpisodeData:
         test in dataviz.episodes.trial_average.plot
 
         """
-
         stim_data = {'no-window':True}
 
         for key in full_data.metadata:
@@ -477,7 +478,7 @@ class EpisodeData:
         for key in self.visual_stim.experiment:
             for i, data_i in enumerate(all_eps[self.protocol_cond_in_full_data]):
                 self.visual_stim.experiment[key][i] = full_data.visual_stim.experiment[key][data_i]
-
+        return 0
         
     
     def get_image(self, key=None, index=None, value=None):
@@ -490,10 +491,8 @@ class EpisodeData:
             if len(cond)>0:
                 iStim = cond[0]
                 
-            
             I = all_eps[ep.protocol_cond_in_full_data]
 
-            
             self.plot_stim_picture(I)
             
             pass
@@ -503,10 +502,15 @@ class EpisodeData:
 
     
     def plot_stim_picture(self):
+
         '''
         Overwrites self.visual_stim.plot_stim_picture'
         '''
+        print("plot stim function to do")
         
+
+        return 0
+    
 
 
 if __name__=='__main__':
