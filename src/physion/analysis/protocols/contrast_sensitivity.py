@@ -22,11 +22,11 @@ def compute_sensitivity_per_cells(data, Episodes,
     # first for positive responses
     stat_test_props['sign'] = 'positive'
     summary_positive= Episodes.pre_post_statistics(\
-                                stat_test_props,
                                 episode_cond=cond,
-                                repetition_keys=['repeat', 'angle'],
                                 response_args=dict(quantity=quantity),
                                 response_significance_threshold=response_significance_threshold,
+                                stat_test_props=stat_test_props,
+                                repetition_keys=['repeat', 'angle'],
                                 multiple_comparison_correction=True,
                                 loop_over_cells=True,
                                 verbose=verbose)
@@ -34,11 +34,11 @@ def compute_sensitivity_per_cells(data, Episodes,
     # second for negative responses
     stat_test_props['sign'] = 'negative'
     summary_negative = Episodes.pre_post_statistics(\
-                            stat_test_props,
                             episode_cond=cond,
-                            repetition_keys=['repeat', 'angle'],
                             response_args=dict(quantity=quantity),
                             response_significance_threshold=response_significance_threshold,
+                            stat_test_props=stat_test_props,
+                            repetition_keys=['repeat', 'angle'],
                             multiple_comparison_correction=True,
                             loop_over_cells=True,
                             verbose=verbose)

@@ -39,7 +39,7 @@ def build_NWB_func(args, Subject=None):
     #################################################
 
     metadata = read_metadata(args.datafolder)
-    
+
     key_not_included_session_description = ['date', 'time', 'protocol', 'experimenter', 
                                              'lab', 'institution', 'notes']
     session_description = str({k: metadata[k] for k in metadata.keys() 
@@ -80,16 +80,19 @@ def build_NWB_func(args, Subject=None):
     # --------------------------------------------------------------
     #                       subject info 
     # --------------------------------------------------------------
-
     if Subject is not None:
         subject_props = reformat_props(Subject, 
-                                       debug=args.verbose)
+                                       debug=args.verbose) 
     else:
+
         subject_props = subject_template.copy()
+        # in case if was filled in the "metadata.json" --> keep !
+        if metadata['subject_ID'] != "demo-Mouse":
+            subject_props['subject_id'] = metadata["subject_ID"]
+        
     # some cleanup -- + calculating "age" here:
     cleanup_keys(subject_props, metadata, 
                  debug=args.verbose)
-
     # --------------------------------------------------------------
     #    ---------  building the pynwb subject object   ----------
     # --------------------------------------------------------------
@@ -104,7 +107,6 @@ def build_NWB_func(args, Subject=None):
                                  date_of_birth=\
         datetime.datetime(*subject_props['Date-of-Birth'], tzinfo=tzlocal()))
                                  
-
     # --------------------------------------------------------------
     #    ---------  building the pynwb NWBfile object   ----------
     # --------------------------------------------------------------
@@ -855,7 +857,6 @@ if __name__=='__main__':
             build_NWB_func(args, Subject=Subject)
         
     elif args.recursive:
-
         i = -1
         for f, _, __ in os.walk(args.datafolder):
             timeFolder = f.split(os.path.sep)[-1]

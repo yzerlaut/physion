@@ -181,15 +181,20 @@ stat_test_props = dict(interval_pre=[-1.,0],
 
 response_args = dict(quantity='running_speed')
 
-summary = ep.compute_summary_data(stat_test_props = stat_test_props, 
-                                  response_args = response_args)
+
+summary = ep.pre_post_statistics(episode_cond = ep.find_episode_cond(),
+                                 response_args = response_args,
+                                stat_test_props=stat_test_props)
+
 for key in summary:
     print(key, summary[key])
 
-response_args = dict(quantity='dFoF', roiIndex=2)
+response_args = dict(quantity='dFoF', roiIndex=9)
 
-summary = ep.compute_summary_data(stat_test_props = stat_test_props, 
-                                  response_args = response_args)
+summary = ep.pre_post_statistics(episode_cond = ep.find_episode_cond(),
+                                 response_args = response_args,
+                                stat_test_props=stat_test_props)
+
 for key in summary:
     print(key, summary[key])
 
@@ -199,5 +204,6 @@ for key in summary:
 # PROBLEM - CHECK WHY THE visual_stim CAN HAVE DIFFERENT VALUES THAN THE DATA <br>
 # does not return anything <br>
 #%%
+data.init_visual_stim()
 ep.init_visual_stim(ep.data)
 # %%

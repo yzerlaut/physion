@@ -11,29 +11,27 @@ except ModuleNotFoundError:
     print('"skimage" module not found')
 
 
+from skimage import exposure
+
+
 def load(image_path):
 
     img = color.rgb2gray(io.imread(image_path))
     
     return np.rot90(np.array(img).T, k=1) # needs transpose + rotation
-    
+
+
 def img_after_hist_normalization(img, verbose=False):
     """
     for NATURAL IMAGES:
     histogram normalization to get comparable images
     """
     if verbose:
-        print('Performing histogram normalization [...]')
+        print("Performing histogram equalization")
 
-    flat = np.array(1000*img.flatten(), dtype=int)
-
-    cumsum = np.cumsum(np.histogram(flat, bins=np.arange(1001))[0])
-
-    norm_cs = np.concatenate([(cumsum-cumsum.min())/(cumsum.max()-cumsum.min())*1000, [1]])
-    new_img = np.array([norm_cs[f]/1000. for f in flat])
+    new_img = exposure.equalize_hist(img)
 
     return new_img.reshape(img.shape)
-
 
 def adapt_to_screen_resolution(img, new_screen, verbose=False):
 
