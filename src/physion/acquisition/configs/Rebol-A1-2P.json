@@ -1,22 +1,76 @@
 {
-    "Rig":"ICM-A1-2P-setup",
-    "NIdaq-acquisition-frequency":10000,
-    "NIdaq-analog-input-channels":1,
-    "NIdaq-digital-input-channels":2,
+    "Rig":"ICM-A1-2P-setup", "physion-version":2.0,
+    "-----------------------------------------":"",
     "Screen":"Dell-2020",
-    "Z-sign-correction-for-rig":-1,
-    "FaceCamera-frame-rate":30,
-    "FaceCamera-1cm-in-pix":480,
-    "RigCamera-frame-rate":20,
-    "RigCamera-1cm-in-pix":33,
-    "ImagingCamera-frame-rate":20,
-    "ImagingCamera-1cm-in-pix":33, 
+    "-----------------------------------------":"",
+    "NIdaq":{
+        "acquisition-frequency":5000,
+        "analog-outputs":{
+            "N-channels":0
+        },
+        "analog-inputs":{
+            "N-channels":1,
+            "channel-labels":[
+                "photodiode-signal-from-screen"
+            ]
+        },
+        "digital-outputs":{
+            "lines":"port0/line0:2",
+            "line-labels":[
+                "2P-start-stop-trigger",
+                "visual-stim-episode-start",
+                "LED-optogenetics-activation"
+            ]
+        },
+        "digital-inputs":{
+            "lines":"port0/line3:7",
+            "line-labels":[
+                "locomotion-channel1",
+                "locomotion-channel2",
+                "copy-visual-stim-episode-start",
+                "copy-LED-optogenetics-activation",
+                ""
+            ]
+        }
+    },
+    "-----------------------------------------":"",
+    "FaceCamera":{
+        "frame-rate":30,
+        "1cm-in-pix":480
+    },
+    "-----------------------------------------":"",
+    "RigCamera":{
+        "frame-rate":20,
+        "1cm-in-pix":33
+    },
+    "-----------------------------------------":"",
+    "ImagingCamera":{
+        "frame-rate":20,
+        "1cm-in-pix":33
+    },
     "Height-of-Microscope-Camera-Image-in-mm":2.7,
-    "rotating-disk":{"radius-position-on-disk-cm":9.0,
-		     "roto-encoder-value-per-rotation": -25300.0},
+    "-----------------------------------------":"",
+    "LED":{
+        "wavelength":455.0,
+        "description":"TTL-controlled LED-driver",
+        "manufacturer":"Thorlabs", 
+        "fiber-location": "VIS"
+    },
+    "-----------------------------------------":"",
+    "rotating-disk":{
+        "radius-position-on-disk-cm":9.0,
+        "roto-encoder-value-per-rotation": -25300.0
+    },
+    "-----------------------------------------":"",
+    "2P":{
+        "Z-sign-correction-for-rig":-1, 
+        "onset-delay":0.1, 
+        "offset-advance":0.2},
+    "-----------------------------------------":"",
+    "default-modalities":["NIDAQ", 
+                          "CaImaging"],
+    "-----------------------------------------":"",
     "root_datafolder":"DATA",
-    "subjects_folder":"Yann",
-    "experimenter":"Yann Zerlaut",
     "lab":"Rebola and Bacci labs",
     "institution":"Institut du Cerveau et de la Moelle, Paris",
     "protocols":"all"
