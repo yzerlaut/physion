@@ -234,6 +234,8 @@ def plot_NIdaq_of_last():
 
     data = np.load(os.path.join(folder, 'NIdaq.npy'),
                    allow_pickle=True).item()
+    with open(os.path.join(folder, 'metadata.json'), 'r') as f:
+        metadata = json.load(f)
 
     for i in range(data['analog'].shape[0]):
         AX[0].plot(data['analog'][i][::10]+5*i)
@@ -241,18 +243,28 @@ def plot_NIdaq_of_last():
     for i in range(data['digital'].shape[0]):
         AX[1].plot(data['digital'][i]+1.1*i)
     AX[0].set_ylabel('analog (V)')
+    AX[0].set_xlabel('time samples (::10)')
     AX[1].set_ylabel('digital')
-    AX[1].set_xlabel('time samples (::10)')
+    AX[1].set_xlabel('time samples')
 
     from behavior.locomotion import compute_speed
+    if 'A1-2P'in metadata['Rig']:
+        speed = compute_speed(data['digital'][0],
+            acq_freq=float(metadata['NIdaq']['acquisition-frequency']),
+            radius_position_on_disk=metadata['rotating-disk']['radius-position-on-disk-cm'],
+            rotoencoder_value_per_rotation=metadata['rotating-disk']['roto-encoder-value-per-rotation'],
+            empirical=True)
+
+    else:
+        speed = compute_speed(None,
+                             A=data['digital'][1],
+                             B=data['digital'][2],
+                             acq_freq=5e3,
+                             radius_position_on_disk=5.)
+    
     # HARDCODED - binary signals on channels 1 & 2 
     # HARDCODED - acq. freq. / position on disk
-    AX[2].plot(compute_speed(data['digital'][1],
-                             #A=data['digital'][0],
-                             #B=data['digital'][1],
-                             acq_freq=5e3,
-                             empirical=True,
-                             radius_position_on_disk=5.))
-    AX[2].set_ylabel('speed (cm/s)') 
+    AX[2].plot(speed)
+    AX[2].set_ylabel('speed (a.u.)') 
 
     plt.show()

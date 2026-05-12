@@ -74,6 +74,10 @@ def compute_speed(binary_signal,
                   forward='counterclockwise',
                   empirical=False,
                   with_raw_position=False):
+    """
+    only if A and B are None, uses binary_signal
+        otherwise uses A & B
+    """
 
     if (A is None) and (B is None):
         A, B = process_binary_signal(binary_signal, empirical)
