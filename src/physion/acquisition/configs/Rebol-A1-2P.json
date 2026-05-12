@@ -9,9 +9,10 @@
             "N-channels":0
         },
         "analog-inputs":{
-            "N-channels":1,
+            "N-channels":2,
             "channel-labels":[
-                "photodiode-signal-from-screen"
+                "photodiode-signal-from-screen",
+                "test"
             ]
         },
         "digital-outputs":{
