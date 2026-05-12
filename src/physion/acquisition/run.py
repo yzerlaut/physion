@@ -150,34 +150,58 @@ def run(self):
         ###   build the different signals   ############
         ################################################
 
-        digital_output_steps = []
-        if self.stim is not None:
-            #  means WITH VisualStim -- find channel
-            props = find_line_props(\
-                self.metadata['NIdaq']['digital-outputs']['line-labels'],
-                                    'visual-stim-episode-start')
-            digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.05}\
-                                        for e in self.stim.experiment['time_start']]
+        digital_output_steps, analog_output_funcs = [], []
+        digital_line_labels = self.metadata['NIdaq']['digital-outputs']['line-labels']
+        analog_output_labels = self.metadata['NIdaq']['analog-outputs']['channel-labels'] if\
+                                    (self.metadata['NIdaq']['analog-outputs']['N-channels']>0) else []
 
         if self.metadata['Neuropixels']:
             #  -- find channel
-            props = find_line_props(\
-                self.metadata['NIdaq']['digital-outputs']['line-labels'],
+            props = find_line_props(digital_line_labels,
                                     'ephys-synch-signal')
             sequence = recordings.ephysSynch(self.max_time, freq=props['freq'])
             digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.1}\
                                                     for e in sequence[:-1]]
 
         if self.metadata['CaImaging']:
-            props = find_line_props(\
-                self.metadata['NIdaq']['digital-outputs']['line-labels'],
+            props = find_line_props(digital_line_labels,
                                     '2P-start-stop-trigger')
             digital_output_steps += [\
                 {'channel':props['chan'], 'onset':self.metadata['2P']['onset-delay'], 'duration':0.1},
-                {'channel':props['chan'], 'onset':self.max_time - self.metadata['2P']['offset-advance'], 'duration':0.1}
-            ]
+                {'channel':props['chan'], 'onset':self.max_time - self.metadata['2P']['offset-advance'], 'duration':0.1}]
+            
+            ## --- old code using analog outputs --- 
+            # def trigger2P(t):
+            #     array = np.zeros(len(t), dtype=float)
+            #     array[(t>=TwoP_trigger_delay) & (t<(TwoP_trigger_delay+TwoP_pulse_length))] = 1.
+            #     return 5.*array 
+            # analog_output_funcs.append(recordings.trigger2P)
 
-            # output_funcs.append(recordings.trigger2P)
+        if self.stim is not None:
+            #  means WITH VisualStim -- find channel
+            props = find_line_props(digital_line_labels,
+                                    'visual-stim-episode-start')
+            digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.05}\
+                                        for e in self.stim.experiment['time_start']]
+
+        if (len(analog_output_labels)>0) and ('trigger-delay' in analog_output_labels[0]):
+            trigger_delay = float(analog_output_labels[0].split('trigger-delay-')[1].split('s')[0])
+            def delayedTrigger(t):
+                array = np.zeros(len(t), dtype=float)
+                array[(t>=trigger_delay) & (t<(trigger_delay+0.5))] = 1.
+                return 5.*array 
+            analog_output_funcs.append(delayedTrigger)
+
+        if (len(analog_output_labels)>1) and ('square-wave-TTL' in analog_output_labels[1]):
+            period = 1./2./float(analog_output_labels[1].split('square-wave-TTL-')[1].split('Hz')[0])
+            def squareTTL(t):
+                array = np.zeros(len(t), dtype=float)
+                tt=0
+                while tt<t[-1]:
+                    array[(t>=tt+period) & (t<(tt+2*period))] = 1.
+                    tt+=2*period
+                return 5.*array 
+            analog_output_funcs.append(squareTTL)
 
         if 'Opto' in self.protocolBox.currentText():
             ## -------------------------------------------------- ##
@@ -219,7 +243,8 @@ def run(self):
                         # ------------------------
                         # -- sent outputs
                         # - analog
-                        # analog_output_funcs=output_funcs,
+                        analog_output_funcs=analog_output_funcs\
+                              if self.metadata['NIdaq']['analog-outputs']['N-channels']>0 else None,
                         # - digital
                         digital_output_port=\
                             self.metadata['NIdaq']['digital-outputs']['lines'],
@@ -311,7 +336,6 @@ def toggle_FaceCamera_process(self):
         self.statusBar.showMessage(' FaceCamera stream interupted !')
         self.FaceCamera_process.terminate()
         self.FaceCamera_process = None
-
 
 def toggle_RigCamera_process(self):
 
@@ -422,21 +446,25 @@ def run_update(self):
     # ----- while loop with qttimer object ----- #
     if self.runEvent.is_set() and\
           ((time.time()-self.t0)<self.max_time):
+        # it wasn't stopped & time is not over
         QtCore.QTimer.singleShot(1, self.run_update)
 
     else:
-        # we reached the end
-        self.stop()
+        # we reached the end OR we clicked
+        stop_acquisition(self)
 
 def stop(self):
-
-    # stop the display of visual stimulation (not the underlying process)
+    # button-related function, just turning the flag off (true things will happen in run_update)
+    self.stopButton.setEnabled(False)   
     self.runEvent.clear()
+
+def stop_acquisition(self):
 
     if self.acq is not None:
         self.acq.close()
 
     if self.CaImagingButton.isChecked():
+        self.stopButton.setEnabled(False)   
         self.send_CaImaging_Stop_signal()
 
     self.statusBar.showMessage('acquisition/stimulation stopped !')
@@ -455,19 +483,24 @@ def stop(self):
 def send_CaImaging_Stop_signal(self):
     self.statusBar.showMessage(\
             'sending stop signal for 2-Photon acq. (>2s)')
-    time.sleep(2.0) # need to wait that the NIdaq process is released to create a new one
+    time.sleep(1.0) # need to wait that the NIdaq process is released to create a new one
     # stop the Ca imaging recording --> a NIdaq process with a single step
     props = find_line_props(\
         self.metadata['NIdaq']['digital-outputs']['line-labels'],
                             '2P-start-stop-trigger')
-    acq = Acquisition(sampling_rate=1000, # 1kHz
-                      max_time=0.5,
-                      buffer_time=0.1,
-                      digital_output_steps=[
-                            {'channel':props['chan'], 
-                             'onset': 0.1, 
-                             'duration':0.1}]
-                      filename=None)
-    acq.launch()
-    time.sleep(0.7)
-    acq.close()
+    self.acq = Acquisition(\
+        sampling_rate=\
+            self.metadata['NIdaq']['acquisition-frequency'],
+        max_time=0.5,
+        digital_output_port=\
+            self.metadata['NIdaq']['digital-outputs']['lines'],
+        digital_output_steps=[
+                        {'channel':props['chan'], 
+                            'onset': 0.1, 
+                                'duration':0.1}],
+        digital_input_port=\
+            self.metadata['NIdaq']['digital-inputs']['lines'],
+        filename=None)
+    self.acq.launch()
+    time.sleep(0.5)
+    self.acq.close()

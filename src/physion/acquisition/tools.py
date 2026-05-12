@@ -62,7 +62,7 @@ def check_gui_to_init_metadata(self):
                 'time':self.time,
                 'protocol':self.protocolBox.currentText(),
                 'VisualStim':self.protocolBox.currentText()!='None',
-                'recording':self.recordingBox.currentText(),
+                #'recording':self.recordingBox.currentText(),
                 'experimenter':self.experimenterBox.currentText(),
                 'notes':self.qmNotes.toPlainText(),
                 'FOV':self.fovPick.text(),

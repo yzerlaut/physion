@@ -65,6 +65,7 @@ def compute_position_from_binary_signals(A, B, forward='counterclockwise'):
     return np.cumsum(np.concatenate([[0], Delta_position]))
 
 def compute_speed(binary_signal, 
+                  A=None, B=None,
                   acq_freq=1e4, 
                   position_smoothing=10e-3, # s
                   radius_position_on_disk=1,	# cm
@@ -74,7 +75,8 @@ def compute_speed(binary_signal,
                   empirical=False,
                   with_raw_position=False):
 
-    A, B = process_binary_signal(binary_signal, empirical)
+    if (A is None) and (B is None):
+        A, B = process_binary_signal(binary_signal, empirical)
     
     if empirical:
         position = compute_position_from_binary_signals(A, B, forward)*2.*np.pi*radius_position_on_disk/rotoencoder_value_per_rotation

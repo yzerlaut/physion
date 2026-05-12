@@ -4,21 +4,25 @@
     "Screen":"Dell-2020",
     "-----------------------------------------":"",
     "NIdaq":{
-        "acquisition-frequency":5000,
+        "acquisition-frequency":1000,
         "analog-outputs":{
-            "N-channels":1,
+            "N-channels":2,
             "channel-labels":[
-                "trigger-for-2P-start"
+                "trigger-delay-1s",
+                "square-wave-TTL-1Hz"
             ]
         },
         "analog-inputs":{
-            "N-channels":1,
+            "N-channels":4,
             "channel-labels":[
-                "photodiode-signal-from-screen"
+                "chan1",
+                "chan2",
+                "chan3",
+                "chan4"
             ]
         },
         "digital-outputs":{
-            "lines":"port0/line0-3",
+            "lines":"port0/line0:2",
             "line-labels":[
                 "trigger-for-2P-start",
                 "visual-stim-episode-start",
@@ -26,11 +30,12 @@
             ]
         },
         "digital-inputs":{
-            "lines":"port0/line4-7",
+            "lines":"port0/line3:7",
             "line-labels":[
                 "locomotion-channel1",
                 "locomotion-channel2",
                 "copy-visual-stim-start",
+                "",
                 ""
             ]
         }
@@ -56,6 +61,8 @@
         "radius-position-on-disk-cm":5.5,
 		"roto-encoder-value-per-rotation": -12563.0
     },
+    "-----------------------------------------":"",
+    "default-modalities":["NIDAQ"],
     "-----------------------------------------":"",
     "root_datafolder":"DATA",
     "lab":"Rebola and Bacci labs",

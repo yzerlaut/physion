@@ -229,14 +229,14 @@ def plot_NIdaq_of_last():
     print()
     import matplotlib.pylab as plt
 
-    fig, AX = plt.subplots(3, 1, figsize=(8,5))
+    fig, AX = plt.subplots(3, 1, figsize=(10,7))
     plt.subplots_adjust(left=0.1, bottom=0.1)
 
     data = np.load(os.path.join(folder, 'NIdaq.npy'),
                    allow_pickle=True).item()
 
     for i in range(data['analog'].shape[0]):
-        AX[0].plot(data['analog'][i][::10])
+        AX[0].plot(data['analog'][i][::10]+5*i)
 
     for i in range(data['digital'].shape[0]):
         AX[1].plot(data['digital'][i]+1.1*i)
@@ -247,9 +247,11 @@ def plot_NIdaq_of_last():
     from behavior.locomotion import compute_speed
     # HARDCODED - binary signals on channels 1 & 2 
     # HARDCODED - acq. freq. / position on disk
-    binary = data['digital'][1]*1+2*data['digital'][2]
-    AX[2].plot(compute_speed(binary, 
+    AX[2].plot(compute_speed(data['digital'][1],
+                             #A=data['digital'][0],
+                             #B=data['digital'][1],
                              acq_freq=5e3,
+                             empirical=True,
                              radius_position_on_disk=5.))
     AX[2].set_ylabel('speed (cm/s)') 
 

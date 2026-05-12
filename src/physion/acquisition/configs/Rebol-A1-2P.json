@@ -29,7 +29,7 @@
                 "locomotion-channel2",
                 "copy-visual-stim-episode-start",
                 "copy-LED-optogenetics-activation",
-                ""
+                "copy-2P-start-stop-trigger"
             ]
         }
     },
