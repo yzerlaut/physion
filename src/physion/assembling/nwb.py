@@ -236,7 +236,7 @@ def build_NWB_func(args, Subject=None):
                         device=led,
                         description=" ",
                         excitation_lambda=metadata['LED']['wavelength'] if 'LED' in metadata else 0.0,
-                        location=metadata['LED']['fiber-location'])
+                        location=metadata['LED']['fiber-location'] if 'LED' in metadata else 'VIS')
         nwbfile.add_ogen_site(ogen_stim_site)
 
         ogen_series = pynwb.ogen.OptogeneticSeries(
@@ -847,6 +847,13 @@ if __name__=='__main__':
                         'reverse_photodiodeSignal']:
                 setattr(args, key, True if dataset[key].values[i]=='Yes'\
                             else False)
+                
+            # for Neuropix recording, getting the whole-session-level infos
+            if dataset['Npx-Folder'][i]!='':
+                args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
+                args.NPX_rec = dataset['Npx-Rec'][i]
+                args.nStart, args.nStop = dataset['nStart'][i], dataset['nStop'][i]
+
             # building the modalities
             args.modalities = []
             for key in ALL_MODALITIES: 
