@@ -659,7 +659,6 @@ def build_NWB_func(args, Subject=None):
         if args.verbose:
             print('=> Storing Neuropixels data for "%s" [...]' % args.datafolder)
 
-        print()    
         add_ephys(nwbfile, args,
                     metadata=metadata)
 
@@ -729,8 +728,11 @@ def build_NWB_func(args, Subject=None):
     print("""     ----> Saving the NWB file: "%s" """ % args.filename)
     io.write(nwbfile, link_data=False)
     io.close()
-    print('---> done !')
-    
+
+    # print('---> done !')
+    file_size_mb = args.filename.stat().st_size / 1e6
+    print(f"Done ! File size: {file_size_mb:.1f} MB")
+ 
     return args.filename
 
 

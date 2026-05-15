@@ -50,6 +50,7 @@ class Data:
 
         node = int(datatable['Npx-Rec'][iRec].split('node')[1].split('/')[0])
         rec_id = int(datatable['Npx-Rec'][iRec].split('rec')[1])-1
+        print(node, rec_id)
         rec = session.recordnodes[node].recordings[rec_id]
 
         self.LFP = rec.continuous['ProbeA'].samples[nStart:nStop,:]
@@ -116,4 +117,42 @@ len(rec.info['continuous'][0]['channels'])
 # %%
 probes = [p for p in rec.continuous.keys() if (type(p)==str) and ('Probe' in p)]
 probes
+# %%
+from spikeinterface.extractors import read_openephys   # binary or classic
+ 
+# ── ProbeInterface (Neuropixels channel geometry) ─────────────────────────────
+from probeinterface import get_probe
+ 
+
+# %%
+# get_probe('IMEC', 'Neuropixels2.0')
+# %%
+import probeinterface 
+probeinterface.list_all_probes()
+# %%
+from probeinterface import Probe, get_probe
+from probeinterface.plotting import plot_probe
+probe = get_probe('imec', 'NP2004') # single shank probe
+plot_probe(probe)
+# %%
+from spikeinterface.extractors import read_openephys   # binary or classic
+# %%
+siRec = read_openephys(datafolder,
+                       stream_name='Record Node 101#OneBox-100.ProbeA')
+# %%
+from spikeinterface import extractors 
+
+# %%
+stream_name='{recorded_processor} {recorded_processor_id}'.format(\
+    **rec.info['continuous'][0])
+stream_name
+siRec = extractors.read_openephys(datafolder, stream_id='0')
+# %%
+p= siRec.get_annotation('probes_info')[0]
+probe = get_probe("imec", p["model_name"])
+probe.set_device_channel_indices(np.arange(siRec.get_num_channels()))
+siRec = siRec.set_probe(siRec.get_probe())#, group_mode="by_shank")
+# %%
+probes = siRec.get_annotation('probes_info')
+
 # %%
