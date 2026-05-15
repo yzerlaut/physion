@@ -29,6 +29,7 @@ dependencies = [
     "ffmpeg-python",
     "pyqt5",
     "openpyxl",
+    "open-ephys-python-tools>=1.0",
 ]
 
 [tool.setuptools.packages.find]

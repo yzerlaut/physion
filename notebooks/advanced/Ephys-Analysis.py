@@ -46,7 +46,7 @@ class Data:
 
         # load the open-ephys data:
         session = OpenEphysSession(\
-                        os.path.join(datafolder, datatable['Npx-Folder'][iRec]))
+            os.path.join(datafolder, datatable['Npx-Folder'][iRec]))
 
         node = int(datatable['Npx-Rec'][iRec].split('node')[1].split('/')[0])
         rec_id = int(datatable['Npx-Rec'][iRec].split('rec')[1])-1
@@ -98,7 +98,22 @@ fig, ax = pt.figure(ax_scale=(2,3))
 pt.plot(t, 1e-3*np.mean(lfp_events, axis=0), sy=1e-3*np.std(lfp_events, axis=0), ax=ax)
 pt.set_plot(ax, xlabel='time from stim. (s)', ylabel='LFP (mV)')
 
-# %%
-# CSD analysis
+# %% [markdown]
+# # CSD analysis
 
+# %%
+datafolder = os.path.expanduser('~/DATA/2026_04_24/2026-04-24_12-23-16')
+session = OpenEphysSession(datafolder)
+rec = session.recordnodes[0].recordings[0]
+
+
+# %%
+probes = [cRec['folder_name'] for cRec in rec.info['continuous']\
+                if 'Probe' in cRec['folder_name']]
+print(probes)
+# %%
+len(rec.info['continuous'][0]['channels'])
+# %%
+probes = [p for p in rec.continuous.keys() if (type(p)==str) and ('Probe' in p)]
+probes
 # %%

@@ -1,4 +1,6 @@
 import pynwb
+from open_ephys.analysis import Session as OpenEphysSession
+from physion.ephys.tools import filter
 
 def add_ephys(nwbfile, args,
               metadata=None):
@@ -18,9 +20,9 @@ def add_ephys(nwbfile, args,
     #   create the device model 
     device_model = nwbfile.create_device_model(
                         name="Neuropixels 2.0",
-                        manufacturer="Array Technologies",
+                        manufacturer="IMEC",
                         # model_number="PRB_1_4_0480_123",
-                        description="A 12-channel array with 4 shanks and 3 channels per shank")
+                        description="")
     #   create the device 
     device = nwbfile.create_device(
                         name="array",
@@ -31,12 +33,18 @@ def add_ephys(nwbfile, args,
 
     nwbfile.add_electrode_column(name="label", 
                                  description="label of electrode")
+    
+
+    nshanks = 0
+
+    probes = [p for p in rec.continuous.keys() if (type(p)==str) and ('Probe' in p)]
+
 
     nshanks = 1 # rec.continuous
     nchannels_per_shank = rec.continuous['ProbeA'].samples.shape[1]
     electrode_counter = 0
 
-    for ishank in range(nshanks):
+    for nprobe, probe in enumerate(probes):
         # create an electrode group for this shank
         electrode_group = nwbfile.create_electrode_group(
             name="shank{}".format(ishank),

@@ -23,6 +23,7 @@ from .tools import build_subsampling_from_freq, StartTime_to_day_seconds
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   'raw_FaceCamera', 'Pupil', 'FaceMotion',
                   # 'EphysLFP', 'EphysUnits', 'EphysVm',
+                  'Neuropixels',
                   'VisualStim',
                   'Locomotion'] 
 
@@ -493,7 +494,7 @@ def build_NWB_func(args, Subject=None):
                     Pupil_frames = pynwb.image.ImageSeries(name='Pupil',
                                                            data=PUC_dataI,
                                                            unit='NA',
-                                                           timestamps=FC_times[PUPIL_SUBSAMPLING])
+                                                           timestamps=fcamData.times[PUPIL_SUBSAMPLING])
                     nwbfile.add_acquisition(Pupil_frames)
 
             elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt','faceit.npz')):
@@ -612,7 +613,7 @@ def build_NWB_func(args, Subject=None):
                                                    dtype=np.dtype(np.uint8))
                     FaceMotion_frames = pynwb.image.ImageSeries(name='FaceMotion',
                                                                 data=FMCI_dataI, unit='NA',
-                                                                timestamps=FC_times[FACEMOTION_SUBSAMPLING])
+                                                                timestamps=fcamData.times[FACEMOTION_SUBSAMPLING])
                     nwbfile.add_acquisition(FaceMotion_frames)
             
             elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz')):
@@ -653,11 +654,12 @@ def build_NWB_func(args, Subject=None):
     ####    Electrophysiological Recording    #######
     #################################################
 
-    if ('Neuropix' in metadata) and metadata['Neuropix'] and ('Neuropix' in args.modalities):
+    if ('Neuropixels' in metadata) and metadata['Neuropixels'] and ('Neuropixels' in args.modalities):
     
         if args.verbose:
             print('=> Storing Neuropixels data for "%s" [...]' % args.datafolder)
-            
+
+        print()    
         add_ephys(nwbfile, args,
                     metadata=metadata)
 
@@ -857,7 +859,7 @@ if __name__=='__main__':
             # building the modalities
             args.modalities = []
             for key in ALL_MODALITIES: 
-                if dataset[key].values[i]=='Yes':
+                if (key in dataset) and (dataset[key].values[i]=='Yes'):
                     args.modalities.append(key)
 
             # run the build:
