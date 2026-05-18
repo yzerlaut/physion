@@ -1,69 +1,7 @@
 import numpy as np
 from scipy import signal
 from scipy.ndimage import gaussian_filter1d
-
-##############################################
-########### Wavelet Transform ################
-##############################################
-
-def my_cwt(data, frequencies, dt, w0=6.):
-    """
-    wavelet transform with normalization to catch the amplitude of a sinusoid
-    """
-    output = np.zeros([len(frequencies), len(data)], 
-                      dtype=np.complex_)
-
-    for ind, freq in enumerate(frequencies):
-        wavelet_data = np.conj(get_Morlet_of_right_size(freq, dt, w0=w0))
-        sliding_mean = signal.convolve(data,
-                                       np.ones(len(wavelet_data))/len(wavelet_data),
-                                       mode='same')
-        # the final convolution
-        wavelet_data_norm = norm_constant_th(freq, dt, w0=w0)
-        output[ind, :] = signal.convolve(data-sliding_mean+0.*1j,
-                                         wavelet_data,
-                                         mode='same')/wavelet_data_norm
-    return output
-
-### MORLET WAVELET, definition, properties and normalization
-def Morlet_Wavelet(t, f, w0=6.):
-    x = 2.*np.pi*f*t
-    output = np.exp(1j * x)
-    output *= np.exp(-0.5 * ((x/w0) ** 2)) # (Normalization comes later)
-    return output
-
-def Morlet_Wavelet_Decay(f, w0=6.):
-    return 2 ** .5 * (w0/(np.pi*f))
-
-def from_fourier_to_morlet(freq):
-    x = np.linspace(0.1/freq, 2.*freq, 1e3)
-    return x[np.argmin((x-freq*(1-np.exp(-freq*x)))**2)]
-    
-def get_Morlet_of_right_size(f, dt, w0=6., with_t=False):
-    Tmax = Morlet_Wavelet_Decay(f, w0=w0)
-    t = np.arange(-int(Tmax/dt), int(Tmax/dt)+1)*dt
-    if with_t:
-        return t, Morlet_Wavelet(t, f, w0=w0)
-    else:
-        return Morlet_Wavelet(t, f, w0=w0)
-
-def norm_constant_th(freq, dt, w0=6.):
-    # from theoretical calculus:
-    n = (w0/2./np.sqrt(2.*np.pi)/freq)*(1.+np.exp(-w0**2/2))
-    return n/dt
-
-
-def compute_freq_envelope(signal, sampling_freq, freqs):
-    """
-    compute the frequency power using wavelet transform
-
-    1. performs wavelet transform of the signal
-    2. transform to envelope only (absolute value)
-    3. take the maximum over the considered band
-    """
-    return np.max(np.abs(my_cwt(signal,
-                                freqs,
-                                1./sampling_freq)), axis=0)
+from physion.ephys.tools import compute_freq_envelope
 
 
 ##################################################

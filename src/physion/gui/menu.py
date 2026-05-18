@@ -56,10 +56,16 @@ def build_menu(self):
     ##### ---------  Assembling   ------------------------
     self.assemblingMenu = self.mainMenu.addMenu('  * Assembling')
     # --
-    self.assemblingMenu.addAction('Build NWB',
+    self.assemblingMenu.addAction('Build NWBs from DataTable',
                                   self.build_NWB_UI)
-    # self.assemblingMenu.addAction('Add Imaging',
+    self.assemblingMenu.addAction('Build DataTable from data (TODO)',
+                                  self.in_progress)
+    self.assemblingMenu.addAction('Add Spike-Sorted Data to NWB (TODO)',
+                                  self.in_progress)
+    self.assemblingMenu.addAction('Add Ca-Imaging Data to NWB (TODO)',
                                   # self.add_imaging)
+                                  self.in_progress)
+    # self.assemblingMenu.addAction('Add Imaging',
     self.assemblingMenu.addAction('FOV coordinates',
                                   self.FOV_coords_UI)
 
@@ -70,7 +76,7 @@ def build_menu(self):
     self.visualizationMenu.addAction('  **** &FOV / ROIs', 
                                       self.FOV)
 
-    # ##### ------- Analysis -------------------------------
+    # # ##### ------- Analysis -------------------------------
     self.analysisMenu = self.mainMenu.addMenu('  *** &Analysis')
     # --
     self.analysisMenu.addAction('&BOT Spatial Maps',
@@ -83,7 +89,7 @@ def build_menu(self):
                                 self.in_progress)
 
     ##### ------   Other   -------------
-    self.otherMenu = self.mainMenu.addMenu('     Others')
+    self.otherMenu = self.mainMenu.addMenu('     Data-Management')
     # --
     self.otherMenu.addAction('&Transfer Data',
                               self.transfer_gui)

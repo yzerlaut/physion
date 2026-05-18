@@ -144,9 +144,9 @@ from spikeinterface import extractors
 
 # %%
 stream_name='{recorded_processor} {recorded_processor_id}'.format(\
-    **rec.info['continuous'][0])
+    **rec.info['continuous'][1])
 stream_name
-siRec = extractors.read_openephys(datafolder, stream_id='0')
+siRec = extractors.read_openephys(datafolder, stream_id='1')
 # %%
 p= siRec.get_annotation('probes_info')[0]
 probe = get_probe("imec", p["model_name"])

@@ -1,6 +1,6 @@
 import numpy as np
-import pynwb
-# from physion.ephys.tools import filter
+import tempfile, os
+from physion.ephys.LFP.build import write_lfp_to_nwb
 from spikeinterface.extractors import read_openephys
 import spikeinterface.full as si
 from pynwb.ecephys import (
@@ -10,15 +10,16 @@ from pynwb.ecephys import (
     SpikeEventSeries,
 )
 
-def make_lfp_recording(rec_ap: si.BaseRecording) -> si.BaseRecording:
-    """Downsample AP band to LFP band (2 500 Hz → 1 250 Hz, low-pass at 300 Hz)."""
-    rec_filtered = si.bandpass_filter(rec_ap, freq_min=0.5, freq_max=300.0)
-    rec_lfp      = si.resample(rec_filtered, resample_rate=1250)
-    return rec_lfp
- 
-
 def add_ephys(nwbfile, args,
-              metadata=None):
+            metadata=None,
+            electrode_subsampling= 50,
+            lfp_freq_min = 0.5,
+            lfp_freq_max = 300.0,
+            mua_freq_min = 300.0,
+            mua_freq_max = 3000.0,
+            resample_rate = 1250,
+            margin_ms = 10000,
+            chunking_window = '60s'):
     """
     See:
     https://pynwb.readthedocs.io/en/dev/tutorials/domain/ecephys.html
@@ -57,6 +58,18 @@ def add_ephys(nwbfile, args,
     # restrict to protocol
     siRec = siRec.frame_slice(start_frame=args.nStart, 
                               end_frame=args.nStop)
+    if not hasattr(args, 'tstop_NIdaq'):
+        print()
+        print(50*'-')
+        print(' [!!]  no NIdaq tstop value available ... ')
+        print('         --> can not put the proper timestamps of the data')
+        print('                     (so putting non-sense)    ')
+        print(50*'-')
+        print()
+        timestamps = np.arange(args.nStop-args.nStart)
+    else:
+        timestamps = np.linspace(0, args.tstop_NIdaq,
+                                 args.nStop-args.nStart)
 
     channel_ids = siRec.get_channel_ids()
     locations = siRec.get_property('contact_vector')
@@ -80,11 +93,8 @@ def add_ephys(nwbfile, args,
             x             = x,
             y             = y,
             z             = 0.0,
-            imp           = -1.0,           # unknown impedance → -1 by convention
             location      = ELECTRODE_LOCATION,
-            filtering     = "None",
             group         = electrode_group,
-            # label         = str(ch_id),
         )
 
     all_electrodes = nwbfile.create_electrode_table_region(
@@ -95,74 +105,123 @@ def add_ephys(nwbfile, args,
 
     # ── 3e. Raw AP band ───────────────────────────────────────────────────
     if False:
-        print("Writing raw AP band …")
- 
-        chunk_frames = int(cfg["chunk_duration_sec"] * fs_ap)
-        n_chunks     = int(np.ceil(n_frames / chunk_frames))
- 
-        # Pre-allocate a memmap-backed array to avoid loading everything into RAM
-        tmp_ap = np.empty((n_frames, n_channels), dtype=np.float32)
-        for i in range(n_chunks):
-            start = i * chunk_frames
-            end   = min(start + chunk_frames, n_frames)
-            tmp_ap[start:end, :] = rec_ap.get_traces(
-                start_frame=start, end_frame=end, return_scaled=True
-            )   # returns µV
+
+        print("         - Writing raw EPhys data [...]")
  
         raw_es = ElectricalSeries(
             name             = "ElectricalSeries",
-            data             = tmp_ap,
+            data             = siRec,
             electrodes       = all_electrodes,
-            starting_time    = 0.0,
-            rate             = fs_ap,
+            timestamps       = timestamps,
             conversion       = 1e-6,   # µV → V  (NWB stores Volts)
-            description      = "Raw AP band recorded by Neuropixels 1.0",
+            description      = "Raw Electrophysiological Data",
             comments         = f"Open-Ephys recording, {n_channels} channels",
             compression      = cfg["compression"],
         )
         nwbfile.add_acquisition(raw_es)
  
-    # ── 3f. LFP band ──────────────────────────────────────────────────────
     if True:
-        print("Computing and writing LFP band …")
-        chunk_duration_sec = 1.0 # TU TUNE
-
-        rec_lfp  = make_lfp_recording(siRec)
-        fs_lfp   = rec_lfp.get_sampling_frequency()
-        nf_lfp   = rec_lfp.get_num_frames()
-        ck_lfp   = int(chunk_duration_sec * fs_lfp)
-        n_ck_lfp = int(np.ceil(nf_lfp / ck_lfp))
- 
-        tmp_lfp  = np.empty((nf_lfp, n_channels), dtype=np.float32)
-        for i in range(n_ck_lfp):
-            start = i * ck_lfp
-            end   = min(start + ck_lfp, nf_lfp)
-            tmp_lfp[start:end, :] = rec_lfp.get_traces(
-                start_frame=start, end_frame=end, return_scaled=True
-            )
- 
-        lfp_electrodes = nwbfile.create_electrode_table_region(
-            region      = list(range(n_channels)),
-            description = "All electrodes (LFP)",
+        # ──  Sub-select channels ----------------------------------------- 
+        channels_ids = siRec.get_channel_ids()
+        rec_subchannels = siRec.select_channels(
+                channel_ids=channels_ids[::electrode_subsampling]
+        ) 
+        subsampled_electrodes = nwbfile.create_electrode_table_region(
+            region      = list(np.arange(len(channels_ids))[::electrode_subsampling]),
+            description = "subsampled electrodes for LFP",
         )
- 
+
+    if True:
+        # # we save the data in the memory with an **extended** chunk size
+        temp_folder = os.path.join(tempfile.gettempprefix(), 'temp')
+        rec_subchannels.save(format='binary', 
+                            folder=temp_folder, overwrite=True,
+                            chunk_duration=chunking_window,
+                            n_jobs=0.8, #
+                            progress_bar=True)
+
+    # ──  LFP band ──────────────────────────────────────────────────────
+    if False:
+
+        print("         - Computing and writing LFP band [...]")
+
+        rec = si.load(temp_folder, chunk_duration=chunking_window)
+
+        # ── 2. Apply filter + resample pipeline on the extended chunk ─────
+        rec_lfp = si.bandpass_filter(
+            rec, 
+            freq_min=lfp_freq_min, freq_max=lfp_freq_max,
+            ignore_low_freq_error=True,
+            margin_ms=margin_ms
+        )
+        rec_lfp = si.resample(rec_lfp, 
+                            resample_rate=resample_rate)
+
+        # ── 3. Build NWB LFP objects ───────────────────────────────────────
         lfp_es = ElectricalSeries(
             name          = "LFP",
-            data          = tmp_lfp,
-            electrodes    = lfp_electrodes,
+            data          = rec_lfp.get_traces(),
+            electrodes    = subsampled_electrodes,
             starting_time = 0.0,
-            rate          = float(fs_lfp),
-            conversion    = 1e-6,
-            description   = "LFP band (0.5–300 Hz, downsampled to 1 250 Hz)",
-            compression   = 'bzip',
+            rate          = float(resample_rate),
+            conversion    = 1e-6,   # µV → V
+            description   = (
+                f"LFP signal in uV "
+                f"electrode subsampling: {electrode_subsampling}"
+                f"LFP band ({lfp_freq_min}–{lfp_freq_max} Hz, "
+                f"Butterworth order 5, zero-phase), "
+                f"downsampled to {resample_rate} Hz. "
+                f"Chunk margin: {margin_ms} ms per side, Chunking window: {chunking_window}"
+            ),
         )
- 
+    
         lfp_module = nwbfile.create_processing_module(
-            name        = "ecephys",
-            description = "Processed electrophysiology data",
+            name        = "LFP",
+            description = "Local-Field Potential computed from raw electrophysiology data",
         )
         lfp_module.add(LFP(electrical_series=lfp_es))
- 
+
+    # ──  MUA band ──────────────────────────────────────────────────────
+    if True:
+
+        print("         - Computing and writing Multi-Unit Activity [...]")
+
+        rec = si.load(temp_folder, chunk_duration=chunking_window)
+
+        # ── 2. Apply filter + resample pipeline on the extended chunk ─────
+        rec_mua = si.bandpass_filter(
+            rec, 
+            freq_min=mua_freq_min, freq_max=mua_freq_max,
+            ignore_low_freq_error=True,
+            margin_ms=3000,
+        )
+        rec_mua = si.resample(rec_mua, 
+                            resample_rate=resample_rate)
+
+        # ── 3. Build NWB MUA objects ───────────────────────────────────────
+        mua_es = ElectricalSeries(
+            name          = "MUA",
+            data          = rec_mua.get_traces(),
+            electrodes    = subsampled_electrodes,
+            starting_time = 0.0,
+            rate          = float(resample_rate),
+            conversion    = 1e-6,   # µV → V
+            description   = (
+                f"MUA signal in uV "
+                f"electrode subsampling: {electrode_subsampling}"
+                f"MUA band ({mua_freq_min}–{mua_freq_max} Hz, "
+                f"Butterworth order 5, zero-phase), "
+                f"downsampled to {resample_rate} Hz. "
+                f"Chunk margin: {margin_ms} ms per side, Chunking window: {chunking_window}"
+            ),
+        )
+    
+        mua_module = nwbfile.create_processing_module(
+            name        = "MUA",
+            description = "Local-Field Potential computed from raw electrophysiology data",
+        )
+        mua_module.add(mua_es)
+
     # ── 3g. Spike events (optional) ───────────────────────────────────────
     # Requires a pre-computed spike-sorting result (e.g. from Kilosort).
     # SpikeInterface can load Kilosort / Phy output with:

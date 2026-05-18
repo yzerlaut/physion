@@ -659,6 +659,7 @@ def build_NWB_func(args, Subject=None):
         if args.verbose:
             print('=> Storing Neuropixels data for "%s" [...]' % args.datafolder)
 
+        args.tstop_NIdaq = len(NIdaq_data['analog'][0])*NIdaq_data['dt']
         add_ephys(nwbfile, args,
                     metadata=metadata)
 
@@ -856,6 +857,8 @@ if __name__=='__main__':
             if dataset['Npx-Folder'][i]!='':
                 args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
                 args.NPX_rec = dataset['Npx-Rec'][i]
+                args.LFP, args.MUA, args.Spikes = dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
+                args.raw_Ephys = dataset['raw-Ephys'][i]
                 args.nStart, args.nStop = dataset['nStart'][i], dataset['nStop'][i]
 
             # building the modalities
