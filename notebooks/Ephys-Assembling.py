@@ -21,9 +21,8 @@
 #       N.B. you can use the code below to guide filling the recordings info
 
 # %%
-import sys, time
+import sys, os
 sys.path += [os.path.expanduser('~/physion/src'), '../src']
-import json
 import numpy as np
 import pandas as pd
 
@@ -160,18 +159,23 @@ for key in ['Npx-Rec', 'nStart', 'nStop']+\
         os.path.join(datafolder, 'DataTable.xlsx'),
         sheet='Recordings',
         column=key,
-        # insert_at=0,
-        data=DF[key],
+        insert_at=16,
+        data=DF[key])
 DF
 # %%
 # TODO add a column with sub-selection of electrode range !!
-ELECTRODE_RANGE = [0,283]
+ELECTRODE_RANGE = [50,150]
 
 # %%
 add_to_table(
     os.path.join(datafolder, 'DataTable.xlsx'),
-    sheet='Recordings',
-    column='electrode-range',
-    # insert_at=0,
-    data=['%i-%i' % ELECTRODE_RANGE for _ in range(len(DF['Npx-Rec']))])
-DF
+    sheet='Recordings', column='electrode-range',
+    insert_at=20,
+    data=['%i-%i' % (ELECTRODE_RANGE[0], ELECTRODE_RANGE[1]) for _ in range(len(DF['Npx-Rec']))])
+add_to_table(
+    os.path.join(datafolder, 'DataTable.xlsx'),
+    sheet='Recordings', column='electrode-subsampling',
+    insert_at=21,
+    data=[40 for _ in range(len(DF['Npx-Rec']))])
+
+# %%

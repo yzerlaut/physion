@@ -156,3 +156,9 @@ siRec = siRec.set_probe(siRec.get_probe())#, group_mode="by_shank")
 probes = siRec.get_annotation('probes_info')
 
 # %%
+import spikeinterface.full as si
+rec_lfp = si.resample(siRec, resample_rate=1250)
+
+# %%
+rec_lfp.get_num_frames()
+# %%

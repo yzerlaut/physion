@@ -1,6 +1,6 @@
 import numpy as np
 import tempfile, os
-from physion.ephys.LFP.build import write_lfp_to_nwb
+# from physion.ephys.tools import filtering, 
 from spikeinterface.extractors import read_openephys
 import spikeinterface.full as si
 from pynwb.ecephys import (
@@ -10,9 +10,17 @@ from pynwb.ecephys import (
     SpikeEventSeries,
 )
 
+def build_args_for_ephys(args, dataset, i, directory):
+    args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
+    args.NPX_rec = dataset['Npx-Rec'][i]
+    args.Location = dataset['Location'][i]
+    args.LFP, args.MUA, args.Spikes = dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
+    args.raw_Ephys = dataset['raw-Ephys'][i]
+    args.electrode_range, args.electrode_subsampling = dataset['electrode-range'][i], dataset['electrode-subsampling'][i]
+    args.nStart, args.nStop = dataset['nStart'][i], dataset['nStop'][i]
+
 def add_ephys(nwbfile, args,
             metadata=None,
-            electrode_subsampling= 50,
             lfp_freq_min = 0.5,
             lfp_freq_max = 300.0,
             mua_freq_min = 300.0,
@@ -24,8 +32,6 @@ def add_ephys(nwbfile, args,
     See:
     https://pynwb.readthedocs.io/en/dev/tutorials/domain/ecephys.html
     """
-
-    ELECTRODE_LOCATION = 'VIS' # to put in the metadata
 
     #   create the device 
     device = nwbfile.create_device(
@@ -71,20 +77,24 @@ def add_ephys(nwbfile, args,
         timestamps = np.linspace(0, args.tstop_NIdaq,
                                  args.nStop-args.nStart)
 
+    # ── Electrode table ───────────────────────────────────────────────
     channel_ids = siRec.get_channel_ids()
     locations = siRec.get_property('contact_vector')
 
     electrode_group = nwbfile.create_electrode_group(
         name        = probe['model_name'],
         description = probe['description'],
-        location    = ELECTRODE_LOCATION,
+        location    = args.Location, # from the DataTable
         device      = device,
     )
- 
-    # ── Electrode table ───────────────────────────────────────────────
+
+    # subsampling
+    e0, e1 = [int(e) for e in args.electrode_range.split('-')]
+    eSubsampling = np.arange(len(channel_ids))[e0:e1][::int(args.electrode_subsampling)]
+
     # NWB requires x, y, z; Neuropixels provides x (horizontal) and y (depth).
     # We set z = 0 for a single-shank probe.
-    for i, ch_id in enumerate(channel_ids):
+    for i in eSubsampling:
 
         x = float(locations["x"][i]) if locations is not None else 0.0
         y = float(locations["y"][i]) if locations is not None else float(i) * 25.0
@@ -93,59 +103,56 @@ def add_ephys(nwbfile, args,
             x             = x,
             y             = y,
             z             = 0.0,
-            location      = ELECTRODE_LOCATION,
+            location      = args.Location,
             group         = electrode_group,
         )
 
-    all_electrodes = nwbfile.create_electrode_table_region(
-        region      = list(range(len(channel_ids))),
-        description = "All recorded electrodes",
+    electrodes = nwbfile.create_electrode_table_region(
+        region      = list(range(len(eSubsampling))),
+        description = "Chosen electrodes in the range %s with subsampling %s" %\
+                (args.electrode_range, args.electrode_subsampling),
     )
-    n_channels = len(channel_ids)
+    n_channels = len(eSubsampling)
+
+    siRec = siRec.select_channels(
+        channel_ids = siRec.get_channel_ids()[eSubsampling]
+    ) 
+
+    # # we save the data in the memory with an **extended** chunk size
+    temp_folder = os.path.join(tempfile.gettempprefix(), 'temp')
+    siRec.save(format='binary', 
+                folder=temp_folder, overwrite=True,
+                    chunk_duration=chunking_window,
+                        n_jobs=0.8, #
+                            progress_bar=True)
+
+    rec = si.load(temp_folder, chunk_duration=chunking_window)
 
     # ── 3e. Raw AP band ───────────────────────────────────────────────────
-    if False:
+    if args.raw_Ephys=='Yes':
 
         print("         - Writing raw EPhys data [...]")
  
         raw_es = ElectricalSeries(
             name             = "ElectricalSeries",
-            data             = siRec,
-            electrodes       = all_electrodes,
+            data             = rec.get_traces(),
+            electrodes       = electrodes,
             timestamps       = timestamps,
             conversion       = 1e-6,   # µV → V  (NWB stores Volts)
             description      = "Raw Electrophysiological Data",
-            comments         = f"Open-Ephys recording, {n_channels} channels",
-            compression      = cfg["compression"],
+            comments         = (
+                f"Open-Ephys recording, selecting {n_channels} channels, "
+                f"electrode channels : {args.electrode_range}, "
+                f"electrode subsampling: {args.electrode_subsampling}"
+            )
         )
         nwbfile.add_acquisition(raw_es)
  
-    if True:
-        # ──  Sub-select channels ----------------------------------------- 
-        channels_ids = siRec.get_channel_ids()
-        rec_subchannels = siRec.select_channels(
-                channel_ids=channels_ids[::electrode_subsampling]
-        ) 
-        subsampled_electrodes = nwbfile.create_electrode_table_region(
-            region      = list(np.arange(len(channels_ids))[::electrode_subsampling]),
-            description = "subsampled electrodes for LFP",
-        )
-
-    if True:
-        # # we save the data in the memory with an **extended** chunk size
-        temp_folder = os.path.join(tempfile.gettempprefix(), 'temp')
-        rec_subchannels.save(format='binary', 
-                            folder=temp_folder, overwrite=True,
-                            chunk_duration=chunking_window,
-                            n_jobs=0.8, #
-                            progress_bar=True)
 
     # ──  LFP band ──────────────────────────────────────────────────────
-    if False:
+    if args.LFP=='Yes':
 
         print("         - Computing and writing LFP band [...]")
-
-        rec = si.load(temp_folder, chunk_duration=chunking_window)
 
         # ── 2. Apply filter + resample pipeline on the extended chunk ─────
         rec_lfp = si.bandpass_filter(
@@ -154,20 +161,21 @@ def add_ephys(nwbfile, args,
             ignore_low_freq_error=True,
             margin_ms=margin_ms
         )
+        resampling_factor = int(rec.get_sampling_frequency()/resample_rate)
         rec_lfp = si.resample(rec_lfp, 
-                            resample_rate=resample_rate)
+                resample_rate=int(rec.get_sampling_frequency()/resampling_factor))
 
         # ── 3. Build NWB LFP objects ───────────────────────────────────────
         lfp_es = ElectricalSeries(
             name          = "LFP",
             data          = rec_lfp.get_traces(),
-            electrodes    = subsampled_electrodes,
-            starting_time = 0.0,
-            rate          = float(resample_rate),
+            electrodes    = electrodes,
+            timestamps    = timestamps[::resampling_factor][:rec_lfp.get_num_frames()],
             conversion    = 1e-6,   # µV → V
             description   = (
                 f"LFP signal in uV "
-                f"electrode subsampling: {electrode_subsampling}"
+                f"electrode channels : {args.electrode_range}"
+                f"electrode subsampling: {args.electrode_subsampling}"
                 f"LFP band ({lfp_freq_min}–{lfp_freq_max} Hz, "
                 f"Butterworth order 5, zero-phase), "
                 f"downsampled to {resample_rate} Hz. "
@@ -182,11 +190,12 @@ def add_ephys(nwbfile, args,
         lfp_module.add(LFP(electrical_series=lfp_es))
 
     # ──  MUA band ──────────────────────────────────────────────────────
-    if True:
+    if args.MUA=='Yes':
 
         print("         - Computing and writing Multi-Unit Activity [...]")
-
-        rec = si.load(temp_folder, chunk_duration=chunking_window)
+        print()
+        print("                      [!!] TODO: need to take absolute value and sliding mean ")
+        print()
 
         # ── 2. Apply filter + resample pipeline on the extended chunk ─────
         rec_mua = si.bandpass_filter(
@@ -202,13 +211,13 @@ def add_ephys(nwbfile, args,
         mua_es = ElectricalSeries(
             name          = "MUA",
             data          = rec_mua.get_traces(),
-            electrodes    = subsampled_electrodes,
-            starting_time = 0.0,
-            rate          = float(resample_rate),
+            electrodes    = electrodes,
+            timestamps    = timestamps[::resampling_factor][:rec_mua.get_num_frames()],
             conversion    = 1e-6,   # µV → V
             description   = (
                 f"MUA signal in uV "
-                f"electrode subsampling: {electrode_subsampling}"
+                f"electrode channels : {args.electrode_range}"
+                f"electrode subsampling: {args.electrode_subsampling}"
                 f"MUA band ({mua_freq_min}–{mua_freq_max} Hz, "
                 f"Butterworth order 5, zero-phase), "
                 f"downsampled to {resample_rate} Hz. "
@@ -218,9 +227,14 @@ def add_ephys(nwbfile, args,
     
         mua_module = nwbfile.create_processing_module(
             name        = "MUA",
-            description = "Local-Field Potential computed from raw electrophysiology data",
+            description = "Multi-Unit-Activity computed from raw electrophysiology data",
         )
         mua_module.add(mua_es)
+
+
+
+def add_spikes(nwbfile, args,
+                metadata=None):
 
     # ── 3g. Spike events (optional) ───────────────────────────────────────
     # Requires a pre-computed spike-sorting result (e.g. from Kilosort).

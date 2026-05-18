@@ -166,10 +166,18 @@ if __name__=='__main__':
                         column=col,
                         sheet='Recordings')
 
+        # location
+        add_to_table(dest, 
+                    data=['V1' for t in times],
+                    column='Location',
+                    sheet='Recordings')
+
+        # modalities
         yes = ['Yes' for t in times]
-        for col in ['Locomotion', 'VisualStim', 'FaceMotion', 
-                    'Pupil', 'raw_FaceCamera', 'processed_CaImaging',
-                    'raw_CaImaging']:
+        for col in ['Locomotion', 'VisualStim', 'FaceMotion', 'Pupil', 
+                    'raw_FaceCamera', 
+                    'raw_CaImaging',
+                    'processed_CaImaging']:
             add_to_table(dest, 
                         data=yes,
                         column=col,

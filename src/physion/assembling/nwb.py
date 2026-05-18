@@ -15,7 +15,7 @@ from physion.utils.camera import CameraData
 
 from .subject import reformat_props, cleanup_keys, subject_template
 from .add_ophys import add_ophys # optical physiology
-from .add_ephys import add_ephys # electrophysiology
+from .add_ephys import build_args_for_ephys, add_ephys # electrophysiology
 from .realign_from_photodiode import realign_from_photodiode
 from .dataset import read_spreadsheet, read_metadata
 from .tools import build_subsampling_from_freq, StartTime_to_day_seconds
@@ -654,7 +654,7 @@ def build_NWB_func(args, Subject=None):
     ####    Electrophysiological Recording    #######
     #################################################
 
-    if ('Neuropixels' in metadata) and metadata['Neuropixels'] and ('Neuropixels' in args.modalities):
+    if ('Neuropixels' in metadata) and metadata['Neuropixels']:
     
         if args.verbose:
             print('=> Storing Neuropixels data for "%s" [...]' % args.datafolder)
@@ -731,7 +731,7 @@ def build_NWB_func(args, Subject=None):
     io.close()
 
     # print('---> done !')
-    file_size_mb = args.filename.stat().st_size / 1e6
+    file_size_mb = os.path.getsize(args.filename) / 1e6
     print(f"Done ! File size: {file_size_mb:.1f} MB")
  
     return args.filename
@@ -855,11 +855,7 @@ if __name__=='__main__':
                 
             # for Neuropix recording, getting the whole-session-level infos
             if dataset['Npx-Folder'][i]!='':
-                args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
-                args.NPX_rec = dataset['Npx-Rec'][i]
-                args.LFP, args.MUA, args.Spikes = dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
-                args.raw_Ephys = dataset['raw-Ephys'][i]
-                args.nStart, args.nStop = dataset['nStart'][i], dataset['nStop'][i]
+                build_args_for_ephys(args, dataset, i, directory)
 
             # building the modalities
             args.modalities = []
