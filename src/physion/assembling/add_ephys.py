@@ -122,7 +122,7 @@ def add_ephys(nwbfile, args,
     ) 
 
     temp_folder = os.path.join(tempfile.gettempprefix(), 'temp')
-    if False: # TURN BACK TO TRUE AFTER DEBUGGING !!
+    if True: # TURN BACK TO TRUE AFTER DEBUGGING !!
         # # we save the data in the memory with an **extended** chunk size
         siRec.save(format='binary', 
                     folder=temp_folder, overwrite=True,
