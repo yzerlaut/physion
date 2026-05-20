@@ -156,7 +156,7 @@ class EpisodeData:
                            'time_duration', 'time_start',
                            'time_start_realigned', 'time_stop',
                            'time_stop_realigned', 'interstim',
-                           'protocol-name']:
+                           'protocol-name', 'OptogeneticSeries']:
                 unique = np.sort(np.unique(full_data.nwbfile.stimulus[key].data[self.protocol_cond_in_full_data,0]))
                 if len(unique)>1:
                     self.varied_parameters[key] = unique
@@ -252,6 +252,27 @@ class EpisodeData:
                 QUANTITY_VALUES.append(full_data.facemotion)
                 QUANTITY_TIMES.append(full_data.t_facemotion)
                 QUANTITIES.append('faceMotion')
+
+            elif quantity in ['Spikes']:
+                if not hasattr(full_data, 'Spikes'):
+                    full_data.build_Spikes(**quantity_args)
+                QUANTITY_VALUES.append(full_data.Spikes)
+                QUANTITY_TIMES.append(full_data.t_Spikes)
+                QUANTITIES.append('Spikes')
+
+            elif quantity in ['MUA']:
+                if not hasattr(full_data, 'MUA'):
+                    full_data.build_MUA(**quantity_args)
+                QUANTITY_VALUES.append(full_data.MUA)
+                QUANTITY_TIMES.append(full_data.t_MUA)
+                QUANTITIES.append('MUA')
+
+            elif quantity in ['LFP']:
+                if not hasattr(full_data, 'LFP'):
+                    full_data.build_LFP(**quantity_args)
+                QUANTITY_VALUES.append(full_data.LFP)
+                QUANTITY_TIMES.append(full_data.t_LFP)
+                QUANTITIES.append('LFP')
 
             else:
                 if quantity in full_data.nwbfile.acquisition:

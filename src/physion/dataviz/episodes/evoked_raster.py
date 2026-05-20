@@ -118,13 +118,14 @@ def plot_evoked_pattern(self,
 
 if __name__=='__main__':
 
-    import physion, sys
-    data = physion.analysis.read_NWB.Data(sys.argv[-1])
+    import sys
+    from physion.analysis.read_NWB import Data
+    data = Data(sys.argv[-1])
     data.build_dFoF()
     data.init_visual_stim()
-    ep = physion.analysis.process_NWB.EpisodeData(data,
-                                                  protocol_name='drifting-gratings',
-                                                  quantities=['dFoF'])
+
+    from physion.analysis.episodes.build import EpisodeData
+    ep = EpisodeData(data, quantities=['dFoF'])
     ep.init_visual_stim(data)
     plot_evoked_pattern(ep, ep.find_episode_cond(),
                         quantity='dFoF')

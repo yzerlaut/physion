@@ -178,6 +178,10 @@ class Data:
             for key in ['Segmentation', 'Fluorescence', 'redcell', 'plane',
                         'valid_roiIndices', 'neuropil']:
                 setattr(self, key, None)
+
+        # optogenetics
+        if 'OptogeneticSeries' in self.nwbfile.stimulus:
+            self.read_optogen()
                 
         if 'Pupil' in self.nwbfile.processing:
             self.read_pupil()
@@ -257,7 +261,7 @@ class Data:
 
         self.initialize_ROIs()
                 
-        
+
     ######################
     #    LOCOMOTION
     ######################    
@@ -287,12 +291,8 @@ class Data:
             else : 
                 self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:, 0]
 
-            if self.nwbfile.acquisition['Running-Speed'].timestamps is not None:
-                self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].timestamps[()]
-            else:
-                self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time + \
-                    np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples) / \
-                    self.nwbfile.acquisition['Running-Speed'].rate
+            self.t_running_speed = tools.build_timestamps(\
+                        self.nwbfile.acquisition, 'Running-Speed')
 
             if specific_time_sampling is not None:
                 return tools.resample(self.t_running_speed,
@@ -413,6 +413,96 @@ class Data:
 
         else:
             return None
+
+    #############################
+    #       Optogenetics        #
+    #############################
+
+    def read_optogen(self,
+        specific_time_sampling=None,
+        interpolation='linear',
+        verbose=True):
+
+        self.LED = self.nwbfile.stimulus['OptogeneticSeries'].data[:]
+
+        self.t_LED = tools.build_timestamps(\
+                    self.nwbfile.stimulus, 'OptogeneticSeries')
+
+        if specific_time_sampling is not None:
+            return tools.resample(self.t_LED,
+                                self.LED,
+                                specific_time_sampling,
+                                interpolation=interpolation,
+                                verbose=verbose)
+
+
+    #############################
+    #       Electrophysiology   #
+    #############################
+
+    def build_LFP(self,
+        specific_time_sampling=None,
+        interpolation='linear',
+        verbose=True):
+
+        # we transpose to have a matrix of shape (channels, timestamps)
+        self.LFP = np.transpose(\
+            self.nwbfile.processing['LFP'].data_interfaces['LFP'].data[:])
+        self.t_LFP = self.nwbfile.processing['LFP'].data_interfaces['LFP'].timestamps[:]
+
+        if specific_time_sampling is not None:
+            self.LFP = np.array([\
+                tools.resample(self.t_LFP,
+                                self.LFP[i,:],
+                                specific_time_sampling,
+                                interpolation=interpolation,
+                                verbose=verbose)\
+                                for i in range(self.LFP.shape[0])])
+            self.t_LFP = specific_time_sampling
+
+
+    def build_MUA(self,
+        specific_time_sampling=None,
+        interpolation='linear',
+        verbose=True):
+
+        # we transpose to have a matrix of shape (channels, timestamps)
+        self.MUA = np.transpose(\
+            self.nwbfile.processing['MUA'].data_interfaces['MUA'].data[:])
+        self.t_MUA = self.nwbfile.processing['MUA'].data_interfaces['MUA'].timestamps[:]
+
+        if specific_time_sampling is not None:
+            self.MUA = np.array([\
+                tools.resample(self.t_MUA,
+                                self.MUA[i,:],
+                                specific_time_sampling,
+                                interpolation=interpolation,
+                                verbose=verbose)\
+                                for i in range(self.MUA.shape[0])])
+            self.t_MUA = specific_time_sampling
+
+
+    def build_siSpikes(self,
+            specific_time_sampling=None,
+            interpolation='linear',
+            verbose=True):
+        """
+        """
+        # we transpose to have a matrix of shape (channels, timestamps)
+        self.MUA = np.transpose(\
+            self.nwbfile.processing['MUA'].data_interfaces['MUA'].data[:])
+        self.t_MUA = self.nwbfile.processing['MUA'].data_interfaces['MUA'].timestamps[:]
+
+        if specific_time_sampling is not None:
+            self.MUA = np.array([\
+                tools.resample(self.t_MUA,
+                                self.MUA[i,:],
+                                specific_time_sampling,
+                                interpolation=interpolation,
+                                verbose=verbose)\
+                                for i in range(self.MUA.shape[0])])
+            self.t_MUA = specific_time_sampling
+
 
     #############################
     #       Calcium Imaging     #

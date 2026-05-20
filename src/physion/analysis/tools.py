@@ -3,6 +3,16 @@ import numpy as np
 from scipy.ndimage.filters import gaussian_filter1d
 from scipy.interpolate import interp1d
 
+
+def build_timestamps(attr, key):
+                        
+    if attr[key].timestamps is not None:
+        return attr[key].timestamps[:]
+    else:
+        return attr[key].starting_time+\
+            np.arange(attr[key].num_samples)/attr[key].rate
+        
+        
 def resample(x, y, new_time_sampling,
              interpolation='linear',
              verbose=True):

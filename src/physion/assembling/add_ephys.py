@@ -5,8 +5,7 @@ from spikeinterface.extractors import read_openephys
 import spikeinterface.full as si
 from pynwb.ecephys import (
     ElectricalSeries,
-    ElectrodeGroup,
-    LFP,
+    FeatureExtraction,
     SpikeEventSeries,
 )
 
@@ -94,7 +93,7 @@ def add_ephys(nwbfile, args,
 
     # NWB requires x, y, z; Neuropixels provides x (horizontal) and y (depth).
     # We set z = 0 for a single-shank probe.
-    for i in eSubsampling:
+    for i in range(len(channel_ids)):
 
         x = float(locations["x"][i]) if locations is not None else 0.0
         y = float(locations["y"][i]) if locations is not None else float(i) * 25.0
@@ -107,8 +106,12 @@ def add_ephys(nwbfile, args,
             group         = electrode_group,
         )
 
+    all_electrodes = nwbfile.create_electrode_table_region(
+        region      = list(range(len(channel_ids))),
+        description = "All electrodes",
+    )
     electrodes = nwbfile.create_electrode_table_region(
-        region      = list(range(len(eSubsampling))),
+        region      = list(eSubsampling),
         description = "Chosen electrodes in the range %s with subsampling %s" %\
                 (args.electrode_range, args.electrode_subsampling),
     )
@@ -118,13 +121,14 @@ def add_ephys(nwbfile, args,
         channel_ids = siRec.get_channel_ids()[eSubsampling]
     ) 
 
-    # # we save the data in the memory with an **extended** chunk size
     temp_folder = os.path.join(tempfile.gettempprefix(), 'temp')
-    siRec.save(format='binary', 
-                folder=temp_folder, overwrite=True,
-                    chunk_duration=chunking_window,
-                        n_jobs=0.8, #
-                            progress_bar=True)
+    if False: # TURN BACK TO TRUE AFTER DEBUGGING !!
+        # # we save the data in the memory with an **extended** chunk size
+        siRec.save(format='binary', 
+                    folder=temp_folder, overwrite=True,
+                        chunk_duration=chunking_window,
+                            n_jobs=0.8, #
+                                progress_bar=True)
 
     rec = si.load(temp_folder, chunk_duration=chunking_window)
 
@@ -187,12 +191,12 @@ def add_ephys(nwbfile, args,
             name        = "LFP",
             description = "Local-Field Potential computed from raw electrophysiology data",
         )
-        lfp_module.add(LFP(electrical_series=lfp_es))
+        lfp_module.add(lfp_es)
 
     # ──  MUA band ──────────────────────────────────────────────────────
     if args.MUA=='Yes':
 
-        print("         - Computing and writing Multi-Unit Activity [...]")
+        print("         -> Computing and writing Multi-Unit Activity [...]")
         print()
         print("                      [!!] TODO: need to take absolute value and sliding mean ")
         print()
@@ -231,21 +235,50 @@ def add_ephys(nwbfile, args,
         )
         mua_module.add(mua_es)
 
+    if args.Spikes=='Yes':
 
+        spiking_module = nwbfile.create_processing_module(
+            name        = "Spikes",
+            description = "Single Unit after Spike Sorting",
+        )
 
-def add_spikes(nwbfile, args,
-                metadata=None):
+        folder = os.path.join(args.NPX_folder, 
+            'Record Node 101', 'experiment1', 'recording1', 
+            'continuous', 'OneBox-100.ProbeA', 'kilosort4')
 
-    # ── 3g. Spike events (optional) ───────────────────────────────────────
-    # Requires a pre-computed spike-sorting result (e.g. from Kilosort).
-    # SpikeInterface can load Kilosort / Phy output with:
-    #   sorting = si.read_kilosort(phy_folder)
-    if False:
-        print("Writing spike events … (not implemented in this template)")
-        # Example skeleton:
-        #
-        # sorting = si.read_kilosort(Path("/path/to/phy/output"))
-        # for unit_id in sorting.get_unit_ids():
-        #     spike_times = sorting.get_unit_spike_train(unit_id, return_times=True)
-        #     nwbfile.add_unit(spike_times=spike_times, electrode_group=electrode_group)
+        sorting = si.read_kilosort(folder)
+        # for now still need to read the kilosort data
+        #      the spike-interface layer doesn't work to extract templates
+        templates = np.load(os.path.join(folder, 'templates.npy'), 
+                            allow_pickle=True)
+
+        print("         -> Writing Single Unit Activity [...]")
+
+        for unit_id in sorting.get_unit_ids():
+
+            spike_time_indices = sorting.get_unit_spike_train(unit_id,
+                                            start_frame=args.nStart,
+                                            end_frame=args.nStop)
+            # we translate those into spike times
+            spike_times = [timestamps[s-args.nStart]\
+                            for s in spike_time_indices]
+            # we now add to the NWB file
+            nwbfile.add_unit(spike_times=spike_times, 
+                             electrode_group=electrode_group)
+            
+        # -------------------------------- #
+        #          Spike templates         #
+        # -------------------------------- #
+        # features should be --> time, channel, features
+        #       and templates is (id, time, channel)
+        spike_waveforms = FeatureExtraction(
+            name="Waveforms",
+            electrodes=all_electrodes,
+            description=['%i' for i in range(templates.shape[0])],
+            times=np.arange(templates.shape[1])/30e3,
+            features=np.array([
+                [templates[:,i,k] for k in range(templates.shape[2])]\
+                    for i in range(templates.shape[1])])
+            )
+        spiking_module.add(spike_waveforms)
  

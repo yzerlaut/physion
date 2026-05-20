@@ -732,7 +732,7 @@ def build_NWB_func(args, Subject=None):
 
     # print('---> done !')
     file_size_mb = os.path.getsize(args.filename) / 1e6
-    print(f"Done ! File size: {file_size_mb:.1f} MB")
+    print(f"                [ok] File size: {file_size_mb:.1f} MB")
  
     return args.filename
 
