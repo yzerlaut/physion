@@ -201,9 +201,21 @@ def build_NWB_func(args, Subject=None):
 
                 binary = NIdaq_data['digital'][chan1]*1+2*NIdaq_data['digital'][chan2]
 
-                speed = compute_speed(binary,
-                        acq_freq=float(metadata['NIdaq']['acquisition-frequency']),
-                        radius_position_on_disk=float(metadata['treadmill']['radius-position-on-disk-cm']))
+                # quick fix 
+                try: 
+                    speed = compute_speed(binary,
+                            acq_freq=float(metadata['NIdaq']['acquisition-frequency']),
+                            radius_position_on_disk=float(metadata['treadmill']['radius-position-on-disk-cm']))
+                except: 
+                    try: 
+                        speed = compute_speed(binary,
+                            acq_freq=float(metadata['NIdaq']['acquisition-frequency']),
+                            radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']))
+                    except:
+                        print("Problem calculating speed")    
+                # end quick fix
+                
+
                 _, speed = resample_signal(speed,
                                         original_freq=float(metadata['NIdaq']['acquisition-frequency']),
                                         new_freq=args.running_sampling,

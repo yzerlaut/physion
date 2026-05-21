@@ -346,12 +346,26 @@ def raw_data_plot(self, tzoom,
                     self.StimAnnots.append(pg.TextItem())
                     text = 'stim.#%i\n\n' % (i+1)
                     for key in self.data.nwbfile.stimulus.keys(): # 666 means None
-                        if (key not in ['time_start', 'time_start_realigned',
-                               'time_stop', 'time_stop_realigned', 'protocol-name']) and \
-                                       (self.data.nwbfile.stimulus[key].data[i,0]!=666):
-                            text+='%s : %s\n' % (key, str(self.data.nwbfile.stimulus[key].data[i,0]))
+                        
+                        if key not in ['time_start', 'time_start_realigned',
+                                       'time_stop','time_stop_realigned',
+                                       'protocol-name']:
+                       
+                            # handle both 1D and 2D datasets. Is it always 1D now?
+                            value = self.data.nwbfile.stimulus[key].data[i] \
+                                                if self.data.nwbfile.stimulus[key].data.ndim == 1 \
+                                                else self.data.nwbfile.stimulus[key].data[i, 0]
+
+                            if value != 666:
+                                text += '%s : %s\n' % (key, str(value))
+
+
                     if 'protocol_id' in self.data.nwbfile.stimulus:
-                        text += '\n* %s *\n' % self.data.protocols[self.data.nwbfile.stimulus['protocol_id'].data[i,0]][:20]
+                        # handle both 1D and 2D datasets. Is it always 1D now?
+                        value_prot = self.data.nwbfile.stimulus['protocol_id'].data[i] \
+                                            if self.data.nwbfile.stimulus['protocol_id'].data.ndim == 1 \
+                                            else self.data.nwbfile.stimulus['protocol_id'].data[i, 0]
+                        text += '\n* %s *\n' % self.data.protocols[value_prot][:20]
                     self.StimAnnots[-1].setPlainText(text)                    
                     self.StimAnnots[-1].setPos(t0, 0.95*y.max())
                     self.plot.addItem(self.StimAnnots[-1])
