@@ -440,6 +440,17 @@ class Data:
     #       Electrophysiology   #
     #############################
 
+    def read_and_format_ephys_data(self):
+       
+        self.NPX_folder = \
+            data.nwbfile.devices['Neuropixels OneBox'].description.split('**')[-1]
+
+        self.build_spikes()
+        self.build_muEvents()
+        self.build_LFP()
+
+                
+
     def build_LFP(self,
         specific_time_sampling=None,
         interpolation='linear',
@@ -451,14 +462,13 @@ class Data:
         self.t_LFP = self.nwbfile.processing['LFP'].data_interfaces['LFP'].timestamps[:]
 
         if specific_time_sampling is not None:
-            self.LFP = np.array([\
+            return np.array([\
                 tools.resample(self.t_LFP,
                                 self.LFP[i,:],
                                 specific_time_sampling,
                                 interpolation=interpolation,
                                 verbose=verbose)\
                                 for i in range(self.LFP.shape[0])])
-            self.t_LFP = specific_time_sampling
 
 
     def build_MUA(self,
@@ -472,37 +482,88 @@ class Data:
         self.t_MUA = self.nwbfile.processing['MUA'].data_interfaces['MUA'].timestamps[:]
 
         if specific_time_sampling is not None:
-            self.MUA = np.array([\
+            return np.array([\
                 tools.resample(self.t_MUA,
                                 self.MUA[i,:],
                                 specific_time_sampling,
                                 interpolation=interpolation,
                                 verbose=verbose)\
                                 for i in range(self.MUA.shape[0])])
-            self.t_MUA = specific_time_sampling
 
 
-    def build_siSpikes(self,
+    def build_spikes(self,
             specific_time_sampling=None,
+            dt=1e-3,
             interpolation='linear',
             verbose=True):
         """
+        single-unit Spikes
+
+        builds a matrix (units, times) of boolean values
+            True -> means spike at that time for that unit
+
+
+        by default: dt=1ms
         """
-        # we transpose to have a matrix of shape (channels, timestamps)
-        self.MUA = np.transpose(\
-            self.nwbfile.processing['MUA'].data_interfaces['MUA'].data[:])
-        self.t_MUA = self.nwbfile.processing['MUA'].data_interfaces['MUA'].timestamps[:]
+        n = int((self.tlim[1]-self.tlim[0])/dt)
+        self.t_spikes = np.arange(n)*dt
+        self.spikes = np.zeros(\
+            (len(self.nwbfile.units), n), dtype=bool)
+        
+        for i, unit in enumerate(self.nwbfile.units):
+            for s in unit.spike_times.values[:][0]:
+                if int(s/dt)<n:
+                    self.spikes[i, int(s/dt)] = True
 
         if specific_time_sampling is not None:
-            self.MUA = np.array([\
-                tools.resample(self.t_MUA,
-                                self.MUA[i,:],
+            return np.array([\
+                tools.resample(self.t_spikes,
+                                self.spikes[i,:],
                                 specific_time_sampling,
                                 interpolation=interpolation,
                                 verbose=verbose)\
-                                for i in range(self.MUA.shape[0])])
-            self.t_MUA = specific_time_sampling
+                                for i in range(self.spikes.shape[0])])
+        
+    def build_spikeWaveforms(self):
+        """ load the spike template waveforms """
+        k1, k2 = 'Spiking', 'single-unit Waveforms'
+        self.t_spikeWaveforms = self.nwbfile.processing[k1].data_interfaces[k2].times[:]
+        self.spikeWaveforms = self.nwbfile.processing[k1].data_interfaces[k2].features[:]
 
+    def build_muEvents(self,
+            specific_time_sampling=None,
+            dt=1e-3,
+            interpolation='linear',
+            verbose=True):
+        """
+        multi-unit peak detection Events
+
+        builds a matrix (channels, times) of integer values
+            True -> means spike at that time for that unit
+
+
+        by default: dt=1ms
+        """
+        n = int((self.tlim[1]-self.tlim[0])/dt)
+        self.t_muEvents= np.arange(n)*dt
+        self.muEvents= np.zeros(\
+            (len(self.nwbfile.electrodes), n), dtype=np.uint8)
+        
+        for c, chan in enumerate(self.nwbfile.units):
+            channel_cond = \
+                (self.nwbfile.processing['Spiking'].data_interfaces['multi-unit Events'].data[:,1]==c)
+            for s in self.nwbfile.processing['Spiking'].data_interfaces['multi-unit Events'].data[:,0][channel_cond]:
+                if int(s/dt)<n:
+                    self.muEvents[c, int(s/dt)] += 1
+
+        if specific_time_sampling is not None:
+            return np.array([\
+                tools.resample(self.t_muEvents,
+                                self.muEvents[i,:],
+                                specific_time_sampling,
+                                interpolation=interpolation,
+                                verbose=verbose)\
+                                for i in range(self.muEvents.shape[0])])
 
     #############################
     #       Calcium Imaging     #
