@@ -460,7 +460,7 @@ def stop(self):
 
 def stop_acquisition(self):
 
-    # self.runEvent.clear() # needed to stop other processes ! 
+    self.runEvent.clear() # needed to stop other processes ! 
 
     if self.acq is not None:
         self.acq.close()
