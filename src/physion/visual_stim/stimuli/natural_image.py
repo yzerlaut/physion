@@ -49,7 +49,6 @@ class stim(visual_stim):
                   parent=None):
         
         im_id = int(self.experiment['Image-ID'][index])
-        print("Im id :", im_id)
         
         im0 = np.rot90(\
                 self.NIarray[im_id], k=1)
