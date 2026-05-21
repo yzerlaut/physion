@@ -227,7 +227,7 @@ def add_ephys(nwbfile, args,
 
     # ── 3e. Raw AP band ───────────────────────────────────────────────────
     # if args.raw_Ephys=='Yes':
-    if True:
+    if False:
 
         print("         - Writing raw EPhys data [...]")
  
