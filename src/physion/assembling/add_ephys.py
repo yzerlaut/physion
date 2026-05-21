@@ -252,8 +252,10 @@ def add_ephys(nwbfile, args,
         templates = np.load(os.path.join(folder, 'templates.npy'), 
                             allow_pickle=True)
 
+        # -------------------------------- #
+        #          Single Units            #
+        # -------------------------------- #
         print("         -> Writing Single Unit Activity [...]")
-
         for unit_id in sorting.get_unit_ids():
 
             spike_time_indices = sorting.get_unit_spike_train(unit_id,
@@ -281,4 +283,8 @@ def add_ephys(nwbfile, args,
                     for i in range(templates.shape[1])])
             )
         spiking_module.add(spike_waveforms)
+
+        # -------------------------------- #
+        #          Single Units            #
+        # -------------------------------- #
  
