@@ -842,7 +842,7 @@ if __name__=='__main__':
         if args.destination_folder=='':
             args.destination_folder = os.path.join(directory, 'NWBs')\
                      if os.path.isdir(os.path.join(directory, 'NWBs')) else directory
-
+        
         for i in np.arange(args.files_indices[0], 
                            min([len(dataset), args.files_indices[1]])):
             print('\n \n     [%i] -- %s \n ' % (i+1, dataset['datafolder'][i]))
@@ -863,7 +863,7 @@ if __name__=='__main__':
                             else False)
                 
             # for Neuropix recording, getting the whole-session-level infos
-            if dataset['Npx-Folder'][i]!='':
+            if 'Npx-Folder' in dataset and dataset['Npx-Folder'][i]!='':
                 build_args_for_ephys(args, dataset, i, directory)
 
             # building the modalities
