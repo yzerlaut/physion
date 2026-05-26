@@ -45,7 +45,8 @@ def update_config(self):
 
         if 'default-modalities' in self.config:
             for modality in self.config['default-modalities']:
-                getattr(self, '%sButton' % modality).setChecked(True)
+                if hasattr(self, '%sButton' % modality):
+                    getattr(self, '%sButton' % modality).setChecked(True)
 
         if hasattr(self, 'runButton') and hasattr(self, 'stopButton')\
                 and not self.stopButton.isEnabled():
