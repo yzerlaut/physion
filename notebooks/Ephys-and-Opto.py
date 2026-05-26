@@ -15,13 +15,17 @@ datafile = os.path.join(os.path.expanduser('~'),
                         'DATA', '2026_04_24', '2026_04_24-12-45-49.nwb')
 
 data = Data(datafile)
-data.build_running_speed()
-data.build_LFP(specific_time_sampling=data.t_running_speed)
-data.build_spikes()
-data.build_spikeWaveforms()
-data.read_optogen()
-data.build_muEvents()
+# data.build_running_speed()
+# data.build_LFP(specific_time_sampling=data.t_running_speed)
+# data.build_MUA(specific_time_sampling=data.t_running_speed)
 
+data.build_suSpikes() # builds data.suSpikes
+# data.build_suWaveforms() # builds data.suWaveforms
+data.read_optogen() # builds data.LED
+data.build_muEvents() # builds data.muEvents
+
+from physion.analysis.episodes.build import EpisodeData
+ep = EpisodeData(data, quantities=['muEvents', 'suSpikes'])
 # %%
 
 # # %%
@@ -97,9 +101,25 @@ data.build_muEvents()
 # plot_template(data, 70)
 
 # # %%
-# # %%
+# %%
+# import spikeinterface.full as si
+# rec = si.read_openephys('/Users/yann/DATA/2026_04_24/2026-04-24_12-23-16',
+#                     stream_name='Record Node 101#OneBox-100.ProbeA')
+
 # df = '/Users/yann/DATA/2026_04_24/2026-04-24_12-23-16/Record Node 101/experiment1/recording1/continuous/OneBox-100.ProbeA/kilosort4'
 # sorting = si.read_kilosort(df)
+
+# %%
+
+
+# %%
+# job_kwargs = dict(n_jobs=-1, progress_bar=True, chunk_duration="1s")
+
+# make the SortingAnalyzer with necessary and some optional extensions
+# sorting_analyzer = si.create_sorting_analyzer(sorting, rec,
+#                                               format="binary_folder", folder="/my_sorting_analyzer",
+#                                               **job_kwargs)
+
 # # %%
 # import spikeinterface.full as si
 # rec = si.read_openephys('/Users/yann/DATA/2026_04_24/2026-04-24_12-23-16',
@@ -166,3 +186,5 @@ data.build_muEvents()
 # # %%
 # rec = rec.remove_channels(bad_chans[0])
 # # %%
+
+# %%

@@ -445,9 +445,9 @@ class Data:
         self.NPX_folder = \
             data.nwbfile.devices['Neuropixels OneBox'].description.split('**')[-1]
 
-        self.build_spikes()
+        self.build_suSpikes()
         self.build_muEvents()
-        self.build_LFP()
+        # self.build_LFP()
 
                 
 
@@ -491,7 +491,7 @@ class Data:
                                 for i in range(self.MUA.shape[0])])
 
 
-    def build_spikes(self,
+    def build_suSpikes(self,
             specific_time_sampling=None,
             dt=1e-3,
             interpolation='linear',
@@ -507,28 +507,28 @@ class Data:
         """
         n = int((self.tlim[1]-self.tlim[0])/dt)
         self.t_spikes = np.arange(n)*dt
-        self.spikes = np.zeros(\
+        self.suSpikes = np.zeros(\
             (len(self.nwbfile.units), n), dtype=bool)
         
         for i, unit in enumerate(self.nwbfile.units):
             for s in unit.spike_times.values[:][0]:
                 if int(s/dt)<n:
-                    self.spikes[i, int(s/dt)] = True
+                    self.suSpikes[i, int(s/dt)] = True
 
         if specific_time_sampling is not None:
             return np.array([\
                 tools.resample(self.t_spikes,
-                                self.spikes[i,:],
+                                self.suSpikes[i,:],
                                 specific_time_sampling,
                                 interpolation=interpolation,
                                 verbose=verbose)\
-                                for i in range(self.spikes.shape[0])])
+                                for i in range(self.suSpikes.shape[0])])
         
-    def build_spikeWaveforms(self):
+    def build_suWaveforms(self):
         """ load the spike template waveforms """
         k1, k2 = 'Spiking', 'single-unit Waveforms'
-        self.t_spikeWaveforms = self.nwbfile.processing[k1].data_interfaces[k2].times[:]
-        self.spikeWaveforms = self.nwbfile.processing[k1].data_interfaces[k2].features[:]
+        self.t_suWaveforms = self.nwbfile.processing[k1].data_interfaces[k2].times[:]
+        self.suWaveforms = self.nwbfile.processing[k1].data_interfaces[k2].features[:]
 
     def build_muEvents(self,
             specific_time_sampling=None,
