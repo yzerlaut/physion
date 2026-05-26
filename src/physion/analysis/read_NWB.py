@@ -181,7 +181,7 @@ class Data:
 
         # optogenetics
         if 'OptogeneticSeries' in self.nwbfile.stimulus:
-            self.read_optogen()
+            self.read_LED()
                 
         if 'Pupil' in self.nwbfile.processing:
             self.read_pupil()
@@ -418,7 +418,7 @@ class Data:
     #       Optogenetics        #
     #############################
 
-    def read_optogen(self,
+    def read_LED(self,
         specific_time_sampling=None,
         interpolation='linear',
         verbose=True):
@@ -446,7 +446,7 @@ class Data:
             data.nwbfile.devices['Neuropixels OneBox'].description.split('**')[-1]
 
         self.build_suSpikes()
-        self.build_muEvents()
+        # self.build_muEvents()
         # self.build_LFP()
 
                 
@@ -493,7 +493,7 @@ class Data:
 
     def build_suSpikes(self,
             specific_time_sampling=None,
-            dt=1e-3,
+            dt=5e-3,
             interpolation='linear',
             verbose=True):
         """
@@ -506,7 +506,7 @@ class Data:
         by default: dt=1ms
         """
         n = int((self.tlim[1]-self.tlim[0])/dt)
-        self.t_spikes = np.arange(n)*dt
+        self.t_suSpikes = np.arange(n)*dt
         self.suSpikes = np.zeros(\
             (len(self.nwbfile.units), n), dtype=bool)
         

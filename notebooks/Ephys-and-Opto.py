@@ -8,35 +8,80 @@ import numpy as np
 
 sys.path += ['../src'] # add src code directory for physion
 import physion.utils.plot_tools as pt
+
 from physion.analysis.read_NWB import Data
+
+
 pt.set_style('dark')
 
 datafile = os.path.join(os.path.expanduser('~'), 
                         'DATA', '2026_04_24', '2026_04_24-12-45-49.nwb')
 
 data = Data(datafile)
+data.build_pupil_diameter()
+
 # data.build_running_speed()
 # data.build_LFP(specific_time_sampling=data.t_running_speed)
 # data.build_MUA(specific_time_sampling=data.t_running_speed)
-
+# %%
 data.build_suSpikes() # builds data.suSpikes
 # data.build_suWaveforms() # builds data.suWaveforms
-data.read_optogen() # builds data.LED
-data.build_muEvents() # builds data.muEvents
+# data.read_optogen() # builds data.LED
+# data.build_muEvents() # builds data.muEvents
 
-from physion.analysis.episodes.build import EpisodeData
-ep = EpisodeData(data, quantities=['muEvents', 'suSpikes'])
+# %%
+print(data.protocols)
+
 # %%
 
-# # %%
-# from physion.dataviz.ephys import show_waveforms
-# for unit in range(10):
-#     fig, ax = show_waveforms(data, unit_id=unit)
-#     ax.set_title('unit #%i' % (unit+1))
-# # 
-# # %%
-# for i, unit in enumerate(data.nwbfile.units):
-#     print(data.tlim[1], unit.spike_times.values[:][0][-1:])
+fig, AX = pt.figure(axes=(1,3), ax_scale=(2,1), hspace=0)
+
+tmax = 160
+# 1) LED
+cond = (data.t_LED<tmax)
+AX[1].plot(data.t_LED[cond], data.LED[cond])
+# 2) Pupil
+cond = (data.t_pupil[:]<tmax)
+AX[0].plot(data.t_pupil[cond], data.pupil_diameter[cond])
+# 2) Firing count across units
+cond = (data.t_suSpikes<tmax)
+AX[2].plot(data.t_suSpikes[cond], data.suSpikes[:,cond].sum(axis=0))
+
+
+
+# %%
+
+from physion.analysis.episodes.build import EpisodeData
+
+ep = EpisodeData(data, prestim_duration=2., 
+                 quantities=['suSpikes', 'LED'],
+                 protocol_name='ffDG-4dir-2ctrst+1sPrePostOpto')
+# %%
+
+for i range(10):
+    plt.plot(ep.t, ep.LED[i, :])
+
+
+# %%
+from physion.utils import plot_tools as pt
+
+LED_on = ep.LED.mean(axis=1)>0 # LED "On" episode condition
+
+fig, ax = pt.figure()
+
+ax.plot(ep.t, ep.suSpikes[LED_on, :,:].mean(axis=(0,1)))
+ax.plot(ep.t, ep.suSpikes[~LED_on,:, :].mean(axis=(0,1)))
+
+# %%
+data.build_suWaveforms() # builds data.suWaveforms
+from physion.dataviz.ephys import show_waveforms
+for unit in range(10):
+    fig, ax = show_waveforms(data, unit_id=unit)
+    ax.set_title('unit #%i' % (unit+1))
+# 
+# %%
+for i, unit in enumerate(data.nwbfile.units):
+    print(data.tlim[1], unit.spike_times.values[:][0][-1:])
 
 # # %%
 # from physion.analysis.episodes.build import EpisodeData

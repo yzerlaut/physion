@@ -2,7 +2,7 @@ import numpy as np
 import physion.utils.plot_tools as pt
 
 def find_center_channel(data, unit_id):
-    return np.argmax(np.std(data.spikeWaveforms[:,:,unit_id],axis=0))
+    return np.argmax(np.std(data.suWaveforms[:,:,unit_id],axis=0))
 
 def show_waveforms(data, 
                   unit_id=0,
@@ -31,8 +31,8 @@ def show_waveforms(data,
         y = data.nwbfile.electrodes[i].y[i]
 
         t = (x-x0)*x_shift_factor+\
-            np.arange(data.spikeWaveforms.shape[0])
-        wf = data.spikeWaveforms[:,i,unit_id]+\
+            np.arange(data.suWaveforms.shape[0])
+        wf = data.suWaveforms[:,i,unit_id]+\
             (y-y0)*y_shift_factor
         pt.plot(t, wf, ax=ax, no_set=True)
         pt.annotate(ax, 'ch.%i' % i,

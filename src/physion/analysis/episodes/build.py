@@ -200,7 +200,8 @@ class EpisodeData:
             else:
                 # quantity is a string but not already built
                 try:
-                    getattr(full_data, 'build_%s' % quantity)(**quantities_args)
+                    print('           ->  building %s [...]' % quantity)
+                    getattr(full_data, 'build_%s' % quantity)(**quantity_args)
                     QUANTITY_VALUES.append(getattr(full_data, quantity))
                     QUANTITY_TIMES.append(getattr(full_data, 't_%s' % quantity))
                     QUANTITIES.append(quantity)
