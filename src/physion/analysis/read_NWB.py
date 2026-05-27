@@ -549,12 +549,13 @@ class Data:
         self.muEvents= np.zeros(\
             (len(self.nwbfile.electrodes), n), dtype=np.uint8)
         
-        for c, chan in enumerate(self.nwbfile.units):
-            channel_cond = \
-                (self.nwbfile.processing['Spiking'].data_interfaces['multi-unit Events'].data[:,1]==c)
-            for s in self.nwbfile.processing['Spiking'].data_interfaces['multi-unit Events'].data[:,0][channel_cond]:
+        channels = self.nwbfile.processing['Spiking'].data_interfaces['multi-unit Events'].data[:]
+        times = self.nwbfile.processing['Spiking'].data_interfaces['multi-unit Events'].data[:]
+        for chan in np.unique(channels):
+            channel_cond = channels==chan
+            for s in times[channel_cond]:
                 if int(s/dt)<n:
-                    self.muEvents[c, int(s/dt)] += 1
+                    self.muEvents[chan, int(s/dt)] += 1
 
         if specific_time_sampling is not None:
             return np.array([\

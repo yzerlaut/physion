@@ -9,6 +9,7 @@ def show_waveforms(data,
                   channels_around=5,
                   x_shift_factor=3,
                   y_shift_factor=.4,
+                  ax=None,
                   ax_scale=(1.,2.5)):
     """
     deals with the fact that you can have dead channels
@@ -21,7 +22,10 @@ def show_waveforms(data,
     x0 = data.nwbfile.electrodes[n].x[n]
     y0 = data.nwbfile.electrodes[n].y[n]
 
-    fig, ax = pt.figure(ax_scale=ax_scale)
+    if ax is None:
+        fig, ax = pt.figure(ax_scale=ax_scale)
+    else:
+        fig = None
     ax.axis('off')
     for i in np.clip(\
             np.arange(n-channels_around, n+channels_around-1),

@@ -15,7 +15,7 @@ from physion.analysis.read_NWB import Data
 pt.set_style('dark')
 
 datafile = os.path.join(os.path.expanduser('~'), 
-                        'DATA', '2026_04_24', '2026_04_24-12-45-49.nwb')
+        'DATA', '2026_04_24', '2026_04_24-12-45-49.nwb')
 
 data = Data(datafile)
 data.build_pupil_diameter()
@@ -28,11 +28,13 @@ data.build_suSpikes() # builds data.suSpikes
 # data.build_suWaveforms() # builds data.suWaveforms
 # data.read_optogen() # builds data.LED
 # data.build_muEvents() # builds data.muEvents
+data.build_suWaveforms() # builds data.suWaveforms
 
 # %%
-print(data.protocols)
+# print(data.protocols)
 
 # %%
+from scipy.ndimage import gaussian_filter1d
 
 fig, AX = pt.figure(axes=(1,3), ax_scale=(2,1), hspace=0)
 
@@ -45,7 +47,9 @@ cond = (data.t_pupil[:]<tmax)
 AX[0].plot(data.t_pupil[cond], data.pupil_diameter[cond])
 # 2) Firing count across units
 cond = (data.t_suSpikes<tmax)
-AX[2].plot(data.t_suSpikes[cond], data.suSpikes[:,cond].sum(axis=0))
+firing = gaussian_filter1d(
+           data.suSpikes[:,cond].sum(axis=0), 30)
+AX[2].plot(data.t_suSpikes[cond], firing) 
 
 
 
@@ -56,28 +60,55 @@ from physion.analysis.episodes.build import EpisodeData
 ep = EpisodeData(data, prestim_duration=2., 
                  quantities=['suSpikes', 'LED'],
                  protocol_name='ffDG-4dir-2ctrst+1sPrePostOpto')
+
 # %%
-
-for i range(10):
-    plt.plot(ep.t, ep.LED[i, :])
-
+# data.build_suWaveforms()
 
 # %%
 from physion.utils import plot_tools as pt
+from physion.dataviz.ephys import show_waveforms
 
 LED_on = ep.LED.mean(axis=1)>0 # LED "On" episode condition
 
-fig, ax = pt.figure()
-
-ax.plot(ep.t, ep.suSpikes[LED_on, :,:].mean(axis=(0,1)))
-ax.plot(ep.t, ep.suSpikes[~LED_on,:, :].mean(axis=(0,1)))
-
 # %%
+import matplotlib.pylab as plt
+
 data.build_suWaveforms() # builds data.suWaveforms
-from physion.dataviz.ephys import show_waveforms
-for unit in range(10):
-    fig, ax = show_waveforms(data, unit_id=unit)
-    ax.set_title('unit #%i' % (unit+1))
+
+def plot_unit(unit):
+    fig = plt.figure(figsize=(4,2))
+    axWF = fig.add_axes([0,0,0.4,1])
+    axBlank = fig.add_axes([0.5,0.5,0.5,0.4])
+    axLED = fig.add_axes([0.5,0,0.5,0.4])
+    for ax, label, cond in zip([axBlank, axLED], 
+                            ['blank', 'LED'],
+                            [~LED_on, LED_on]):
+        rate = ep.suSpikes[cond, unit, :].mean(axis=0)/(ep.t[1]-ep.t[0])
+        # smoothing:
+        rate = gaussian_filter1d(rate, 30)
+        ax.fill_between(ep.t, 0*ep.t, rate)
+        # rate = ep.suSpikes[cond, unit, :].mean(axis=0)
+        # rate = ep.muEvents[cond, :, :].mean(axis=(0,1))
+        # rate = ep.muEvents[cond, unit, :].mean(axis=0)
+        pt.annotate(ax, label, (0.5,1), va='top', ha='center')
+        pt.draw_bar_scales(ax, Xbar=1, Ybar=2,
+                        Xbar_label='1s', Ybar_label='2Hz')
+        ax.axis('off')
+    pt.set_common_ylims([axBlank, axLED])
+    for ax in [axBlank, axLED]:
+        ax.fill_between([0,2], [0,0],
+                    ax.get_ylim()[1]*np.ones(2), alpha=.1)
+    axLED.fill_between(ep.t, 0*ep.t,
+                ax.get_ylim()[1]*ep.LED[cond, :].mean(axis=0), alpha=0.1)
+    _ = show_waveforms(data, unit_id=unit, ax=axWF)
+    pt.annotate(fig, 'unit #%i' % (unit+1), (1,1), va='top', ha='right')
+plot_unit(168)
+# %%
+for unit in range(data.suSpikes.shape[0]):
+    # ax.set_title('unit #%i' % (unit+1))
+    # fig, ax = show_waveforms(data, unit_id=unit, ax=axWF)
+    plot_unit(unit)
+    
 # 
 # %%
 for i, unit in enumerate(data.nwbfile.units):
@@ -216,8 +247,8 @@ for i, unit in enumerate(data.nwbfile.units):
 # from spikeinterface.sortingcomponents import peak_detection
 # peaks = peak_detection.detect_peaks(rec)
 # # %%
-# sample_index = np.array([peaks.item(i)[0] for i in range(len(peaks))])
-# channel = np.array([peaks.item(i)[1] for i in range(len(peaks))])
+# sample_indices = np.array([peaks.item(i)[0] for i in range(len(peaks))])
+# channels = np.array([peaks.item(i)[1] for i in range(len(peaks))])
 # sample_index
 # # %%
 # np.unique([peaks.item(i)[1] for i in range(len(peaks))])

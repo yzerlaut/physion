@@ -181,15 +181,13 @@ def add_ephys(nwbfile, args,
                             )
         
         print("         -> writing multi-unit events per channels [...]")
-        times, channels = np.array([peaks.item(i)[:2] for i in range(len(peaks))]).T
+        times = np.array([peaks.item(i)[0] for i in range(len(peaks))])
+        channels = np.array([peaks.item(i)[1] for i in range(len(peaks))])
         muEvents = SpikeEventSeries(
             name="multi-unit Events",
-            data =\
-                 np.array([peaks.item(i)[:2] for i in range(len(peaks))]).T,
+            data = channels,
             electrodes=all_electrodes,
-            timestamps= [\
-                timestamps[peaks.item(i)[0]]\
-                           for i in range(len(peaks))])
+            timestamps= [timestamps[t] for t in times])
 
         spiking_module.add(muEvents)
 
