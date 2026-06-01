@@ -204,7 +204,7 @@ def run_analysis_splitting_by_stim_params(ep,
                     print(' Number of episodes n=%i for cond:' % np.sum(merged_episode_cond))
                     print('      ', VARIED_KEYS, ' = ', values)
                     print('     is lower that nMin_episodes specific for stat_test (%i)' % nMin_episodes)
-                    print('        ---> NOT INCLUDED int summary statistics')
+                    print('        ---> NOT INCLUDED in the summary statistics')
 
     else:
 

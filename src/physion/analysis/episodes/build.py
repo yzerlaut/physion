@@ -64,7 +64,8 @@ class EpisodeData:
                             prestim_duration=prestim_duration,
                             dt_sampling=dt_sampling,
                             interpolation=interpolation,
-                            tfull=tfull)
+                            tfull=tfull,
+                            verbose=verbose)
 
         ################################################i
         #           some clean up
@@ -128,7 +129,8 @@ class EpisodeData:
                        prestim_duration=None,
                        dt_sampling=1, # ms
                        interpolation='linear',
-                       tfull=None):
+                       tfull=None,
+                       verbose=True):
        
         """
         Sets self.varied_parameters and self.fixed_parameters
@@ -200,7 +202,8 @@ class EpisodeData:
             else:
                 # quantity is a string but not already built
                 try:
-                    print('           ->  building %s [...]' % quantity)
+                    if verbose:
+                        print('           ->  building %s [...]' % quantity)
                     getattr(full_data, 'build_%s' % quantity)(**quantity_args)
                     QUANTITY_VALUES.append(getattr(full_data, quantity))
                     QUANTITY_TIMES.append(getattr(full_data, 't_%s' % quantity))

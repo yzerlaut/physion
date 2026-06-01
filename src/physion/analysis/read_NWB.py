@@ -630,6 +630,7 @@ class Data:
         if not hasattr(self, 'dFoF'):
             print('\n deconvolution not possible \n --> need to build_dFoF(**options) first !! ')
         else:
+            self.t_Deconvolved = self.t_dFoF
             setattr(self, 'Deconvolved',
                     oasis(self.dFoF, 
                           self.dFoF.shape[0], # batch size
