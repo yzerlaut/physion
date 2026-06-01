@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Analysis of Eletrophysiology Data and Optogenetic Manipulation
+# # Analysis of Electrophysiology Data and Optogenetic Manipulation
 
 # %%
 # general python modules for scientific analysis
@@ -27,7 +27,7 @@ data.build_pupil_diameter()
 data.build_suSpikes() # builds data.suSpikes
 # data.build_suWaveforms() # builds data.suWaveforms
 # data.read_optogen() # builds data.LED
-# data.build_muEvents() # builds data.muEvents
+data.build_muEvents() # builds data.muEvents
 data.build_suWaveforms() # builds data.suWaveforms
 
 # %%
@@ -62,7 +62,7 @@ ep = EpisodeData(data, prestim_duration=2.,
                  protocol_name='ffDG-4dir-2ctrst+1sPrePostOpto')
 
 # %%
-# data.build_suWaveforms()
+data.build_suWaveforms()
 
 # %%
 from physion.utils import plot_tools as pt
@@ -102,7 +102,7 @@ def plot_unit(unit):
                 ax.get_ylim()[1]*ep.LED[cond, :].mean(axis=0), alpha=0.1)
     _ = show_waveforms(data, unit_id=unit, ax=axWF)
     pt.annotate(fig, 'unit #%i' % (unit+1), (1,1), va='top', ha='right')
-plot_unit(168)
+plot_unit(10)
 # %%
 for unit in range(data.suSpikes.shape[0]):
     # ax.set_title('unit #%i' % (unit+1))
@@ -123,16 +123,28 @@ for i, unit in enumerate(data.nwbfile.units):
 # import physion.utils.plot_tools as pt
 # pt.set_style('dark')
 
-# # %%
-# import numpy as np
-# df = '/Users/yann/DATA/2026_04_24/2026-04-24_12-23-16/Record Node 101/experiment1/recording1/continuous/OneBox-100.ProbeA/kilosort4'
-# data = {}
-# for key in [f for f in os.listdir(df) if '.npy' in f]:
-#     # data[key.replace('.npy','')] = np.load(os.path.join(df, key), allow_pickle=True)
-#     # exec('%s = np.load("%s/%s", allow_pickle=True)' % (key.replace('.npy',''), df, key))
-#     data[key.replace('.npy','')] = np.load(os.path.join(df, key), allow_pickle=True)
-# # %%
-# templates = np.load(os.path.join(df, 'templates.npy'), allow_pickle=True)
+# %%
+import numpy as np
+import pandas as pd
+
+import csv
+df = '/Users/yann/DATA/2026_04_24/2026-04-24_12-23-16/Record Node 101/experiment1/recording1/continuous/OneBox-100.ProbeA/kilosort4'
+def read_kilosort(df):
+    data = {}
+    for key in [f for f in os.listdir(df) if '.npy' in f]:
+        # data[key.replace('.npy','')] = np.load(os.path.join(df, key), allow_pickle=True)
+        # exec('%s = np.load("%s/%s", allow_pickle=True)' % (key.replace('.npy',''), df, key))
+        data[key.replace('.npy','')] = np.load(os.path.join(df, key), allow_pickle=True)
+    for key in [f for f in os.listdir(df) if '.tsv' in f]:
+        rd = pd.read_csv(open(os.path.join(df, key)), sep = '\t')
+        keys = list(rd.keys())
+        for k in keys:
+            if k!='cluster_id':
+                data[key.replace('.tsv','')+'_'+k] = rd[k]
+    return data
+data = read_kilosort(df)
+# %%
+templates = np.load(os.path.join(df, 'templates.npy'), allow_pickle=True)
 
 # # %%
 # import matplotlib.pylab as plt

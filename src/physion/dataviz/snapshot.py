@@ -185,9 +185,7 @@ def update_screen(AX, data, t):
 
 def get_camera_img(camera, t=0):
 
-    index = np.argmin((camera.times-t)**2)
-
-    return np.array(camera.get(index).T, dtype=float)/255.
+    return np.array(camera.get_from_time(t).T, dtype=float)/255.
 
 def init_camera(AX, params, camera, name='Face'):
 
@@ -210,7 +208,7 @@ def update_camera(AX, params, camera, t=0, name='Face'):
 
     img= get_camera_img(camera, t)
 
-    AX['imgRig'].set_array(show_img(img, params, 'Rig'))
+    AX['img%s' % name].set_array(show_img(img, params, name))
 
 def get_pupil_center(index, data):
     coords = []

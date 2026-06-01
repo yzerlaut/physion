@@ -24,8 +24,7 @@ class CameraData:
     def __init__(self, name,
                  folder = '.',
                  video_formats=['mp4', 'wmv', 'avi'],
-                 t0=0,
-                 verbose=True):
+                 verbose=False):
 
         
         self.name = name
@@ -190,10 +189,14 @@ class CameraData:
             self.FRAMES = [np.zeros(self.summary['resolution'])]
                 
 
+    def build_relative_times(self, t0=None):
 
-    def build_relative_times(self):
+        if t0 is not None:
 
-        if os.path.isfile(os.path.join(self.folder, 'NIdaq.start.npy')):
+            self.t0 = t0
+            self.relative_times = self.times - self.t0
+
+        elif os.path.isfile(os.path.join(self.folder, 'NIdaq.start.npy')):
 
             self.t0 = np.load(os.path.join(self.folder, 'NIdaq.start.npy'))[0]
             self.relative_times = self.times - self.t0
@@ -208,9 +211,22 @@ class CameraData:
                         --> no "t0" information available
                   """)
         
+    def get_from_time(self, time):
 
-    def get(self, index, 
-            from_relative_time=None):
+        if hasattr(self, 'relative_times'):
+            index = np.argmin((self.relative_times-time)**2)
+            return self.get(index)
+        else:
+            print("""
+                  
+                --> no "relative_times" information available
+                  
+                  need to build the relative_times with:
+                        cam.build_relative_times(t0=...)
+                  """)
+
+
+    def get(self, index):
 
         if self.binary_file is not None:
 

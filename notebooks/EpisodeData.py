@@ -12,6 +12,8 @@
 
 
 # %%
+
+# %%
 import os, sys
 sys.path += ['../src'] # add src code directory for physion
 from physion.analysis.read_NWB import Data, scan_folder_for_NWBfiles
@@ -41,13 +43,10 @@ data.build_dFoF(**dFoF_options, verbose=True)
 data.build_pupil_diameter()
 data.build_running_speed()
 
-
-
-
 # %% [markdown]
 # ### init
 # %%
-quantities = ['dFoF', 'running_speed', 'pupil_diameter']
+quantities = ['dFoF', 'running_speed'] #, 'pupil_diameter']
 protocol = "static-patch"
 ep = EpisodeData(data, 
                  quantities = quantities, 
