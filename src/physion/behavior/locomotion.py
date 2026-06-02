@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.ndimage import gaussian_filter1d
 
-from physion.analysis.tools import reasample_signal
+from physion.analysis.tools import resample_signal
 
 def process_binary_signal(binary_signal, empirical=False):
 
