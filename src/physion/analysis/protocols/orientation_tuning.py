@@ -124,7 +124,7 @@ def compute_tuning_response_per_cells(data, Episodes,
 
     # find preferred angle:
     ipref = np.argmax(summary['value'], axis=1).flatten()
-    print(ipref)
+    # print(ipref)
 
     prefered_angles = np.array(\
             [summary['angle'][i] for i in ipref])

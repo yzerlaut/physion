@@ -22,26 +22,30 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 from dateutil.tz import tzlocal
 
-#################################################
-###        Select the Camera Interface    #######
-#################################################
-from physion.intrinsic.load_camera import *
-
-#################################################
-###        Now set up the Acquisition     #######
-#################################################
-
 from physion.utils.paths import FOLDERS
-from physion.acquisition.settings import get_config_list, update_config
-from physion.visual_stim.main import visual_stim
-from physion.visual_stim.show import init_stimWindows
-from physion.utils.files import generate_filename_path
-from physion.acquisition.tools import base_path
-from physion.intrinsic.acquisition import take_fluorescence_picture,\
-        take_vasculature_picture, write_data,\
-        save_intrinsic_metadata, live_intrinsic,\
-        stop_intrinsic, get_frame, update_Image, update_dt_intrinsic,\
-        initialize_stimWindow
+
+if ('all' in sys.argv) or ('OD' in sys.argv) or ('ocular-dominance' in sys.argv):
+    # launched in acquisition mode...
+
+    #################################################
+    ###        Select the Camera Interface    #######
+    #################################################
+    from physion.intrinsic.load_camera import *
+
+    #################################################
+    ###        Now set up the Acquisition     #######
+    #################################################
+    from physion.acquisition.settings import get_config_list, update_config
+    from physion.visual_stim.main import visual_stim
+    from physion.visual_stim.show import init_stimWindows
+    from physion.utils.files import generate_filename_path
+    from physion.acquisition.tools import base_path
+    from physion.intrinsic.acquisition import take_fluorescence_picture,\
+            take_vasculature_picture, write_data,\
+            save_intrinsic_metadata, live_intrinsic,\
+            stop_intrinsic, get_frame, update_Image, update_dt_intrinsic,\
+            initialize_stimWindow
+    
 from physion.intrinsic.tools import *
 
 def gui(self,

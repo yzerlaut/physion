@@ -68,11 +68,12 @@ def get_responses(Sensitivities,
 
     if average_by=='sessions':
         # mean significant responses per session
-        Responses = [np.mean(S['Responses'], axis=0) for S in Sensitivities]
+        Responses = [np.mean(S['Responses'], axis=0)\
+                                for S in Sensitivities]
 
     elif average_by=='subjects':
-        subjects = np.array([Sensitivitie['subject']\
-                                for Sensitivitie in Sensitivities])
+        subjects = np.array([Sensitivity['subject']\
+                                for Sensitivity in Sensitivities])
         Responses = []
         # mean significant responses per session
         for subj in np.unique(subjects):

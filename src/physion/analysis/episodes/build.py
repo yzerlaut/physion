@@ -6,6 +6,8 @@ from scipy.interpolate import interp1d
 from physion.analysis import stat_tools
 from physion.visual_stim.build import build_stim
 import physion.analysis.episodes as episodes
+from .trial_statistics import pre_post_statistics,\
+        stat_test_for_evoked_responses, reliability
 
 class EpisodeData:
     """
@@ -64,7 +66,8 @@ class EpisodeData:
                             prestim_duration=prestim_duration,
                             dt_sampling=dt_sampling,
                             interpolation=interpolation,
-                            tfull=tfull)
+                            tfull=tfull,
+                            verbose=verbose)
 
         ################################################i
         #           some clean up
@@ -128,7 +131,8 @@ class EpisodeData:
                        prestim_duration=None,
                        dt_sampling=1, # ms
                        interpolation='linear',
-                       tfull=None):
+                       tfull=None,
+                       verbose=True):
        
         """
         Sets self.varied_parameters and self.fixed_parameters
@@ -186,107 +190,34 @@ class EpisodeData:
         for iq, quantity, quantity_args in zip(range(len(quantities)), quantities, quantities_args):
 
             if type(quantity)!=str and (tfull is not None):
+                # if quantity is an array and not a keyword
                 QUANTITY_VALUES.append(quantity)
                 QUANTITY_TIMES.append(tfull)
                 QUANTITIES.append('quant_%i' % iq)
 
-            elif quantity in ['running_speed', 'Running-Speed', 'RunningSpeed', 'Locomotion']:
-                if not hasattr(full_data, 'running_speed'):
-                    full_data.build_running_speed(**quantity_args)
-                QUANTITY_VALUES.append(full_data.running_speed)
-                QUANTITY_TIMES.append(full_data.t_running_speed)
-                QUANTITIES.append('running_speed')
-
-            elif quantity in ['Deconvolved']:
-                if not hasattr(full_data, 'Deconvolved'):
-                    full_data.build_Deconvolved(**quantity_args)
-                QUANTITY_VALUES.append(full_data.Deconvolved)
-                QUANTITY_TIMES.append(full_data.t_dFoF)
-                QUANTITIES.append('Deconvolved')
-
-            elif quantity in ['dFoF', 'dF/F']:
-                if not hasattr(full_data, 'dFoF'):
-                    full_data.build_dFoF(**quantity_args)
-                QUANTITY_VALUES.append(full_data.dFoF)
-                QUANTITY_TIMES.append(full_data.t_dFoF)
-                QUANTITIES.append('dFoF')
-
-            elif quantity in ['Zscore_dFoF', 'Zscore_dF/F']:
-                if not hasattr(full_data, 'Zscore_dFoF'):
-                    full_data.build_Zscore_dFoF(**quantity_args)
-                QUANTITY_VALUES.append(full_data.Zscore_dFoF)
-                QUANTITY_TIMES.append(full_data.t_dFoF)
-                QUANTITIES.append('Zscore_dFoF')
-
-            elif quantity in ['Neuropil', 'neuropil']:
-                if not hasattr(full_data, 'neuropil'):
-                    full_data.build_neuropil(**quantity_args)
-                QUANTITY_VALUES.append(full_data.neuropil)
-                QUANTITY_TIMES.append(full_data.t_neuropil)
-                QUANTITIES.append('neuropil')
-
-            elif quantity in ['Fluorescence', 'rawFluo']:
-                if not hasattr(full_data, 'rawFluo'):
-                    full_data.build_rawFluo(**quantity_args)
-                QUANTITY_VALUES.append(full_data.rawFluo)
-                QUANTITY_TIMES.append(full_data.t_rawFluo)
-                QUANTITIES.append('rawFluo')
-
-            elif quantity in ['pupil_diameter', 'Pupil', 'pupil-size', 'Pupil-diameter', 'pupil-diameter', 'pupil']:
-                if not hasattr(full_data, 'pupil_diameter'):
-                    full_data.build_pupil_diameter(**quantity_args)
-                QUANTITY_VALUES.append(full_data.pupil_diameter)
-                QUANTITY_TIMES.append(full_data.t_pupil)
-                QUANTITIES.append('pupil_diameter')
-
-            elif quantity in ['gaze', 'Gaze', 'gaze_movement', 'gazeMovement', 'gazeDirection']:
-                if not hasattr(full_data, 'gaze_movement'):
-                    full_data.build_gaze_movement(**quantity_args)
-                QUANTITY_VALUES.append(full_data.gaze_movement)
-                QUANTITY_TIMES.append(full_data.t_pupil)
-                QUANTITIES.append('gaze_movement')
-
-            elif quantity in ['facemotion', 'FaceMotion', 'faceMotion']:
-                if not hasattr(full_data, 'facemotion'):
-                    full_data.build_facemotion(**quantity_args)
-                QUANTITY_VALUES.append(full_data.facemotion)
-                QUANTITY_TIMES.append(full_data.t_facemotion)
-                QUANTITIES.append('faceMotion')
-
-            elif quantity in ['Spikes']:
-                if not hasattr(full_data, 'Spikes'):
-                    full_data.build_Spikes(**quantity_args)
-                QUANTITY_VALUES.append(full_data.Spikes)
-                QUANTITY_TIMES.append(full_data.t_Spikes)
-                QUANTITIES.append('Spikes')
-
-            elif quantity in ['MUA']:
-                if not hasattr(full_data, 'MUA'):
-                    full_data.build_MUA(**quantity_args)
-                QUANTITY_VALUES.append(full_data.MUA)
-                QUANTITY_TIMES.append(full_data.t_MUA)
-                QUANTITIES.append('MUA')
-
-            elif quantity in ['LFP']:
-                if not hasattr(full_data, 'LFP'):
-                    full_data.build_LFP(**quantity_args)
-                QUANTITY_VALUES.append(full_data.LFP)
-                QUANTITY_TIMES.append(full_data.t_LFP)
-                QUANTITIES.append('LFP')
+            elif hasattr(full_data, quantity):
+                # quantity is a string and it's already built
+                QUANTITY_VALUES.append(getattr(full_data, quantity))
+                QUANTITY_TIMES.append(getattr(full_data, 't_%s' % quantity))
+                QUANTITIES.append(quantity)
 
             else:
-                if quantity in full_data.nwbfile.acquisition:
-                    QUANTITY_TIMES.append(np.arange(full_data.nwbfile.acquisition[quantity].data.shape[0])/full_data.nwbfile.acquisition[quantity].rate)
-                    QUANTITY_VALUES.append(full_data.nwbfile.acquisition[quantity].data[:,0])
-                    QUANTITIES.append(full_data.nwbfile.acquisition[quantity].name.replace('-', '').replace('_', ''))
-                elif quantity in full_data.nwbfile.processing:
-                    QUANTITY_TIMES.append(np.arange(full_data.nwbfile.processing[quantity].data.shape[0])/full_data.nwbfile.processing[quantity].rate)
-                    QUANTITY_VALUES.append(full_data.nwbfile.processing[quantity].data[:,0])
-                    QUANTITIES.append(full_data.nwbfile.processing[quantity].name.replace('-', '').replace('_', ''))
-                else:
+                # quantity is a string but not already built
+                try:
+                    if verbose:
+                        print('           ->  building %s [...]' % quantity)
+                    getattr(full_data, 'build_%s' % quantity)(**quantity_args)
+                    QUANTITY_VALUES.append(getattr(full_data, quantity))
+                    QUANTITY_TIMES.append(getattr(full_data, 't_%s' % quantity))
+                    QUANTITIES.append(quantity)
+                except BaseException as be:
+                    print()
+                    print(be)
+                    print()
                     print(30*'-')
-                    print(quantity, 'not recognized')
+                    print('[!!] Pb, ', quantity, 'not recognized')
                     print(30*'-')
+
 
         # adding the parameters
         for key in full_data.nwbfile.stimulus.keys():
@@ -532,14 +463,19 @@ class EpisodeData:
 
         return 0
     
-
+    def pre_post_statistics(self, **args):
+        return pre_post_statistics(self, **args)
+    def stat_test_for_evoked_responses(self, **args):
+        return stat_test_for_evoked_responses(self, **args)
+    def reliability(self, **args):
+        return reliability(self, **args)
 
 if __name__=='__main__':
 
-    import physion
+    from physion.analysis.read_NWB import Data
 
     filename = sys.argv[-1]
-    data= physion.analysis.read_NWB.Data(filename)
+    data= Data(filename)
     data.build_dFoF()
     print("Protocols : ", data.protocols)
 
@@ -547,12 +483,14 @@ if __name__=='__main__':
     ep = EpisodeData(data, quantities=['dFoF'], protocol_id=2)
     print("Varied parameters : ", ep.varied_parameters)
 
-    for ia, angle in enumerate(episodes.varied_parameters['angle']):
-        ep_cond = episodes.find_episode_cond('angle', ia)
-        stats = episodes.trial_statistics.stat_test_for_evoked_responses(ep,
-                                                                episode_cond=ep_cond,
-                                                                response_args={'quantity':'dFoF', 'roiIndex':3})
-        print(ia, angle, stats.significant())
+    summary = ep.pre_post_statistics()
+    print(summary)
+    # for ia, angle in enumerate(episodes.varied_parameters['angle']):
+    #     ep_cond = episodes.find_episode_cond('angle', ia)
+    #     stats = episodes.trial_statistics.stat_test_for_evoked_responses(ep,
+    #                                                             episode_cond=ep_cond,
+    #                                                             response_args={'quantity':'dFoF', 'roiIndex':3})
+    #     print(ia, angle, stats.significant())
 
         
 

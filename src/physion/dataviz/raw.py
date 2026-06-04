@@ -52,7 +52,9 @@ def add_Locomotion(data, tlim, ax,
                    fig_fraction_start=0., fig_fraction=1., subsampling=2,
                    speed_scale_bar=1, # cm/s
                    scale_side='left',
-                   color='#1f77b4', name='run. speed'):
+                   color='tab:green', 
+                #    color='#1f77b4', 
+                   name='run. speed'):
 
     if not hasattr(data, 'running_speed'):
         data.build_running_speed()
@@ -119,7 +121,9 @@ def add_GazeMovement(data, tlim, ax,
 
 def add_FaceMotion(data, tlim, ax,
                    scale_side='left',
-                   fig_fraction_start=0., fig_fraction=1., subsampling=2, color='#9467bd', name='facemotion'):
+                   fig_fraction_start=0., fig_fraction=1., subsampling=2, 
+                   color='#9467bd', 
+                   name='facemotion'):
 
     if not hasattr(data, 'facemotion'):
         data.build_facemotion()
@@ -141,7 +145,7 @@ def add_FaceMotion(data, tlim, ax,
 def add_Optogenetics(data, tlim, ax,
                    scale_side='left',
                    fig_fraction_start=0., fig_fraction=1., subsampling=5, 
-                   color='#9467bd', name='LED'):
+                   color='tab:blue', name='LED'):
 
     i1, i2 = dv_tools.convert_times_to_indices(*tlim,
                             data.nwbfile.stimulus['OptogeneticSeries'])

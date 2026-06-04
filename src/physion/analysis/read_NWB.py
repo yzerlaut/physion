@@ -181,7 +181,7 @@ class Data:
 
         # optogenetics
         if 'OptogeneticSeries' in self.nwbfile.stimulus:
-            self.read_optogen()
+            self.read_LED()
                 
         if 'Pupil' in self.nwbfile.processing:
             self.read_pupil()
@@ -418,7 +418,7 @@ class Data:
     #       Optogenetics        #
     #############################
 
-    def read_optogen(self,
+    def read_LED(self,
         specific_time_sampling=None,
         interpolation='linear',
         verbose=True):
@@ -440,6 +440,17 @@ class Data:
     #       Electrophysiology   #
     #############################
 
+    def read_and_format_ephys_data(self):
+       
+        self.NPX_folder = \
+            data.nwbfile.devices['Neuropixels OneBox'].description.split('**')[-1]
+
+        self.build_suSpikes()
+        # self.build_muEvents()
+        # self.build_LFP()
+
+                
+
     def build_LFP(self,
         specific_time_sampling=None,
         interpolation='linear',
@@ -451,14 +462,13 @@ class Data:
         self.t_LFP = self.nwbfile.processing['LFP'].data_interfaces['LFP'].timestamps[:]
 
         if specific_time_sampling is not None:
-            self.LFP = np.array([\
+            return np.array([\
                 tools.resample(self.t_LFP,
                                 self.LFP[i,:],
                                 specific_time_sampling,
                                 interpolation=interpolation,
                                 verbose=verbose)\
                                 for i in range(self.LFP.shape[0])])
-            self.t_LFP = specific_time_sampling
 
 
     def build_MUA(self,
@@ -472,37 +482,89 @@ class Data:
         self.t_MUA = self.nwbfile.processing['MUA'].data_interfaces['MUA'].timestamps[:]
 
         if specific_time_sampling is not None:
-            self.MUA = np.array([\
+            return np.array([\
                 tools.resample(self.t_MUA,
                                 self.MUA[i,:],
                                 specific_time_sampling,
                                 interpolation=interpolation,
                                 verbose=verbose)\
                                 for i in range(self.MUA.shape[0])])
-            self.t_MUA = specific_time_sampling
 
 
-    def build_siSpikes(self,
+    def build_suSpikes(self,
             specific_time_sampling=None,
+            dt=5e-3,
             interpolation='linear',
             verbose=True):
         """
+        single-unit Spikes
+
+        builds a matrix (units, times) of boolean values
+            True -> means spike at that time for that unit
+
+
+        by default: dt=1ms
         """
-        # we transpose to have a matrix of shape (channels, timestamps)
-        self.MUA = np.transpose(\
-            self.nwbfile.processing['MUA'].data_interfaces['MUA'].data[:])
-        self.t_MUA = self.nwbfile.processing['MUA'].data_interfaces['MUA'].timestamps[:]
+        n = int((self.tlim[1]-self.tlim[0])/dt)
+        self.t_suSpikes = np.arange(n)*dt
+        self.suSpikes = np.zeros(\
+            (len(self.nwbfile.units), n), dtype=bool)
+        
+        for i, unit in enumerate(self.nwbfile.units):
+            for s in unit.spike_times.values[:][0]:
+                if int(s/dt)<n:
+                    self.suSpikes[i, int(s/dt)] = True
 
         if specific_time_sampling is not None:
-            self.MUA = np.array([\
-                tools.resample(self.t_MUA,
-                                self.MUA[i,:],
+            return np.array([\
+                tools.resample(self.t_spikes,
+                                self.suSpikes[i,:],
                                 specific_time_sampling,
                                 interpolation=interpolation,
                                 verbose=verbose)\
-                                for i in range(self.MUA.shape[0])])
-            self.t_MUA = specific_time_sampling
+                                for i in range(self.suSpikes.shape[0])])
+        
+    def build_suWaveforms(self):
+        """ load the spike template waveforms """
+        k1, k2 = 'Spiking', 'single-unit Waveforms'
+        self.t_suWaveforms = self.nwbfile.processing[k1].data_interfaces[k2].times[:]
+        self.suWaveforms = self.nwbfile.processing[k1].data_interfaces[k2].features[:]
 
+    def build_muEvents(self,
+            specific_time_sampling=None,
+            dt=1e-3,
+            interpolation='linear',
+            verbose=True):
+        """
+        multi-unit peak detection Events
+
+        builds a matrix (channels, times) of integer values
+            True -> means spike at that time for that unit
+
+
+        by default: dt=1ms
+        """
+        n = int((self.tlim[1]-self.tlim[0])/dt)
+        self.t_muEvents= np.arange(n)*dt
+        self.muEvents= np.zeros(\
+            (len(self.nwbfile.electrodes), n), dtype=np.uint8)
+        
+        channels = self.nwbfile.processing['Spiking'].data_interfaces['multi-unit Events'].data[:]
+        times = self.nwbfile.processing['Spiking'].data_interfaces['multi-unit Events'].data[:]
+        for chan in np.unique(channels):
+            channel_cond = channels==chan
+            for s in times[channel_cond]:
+                if int(s/dt)<n:
+                    self.muEvents[chan, int(s/dt)] += 1
+
+        if specific_time_sampling is not None:
+            return np.array([\
+                tools.resample(self.t_muEvents,
+                                self.muEvents[i,:],
+                                specific_time_sampling,
+                                interpolation=interpolation,
+                                verbose=verbose)\
+                                for i in range(self.muEvents.shape[0])])
 
     #############################
     #       Calcium Imaging     #
@@ -568,6 +630,7 @@ class Data:
         if not hasattr(self, 'dFoF'):
             print('\n deconvolution not possible \n --> need to build_dFoF(**options) first !! ')
         else:
+            self.t_Deconvolved = self.t_dFoF
             setattr(self, 'Deconvolved',
                     oasis(self.dFoF, 
                           self.dFoF.shape[0], # batch size

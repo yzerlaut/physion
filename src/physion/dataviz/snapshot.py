@@ -15,6 +15,7 @@ from physion.dataviz.raw import *
 from physion.dataviz.imaging import *
 from physion.dataviz.camera import *
 from physion.dataviz.pupil import *
+from physion.dataviz.ephys import *
 
 plt.rcParams['figure.autolayout'] = False
 
@@ -35,8 +36,8 @@ def layout(show_axes=False,
         AX['axTime'] = fig.add_axes([0.1, 0.01, 0.1, 0.05])
     else:
         fig = plt.figure(figsize=(8,4.5))
-        AX['axTraces'] = fig.add_axes([0.15, 0.47, 0.8, 0.2])
-        AX['axEphys'] = fig.add_axes([0.25, 0.01, 0.7, 0.45])
+        AX['axTraces'] = fig.add_axes([0.15, 0.42, 0.8, 0.23])
+        AX['axEphys'] = fig.add_axes([0.1, 0.01, 0.8, 0.39])
         AX['axTime'] = fig.add_axes([0.1, 0.01, 0.1, 0.05])
 
     height0 = 0.68
@@ -157,6 +158,54 @@ def update_imaging(AX, data, params, imagingData, t):
                               'ROI%i'%n))
 
 
+def init_ephys(AX, data, params, rec, t):
+
+    nStart, nStop = params['ephys_nStart'], params['ephys_nStop']
+    i0 = np.argmin((rec.t-t)**2)
+    
+    cond = (rec.t>(t-params['ephys_interval']/2.)) & (rec.t<(t+params['ephys_interval']/2.))
+
+    means = [rec.continuous['ProbeA'].samples[nStart:nStop,chan][cond].mean() for chan in params['ephys_channels']]
+    stds = [rec.continuous['ProbeA'].samples[nStart:nStop,chan][cond].std() for chan in params['ephys_channels']]
+
+    for c, chan in enumerate(params['ephys_channels']):
+        y = (rec.continuous['ProbeA'].samples[nStart:nStop,chan][cond]-means[c])/stds[c]
+        AX['ephys%i' % c] =\
+            AX['axEphys'].plot(rec.t[cond]-t, 
+                               y+params['ephys_shift_factor']*c, 
+                               lw=0.5, color=plt.cm.Dark2(c))[0]
+    dy, y0 = params['ephys_shift_factor']*len(params['ephys_channels'])+3, -4
+    AX['axEphys'].plot([0, params['ephys_Tbar']], np.zeros(2)+y0, color='k')
+    AX['axEphys'].set_ylim([y0,y0+dy])
+    AX['axEphys'].set_xlim([rec.t[cond][0]-t, rec.t[cond][-1]-t])
+
+    cond = (data.t_LED>(t-params['ephys_interval']/2.)) & (data.t_LED<(t+params['ephys_interval']/2.))
+    AX['ledEphys'] = AX['axEphys'].fill_between(\
+                    data.t_LED[cond]-t, 
+                    y0+0*data.t_LED[cond], 
+                    y0+data.LED[cond]*dy, 
+                    alpha=.1, color='tab:blue', lw=0)
+
+def update_ephys(AX, data, params, rec, t):
+
+    nStart, nStop = params['ephys_nStart'], params['ephys_nStop']
+    i0 = np.argmin((rec.t-t)**2)
+    
+    cond = (rec.t>(t-params['ephys_interval']/2.)) & (rec.t<(t+params['ephys_interval']/2.))
+
+    means = [rec.continuous['ProbeA'].samples[nStart:nStop,chan][cond].mean() for chan in params['ephys_channels']]
+    stds = [rec.continuous['ProbeA'].samples[nStart:nStop,chan][cond].std() for chan in params['ephys_channels']]
+
+    for c, chan in enumerate(params['ephys_channels']):
+        y = (rec.continuous['ProbeA'].samples[nStart:nStop,chan][cond]-means[c])/stds[c]
+        AX['ephys%i' % c].set_data(\
+            rec.t[cond]-t, 
+            y+params['ephys_shift_factor']*c)
+    AX['axEphys'].set_xlim([rec.t[cond][0]-t, rec.t[cond][-1]-t])
+    dy, y0 = params['ephys_shift_factor']*len(params['ephys_channels'])+3, -4
+    AX['axEphys'].set_ylim([y0,y0+dy])
+
+
 def init_screen(AX, data):
 
     # screen inset
@@ -185,9 +234,7 @@ def update_screen(AX, data, t):
 
 def get_camera_img(camera, t=0):
 
-    index = np.argmin((camera.times-t)**2)
-
-    return np.array(camera.get(index).T, dtype=float)/255.
+    return np.array(camera.get_from_time(t).T, dtype=float)/255.
 
 def init_camera(AX, params, camera, name='Face'):
 
@@ -210,7 +257,7 @@ def update_camera(AX, params, camera, t=0, name='Face'):
 
     img= get_camera_img(camera, t)
 
-    AX['imgRig'].set_array(show_img(img, params, 'Rig'))
+    AX['img%s' % name].set_array(show_img(img, params, name))
 
 def get_pupil_center(index, data):
     coords = []
@@ -269,7 +316,7 @@ def init_pupil(AX, data, params, faceCamera):
 
 def update_pupil(AX, data, params, faceCamera, t):
 
-    index = np.argmin((faceCamera.times-t)**2)
+    index = np.argmin((faceCamera.relative_times-t)**2)
 
     AX['imgPupil'].set_array(
             faceCamera.get(index).T[params['pupil_cond']].reshape(*params['pupil_shape']))
@@ -315,7 +362,7 @@ def init_whisking(AX, data, params, faceCamera):
 
 def update_whisking(AX, data, params, faceCamera, t):
 
-    index = np.argmin((faceCamera.times-t)**2)
+    index = np.argmin((faceCamera.relative_times-t)**2)
 
     img1 = faceCamera.get(index+1).astype(float).T
     img = faceCamera.get(index).astype(float).T
@@ -405,10 +452,9 @@ def plot_traces(AX, params, data):
     if params['Tbar']>0:
         AX['axTraces'].plot(params['Tbar']*np.arange(2)+params['tlim'][0],
                             params['Tbar_loc']*np.ones(2), 'k-', lw=1)
-        AX['axTraces'].annotate('%is' % params['Tbar'],
-                                (params['tlim'][0], 1.005*params['Tbar_loc']),
-                                 ha='left', fontsize=8,)
-    # AX['axTraces'].set_xlim(params['tlim'])
+        # AX['axTraces'].annotate('%is' % params['Tbar'],
+        #                         (params['tlim'][0], 1.005*params['Tbar_loc']),
+        #                          ha='left', fontsize=8,)
     AX['axTraces'].set_xlim([params['tlim'][0], AX['axTraces'].get_xlim()[1]])
     AX['axTraces'].set_ylim([-0.01, 1.01])
 

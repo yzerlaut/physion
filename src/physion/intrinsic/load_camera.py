@@ -40,6 +40,7 @@ if CameraInterface == 'ThorCam':
         camera_depth = 12
         from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
     except BaseException as be:
+        print(be)
         CameraInterface = None
 
 ### --------- None -> demo mode ------------- ###

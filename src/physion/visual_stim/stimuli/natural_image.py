@@ -17,9 +17,9 @@ params = {"Image-ID":1,
 }
 
 
-def get_NaturalImages_as_array(screen):
+def get_NaturalImages_as_array(NI_FOLDER, screen):
     
-    NI_FOLDER = os.path.join(str(pathlib.Path(__file__).resolve().parents[1]), 'NI_bank')
+    # NI_FOLDER = os.path.join(str(pathlib.Path(__file__).resolve().parents[1]), 'NI_bank')
     
     NIarray = []
 
@@ -41,8 +41,17 @@ class stim(visual_stim):
 
         super().__init__(protocol, params)
 
+        if not 'NI_FOLDER' in protocol or not os.path.isdir(protocol['NI_FOLDER']):
+            print()
+            print("""
+                [!!] need to add a valid "NI_FOLDER" folder location containing natural images
+                            in the protocol [!!]
+                  """)
+            print()
+            protocol['NI_FOLDER'] = os.path.join('physion', 'visual_stim', 'NI_bank')
+
         # initializing set of NI
-        self.NIarray = get_NaturalImages_as_array(self.screen)
+        self.NIarray = get_NaturalImages_as_array(protocol['NI_FOLDER'], self.screen)
 
     def get_image(self, index,
                   time_from_episode_start=0,

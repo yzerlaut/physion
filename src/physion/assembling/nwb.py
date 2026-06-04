@@ -61,6 +61,8 @@ def build_NWB_func(args, Subject=None):
         # we add all protocol parameters to the metadata:
         for key in protocol:
             metadata[key] = protocol[key]
+    else:
+        protocol = {'name':metadata['protocol']}
 
     # some cleanup
     if 'date' not in metadata:
@@ -117,7 +119,7 @@ def build_NWB_func(args, Subject=None):
                 experiment_description=metadata['protocol'],
                 experimenter=metadata['experimenter'] if ('experimenter' in protocol) else '',
                 lab=metadata['lab'],
-                protocol=str({k: protocol[k] for k in protocol if len(k) <66}) if metadata['protocol'] != 'None' else None,
+                protocol=str({k: protocol[k] for k in protocol if len(k)<66}),
                 institution=metadata['institution'],
                 notes=metadata['notes'],
                 virus=subject_props['virus'],
@@ -417,6 +419,7 @@ def build_NWB_func(args, Subject=None):
             FC_SUBSAMPLING = build_subsampling_from_freq(args.FaceCamera_frame_sampling,
                                              1./np.mean(np.diff(fcamData.times)), 
                                             fcamData.nFrames, Nmin=3)
+
             def FaceCamera_frame_generator():
                 for i in FC_SUBSAMPLING:
                     try:

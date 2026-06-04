@@ -1,4 +1,4 @@
-# %% [markdown]
+2# %% [markdown]
 # # Visualize Raw Data
 
 # %%
@@ -58,7 +58,7 @@ fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'FOV.png'))
 # default plot
 from physion.dataviz.raw import plot as plot_raw, find_default_plot_settings
 settings = find_default_plot_settings(data)
-_ = plot_raw(data, settings=settings, tlim=[1200,1300])
+_ = plot_raw(data, settings=settings, tlim=[1200,1230])
 
 # %% [markdown]
 # ## Full view

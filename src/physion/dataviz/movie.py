@@ -8,6 +8,7 @@ def build(fig, AX, data, params,
             faceCamera=None,
             rigCamera=None,
             imagingData=None,
+            ephysData=None,
             Ndiscret=100):
 
     times = np.linspace(params['tlim'][0], params['tlim'][1], 
@@ -20,6 +21,7 @@ def build(fig, AX, data, params,
     init_camera(AX, params, faceCamera, 'Face')
     init_pupil(AX, data, params, faceCamera)
     init_whisking(AX, data, params, faceCamera)
+    init_ephys(AX, data, params, ephysData, times[0])
     if rigCamera is not None:
         init_camera(AX, params, rigCamera, 'Rig')
     else:
@@ -40,17 +42,27 @@ def build(fig, AX, data, params,
         if imagingData is not None:
             update_imaging(AX, data, params, imagingData, times[i])
 
+        # if ephysData is not None:
+        #     update_ephys(AX, data, params, ephysData, times[i])
+
         update_timer(AX, times[i])
 
-        
-        return [AX['cursor'], AX['time'], 
-                AX['imgScreen'], 
-                AX['imgRig'], AX['imgFace'],
-                AX['imgPupil'], AX['imgWhisking'], 
-                AX['pupil_fit'], 
-                AX['pupil_center'],
-                AX['imgImaging'], 
-                AX['imgROI1'], AX['imgROI2']]
+        output = [AX['cursor'], AX['time'], 
+                    AX['imgScreen'], 
+                    AX['imgRig'], AX['imgFace'],
+                    AX['imgPupil'], AX['imgWhisking'], 
+                    AX['pupil_fit'], 
+                    AX['pupil_center']]
+        if imagingData is not None:
+            output += [AX['imgImaging'],
+                       AX['imgROI1'], AX['imgROI2']]
+        if ephysData is not None:
+            output += [AX['axEphys']]
+            output += [AX['ephys%i' % c]\
+                        for c in range(len(params['ephys_channels']))]
+
+        return output
+
        
     ani = animation.FuncAnimation(fig, 
                                   update,
