@@ -241,13 +241,12 @@ if __name__=='__main__':
     stat_test_props = dict(interval_pre=[-1.,0],                                   
                            interval_post=[1.,2.],                                   
                            test='ttest',                                            
-                           positive=True)
+                           sign='positive')
 
     resp = compute_sensitivity_per_cells(data, Episodes,
                                      stat_test_props)
     
 
-    plot_contrast_sensitivity(resp)
-
-    pt.plt.show()
+    # plot_contrast_sensitivity(resp)
+    # pt.plt.show()
 
