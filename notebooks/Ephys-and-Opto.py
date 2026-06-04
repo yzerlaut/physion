@@ -9,26 +9,26 @@ import numpy as np
 sys.path += ['../src'] # add src code directory for physion
 import physion.utils.plot_tools as pt
 
-from physion.analysis.read_NWB import Data
+from physion.analysis.read_NWB import Data,\
+    scan_folder_for_NWBfiles
 
-
+dataset = scan_folder_for_NWBfiles(\
+        os.path.join(os.path.expanduser('~'), 
+            'DATA', '2026_04_24'))
+# %%
 pt.set_style('dark')
 
-datafile = os.path.join(os.path.expanduser('~'), 
-        'DATA', '2026_04_24', '2026_04_24-12-45-49.nwb')
-
-data = Data(datafile)
-data.build_pupil_diameter()
+data = Data(dataset['files'][1])
+# data.build_pupil_diameter()
+data.build_suSpikes() # builds data.suSpikes
+data.build_suWaveforms() # builds data.suWaveforms
 
 # data.build_running_speed()
 # data.build_LFP(specific_time_sampling=data.t_running_speed)
 # data.build_MUA(specific_time_sampling=data.t_running_speed)
-# %%
-data.build_suSpikes() # builds data.suSpikes
 # data.build_suWaveforms() # builds data.suWaveforms
 # data.read_optogen() # builds data.LED
-data.build_muEvents() # builds data.muEvents
-data.build_suWaveforms() # builds data.suWaveforms
+# data.build_muEvents() # builds data.muEvents
 
 # %%
 # print(data.protocols)
@@ -57,12 +57,10 @@ AX[2].plot(data.t_suSpikes[cond], firing)
 
 from physion.analysis.episodes.build import EpisodeData
 
-ep = EpisodeData(data, prestim_duration=2., 
+ep = EpisodeData(data, prestim_duration=4., 
                  quantities=['suSpikes', 'LED'],
                  protocol_name='ffDG-4dir-2ctrst+1sPrePostOpto')
 
-# %%
-data.build_suWaveforms()
 
 # %%
 from physion.utils import plot_tools as pt
@@ -72,8 +70,6 @@ LED_on = ep.LED.mean(axis=1)>0 # LED "On" episode condition
 
 # %%
 import matplotlib.pylab as plt
-
-data.build_suWaveforms() # builds data.suWaveforms
 
 def plot_unit(unit):
     fig = plt.figure(figsize=(4,2))
@@ -85,11 +81,9 @@ def plot_unit(unit):
                             [~LED_on, LED_on]):
         rate = ep.suSpikes[cond, unit, :].mean(axis=0)/(ep.t[1]-ep.t[0])
         # smoothing:
-        rate = gaussian_filter1d(rate, 30)
+        rate = gaussian_filter1d(rate, 50)
         ax.fill_between(ep.t, 0*ep.t, rate)
-        # rate = ep.suSpikes[cond, unit, :].mean(axis=0)
-        # rate = ep.muEvents[cond, :, :].mean(axis=(0,1))
-        # rate = ep.muEvents[cond, unit, :].mean(axis=0)
+        # ax.plot(ep.t, rate)
         pt.annotate(ax, label, (0.5,1), va='top', ha='center')
         pt.draw_bar_scales(ax, Xbar=1, Ybar=2,
                         Xbar_label='1s', Ybar_label='2Hz')
@@ -100,9 +94,11 @@ def plot_unit(unit):
                     ax.get_ylim()[1]*np.ones(2), alpha=.1)
     axLED.fill_between(ep.t, 0*ep.t,
                 ax.get_ylim()[1]*ep.LED[cond, :].mean(axis=0), alpha=0.1)
-    _ = show_waveforms(data, unit_id=unit, ax=axWF)
-    pt.annotate(fig, 'unit #%i' % (unit+1), (1,1), va='top', ha='right')
-plot_unit(10)
+    _ = show_waveforms(data, unit_id=unit, ax=axWF,
+                       channels_around=5)
+    pt.annotate(fig, 'unit #%i' % (unit+1), 
+                (1,1), va='top', ha='right')
+    return fig, [axBlank, axLED], axWF
 # %%
 for unit in range(data.suSpikes.shape[0]):
     # ax.set_title('unit #%i' % (unit+1))

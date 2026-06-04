@@ -440,8 +440,3 @@ def reliability(ep,
 
 
         return summary
-
-from .build import EpisodeData
-EpisodeData.stat_test_for_evoked_responses = stat_test_for_evoked_responses
-EpisodeData.pre_post_statistics = pre_post_statistics
-EpisodeData.reliability = reliability
