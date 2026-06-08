@@ -52,7 +52,7 @@ def prepare_panels(episodes,
                             squeeze=False)
         no_set=False
     else:
-        no_set=no_set
+        no_set=False
 
     return condition, COL_CONDS, ROW_CONDS,\
             with_screen_inset, fig, AX, no_set
