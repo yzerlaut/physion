@@ -111,7 +111,8 @@ def legacy_speed_calculation(NIdaq_data, metadata, args):
     speed = compute_speed(NIdaq_data['digital'][0],
             acq_freq=float(metadata['NIdaq-acquisition-frequency']),
             radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
-            rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']))
+            rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']), 
+            empirical=True)
     _, speed = resample_signal(speed,
                             original_freq=float(metadata['NIdaq-acquisition-frequency']),
                             new_freq=args.running_sampling,
