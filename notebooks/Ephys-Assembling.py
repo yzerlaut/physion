@@ -38,7 +38,7 @@ from physion.ephys.alignement import load_nidaq_synch_signal,\
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
-datafolder = os.path.expanduser('~/DATA/2026_04_24').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/2026_06_02').replace('/', os.path.sep)
 
 INTERPROTOCOL_WINDOW = 10. # 
 PROBE_NAME = 'ProbeA'
@@ -133,7 +133,7 @@ DF
 
 
 # %%
-iRec = 2 # example recording
+iRec = 4 # example recording
 _, _, fig, ephys_onsets, nidaq_onsets = sampling_match(iRec, 
                                                        datafolder, DF,
                                                        with_fig=True, verbose=True)
@@ -164,7 +164,7 @@ for key in ['Npx-Rec', 'nStart', 'nStop']+\
 DF
 # %%
 # TODO add a column with sub-selection of electrode range !!
-ELECTRODE_RANGE = [50,150]
+ELECTRODE_RANGE = [0,250]
 
 # %%
 add_to_table(
@@ -177,5 +177,105 @@ add_to_table(
     sheet='Recordings', column='electrode-subsampling',
     insert_at=21,
     data=[40 for _ in range(len(DF['Npx-Rec']))])
+
+# %%
+from scipy.ndimage import gaussian_filter1d
+
+datatable, _, _ = read_spreadsheet(\
+            os.path.join(datafolder, 'DataTable.xlsx'),
+                    get_metadata_from='files')
+
+def get_channel_subsampled_LFP(rec, iRange, 
+                               channel_subsampling,
+                               temporal_smoothing=10):
+
+    LFP, chan = [], 0
+
+    while chan<(rec.continuous['ProbeA'].samples.shape[1]-channel_subsampling):
+
+        lfp = []
+        for c in range(channel_subsampling):
+            lfp.append(\
+                rec.continuous['ProbeA'].samples[iRange,chan+c])
+        LFP.append(\
+            gaussian_filter1d(\
+                np.mean(lfp, axis=0), 
+                    temporal_smoothing))
+
+        chan += channel_subsampling
+        
+    return np.array(LFP)
+
+def load_LFP_resp(datafolder, iRec,
+                  channel_subsampling=4,
+                  temporal_smoothing=10,
+                  pre_window=0.5,
+                  post_window=1):
+
+    datatable, _, _ = read_spreadsheet(\
+                            os.path.join(datafolder, 'DataTable.xlsx'),
+                                    get_metadata_from='files')
+
+    nidaq = np.load(os.path.join(datafolder, datatable['time'][iRec], 'Nidaq.npy'),
+                    allow_pickle=True).item()
+    t_nidaq = np.arange(0, len(nidaq['digital'][0]))*nidaq['dt']
+    visStim = nidaq['digital'][3]
+
+    nStart, nStop = datatable['nStart'][iRec], datatable['nStop'][iRec]
+    t_probe = np.linspace(0, t_nidaq[-1], nStop-nStart)
+    dt_probe = t_nidaq[-1]/(nStop-nStart)
+    iPre, iPost = int(pre_window/dt_probe), int(post_window/dt_probe)
+    # load the open-ephys data:
+    session = OpenEphysSession(\
+        os.path.join(datafolder, datatable['Npx-Folder'][iRec]))
+
+    node = int(datatable['Npx-Rec'][iRec].split('node')[1].split('/')[0])
+    rec_id = int(datatable['Npx-Rec'][iRec].split('rec')[1])-1
+    rec = session.recordnodes[node].recordings[rec_id]
+
+    # loop over stim events
+    LFP_resp = []
+    for i in np.flatnonzero(visStim[1:]>visStim[:-1]):
+        iP = np.argmin((t_probe-t_nidaq[i])**2) # 
+        # print(t_probe[iP])
+        LFP_resp.append(\
+            get_channel_subsampled_LFP(rec, iP+np.arange(-iPre, iPost),
+                               channel_subsampling,
+                               temporal_smoothing=temporal_smoothing))
+
+    return t_probe[:iPost+iPre]-t_probe[iPre], np.array(LFP_resp)
+
+
+def show_LFP(t, LFP):
+    fig, ax = pt.figure(ax_scale=(2,3))
+    shift= 10
+    for i, c in enumerate(np.arange(LFP.shape[0])):
+        lfp = LFP[c,:].mean(axis=0) # trial-average here
+        ax.plot(t, lfp-np.nanmean(lfp[t<0])+c*shift, color=pt.viridis(i/LFP.shape[0]), lw=0.5)
+    pt.set_plot(ax, xlabel='time (s)', ylabel='uV',
+                ylim=[-200,200])
+    return fig, ax
+
+iRecs = np.flatnonzero(datatable['protocol']=='flashed-stimuli')
+
+for iRec in iRecs:
+
+    t, LFP = load_LFP_resp(datafolder, iRec, channel_subsampling=4,
+                        temporal_smoothing=100)
+    show_LFP(t, LFP)
+
+# %%
+# %%
+def show_CSD(t, LFP):
+    CSD = np.diff(LFP, axis=0).T
+    fig, ax = pt.figure(ax_scale=(2,3))
+    ax.imshow(CSD, vmin=-1000, vmax=1000, cmap=pt.PiYG, aspect='auto',
+            extent=(t[0], 0, t[-1]-t[0], CSD.shape[1]),
+            origin='lower')
+    pt.set_plot(ax, xlabel='time (s)', ylabel='channel (subsampled)')
+    return fig, ax
+
+
+# %%
 
 # %%
