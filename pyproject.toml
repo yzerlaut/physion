@@ -1,0 +1,51 @@
+[project]
+name = "physion"
+version = "1.2.1"
+authors = [
+  { name="Yann Zerlaut", email="yann.zerlaut@icm-institute.org" },
+  { name="Mai-An Nguyen", email="mai-an.nguyen@icm-institute.org" },
+  { name="Laura Sofia Gonzalez", email="laura.gonzalez@icm-institute.org" },
+]
+description = "Vision Physiology Software"
+readme = "README.md"
+requires-python = ">=3.9.5"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy",
+    "numba",
+    "scipy",
+    "matplotlib",
+    "scikit-image",
+    "scikit-learn",
+    "natsort",
+    "pynwb",
+    "pandas>=1.4.4",
+    "pyqt5.sip",
+    "pyqtgraph",
+    "pyqtdarktheme",
+    "opencv-python-headless",
+    "opencv-contrib-python-headless",
+    "ffmpeg-python",
+    "pyqt5",
+    "openpyxl",
+    "open-ephys-python-tools>=1.0",
+    "spikeinterface[full]",
+    "probeinterface",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+[tool.setuptools.package-data]
+"physion.acquisition.protocols" = ["*.json"]
+"physion.acquisition.configs" = ["*.json"]
+"physion.acquisition" = ["DataTable.xlsx"]
+
+[project.urls]
+"Homepage" = "https://github.com/yzerlaut/physion"
+"Documentation" = "https://github.com/yzerlaut/physion/README.md"
+"Bug Tracker" = "https://github.com/yzerlaut/physion/issues"
+
