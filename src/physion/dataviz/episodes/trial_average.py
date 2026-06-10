@@ -2,6 +2,7 @@
 import pynwb, os, sys, pathlib, itertools
 import numpy as np
 import matplotlib.pylab as plt
+from scipy.ndimage import gaussian_filter1d
 
 # custom modules
 import physion.utils.plot_tools as pt
@@ -18,6 +19,7 @@ from . import common
 def plot(episodes,
            # episodes props
            quantity='dFoF', roiIndex=None,
+           smoothing=0,
            condition=None,
            COL_CONDS=None, column_keys=[], column_key='',
            ROW_CONDS=None, row_keys=[], row_key='',
@@ -73,6 +75,9 @@ def plot(episodes,
                                 averaging_dimension=avg_dim)
 
                 my = response.mean(axis=0) # mean response
+
+                if smoothing>0:
+                    my = gaussian_filter1d(my, smoothing)
 
                 if with_std:
                     sy = response.std(axis=0)
