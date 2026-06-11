@@ -29,6 +29,35 @@ if '.mp4' in sys.argv[-1]:
         print(time.time()-tic)
         tic = time.time()
 
+elif sys.argv[-1]=='flicker':
+
+    monitor = monitors.Monitor('Test', 
+                               distance=15., width=60.)
+    SCREEN = [int(1280/2), int(720/2)]
+    monitor.setSizePix(SCREEN)
+    #create a window
+    mywin = visual.Window(SCREEN,
+                          monitor=monitor,
+                          checkTiming=(os.name=='posix'),
+                          units='pix',
+                          fullscr=False)
+
+    #draw the stimuli and update the window
+    i=0
+    while True: #this creates a never-ending loop
+
+        factor = 1 if ((i>800) and (i<900)) else -1
+        stim = visual.ImageStim(win=mywin,
+                                image=np.ones(SCREEN)*factor,
+                                # units='pix',
+                                size=mywin.size)
+        stim.draw()
+        mywin.flip()
+        i+=1
+
+        if len(event.getKeys())>0:
+            break
+        event.clearEvents()
 elif sys.argv[-1]=='grating':
 
     monitor = monitors.Monitor('Test', 
