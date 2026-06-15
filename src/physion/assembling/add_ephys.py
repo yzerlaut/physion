@@ -2,7 +2,6 @@ import tempfile, os
 import numpy as np
 import pandas as pd
 
-# from physion.ephys.tools import filtering, 
 from spikeinterface.extractors import read_openephys
 from spikeinterface.sortingcomponents import peak_detection
 import spikeinterface.full as si
@@ -11,6 +10,9 @@ from pynwb.ecephys import (
     FeatureExtraction,
     SpikeEventSeries,
 )
+
+from physion.ephys.tools import compute_freq_envelope
+
 
 def build_args_for_ephys(args, dataset, i, directory):
     args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
@@ -42,11 +44,9 @@ def read_kilosort(df):
 
 def add_ephys(nwbfile, args,
             metadata=None,
-            lfp_freq_min = 0.5,
-            lfp_freq_max = 300.0,
-            mua_freq_min = 300.0,
-            mua_freq_max = 3000.0,
-            resample_rate = 1250,
+            LFP_BAND = [0.5, 300.0],
+            MUA_BAND = np.logspace(np.log10(300), np.log10(3000), 30)
+            resampling_factor = 24, # int,  gives a resampled_rate = 1250,
             margin_ms = 10000,
             chunking_window = '60s'):
     """
@@ -296,13 +296,12 @@ def add_ephys(nwbfile, args,
 
         # ── 2. Apply filter + resample pipeline on the extended chunk ─────
         rec_lfp = si.bandpass_filter(rec, 
-            freq_min=lfp_freq_min, freq_max=lfp_freq_max,
+            freq_min=LFP_BAND[0], freq_max=LFP_BAND[1],
             ignore_low_freq_error=True,
             margin_ms=margin_ms
         )
-        resampling_factor = int(rec.get_sampling_frequency()/resample_rate)
         rec_lfp = si.resample(rec_lfp, 
-                resample_rate=int(rec.get_sampling_frequency()/resampling_factor))
+                resample_rate=rec.get_sampling_frequency()/resampling_factor)
 
         # ── 3. Build NWB LFP objects ───────────────────────────────────────
         lfp_es = ElectricalSeries(
@@ -329,7 +328,7 @@ def add_ephys(nwbfile, args,
         lfp_module.add(lfp_es)
 
     # ──  MUA band ──────────────────────────────────────────────────────
-    if False:
+    if args.LFP=='Yes' and (rec is not None):
 
         print("         -> Computing and writing Multi-Unit Activity [...]")
         print()
