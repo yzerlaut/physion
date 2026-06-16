@@ -1,6 +1,7 @@
 import tempfile, os
 import numpy as np
 import pandas as pd
+from scipy import signal
 
 from spikeinterface.extractors import read_openephys
 from spikeinterface.sortingcomponents import peak_detection
@@ -45,7 +46,7 @@ def read_kilosort(df):
 def add_ephys(nwbfile, args,
             metadata=None,
             LFP_BAND = [0.5, 300.0],
-            MUA_BAND = np.logspace(np.log10(300), np.log10(3000), 30)
+            MUA_BAND = np.logspace(np.log10(300), np.log10(3000), 30),
             resampling_factor = 24, # int,  gives a resampled_rate = 1250,
             margin_ms = 10000,
             chunking_window = '60s'):
@@ -255,7 +256,7 @@ def add_ephys(nwbfile, args,
         ) 
 
         temp_folder = os.path.join(tempfile.gettempprefix(), 'temp')
-        if True: # TURN BACK TO TRUE AFTER DEBUGGING !!
+        if False: # TURN BACK TO TRUE AFTER DEBUGGING !!
             # # we save the data in the memory with an **extended** chunk size
             siRec.save(format='binary', 
                         folder=temp_folder, overwrite=True,
@@ -292,7 +293,7 @@ def add_ephys(nwbfile, args,
     # ──  LFP band ──────────────────────────────────────────────────────
     if args.LFP=='Yes' and (rec is not None):
 
-        print("         - Computing and writing LFP band [...]")
+        print("         -> computing and writing LFP band [...]")
 
         # ── 2. Apply filter + resample pipeline on the extended chunk ─────
         rec_lfp = si.bandpass_filter(rec, 
@@ -301,7 +302,7 @@ def add_ephys(nwbfile, args,
             margin_ms=margin_ms
         )
         rec_lfp = si.resample(rec_lfp, 
-                resample_rate=rec.get_sampling_frequency()/resampling_factor)
+                resample_rate=int(rec.get_sampling_frequency()/resampling_factor))
 
         # ── 3. Build NWB LFP objects ───────────────────────────────────────
         lfp_es = ElectricalSeries(
@@ -314,9 +315,9 @@ def add_ephys(nwbfile, args,
                 f"LFP signal in uV "
                 f"electrode channels : {args.electrode_range}"
                 f"electrode subsampling: {args.electrode_subsampling}"
-                f"LFP band ({lfp_freq_min}–{lfp_freq_max} Hz, "
+                f"LFP band ({LFP_BAND[0]}–{LFP_BAND[1]} Hz, "
                 f"Butterworth order 5, zero-phase), "
-                f"downsampled to {resample_rate} Hz. "
+                f"downsampled to {int(rec.get_sampling_frequency()/resampling_factor)} Hz. "
                 f"Chunk margin: {margin_ms} ms per side, Chunking window: {chunking_window}"
             ),
         )
@@ -328,27 +329,24 @@ def add_ephys(nwbfile, args,
         lfp_module.add(lfp_es)
 
     # ──  MUA band ──────────────────────────────────────────────────────
-    if args.LFP=='Yes' and (rec is not None):
+    if args.MUA=='Yes' and (rec is not None):
 
-        print("         -> Computing and writing Multi-Unit Activity [...]")
-        print()
-        print("                      [!!] TODO: need to take absolute value and sliding mean ")
-        print()
+        print("         -> computing and writing Multi-Unit Activity [...]")
 
-        # ── 2. Apply filter + resample pipeline on the extended chunk ─────
-        rec_mua = si.bandpass_filter(
-            rec, 
-            freq_min=mua_freq_min, freq_max=mua_freq_max,
-            ignore_low_freq_error=True,
-            margin_ms=3000,
-        )
-        rec_mua = si.resample(rec_mua, 
-                            resample_rate=resample_rate)
+        MUA = []
+        V = rec.get_traces()
+        for i in range(V.shape[1]):
+            print('channel', i)
+            # Wavelet transform here:
+            mua = compute_freq_envelope(V[:,i], 
+                            rec.get_sampling_frequency(), MUA_BAND)
+            MUA.append(\
+                signal.decimate(mua, resampling_factor))
 
         # ── 3. Build NWB MUA objects ───────────────────────────────────────
         mua_es = ElectricalSeries(
             name          = "MUA",
-            data          = rec_mua.get_traces(),
+            data          = np.array(MUA),
             electrodes    = electrodes,
             timestamps    = timestamps[::resampling_factor][:rec_mua.get_num_frames()],
             conversion    = 1e-6,   # µV → V
