@@ -121,7 +121,7 @@ def calc_pval_factor(VARIED_VALUES,
 
     else:
 
-        return 1., sStims
+        return 1., nStims
 
 def run_analysis_splitting_by_stim_params(ep, 
                                           stat_func,

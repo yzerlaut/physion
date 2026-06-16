@@ -146,29 +146,28 @@ def add_ephys(nwbfile, args,
 
         spiking_module = nwbfile.create_processing_module(
             name        = "Spiking",
-            description = "Single and Multiple Unit Module ",
+            description = "Single Unit Module ",
         )
 
-        # sorting = si.read_kilosort(folder)
-
         sorting = read_kilosort(args.kilosort_folder)
+        cInfo = pd.read_csv(\
+              open(os.path.join(args.kilosort_folder,
+                                'cluster_info.tsv')), sep = '\t')
+
         template_ids = np.sort(\
-            np.unique(sorting['spike_templates']))
-        labels = sorting['cluster_group_KSLabel']
+            np.unique(sorting['spike_clusters']))
+
+        labels = cInfo['group'] # those are the units manually curated in kilosort
         templates = []
-        # -------------------------------- #
-        #          Single Units            #
-        # -------------------------------- #
+
         print("         -> writing single-unit spike times [...]")
+        # -------------------------------- #
+        #          Spike times             #
+        # -------------------------------- #
         for unit_id in template_ids[labels=='good']:
 
-            # # --- old
-            # spike_time_indices = sorting.get_unit_spike_train(unit_id,
-            #                                 start_frame=args.nStart,
-            #                                 end_frame=args.nStop)
-
             spike_time_indices = sorting['spike_times'][\
-                            sorting['spike_templates']==unit_id]
+                            sorting['spike_clusters']==unit_id]
             cond = (spike_time_indices>args.nStart) &\
                         (spike_time_indices<args.nStop)
 
@@ -176,15 +175,16 @@ def add_ephys(nwbfile, args,
             spike_times = [timestamps[s-args.nStart]\
                             for s in spike_time_indices[cond]]
             # we now add to the NWB file
-            nwbfile.add_unit(spike_times=spike_times, 
+            nwbfile.add_unit(spike_times=spike_times,
                              electrode_group=electrode_group)
 
             # we store its spike template
-            templates.append(sorting['templates'][unit_id]) 
+            # templates.append(sorting['templates'][unit_id])
+
         # -------------------------------- #
         #          Spike templates         #
         # -------------------------------- #
-        print("         -> writing single-unit spiking template [...]")
+        # print("         -> writing single-unit spiking template [...]")
         # [!!] for now still need to read the kilosort data
         #       the spike-interface layer doesn't work to extract templates
         # templates = np.load(os.path.join(folder, 'templates.npy'), 
