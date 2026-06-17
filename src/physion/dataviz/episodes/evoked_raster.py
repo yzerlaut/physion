@@ -122,7 +122,7 @@ if __name__=='__main__':
     from physion.analysis.read_NWB import Data
     data = Data(sys.argv[-1])
     data.build_dFoF()
-    data.init_visual_stim()
+    data.build_visual_stim()
 
     from physion.analysis.episodes.build import EpisodeData
     ep = EpisodeData(data, quantities=['dFoF'])
