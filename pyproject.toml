@@ -35,6 +35,8 @@ dependencies = [
     "open-ephys-python-tools>=1.0",
     "spikeinterface[full]",
     "probeinterface",
+    "elephant==1.0.0",
+    "neo==0.14.4",
 ]
 
 [tool.setuptools.packages.find]
