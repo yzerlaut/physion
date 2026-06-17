@@ -14,21 +14,24 @@ from physion.analysis.read_NWB import Data,\
 
 dataset = scan_folder_for_NWBfiles(\
         os.path.join(os.path.expanduser('~'), 
-            'DATA', '2026_04_24'))
+            'DATA', 'Sally', '2026_06_09'))
+
+
 # %%
 pt.set_style('dark')
 
-data = Data(dataset['files'][1])
+data = Data(dataset['files'][0])
 # data.build_pupil_diameter()
 data.build_suSpikes() # builds data.suSpikes
 data.build_suWaveforms() # builds data.suWaveforms
 
 # data.build_running_speed()
-# data.build_LFP(specific_time_sampling=data.t_running_speed)
+data.build_LFP()
 # data.build_MUA(specific_time_sampling=data.t_running_speed)
-# data.build_suWaveforms() # builds data.suWaveforms
 # data.read_optogen() # builds data.LED
 # data.build_muEvents() # builds data.muEvents
+
+#
 
 # %%
 # print(data.protocols)
@@ -54,7 +57,6 @@ AX[2].plot(data.t_suSpikes[cond], firing)
 
 
 # %%
-
 from physion.analysis.episodes.build import EpisodeData
 
 ep = EpisodeData(data, prestim_duration=4., 
