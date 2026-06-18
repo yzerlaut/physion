@@ -46,7 +46,7 @@ def read_kilosort(df):
 def add_ephys(nwbfile, args,
             metadata=None,
             LFP_BAND = [0.5, 300.0],
-            MUA_BAND = np.logspace(np.log10(300), np.log10(3000), 30),
+            MUA_BAND = np.logspace(np.log10(300), np.log10(3000), 10),
             resampling_factor = 24, # int,  gives a resampled_rate = 1250,
             margin_ms = 10000,
             chunking_window = '60s'):
@@ -337,22 +337,17 @@ def add_ephys(nwbfile, args,
 
         print("         -> computing and writing Multi-Unit Activity [...]")
 
-        MUA = []
-        V = rec.get_traces()
-        for i in range(V.shape[1]):
-            print('channel', i)
-            # Wavelet transform here:
-            mua = compute_freq_envelope(V[:,i], 
-                            rec.get_sampling_frequency(), MUA_BAND)
-            MUA.append(\
-                signal.decimate(mua, resampling_factor))
+        MUA = compute_freq_envelope(rec.get_traces(),
+                        rec.get_sampling_frequency(), 
+                        MUA_BAND)
+        MUA = signal.decimate(MUA, resampling_factor)
 
         # ── 3. Build NWB MUA objects ───────────────────────────────────────
         mua_es = ElectricalSeries(
             name          = "MUA",
-            data          = np.array(MUA),
+            data          = MUA,
             electrodes    = electrodes,
-            timestamps    = timestamps[::resampling_factor][:rec_mua.get_num_frames()],
+            timestamps    = timestamps[::resampling_factor][:MUA.shape[1]],
             conversion    = 1e-6,   # µV → V
             description   = (
                 f"MUA signal in uV "

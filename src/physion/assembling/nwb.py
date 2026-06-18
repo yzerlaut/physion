@@ -408,17 +408,19 @@ def build_NWB_func(args, Subject=None):
         if args.verbose:
             print('=> Storing FaceCamera acquisition for "%s" [...]' % args.datafolder)
 
-        fcamData = CameraData('FaceCamera', folder=args.datafolder)
+        fcamData = CameraData('FaceCamera', 
+                              folder=args.datafolder, 
+                              dont_load_from_video=True)
+
         FC_times = fcamData.original_times
         FC_times = check_times(FC_times, NIdaq_Tstart)
-        # print(len(FC_times))
 
         if ('raw_FaceCamera' in args.modalities) and (len(fcamData.times)>0):
            
             imgR = fcamData.get(0)
             FC_SUBSAMPLING = build_subsampling_from_freq(args.FaceCamera_frame_sampling,
                                              1./np.mean(np.diff(fcamData.times)), 
-                                            fcamData.nFrames, Nmin=3)
+                                            fcamData.nFrames-1, Nmin=3)
 
             def FaceCamera_frame_generator():
                 for i in FC_SUBSAMPLING:
@@ -488,7 +490,8 @@ def build_NWB_func(args, Subject=None):
                     cond = (x>=dataP['xmin']) & (x<=dataP['xmax']) & (y>=dataP['ymin']) & (y<=dataP['ymax'])
 
                     PUPIL_SUBSAMPLING = build_subsampling_from_freq(args.Pupil_frame_sampling,
-                                                 1./np.mean(np.diff(fcamData.times)), fcamData.nFrames, Nmin=3)
+                                                 1./np.mean(np.diff(fcamData.times)), 
+                                                 fcamData.nFrames-1, Nmin=3)
 
                     new_shapeP = dataP['xmax']-dataP['xmin']+1, dataP['ymax']-dataP['ymin']+1
                     def Pupil_frame_generator():
@@ -595,7 +598,7 @@ def build_NWB_func(args, Subject=None):
                     FACEMOTION_SUBSAMPLING=build_subsampling_from_freq(
                                         args.FaceMotion_frame_sampling,
                                         1./np.mean(np.diff(fcamData.times)),
-                                        fcamData.nFrames, Nmin=3)
+                                        fcamData.nFrames-1, Nmin=3)
                     
                     imgFM = fcamData.get(0)
                     x, y = np.meshgrid(np.arange(0,imgFM.shape[0]), 

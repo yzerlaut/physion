@@ -18,7 +18,7 @@ from . import common
 
 def plot(episodes,
            # episodes props
-           quantity='dFoF', roiIndex=None,
+           quantity='dFoF', index=None,
            smoothing=0,
            condition=None,
            COL_CONDS=None, column_keys=[], column_key='',
@@ -29,6 +29,7 @@ def plot(episodes,
            with_std=True, 
            with_std_over_rois=False,
            with_screen_inset=False,
+           screen_inset=[.75, .9, .35, .25],
            with_stim=True,
            with_axis=False,
            with_stat_test=False, 
@@ -71,7 +72,7 @@ def plot(episodes,
                 response = episodes.get_response2D(\
                                 quantity=quantity,
                                 episode_cond=cond,
-                                roiIndex=roiIndex,
+                                index=index,
                                 averaging_dimension=avg_dim)
 
                 my = response.mean(axis=0) # mean response
@@ -97,7 +98,7 @@ def plot(episodes,
                 if with_screen_inset:
 
                     inset = pt.inset(AX[irow][icol],
-                                     [.83, .9, .3, .25])
+                                     screen_inset)
 
                     istim = np.flatnonzero(cond)[0] # 
 
@@ -167,7 +168,7 @@ def plot(episodes,
                     cond = np.array(condition & col_cond & row_cond & color_cond)#[:response.shape[0]]
                     results = trial_statistics.stat_test_for_evoked_responses(episodes,
                                                                               episode_cond=cond,
-                                                                              response_args=dict(quantity=quantity, roiIndex=roiIndex),
+                                                                              response_args=dict(quantity=quantity, index=index),
                                                                               **stat_test_props)
 
                     ps, size = results.pval_annot()
@@ -211,8 +212,8 @@ def plot(episodes,
     # if with_annotation:
         # S = ''
         # if hasattr(episodes, 'rawFluo') or hasattr(episodes, 'dFoF') or hasattr(episodes, 'neuropil'):
-            # if roiIndex is not None:
-                # S+='roi #%i' % roiIndex
+            # if index is not None:
+                # S+='roi #%i' % index
             # elif roiIndices in ['sum', 'mean', 'all']:
                 # S+='n=%i rois' % len(episodes.data.valid_roiIndices)
             # else:

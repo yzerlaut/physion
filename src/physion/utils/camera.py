@@ -24,6 +24,7 @@ class CameraData:
     def __init__(self, name,
                  folder = '.',
                  video_formats=['mp4', 'wmv', 'avi'],
+                 dont_load_from_video=False,
                  verbose=False):
 
         
@@ -54,7 +55,8 @@ class CameraData:
             """ % folder)
             self.load_from_binary(name)
         
-        elif np.sum([\
+        elif not dont_load_from_video and\
+            np.sum([\
                 os.path.isfile(\
                      os.path.join(self.folder, '%s.%s' % (name,f)))\
                             for f in video_formats]):
@@ -148,7 +150,6 @@ class CameraData:
         self.cap  = cv.VideoCapture(os.path.join(self.folder, video_name))
         # number of camera frames doesn't match 
         self.nFrames_movie = int(self.cap.get(cv.CAP_PROP_FRAME_COUNT))
-
         # now over-rewrite times base on the sampling we have
         self.times = np.linspace(self.times[0], self.times[-1],
                                     self.nFrames_movie)
@@ -403,7 +404,7 @@ if __name__=='__main__':
             camData = CameraData(cam, folder)
             camData.convert_to_movie()
 
-    else:
+    if False:
         print('test')
         camData = CameraData('FaceCamera', folder)
         import physion.utils.plot_tools as pt

@@ -272,7 +272,7 @@ def pre_post_statistics(ep,
 
         for cell in np.arange(getattr(ep, quantity).shape[1]):
             response_args = {'quantity':quantity,
-                             'roiIndex':cell}
+                             'index':cell}
             summaries.append(\
                 run_analysis_splitting_by_stim_params(ep, 
                                             run_pre_post_stat,
@@ -412,7 +412,7 @@ def reliability(ep,
 
         for cell in np.arange(getattr(ep, quantity).shape[1]):
             response_args = {'quantity':quantity,
-                             'roiIndex':cell}
+                             'index':cell}
             summaries.append(\
                 run_analysis_splitting_by_stim_params(ep, 
                                             run_reliability_test,

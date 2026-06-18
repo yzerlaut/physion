@@ -63,7 +63,7 @@ def plot(fig, data, args,
     ep = EpisodeData(data, 
                 quantities=quantities,
                 protocol_name=data.protocols[0])
-    ep.init_visual_stim(data)
+    ep.show_visual_stim(data)
 
     N = len(ep.varied_parameters['Image-ID'])
 

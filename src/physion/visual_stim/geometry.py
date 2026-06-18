@@ -202,15 +202,15 @@ def set_angle_meshgrid_V2Screens(self,
 
     if force_degree or (self.units=='deg'):
 
-        altitudeMax, altitudeMin = np.max(self.z), np.min(self.z)
+        altitudeMax, altitudeMin = np.max(self.Z), np.min(self.Z)
         dZ = altitudeMax-altitudeMin
-        azimuthMax = dZ*self.x.shape[0]/self.x.shape[1]/2.
+        azimuthMax = dZ*self.X.shape[0]/self.X.shape[1]/2.
 
         self.x, self.z = np.meshgrid(\
                      np.linspace(-azimuthMax, azimuthMax,
-                                 self.x.shape[0]),
+                                 self.X.shape[0]),
                      np.linspace(altitudeMin, altitudeMax,
-                                  self.x.shape[1]),
+                                  self.X.shape[1]),
                               indexing='ij')
         
         # for this, we get back to widths, height screen coords

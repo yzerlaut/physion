@@ -4,7 +4,8 @@ import numpy as np
 from scipy.interpolate import interp1d
 
 from physion.analysis import stat_tools
-from physion.visual_stim.build import build_stim
+from physion.visual_stim import stimuli
+from physion.visual_stim.build import get_default_params
 import physion.analysis.episodes as episodes
 from .trial_statistics import pre_post_statistics,\
         stat_test_for_evoked_responses, reliability
@@ -21,29 +22,29 @@ class EpisodeData:
 
     - Using metadata to store stimulus informations per episode
 
-    quantities should be given as:
-            - Photodiode-Signal
-            - running_speed
-            - Deconvolved
-            - dFoF
-            - Zscore_dFoF
-            - neuropil
-            - rawFluo
-            - pupil_diameter
-            - gaze_movement
-            - facemotion
+    quantities should be one of:
+        'photodiode',
+        'pupil',
+        'facemotion',
+        'running',
+        'opto',
+        'rawFluo',
+        'neuropil',
+        'dFoF',
+        'spikes',
+        'LFP',
+        'MUA'
     """
 
     def __init__(self, full_data,
                  protocol_id=None, protocol_name=None,
-                 quantities=['Photodiode-Signal'],
+                 quantities=['photodiode'],
                  quantities_args=None,
                  prestim_duration=None, # to force the prestim window otherwise, half the value in between episodes
                  dt_sampling=1, # ms
                  interpolation='linear',
-                 with_visual_stim=False,
                  tfull=None,
-                 verbose=True):
+                 verbose=False):
         '''
         Initializes EpisodeData
 
@@ -89,12 +90,6 @@ class EpisodeData:
         # we overwrite those to single values
         self.protocol_id = protocol_id
         self.protocol_name = full_data.protocols[self.protocol_id]
-
-        # VISUAL STIM
-        if with_visual_stim:
-            self.init_visual_stim(full_data)
-        else:
-            self.visual_stim = None
 
         if self.verbose:
             print('  -> [ok] episodes ready !')
@@ -289,7 +284,7 @@ class EpisodeData:
     def get_response2D(self, 
                      quantity=None, 
                      episode_cond=None,
-                     roiIndex=None, 
+                     index=None,
                      averaging_dimension='ROIs'):
         """
         takes the quantity you want the response from (default will be the first one). Check with ep.quantities
@@ -304,12 +299,11 @@ class EpisodeData:
             self.pupil_diameter.shape() = (Nepisodes, Ntimestamps)
             self.dFoF.shape() = (Nepisodes, Nrois, Ntimestamps)
 
-        roiIndex can be either a index, an array of indices or None (default: then all indices)
+        index can be either a index, an array of indices or None (default: then all indices)
         """
 
-
-        if roiIndex is None:
-            roiIndex = np.arange(self.data.nROIs)  
+        if index is None:
+            index = np.arange(getattr(self, quantity).shape[1])
             
         if quantity is None:
             if len(self.quantities)>1:
@@ -329,21 +323,21 @@ class EpisodeData:
         elif len(getattr(self, quantity).shape)==3: #3 dimensions
             # i.e. self.quantity.shape = (Nepisodes, Nrois, Ntimestamps) 
             # then two cases:
-            if type(roiIndex) in [int, np.int16, np.int64]:
-                return getattr(self, quantity)[episode_cond,roiIndex,:]
+            if type(index) in [int, np.int16, np.int64]:
+                return getattr(self, quantity)[episode_cond,index,:]
 
-            else:  #roiIndex is an array -> multiple ROIs and multiple episodes
+            else:  #index is an array -> multiple ROIs and multiple episodes
                 #could be written in a shorter way
                 if averaging_dimension=='episodes':
                     dim = 0
-                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=dim)[roiIndex,:]
+                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=dim)[index,:]
                 elif averaging_dimension=='ROIs':
                     dim = 1
-                    return getattr(self, quantity)[:,roiIndex,:].mean(axis=dim)[episode_cond,:]
+                    return getattr(self, quantity)[:,index,:].mean(axis=dim)[episode_cond,:]
                 else:
                     print('dimension not recognized, using episodes by default')
                     dim = 0
-                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=dim)[roiIndex,:]
+                    return getattr(self, quantity)[episode_cond,:,:].mean(axis=dim)[index,:]
 
     def compute_interval_cond(self, interval):
         """
@@ -395,7 +389,9 @@ class EpisodeData:
 
         return cond
 
-    def init_visual_stim(self, full_data):
+    def show_visual_stim(self, 
+                         iEp=0,
+                         force_degree=False):
         """
         Initialize visual stimulation specific to those episodes (self.visual_stim) by creating a dictionnary from the metadata
 
@@ -413,24 +409,59 @@ class EpisodeData:
         test in dataviz.episodes.trial_average.plot
 
         """
-        stim_data = {'no-window':True}
+        stim_data = {'no-window':True,
+                     'Screen' : self.data.metadata['Screen'],
+                     'Stimulus': self.data.metadata['Stimulus']}
 
-        for key in full_data.metadata:
-            stim_data[key]=full_data.metadata[key]
-            # if subprotocol, removes the "Protocol-i" from the key
-            if ('Protocol-%i-' % (self.protocol_id+1)) in key:
-                stim_data[key.replace('Protocol-%i-' % (self.protocol_id+1), '')] = full_data.metadata[key]
+        import pprint
+        pprint.pprint(self.data.metadata)
+        default_params = get_default_params(stim_data['Stimulus'])
+        for key in default_params:
+            if key in self.varied_parameters:
+                value = getattr(self, key)[iEp]
+                stim_data[key] = value
+                print(0, key, value)
+            elif 'Protocol-%i-%s' % (self.protocol_id+1, key) in self.data.metadata:
+                value = self.data.metadata['Protocol-%i-%s' % (self.protocol_id+1, key)]
+                print(1, key, value)
+                stim_data[key] = value
+            elif key in self.data.metadata:
+                value = self.data.metadata[key]
+                print(2, key, value)
+                stim_data[key] = value
 
-        self.visual_stim = build_stim(stim_data)
+        if force_degree:
+            stim_data['units'] = 'deg'
+        stim_data['Presentation'] = 'Single-Stimulus'
 
-        # WE REBUILD THE TIME COURSE FROM THE FULL DATA
-        #   (and we limit the episodes to those actually recorded/realigned, see full_data.get_protocol_cond() )
-        all_eps = np.arange(len(self.protocol_cond_in_full_data))
+        visual_stim = getattr(\
+                         getattr(\
+                                stimuli,\
+                                    stim_data['Stimulus']),
+                                              'stim')(stim_data)
 
-        for key in self.visual_stim.experiment:
-            for i, data_i in enumerate(all_eps[self.protocol_cond_in_full_data]):
-                self.visual_stim.experiment[key][i] = full_data.visual_stim.experiment[key][data_i]
-        return 0
+        import matplotlib.pylab as plt
+        visual_stim.plot_stim_picture(0)
+        plt.show()
+
+        # for key in self.metadata:
+        #     stim_data[key]=full_data.metadata[key]
+        #     # if subprotocol, removes the "Protocol-i" from the key
+        #     if ('Protocol-%i-' % (self.protocol_id+1)) in key:
+        #         stim_data[key.replace('Protocol-%i-' % (self.protocol_id+1), '')] = full_data.metadata[key]
+
+        # import pprint
+        # pprint.pprint(stim_data)
+        # self.visual_stim = build_stim(stim_data)
+
+        # # WE REBUILD THE TIME COURSE FROM THE FULL DATA
+        # #   (and we limit the episodes to those actually recorded/realigned, see full_data.get_protocol_cond() )
+        # all_eps = np.arange(len(self.protocol_cond_in_full_data))
+
+        # for key in self.visual_stim.experiment:
+        #     for i, data_i in enumerate(all_eps[self.protocol_cond_in_full_data]):
+        #         self.visual_stim.experiment[key][i] = full_data.visual_stim.experiment[key][data_i]
+        # return 0
         
     
     def get_image(self, key=None, index=None, value=None):
@@ -476,20 +507,25 @@ if __name__=='__main__':
 
     filename = sys.argv[-1]
     data= Data(filename)
-    data.build_dFoF()
+    data.build_running()
     print("Protocols : ", data.protocols)
 
-    print("Protocol name : ", data.protocols[2])
-    ep = EpisodeData(data, quantities=['dFoF'], protocol_id=2)
+    print("Protocol name : ", data.protocols[0])
+    ep = EpisodeData(data, quantities=['running'], protocol_id=0)
     print("Varied parameters : ", ep.varied_parameters)
 
-    summary = ep.pre_post_statistics()
+    summary = ep.pre_post_statistics(\
+        response_args=dict(quantity='running'))
     print(summary)
+    print(getattr(ep, 'x-center')[:3])
+    print(getattr(ep, 'y-center')[:3])
+    for i in range(3):
+        ep.show_visual_stim(3)#, force_degree=True)
     # for ia, angle in enumerate(episodes.varied_parameters['angle']):
     #     ep_cond = episodes.find_episode_cond('angle', ia)
     #     stats = episodes.trial_statistics.stat_test_for_evoked_responses(ep,
     #                                                             episode_cond=ep_cond,
-    #                                                             response_args={'quantity':'dFoF', 'roiIndex':3})
+    #                                                             response_args={'quantity':'dFoF', 'index':3})
     #     print(ia, angle, stats.significant())
 
         

@@ -11,6 +11,22 @@ from physion.imaging.Calcium import compute_dFoF,\
         T_SLIDING, PERCENTILE, NEUROPIL_CORRECTION_FACTOR, ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC
 from physion.imaging.dcnv import oasis
 
+MODALITIES = [\
+        'photodiode',
+        'visual_stim',
+        'pupil',
+        'facemotion',
+        'running',
+        'opto',
+        'rawFluo',
+        'neuropil',
+        'dFoF',
+        'spikes',
+        'spikeWaveforms',
+        'LFP',
+        'MUA'
+    ]
+
 class Data:
     
     """
@@ -44,7 +60,7 @@ class Data:
     data.df_name        # formatted name with protocol
 
     """
-    
+
     def __init__(self, filename,
                  with_tlim=True,
                  metadata_only=False,
@@ -837,10 +853,10 @@ class Data:
 
 
     def has_visual_stim(self):
-        return ('time_tstart_realigned' in self.nwbfile.stimulus)
+        return ('time_start_realigned' in self.nwbfile.stimulus)
 
     def build_visual_stim(self, 
-                         verbose=True, 
+                         verbose=False, 
                          force_degree=False):
         """
         Builds an initial visual stim  - well built?
@@ -958,33 +974,23 @@ class Data:
     #       other methods     #
     ###########################
     
-    def close(self):
-        self.io.close()
-
     def available_modalities(self,
                              verbose=False):
         self.modalities = []
-        for key in [
-            'photodiode',
-            'visual_stim',
-            'pupil',
-            'facemotion',
-            'running',
-            'opto',
-            'rawFluo',
-            'neuropil',
-            'dFoF',
-            'spikes',
-            'spikeWaveforms',
-            'LFP',
-            'MUA'
-        ]:
-            if getattr(data, 'has_%s' % key)():
+        for key in MODALITIES:
+            if getattr(self, 'has_%s' % key)():
                 self.modalities.append(key)
                 if verbose:
                     print(' --> available: "%s" ' % key)
         return self.modalities
 
+    def build_available_modalities(self,
+                                   verbose=True):
+        for key in self.available_modalities(verbose=verbose):
+            getattr(self, 'build_%s' % key)(verbose=verbose)
+
+    def close(self):
+        self.io.close()
 
         
 def scan_folder_for_NWBfiles(folder, 

@@ -3,7 +3,7 @@
 import numpy.fft as fft
 import numpy as np
 from scipy import signal
-
+import pywt # PyWavelets
 
 ##############################################
 ########### Spectral Filtering ###############
@@ -44,8 +44,31 @@ def filter_kernel(Facq,
 ########### Wavelet Transform ################
 ##############################################
 
+def cwt(data, freqs, dt,
+        # wavelet = 'morl',
+        wavelet = 'cmor1.5-0.5',
+        ):
+    """
+    Continuous Wavelet Transform
+    based on the PyWavelet package
+
+    See the doc (available wavelets, ...) at:
+    https://pywavelets.readthedocs.io/en/latest/ref/cwt.html
+    """
+    # we pad signal to remove boundary effects
+    pad_width = int(2./freqs.min()/dt)
+    dataP = pywt.pad(data, pad_width, 'constant')
+    # find the scales corresponding to freqs
+    scales = pywt.frequency2scale(wavelet, freqs)/dt
+    # compute the cwt
+    coeffs, freqs = pywt.cwt(dataP, scales, wavelet)
+
+    return coeffs.take(indices=pad_width+np.arange(len(data)),
+                       axis=-1)
+
 def my_cwt(data, frequencies, dt, w0=6.):
     """
+    my (slow) custom cwt implementation (Y. Zerlaut)
     wavelet transform with normalization to catch the amplitude of a sinusoid
     """
     output = np.zeros([len(frequencies), len(data)], 
@@ -99,11 +122,12 @@ def compute_freq_envelope(signal, sampling_freq, freqs):
     2. transform to envelope only (absolute value)
     3. take the maximum over the considered band
     """
-    return np.max(np.abs(my_cwt(signal,
-                                freqs,
-                                1./sampling_freq)), 
-                                axis=0)
-
+    return np.max(np.abs(\
+                    # my_cwt(signal,
+                    cwt(signal,
+                            freqs,
+                                1./sampling_freq)),
+                                    axis=0)
 
 if __name__=='__main__':
 
