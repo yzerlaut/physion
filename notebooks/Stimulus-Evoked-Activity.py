@@ -23,6 +23,7 @@ filename = os.path.join(os.path.expanduser('~'), 'DATA',
                         '2023_02_15-13-30-47.nwb')
 
 data = Data(filename, verbose=False)
+data.build_available_modalities()
 
 # %% [markdown]
 # ## Build episodes (stimulus-aligned)
@@ -31,9 +32,8 @@ data = Data(filename, verbose=False)
 # find protocol of full-field gratings
 p_name = [p for p in data.protocols if 'ff-gratings' in p][0]
 episodes = EpisodeData(data, 
-                        quantities=['dFoF','pupil_diameter'],
+                        quantities=['dFoF','pupil'],
                         protocol_name=p_name)
-
 # %% [markdown]
 # ## Plot properties
 
@@ -48,7 +48,7 @@ plot_props = dict(column_key='angle',
 
 # %%
 fig, AX = plot(episodes,
-                quantity='pupil_diameter',
+                quantity='pupil',
                 #   with_std=False,
                 **plot_props)
 # %% [markdown]
@@ -57,7 +57,7 @@ fig, AX = plot(episodes,
 # %%
 fig, AX = plot(episodes,
                 quantity='dFoF',
-                roiIndex=range(data.nROIs),
+                index=range(data.nROIs),
                 **plot_props)
 
 # %% [markdown]
@@ -65,12 +65,12 @@ fig, AX = plot(episodes,
 
 # %%
 fig, AX = plot(episodes,
-                roiIndex=0,
+               quantity='dFoF', index=0,
                 **plot_props)
 
 # %%
 fig, AX = plot(episodes,
-                roiIndex=2,
+               quantity='dFoF', index=2,
                 **plot_props)
 
 # %%
@@ -85,7 +85,7 @@ summary = episodes.pre_post_statistics(\
                 stat_test_props=stat_test_props,
                 # repetition_keys=['repeat', 'angle', 'contrast'],
                 response_args=dict(quantity='dFoF',
-                                   roiIndex=0),
+                                   index=0),
                 response_significance_threshold=0.01,
                 verbose=True)
 
@@ -121,7 +121,7 @@ from physion.analysis.episodes.trial_statistics \
 summary = run_reliability_test(episodes,
                 episodes.find_episode_cond(key=['contrast', 'angle'],
                                            value=[0.5, 0]),
-                dict(quantity='dFoF', roiIndex=1),
+                dict(quantity='dFoF', index=1),
                 stat_test_props=dict(n_samples=100, seed=2),
                 response_significance_threshold=0.05,
                 return_samples=True)

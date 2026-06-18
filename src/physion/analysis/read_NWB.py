@@ -567,7 +567,7 @@ class Data:
             print(' %s --> "MUA" not available ...' % self.df_name)
 
     def has_spikes(self):
-        return hasattr(self.nwbfile, 'units')
+        return getattr(self.nwbfile, 'units')!=None
 
     def build_spikes(self,
             specific_time_sampling=None,
