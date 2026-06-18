@@ -1,10 +1,11 @@
-2# %% [markdown]
+# %% [markdown]
 # # Visualize Raw Data
 
 # %%
 # general python modules for scientific analysis
-import sys, pathlib, os
+import sys, os
 import numpy as np
+import pprint
 
 sys.path += ['../src'] # add src code directory for physion
 import physion.utils.plot_tools as pt
@@ -47,7 +48,7 @@ show_CaImaging_FOV(data, key='meanImg',
                    ax=AX[2])
 
 # save on desktop
-fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'FOV.png'))
+# fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'FOV.png'))
 
 
 # %% [markdown]
@@ -56,21 +57,24 @@ fig.savefig(os.path.join(os.path.expanduser('~'), 'Desktop', 'FOV.png'))
 # %%
 
 # default plot
-from physion.dataviz.raw import plot as plot_raw, find_default_plot_settings
+from physion.dataviz.raw import plot as plot_raw,\
+                            find_default_plot_settings
 settings = find_default_plot_settings(data)
 _ = plot_raw(data, settings=settings, tlim=[1200,1230])
+
+pprint.pprint(settings)
 
 # %% [markdown]
 # ## Full view
 
 # %%
-settings = {'Locomotion': {'fig_fraction': 1,
+settings = {'running': {'fig_fraction': 1,
                            'subsampling': 1,
                            'color': '#1f77b4'},
-            'FaceMotion': {'fig_fraction': 1,
+            'facemotion': {'fig_fraction': 1,
                            'subsampling': 1,
                            'color': 'purple'},
-            'Pupil': {'fig_fraction': 2,
+            'pupil': {'fig_fraction': 2,
                       'subsampling': 1,
                       'color': '#d62728'},
              'CaImaging': {'fig_fraction': 10,
@@ -85,3 +89,4 @@ fig, AX = \
              settings=settings)
 
 # %%
+pt.plt.show()

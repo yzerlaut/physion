@@ -40,7 +40,7 @@ def color(key):
     else:
         return pt.plt.cm.Greens(np.random.uniform(0.5, .8))
     
-fig, ax = pt.plt.subplots(figsize=(8,10))
+fig, ax = pt.plt.subplots(figsize=(8,18))
 i = 0
 for key in data.keys():
     if key !='time':
