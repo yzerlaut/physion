@@ -126,7 +126,7 @@ if __name__=='__main__':
 
     from physion.analysis.episodes.build import EpisodeData
     ep = EpisodeData(data, quantities=['dFoF'])
-    ep.show_visual_stim(data)
+    ep.plot_stim_picture(data)
     plot_evoked_pattern(ep, ep.find_episode_cond(),
                         quantity='dFoF')
     pt.plt.show()

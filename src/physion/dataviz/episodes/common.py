@@ -9,11 +9,6 @@ def prepare_panels(episodes,
            fig, AX, figsize,
     ):
 
-    if with_screen_inset and (episodes.visual_stim is None):
-        print('\n [!!] visual stim of episodes was not initialized  [!!]  ')
-        print('    --> screen_inset display desactivated ' )
-        with_screen_inset = False
-
     if condition is None:
         condition = np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)
 

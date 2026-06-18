@@ -389,109 +389,45 @@ class EpisodeData:
 
         return cond
 
-    def show_visual_stim(self, 
+    def plot_stim_picture(self, 
                          iEp=0,
-                         force_degree=False):
+                         ax=None,
+                         force_degree=False,
+                         **args):
         """
-        Initialize visual stimulation specific to those episodes (self.visual_stim) by creating a dictionnary from the metadata
-
-        PROBLEM - CHECK WHY THE visual_stim CAN HAVE DIFFERENT VALUES THAN THE DATA
-        
-        No return output
-
-        start from
-        data.init_visual_stim()
-        data.visual_stim.get_image(episode_number_in_multiprotocol)
-
-        Ep.init_visual_stim()
-        Ep.visual_stim.get_image(episode_number_in_single_protocol)
-
-        test in dataviz.episodes.trial_average.plot
+        ###########################################################
+        we rebuild an artificial **single stimulus** protocol 
+            for the stimulus parameters of that episode
 
         """
         stim_data = {'no-window':True,
                      'Screen' : self.data.metadata['Screen'],
                      'Stimulus': self.data.metadata['Stimulus']}
 
-        import pprint
-        pprint.pprint(self.data.metadata)
         default_params = get_default_params(stim_data['Stimulus'])
+        # replacing the default params with those of this episode
         for key in default_params:
             if key in self.varied_parameters:
-                value = getattr(self, key)[iEp]
-                stim_data[key] = value
-                print(0, key, value)
+                stim_data[key] = getattr(self, key)[iEp]
             elif 'Protocol-%i-%s' % (self.protocol_id+1, key) in self.data.metadata:
-                value = self.data.metadata['Protocol-%i-%s' % (self.protocol_id+1, key)]
-                print(1, key, value)
-                stim_data[key] = value
+                stim_data[key] = self.data.metadata['Protocol-%i-%s' % (self.protocol_id+1, key)]
             elif key in self.data.metadata:
-                value = self.data.metadata[key]
-                print(2, key, value)
-                stim_data[key] = value
+                stim_data[key] = self.data.metadata[key]
 
         if force_degree:
             stim_data['units'] = 'deg'
         stim_data['Presentation'] = 'Single-Stimulus'
 
+        # we generate a new visual_stim object from this single episode info
         visual_stim = getattr(\
                          getattr(\
                                 stimuli,\
                                     stim_data['Stimulus']),
                                               'stim')(stim_data)
 
-        import matplotlib.pylab as plt
-        visual_stim.plot_stim_picture(0)
-        plt.show()
-
-        # for key in self.metadata:
-        #     stim_data[key]=full_data.metadata[key]
-        #     # if subprotocol, removes the "Protocol-i" from the key
-        #     if ('Protocol-%i-' % (self.protocol_id+1)) in key:
-        #         stim_data[key.replace('Protocol-%i-' % (self.protocol_id+1), '')] = full_data.metadata[key]
-
-        # import pprint
-        # pprint.pprint(stim_data)
-        # self.visual_stim = build_stim(stim_data)
-
-        # # WE REBUILD THE TIME COURSE FROM THE FULL DATA
-        # #   (and we limit the episodes to those actually recorded/realigned, see full_data.get_protocol_cond() )
-        # all_eps = np.arange(len(self.protocol_cond_in_full_data))
-
-        # for key in self.visual_stim.experiment:
-        #     for i, data_i in enumerate(all_eps[self.protocol_cond_in_full_data]):
-        #         self.visual_stim.experiment[key][i] = full_data.visual_stim.experiment[key][data_i]
-        # return 0
+        # we use the plot_stim_picture method from visual stim
+        visual_stim.plot_stim_picture(0, ax=ax, **args)
         
-    
-    def get_image(self, key=None, index=None, value=None):
-
-        if hasattr(self, 'visual_stim'):
-
-            all_eps = np.arange(len(self.index))
-            cond = all_eps[self.find_episode_cond(key=key, index=index, value=value)]
-
-            if len(cond)>0:
-                iStim = cond[0]
-                
-            I = all_eps[ep.protocol_cond_in_full_data]
-
-            self.plot_stim_picture(I)
-            
-            pass
-
-        else:
-            print('init visual stim!!')
-
-    
-    def plot_stim_picture(self):
-
-        '''
-        Overwrites self.visual_stim.plot_stim_picture'
-        '''
-        print("plot stim function to do")
-        
-
         return 0
     
     def pre_post_statistics(self, **args):
@@ -501,32 +437,33 @@ class EpisodeData:
     def reliability(self, **args):
         return reliability(self, **args)
 
+
 if __name__=='__main__':
 
     from physion.analysis.read_NWB import Data
+    from physion.utils import plot_tools as pt
 
     filename = sys.argv[-1]
     data= Data(filename)
     data.build_running()
+
     print("Protocols : ", data.protocols)
 
     print("Protocol name : ", data.protocols[0])
     ep = EpisodeData(data, quantities=['running'], protocol_id=0)
     print("Varied parameters : ", ep.varied_parameters)
 
-    summary = ep.pre_post_statistics(\
-        response_args=dict(quantity='running'))
-    print(summary)
-    print(getattr(ep, 'x-center')[:3])
-    print(getattr(ep, 'y-center')[:3])
+    # summary = ep.pre_post_statistics(\
+    #     response_args=dict(quantity='running'))
+
+    for key in ep.varied_parameters:
+        print(getattr(ep, key)[:3])
+
     for i in range(3):
-        ep.show_visual_stim(3)#, force_degree=True)
-    # for ia, angle in enumerate(episodes.varied_parameters['angle']):
-    #     ep_cond = episodes.find_episode_cond('angle', ia)
-    #     stats = episodes.trial_statistics.stat_test_for_evoked_responses(ep,
-    #                                                             episode_cond=ep_cond,
-    #                                                             response_args={'quantity':'dFoF', 'index':3})
-    #     print(ia, angle, stats.significant())
+        fig, ax = pt.figure(ax_scale=(2,2))
+        ep.plot_stim_picture(i, ax=ax)
+        pt.plt.show()
+
 
         
 

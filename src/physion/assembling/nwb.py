@@ -398,6 +398,13 @@ def build_NWB_func(args, Subject=None):
                                           rate=args.photodiode_sampling)
             nwbfile.add_acquisition(photodiode)
 
+        ####################
+        ## put addition of natural images here
+        if False:
+            # checking that you have some NI in your stimulus
+            NI = pynwb.image.GrayscaleImage(name, data)
+            nwbfile.add_stimulus(NI)
+
         
     #################################################
     ####         FaceCamera Recording         #######

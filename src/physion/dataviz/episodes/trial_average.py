@@ -18,7 +18,7 @@ from . import common
 
 def plot(episodes,
            # episodes props
-           quantity='dFoF', index=None,
+           quantity='running', index=None,
            smoothing=0,
            condition=None,
            COL_CONDS=None, column_keys=[], column_key='',
@@ -100,23 +100,9 @@ def plot(episodes,
                     inset = pt.inset(AX[irow][icol],
                                      screen_inset)
 
-                    istim = np.flatnonzero(cond)[0] # 
-
-                    # start -- QUICK FIX 
-
-                    # Forces episodes.visual_stim.experiment['protocol_id']
-                    # as a NumPy array of length len(cond) filled with a single integer protocol ID
-
-                    if 'protocol_id' in episodes.visual_stim.experiment:
-                        if type(episodes.visual_stim.experiment['protocol_id']) in [int, np.int64]:
-                            episodes.visual_stim.experiment['protocol_id'] = np.zeros(len(cond), dtype=int)+\
-                                                        int(episodes.visual_stim.experiment['protocol_id'])
-                        else:
-                            episodes.visual_stim.experiment['protocol_id'] = np.zeros(len(cond), dtype=int)+\
-                                                        int(episodes.visual_stim.experiment['protocol_id'][0])
-                    # end -- QUICK FIX
-
-                    episodes.visual_stim.plot_stim_picture(istim, ax=inset)
+                    istim = np.flatnonzero(cond)[0] # first episode with that condition
+                    episodes.plot_stim_picture(istim, 
+                                               ax=inset)
 
                 if with_annotation:
 
@@ -237,16 +223,21 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    import physion
-    if os.path.isfile(args.datafile):
-        data = physion.analysis.read_NWB.Data(args.datafile)
-        data.init_visual_stim()
-        episodes = physion.analysis.episodes.build.EpisodeData(data,
-                quantities=['dFoF'],
-                protocol_id=args.protocol_id)
-        episodes.init_visual_stim(data)
+    from physion.analysis.episodes.build import EpisodeData
+    from physion.analysis.read_NWB import Data
 
+    if os.path.isfile(args.datafile):
+        data = Data(args.datafile)
+        data.build_running()
+        episodes = EpisodeData(data,
+                quantities=['running'],
+                protocol_id=args.protocol_id)
+
+        keys = list(episodes.varied_parameters.keys())
         plot(episodes, 
+             column_key=keys[0] if len(keys)>0 else None,
+             row_key=keys[1] if len(keys)>1 else '',
+             color_key=keys[2] if len(keys)>2 else '',
              with_screen_inset=True)
         pt.plt.show()
 
