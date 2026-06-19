@@ -219,13 +219,14 @@ def add_ephys(nwbfile, args,
 
         # channel subsampling
         e0, e1 = [int(e) for e in args.electrode_range.split('-')]
-        eSubsampling = np.arange(len(channel_ids))[e0:e1][::int(args.electrode_subsampling)]
+        # nElecGroups =  int((e1-e0)/args.args.electrode_subsampling)
+        elecSubsampling = np.arange(e0, e1, args.electrode_subsampling)
         electrodes = nwbfile.create_electrode_table_region(
-            region      = list(eSubsampling),
+            region      = list(elecSubsampling),
             description = "Chosen electrodes in the range %s with subsampling %s" %\
                     (args.electrode_range, args.electrode_subsampling),
         )
-        n_channels = len(eSubsampling)
+        n_channels = len(elecSubsampling)
 
         # resampling rate for those
         resample_rate = int(siRec.get_sampling_frequency()\
@@ -239,24 +240,57 @@ def add_ephys(nwbfile, args,
 
         print("         -> computing and writing Multi-Unit Activity [...]")
 
-        hfRec = si.resample(
-                    si.rectify(
-                        si.bandpass_filter(\
+        # strategy to subsample, we do it on all channels,
+        #      but we average those in between the contacts we don't keep
+
+        # N considered channels 
+        # nFullChannels = (n_channels-1)*args.electrode_subsampling 
+        # (we remove the last channelsgroup to be sure to have 
+        #      a multiple of electrode_subsampling for )
+
+        # in order, we do:
+        # 1) we select channels from e0 to e1
+        # 2) we bandpass
+        # 3) we rectify
+        # 4) we resample
+        # 5) we average of groups of "electrode_subsampling"
+        mua_channels = e0+np.arange(\
+                    len(elecSubsampling)*args.electrode_subsampling)
+
+        mua_traces = si.resample(
+                        si.rectify(
+                            si.bandpass_filter(\
                                 siRec.select_channels(\
                                     channel_ids =\
-                                            siRec.get_channel_ids()[e0:e1]
+                                            siRec.get_channel_ids()[mua_channels]
                                     ), 
                                 freq_min=MUA_BAND[0], 
                                 freq_max=MUA_BAND[1])
                         ),
                 resample_rate=resample_rate
-                )
+                ).get_traces().reshape(\
+                                -1, 
+                                len(elecSubsampling),
+                                args.electrode_subsampling\
+                                    ).mean(axis=-1)
+        # hfRec = si.resample(
+        #             si.rectify(
+        #                 si.bandpass_filter(\
+        #                         siRec.select_channels(\
+        #                             channel_ids =\
+        #                                     siRec.get_channel_ids()[e0:e1]
+        #                             ), 
+        #                         freq_min=MUA_BAND[0], 
+        #                         freq_max=MUA_BAND[1])
+        #                 ),
+        #         resample_rate=resample_rate
+        #         )
+        # mua_traces = hfRec.get_traces()[:,:nFullChannels].reshape(\
+        #     -1, n_channels-1, args.electrode_subsampling).mean(axis=-1)
+        # print(e0, e1, nFullChannels, args.electrode_subsampling)
+        # print(hfRec.get_traces().shape)
 
-
-        nTot = n_channels*args.electrode_subsampling # N considered channels
         # compute mean traces 
-        mua_traces = hfRec.get_traces()[:,:nTot].reshape(\
-            -1, n_channels, args.electrode_subsampling).mean(axis=-1)
 
         # ── Build NWB MUA objects ───────────────────────────────────────
         mua_es = ElectricalSeries(
@@ -292,7 +326,7 @@ def add_ephys(nwbfile, args,
 
         # subsampling on the chosen electrodes
         siRec = siRec.select_channels(
-            channel_ids = siRec.get_channel_ids()[eSubsampling]
+            channel_ids = siRec.get_channel_ids()[elecSubsampling]
         ) 
 
         temp_folder = os.path.join(tempfile.gettempprefix(), 'temp')
