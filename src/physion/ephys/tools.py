@@ -3,7 +3,8 @@
 import numpy.fft as fft
 import numpy as np
 from scipy import signal
-import pywt # PyWavelets
+# import pywt # PyWavelets
+pywt = None
 
 ##############################################
 ########### Spectral Filtering ###############

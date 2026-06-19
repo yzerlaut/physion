@@ -313,7 +313,7 @@ def add_ephys(nwbfile, args,
                 si.bandpass_filter(rec, 
                     freq_min=LFP_BAND[0], 
                     freq_max=LFP_BAND[1],
-                    # ignore_low_freq_error=True,
+                    ignore_low_freq_error=True,
                     margin_ms=margin_ms
                 ),
                 resample_rate=resample_rate)
