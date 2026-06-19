@@ -5,6 +5,7 @@ from scipy import signal
 
 from spikeinterface.extractors import read_openephys
 from spikeinterface.sortingcomponents import peak_detection
+from spikeinterface import preprocessing
 import spikeinterface.full as si
 from pynwb.ecephys import (
     ElectricalSeries,
@@ -46,7 +47,7 @@ def read_kilosort(df):
 def add_ephys(nwbfile, args,
             metadata=None,
             LFP_BAND = [0.5, 300.0],
-            MUA_BAND = np.logspace(np.log10(300), np.log10(3000), 10),
+            MUA_BAND = [300.0, 6000.0],
             resampling_factor = 24, # int,  gives a resampled_rate = 1250,
             margin_ms = 10000,
             chunking_window = '60s'):
@@ -122,7 +123,6 @@ def add_ephys(nwbfile, args,
         location    = args.Location, # from the DataTable
         device      = device,
     )
-
     # NWB requires x, y, z; Neuropixels provides x (horizontal) and y (depth).
     # We set z = 0 for a single-shank probe.
     for i in range(len(channel_ids)):
@@ -137,12 +137,15 @@ def add_ephys(nwbfile, args,
             location      = args.Location,
             group         = electrode_group,
         )
-
     all_electrodes = nwbfile.create_electrode_table_region(
         region      = list(range(len(channel_ids))),
         description = "All electrodes (bad channels removed)",
     )
 
+    # 3)
+    #######################################################
+    # ── add Spikes ───────────────────────────────────────
+    #######################################################
     if args.Spikes=='Yes':
 
         spiking_module = nwbfile.create_processing_module(
@@ -169,8 +172,10 @@ def add_ephys(nwbfile, args,
             cond = (sorting['spike_clusters']==id)
             return np.unique(sorting['spike_templates'][cond])[0]
 
+        # only units that have been selected as "good" after manual sorting
         for unit_id in template_ids[labels=='good']:
 
+            # getting indices from kilosort
             spike_time_indices = sorting['spike_times'][\
                             sorting['spike_clusters']==unit_id]
             cond = (spike_time_indices>args.nStart) &\
@@ -206,42 +211,9 @@ def add_ephys(nwbfile, args,
             )
         spiking_module.add(spike_waveforms)
 
-        # -------------------------------- #
-        #        multi-unit Events         #
-        # -------------------------------- #
-        # print("         -> running peak-detection (locally_exclusive) [...]")
-        # peaks = peak_detection.detect_peaks(siRec,
-        #         method='locally_exclusive',
-        #         method_kwargs=dict(peak_sign='both'),
-        #                     )
 
-        # times, channels = [], []
-        # for unit_id in template_ids[labels=='mua']:
-        #     cond = (sorting['spike_times']>args.nStart) &\
-        #              (sorting['spike_times']<args.nStop)
-        #     times += list(\
-        #         sorting['spike_times'][\
-        #          cond & (sorting['spike_clusters']==unit_id)])
-        #     # to find the associated channel, we use the template
-        #     channel = \
-        #         np.argmax(sorting['templates'][unit_id].std(axis=0))            
-        #     channels += list(\
-        #         channel*np.ones(np.sum(cond & (sorting['spike_clusters']==unit_id))))
-            
-        # muEvents = SpikeEventSeries(
-        #     name="multi-unit Events",
-        #     data = channels,
-        #     electrodes=all_electrodes,
-        #     timestamps= [timestamps[t-args.nStart] for t in times])
-
-        # spiking_module.add(muEvents)
-
-    # -------------------------------------------------#
-    # 
     ##### FROM NOW ON --> sub-selection of channels ####
-    #
-    # -------------------------------------------------#
-    if (args.raw_Ephys=='Yes') or (args.LFP=='Yes') or (args.MUA=='Yes'):
+    if (args.LFP=='Yes') or (args.MUA=='Yes'):
 
         print("         -> subsampling channels for voltage traces [...]")
 
@@ -255,58 +227,96 @@ def add_ephys(nwbfile, args,
         )
         n_channels = len(eSubsampling)
 
+        # resampling rate for those
+        resample_rate = int(siRec.get_sampling_frequency()\
+                                    /resampling_factor)
+
+    # 4)
+    #######################################################
+    # ── add Multi-Unit Activity ──────────────────────────
+    #######################################################
+    if args.MUA=='Yes':
+
+        print("         -> computing and writing Multi-Unit Activity [...]")
+
+        hfRec = si.resample(
+                    si.rectify(
+                        si.bandpass_filter(\
+                                siRec.select_channels(\
+                                    channel_ids =\
+                                            siRec.get_channel_ids()[e0:e1]
+                                    ), 
+                                freq_min=MUA_BAND[0], 
+                                freq_max=MUA_BAND[1])
+                        ),
+                resample_rate=resample_rate
+                )
+
+
+        nTot = n_channels*args.electrode_subsampling # N considered channels
+        # compute mean traces 
+        mua_traces = hfRec.get_traces()[:,:nTot].reshape(\
+            -1, n_channels, args.electrode_subsampling).mean(axis=-1)
+
+        # ── Build NWB MUA objects ───────────────────────────────────────
+        mua_es = ElectricalSeries(
+            name          = "MUA",
+            data          = mua_traces,
+            electrodes    = electrodes,
+            timestamps    = timestamps[::resampling_factor][:mua_traces.shape[0]],
+            conversion    = 1e-6,   # µV → V
+            description   = (
+                f"MUA signal in uV "
+                f"electrode channels : {args.electrode_range}"
+                f"electrode subsampling: {args.electrode_subsampling}"
+                f"MUA band ({MUA_BAND[0]}–{MUA_BAND[1]} Hz, "
+                f"Butterworth order 5, zero-phase), "
+                f"downsampled to {resample_rate} Hz. "
+            ),
+        )
+    
+        mua_module = nwbfile.create_processing_module(
+            name        = "MUA",
+            description = "Multi-Unit-Activity computed from raw electrophysiology data",
+        )
+        mua_module.add(mua_es)
+
+
+    # 5)
+    #######################################################
+    # ── add Local Field Potential  ───────────────────────
+    #######################################################
+    if args.LFP=='Yes':
+
+        print("         -> computing and writing LFP band [...]")
+
+        # subsampling on the chosen electrodes
         siRec = siRec.select_channels(
             channel_ids = siRec.get_channel_ids()[eSubsampling]
         ) 
 
         temp_folder = os.path.join(tempfile.gettempprefix(), 'temp')
-        if True: # TURN BACK TO TRUE AFTER DEBUGGING !!
-            # # we save the data in the memory with an **extended** chunk size
+        # ── 1. We save the data in the memory with an **extended** chunk size to avoid boundary artefacts
+        if True: 
             siRec.save(format='binary', 
-                        folder=temp_folder, overwrite=True,
-                            chunk_duration=chunking_window,
-                                n_jobs=0.8, #
-                                    progress_bar=True)
+                        folder=temp_folder, 
+                        chunk_duration=chunking_window,
+                        overwrite=True,
+                        n_jobs=0.8, #
+                        progress_bar=True)
 
         rec = si.load(temp_folder,
                     chunk_duration=chunking_window)
-    else:
-        rec = None
-
-    # ── 3e. Raw AP band ───────────────────────────────────────────────────
-    if args.raw_Ephys=='Yes' and (rec is not None):
-
-        print("         - Writing raw EPhys data [...]")
-
-        raw_es = ElectricalSeries(
-            name             = "ElectricalSeries",
-            data             = rec.get_traces(),
-            electrodes       = electrodes,
-            timestamps       = timestamps,
-            conversion       = 1e-6,   # µV → V  (NWB stores Volts)
-            description      = "Raw Electrophysiological Data",
-            comments         = (
-                f"Open-Ephys recording, selecting {n_channels} channels, "
-                f"electrode channels : {args.electrode_range}, "
-                f"electrode subsampling: {args.electrode_subsampling}"
-            )
-        )
-        nwbfile.add_acquisition(raw_es)
-
-
-    # ──  LFP band ──────────────────────────────────────────────────────
-    if args.LFP=='Yes' and (rec is not None):
-
-        print("         -> computing and writing LFP band [...]")
 
         # ── 2. Apply filter + resample pipeline on the extended chunk ─────
-        rec_lfp = si.bandpass_filter(rec, 
-            freq_min=LFP_BAND[0], freq_max=LFP_BAND[1],
-            ignore_low_freq_error=True,
-            margin_ms=margin_ms
-        )
-        rec_lfp = si.resample(rec_lfp, 
-                resample_rate=int(rec.get_sampling_frequency()/resampling_factor))
+        rec_lfp = si.resample(
+                si.bandpass_filter(rec, 
+                    freq_min=LFP_BAND[0], 
+                    freq_max=LFP_BAND[1],
+                    # ignore_low_freq_error=True,
+                    margin_ms=margin_ms
+                ),
+                resample_rate=resample_rate)
 
         # ── 3. Build NWB LFP objects ───────────────────────────────────────
         lfp_es = ElectricalSeries(
@@ -321,7 +331,7 @@ def add_ephys(nwbfile, args,
                 f"electrode subsampling: {args.electrode_subsampling}"
                 f"LFP band ({LFP_BAND[0]}–{LFP_BAND[1]} Hz, "
                 f"Butterworth order 5, zero-phase), "
-                f"downsampled to {int(rec.get_sampling_frequency()/resampling_factor)} Hz. "
+                f"downsampled to {resample_rate} Hz. "
                 f"Chunk margin: {margin_ms} ms per side, Chunking window: {chunking_window}"
             ),
         )
@@ -331,41 +341,6 @@ def add_ephys(nwbfile, args,
             description = "Local-Field Potential computed from raw electrophysiology data",
         )
         lfp_module.add(lfp_es)
-
-    # ──  MUA band ──────────────────────────────────────────────────────
-    if args.MUA=='Yes' and (rec is not None):
-
-        print("         -> computing and writing Multi-Unit Activity [...]")
-
-        MUA = compute_freq_envelope(rec.get_traces(),
-                        rec.get_sampling_frequency(), 
-                        MUA_BAND)
-        MUA = signal.decimate(MUA, resampling_factor)
-
-        # ── 3. Build NWB MUA objects ───────────────────────────────────────
-        mua_es = ElectricalSeries(
-            name          = "MUA",
-            data          = MUA,
-            electrodes    = electrodes,
-            timestamps    = timestamps[::resampling_factor][:MUA.shape[1]],
-            conversion    = 1e-6,   # µV → V
-            description   = (
-                f"MUA signal in uV "
-                f"electrode channels : {args.electrode_range}"
-                f"electrode subsampling: {args.electrode_subsampling}"
-                f"MUA band ({mua_freq_min}–{mua_freq_max} Hz, "
-                f"Butterworth order 5, zero-phase), "
-                f"downsampled to {resample_rate} Hz. "
-                f"Chunk margin: {margin_ms} ms per side, Chunking window: {chunking_window}"
-            ),
-        )
-    
-        mua_module = nwbfile.create_processing_module(
-            name        = "MUA",
-            description = "Multi-Unit-Activity computed from raw electrophysiology data",
-        )
-        mua_module.add(mua_es)
-
 
 if __name__=='__main__':
 
