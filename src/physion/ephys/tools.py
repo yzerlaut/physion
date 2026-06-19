@@ -4,7 +4,6 @@ import numpy.fft as fft
 import numpy as np
 from scipy import signal
 # import pywt # PyWavelets
-pywt = None
 
 ##############################################
 ########### Spectral Filtering ###############
@@ -45,27 +44,27 @@ def filter_kernel(Facq,
 ########### Wavelet Transform ################
 ##############################################
 
-def cwt(data, freqs, dt,
-        # wavelet = 'morl',
-        wavelet = 'cmor1.5-0.5',
-        ):
-    """
-    Continuous Wavelet Transform
-    based on the PyWavelet package
+# def cwt(data, freqs, dt,
+#         # wavelet = 'morl',
+#         wavelet = 'cmor1.5-0.5',
+#         ):
+#     """
+#     Continuous Wavelet Transform
+#     based on the PyWavelet package
 
-    See the doc (available wavelets, ...) at:
-    https://pywavelets.readthedocs.io/en/latest/ref/cwt.html
-    """
-    # we pad signal to remove boundary effects
-    pad_width = int(2./freqs.min()/dt)
-    dataP = pywt.pad(data, pad_width, 'constant')
-    # find the scales corresponding to freqs
-    scales = pywt.frequency2scale(wavelet, freqs)/dt
-    # compute the cwt
-    coeffs, freqs = pywt.cwt(dataP, scales, wavelet)
+#     See the doc (available wavelets, ...) at:
+#     https://pywavelets.readthedocs.io/en/latest/ref/cwt.html
+#     """
+#     # we pad signal to remove boundary effects
+#     pad_width = int(2./freqs.min()/dt)
+#     dataP = pywt.pad(data, pad_width, 'constant')
+#     # find the scales corresponding to freqs
+#     scales = pywt.frequency2scale(wavelet, freqs)/dt
+#     # compute the cwt
+#     coeffs, freqs = pywt.cwt(dataP, scales, wavelet)
 
-    return coeffs.take(indices=pad_width+np.arange(len(data)),
-                       axis=-1)
+#     return coeffs.take(indices=pad_width+np.arange(len(data)),
+#                        axis=-1)
 
 def my_cwt(data, frequencies, dt, w0=6.):
     """
