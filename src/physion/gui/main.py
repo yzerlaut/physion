@@ -148,8 +148,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # # -- Assembling
     if (not Acquisition) and (not Intrinsic):
-        from physion.assembling.gui import build_NWB_UI, runBuildNWB,\
-                load_NWB_folder
+        from physion.assembling.gui import build_NWB_from_DataTable_UI,\
+            choose_DataTable, runBuildNWBfromDTBL, build_NWB_UI, runBuildNWB, load_NWB_folder
         # from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
             # loadNWBfolder, loadCafolder, runAddOphys, check_ordered
         from physion.assembling.FOV_coordinates import gui as FOV_coords_UI,\
@@ -338,7 +338,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.pupil()
             # self.transfer_gui()
             # self.suite2p_preprocessing_UI()
-            # self.build_NWB_UI()
+            self.build_NWB_from_DataTable_UI()
             # self.add_imaging()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
@@ -348,7 +348,7 @@ class MainWindow(QtWidgets.QMainWindow):
             # from physion.analysis import read_NWB
             # self.data = read_NWB.Data(self.datafile)
             # self.visualization()
-            self.trial_averaging()
+            # self.trial_averaging()
             # self.FOV()
             # self.multimodal()
             # self.intrinsic()

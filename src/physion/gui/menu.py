@@ -57,6 +57,8 @@ def build_menu(self):
     self.assemblingMenu = self.mainMenu.addMenu('  * Assembling')
     # --
     self.assemblingMenu.addAction('Build NWBs from DataTable',
+                                  self.build_NWB_from_DataTable_UI)
+    self.assemblingMenu.addAction('Build NWBs (deprecated)',
                                   self.build_NWB_UI)
     self.assemblingMenu.addAction('Build DataTable from data (TODO)',
                                   self.in_progress)
