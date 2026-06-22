@@ -257,34 +257,54 @@ def add_ephys(nwbfile, args,
         mua_channels = e0+np.arange(\
                     len(elecSubsampling)*args.electrode_subsampling)
 
-        mua_traces = si.resample(
-                        si.rectify(
-                            si.bandpass_filter(\
-                                siRec.select_channels(\
-                                    channel_ids =\
-                                            siRec.get_channel_ids()[mua_channels]
-                                    ), 
-                                freq_min=MUA_BAND[0], 
-                                freq_max=MUA_BAND[1])
-                        ),
-                resample_rate=resample_rate
-                ).get_traces().reshape(\
-                                -1, 
-                                len(elecSubsampling),
-                                args.electrode_subsampling\
-                                    ).mean(axis=-1)
-        # hfRec = si.resample(
-        #             si.rectify(
-        #                 si.bandpass_filter(\
+        # mua_traces = si.resample(
+        #                 si.rectify(
+        #                     si.bandpass_filter(\
         #                         siRec.select_channels(\
         #                             channel_ids =\
-        #                                     siRec.get_channel_ids()[e0:e1]
+        #                                     siRec.get_channel_ids()[mua_channels]
         #                             ), 
         #                         freq_min=MUA_BAND[0], 
         #                         freq_max=MUA_BAND[1])
         #                 ),
         #         resample_rate=resample_rate
-        #         )
+        #         ).get_traces().reshape(\
+        #                         -1, 
+        #                         len(elecSubsampling),
+        #                         args.electrode_subsampling\
+        #                             ).mean(axis=-1)
+        print('- channel subselection')
+        hfRec = siRec.select_channels(\
+            channel_ids =\
+                    siRec.get_channel_ids()[e0:e1]
+            )
+        print('- bandpass filtering')
+        hfRec = si.bandpass_filter(hfRec,
+                    freq_min=MUA_BAND[0], 
+                    freq_max=MUA_BAND[1])
+        print('- rectifying')
+        hfRec = si.rectify(hfRec)
+        print('- resampling')
+        hfRec = si.resample(hfRec,
+                            resample_rate=resample_rate)
+        print('- taking traces')
+        # mua_traces = hfRec.get_traces().reshape(\
+        #                         hfRec.get_num_frames(), 
+        #                         len(elecSubsampling),
+        #                         args.electrode_subsampling\
+        #                             ).mean(axis=2)
+        mua_traces = np.zeros(
+            (hfRec.get_num_frames(), len(elecSubsampling)))
+        for ee in range(len(elecSubsampling)-1):
+            channel_range = ee*args.electrode_subsampling+\
+                    np.arange(args.electrode_subsampling)
+            print('- averaging channels:', channel_range)
+            mua_traces[:,ee] =\
+                  hfRec.get_traces(\
+                      channel_ids=\
+                            hfRec.get_channel_ids()[channel_range]\
+                        ).mean(axis=1)
+
         # mua_traces = hfRec.get_traces()[:,:nFullChannels].reshape(\
         #     -1, n_channels-1, args.electrode_subsampling).mean(axis=-1)
         # print(e0, e1, nFullChannels, args.electrode_subsampling)

@@ -146,6 +146,14 @@ def plot(episodes,
                                 AX[0][0].annotate(s+'  '+icolor*'\n', (1,0), color=COLORS[icolor],
                                         ha='right', va='bottom', size='small', xycoords='figure fraction')
 
+    if xlim is None:
+        episodes.xlim = [episodes.t[0], episodes.t[-1]]
+    else:
+        episodes.xlim = xlim
+
+    if ylim is not None:
+        episodes.ylim = ylim
+
     if with_stat_test:
         for irow, row_cond in enumerate(ROW_CONDS):
             for icol, col_cond in enumerate(COL_CONDS):
@@ -162,15 +170,6 @@ def plot(episodes,
                                                              episodes.ylim[0]), va='top', ha='center', size=size-1, xycoords='data', color=COLORS[icolor])
                     AX[irow][icol].plot(stat_test_props['interval_pre'], episodes.ylim[0]*np.ones(2), 'k-', lw=1)
                     AX[irow][icol].plot(stat_test_props['interval_post'], episodes.ylim[0]*np.ones(2), 'k-', lw=1)
-
-    if xlim is None:
-        episodes.xlim = [episodes.t[0], episodes.t[-1]]
-    else:
-        episodes.xlim = xlim
-
-    if ylim is not None:
-        episodes.ylim = ylim
-
 
     for irow, row_cond in enumerate(ROW_CONDS):
         for icol, col_cond in enumerate(COL_CONDS):
