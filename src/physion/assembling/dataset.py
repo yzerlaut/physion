@@ -29,11 +29,13 @@ def read_spreadsheet(filename,
         path = os.path.join(directory, 'processed',
                             str(dataset['day'].values[i]),
                             str(dataset['time'].values[i]))
+        print(path)
         if not os.path.isdir(path):
             # without the "processed" subfolder
             path = os.path.join(directory, 
                                 str(dataset['day'].values[i]),
                                 str(dataset['time'].values[i]))
+            print(path)
         if not os.path.isdir(path):
             # without the "processed" subfolder and the "day" folder
             path = os.path.join(directory, 

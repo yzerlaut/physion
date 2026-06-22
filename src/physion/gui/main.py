@@ -149,7 +149,8 @@ class MainWindow(QtWidgets.QMainWindow):
     # # -- Assembling
     if (not Acquisition) and (not Intrinsic):
         from physion.assembling.gui import build_NWB_from_DataTable_UI,\
-            choose_DataTable, runBuildNWBfromDTBL, build_NWB_UI, runBuildNWB, load_NWB_folder
+            build_DataTable_UI, runBuildDTBL, load_NWB_folder,\
+            choose_DataTable, runBuildNWBfromDTBL, build_NWB_UI, runBuildNWB
         # from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
             # loadNWBfolder, loadCafolder, runAddOphys, check_ordered
         from physion.assembling.FOV_coordinates import gui as FOV_coords_UI,\
