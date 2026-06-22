@@ -65,14 +65,10 @@ def choose_DataTable(self):
 def runBuildNWBfromDTBL(self):
     if self.DataTable_file is not None:
 
-        folder = os.path.dirname(self.DataTable_file)
-        # in case NWBs/ exists, we put them there
-        if os.path.isdir(os.path.join(folder, 'NWBs')):
-            folder = os.path.join(folder, 'NWBs')
 
         cmd = '%s -m physion.assembling.nwb %s' % (python_path,
                                                    self.DataTable_file)
-        cmd += ' --destination_folder %s' % folder
+        cmd += ' --destination_folder %s' % os.path.dirname(self.DataTable_file)
 
         print('\n launching the command \n :  %s \n ' % cmd)
         p = subprocess.Popen(cmd, 
