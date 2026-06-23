@@ -27,7 +27,6 @@ def compute_sensitivity_per_cells(data, Episodes,
                                 response_significance_threshold=response_significance_threshold,
                                 stat_test_props=stat_test_props,
                                 repetition_keys=['repeat', 'angle'],
-                                multiple_comparison_correction=True,
                                 loop_over_cells=True,
                                 verbose=verbose)
     
@@ -39,7 +38,6 @@ def compute_sensitivity_per_cells(data, Episodes,
                             response_significance_threshold=response_significance_threshold,
                             stat_test_props=stat_test_props,
                             repetition_keys=['repeat', 'angle'],
-                            multiple_comparison_correction=True,
                             loop_over_cells=True,
                             verbose=verbose)
 

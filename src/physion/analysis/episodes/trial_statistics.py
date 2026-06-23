@@ -129,7 +129,7 @@ def run_analysis_splitting_by_stim_params(ep,
                                           episode_cond = None,
                                           stat_test_props={},
                                           repetition_keys=['repeat'],
-                                          multiple_comparison_correction=True,
+                                          multiple_comparison_correction=False,
                                           response_significance_threshold=0.05,
                                           nMin_episodes=5,
                                           verbose=True):
@@ -230,7 +230,7 @@ def pre_post_statistics(ep,
                         stat_test_props={},
                         repetition_keys=['repeat'],
                         nMin_episodes=5,
-                        multiple_comparison_correction=True,
+                        multiple_comparison_correction=False,
                         loop_over_cells=False,
                         verbose=True):
     
