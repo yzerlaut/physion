@@ -62,6 +62,7 @@ def plot(episodes,
         COLOR_CONDS, color_keys, color_key, color)
 
     episodes.ylim = [np.inf, -np.inf]
+
     for irow, row_cond in enumerate(ROW_CONDS):
         for icol, col_cond in enumerate(COL_CONDS):
             for icolor, color_cond in enumerate(COLOR_CONDS):
@@ -222,18 +223,13 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    from physion.analysis.episodes.build import EpisodeData
-    from physion.analysis.read_NWB import Data
-
     if os.path.isfile(args.datafile):
-        data = Data(args.datafile)
-        data.build_running()
-        episodes = EpisodeData(data,
-                quantities=['running'],
-                protocol_id=args.protocol_id)
+
+        quantity, episodes = common.test_data(args)
 
         keys = list(episodes.varied_parameters.keys())
-        plot(episodes, 
+        plot(episodes,
+             quantity=quantity,
              column_key=keys[0] if len(keys)>0 else None,
              row_key=keys[1] if len(keys)>1 else '',
              color_key=keys[2] if len(keys)>2 else '',

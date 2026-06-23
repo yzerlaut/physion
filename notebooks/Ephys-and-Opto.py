@@ -15,20 +15,27 @@ from physion.analysis.read_NWB import Data,\
 dataset = scan_folder_for_NWBfiles(\
         os.path.join(os.path.expanduser('~'), 
             'DATA', 'Sally', '2026_06_09'))
-
+            # 'DATA', 'Sally', '2026_04_24'))
 
 # %%
-pt.set_style('dark')
+filename = os.path.join(os.path.expanduser('~'), 
+            'DATA', 'Sally', '2026_04_24',
+                        '2026_04_24-13-15-56.nwb')
 
-data = Data(dataset['files'][0])
-# data.build_pupil_diameter()
-data.build_suSpikes() # builds data.suSpikes
-data.build_suWaveforms() # builds data.suWaveforms
+# %%
+pt.set_style()#'manuscript')
+
+# %%
+data = Data(dataset['files'][-1])
+# data = Data(filename)
+data.build_pupil()
+data.build_spikes() # builds data.suSpikes
+data.build_spikeWaveforms() # builds data.suWaveforms
 
 # data.build_running_speed()
-data.build_LFP()
-# data.build_MUA(specific_time_sampling=data.t_running_speed)
-# data.read_optogen() # builds data.LED
+# data.build_LFP()
+data.build_MUA()
+data.build_opto() # builds data.opto
 # data.build_muEvents() # builds data.muEvents
 
 #
@@ -42,25 +49,28 @@ from scipy.ndimage import gaussian_filter1d
 fig, AX = pt.figure(axes=(1,3), ax_scale=(2,1), hspace=0)
 
 tmax = 160
-# 1) LED
-cond = (data.t_LED<tmax)
-AX[1].plot(data.t_LED[cond], data.LED[cond])
+# 1) opto
+cond = (data.t_opto<tmax)
+AX[1].plot(data.t_opto[cond], data.opto[cond])
 # 2) Pupil
 cond = (data.t_pupil[:]<tmax)
-AX[0].plot(data.t_pupil[cond], data.pupil_diameter[cond])
+AX[0].plot(data.t_pupil[cond], data.pupil[cond])
 # 2) Firing count across units
-cond = (data.t_suSpikes<tmax)
+cond = (data.t_spikes<tmax)
 firing = gaussian_filter1d(
-           data.suSpikes[:,cond].sum(axis=0), 30)
-AX[2].plot(data.t_suSpikes[cond], firing) 
+           data.MUA[:,cond].sum(axis=0), 30)
+AX[2].plot(data.t_MUA[cond], firing) 
 
 
-
+# %%
+data = Data(filename)
+data.build_MUA()
+data.build_opto() # builds data.opto
 # %%
 from physion.analysis.episodes.build import EpisodeData
 
 ep = EpisodeData(data, prestim_duration=4., 
-                 quantities=['suSpikes', 'LED'],
+                 quantities=['MUA', 'opto'],
                  protocol_name='ffDG-4dir-2ctrst+1sPrePostOpto')
 
 
@@ -68,20 +78,50 @@ ep = EpisodeData(data, prestim_duration=4.,
 from physion.utils import plot_tools as pt
 from physion.dataviz.ephys import show_waveforms
 
-LED_on = ep.LED.mean(axis=1)>0 # LED "On" episode condition
+opto_on = ep.opto.mean(axis=1)>0 # opto "On" episode condition
+
+fig, [axBlank, axopto]= pt.figure(axes=(1,2), 
+                                  ax_scale=(1.5,2),
+                                  figsize=(4,2))
+
+for ax, label, cond in zip([axBlank, axopto], 
+                        ['blank', 'opto'],
+                        [~opto_on, opto_on]):
+    rate = ep.MUA[cond, :, :].mean(axis=(0,1))
+    # smoothing:
+    rate = gaussian_filter1d(rate, 10)
+    ax.fill_between(ep.t, 0*ep.t, rate)
+    # ax.plot(ep.t, rate)
+    pt.annotate(ax, label, (0.5,1), va='top', ha='center')
+    ax.set_ylim([50,70])
+    pt.draw_bar_scales(ax, Xbar=1, Ybar=5,
+                    Xbar_label='1s', Ybar_label='5$\mu$V')
+    ax.axis('off')
+pt.set_common_ylims([axBlank, axopto], lims=[50,70])
+
+for ax in [axBlank, axopto]:
+    ax.fill_between([0,2], [0,0],
+                ax.get_ylim()[1]*np.ones(2), alpha=.1)
+axopto.fill_between(ep.t, 0*ep.t,
+            ax.get_ylim()[1]*ep.opto[cond, :].mean(axis=0), alpha=0.1)
+
+# _ = show_waveforms(data, unit_id=unit, ax=axWF,
+#                     channels_around=5)
+# pt.annotate(fig, 'unit #%i' % (unit+1), 
+#             (1,1), va='top', ha='right')
 
 # %%
 import matplotlib.pylab as plt
 
 def plot_unit(unit):
-    fig = plt.figure(figsize=(4,2))
+    fig = pt.figure()
     axWF = fig.add_axes([0,0,0.4,1])
     axBlank = fig.add_axes([0.5,0.5,0.5,0.4])
-    axLED = fig.add_axes([0.5,0,0.5,0.4])
-    for ax, label, cond in zip([axBlank, axLED], 
-                            ['blank', 'LED'],
-                            [~LED_on, LED_on]):
-        rate = ep.suSpikes[cond, unit, :].mean(axis=0)/(ep.t[1]-ep.t[0])
+    axopto = fig.add_axes([0.5,0,0.5,0.4])
+    for ax, label, cond in zip([axBlank, axopto], 
+                            ['blank', 'opto'],
+                            [~opto_on, opto_on]):
+        rate = ep.spikes[cond, unit, :].mean(axis=0)/(ep.t[1]-ep.t[0])
         # smoothing:
         rate = gaussian_filter1d(rate, 50)
         ax.fill_between(ep.t, 0*ep.t, rate)
@@ -90,19 +130,20 @@ def plot_unit(unit):
         pt.draw_bar_scales(ax, Xbar=1, Ybar=2,
                         Xbar_label='1s', Ybar_label='2Hz')
         ax.axis('off')
-    pt.set_common_ylims([axBlank, axLED])
-    for ax in [axBlank, axLED]:
+    pt.set_common_ylims([axBlank, axopto])
+    for ax in [axBlank, axopto]:
         ax.fill_between([0,2], [0,0],
                     ax.get_ylim()[1]*np.ones(2), alpha=.1)
-    axLED.fill_between(ep.t, 0*ep.t,
-                ax.get_ylim()[1]*ep.LED[cond, :].mean(axis=0), alpha=0.1)
+    axopto.fill_between(ep.t, 0*ep.t,
+                ax.get_ylim()[1]*ep.opto[cond, :].mean(axis=0), alpha=0.1)
     _ = show_waveforms(data, unit_id=unit, ax=axWF,
                        channels_around=5)
     pt.annotate(fig, 'unit #%i' % (unit+1), 
                 (1,1), va='top', ha='right')
-    return fig, [axBlank, axLED], axWF
+    return fig, [axBlank, axopto], axWF
+
 # %%
-for unit in range(data.suSpikes.shape[0]):
+for unit in range(data.spikes.shape[0]):
     # ax.set_title('unit #%i' % (unit+1))
     # fig, ax = show_waveforms(data, unit_id=unit, ax=axWF)
     plot_unit(unit)

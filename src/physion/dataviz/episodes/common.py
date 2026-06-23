@@ -1,6 +1,10 @@
 import numpy as np
 import matplotlib.pylab as plt
 
+from physion.utils import plot_tools as pt 
+from physion.analysis.episodes.build import EpisodeData
+from physion.analysis.read_NWB import Data
+
 def prepare_panels(episodes,
            condition,
            COL_CONDS, column_keys, column_key,
@@ -42,16 +46,20 @@ def prepare_panels(episodes,
                 dtype=bool)]
 
     if (fig is None) and (AX is None):
-        fig, AX = plt.subplots(len(ROW_CONDS), len(COL_CONDS),
-                            figsize=figsize,
-                            squeeze=False)
+        # fig, AX = plt.subplots(len(ROW_CONDS), len(COL_CONDS),
+        #                         figsize=figsize,
+        #                         squeeze=False)
+        fig, AX = pt.figure(axes=(len(ROW_CONDS), len(COL_CONDS)),
+                            right=1.5,
+                            reshape_axes=False)
         no_set=False
     else:
         no_set=False
 
     return condition, COL_CONDS, ROW_CONDS,\
             with_screen_inset, fig, AX, no_set
-    
+
+
 def prepare_colors(episodes,
            COLOR_CONDS, color_keys, color_key, color):
 
@@ -75,3 +83,25 @@ def prepare_colors(episodes,
         COLORS = [color for ic in range(len(COLOR_CONDS))]
 
     return COLOR_CONDS, COLORS
+
+
+
+def test_data(args):
+    """
+        quick way to load data to be test in scripts
+    """
+    data = Data(args.datafile)
+    if data.has_MUA():
+        data.build_MUA()
+        quantity='MUA'
+    elif data.has_rawFluo():
+        data.build_rawFluo()
+        quantity='rawFluo'
+    else:
+        data.build_running()
+        quantity='running'
+    
+    episodes = EpisodeData(data,
+            quantities=[quantity],
+            protocol_id=args.protocol_id)
+    return quantity, episodes

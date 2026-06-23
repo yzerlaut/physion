@@ -485,7 +485,7 @@ class Data:
                         self.nwbfile.stimulus, 'OptogeneticSeries')
 
             if verbose:
-                print(' [ok] --> "running" built successfully ')
+                print(' [ok] --> "opto" built successfully ')
 
             if specific_time_sampling is not None:
                 return tools.resample(self.t_opto,

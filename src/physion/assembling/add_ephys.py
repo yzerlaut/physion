@@ -13,9 +13,6 @@ from pynwb.ecephys import (
     SpikeEventSeries,
 )
 
-from physion.ephys.tools import compute_freq_envelope
-
-
 def build_args_for_ephys(args, dataset, i, directory):
     args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
     args.NPX_rec = dataset['Npx-Rec'][i]
@@ -242,73 +239,42 @@ def add_ephys(nwbfile, args,
 
         # strategy to subsample, we do it on all channels,
         #      but we average those in between the contacts we don't keep
-
-        # N considered channels 
-        # nFullChannels = (n_channels-1)*args.electrode_subsampling 
-        # (we remove the last channelsgroup to be sure to have 
-        #      a multiple of electrode_subsampling for )
-
         # in order, we do:
-        # 1) we select channels from e0 to e1
-        # 2) we bandpass
-        # 3) we rectify
-        # 4) we resample
-        # 5) we average of groups of "electrode_subsampling"
+
+        # select channels:
         mua_channels = e0+np.arange(\
                     len(elecSubsampling)*args.electrode_subsampling)
 
-        # mua_traces = si.resample(
-        #                 si.rectify(
-        #                     si.bandpass_filter(\
-        #                         siRec.select_channels(\
-        #                             channel_ids =\
-        #                                     siRec.get_channel_ids()[mua_channels]
-        #                             ), 
-        #                         freq_min=MUA_BAND[0], 
-        #                         freq_max=MUA_BAND[1])
-        #                 ),
-        #         resample_rate=resample_rate
-        #         ).get_traces().reshape(\
-        #                         -1, 
-        #                         len(elecSubsampling),
-        #                         args.electrode_subsampling\
-        #                             ).mean(axis=-1)
-        print('- channel subselection')
+
+        # print('- 1) channel subselection')
         hfRec = siRec.select_channels(\
             channel_ids =\
                     siRec.get_channel_ids()[e0:e1]
             )
-        print('- bandpass filtering')
+        # print('- 2) bandpass filtering')
         hfRec = si.bandpass_filter(hfRec,
                     freq_min=MUA_BAND[0], 
                     freq_max=MUA_BAND[1])
-        print('- rectifying')
+
+        # print('- 3) rectifying')
         hfRec = si.rectify(hfRec)
-        print('- resampling')
+
+        # print('- 4) resampling')
         hfRec = si.resample(hfRec,
                             resample_rate=resample_rate)
-        print('- taking traces')
-        # mua_traces = hfRec.get_traces().reshape(\
-        #                         hfRec.get_num_frames(), 
-        #                         len(elecSubsampling),
-        #                         args.electrode_subsampling\
-        #                             ).mean(axis=2)
+        
+        # print('- 5) computing traces by averaging groups of "electrode_subsampling"
         mua_traces = np.zeros(
             (hfRec.get_num_frames(), len(elecSubsampling)))
         for ee in range(len(elecSubsampling)-1):
             channel_range = ee*args.electrode_subsampling+\
                     np.arange(args.electrode_subsampling)
-            print('- averaging channels:', channel_range)
+            # print('- averaging channels:', channel_range)
             mua_traces[:,ee] =\
                   hfRec.get_traces(\
                       channel_ids=\
                             hfRec.get_channel_ids()[channel_range]\
                         ).mean(axis=1)
-
-        # mua_traces = hfRec.get_traces()[:,:nFullChannels].reshape(\
-        #     -1, n_channels-1, args.electrode_subsampling).mean(axis=-1)
-        # print(e0, e1, nFullChannels, args.electrode_subsampling)
-        # print(hfRec.get_traces().shape)
 
         # compute mean traces 
 
