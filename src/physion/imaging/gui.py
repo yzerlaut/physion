@@ -123,6 +123,9 @@ def suite2p_preprocessing_UI(self, tab_id=1):
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
+    self.versionBox= QtWidgets.QCheckBox('suite2p >= 1.0', self)
+    self.add_side_widget(tab.layout, self.versionBox)
+
     self.delBox= QtWidgets.QCheckBox('delete previous', self)
     self.add_side_widget(tab.layout, self.delBox)
 
@@ -328,9 +331,16 @@ def run_TSeries_analysis(self):
 
             settings['nplanes'] = self.Nplanes[i]
             settings['nchannels'] = self.Nchans[i]
-            build_suite2p_options(folder, settings)
-            cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
-                                                            os.path.join(folder,'db.npy'),
+            build_suite2p_options(folder, settings,
+                                  v1=self.versionBox.isChecked())
+            if self.versionBox.isChecked():
+                # changed to "ops" to "settings " in >=v1.1
+                cmd = '%s -m suite2p --db "%s" --settings "%s" &' % (python_path_suite2p_env,
+                                                                os.path.join(folder,'db.npy'),
+                                                            os.path.join(folder,'ops.npy'))
+            else:
+                cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
+                                                                os.path.join(folder,'db.npy'),
                                                             os.path.join(folder,'ops.npy'))
             print('sleeping for %.1f min [...]' % delays[i])
             time.sleep(delays[i]*60)

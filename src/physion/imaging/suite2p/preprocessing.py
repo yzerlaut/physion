@@ -19,17 +19,19 @@ def override_suite2p_defaults(ops):
     ops['align_by_chan'] = 2
     ops['batch_size'] = 500
 
-def build_db(folder):
-    db = {'data_path':[folder],
-          'subfolders': [],
-          'save_path0': folder,
-          'fast_disk': folder,
-          'input_format': 'bruker'}
-    return db
-
+def build_db(folder, v1=False):
+    if v1:
+        return {'data_path':[folder]}
+    else:
+        return {'data_path':[folder],
+                'subfolders': [],
+                'save_path0': folder,
+                'fast_disk': folder,
+                'input_format': 'bruker'}
 
 def build_suite2p_options(folder,
-                          settings_dict):
+                          settings_dict,
+                          v1=False):
     
     xml_file = get_files_with_extension(folder, extension='.xml')[0]
 
@@ -56,9 +58,11 @@ def build_suite2p_options(folder,
     for key in ['data_path', 'subfolders', 'save_path0',
                 'fast_disk', 'input_format']:
         ops[key] = db[key]
-
-    np.save(os.path.join(folder,'db.npy'), db)
     np.save(os.path.join(folder,'ops.npy'), ops)
+
+    # we re-build  
+    db = build_db(folder, v1=v1)
+    np.save(os.path.join(folder,'db.npy'), db)
 
 
 def run_preprocessing(args):
