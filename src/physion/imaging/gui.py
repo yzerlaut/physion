@@ -331,7 +331,7 @@ def run_TSeries_analysis(self):
             settings['nchannels'] = self.Nchans[i]
             build_suite2p_options(folder, settings)
 
-            if self.settings['v1']:
+            if settings['v1']:
                 # changed to "ops" to "settings " in >=v1.1
                 cmd = '%s -m suite2p --db "%s" --settings "%s" --verbose &'\
                       % (python_path_suite2p_env,
