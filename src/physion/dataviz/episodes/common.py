@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pylab as plt
+import itertools
 
 from physion.utils import plot_tools as pt 
 from physion.analysis.episodes.build import EpisodeData
