@@ -51,6 +51,7 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.add_side_widget(tab.layout, self.presetBox)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' <a href='README.md'>link</a> '))
 
     self.registrButton = QtWidgets.QCheckBox(' -- Registration --', self)
     self.registrButton.setChecked(True)
