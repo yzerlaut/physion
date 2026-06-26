@@ -11,7 +11,9 @@ def generate_pdf(args,
                  verbose=True):
 
     if pdf_filename is None:
-        pdf_filename = os.path.join(os.path.dirname(args.datafile).replace('NWBs', 'pdfs'),
+        output_folder = os.path.dirname(args.datafile).replace('NWBs', 'pdfs')
+        os.makedirs(output_folder, exist_ok=True)
+        pdf_filename = os.path.join(output_folder,
                                 os.path.basename(args.datafile).replace('.nwb', '.pdf'))
 
     fig = pt.plt.figure(figsize=(8.27, 11.7), dpi=75)
