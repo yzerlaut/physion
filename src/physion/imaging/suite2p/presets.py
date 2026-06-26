@@ -10,7 +10,7 @@ presets = {\
                 "denoise":False,
                 "sourcery_settings":{\
                     "connected":True,
-                    "max_iter":20,
+                    "max_iterations":20,
                     "smooth_masks":False,
                     },
                 "threshold_scaling":1.0,

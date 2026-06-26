@@ -48,16 +48,17 @@ def build_suite2p_options(folder,
 
         settings = default_settings()
         settings['diameter'] = (diameter, diameter)
+
         for key in my_settings:
-            print(key)
             if key in settings:
+                print(' - ', key)
                 if type(settings[key]==dict):
                     for k in my_settings[key]:
-                        print(k, key)
-                        if k in settings[key][k]:
+                        print(10*' ', key, k, ' = ', my_settings[key][k])
+                        if k in settings[key]:
                             settings[key][k] = my_settings[key][k]
                 else:
-                    print(' changed -> ', key)
+                    print('         changed -> ', my_settings[key])
                     settings[key] = my_settings[key]
 
         np.save(os.path.join(folder, 'settings.npy'), settings)
@@ -82,7 +83,7 @@ def build_suite2p_options(folder,
         np.save(os.path.join(folder,'ops.npy'), ops)
 
     # we re-build the db
-    db = build_db(folder, v1=v1)
+    db = build_db(folder, v1=my_settings['v1'])
     np.save(os.path.join(folder,'db.npy'), db)
 
 
