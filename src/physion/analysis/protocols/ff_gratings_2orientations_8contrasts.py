@@ -65,7 +65,7 @@ def plot(fig, data, args=None,
                        with_annotation=True, 
                        Xbar=1, Xbar_label='1s', 
                        Ybar=0.1, Ybar_label='0.1$\\Delta$F/F',
-                       with_screen_inset=True,
+                    #    with_screen_inset=True,
                        with_std_over_rois=True,
                        AX=AX)
 
@@ -112,7 +112,7 @@ def plot(fig, data, args=None,
         
         plot_trial_average(Episodes, 
                            quantity=quantity,
-                           roiIndex=n,
+                           index=n,
                            color_key='angle',
                            column_key='contrast',
                            Xbar=1, Xbar_label='1s', 
