@@ -4,6 +4,12 @@ Some presets for our recording conditions
 
 presets = {\
         "sourcery-thy1-Taddy":{\
+            "registration":{
+                "nimg_init": 2000,
+                "maxregshift": 0.15,
+                "nonrigid":False,
+                "batch_size":200,
+            },
             "detection":{
                 "algorithm": "sourcery",
                 "highpass_time":300,
@@ -14,8 +20,6 @@ presets = {\
                     "smooth_masks":False,
                     },
                 "threshold_scaling":1.0,
-                "diameter":(9.0, 9.0),
-
             }
         },
         "hsyn-pyramidal":{\

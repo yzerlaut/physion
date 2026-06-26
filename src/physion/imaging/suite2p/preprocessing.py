@@ -48,6 +48,7 @@ def build_suite2p_options(folder,
 
         settings = default_settings()
         settings['diameter'] = (diameter, diameter)
+        settings['fs'] = acq_freq
 
         for key in my_settings:
             if key in settings:
