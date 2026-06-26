@@ -100,7 +100,7 @@ def generate_figs(nwbfile,
     fig, ax = pt.plt.subplots(1, figsize=(7, 2.5))
     pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.1, right=0.9)
     plot_raw(data, data.tlim, 
-              settings={'Locomotion':dict(fig_fraction=1, subsampling=2, color='blue'),
+              settings={'running':dict(fig_fraction=1, subsampling=2, color='blue'),
                         'FaceMotion':dict(fig_fraction=1, subsampling=2, color='purple'),
                         'Pupil':dict(fig_fraction=1, subsampling=2, color='red'),
                         'CaImaging':dict(fig_fraction=4, subsampling=2, 
@@ -139,9 +139,9 @@ def zoom_light_conditions(data):
     pt.plt.subplots_adjust(bottom=0, top=0.9, left=0.1, right=0.9)
 
     _, Ax = plot_raw(data, data.tlim, 
-                      settings={'Locomotion':dict(fig_fraction=1, subsampling=1, color='blue'),
-                                'FaceMotion':dict(fig_fraction=1, subsampling=1, color='purple'),
-                                'Pupil':dict(fig_fraction=1, subsampling=1, color='red'),
+                      settings={'running':dict(fig_fraction=1, subsampling=1, color='blue'),
+                                'facemotion':dict(fig_fraction=1, subsampling=1, color='purple'),
+                                'pupil':dict(fig_fraction=1, subsampling=1, color='red'),
                                 'CaImaging':dict(fig_fraction=4, subsampling=1, 
                                                  subquantity='dF/F', color='green',
                                                  roiIndices=np.random.choice(data.vNrois,8)),
@@ -149,7 +149,7 @@ def zoom_light_conditions(data):
                                                        roiIndices='all',
                                                        normalization='per-line',
                                                        subquantity='dF/F'),
-                                'VisualStim':dict(fig_fraction=0, color='black',
+                                'visual_stim':dict(fig_fraction=0, color='black',
                                                   with_screen_inset=False)},
                                 Tbar=60, ax=ax)
 
@@ -168,10 +168,10 @@ def zoom_light_conditions(data):
         ax.annotate('%s  -- t=%.1fmin  ' % (key, tlim[1]/60), (1,1), 
                      ha='right', xycoords='axes fraction', size=8)
         plot_raw(data, tlim, 
-                 settings={'Photodiode':dict(fig_fraction=0.5, subsampling=1, color='grey'),
-                            'Locomotion':dict(fig_fraction=1, subsampling=1, color='blue'),
-                            'FaceMotion':dict(fig_fraction=1, subsampling=1, color='purple'),
-                            'Pupil':dict(fig_fraction=1, subsampling=1, color='red'),
+                 settings={'photodiode':dict(fig_fraction=0.5, subsampling=1, color='grey'),
+                            'running':dict(fig_fraction=1, subsampling=1, color='blue'),
+                            'facemotion':dict(fig_fraction=1, subsampling=1, color='purple'),
+                            'pupil':dict(fig_fraction=1, subsampling=1, color='red'),
                             'CaImaging':dict(fig_fraction=4, subsampling=1, 
                                              subquantity='dF/F', color='green',
                                              roiIndices=np.random.choice(data.vNrois,8)),
@@ -179,7 +179,7 @@ def zoom_light_conditions(data):
                                                    roiIndices='all',
                                                    normalization='per-line',
                                                    subquantity='dF/F'),
-                            'VisualStim':dict(fig_fraction=0, color='black',
+                            'visual_stim':dict(fig_fraction=0, color='black',
                                               with_screen_inset=False)},
                                     Tbar=1, ax=ax)
         fig1.savefig(os.path.join(tempfile.tempdir, 'raw%i.png'%iStim), dpi=300)

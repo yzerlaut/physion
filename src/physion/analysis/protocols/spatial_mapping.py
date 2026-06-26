@@ -21,7 +21,7 @@ stat_test_props = dict(interval_pre=[-1,0],
                        test='ttest',
                        positive=True)
 
-def plot_spatial_grid(episode, ax, args, roiIndex):
+def plot_spatial_grid(episode, ax, args, index):
 
     Nx = len(episode.varied_parameters['x-center'])
     Ny = len(episode.varied_parameters['y-center'])
@@ -30,7 +30,7 @@ def plot_spatial_grid(episode, ax, args, roiIndex):
                     for i in range(Nx)]\
                           for j in range(Ny)]
     plot_trial_average(episode,
-                       roiIndex=roiIndex,
+                       index=index,
                        column_key='x-center',
                        row_key='y-center',
                        with_std=False,
@@ -108,7 +108,7 @@ def plot_spatial_grid(episode, ax, args, roiIndex):
 
 #         plot_trial_average(episodes,
 #                            quantity=args.imaging_quantity, 
-#                            roiIndex=roi,
+#                            index=roi,
 #                            column_key='x-center', 
 #                            row_key='y-center', 
 #                            xbar=1, xbarlabel='1s', 
@@ -133,7 +133,7 @@ def plot_spatial_grid(episode, ax, args, roiIndex):
 
 #         plot_trial_average(episodes,
 #                            quantity=args.imaging_quantity, 
-#                            roiIndex=roi,
+#                            index=roi,
 #                            column_key='x-center', 
 #                            row_key='y-center', 
 #                            xbar=1, xbarlabel='1s', 
@@ -164,7 +164,7 @@ def plot_spatial_grid(episode, ax, args, roiIndex):
 #                                   figsize=(6.5,2.7))
 #         plot_trial_average(episodes,
 #                            quantity=args.imaging_quantity, 
-#                            roiIndex=roi,
+#                            index=roi,
 #                            column_key='x-center', 
 #                            row_key='y-center', 
 #                            xbar=1, xbarlabel='1s', 
@@ -250,7 +250,7 @@ def plot_spatial_grid(episode, ax, args, roiIndex):
 #                                                   test='ttest',
 #                                                   positive=True),
 #                                                   response_args={'quantity':args.imaging_quantity,
-#                                                                  'roiIndex':roi},
+#                                                                  'index':roi},
 #                                                   response_significance_threshold=0.05)
 
 #         significant_cond, label = (resp['significant']==True), 'ROI %i  -> max resp.: '%(roi+1)

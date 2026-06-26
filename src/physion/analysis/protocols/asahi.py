@@ -19,9 +19,9 @@ def zoom_view(ax, data, args, tlim=[300,420]):
 
     settings={}
     if 'Running-Speed' in data.nwbfile.acquisition:
-        settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
+        settings['running'] = dict(fig_fraction=1, subsampling=2, color='blue')
     if 'FaceMotion' in data.nwbfile.processing:
-        settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
+        settings['facemotion']=dict(fig_fraction=1, subsampling=2, color='purple')
     if 'Pupil' in data.nwbfile.processing:
         settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
@@ -33,7 +33,7 @@ def zoom_view(ax, data, args, tlim=[300,420]):
                                     roiIndices=np.random.choice(data.nROIs,
                                                     np.min([15,data.nROIs]), 
                                                         replace=False))
-    settings['VisualStim'] = dict(fig_fraction=0, color='black',
+    settings['visual_stim'] = dict(fig_fraction=0, color='black',
                                   with_screen_inset=True)
 
     plot_raw(data, tlim, 
@@ -59,7 +59,6 @@ def plot(fig, data, args,
     if 'Pupil' in data.nwbfile.processing:
         quantities.append('pupil_diameter')
 
-    print(quantities)
     ep = EpisodeData(data, 
                 quantities=quantities,
                 protocol_name=data.protocols[0])

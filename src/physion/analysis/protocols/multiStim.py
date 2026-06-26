@@ -20,10 +20,10 @@ def zoom_view(ax, data, args, tlim=[300,420]):
     settings={}
     if 'Running-Speed' in data.nwbfile.acquisition:
         settings['running'] = dict(fig_fraction=1, subsampling=2, color='blue')
-    # if 'FaceMotion' in data.nwbfile.processing:
-    #     settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
-    # if 'Pupil' in data.nwbfile.processing:
-    #     settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
+    if 'FaceMotion' in data.nwbfile.processing:
+        settings['facemotion']=dict(fig_fraction=1, subsampling=2, color='purple')
+    if 'Pupil' in data.nwbfile.processing:
+        settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=6,
                                     subsampling=1, 
@@ -45,6 +45,7 @@ def zoom_view(ax, data, args, tlim=[300,420]):
 
 
 def plot(fig, data, args, 
+         quantity='dFoF',
          stat_test=stat_test):
 
     # Zoom view
@@ -67,7 +68,7 @@ def plot(fig, data, args,
 
         Eps.append(\
             EpisodeData(data, 
-                        quantities=['dFoF'],
+                        quantities=[quantity],
                         protocol_name=p))
         params = list(Eps[-1].varied_parameters.keys())
 
@@ -76,7 +77,6 @@ def plot(fig, data, args,
                               np.arange(data.nROIs))
 
         elif ('drifting-surround' in p) and (len(params)>1):
-            print(params)
             plot_spatial_grid(Eps[-1], AXm[i], args,
                               np.arange(data.nROIs))
 
@@ -85,6 +85,7 @@ def plot(fig, data, args,
             if 'repeat' in params:
                 params.remove('repeat')
             plot_trial_average(Eps[-1],
+                               quantity=quantity,
                             color_keys=params,
                             with_std=False,
                             AX=[[AXm[i]]])
@@ -115,7 +116,7 @@ def plot(fig, data, args,
                     params.remove('repeat')
 
                 plot_trial_average(Eps[i],
-                                roiIndex=roi,
+                                index=roi,
                                 color_keys=params,
                                 with_std=False,
                                 AX=[[AXm[i]]])

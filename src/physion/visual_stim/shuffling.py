@@ -48,6 +48,8 @@ def shuffle_from_protocol_info(indices, repeats, protocol_ids,
 
                 full_indices[2*i] = full_indices_even[i]
                 full_indices[2*i+1] = full_indices_odd[i]
+        elif protocol['shuffling'] in ['none']:
+            pass
         else:
             print()
             print("""
@@ -55,7 +57,8 @@ def shuffle_from_protocol_info(indices, repeats, protocol_ids,
                 ###  [!!] shuffling key not recognized [!!] ### 
                 ###        ---> data won't be shuffled !!   ### 
                 ###############################################
-            """)
+                key: '%s'
+                """ % protocol['shuffling'])
             print()
 
     return full_indices
@@ -104,6 +107,8 @@ def shuffle_single_protocol(indices, repeats, protocol,
 
             full_indices[2*i] = full_indices_even[i]
             full_indices[2*i+1] = full_indices_odd[i]
+    elif protocol['shuffling'] in ['none']:
+        pass
     else:
         print()
         print("""
@@ -111,7 +116,8 @@ def shuffle_single_protocol(indices, repeats, protocol,
             ###  [!!] shuffling key not recognized [!!] ### 
             ###        ---> data won't be shuffled !!   ### 
             ###############################################
-        """)
+                key: '%s'
+        """ % protocol['shuffling'])
         print()
 
     return indices[full_indices], repeats[full_indices]
@@ -120,7 +126,7 @@ def shuffle_multiprotocol(indices, repeats, protocol_id,
                           protocol,
                           default_seed=1):
     
-    print(indices)
+    # print(indices)
     full_indices = np.arange(len(indices))
 
     if (protocol['shuffling']=='full'):
@@ -143,6 +149,8 @@ def shuffle_multiprotocol(indices, repeats, protocol_id,
 
             full_indices[2*i] = full_indices_even[i]
             full_indices[2*i+1] = full_indices_odd[i]
+    elif protocol['shuffling'] in ['none']:
+        pass
     else:
         print()
         print("""
@@ -150,7 +158,8 @@ def shuffle_multiprotocol(indices, repeats, protocol_id,
             ###  [!!] shuffling key not recognized [!!] ### 
             ###        ---> data won't be shuffled !!   ### 
             ###############################################
-        """)
+                key: '%s'
+        """ % protocol['shuffling'])
         print()
 
     return indices[full_indices], repeats[full_indices], protocol_id[full_indices]

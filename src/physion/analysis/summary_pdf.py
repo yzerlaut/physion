@@ -44,8 +44,7 @@ def generate_pdf(args,
         # protocol-specific plots
         # try:
         if True:
-            # exec('from physion.analysis.protocols import '+data.metadata['protocol'].replace('-', '_')+' as protocol')
-            # protocol.plot(fig, data, args)
+            # to debug, put back the try, Except afterwards...
             from physion.analysis import protocols
             getattr(protocols,
                     data.metadata['protocol'].replace('-', '_')).plot(fig, data, args)

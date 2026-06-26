@@ -401,8 +401,14 @@ class EpisodeData:
 
         """
         stim_data = {'no-window':True,
-                     'Screen' : self.data.metadata['Screen'],
-                     'Stimulus': self.data.metadata['Stimulus']}
+                     'Screen' : self.data.metadata['Screen']}
+
+        if 'Stimulus' in self.data.metadata:
+            # single protocol
+            stim_data['Stimulus'] = self.data.metadata['Stimulus']
+        else:
+            # means multi-protocol
+            stim_data['Stimulus'] = self.data.metadata['Protocol-%i-Stimulus' % (self.protocol_id+1)]
 
         default_params = get_default_params(stim_data['Stimulus'])
         # replacing the default params with those of this episode
@@ -422,7 +428,7 @@ class EpisodeData:
         visual_stim = getattr(\
                          getattr(\
                                 stimuli,\
-                                    stim_data['Stimulus']),
+                                    stim_data['Stimulus'].replace('-','_')),
                                               'stim')(stim_data)
 
         # we use the plot_stim_picture method from visual stim
