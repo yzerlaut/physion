@@ -43,7 +43,10 @@ def generate_pdf(args,
 
         # protocol-specific plots
         try:
-            getattr(physion.analysis.protocols,
+            # exec('from physion.analysis.protocols import '+data.metadata['protocol'].replace('-', '_')+' as protocol')
+            # protocol.plot(fig, data, args)
+            from physion.analysis import protocols
+            getattr(protocols,
                     data.metadata['protocol'].replace('-', '_')).plot(fig, data, args)
         except BaseException as be:
             print()

@@ -18,7 +18,7 @@ def zoom_view(ax, data, args, tlim=[300,420]):
 
     settings={}
     if 'Running-Speed' in data.nwbfile.acquisition:
-        settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
+        settings['running'] = dict(fig_fraction=1, subsampling=2, color='blue')
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=6,
                                     subsampling=1, 
@@ -30,7 +30,7 @@ def zoom_view(ax, data, args, tlim=[300,420]):
                                                         replace=False))
         settings['CaImagingRaster']= dict(fig_fraction=3,
                                           subquantity='dFoF')
-    settings['VisualStim'] = dict(fig_fraction=0, color='black',
+    settings['visual_stim'] = dict(fig_fraction=0, color='black',
                                   with_screen_inset=True)
 
     plot_raw(data, tlim, 
@@ -44,21 +44,22 @@ def zoom_view(ax, data, args, tlim=[300,420]):
 
 
 def plot(fig, data, args=None, 
+         quantity='dFoF',
          stat_test=stat_test):
 
     Episodes = EpisodeData(data,
-                           quantities=['dFoF'],
+                           quantities=[quantity],
                            prestim_duration=3,
                            verbose=True)
 
     ax = pt.inset(fig, [0.07, 0.41, 0.84, 0.2])
     zoom_view(ax, data, args)
-
     
     AX = [[pt.inset(fig, [0.06+i*0.11, 0.28+0.07*j, 0.1, 0.06])\
             for i in range(8)] for j in range(2)]
-    
+
     plot_trial_average(Episodes,
+                       quantity=quantity,
                        row_key='angle',
                        column_key='contrast',
                        with_annotation=True, 
@@ -109,7 +110,9 @@ def plot(fig, data, args=None,
         AX = [[pt.inset(fig, [0.22+i*0.085, 0.035+0.026*j, 0.09, 0.03])\
                 for i in range(8)]]
         
-        plot_trial_average(Episodes, roiIndex=n,
+        plot_trial_average(Episodes, 
+                           quantity=quantity,
+                           roiIndex=n,
                            color_key='angle',
                            column_key='contrast',
                            Xbar=1, Xbar_label='1s', 
