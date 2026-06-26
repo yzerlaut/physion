@@ -383,7 +383,7 @@ def reliability(ep,
                 stat_test_props=dict(seed=1, n_samples=500),
                 repetition_keys=['repeat'],
                 nMin_episodes=5,
-                multiple_comparison_correction=True,
+                multiple_comparison_correction=False,
                 loop_over_cells=False,
                 verbose=True):
 

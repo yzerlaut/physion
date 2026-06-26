@@ -115,7 +115,7 @@ def compute_tuning_response_per_cells(data, Episodes,
                                            repetition_keys=['repeat', 'contrast'],
                                            response_args=dict(quantity=quantity),
                                            response_significance_threshold=response_significance_threshold,
-                                           multiple_comparison_correction=True,
+                                           multiple_comparison_correction=False,
                                            loop_over_cells=True,
                                            verbose=verbose)
         

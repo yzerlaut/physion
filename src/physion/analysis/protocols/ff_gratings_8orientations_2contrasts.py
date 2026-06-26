@@ -78,8 +78,8 @@ def plot(fig, data, args=None,
          stat_test=stat_test):
 
     Episodes = EpisodeData(data,
-                           protocol_name=[p for p in data.protocols if 'gratings' in p][0],
                            quantities=[quantity],
+                           protocol_name=[p for p in data.protocols if 'gratings' in p][0],
                            prestim_duration=3,
                            verbose=True)
 
