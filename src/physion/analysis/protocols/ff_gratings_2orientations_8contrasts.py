@@ -131,7 +131,7 @@ if __name__=='__main__':
     import sys
 
     from physion.analysis.read_NWB import Data
-    from physion.analysis.process_NWB import EpisodeData
+    from physion.analysis.episodes.build import EpisodeData
     from physion.utils import plot_tools as pt
 
     fig = pt.plt.figure(figsize=(8.27, 11.7), dpi=75)

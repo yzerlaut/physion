@@ -126,3 +126,4 @@ def plot(fig, data, args,
                 pt.annotate(AXm[i], 'roi#%i' % (1+roi), (0,0),
                             ha='right')
     # pt.set_common_ylims(AXm)
+

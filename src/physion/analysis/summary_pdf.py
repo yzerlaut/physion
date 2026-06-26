@@ -42,18 +42,19 @@ def generate_pdf(args,
         generate_raw_data_figs(data, ax, args)
 
         # protocol-specific plots
-        try:
+        # try:
+        if True:
             # exec('from physion.analysis.protocols import '+data.metadata['protocol'].replace('-', '_')+' as protocol')
             # protocol.plot(fig, data, args)
             from physion.analysis import protocols
             getattr(protocols,
                     data.metadata['protocol'].replace('-', '_')).plot(fig, data, args)
-        except BaseException as be:
-            print()
-            print()
-            print(be)
-            print(' [!!] protocol-specific analysis failed for "%s"' % args.datafile)
-            print('        protocol = %s' % data.metadata['protocol'])
+        # except BaseException as be:
+        #     print()
+        #     print()
+        #     print(be)
+        #     print(' [!!] protocol-specific analysis failed for "%s"' % args.datafile)
+        #     print('        protocol = %s' % data.metadata['protocol'])
 
     else:
         print('\n \n Need to pick a datafile')
