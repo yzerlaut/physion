@@ -79,7 +79,7 @@ def add_running(data, tlim, ax,
             fig_fraction, fig_fraction_start, color=color)
 
 
-defadd_pupil(data, tlim, ax,
+def add_pupil(data, tlim, ax,
               fig_fraction_start=0., 
               fig_fraction=1., 
               subsampling=2,

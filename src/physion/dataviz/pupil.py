@@ -11,7 +11,7 @@ def imgPupil_process(img, args, exp=0.5,
                args['PupilZoom'][1]:args['PupilZoom'][3]] 
 
 
-defadd_pupil_fit(metadata, ax, index):
+def add_pupil_fit(metadata, ax, index):
 
     cx, sx = metadata['pupil_cx'][index], metadata['pupil_sx'][index]
     cy, sy = metadata['pupil_cy'][index], metadata['pupil_sy'][index]
@@ -53,7 +53,7 @@ def show_pupil(metadata,
 
     imshow = ax.imshow(Img, cmap='gray')
 
-   add_pupil_fit(metadata, ax, index=t_index)
+    add_pupil_fit(metadata, ax, index=t_index)
 
     return imshow
 

@@ -411,7 +411,7 @@ def plot_traces(AX, params, data):
 
     # pupil 
     if 'pupil' in params['fractions']:
-       add_pupil(data, params['tlim'], AX['axTraces'], 
+        add_pupil(data, params['tlim'], AX['axTraces'], 
                     fig_fraction_start=params['fractions']['pupil_start'], 
                     fig_fraction=params['fractions']['pupil'], 
                     scale_side='right', subsampling=1, name='')
