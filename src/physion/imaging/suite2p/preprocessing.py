@@ -28,8 +28,7 @@ def build_db(folder, v1=False):
                 'input_format': 'bruker'}
 
 def build_suite2p_options(folder,
-                          my_settings,
-                          v1=False):
+                          my_settings):
     
     xml_file = get_files_with_extension(folder, extension='.xml')[0]
 
@@ -45,13 +44,21 @@ def build_suite2p_options(folder,
     diameter = int(my_settings['cell_diameter']/um_per_pixel) # in pixels (int 20um)
     spatial_scale = int(my_settings['cell_diameter']/6/um_per_pixel)
 
-    if v1:
+    if my_settings['v1']:
 
         settings = default_settings()
         settings['diameter'] = (diameter, diameter)
         for key in my_settings:
+            print(key)
             if key in settings:
-                settings[key] = my_settings[key]
+                if type(settings[key]==dict):
+                    for k in my_settings[key]:
+                        print(k, key)
+                        if k in settings[key][k]:
+                            settings[key][k] = my_settings[key][k]
+                else:
+                    print(' changed -> ', key)
+                    settings[key] = my_settings[key]
 
         np.save(os.path.join(folder, 'settings.npy'), settings)
 

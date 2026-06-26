@@ -257,9 +257,9 @@ def change_presets(self):
 
 def fetch_settings_from_UI(self):
 
-    settings = presets[self.presetBox.currentText()]
+    my_settings = presets[self.presetBox.currentText()]
 
-    settings['v1'] = ('sourcery' in self.presetBox.currentText()) or\
+    my_settings['v1'] = ('sourcery' in self.presetBox.currentText()) or\
                         ('sparsery' in self.presetBox.currentText()) or\
                             ('cellpose' in self.presetBox.currentText())
 
@@ -267,34 +267,34 @@ def fetch_settings_from_UI(self):
     # Registration
     # -------------
     if not self.registrButton.isChecked():
-        settings['do_registration'] = 0
-    # settings['functional_chan'] = int(self.functionalChanBox.text())
-    # settings['align_by_chan'] = int(self.alignChanBox.text())
-    settings['nonrigid'] = (not self.rigidBox.isChecked())
+        my_settings['do_registration'] = 0
+    # my_settings['functional_chan'] = int(self.functionalChanBox.text())
+    # my_settings['align_by_chan'] = int(self.alignChanBox.text())
+    my_settings['nonrigid'] = (not self.rigidBox.isChecked())
 
     # -------------
     # ROI detection
     # -------------
-    settings['roidetect'] = self.roiDetectButton.isChecked()
-    settings['cell_diameter'] = float(self.cellSizeBox.text())
+    my_settings['roidetect'] = self.roiDetectButton.isChecked()
+    my_settings['cell_diameter'] = float(self.cellSizeBox.text())
 
     if self.cellposeBox.isChecked():
 
-        settings['anatomical_only'] = int(self.refImageBox.text())
-        settings['flow_threshold'] = float(self.flowThreshBox.text())
-        settings['cellprob_threshold'] = float(self.probThreshBox.text())
+        my_settings['anatomical_only'] = int(self.refImageBox.text())
+        my_settings['flow_threshold'] = float(self.flowThreshBox.text())
+        my_settings['cellprob_threshold'] = float(self.probThreshBox.text())
     
     else:
 
-        settings['sparse_mode'] = self.sparseBox.isChecked()
-        settings['connected'] = self.connectedBox.isChecked()
-        settings['threshold_scaling'] = float(self.threshScalingBox.text())
+        my_settings['sparse_mode'] = self.sparseBox.isChecked()
+        my_settings['connected'] = self.connectedBox.isChecked()
+        my_settings['threshold_scaling'] = float(self.threshScalingBox.text())
 
-    return settings
+    return my_settings
 
 def run_TSeries_analysis(self):
     
-    settings = fetch_settings_from_UI(self)
+    my_settings = fetch_settings_from_UI(self)
 
     # we precede the python call by a "sleep Xm" command
     delay = float(self.delayBox.text())
@@ -327,11 +327,11 @@ def run_TSeries_analysis(self):
                     reconvert_to_tiffs_from_log8bit(folder)
 
 
-            settings['nplanes'] = self.Nplanes[i]
-            settings['nchannels'] = self.Nchans[i]
-            build_suite2p_options(folder, settings)
+            my_settings['nplanes'] = self.Nplanes[i]
+            my_settings['nchannels'] = self.Nchans[i]
+            build_suite2p_options(folder, my_settings)
 
-            if settings['v1']:
+            if my_settings['v1']:
                 # changed to "ops" to "settings " in >=v1.1
                 cmd = '%s -m suite2p --db "%s" --settings "%s" --verbose &'\
                       % (python_path_suite2p_env,
