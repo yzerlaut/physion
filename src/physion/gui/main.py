@@ -140,7 +140,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # # -- Suite2P Preprocesssing
     if (not Acquisition) and (not Intrinsic):
-        from physion.imaging.gui import suite2p_preprocessing_UI,\
+        from physion.imaging.gui import suite2p_preprocessing_UI, open_suite2p,\
                 load_TSeries_folder, run_TSeries_analysis, change_presets
     else:
         from physion.gui.parts import inactivated as suite2p_preprocessing_UI

@@ -109,14 +109,14 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.add_side_widget(tab.layout,\
             QtWidgets.QLabel('- flow thresh.'), 'large-left')
     self.flowThreshBox = QtWidgets.QLineEdit('0.4', self)
-    self.flowThreshBox.setToolTip('The flow_threshold parameter is the maximum allowed error of the flows for each mask. The default is flow_threshold=0.4. Increase this threshold if cellpose is not returning as many ROIs as you’d expect. Similarly, decrease this threshold if cellpose is returning too many ill-shaped ROIs.')
-    self.add_side_widget(tab.layout, self.flowThreshBox, 'small-right')
+    # self.flowThreshBox.setToolTip('The flow_threshold parameter is the maximum allowed error of the flows for each mask. The default is flow_threshold=0.4. Increase this threshold if cellpose is not returning as many ROIs as you’d expect. Similarly, decrease this threshold if cellpose is returning too many ill-shaped ROIs.')
+    # self.add_side_widget(tab.layout, self.flowThreshBox, 'small-right')
 
     self.add_side_widget(tab.layout,\
             QtWidgets.QLabel('- prob. thresh.'), 'large-left')
     self.probThreshBox = QtWidgets.QLineEdit('0.', self)
-    self.add_side_widget(tab.layout, self.probThreshBox, 'small-right')
-    self.probThreshBox.setToolTip('they vary from around -6 to +6. The pixels greater than the cellprob_threshold are used to run dynamics and determine ROIs. The default is cellprob_threshold=0.0. Decrease this threshold if cellpose is not returning as many ROIs as you’d expect. Similarly, increase this threshold if cellpose is returning too ROIs particularly from dim areas')
+    # self.add_side_widget(tab.layout, self.probThreshBox, 'small-right')
+    # self.probThreshBox.setToolTip('they vary from around -6 to +6. The pixels greater than the cellprob_threshold are used to run dynamics and determine ROIs. The default is cellprob_threshold=0.0. Decrease this threshold if cellpose is not returning as many ROIs as you’d expect. Similarly, increase this threshold if cellpose is returning too ROIs particularly from dim areas')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
@@ -133,6 +133,12 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
     self.runBtn.clicked.connect(self.run_TSeries_analysis)
     self.add_side_widget(tab.layout, self.runBtn)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.suite2pBtn = QtWidgets.QPushButton('suite2p')
+    self.suite2pBtn.clicked.connect(self.open_suite2p)
+    self.add_side_widget(tab.layout, self.suite2pBtn, 'small-right')
 
     while self.i_wdgt<(self.nWidgetRow-1):
         self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
