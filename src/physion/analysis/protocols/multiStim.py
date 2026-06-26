@@ -116,6 +116,7 @@ def plot(fig, data, args,
                     params.remove('repeat')
 
                 plot_trial_average(Eps[i],
+                                   quantity=quantity,
                                 index=roi,
                                 color_keys=params,
                                 with_std=False,
