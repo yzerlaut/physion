@@ -23,7 +23,7 @@ def zoom_view(ax, data, args, tlim=[300,420]):
     if 'FaceMotion' in data.nwbfile.processing:
         settings['facemotion']=dict(fig_fraction=1, subsampling=2, color='purple')
     if 'Pupil' in data.nwbfile.processing:
-        settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
+        settings['pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=6,
                                     subsampling=1, 

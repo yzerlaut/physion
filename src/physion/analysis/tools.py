@@ -61,7 +61,7 @@ def find_modalities(data):
     MODALITIES, QUANTITIES, TIMES, UNITS, COLORS = [], [], [], [], []
 
     if 'Running-Speed' in data.nwbfile.acquisition:
-        MODALITIES.append('Running-Speed')
+        MODALITIES.append('running')
         # QUANTITIES.append(data.nwbfile.acquisition['Running-Speed'])
         # TIMES.append(None)
         QUANTITIES.append(np.abs(data.nwbfile.acquisition['Running-Speed'].data[:]))
@@ -69,7 +69,7 @@ def find_modalities(data):
         UNITS.append('|cm/s|')
         COLORS.append(ge.blue)
     if 'Pupil' in data.nwbfile.processing:
-        MODALITIES.append('Pupil')
+        MODALITIES.append('pupil')
         finite_cond = np.isfinite(data.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:]) & np.isfinite(data.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:])
         diameter = np.zeros(len(finite_cond))
         diameter[finite_cond] = np.max([data.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:][finite_cond],
@@ -80,7 +80,7 @@ def find_modalities(data):
         UNITS.append('mm')
         COLORS.append(ge.red)
     if 'Pupil' in data.nwbfile.processing:
-        MODALITIES.append('GazeMovement')
+        MODALITIES.append('gaze')
         finite_cond = np.isfinite(data.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:]) & np.isfinite(data.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:])
         distance = np.zeros(len(finite_cond))
         cx = data.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:][finite_cond]
@@ -92,7 +92,7 @@ def find_modalities(data):
         UNITS.append('mm')
         COLORS.append(ge.orange)
     if 'FaceMotion' in data.nwbfile.processing:
-        MODALITIES.append('FaceMotion')
+        MODALITIES.append('facemotion')
         QUANTITIES.append(data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:])
         TIMES.append(data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps[:])
         UNITS.append('a.u.')

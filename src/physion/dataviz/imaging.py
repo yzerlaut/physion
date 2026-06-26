@@ -483,7 +483,7 @@ if __name__=='__main__':
                                              # subquantity='dF/F', color='#2ca02c',
                                              # roiIndices=np.sort(np.random.choice(np.arange(np.sum(data.iscell)), np.min([args.Nmax, data.iscell.sum()]), replace=False))),
                             # 'Locomotion':dict(fig_fraction=1, subsampling=1, color='#1f77b4'),
-                            # 'Pupil':dict(fig_fraction=2, subsampling=1, color='#d62728'),
+                            # 'pupil':dict(fig_fraction=2, subsampling=1, color='#d62728'),
                             # 'GazeMovement':dict(fig_fraction=1, subsampling=1, color='#ff7f0e'),
                             # 'Photodiode':dict(fig_fraction=.5, subsampling=1, color='grey'),
                             # 'VisualStim':dict(fig_fraction=.5, color='black')},

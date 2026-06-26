@@ -18,7 +18,7 @@ settings={'CaImagingRaster':dict(fig_fraction=4,
                           roiIndices=np.random.choice(np.arange(data.nROIs), 
                                                      5, replace=False)),
           'Locomotion':dict(fig_fraction=1, subsampling=1, color='#1f77b4'),
-          'Pupil':dict(fig_fraction=2, subsampling=1, color='#d62728'),
+          'pupil':dict(fig_fraction=2, subsampling=1, color='#d62728'),
           'GazeMovement':dict(fig_fraction=1, subsampling=1, color='#ff7f0e'),
           'Photodiode':dict(fig_fraction=.5, subsampling=1, color='grey')}
           # 'VisualStim':dict(fig_fraction=.5, color='black')}
