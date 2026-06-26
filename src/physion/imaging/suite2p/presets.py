@@ -3,7 +3,18 @@ Some presets for our recording conditions
 """
 
 presets = {\
-        "":{},
+        "sourcery-thy1-Taddy":{\
+                          "algorithm": "sourcery",
+                          "highpass_time":300,
+                          "denoise":False,
+                          "sourcery_settings":{\
+                               "connected":True,
+                               "max_iter":20,
+                               "smooth_masks":False,
+                               },
+                          "threshold_scaling":1.0,
+                          "diameter":(9.0, 9.0),
+        },
         "hsyn-pyramidal":{\
                            # functional detection
                            "high_pass":300,

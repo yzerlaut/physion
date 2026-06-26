@@ -11,10 +11,8 @@ from physion.imaging.suite2p.default_ops import default_ops
 
 
 # we override some of suite2p defaults (see default_ops)
-def override_suite2p_defaults(ops):
+def override_suite2p_default_ops(ops, v1=False):
     ops['bruker']=True
-    # no need of deconvolution yet
-    ops['spikedetect']=False
     ops['functional_chan']= 2
     ops['align_by_chan'] = 2
     ops['batch_size'] = 500
@@ -30,7 +28,7 @@ def build_db(folder, v1=False):
                 'input_format': 'bruker'}
 
 def build_suite2p_options(folder,
-                          settings_dict,
+                          my_settings,
                           v1=False):
     
     xml_file = get_files_with_extension(folder, extension='.xml')[0]
@@ -38,33 +36,37 @@ def build_suite2p_options(folder,
     bruker_data = bruker_xml_parser(xml_file)
 
     # acquisition frequency per plane - (bruker framePeriod i already per plane)
-    nplanes = settings_dict['nplanes']\
-                        if 'nplanes' in settings_dict else 1 
+    nplanes = my_settings['nplanes']\
+                        if 'nplanes' in my_settings else 1 
     acq_freq = 1./float(bruker_data['settings']['framePeriod'])/nplanes
 
     # hints for the size of the ROI
     um_per_pixel = float(bruker_data['settings']['micronsPerPixel']['XAxis'])
-    diameter = int(settings_dict['cell_diameter']/um_per_pixel) # in pixels (int 20um)
-    spatial_scale = int(settings_dict['cell_diameter']/6/um_per_pixel)
+    diameter = int(my_settings['cell_diameter']/um_per_pixel) # in pixels (int 20um)
+    spatial_scale = int(my_settings['cell_diameter']/6/um_per_pixel)
 
     if v1:
 
         settings = default_settings()
+        settings['diameter'] = (diameter, diameter)
+        for key in my_settings:
+            if key in settings:
+                settings[key] = my_settings[key]
 
         np.save(os.path.join(folder, 'settings.npy'), settings)
 
     else:
 
         ops = default_ops()
-        override_suite2p_defaults(ops)
+        override_suite2p_default_ops(ops)
 
         ops['fs'], ops['diameter'] = acq_freq, diameter
         ops['spatial_scale'] = spatial_scale
 
         # all other keys here
-        for key in settings_dict:
+        for key in my_settings:
             if key in ops:
-                ops[key] = settings_dict[key]
+                ops[key] = my_settings[key]
     
         db = build_db(folder)
         for key in ['data_path', 'subfolders', 'save_path0',

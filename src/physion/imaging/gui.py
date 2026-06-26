@@ -1,4 +1,4 @@
-import os, sys, pathlib, shutil, time, datetime, tempfile, subprocess
+import os, sys, pathlib, shutil, time, subprocess
 from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
@@ -43,9 +43,6 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     # self.lastBox= QtWidgets.QCheckBox('last', self)
     # self.lastBox.setChecked(True)
     # self.add_side_widget(tab.layout, self.lastBox, 'small-right')
-
-    self.versionBox= QtWidgets.QCheckBox('suite2p >= v1.0', self)
-    self.add_side_widget(tab.layout, self.versionBox)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' -- * Presets * --  '))
     self.presetBox = QtWidgets.QComboBox()
@@ -262,6 +259,10 @@ def fetch_settings_from_UI(self):
 
     settings = presets[self.presetBox.currentText()]
 
+    settings['v1'] = ('sourcery' in self.presetBox.currentText()) or\
+                        ('sparsery' in self.presetBox.currentText()) or\
+                            ('cellpose' in self.presetBox.currentText())
+
     # -------------
     # Registration
     # -------------
@@ -328,9 +329,9 @@ def run_TSeries_analysis(self):
 
             settings['nplanes'] = self.Nplanes[i]
             settings['nchannels'] = self.Nchans[i]
-            build_suite2p_options(folder, settings,
-                                  v1=self.versionBox.isChecked())
-            if self.versionBox.isChecked():
+            build_suite2p_options(folder, settings)
+
+            if self.settings['v1']:
                 # changed to "ops" to "settings " in >=v1.1
                 cmd = '%s -m suite2p --db "%s" --settings "%s" --verbose &'\
                       % (python_path_suite2p_env,

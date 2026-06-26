@@ -4,8 +4,6 @@ copy the file in suite2p/default_ops.py and paste it here
 add the version manually (get it with: "python -m suite2p --version")
 """
 
-# version = 'v0.9.3.dev528+gc88e1ba.d20240604'
-
 def default_ops():
     """ 
     default options to run pipeline 
@@ -14,7 +12,7 @@ def default_ops():
     """
     return {
         # Suite2p version
-        "suite2p_version": version,  #current version of suite2p used for pipeline
+        "suite2p_version": 'v0.9.3.dev528+gc88e1ba.d20240604',  #current version of suite2p used for pipeline
 
         # file input/output settings
         "look_one_level_down":
@@ -113,7 +111,7 @@ def default_ops():
 
         # cell detection settings with suite2p
         "roidetect": True,  # whether or not to run ROI extraction
-        "spikedetect": True,  # whether or not to run spike deconvolution
+        "spikedetect": False,  # whether or not to run spike deconvolution
         "sparse_mode": True,  # whether or not to run sparse_mode
         "spatial_scale":
             0,  # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
