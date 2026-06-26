@@ -2,23 +2,23 @@ import os, json
 import numpy as np
 from scipy.interpolate import interp1d
 
-import physion
+from physion.analysis.read_NWB import Data
 import physion.utils.plot_tools as pt
 
 def generate_pdf(args,
-                 filename=None,
+                 pdf_filename=None,
                  debug=False,
                  verbose=True):
 
-    if filename is None:
-        filename = os.path.join(os.path.dirname(args.datafile).replace('NWBs', 'pdfs'),
+    if pdf_filename is None:
+        pdf_filename = os.path.join(os.path.dirname(args.datafile).replace('NWBs', 'pdfs'),
                                 os.path.basename(args.datafile).replace('.nwb', '.pdf'))
 
     fig = pt.plt.figure(figsize=(8.27, 11.7), dpi=75)
 
     if args.datafile!='':
 
-        data = physion.analysis.read_NWB.Data(args.datafile)
+        data = Data(args.datafile)
 
         if ('ophys' in data.nwbfile.processing)  and hasattr(args, 'dFoF_options'):
             print(' [!!] applying dFoF options: ')
@@ -56,7 +56,7 @@ def generate_pdf(args,
     if debug:
         pt.plt.show()
     else:
-        fig.savefig(filename, dpi=300)
+        fig.savefig(pdf_filename, dpi=300)
 
 def metadata_fig(ax, data, short=True):
     
@@ -103,11 +103,13 @@ def metadata_fig(ax, data, short=True):
 
 def generate_FOV_fig(AX, data, args):
 
-    physion.dataviz.imaging.show_CaImaging_FOV(\
+    from physion.dataviz.imaging import show_CaImaging_FOV
+
+    show_CaImaging_FOV(\
             data, key='meanImg', ax=AX[0], NL=4,with_annotation=False)
-    physion.dataviz.imaging.show_CaImaging_FOV(\
+    show_CaImaging_FOV(\
             data, key='max_proj', ax=AX[1], NL=4, with_annotation=False)
-    physion.dataviz.imaging.show_CaImaging_FOV(\
+    show_CaImaging_FOV(\
             data, key='meanImg', ax=AX[2], NL=4, with_annotation=False,
                        roiIndex=np.arange(data.nROIs))
 
@@ -139,11 +141,11 @@ def generate_raw_data_figs(data, ax, args,
     settings={}
 
     if 'Running-Speed' in data.nwbfile.acquisition:
-        settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
+        settings['running'] = dict(fig_fraction=1, subsampling=2, color='blue')
     if 'FaceMotion' in data.nwbfile.processing:
-        settings['FaceMotion']=dict(fig_fraction=1, subsampling=2, color='purple')
+        settings['facemotion']=dict(fig_fraction=1, subsampling=2, color='purple')
     if 'Pupil' in data.nwbfile.processing:
-        settings['Pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
+        settings['pupil'] = dict(fig_fraction=1, subsampling=2, color='red')
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=4./7.*args.nROIs, 
                                     subsampling=2, 
@@ -155,7 +157,8 @@ def generate_raw_data_figs(data, ax, args,
         settings['CaImagingRaster']= dict(fig_fraction=2,
                                           subquantity='dFoF')
 
-    physion.dataviz.raw.plot(data, data.tlim, 
+    from physion.dataviz.raw import plot
+    plot(data, data.tlim, 
               settings=settings, Tbar=30, ax=ax)
 
     ax.annotate('full recording: %.1fmin  ' % ((data.tlim[1]-data.tlim[0])/60), (1,1), 
@@ -206,14 +209,22 @@ if __name__=='__main__':
     
     import argparse
 
-    parser=argparse.ArgumentParser()
+    parser=argparse.ArgumentParser("""
+
+script to build a summary pdf either from:
+                                   
+        - a single NWB file
+        - a dataset given by a DataTable.xlsx file
+        - a folder containing a list of NWB files 
+
+                                   """)
     parser.add_argument("datafile", type=str)
     parser.add_argument('-p', "--for_protocol", default='')
     parser.add_argument('-s', "--sorted_by", default='')
     parser.add_argument("--remove_all_pdfs", 
                         help="remove all pdfs of previous analysis in folder", action="store_true")
     parser.add_argument('-dFoF', "--dFoF_options_file", default='')
-    parser.add_argument('-nmax', "--Nmax", 
+    parser.add_argument("--Nmax", 
                         type=int, default=1000000)
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="increase output verbosity") 
@@ -226,6 +237,7 @@ if __name__=='__main__':
             args.dFoF_options = json.load(f)
 
     if '.xlsx' in args.datafile:
+        # if it's a DataTable
 
         dataset, _, analysis = \
             physion.assembling.dataset.read_spreadsheet(args.datafile)
@@ -258,7 +270,7 @@ if __name__=='__main__':
 
             os.makedirs(output_folder, exist_ok=True)
 
-            for i, f in enumerate(filenames):
+            for i, f in enumerate(filenames[:Nmax]):
                 args.datafile = f
                 generate_pdf(args, 
                              filename=os.path.join(output_folder, 
@@ -266,20 +278,19 @@ if __name__=='__main__':
                                                       (i+1, os.path.basename(f).replace('.nwb',''))),
                              debug=args.verbose)
 
-
             # from physion.utils.parallel import process_datafiles
             # process_datafiles(process_file_for_parallel,
             #                   filenames,
             #                   output_folder)
 
     elif '.nwb' in args.datafile:
-        data = physion.analysis.read_NWB.Data(args.datafile)
+        data = Data(args.datafile)
         generate_pdf(args, debug=args.verbose)
 
     elif os.path.isdir(args.datafile):
         directory = args.datafile
         for f in physion.utils.files.get_files_with_extension(directory,
-                                          extension='.nwb', recursive=True):
+                                extension='.nwb', recursive=True)[:args.Nmax]:
             args.datafile = f
             generate_pdf(args, debug=args.verbose)
     else:

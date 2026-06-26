@@ -44,14 +44,14 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     # self.lastBox.setChecked(True)
     # self.add_side_widget(tab.layout, self.lastBox, 'small-right')
 
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.versionBox= QtWidgets.QCheckBox('suite2p >= v1.0', self)
+    self.add_side_widget(tab.layout, self.versionBox)
+
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' -- * Presets * --  '))
     self.presetBox = QtWidgets.QComboBox()
     self.presetBox.addItems(list(presets.keys()))
     self.presetBox.activated.connect(self.change_presets)
     self.add_side_widget(tab.layout, self.presetBox)
-
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
@@ -122,9 +122,6 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.probThreshBox.setToolTip('they vary from around -6 to +6. The pixels greater than the cellprob_threshold are used to run dynamics and determine ROIs. The default is cellprob_threshold=0.0. Decrease this threshold if cellpose is not returning as many ROIs as you’d expect. Similarly, increase this threshold if cellpose is returning too ROIs particularly from dim areas')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-
-    self.versionBox= QtWidgets.QCheckBox('suite2p >= 1.0', self)
-    self.add_side_widget(tab.layout, self.versionBox)
 
     self.delBox= QtWidgets.QCheckBox('delete previous', self)
     self.add_side_widget(tab.layout, self.delBox)
@@ -335,9 +332,10 @@ def run_TSeries_analysis(self):
                                   v1=self.versionBox.isChecked())
             if self.versionBox.isChecked():
                 # changed to "ops" to "settings " in >=v1.1
-                cmd = '%s -m suite2p --db "%s" --settings "%s" &' % (python_path_suite2p_env,
-                                                                os.path.join(folder,'db.npy'),
-                                                            os.path.join(folder,'ops.npy'))
+                cmd = '%s -m suite2p --db "%s" --settings "%s" --verbose &'\
+                      % (python_path_suite2p_env,
+                         os.path.join(folder,'db.npy'),
+                         os.path.join(folder,'settings.npy'))
             else:
                 cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
                                                                 os.path.join(folder,'db.npy'),

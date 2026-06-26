@@ -4,7 +4,7 @@ import numpy as np
 from physion.utils.paths import python_path_suite2p_env
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
-from physion.imaging.suite2p.default_ops import default_ops
+from physion.imaging.suite2p.default_ops import default_ops, default_settings
 from physion.imaging.suite2p.presets import presets
 
 from physion.imaging.suite2p.default_ops import default_ops
@@ -36,31 +36,43 @@ def build_suite2p_options(folder,
     xml_file = get_files_with_extension(folder, extension='.xml')[0]
 
     bruker_data = bruker_xml_parser(xml_file)
-    ops = default_ops()
-    override_suite2p_defaults(ops)
 
     # acquisition frequency per plane - (bruker framePeriod i already per plane)
     nplanes = settings_dict['nplanes']\
                         if 'nplanes' in settings_dict else 1 
-    ops['fs'] = 1./float(bruker_data['settings']['framePeriod'])/nplanes
+    acq_freq = 1./float(bruker_data['settings']['framePeriod'])/nplanes
 
     # hints for the size of the ROI
     um_per_pixel = float(bruker_data['settings']['micronsPerPixel']['XAxis'])
-    ops['diameter'] = int(settings_dict['cell_diameter']/um_per_pixel) # in pixels (int 20um)
-    ops['spatial_scale'] = int(settings_dict['cell_diameter']/6/um_per_pixel)
+    diameter = int(settings_dict['cell_diameter']/um_per_pixel) # in pixels (int 20um)
+    spatial_scale = int(settings_dict['cell_diameter']/6/um_per_pixel)
 
-    # all other keys here
-    for key in settings_dict:
-        if key in ops:
-            ops[key] = settings_dict[key]
+    if v1:
+
+        settings = default_settings()
+
+        np.save(os.path.join(folder, 'settings.npy'), settings)
+
+    else:
+
+        ops = default_ops()
+        override_suite2p_defaults(ops)
+
+        ops['fs'], ops['diameter'] = acq_freq, diameter
+        ops['spatial_scale'] = spatial_scale
+
+        # all other keys here
+        for key in settings_dict:
+            if key in ops:
+                ops[key] = settings_dict[key]
     
-    db = build_db(folder)
-    for key in ['data_path', 'subfolders', 'save_path0',
-                'fast_disk', 'input_format']:
-        ops[key] = db[key]
-    np.save(os.path.join(folder,'ops.npy'), ops)
+        db = build_db(folder)
+        for key in ['data_path', 'subfolders', 'save_path0',
+                    'fast_disk', 'input_format']:
+            ops[key] = db[key]
+        np.save(os.path.join(folder,'ops.npy'), ops)
 
-    # we re-build  
+    # we re-build the db
     db = build_db(folder, v1=v1)
     np.save(os.path.join(folder,'db.npy'), db)
 

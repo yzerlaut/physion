@@ -4,10 +4,14 @@ copy the file in suite2p/default_ops.py and paste it here
 add the version manually (get it with: "python -m suite2p --version")
 """
 
-version = 'v0.9.3.dev528+gc88e1ba.d20240604'
+# version = 'v0.9.3.dev528+gc88e1ba.d20240604'
 
 def default_ops():
-    """ default options to run pipeline """
+    """ 
+    default options to run pipeline 
+
+    version = 'v0.9.3.dev528+gc88e1ba.d20240604'
+    """
     return {
         # Suite2p version
         "suite2p_version": version,  #current version of suite2p used for pipeline
@@ -164,7 +168,8 @@ def default_ops():
         "sig_baseline": 10.,  # smoothing constant for gaussian filter
         "prctile_baseline": 8.,  # optional (whether to use a percentile baseline)
         "neucoeff": 0.7,  # neuropil coefficient
-    }
+        "version" : 'v0.9.3.dev528+gc88e1ba.d20240604',
+        }
 
 
 def default_settings():
@@ -221,7 +226,7 @@ def default_settings():
                     'move_bin': False,
                     'save_NWB': False,
                     'save_mat': False,
-                    'save_ops_orig': True},
+                    'save_ops_orig': False},
             'registration': {'align_by_chan2': False,
                             'batch_size': 100,
                             'bidiphase': 0.0,
