@@ -158,6 +158,8 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
         from physion.gui.parts import inactivated as add_imaging
         from physion.gui.parts import inactivated as build_NWB_UI 
+        from physion.gui.parts import inactivated as build_DataTable_UI
+        from physion.gui.parts import inactivated as build_NWB_from_DataTable_UI
         from physion.gui.parts import inactivated as FOV_coords_UI
 
 
