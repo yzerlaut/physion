@@ -166,6 +166,9 @@ def run(self):
         if self.metadata['CaImaging']:
             props = find_line_props(digital_line_labels,
                                     '2P-start-stop-trigger')
+            
+            ###### EXTRACT THE DELAY FROM THE METADATA:  "2P-start-stop-trigger-with-0.1s-delay"
+
             digital_output_steps += [\
                 {'channel':props['chan'], 'onset':self.metadata['2P']['onset-delay'], 'duration':0.1},
                 {'channel':props['chan'], 'onset':self.max_time - self.metadata['2P']['offset-advance'], 'duration':0.1}]

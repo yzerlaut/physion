@@ -17,7 +17,7 @@
         "digital-outputs":{
             "lines":"port0/line0:2",
             "line-labels":[
-                "2P-start-stop-trigger",
+                "2P-start-stop-trigger-with-0.1s-delay",
                 "visual-stim-episode-start",
                 "LED-optogenetics-activation"
             ]
