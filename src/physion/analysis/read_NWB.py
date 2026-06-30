@@ -167,6 +167,11 @@ class Data:
         else:
             self.age = -1
 
+        if hasattr(self.nwbfile, 'virus') and self.nwbfile.virus!=None:
+            self.virus = self.nwbfile.virus
+        else:
+            self.virus = ''
+
     
     def read_tlim(self):
         
@@ -1022,7 +1027,8 @@ def scan_folder_for_NWBfiles(folder,
                                       ('up-' not in f))]
 
     DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES0])
-    FILES, SUBJECTS, PROTOCOLS, PROTOCOL_IDS, AGES = [], [], [], [], []
+    FILES, SUBJECTS, PROTOCOLS, PROTOCOL_IDS= [], [], [], []
+    VIRUSES, AGES = [], []
 
     for f in FILES0[:Nmax]:
 
@@ -1046,6 +1052,7 @@ def scan_folder_for_NWBfiles(folder,
                     PROTOCOL_IDS.append(iProtocols)
                     SUBJECTS.append(data.nwbfile.subject.subject_id)
                     AGES.append(data.age)
+                    VIRUSES.append(data.virus)
 
             else:
 
@@ -1055,6 +1062,7 @@ def scan_folder_for_NWBfiles(folder,
                 PROTOCOL_IDS.append(range(len(data.protocols)))
                 SUBJECTS.append(data.nwbfile.subject.subject_id)
                 AGES.append(data.age)
+                VIRUSES.append(data.virus)
 
         except BaseException as be:
             SUBJECTS.append('N/A')
@@ -1084,6 +1092,7 @@ def scan_folder_for_NWBfiles(folder,
             'dates':np.array(DATES)[isorted],
             'subjects':np.array(SUBJECTS)[isorted],
             'ages':np.array(AGES)[isorted],
+            'viruses':np.array(VIRUSES)[isorted],
             'protocol_ids':[PROTOCOL_IDS[i] for i in isorted],
             'protocols':[PROTOCOLS[i] for i in isorted]}
 
