@@ -38,7 +38,7 @@ from physion.ephys.alignement import load_nidaq_synch_signal,\
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
-datafolder = os.path.expanduser('~/DATA/2026_06_02').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/2026_06_09').replace('/', os.path.sep)
 
 INTERPROTOCOL_WINDOW = 10. # 
 PROBE_NAME = 'ProbeA'
@@ -164,7 +164,7 @@ for key in ['Npx-Rec', 'nStart', 'nStop']+\
 DF
 # %%
 # TODO add a column with sub-selection of electrode range !!
-ELECTRODE_RANGE = [0,250]
+ELECTRODE_RANGE = [0,300]
 
 # %%
 add_to_table(
@@ -220,7 +220,7 @@ def load_LFP_resp(datafolder, iRec,
                     allow_pickle=True).item()
     t_nidaq = np.arange(0, len(nidaq['digital'][0]))*nidaq['dt']
     visStim = nidaq['digital'][3]
-
+    
     nStart, nStop = datatable['nStart'][iRec], datatable['nStop'][iRec]
     t_probe = np.linspace(0, t_nidaq[-1], nStop-nStart)
     dt_probe = t_nidaq[-1]/(nStop-nStart)
@@ -275,6 +275,12 @@ def show_CSD(t, LFP):
     pt.set_plot(ax, xlabel='time (s)', ylabel='channel (subsampled)')
     return fig, ax
 
+iRec = 4 #flash
+
+t, LFP = load_LFP_resp(datafolder, iRec, channel_subsampling=4,
+                        temporal_smoothing=100)
+
+show_CSD(t, LFP)
 
 # %%
 

@@ -5,7 +5,7 @@
 #
 
 # %%
-import sys, time
+import os, sys, time
 sys.path += [os.path.expanduser('~/physion/src'), '../../src']
 import json
 import numpy as np
@@ -17,7 +17,7 @@ from physion.assembling.dataset import read_spreadsheet
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
-datafolder = os.path.expanduser('~/DATA/2026_04_24').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/2026_06_09').replace('/', os.path.sep)
 
 # datatable, _, analysis = read_spreadsheet(\
 #                         os.path.join(datafolder, 'DataTable.xlsx'),
