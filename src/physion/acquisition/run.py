@@ -1,4 +1,5 @@
 import os, json, time, sys, shutil
+import requests # to send https message to open ephys
 import numpy as np
 import multiprocessing
 from PyQt5 import QtCore
@@ -420,12 +421,19 @@ def run_update(self):
             stim_index = self.stim.experiment['index'][\
                                             self.stim.next_index_table[iT]]
 
+            if self.metadata['Neuropixels']:
+                # we send a message to open-ephys
+                requests.put("http://localhost:37497/api/message", 
+                            json={"text":"Prtcl-%i-Stim-%i" % (\
+                                            protocol_id+1,
+                                            stim_index+1)})
+
             print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (\
                     t/3600, (t%3600)/60, (t%60), 100*((t%60)-int(t%60))),
                   '- Running protocol of index %i/%i' %\
                         (self.current_index+1, 
                          len(self.stim.experiment['index'])),
-                  'protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
+                  ' -- protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
 
     # ----- online visualization here -----
     if (self.FaceCamera_process is not None) and\
