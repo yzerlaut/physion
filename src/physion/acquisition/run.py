@@ -421,7 +421,7 @@ def run_update(self):
             stim_index = self.stim.experiment['index'][\
                                             self.stim.next_index_table[iT]]
 
-            if self.metadata['Neuropixels']:
+            if self.metadata['Neuropixels'] and self.onlineBox.isChecked():
                 # we send a message to open-ephys
                 requests.put("http://localhost:37497/api/message", 
                             json={"text":"Prtcl-%i-Stim-%i" % (\

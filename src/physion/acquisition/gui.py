@@ -70,8 +70,10 @@ def multimodal(self,
         setattr(self,k+'Button', QtWidgets.QPushButton(k, self))
         getattr(self,k+'Button').setCheckable(True)
         self.add_side_widget(tab.layout, getattr(self, k+'Button'))
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.onlineBox = QtWidgets.QCheckBox('online analysis')
+    self.add_side_widget(tab.layout, self.onlineBox)
+    # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    # self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.FaceCameraButton.clicked.connect(self.toggle_FaceCamera_process)
     self.RigCameraButton.clicked.connect(self.toggle_RigCamera_process)
