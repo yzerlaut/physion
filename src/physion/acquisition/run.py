@@ -422,7 +422,7 @@ def run_update(self):
                                             self.stim.next_index_table[iT]]
 
             if self.metadata['Neuropixels'] and self.onlineBox.isChecked():
-                # we send a message to open-ephys
+                # we send a message to open-ephys to trigger the online PSTH stim condition
                 requests.put("http://localhost:37497/api/message", 
                             json={"text":"Prtcl-%i-Stim-%i" % (\
                                             protocol_id+1,
