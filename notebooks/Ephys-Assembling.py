@@ -16,7 +16,8 @@
 # this will create a file: `%USERPROFILE%\DATA\DataTable0.xlsx`  
 #      move it to  ~/DATA/2026_02_13/DataTable0.xlsx
 #
-# Then fill its neuropixels folder (`Npx-Folder`, for example 2026-03-19_16-13-00) and recordings information (`Npx-Rec`for example node0/exp1/rec1).    
+# Then fill its neuropixels folder (`Npx-Folder`, for example 2026-03-19_16-13-00) 
+# and recordings information (`Npx-Rec`for example node0/exp1/rec1).    
 #
 #       N.B. you can use the code below to guide filling the recordings info
 
@@ -38,7 +39,7 @@ from physion.ephys.alignement import load_nidaq_synch_signal,\
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
-datafolder = os.path.expanduser('~/DATA/2026_06_09').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/2026_07_29').replace('/', os.path.sep)
 
 INTERPROTOCOL_WINDOW = 10. # 
 PROBE_NAME = 'ProbeA'
@@ -133,10 +134,10 @@ DF
 
 
 # %%
-iRec = 4 # example recording
-_, _, fig, ephys_onsets, nidaq_onsets = sampling_match(iRec, 
-                                                       datafolder, DF,
-                                                       with_fig=True, verbose=True)
+# iRec = 4 # example recording
+# _, _, fig, ephys_onsets, nidaq_onsets = sampling_match(iRec, 
+#                                                        datafolder, DF,
+#                                                        with_fig=True, verbose=True)
 
 
 # %%
@@ -164,7 +165,7 @@ for key in ['Npx-Rec', 'nStart', 'nStop']+\
 DF
 # %%
 # TODO add a column with sub-selection of electrode range !!
-ELECTRODE_RANGE = [0,300]
+ELECTRODE_RANGE = [0,200]
 
 # %%
 add_to_table(
