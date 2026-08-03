@@ -26,7 +26,7 @@ def add_ophys_processing_from_suite2p(save_folder, nwbfile, xml,
 
     plane_folders = natsorted([ f.path for f in os.scandir(save_folder) if f.is_dir() and f.name[:5]=='plane'])
     print(save_folder, plane_folders)
-    STATS = [np.load(os.path.join(f, 'stat.npy'), allow_pickle=True).item() for f in plane_folders]
+    STATS = [np.load(os.path.join(f, 'stat.npy'), allow_pickle=True) for f in plane_folders]
 
     if len(STATS)>1:
         multiplane, nplanes = True, len(plane_folders)
