@@ -224,7 +224,7 @@ def default_settings():
                     'move_bin': False,
                     'save_NWB': False,
                     'save_mat': False,
-                    'save_ops_orig': False},
+                    'save_ops_orig': True},
             'registration': {'align_by_chan2': False,
                             'batch_size': 100,
                             'bidiphase': 0.0,
