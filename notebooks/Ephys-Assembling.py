@@ -39,7 +39,7 @@ from physion.ephys.alignement import load_nidaq_synch_signal,\
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
-datafolder = os.path.expanduser('~/DATA/2026_07_29').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/2026_07_31').replace('/', os.path.sep)
 
 INTERPROTOCOL_WINDOW = 10. # 
 PROBE_NAME = 'ProbeA'
@@ -167,7 +167,7 @@ def load_nidaq_synch_signal(folder):
 
 def build_trace_from_events(events, 
                             t_array,
-                            duration=0.3):
+                            duration=0.1):
     """
     converts a set of onset-events into a time trace
         (set the duration of events thourgh "duration")
@@ -386,7 +386,39 @@ _, _, fig, ephys_onsets, nidaq_onsets = sampling_match(iRec,
 
 # %%
 
+F0 = 30000.
 
+Residuals, N0s, t0s, Fs = [], [], [], []
+
+iStepNIDAQ= 0
+iStepEphys = 0
+t0 = nidaq_onsets[iStepNIDAQ]
+new_nidaq_onsets = nidaq_onsets-t0
+
+dt=1e-2
+t = np.arange(int(new_nidaq_onsets[-1]/dt))*dt
+t = t[t>0.8*t.max()]
+nidaq_trace = build_trace_from_events(new_nidaq_onsets, t)
+
+def to_minimize(F):
+    N0 = ephys_onsets[iStepEphys]
+    new_ephys_onsets = (ephys_onsets-N0)/F
+    ephys_trace = build_trace_from_events(new_ephys_onsets, t)
+    return 1-np.corrcoef(nidaq_trace, ephys_trace)[0,1]
+
+res = minimize(to_minimize, [F0])
+print(res)
+print(res.x)
+N0 = ephys_onsets[iStepEphys]
+new_ephys_onsets = (ephys_onsets-N0)/res.x
+ephys_trace = build_trace_from_events(new_ephys_onsets, t)
+
+fig, ax = pt.figure(ax_scale=(2,1))
+cond = (t>(t[-1]-5))
+ax.plot(t[cond], nidaq_trace[cond])
+ax.plot(t[cond], 1+ephys_trace[cond])
+
+#%%
     # if verbose:
     #     print('best shift correspond to, N0=%i F=%.4e' % (N0, F))
     # return t0, N0, F, shifts[iMin], res
@@ -401,7 +433,7 @@ _, _, fig, ephys_onsets, nidaq_onsets = find_sampling_match(iRec,
 
 # %%
 #print(nidaq_onsets[0])
-F*(pulse_onsets[pulse_cond][shift]-N0)
+# F*(pulse_onsets[pulse_cond][shift]-N0)
 
 
 # %%
