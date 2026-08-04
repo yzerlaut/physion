@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, json
 import pandas as pd
 import numpy as np
 
@@ -113,6 +113,20 @@ def add_to_table(filename,
                            sheet_name=sheet,
                            index=False)
 
+def load_one_metadata_file(folder):
+    # find the first metadata file in the subfolders
+    on = True
+    for r, d, f in os.walk(folder):
+        for ff in f:
+            if ff=='metadata.json':
+                with open(os.path.join(r, ff), 'r') as j:
+                    params = json.load(j)
+                on=False
+                break;
+        if not on:
+            break;
+    return params
+
 
 if __name__=='__main__':
 
@@ -125,8 +139,8 @@ if __name__=='__main__':
 
         or:
 
-        python -m physion.assembling.dataset build-DataTable path-to-folder-of-processed files
-
+        python -m physion.assembling.dataset build-DataTable path/to/folder/of/processed/files 
+    
         """)
 
     elif sys.argv[-2]=='build-DataTable':
@@ -174,15 +188,27 @@ if __name__=='__main__':
                     column='Location',
                     sheet='Recordings')
 
+        # find modalities
+        exp = load_one_metadata_file(folder)
+
         # modalities
         yes = ['Yes' for t in times]
-        for col in ['Locomotion', 'VisualStim', 'FaceMotion', 'Pupil', 
-                    'raw_FaceCamera', 
-                    'raw_CaImaging',
-                    'processed_CaImaging']:
+        COLS = ['Locomotion', 'VisualStim', 'FaceMotion', 'Pupil', 'raw_FaceCamera']
+        
+        if exp['CaImaging']:
+            add_to_table(dest, column='FOV', data=['----' for t in times], insert_at=3, sheet='Recordings')
+            COLS += ['raw_CaImaging', 'processed_CaImaging']
+        if exp['Neuropixels']:
+            add_to_table(dest, column='Npx-Folder', data=['----' for t in times], insert_at=3, sheet='Recordings')
+            add_to_table(dest, column='Npx-Rec', data=['----' for t in times], insert_at=4, sheet='Recordings')
+            add_to_table(dest, column='electrode-range', data=['0-384' for t in times], insert_at=5, sheet='Recordings')
+            COLS += ['LFP', 'MUA', 'Spikes']
+
+        for i, col in enumerate(COLS):
             add_to_table(dest, 
                         data=yes,
                         column=col,
+                        insert_at=(i+7 if exp['Neuropixels'] else i+3),
                         sheet='Recordings')
 
 
