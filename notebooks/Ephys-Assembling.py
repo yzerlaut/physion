@@ -253,16 +253,18 @@ def show_LFP(t, LFP):
     for i, c in enumerate(np.arange(LFP.shape[0])):
         lfp = LFP[c,:].mean(axis=0) # trial-average here
         ax.plot(t, lfp-np.nanmean(lfp[t<0])+c*shift, color=pt.viridis(i/LFP.shape[0]), lw=0.5)
-    pt.set_plot(ax, xlabel='time (s)', ylabel='uV',
-                ylim=[-200,200])
+    pt.set_plot(ax, xlabel='time (s)', 
+                ylim=[-2000,200], 
+                ylabel='uV')
     return fig, ax
 
 iRecs = np.flatnonzero(datatable['protocol']=='flashed-stimuli')
 
 for iRec in iRecs:
 
-    t, LFP = load_LFP_resp(datafolder, iRec, channel_subsampling=4,
-                        temporal_smoothing=100)
+    t, LFP = load_LFP_resp(datafolder, iRec, 
+                           channel_subsampling=4,
+                           temporal_smoothing=100)
     show_LFP(t, LFP)
 
 # %%
