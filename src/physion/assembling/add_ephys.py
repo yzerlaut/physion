@@ -100,8 +100,10 @@ def add_ephys(nwbfile, args,
     siRec = siRec.select_channels(siRec.get_channel_ids()[e0:e1])
 
     print("         -> removing bad channels [...]")
-    bad_channel_ids = args.bad_channels.split(',')
-    siRec = siRec.remove_channels(bad_channel_ids)
+    print(args.bad_channels, type(args.bad_channels))
+    if type(args.bad_channels) in [str, np.str_]:
+        bad_channel_ids = args.bad_channels.split(',')
+        siRec = siRec.remove_channels(bad_channel_ids)
 
     # 2)
     # ── build Electrode table ───────────────────────────────────────────────
