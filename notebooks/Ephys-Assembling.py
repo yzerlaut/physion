@@ -41,8 +41,8 @@ import spikeinterface.full as si
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
-datafolder = os.path.expanduser('~/DATA/2026_08_04').replace('/', os.path.sep)
-datafolder = os.path.expanduser('Z:2026_07_28').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/2026_07_31').replace('/', os.path.sep)
+#datafolder = os.path.expanduser('Z:2026_07_28').replace('/', os.path.sep)
 
 INTERPROTOCOL_WINDOW = 10. # 
 ELECTRODE_RANGE = [0,200]
@@ -188,11 +188,13 @@ for folder in np.unique(datatable['Npx-Folder']):
     bad_channel_ids, _ = si.detect_bad_channels(siRec,\
                                              method="coherence+psd")
 
-    bad_channels[folder] = bad_channel_ids[0]
-    for c in bad_channel_ids[1:]:
-        bad_channels[folder] += ','+c
+    if len(bad_channel_ids)>0:
+        bad_channels[folder] = bad_channel_ids[0]
+        for c in bad_channel_ids[1:]:
+            bad_channels[folder] += ','+c
+    else:
+        bad_channels[folder] = ''
 
-    print(bad_channels[folder].split(','))
 
 # %%
 add_to_table(
@@ -211,3 +213,4 @@ add_to_table(
     sheet='Recordings', column='bad-channels',
     insert_at=7,
     data=[bad_channels[f] for f in DF['Npx-Folder']])
+# %%
