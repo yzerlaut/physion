@@ -49,8 +49,8 @@ def prepare_panels(episodes,
     if (fig is None) and (AX is None):
         # fig, AX = plt.subplots(len(ROW_CONDS), len(COL_CONDS),
         #                         figsize=figsize,
-        #                         squeeze=False)
-        fig, AX = pt.figure(axes=(len(ROW_CONDS), len(COL_CONDS)),
+        #                         squeeze=False
+        fig, AX = pt.figure(axes=(len(COL_CONDS), len(ROW_CONDS)),
                             right=1.5,
                             reshape_axes=False)
         no_set=False
