@@ -20,6 +20,7 @@ def build_args_for_ephys(args, dataset, i, directory):
     args.LFP, args.MUA, args.Spikes = dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
     # args.raw_Ephys = dataset['raw-Ephys'][i]
     args.electrode_range, args.electrode_subsampling = dataset['electrode-range'][i], dataset['electrode-subsampling'][i]
+    args.bad_channels = dataset['bad-channels'][i]
     args.nStart, args.nStop = dataset['nStart'][i], dataset['nStop'][i]
     # to update, hard-coded for now ...
     args.stream_name='Record Node 101#OneBox-100.ProbeA' 
@@ -99,9 +100,7 @@ def add_ephys(nwbfile, args,
     siRec = siRec.select_channels(siRec.get_channel_ids()[e0:e1])
 
     print("         -> removing bad channels [...]")
-    bad_channel_ids, chan_labels = si.detect_bad_channels(siRec,\
-                                             method="coherence+psd")
-    print("                           found n=%i bad channels " % len(bad_channel_ids))
+    bad_channel_ids = args.bad_channels.split(',')
     siRec = siRec.remove_channels(bad_channel_ids)
 
     # 2)
@@ -144,7 +143,8 @@ def add_ephys(nwbfile, args,
     #######################################################
     if args.Spikes=='Yes':
 
-        add_spikes(nwbfile, args.kilosort_folder)
+        pass
+        #add_spikes(nwbfile, args.kilosort_folder)
 
     ##### FROM NOW ON --> sub-selection of channels ####
     if (args.LFP=='Yes') or (args.MUA=='Yes'):
@@ -197,7 +197,7 @@ def add_ephys(nwbfile, args,
         for ee in range(len(elecSubsampling)-1):
             channel_range = ee*args.electrode_subsampling+\
                     np.arange(args.electrode_subsampling)
-            print('- averaging channels:', channel_range)
+            # print('- averaging channels:', channel_range)
             mua_traces[:,ee] =\
                   hfRec.get_traces(\
                       channel_ids=\
