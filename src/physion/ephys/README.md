@@ -4,11 +4,17 @@
 
 __*following an experimental session recorded with OpenEphys & physion*:__
 
-0. *Preprocess the facecamera data (see [pupil](../pupil/README.md) and [facemotion](../facemotion/README.md) documentation)*
+### 0. *Preprocess the facecamera data (see [pupil](../pupil/README.md) and [facemotion](../facemotion/README.md) documentation)*
 
-1. Build the DataTable for the different protocols of the session
+- compute and save the pupil trace
+- compute and save the facemotion trace
+- export to mp4 movie (in the "physion-analysis" software "Data-Management/Convert Camera to Movie")
+- delete the raw `FaceCamera-imgs` folder
 
-Open the terminal (miniforge) on the `base` environment, go to the 
+### 1. Build the DataTable for the different protocols of the session
+
+Open the terminal (miniforge) on the `base` environment. 
+For an experiment recorded in `~/DATA/2026_08_04`, you build the datatable with the command:
 ```
 cd %USERPROFILE%/physion/src
 python -m physion.assembling.dataset build-DataTable %USERPROFILE%/DATA/2026_08_04
@@ -19,37 +25,45 @@ Fill the column `Npx-Folder` (for example 2026-08-04_16-13-00)
 
 <!-- and recordings information (`Npx-Rec`for example node0/exp1/rec1).     -->
 
-2. Run the [Ephys-Assembling.py](../../../notebooks/Ephys-Assembling.py) notebook.    
+### 2. Run the [Ephys-Assembling.py](../../../notebooks/Ephys-Assembling.py) notebook.    
 
-    Important parameters to set up:
-    - `ELECTRODE_RANGE` defines the sub-selection of electrodes **kept for analysis** (default `ELECTRODE_RANGE=[0,200]`)
-    - `PROBE_NAME` = 'ProbeA'
-    - `EXP`  ID of the recording (starting from 1, default `EXP=1`)
-    - `NODE` ID of the desired Recorde Node (default `NODE=0`)
-    - `STREAM_NAME` default `STREAM_NAME='Record Node 101#OneBox-100.ProbeA'`
+Important parameters to set up:
+- `ELECTRODE_RANGE` defines the sub-selection of electrodes **kept for analysis** (default `ELECTRODE_RANGE=[0,200]`)
+- `PROBE_NAME` = 'ProbeA'
+- `EXP`  ID of the recording (starting from 1, default `EXP=1`)
+- `NODE` ID of the desired Recorde Node (default `NODE=0`)
+- `STREAM_NAME` default `STREAM_NAME='Record Node 101#OneBox-100.ProbeA'`
 
-    This will:
-    - find the probe samples aligned to NIdaq acquisition  
+This will:
+- find the probe samples aligned to NIdaq acquisition  
 
-    1. **CHECK** that `daq-nEpisodes` & `ephys-nEpisodes` match (+/-1) 
+1. **CHECK** that `daq-nEpisodes` & `ephys-nEpisodes` match (+/-1) 
 
-        ![synch-protocols](../../../docs/ephys/synch-protocols.png)
+    ![synch-protocols](../../../docs/ephys/synch-protocols.png)
 
-    2. **CHECK** that synchronizing steps match in the 
+2. **CHECK** that synchronizing steps match in the 
 
-        ![synch-steps](../../../docs/ephys/synch-steps.png)
+    ![synch-steps](../../../docs/ephys/synch-steps.png)
 
-    - focus on the range of electrodes defined (those in the brain)
-    - detect and remove bad channels
-    - set the electrode subsamplig per protocol [TODO]  
-        default  
-            - 2: for flashed stimuli (to protocol to identify layer 4)  
-            - 8: for the rest  
-    - [???] compress and save as binary the data
+- focus on the range of electrodes defined (those in the brain)
+- detect and remove bad channels
+- set the electrode subsamplig per protocol [TODO]  
+    default  
+        - 2: for flashed stimuli (to protocol to identify layer 4)  
+        - 8: for the rest  
+- [???] compress and save as binary the data
 
-2. run the spike sorting using spike interface (kilosort for now)
+### 3. Copy the Data from Acquisition to Analysis computer 
 
-3. assemble the data into a NWB file using the command:  
+```
+...
+```
+
+
+### 2. run the spike sorting using spike interface (kilosort for now)
+
+### 3. assemble the data into a NWB file using the command:  
+
 `python -m physion.assembling.nwb ~/DATA/2026_01_01/DataTable.xlsx`
 
 
