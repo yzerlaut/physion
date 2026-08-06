@@ -166,10 +166,17 @@ if __name__=='__main__':
                     times.append(time)
                     mice.append('demo-Mouse') # by default
 
+        # find modalities of recordings
+        exp = load_one_metadata_file(folder)
+
         import pathlib, shutil
 
         base_path = str(pathlib.Path(__file__).resolve().parents[2])
-        dest = os.path.join(pathlib.Path(folder).resolve().parent, 'DataTable0.xlsx')
+        if exp['Neuropixels']:
+            dest = os.path.join(folder, 'DataTable0.xlsx')
+        else:
+            dest = os.path.join(pathlib.Path(folder).resolve().parent, 'DataTable0.xlsx')
+
         shutil.copyfile(\
             os.path.join(base_path, 'physion', 'acquisition', 'DataTable.xlsx'), 
                         dest)
@@ -187,9 +194,6 @@ if __name__=='__main__':
                     data=['V1' for t in times],
                     column='Location',
                     sheet='Recordings')
-
-        # find modalities
-        exp = load_one_metadata_file(folder)
 
         # modalities
         yes = ['Yes' for t in times]

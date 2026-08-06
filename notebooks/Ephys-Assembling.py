@@ -1,25 +1,12 @@
 
 # %% [markdown]
 #
-# # Assemble Neuropixels data
+# # Assemble Neuropixels data, see [ephys doc](https://github.com/yzerlaut/physion/blob/main/src/physion/ephys/README.md)
 #
 # requirements:
 # ```
 # pip install open-ephys-python-tools
 # ```
-# ## 1) 
-# cd physion/src
-# Run:
-# ```
-# python -m physion.assembling.dataset build-DataTable %USERPROFILE%\DATA\2026_02_13
-# ```
-# this will create a file: `%USERPROFILE%\DATA\DataTable0.xlsx`  
-#      move it to  ~/DATA/2026_02_13/DataTable0.xlsx
-#
-# Then fill its neuropixels folder (`Npx-Folder`, for example 2026-03-19_16-13-00) 
-# and recordings information (`Npx-Rec`for example node0/exp1/rec1).    
-#
-#       N.B. you can use the code below to guide filling the recordings info
 
 # %%
 import sys, os
@@ -41,12 +28,10 @@ import spikeinterface.full as si
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
-datafolder = os.path.expanduser('~/DATA/2026_07_31').replace('/', os.path.sep)
-#datafolder = os.path.expanduser('Z:2026_07_28').replace('/', os.path.sep)
+datafolder = os.path.expanduser('~/DATA/2026_08_04').replace('/', os.path.sep)
 
 INTERPROTOCOL_WINDOW = 10. # 
 ELECTRODE_RANGE = [0,200]
-
 PROBE_NAME = 'ProbeA'
 STREAM_NAME='Record Node 101#OneBox-100.%s' % PROBE_NAME
 EXP = 1 # 
