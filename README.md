@@ -60,7 +60,7 @@ The different modules of the software are documented in the following links:
 - [Visual stimulation](src/physion/visual_stim/README.md)
 - [Multimodal Acquisition](src/physion/acquisition/README.md)
 - [Intrinsic Imaging](src/physion/intrinsic/README.md)
-- [Electrophysiology](src/physion/electrophy/README.md)
+- [Electrophysiology](src/physion/ephys/README.md)
 - [Calcium imaging](src/physion/imaging/README.md)
 - [Pupil tracking](src/physion/pupil/README.md)
 - [Face Motion tracking](src/physion/facemotion/README.md)
