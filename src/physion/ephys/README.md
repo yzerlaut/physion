@@ -2,7 +2,19 @@
 
 ## Overall pipeline 
 
-1. run the [Ephys-Assembling.py](../../../notebooks/Ephys-Assembling.py) notebook.    
+*following a given experiment recorded with OpenEphys & physion*
+
+0. (prelim) Preprocess the facecamera data (Pupil & Facemotion)
+
+1. Build the DataTable for the different protocols of the session
+
+Open the terminal (miniforge) on the `base` environment:
+```
+cd physion/src
+python -m physion.assembling.dataset build-DataTable %USERPROFILE%\DATA
+```
+
+run the [Ephys-Assembling.py](../../../notebooks/Ephys-Assembling.py) notebook.    
     This will:
     - detect and remove bad channels
     - define the range of intersting range of electrodes for (those in the brain)
