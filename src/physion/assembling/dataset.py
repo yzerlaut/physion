@@ -127,6 +127,14 @@ def load_one_metadata_file(folder):
             break;
     return params
 
+def load_metadata_file(folder):
+    if os.path.isfile(os.path.join(folder, 'metadata.json')):
+        with open(os.path.join(folder, 'metadata.json'), 'r') as j:
+            params = json.load(j)
+        return params 
+    else:
+        return None
+
 
 if __name__=='__main__':
 
@@ -147,15 +155,22 @@ if __name__=='__main__':
 
         folder = sys.argv[-1]
 
-        days, times, mice = [], [], []
+        days, times, mice, protocols = [], [], [], []
         if (len(folder.split('_'))==3):
 
             print(' folder recognized as a day folder')
-            day = folder.split(os.path.sep)[-1]
+            day = folder[-10:]
+            print(day)
             for time in [t for t in os.listdir(folder) if (len(t.split('-'))==3)]:
                 days.append(day)
                 times.append(time)
-                mice.append('demo-Mouse') # by default
+                params = load_metadata_file(os.path.join(folder, time))
+                if params is not None:
+                    protocols.append(params['protocol'])
+                    mice.append(params['subject_ID'])
+                else:
+                    mice.append('demo-Mouse') # by default
+                    protocols.append('')
 
         else:
 
@@ -164,7 +179,12 @@ if __name__=='__main__':
                 for time in [t for t in os.listdir(os.path.join(folder,day)) if (len(t.split('-'))==3)]:
                     days.append(day)
                     times.append(time)
-                    mice.append('demo-Mouse') # by default
+                    if params is not None:
+                        protocols.append(params['protocol'])
+                        mice.append(params['subject_ID'])
+                    else:
+                        mice.append('demo-Mouse') # by default
+                        protocols.append('')
 
         # find modalities of recordings
         exp = load_one_metadata_file(folder)
@@ -172,7 +192,7 @@ if __name__=='__main__':
         import pathlib, shutil
 
         base_path = str(pathlib.Path(__file__).resolve().parents[2])
-        if exp['Neuropixels']:
+        if params is not None and params['Neuropixels']:
             dest = os.path.join(folder, 'DataTable0.xlsx')
         else:
             dest = os.path.join(pathlib.Path(folder).resolve().parent, 'DataTable0.xlsx')
@@ -182,8 +202,8 @@ if __name__=='__main__':
                         dest)
 
 
-        for col, array in zip(['subject', 'day', 'time'],
-                              [mice, days, times]):
+        for col, array in zip(['protocol', 'subject', 'day', 'time'],
+                              [protocols, mice, days, times]):
             add_to_table(dest, 
                         data=array,
                         column=col,
@@ -199,20 +219,20 @@ if __name__=='__main__':
         yes = ['Yes' for t in times]
         COLS = ['Locomotion', 'VisualStim', 'FaceMotion', 'Pupil', 'raw_FaceCamera']
         
-        if exp['CaImaging']:
+        if params is not None and params['CaImaging']:
             add_to_table(dest, column='FOV', data=['----' for t in times], insert_at=3, sheet='Recordings')
             COLS += ['raw_CaImaging', 'processed_CaImaging']
-        if exp['Neuropixels']:
-            add_to_table(dest, column='Npx-Folder', data=['----' for t in times], insert_at=3, sheet='Recordings')
-            add_to_table(dest, column='Npx-Rec', data=['----' for t in times], insert_at=4, sheet='Recordings')
-            add_to_table(dest, column='electrode-range', data=['0-384' for t in times], insert_at=5, sheet='Recordings')
+        if params is not None and params['Neuropixels']:
+            add_to_table(dest, column='Npx-Folder', data=['----' for t in times], insert_at=4, sheet='Recordings')
+            add_to_table(dest, column='Npx-Rec', data=['----' for t in times], insert_at=5, sheet='Recordings')
+            add_to_table(dest, column='electrode-range', data=['0-384' for t in times], insert_at=6, sheet='Recordings')
             COLS += ['LFP', 'MUA', 'Spikes']
 
         for i, col in enumerate(COLS):
             add_to_table(dest, 
                         data=yes,
                         column=col,
-                        insert_at=(i+7 if exp['Neuropixels'] else i+3),
+                        insert_at=(i+8 if (params is not None and params['Neuropixels']) else i+4),
                         sheet='Recordings')
 
 

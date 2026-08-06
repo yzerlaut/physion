@@ -187,11 +187,14 @@ add_to_table(
     sheet='Recordings', column='electrode-range',
     data=['%i-%i' % (ELECTRODE_RANGE[0], ELECTRODE_RANGE[1]) for _ in range(len(DF['Npx-Rec']))])
 
+ELECTRODE_SUBSAMPLING = [\
+    2 if datatable['protocol'][i] in ['flashed-stimuli'] else 8 for i in range(len(DF))]
+
 add_to_table(
     os.path.join(datafolder, 'DataTable.xlsx'),
     sheet='Recordings', column='electrode-subsampling',
     insert_at=6,
-    data=[8 for _ in range(len(DF['Npx-Rec']))])
+    data=ELECTRODE_SUBSAMPLING)
 
 add_to_table(
     os.path.join(datafolder, 'DataTable.xlsx'),
