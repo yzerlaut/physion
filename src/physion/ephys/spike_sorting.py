@@ -50,11 +50,18 @@ def run_spike_sorting(self,
         if y in ['y', 'yes']:
             shutil.rmtree(ks_folder)
 
-    sorting = ss.run_sorter(sorter_name='kilosort4', 
-                            recording=rec,
-                            verbose=True,
-                            folder=ks_folder,
-                            delete_recording_dat=False)
+    if not os.path.isdir(ks_folder):
+        sorting = ss.run_sorter(sorter_name='kilosort4', 
+                                recording=rec,
+                                verbose=True,
+                                folder=ks_folder,
+                                delete_recording_dat=False)
+    else:
+        print()
+        print(' folder "%s" still exists ! ')
+        print('             remove it manually... ')
+        print(' == spike sorting *NOT* launched == ')
+
 
 
 if __name__=='__main__':
