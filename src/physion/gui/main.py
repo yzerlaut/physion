@@ -148,7 +148,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # # -- Spike Sorting Preprocesssing
     if (not Acquisition) and (not Intrinsic):
         from physion.ephys.gui import spike_sorting_preprocessing_UI, open_phy,\
-                load_spike_sorting, run_spike_sorting
+                run_spike_sorting
     else:
         from physion.gui.parts import inactivated as suite2p_preprocessing_UI
 

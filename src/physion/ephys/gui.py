@@ -49,6 +49,11 @@ def spike_sorting_preprocessing_UI(self, tab_id=1):
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
+    self.delBox= QtWidgets.QCheckBox('delete previous', self)
+    self.add_side_widget(tab.layout, self.delBox)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
     self.presetBox = QtWidgets.QComboBox()
 
     """
@@ -131,9 +136,6 @@ def spike_sorting_preprocessing_UI(self, tab_id=1):
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
-    self.delBox= QtWidgets.QCheckBox('delete previous', self)
-    self.add_side_widget(tab.layout, self.delBox)
-
     self.add_side_widget(tab.layout,\
             QtWidgets.QLabel('Delay:'), 'small-left')
     self.delayBox = QtWidgets.QDoubleSpinBox(self)
@@ -189,17 +191,6 @@ def spike_sorting_preprocessing_UI(self, tab_id=1):
     self.refresh_tab(tab)
 
 
-def load_spike_sorting(self):
-
-    folder = self.open_folder()
-
-    self.folders, self.Nplanes, self.Nchans = [], [], []
-    
-    if folder!='':
-
-        print(folder)
-
-    
 def open_phy(self):
     """   """
     p = subprocess.Popen('%s -m phy' % python_path_phy_env,

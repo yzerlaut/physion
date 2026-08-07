@@ -17,7 +17,8 @@ def build_args_for_ephys(args, dataset, i, directory):
     args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
     args.NPX_rec = dataset['Npx-Rec'][i]
     args.Location = dataset['Location'][i]
-    args.LFP, args.MUA, args.Spikes = dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
+    # args.LFP, args.MUA, args.Spikes = dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
+    args.LFP, args.MUA, args.Spikes = 'No', 'No', 'Yes'
     # args.raw_Ephys = dataset['raw-Ephys'][i]
     args.electrode_range, args.electrode_subsampling = dataset['electrode-range'][i], dataset['electrode-subsampling'][i]
     args.bad_channels = dataset['bad-channels'][i]

@@ -1,14 +1,13 @@
-import sys, os
+import sys, os, shutil
 import spikeinterface.full as si
+import spikeinterface.sorters as ss
 from physion.assembling.dataset import read_spreadsheet
 
 def run_spike_sorting(self, 
-                      debug=True,
                       datatable=None):
     """   
     """
-
-    if datatable is None:
+    if not os.path.isfile(datatable):
         datatable = self.DataTable_file
 
     print()
@@ -43,14 +42,21 @@ def run_spike_sorting(self,
     print(" Final number of selected channels:", rec.get_num_channels())
 
     # Run Sorter
-
     ks_folder=os.path.join(folder, 'kilosort4_output')
     if os.path.isdir(ks_folder):
-        y = input(' folder "%s" already exists ! \n Do you want to delete it ? y/[n]' % ks_folder)
+
+        if hasattr(self, 'delBox') and self.delBox.isChecked():
+            y = 'yes'
+        else:
+            y = input(' folder "%s" already exists ! \n Do you want to delete it ? y/[n]' % ks_folder)
+
         if y in ['y', 'yes']:
             shutil.rmtree(ks_folder)
 
     if not os.path.isdir(ks_folder):
+        print()
+        print(' Launching Spike Sorting (through spikeinterface)')
+        print()
         sorting = ss.run_sorter(sorter_name='kilosort4', 
                                 recording=rec,
                                 verbose=True,
@@ -58,7 +64,7 @@ def run_spike_sorting(self,
                                 delete_recording_dat=False)
     else:
         print()
-        print(' folder "%s" still exists ! ')
+        print(' folder "%s" still exists ! ' % ks_folder)
         print('             remove it manually... ')
         print(' == spike sorting *NOT* launched == ')
 

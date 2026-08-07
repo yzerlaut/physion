@@ -131,6 +131,7 @@ def choose_DataTable(self):
     else:
         self.DataTable_file = None
 
+    print(self.DataTable_file)
 
 def runBuildNWBfromDTBL(self):
     if self.DataTable_file is not None:
