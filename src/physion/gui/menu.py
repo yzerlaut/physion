@@ -50,6 +50,8 @@ def build_menu(self):
                                      self.SS_intrinsic)
     self.preprocessingMenu.addAction('&Suite2P',
                                      self.suite2p_preprocessing_UI)
+    self.preprocessingMenu.addAction('&Spike Sorting',
+                                     self.suite2p_preprocessing_UI)
     self.preprocessingMenu.addAction('&Red Channel Labelling',
                                      self.red_channel_labelling)
 
