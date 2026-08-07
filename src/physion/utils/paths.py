@@ -33,6 +33,8 @@ else:
         
 python_path_suite2p_env = check_path('suite2p')
 
+python_path_phy_env = check_path('phy')
+
 LAB = ['Cibele', 'Joana', 'Taddy', 'Sally', 'Sofia', 'Yann']
 
 FOLDERS = {}

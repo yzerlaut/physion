@@ -5,10 +5,7 @@ import numpy as np
 from physion.utils.paths import FOLDERS, python_path_phy_env
 from physion.utils.files import get_files_with_extension,\
         list_dayfolder, get_TSeries_folders
-from physion.imaging.phy.preprocessing import build_phy_options,\
-        default_ops
-from physion.imaging.bruker.xml_parser import bruker_xml_parser
-from physion.imaging.phy.presets import presets
+from physion.ephys.spike_sorting import run_spike_sorting
 from physion.utils.compression.twoP import reconvert_to_tiffs_from_log8bit
 
 def spike_sorting_preprocessing_UI(self, tab_id=1):
@@ -36,13 +33,22 @@ def spike_sorting_preprocessing_UI(self, tab_id=1):
     self.add_side_widget(tab.layout,
             QtWidgets.QLabel('- data folder(s): '))
 
-    self.loadFolderBtn = QtWidgets.QPushButton(' select \u2b07')
-    self.loadFolderBtn.clicked.connect(self.load_spike_sorting_folder)
-    self.add_side_widget(tab.layout, self.loadFolderBtn)
+#     self.loadFolderBtn = QtWidgets.QPushButton(' select \u2b07')
+#     self.loadFolderBtn.clicked.connect(self.load_spike_sorting)
+#     self.add_side_widget(tab.layout, self.loadFolderBtn)
+
+    self.loadDataTableBtn = QtWidgets.QPushButton(' choose DataTable.xlsx \u2b07')
+    self.loadDataTableBtn.clicked.connect(self.choose_DataTable)
+    self.add_side_widget(tab.layout, self.loadDataTableBtn)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' -- * Presets * --  '))
+    for i in range(8):
+        self.add_side_widget(tab.layout, QtWidgets.QLabel(10*' -- '))
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
     self.presetBox = QtWidgets.QComboBox()
 
     """
@@ -183,7 +189,7 @@ def spike_sorting_preprocessing_UI(self, tab_id=1):
     self.refresh_tab(tab)
 
 
-def load_spike_sorting_folder(self):
+def load_spike_sorting(self):
 
     folder = self.open_folder()
 
@@ -193,7 +199,6 @@ def load_spike_sorting_folder(self):
 
         print(folder)
 
-
     
 def open_phy(self):
     """   """
@@ -201,10 +206,3 @@ def open_phy(self):
                          shell=True,
                          stdout=subprocess.PIPE,
                          stderr=subprocess.STDOUT)
-
-def run_spike_sorting(self):
-    """   """
-    self.runBtn.setText('  * - RUNNING - * ')
-    self.runBtn.setEnabled(False)
-    self.phyBtn.setEnabled(False)
-    self.loadFolderBtn.setEnabled(False)
