@@ -55,7 +55,7 @@ default:
 
     - 8: for the rest  
 
-### d) [???] compress and save as binary the data
+### d) [to do...] compress and save as binary the data
 
 ## 3. Copy the Data from Acquisition to Analysis computer 
 
@@ -74,9 +74,42 @@ robocopy %USERPROFILE%/DATA/2026_08_04 Z: /MIR
 
 ## 5. Run the spike sorting using spike interface (with kilosort under the hood)
 
+### Automated preprocessing
+
+In physion, use the menu: `Preprocessing / Spike Sorting`, select the `DataTable.xlsx` file corresponding to the experiment and launch the spike sorting. Under the hood, this launches `kilosort4` (see: https://kilosort.readthedocs.io/en/latest/README.html).  
+This creates within the day folder (e.g. `2026_08_04`) a folder called `kilosort4_output`. 
+
+
+You can transfer/synchronize this folder to 
 ```
-...
+
+server_adress=user@10.0.0.1
+server_root_path=/media/user/DATA2
+desktop_root_path=/home/pan.zhang/DATA
+
+get_spike_sorting ()
+{
+    day=$1
+    rsync -avhP --exclude 'continuous.dat' $server_address:$server_root_path/$day $desktop_root_path
+}
+
+send_spike_sorting ()
+{
+    day=$1
+    rsync -avhP $desktop_root_path/$day $server_address:$server_root_path 
+}
 ```
+
+get_spike_sorting 2026_08_04
+
+ spits out kilosort outputs (), you can 
+
+If need
+
+### Manual curation step
+
+Do it in [Phy](https://github.com/cortex-lab/phy).
+
 
 ## 6. Assemble the data into a NWB file using the command:  
 
