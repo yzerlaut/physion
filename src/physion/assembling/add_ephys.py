@@ -147,50 +147,55 @@ def add_ephys(nwbfile, args,
     #######################################################
     # ── add Spikes ───────────────────────────────────────
     #######################################################
-    if args.Spikes=='Yes' and\
-            os.path.isdir(args.kilosort_folder):
+    if args.Spikes=='Yes':
 
-        # ---- read the spike sorting output from ks & phy ---- #
-        # only units that have been set as "good" in manual sorting #
-        data = read_kilosort_phy_output(args.kilosort_folder)
-        spike_time_indices, templates = fetch_good_units(data)
+        if os.path.isdir(args.kilosort_folder):
 
-        #     ---  Spiking Module ---      #
-        spiking_module = nwbfile.create_processing_module(
-            name        = "Spiking",
-            description = "Single Unit Module ",
-        )
+            # ---- read the spike sorting output from ks & phy ---- #
+            # only units that have been set as "good" in manual sorting #
+            data = read_kilosort_phy_output(args.kilosort_folder)
+            spike_time_indices, templates = fetch_good_units(data)
 
-        print("         -> writing single-unit spike times [...]")
-        #     ---  Spike times  ---        #
-        for unit_id, spk_time_indices in enumerate(spike_time_indices):
-
-            cond = (spk_time_indices>args.nStart) &\
-                        (spk_time_indices<args.nStop)
-
-            # we translate the into spike times
-            spike_times = [timestamps[s-args.nStart]\
-                            for s in spk_time_indices[cond]]
-            # we now add to the NWB file
-            nwbfile.add_unit(spike_times=spike_times,
-                            electrode_group=electrode_group)
-
-        #    ---   Spike templates   ---       #
-        print("         -> writing single-unit spiking template [...]")
-
-        # "features" should be --> time, channel, features
-        #       whereas "templates" is (id, time, channel)
-        spike_waveforms = FeatureExtraction(
-            name="single-unit Waveforms",
-            electrodes=all_electrodes,
-            description=['cluster #%i' for i in range(templates.shape[0])],
-            times=np.arange(templates.shape[1])/30e3,
-            features=np.array([
-                [templates[:,i,k] for k in np.arange(templates.shape[2])]\
-                    for i in range(templates.shape[1])])
+            #     ---  Spiking Module ---      #
+            spiking_module = nwbfile.create_processing_module(
+                name        = "Spiking",
+                description = "Single Unit Module ",
             )
-        spiking_module.add(spike_waveforms)
 
+            print("         -> writing single-unit spike times [...]")
+            #     ---  Spike times  ---        #
+            for unit_id, spk_time_indices in enumerate(spike_time_indices):
+
+                cond = (spk_time_indices>args.nStart) &\
+                            (spk_time_indices<args.nStop)
+
+                # we translate the into spike times
+                spike_times = [timestamps[s-args.nStart]\
+                                for s in spk_time_indices[cond]]
+                # we now add to the NWB file
+                nwbfile.add_unit(spike_times=spike_times,
+                                electrode_group=electrode_group)
+
+            #    ---   Spike templates   ---       #
+            print("         -> writing single-unit spiking template [...]")
+
+            # "features" should be --> time, channel, features
+            #       whereas "templates" is (id, time, channel)
+            spike_waveforms = FeatureExtraction(
+                name="single-unit Waveforms",
+                electrodes=all_electrodes,
+                description=['cluster #%i' for i in range(templates.shape[0])],
+                times=np.arange(templates.shape[1])/30e3,
+                features=np.array([
+                    [templates[:,i,k] for k in np.arange(templates.shape[2])]\
+                        for i in range(templates.shape[1])])
+                )
+            spiking_module.add(spike_waveforms)
+
+        else:
+            print(2*"\n")
+            print('   kilosort folder "%s" COULD NO BE FOUND ! ' % args.kilosort_folder)
+            print(2*"\n")
 
     ####################################################
     ##### FROM NOW ON --> sub-selection of channels ####
