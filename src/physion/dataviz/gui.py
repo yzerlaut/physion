@@ -45,7 +45,7 @@ def visualization(self,
         analyze_datafile(self)
         self.raw_data_plot(self.data.tlim)
 
-    self.statusBar.showMessage(' [R]efresh, [M]aximize/minimize, [O]pen file, add keywords: "dFoF", "neuropil", "rawFluo", "wNeuropil"')
+    self.statusBar.showMessage(' [R]efresh, [M]aximize/minimize, [O]pen file"')
 
 
 def create_layout(self, tab, nRowImages):
@@ -89,16 +89,16 @@ def create_modality_button_ticks(self, tab,
                                  nRowImages):
 
     KEYS = ['visualStim', 'pupil', 'gaze',
-            'facemotion', 'run',
+            'whisk', 'run',
             'photodiode',
-            'ephys', 
-            'ophys', 'ophysRaster']
+            'rawFluo', 'neuropil',
+            'LFP', 'MUA', 'spikes']
 
     COLORS = ['grey', 'red', 'orange',
               'magenta', 'white',
               'grey',
-              'blue',
-              'green', 'grey']
+              'lightgreen', 'darkred',
+              'blue', 'white', 'green']
 
     for i, key, color in zip(range(len(KEYS)),
                              KEYS, COLORS):
@@ -109,7 +109,16 @@ def create_modality_button_ticks(self, tab,
         tab.layout.addWidget(getattr(self, '%sSelect'%key),
                              nRowImages, self.nWidgetCol-1-i,
                              1, 1)
-        if key in ['ophys']:
+        if key=='rawFluo':
+            setattr(self, '%sSettings'%key, QtWidgets.QLineEdit())
+            getattr(self, '%sSettings'%key).setStyleSheet('color: %s;' % color)
+            getattr(self, '%sSettings'%key).setMaximumWidth(130)
+            getattr(self, '%sSettings'%key).setFont(physion.gui.parts.smallfont)
+            getattr(self, '%sSettings'%key).setText('{i:-1,n:10}')
+            tab.layout.addWidget(getattr(self, '%sSettings'%key),
+                                 nRowImages+1, self.nWidgetCol-1-i,
+                                 1, 1)
+        if key=='LFP':
             setattr(self, '%sSettings'%key, QtWidgets.QLineEdit())
             getattr(self, '%sSettings'%key).setStyleSheet('color: %s;' % color)
             getattr(self, '%sSettings'%key).setMaximumWidth(130)
@@ -168,7 +177,7 @@ def init_image_panels(self):
     # FaceCamera panel
     self.pFace = self.winImg.addViewBox(lockAspect=True,
                                 invertY=True, border=[1, 1, 1], colspan=2)
-    self.faceMotionContour = pg.ScatterPlotItem()
+    self.whiskContour = pg.ScatterPlotItem()
     self.facePupilContour = pg.ScatterPlotItem()
     self.pFaceimg = pg.ImageItem(np.ones((10,12))*50)
     # Pupil panel
@@ -239,24 +248,19 @@ def analyze_datafile(self):
     self.time = self.data.tlim[0]
 
     if 'ophys' in self.data.nwbfile.processing:
-        # self.roiPick.setText(' [select ROI: %i-%i]' % (0,
-                             # len(self.data.valid_roiIndices)-1))
-        self.ophysSelect.setChecked(True)
+        self.rawFluoSelect.setChecked(True)
 
-    if ('Electrophysiological-Signal' in self.data.nwbfile.acquisition) or\
-            ('Vm' in self.data.nwbfile.acquisition) or\
-            ('LFP' in self.data.nwbfile.acquisition):
-        self.ephysSelect.setChecked(True)
+    for key1, key2 in zip(['LFP', 'MUA', 'Spiking'], 
+                          ['LFP', 'MUA', 'spikes']):
+        if key1 in self.data.nwbfile.processing:
+            getattr(self, '%sSelect' % key2).setChecked(True)
         
-    # if 'Photodiode-Signal' in self.data.nwbfile.acquisition:
-        # self.photodiodeSelect.setChecked(True)
-
     if 'Running-Speed' in self.data.nwbfile.acquisition:
         self.runSelect.setChecked(True)
         self.runSelect.isChecked()
 
     if 'FaceMotion' in self.data.nwbfile.processing:
-        self.facemotionSelect.setChecked(True)
+        self.whiskSelect.setChecked(True)
 
     if 'Pupil' in self.data.nwbfile.processing:
         self.pupilSelect.setChecked(True)

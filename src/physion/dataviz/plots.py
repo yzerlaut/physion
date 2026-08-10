@@ -60,7 +60,7 @@ def raw_data_plot(self, tzoom,
         t_facemotion_frame = None
 
 
-    if 'FaceMotion' in self.data.nwbfile.processing and self.facemotionSelect.isChecked():
+    if 'FaceMotion' in self.data.nwbfile.processing and self.whiskSelect.isChecked():
 
         i1, i2 = convert_times_to_indices(*tzoom, self.data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'])
         t = self.data.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps[i1:i2]
@@ -182,17 +182,16 @@ def raw_data_plot(self, tzoom,
         
     # ## -------- Calcium --------- ##
     
-    # if (self.time==0) and ('ophys' in self.data.nwbfile.processing):
     if ('ophys' in self.data.nwbfile.processing):
+        iHeight = 5 # default height of the CaImaging plot
 
         try:
-            iHeight = int(str(self.ophysSettings.text()).split('h:')[1].split(',')[0].split('}')[0])
-            iStart = int(str(self.ophysSettings.text()).split('i:')[1].split(',')[0].split('}')[0])
-            nROIs = int(str(self.ophysSettings.text()).split('n:')[1].split(',')[0].split('}')[0])
+            iStart = int(str(self.rawFluoSettings.text()).split('i:')[1].split(',')[0].split('}')[0])
+            nROIs = int(str(self.rawFluoSettings.text()).split('n:')[1].split(',')[0].split('}')[0])
         except BaseException as be:
             print(be)
             print(' ophys options not recognized ! setting defaults ')
-            iHeight, iStart, nROIs = 3, -1, 10 
+            iStart, nROIs = -1, 10 
 
         if iStart==-1:
             # random pick
@@ -205,35 +204,13 @@ def raw_data_plot(self, tzoom,
             roiIndices = np.arange(iStart,
                             np.min([iStart+nROIs, self.data.nROIs]))[::-1]
 
-    if 'CaImaging-TimeSeries' in self.data.nwbfile.acquisition and self.ophysSelect.isChecked():
-        i0 = convert_time_to_index(self.time, self.data.nwbfile.acquisition['CaImaging-TimeSeries'])
-        # self.pCaimg.setImage(self.data.nwbfile.acquisition['CaImaging-TimeSeries'].data[i0,:,:]) # REMOVE NOW, MAYBE REINTRODUCE
-        if hasattr(self, 'CaFrameLevel'):
-            self.plot.removeItem(self.CaFrameLevel)
-        self.CaFrameLevel = self.plot.plot(self.data.nwbfile.acquisition['CaImaging-TimeSeries'].timestamps[i0]*np.ones(2), [0, y.max()],
-                                           pen=pg.mkPen(color=settings['colors']['CaImaging']), linewidth=0.5)
-        
-    if ('ophys' in self.data.nwbfile.processing) and with_roi:
-        if hasattr(self, 'ROIscatter'):
-            self.pCa.removeItem(self.ROIscatter)
-        self.ROIscatter = pg.ScatterPlotItem()
-        X, Y = [], []
-        for ir in self.data.valid_roiIndices[roiIndices]:
-            indices = np.arange((self.data.pixel_masks_index[ir-1] if ir>0 else 0),
-                                (self.data.pixel_masks_index[ir] if ir<len(self.data.valid_roiIndices) else len(self.data.pixel_masks_index)))
-            x = [self.data.pixel_masks[ii][1] for ii in indices]
-            y = [self.data.pixel_masks[ii][0] for ii in indices]
-            X += list(np.mean(x)+3*np.std(x)*np.cos(np.linspace(0, 2*np.pi))) # TO PLOT CIRCLES
-            Y += list(np.mean(y)+3*np.std(y)*np.sin(np.linspace(0, 2*np.pi)))
-            # X += x # TO PLOT THE REAL ROIS
-            # Y += y
-        self.ROIscatter.setData(X, Y, size=1, brush=pg.mkBrush(0,255,0))
-        self.pCa.addItem(self.ROIscatter)
+    if ('ophys' in self.data.nwbfile.processing) and (roiIndices is not None) and\
+            (self.rawFluoSelect.isChecked() or self.neuropilSelect.isChecked()):
 
-    if ('ophys' in self.data.nwbfile.processing) and (roiIndices is not None) and self.ophysSelect.isChecked():
-
-        if not hasattr(self.data, 'rawFluo'):
+        if not hasattr(self.data, 'rawFluo') and self.rawFluoSelect.isChecked():
             self.data.build_rawFluo()
+        if not hasattr(self.data, 'neuropil') and self.neuropilSelect.isChecked():
+            self.data.build_neuropil()
 
         i1 = convert_time_to_index(tzoom[0], self.data.Neuropil, axis=1)
         i2 = convert_time_to_index(tzoom[1], self.data.Neuropil, axis=1)
@@ -245,44 +222,63 @@ def raw_data_plot(self, tzoom,
 
         tt = np.array(self.data.Neuropil.timestamps[:])[isampling]
 
-        color, Fneu = (0, 150, 0), None
-        if 'dFoF' in str(self.ophysSettings.text()):
-            if not hasattr(self.data, 'dFoF'):
-                self.data.build_dFoF()
-            F = self.data.dFoF[:,isampling]
-        elif ('Neuropil' in str(self.ophysSettings.text())) or ('neuropil' in str(self.ophysSettings.text())):
-            if not hasattr(self.data, 'neuropil'):
-                self.data.build_neuropil()
-            print('using the neuropil')
-            if ('wNeuropil' in str(self.ophysSettings.text())):
-                F = self.data.rawFluo[:,isampling]
-                Fneu = self.data.neuropil[:,isampling]
-            else:
-                color = (150, 10, 10)
-                F = self.data.neuropil[:,isampling]
+        F = self.data.rawFluo[:,isampling]
+        if self.neuropilSelect.isChecked():
+            Fneu = self.data.neuropil[:,isampling]
         else:
-            F = self.data.rawFluo[:,isampling]
+            Fneu = None
 
-        if 'sum' in str(self.ophysSettings.text()):
-            y = scale_and_position(self, F[:,isampling].mean(axis=0))
-            self.plot.plot(tt, y, pen=pg.mkPen(color=(0,250,0), linewidth=1))
-        else:
-            y = scale_and_position(self, np.arange(2), iHeight=iHeight)
-            width = (y[1]-y[0])
-            for n, ir in enumerate(roiIndices):
-                loc = y[0]+n*width/len(roiIndices)
-                if Fneu is not None:
-                    self.plot.plot(tt,
-                            loc+1.3*width*(Fneu[ir,:]-Fneu[ir,:].min())/(Fneu[ir,:].max()-Fneu[ir,:].min())/len(roiIndices),
-                            pen=pg.mkPen((150,10,10)), linewidth=1)
+        y = scale_and_position(self, np.arange(2), iHeight=iHeight)
+        width = (y[1]-y[0])
+
+        for n, ir in enumerate(roiIndices):
+
+            loc = y[0]+n*width/len(roiIndices)
+
+            if Fneu is not None:
                 self.plot.plot(tt,
-                        loc+1.3*width*(F[ir,:]-F[ir,:].min())/(F[ir,:].max()-F[ir,:].min())/len(roiIndices),
-                        pen=pg.mkPen(color), linewidth=1)
+                        loc+1.3*width*(Fneu[ir,:]-Fneu[ir,:].min())/(Fneu[ir,:].max()-Fneu[ir,:].min())/len(roiIndices),
+                        pen=pg.mkPen(color=settings['colors']['neuropil']), linewidth=1)
 
-                # roi number annotation
-                roiAnnot = pg.TextItem(str(ir), color=(200, 250, 200))
-                roiAnnot.setPos(tt[0], loc+width/len(roiIndices)/2.)
-                self.plot.addItem(roiAnnot)
+            self.plot.plot(tt,
+                    loc+1.3*width*(F[ir,:]-F[ir,:].min())/(F[ir,:].max()-F[ir,:].min())/len(roiIndices),
+                    pen=pg.mkPen(color=settings['colors']['rawFluo']), linewidth=1)
+            
+            # roi number annotation
+            roiAnnot = pg.TextItem(str(ir), color=(200, 250, 200))
+            roiAnnot.setPos(tt[0], loc+width/len(roiIndices)/2.)
+            self.plot.addItem(roiAnnot)
+                
+        # color, Fneu = (0, 150, 0), None
+        # if ('Neuropil' in str(self.rawFluoSettings.text())) or ('neuropil' in str(self.rawFluoSettings.text())):
+        #     if not hasattr(self.data, 'neuropil'):
+        #         self.data.build_neuropil()
+        #     print('using the neuropil')
+        #     if ('wNeuropil' in str(self.rawFluoSettings.text())):
+        #         F = self.data.rawFluo[:,isampling]
+        #         Fneu = self.data.neuropil[:,isampling]
+        #     else:
+        #         color = (150, 10, 10)
+        #         F = self.data.neuropil[:,isampling]
+        # else:
+        #     F = self.data.rawFluo[:,isampling]
+
+        # if 'sum' in str(self.rawFluoSettings.text()):
+        #     y = scale_and_position(self, F[:,isampling].mean(axis=0))
+        #     self.plot.plot(tt, y, pen=pg.mkPen(color=(0,250,0), linewidth=1))
+        # else:
+        #     y = scale_and_position(self, np.arange(2), iHeight=iHeight)
+        #     width = (y[1]-y[0])
+        #     for n, ir in enumerate(roiIndices):
+        #         loc = y[0]+n*width/len(roiIndices)
+        #         if Fneu is not None:
+        #             self.plot.plot(tt,
+        #                     loc+1.3*width*(Fneu[ir,:]-Fneu[ir,:].min())/(Fneu[ir,:].max()-Fneu[ir,:].min())/len(roiIndices),
+        #                     pen=pg.mkPen((150,10,10)), linewidth=1)
+        #         self.plot.plot(tt,
+        #                 loc+1.3*width*(F[ir,:]-F[ir,:].min())/(F[ir,:].max()-F[ir,:].min())/len(roiIndices),
+        #                 pen=pg.mkPen(color), linewidth=1)
+
 
 
     # ## -------- Visual Stimulation --------- ##

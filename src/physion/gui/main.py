@@ -348,17 +348,19 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.pupil()
             # self.transfer_gui()
             # self.suite2p_preprocessing_UI()
-            self.spike_sorting_preprocessing_UI()
+            # self.spike_sorting_preprocessing_UI()
             # self.build_NWB_from_DataTable_UI()
             # self.add_imaging()
             # self.NWBs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/2022_11_16-15-17-59.nwb']
             # self.IMAGINGs = ['/home/yann.zerlaut/DATA/JO-VIP-CB1/Imaging-2Chan/TSeries-11162022-nomark-000']
             # self.runAddOphys()
             # ---- DEBUG analysis ---- #
-            # self.datafile = '/Users/yann/UNPROCESSED/DEMO-PYR/2023_12_20-15-14-20.nwb'
-            # from physion.analysis import read_NWB
-            # self.data = read_NWB.Data(self.datafile)
-            # self.visualization()
+            from physion.analysis.read_NWB import Data
+            self.datafile = os.path.join(\
+                os.path.expanduser('~'), 'DATA', 'physion_Demo-Datasets',
+                'PYR-WT', 'NWBs', '2025_11_14-13-54-32.nwb')
+            self.data = Data(self.datafile)
+            self.visualization()
             # self.trial_averaging()
             # self.FOV()
             # self.multimodal()
