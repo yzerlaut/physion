@@ -8,34 +8,32 @@ import numpy as np
 
 sys.path += ['../src'] # add src code directory for physion
 import physion.utils.plot_tools as pt
+pt.set_style('dark')
 
 from physion.analysis.read_NWB import Data,\
     scan_folder_for_NWBfiles
 
 dataset = scan_folder_for_NWBfiles(\
         os.path.join(os.path.expanduser('~'), 
-            'DATA', 'Sally', '2026_06_09'))
+            'DATA', 'Sally', 'Npx_WT_prelim_2026'))
             # 'DATA', 'Sally', '2026_04_24'))
 
 # %%
-filename = os.path.join(os.path.expanduser('~'), 
-            'DATA', 'Sally', '2026_04_24',
-                        '2026_04_24-13-15-56.nwb')
+filename = dataset['files'][0]
 
 # %%
-pt.set_style()#'manuscript')
 
 # %%
-data = Data(dataset['files'][-1])
+data = Data(filename)
 # data = Data(filename)
-data.build_pupil()
+# data.build_pupil()
 data.build_spikes() # builds data.suSpikes
 data.build_spikeWaveforms() # builds data.suWaveforms
 
 # data.build_running_speed()
 # data.build_LFP()
-data.build_MUA()
-data.build_opto() # builds data.opto
+# data.build_MUA()
+# data.build_opto() # builds data.opto
 # data.build_muEvents() # builds data.muEvents
 
 #
