@@ -1,4 +1,8 @@
+# %%
 import sys, os, shutil
+import numpy as np
+import pandas as pd
+
 import spikeinterface.full as si
 import spikeinterface.sorters as ss
 from physion.assembling.dataset import read_spreadsheet
@@ -69,11 +73,8 @@ def run_spike_sorting(self,
         print(' == spike sorting *NOT* launched == ')
 
 # %%
-import numpy as np
-import pandas as pd
-import json
 
-def read_kilosort_phy_output(df):
+def read_kilosort_output(df):
     """ 
     """
     data = {}
@@ -90,13 +91,30 @@ def read_kilosort_phy_output(df):
             data[key.replace('.tsv','')+'_'+k] = rd[k]
 
     # ---    phy output (useless) --- #
-    if os.path.isdir(os.path.join(df, '.phy')):
-        with open(os.path.join(df, '.phy', 'new_cluster_id.json')) as f:
-            data['new_cluster_id'] = json.load(f)
-        with open(os.path.join(df, '.phy', 'state.json')) as f:
-            data['phy_state'] = json.load(f)
+    # if os.path.isdir(os.path.join(df, '.phy')):
+    #     with open(os.path.join(df, '.phy', 'new_cluster_id.json')) as f:
+    #         data['new_cluster_id'] = json.load(f)
+    #     with open(os.path.join(df, '.phy', 'state.json')) as f:
+    #         data['phy_state'] = json.load(f)
 
     return data
+
+def find_template_of_cluster(cluster_id, data):
+    """ 
+    using:
+        spike_templates.npy --> template ID for every detected spike (not rewritten by Phy)
+        spike_clusters.npy  --> cluster ID for every detected spike (**rewritten** by Phy)
+    """
+    values =  np.unique(
+        data['spike_templates'][\
+            data['spike_clusters']==cluster_id])
+    if len(values)==1:
+        return values[0]
+    else:
+        print()
+        print(' [!!]  cluster %i does not have a single matching template: %s ' % (cluster_id, values))
+        print()
+
 
 def fetch_good_units(data):
 
@@ -107,14 +125,16 @@ def fetch_good_units(data):
 
     spike_time_indices, templates = [], []
     
-    for unit_id in cluster_ids:
+    for cluster_id in cluster_ids:
 
         # getting indices from kilosort
         spike_time_indices = data['spike_times'][\
-                        data['spike_clusters']==unit_id]
+                        data['spike_clusters']==cluster_id]
 
         # we store its spike template
-        templates.append(data['templates'][unit_id, :, :])
+        template_id = find_template_of_cluster(cluster_id, data)
+        templates.append(\
+            data['templates'][template_id, :, :])
 
     templates = np.array(templates)
 
@@ -128,9 +148,13 @@ if __name__=='__main__':
 
 # %%
 if False:
-    data = read_kilosort_phy_output(\
-                os.path.join(os.path.expanduser('~'), 'temp', 
+    import sys
+    sys.path.append('/home/user/lab-notebook/yann/physion/src')
+    from physion.ephys.spike_sorting import read_kilosort_output, fetch_good_units
+    data = read_kilosort_output(\
+                os.path.join('/media/user/DATA2/2026_08_04/',
                         'kilosort4_output', 'sorter_output'))
-    indices, templates = fetch_good_units(data)
-
+    #indices, templates = fetch_good_units(data)
+    
+    print(find_template_of_cluster(152, data))        
 # %%

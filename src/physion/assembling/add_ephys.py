@@ -13,7 +13,7 @@ from pynwb.ecephys import (
     SpikeEventSeries,
 )
 from physion.ephys.spike_sorting\
-      import read_kilosort_phy_output, fetch_good_units
+      import read_kilosort_output, fetch_good_units
 
 def build_args_for_ephys(args, dataset, i, directory):
     args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
@@ -88,7 +88,6 @@ def add_ephys(nwbfile, args,
     siRec = siRec.select_channels(siRec.get_channel_ids()[e0:e1])
 
     print("         -> removing bad channels [...]")
-    print(args.bad_channels, type(args.bad_channels))
     if type(args.bad_channels) in [str, np.str_]:
         bad_channel_ids = args.bad_channels.split(',')
         siRec = siRec.remove_channels(bad_channel_ids)
@@ -137,7 +136,7 @@ def add_ephys(nwbfile, args,
 
             # ---- read the spike sorting output from ks & phy ---- #
             # only units that have been set as "good" in manual sorting #
-            data = read_kilosort_phy_output(args.kilosort_folder)
+            data = read_kilosort_output(args.kilosort_folder)
             spike_time_indices, templates = fetch_good_units(data)
 
             #     ---  Spiking Module ---      #
