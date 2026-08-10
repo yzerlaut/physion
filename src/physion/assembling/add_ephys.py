@@ -12,6 +12,8 @@ from pynwb.ecephys import (
     FeatureExtraction,
     SpikeEventSeries,
 )
+from physion.ephys.spike_sorting\
+      import read_kilosort_phy_output, fetch_good_units
 
 def build_args_for_ephys(args, dataset, i, directory):
     args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
@@ -25,9 +27,10 @@ def build_args_for_ephys(args, dataset, i, directory):
     args.nStart, args.nStop = dataset['nStart'][i], dataset['nStop'][i]
     # to update, hard-coded for now ...
     args.stream_name='Record Node 101#OneBox-100.ProbeA' 
-    args.kilosort_folder = os.path.join(args.NPX_folder, 
-            'Record Node 101', 'experiment1', 'recording1', 
-            'continuous', 'OneBox-100.ProbeA', 'kilosort4')
+    # args.kilosort_folder = os.path.join(args.NPX_folder, 
+    #         'Record Node 101', 'experiment1', 'recording1', 
+    #         'continuous', 'OneBox-100.ProbeA', 'kilosort4')
+    args.kilosort_folder = os.path.join(directory, 'kilosort4_output')
 
 
 def read_kilosort(df):
@@ -144,12 +147,54 @@ def add_ephys(nwbfile, args,
     #######################################################
     # ── add Spikes ───────────────────────────────────────
     #######################################################
-    if args.Spikes=='Yes':
+    if args.Spikes=='Yes' and\
+            os.path.isdir(args.kilosort_folder):
 
-        pass
-        #add_spikes(nwbfile, args.kilosort_folder)
+        # ---- read the spike sorting output from ks & phy ---- #
+        # only units that have been set as "good" in manual sorting #
+        data = read_kilosort_phy_output(args.kilosort_folder)
+        spike_time_indices, templates = fetch_good_units(data)
 
+        #     ---  Spiking Module ---      #
+        spiking_module = nwbfile.create_processing_module(
+            name        = "Spiking",
+            description = "Single Unit Module ",
+        )
+
+        print("         -> writing single-unit spike times [...]")
+        #     ---  Spike times  ---        #
+        for unit_id, spk_time_indices in enumerate(spike_time_indices):
+
+            cond = (spk_time_indices>args.nStart) &\
+                        (spk_time_indices<args.nStop)
+
+            # we translate the into spike times
+            spike_times = [timestamps[s-args.nStart]\
+                            for s in spk_time_indices[cond]]
+            # we now add to the NWB file
+            nwbfile.add_unit(spike_times=spike_times,
+                            electrode_group=electrode_group)
+
+        #    ---   Spike templates   ---       #
+        print("         -> writing single-unit spiking template [...]")
+
+        # "features" should be --> time, channel, features
+        #       whereas "templates" is (id, time, channel)
+        spike_waveforms = FeatureExtraction(
+            name="single-unit Waveforms",
+            electrodes=all_electrodes,
+            description=['cluster #%i' for i in range(templates.shape[0])],
+            times=np.arange(templates.shape[1])/30e3,
+            features=np.array([
+                [templates[:,i,k] for k in np.arange(templates.shape[2])]\
+                    for i in range(templates.shape[1])])
+            )
+        spiking_module.add(spike_waveforms)
+
+
+    ####################################################
     ##### FROM NOW ON --> sub-selection of channels ####
+    ####################################################
     if (args.LFP=='Yes') or (args.MUA=='Yes'):
 
         print("         -> subsampling channels for MUA and LFP [...]")
@@ -178,23 +223,19 @@ def add_ephys(nwbfile, args,
         #      but we average those in between the contacts we don't keep
         # in order, we do:
 
-        # print('- 1) channel subselection')
-        # hfRec = siRec.select_channels(
-        #     channel_ids = siRec.get_channel_ids()[elecSubsampling])
-
-        # print('- 2) bandpass filtering')
+        # print('- 1) bandpass filtering')
         hfRec = si.bandpass_filter(siRec,
                     freq_min=MUA_BAND[0], 
                     freq_max=MUA_BAND[1])
 
-        # print('- 3) rectifying')
+        # print('- 2) rectifying')
         hfRec = si.rectify(hfRec)
 
-        # print('- 4) resampling')
+        # print('- 3) resampling')
         hfRec = si.resample(hfRec,
                             resample_rate=resample_rate)
         
-        # print('- 5) computing traces by averaging groups of "electrode_subsampling"
+        # print('- 4) computing traces by averaging groups of "electrode_subsampling"
         mua_traces = np.zeros(
             (hfRec.get_num_frames(), len(elecSubsampling)))
         for ee in range(len(elecSubsampling)-1):
@@ -293,74 +334,6 @@ def add_ephys(nwbfile, args,
         )
         lfp_module.add(lfp_es)
 
-
-def add_spikes(nwbfile, kilosort_folder):
-
-    electrode_table = nwbfile.get_electrode_table() # something like that ???
-    nStart, nStop = get_this_from_nwbfile() 
-
-    spiking_module = nwbfile.create_processing_module(
-        name        = "Spiking",
-        description = "Single Unit Module ",
-    )
-
-    sorting = read_kilosort(kilosort_folder)
-    cInfo = pd.read_csv(\
-            open(os.path.join(kilosort_folder,
-                            'cluster_info.tsv')), sep = '\t')
-
-    template_ids = np.sort(\
-        np.unique(sorting['spike_clusters']))
-
-    labels = cInfo['group'] # those are the units manually curated in kilosort
-    templates = []
-
-    print("         -> writing single-unit spike times [...]")
-    # -------------------------------- #
-    #          Spike times             #
-    # -------------------------------- #
-    def find_matching_unit(id):
-        cond = (sorting['spike_clusters']==id)
-        return np.unique(sorting['spike_templates'][cond])[0]
-
-    # only units that have been selected as "good" after manual sorting
-    for unit_id in template_ids[labels=='good']:
-
-        # getting indices from kilosort
-        spike_time_indices = sorting['spike_times'][\
-                        sorting['spike_clusters']==unit_id]
-        cond = (spike_time_indices>nStart) &\
-                    (spike_time_indices<nStop)
-
-        # we translate those into spike times
-        spike_times = [timestamps[s-nStart]\
-                        for s in spike_time_indices[cond]]
-        # we now add to the NWB file
-        nwbfile.add_unit(spike_times=spike_times,
-                            electrode_group=electrode_group)
-
-        # we store its spike template
-        templates.append(sorting['templates'][\
-                    find_matching_unit(unit_id)][:,good_channels])
-
-    # -------------------------------- #
-    #          Spike templates         #
-    # -------------------------------- #
-    print("         -> writing single-unit spiking template [...]")
-    templates = np.array(templates)
-
-    # features should be --> time, channel, features
-    #       and templates is (id, time, channel)
-    spike_waveforms = FeatureExtraction(
-        name="single-unit Waveforms",
-        electrodes=all_electrodes,
-        description=['cluster #%i' for i in template_ids[labels=='good']],
-        times=np.arange(templates.shape[1])/30e3,
-        features=np.array([
-            [templates[:,i,k] for k in np.arange(templates.shape[2])]\
-                for i in range(templates.shape[1])])
-        )
-    spiking_module.add(spike_waveforms)
 
 if __name__=='__main__':
 

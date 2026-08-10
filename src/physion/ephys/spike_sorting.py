@@ -68,9 +68,75 @@ def run_spike_sorting(self,
         print('             remove it manually... ')
         print(' == spike sorting *NOT* launched == ')
 
+# %%
+import numpy as np
+import pandas as pd
+import json
+
+def read_kilosort_phy_output(df):
+    """ 
+    """
+    data = {}
+
+    # ---    raw kilosort output   --- #
+    for key in [f for f in os.listdir(df) if '.npy' in f]:
+        data[key.replace('.npy','')] = np.load(os.path.join(df, key), allow_pickle=True)
+
+    # ---  tsv files edited by Phy --- #
+    for key in [f for f in os.listdir(df) if '.tsv' in f]:
+        rd = pd.read_csv(open(os.path.join(df, key)), sep = '\t')
+        keys = list(rd.keys())
+        for k in keys:
+            print(key, ', ', k)
+            data[key.replace('.tsv','')+'_'+k] = rd[k]
+
+    # ---    phy output (useless) --- #
+    if os.path.isdir(os.path.join(df, '.phy')):
+        with open(os.path.join(df, '.phy', 'new_cluster_id.json')) as f:
+            data['new_cluster_id'] = json.load(f)
+        with open(os.path.join(df, '.phy', 'state.json')) as f:
+            data['phy_state'] = json.load(f)
+
+    return data
+
+def fetch_good_units(data):
+
+    # units manually selected as good in Phy:
+    good_units = data['cluster_info_group']=='good'
+
+    cluster_ids = data['cluster_info_cluster_id'][good_units]
+
+    print("         -> writing single-unit spike times [...]")
+
+    def find_matching_unit(id):
+        cond = (data['spike_clusters']==id)
+        return np.unique(data['spike_templates'][cond])[0]
+
+    spike_time_indices, templates = [], []
+    for unit_id in cluster_ids:
+
+        # getting indices from kilosort
+        spike_time_indices = data['spike_times'][\
+                        data['spike_clusters']==unit_id]
+
+        # we store its spike template
+        templates.append(data['templates'][unit_id, :, :])
+
+    templates = np.array(templates)
+
+    return spike_time_indices, templates
 
 
 if __name__=='__main__':
 
     run_spike_sorting(None, 
                       datatable=sys.argv[-1])
+
+# %%
+if False:
+    data = read_kilosort_phy_output(\
+                os.path.join(os.path.expanduser('~'), 'temp', 
+                        'kilosort4_output', 'sorter_output'))
+    indices, templates = fetch_good_units(data)
+
+# %%
