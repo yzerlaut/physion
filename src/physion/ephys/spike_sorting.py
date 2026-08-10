@@ -127,12 +127,15 @@ def fetch_good_units(data):
     
     for cluster_id in cluster_ids:
 
-        # getting indices from kilosort
-        spike_time_indices = data['spike_times'][\
+        # getting indices from kilosort:
+        spk_time_indices = data['spike_times'][\
                         data['spike_clusters']==cluster_id]
 
-        # we store its spike template
+        # we find its spike template:
         template_id = find_template_of_cluster(cluster_id, data)
+
+        # put in storage lists:
+        spike_time_indices.append(spk_time_indices)
         templates.append(\
             data['templates'][template_id, :, :])
 
