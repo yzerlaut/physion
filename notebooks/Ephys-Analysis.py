@@ -1,5 +1,5 @@
 # %% [markdown]
-# # Analysis of Electrophysiology Data and Optogenetic Manipulation
+# # Analysis of Electrophysiology Data 
 
 # %%
 # general python modules for scientific analysis
@@ -13,24 +13,29 @@ pt.set_style('dark')
 from physion.analysis.read_NWB import Data,\
     scan_folder_for_NWBfiles
 
+# %%
 dataset = scan_folder_for_NWBfiles(\
         os.path.join(os.path.expanduser('~'), 
-            'DATA', 'Sally', 'Npx_WT_prelim_2026'))
-            # 'DATA', 'Sally', '2026_04_24'))
+            'DATA', 'Sally', 'Npx_WT_prelim_2026', 'NWBs'))
 
 # %%
-filename = dataset['files'][0]
-
-# %%
-
-# %%
-data = Data(filename)
-# data = Data(filename)
-# data.build_pupil()
+data = Data(dataset['files'][0])
 data.build_spikes() # builds data.suSpikes
 data.build_spikeWaveforms() # builds data.suWaveforms
 
+# %%
+from physion.dataviz.ephys import show_waveforms
+
+for unit in range(data.spikeWaveforms.shape[-1]):
+    
+    fig, ax = show_waveforms(data, unit_id=unit,
+                             channels_around=10)
+
+    fig.suptitle(' unit #%i' % (unit+1) )
+
+# %%
 # data.build_running_speed()
+# data.build_pupil()
 # data.build_LFP()
 # data.build_MUA()
 # data.build_opto() # builds data.opto
