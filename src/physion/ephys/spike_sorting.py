@@ -40,8 +40,9 @@ def run_spike_sorting(self,
     e0, e1 = [int(e) for e in electrode_range.split('-')]
     rec = rec.select_channels(rec.get_channel_ids()[e0:e1])
 
-    print("         -> removing n=%i bad channels [...]" % len(bad_channels.split(',')))
-    rec = rec.remove_channels(bad_channels.split(','))
+    if type(bad_channels) in [str, np.str_]:
+        print("         -> removing n=%i bad channels [...]" % len(bad_channels.split(',')))
+        rec = rec.remove_channels(bad_channels.split(','))
 
     print(" Final number of selected channels:", rec.get_num_channels())
 
