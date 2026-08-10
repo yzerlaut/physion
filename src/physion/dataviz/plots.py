@@ -178,11 +178,35 @@ def raw_data_plot(self, tzoom,
         self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Vm']),
                        scale_and_position(self,self.data.nwbfile.acquisition['Vm'].data[list(isampling),0]),
                        pen=pg.mkPen(color=settings['colors']['Vm']))
-
         
+    # ## -------------------------- ## 
+    # ## --------   LFP   --------- ##
+    # ## -------------------------- ## 
+
+    if ('LFP' in self.data.nwbfile.processing) and\
+                            (self.LFPSelect.isChecked())
+
+        iHeight = 3 # default height of the CaImaging plot
+        print('LFP')
+
+    # ## -------------------------- ## 
+    # ## --------   MUA   --------- ##
+    # ## -------------------------- ## 
+
+    if ('MUA' in self.data.nwbfile.processing) and\
+                            (self.MUASelect.isChecked())
+
+        iHeight = 3 # default height of the CaImaging plot
+        print('MUA')
+
+
+    # ## -------------------------- ## 
     # ## -------- Calcium --------- ##
-    
-    if ('ophys' in self.data.nwbfile.processing):
+    # ## -------------------------- ## 
+
+    if ('ophys' in self.data.nwbfile.processing) and (roiIndices is not None) and\
+            (self.rawFluoSelect.isChecked() or self.neuropilSelect.isChecked()):
+
         iHeight = 5 # default height of the CaImaging plot
 
         try:
@@ -203,9 +227,6 @@ def raw_data_plot(self, tzoom,
             # ordered
             roiIndices = np.arange(iStart,
                             np.min([iStart+nROIs, self.data.nROIs]))[::-1]
-
-    if ('ophys' in self.data.nwbfile.processing) and (roiIndices is not None) and\
-            (self.rawFluoSelect.isChecked() or self.neuropilSelect.isChecked()):
 
         if not hasattr(self.data, 'rawFluo') and self.rawFluoSelect.isChecked():
             self.data.build_rawFluo()
@@ -248,64 +269,16 @@ def raw_data_plot(self, tzoom,
             roiAnnot = pg.TextItem(str(ir), color=(200, 250, 200))
             roiAnnot.setPos(tt[0], loc+width/len(roiIndices)/2.)
             self.plot.addItem(roiAnnot)
-                
-        # color, Fneu = (0, 150, 0), None
-        # if ('Neuropil' in str(self.rawFluoSettings.text())) or ('neuropil' in str(self.rawFluoSettings.text())):
-        #     if not hasattr(self.data, 'neuropil'):
-        #         self.data.build_neuropil()
-        #     print('using the neuropil')
-        #     if ('wNeuropil' in str(self.rawFluoSettings.text())):
-        #         F = self.data.rawFluo[:,isampling]
-        #         Fneu = self.data.neuropil[:,isampling]
-        #     else:
-        #         color = (150, 10, 10)
-        #         F = self.data.neuropil[:,isampling]
-        # else:
-        #     F = self.data.rawFluo[:,isampling]
-
-        # if 'sum' in str(self.rawFluoSettings.text()):
-        #     y = scale_and_position(self, F[:,isampling].mean(axis=0))
-        #     self.plot.plot(tt, y, pen=pg.mkPen(color=(0,250,0), linewidth=1))
-        # else:
-        #     y = scale_and_position(self, np.arange(2), iHeight=iHeight)
-        #     width = (y[1]-y[0])
-        #     for n, ir in enumerate(roiIndices):
-        #         loc = y[0]+n*width/len(roiIndices)
-        #         if Fneu is not None:
-        #             self.plot.plot(tt,
-        #                     loc+1.3*width*(Fneu[ir,:]-Fneu[ir,:].min())/(Fneu[ir,:].max()-Fneu[ir,:].min())/len(roiIndices),
-        #                     pen=pg.mkPen((150,10,10)), linewidth=1)
-        #         self.plot.plot(tt,
-        #                 loc+1.3*width*(F[ir,:]-F[ir,:].min())/(F[ir,:].max()-F[ir,:].min())/len(roiIndices),
-        #                 pen=pg.mkPen(color), linewidth=1)
 
 
-
+    # ## ------------------------------------- ##
     # ## -------- Visual Stimulation --------- ##
+    # ## ------------------------------------- ##
 
     if self.visualStimSelect.isChecked() and ('time_start_realigned' in self.data.nwbfile.stimulus):
 
         icond = np.argwhere((self.data.nwbfile.stimulus['time_start_realigned'].data[:,0]<=self.time) & \
                             (self.data.nwbfile.stimulus['time_stop_realigned'].data[:,0]>=self.time)).flatten()
-
-        """
-        if self.imgSelect.isChecked():
-            try:
-                if len(icond)>1:
-                        self.pScreenimg.setImage(255*self.data.visual_stim.get_image(icond[0],
-                              self.time-self.data.nwbfile.stimulus['time_start_realigned'].data[icond[0]]))
-                elif self.time<=self.data.nwbfile.stimulus['time_start_realigned'].data[0]: # PRE-STIM
-                    self.pScreenimg.setImage(255*self.data.visual_stim.get_prestim_image())
-                elif self.time>=self.data.nwbfile.stimulus['time_stop_realigned'].data[-1]: # POST-STIM
-                    self.pScreenimg.setImage(255*self.data.visual_stim.get_poststim_image())
-                else: # INTER-STIM
-                    self.pScreenimg.setImage(255*self.data.visual_stim.get_interstim_image())
-            except BaseException as be:
-                print(be)
-                print('pb with image')
-            self.pScreenimg.setLevels([0,255])
-        """
-            
 
     if self.visualStimSelect.isChecked() and\
             ('time_start_realigned' in self.data.nwbfile.stimulus) and\
