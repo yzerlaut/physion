@@ -87,7 +87,6 @@ def read_kilosort_phy_output(df):
         rd = pd.read_csv(open(os.path.join(df, key)), sep = '\t')
         keys = list(rd.keys())
         for k in keys:
-            print(key, ', ', k)
             data[key.replace('.tsv','')+'_'+k] = rd[k]
 
     # ---    phy output (useless) --- #
@@ -105,12 +104,6 @@ def fetch_good_units(data):
     good_units = data['cluster_info_group']=='good'
 
     cluster_ids = data['cluster_info_cluster_id'][good_units]
-
-    print("         -> writing single-unit spike times [...]")
-
-    def find_matching_unit(id):
-        cond = (data['spike_clusters']==id)
-        return np.unique(data['spike_templates'][cond])[0]
 
     spike_time_indices, templates = [], []
     for unit_id in cluster_ids:

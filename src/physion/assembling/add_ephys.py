@@ -19,32 +19,15 @@ def build_args_for_ephys(args, dataset, i, directory):
     args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
     args.NPX_rec = dataset['Npx-Rec'][i]
     args.Location = dataset['Location'][i]
-    # args.LFP, args.MUA, args.Spikes = dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
-    args.LFP, args.MUA, args.Spikes = 'No', 'No', 'Yes'
-    # args.raw_Ephys = dataset['raw-Ephys'][i]
+    args.LFP, args.MUA, args.Spikes = dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
     args.electrode_range, args.electrode_subsampling = dataset['electrode-range'][i], dataset['electrode-subsampling'][i]
     args.bad_channels = dataset['bad-channels'][i]
     args.nStart, args.nStop = dataset['nStart'][i], dataset['nStop'][i]
-    # to update, hard-coded for now ...
+    args.kilosort_folder = os.path.join(directory,
+                              'kilosort4_output', 'sorter_output')
+   # to update, hard-coded for now ...
     args.stream_name='Record Node 101#OneBox-100.ProbeA' 
-    # args.kilosort_folder = os.path.join(args.NPX_folder, 
-    #         'Record Node 101', 'experiment1', 'recording1', 
-    #         'continuous', 'OneBox-100.ProbeA', 'kilosort4')
-    args.kilosort_folder = os.path.join(directory, 'kilosort4_output')
-
-
-def read_kilosort(df):
-    """ """
-    data = {}
-    for key in [f for f in os.listdir(df) if '.npy' in f]:
-        data[key.replace('.npy','')] = np.load(os.path.join(df, key), allow_pickle=True)
-    for key in [f for f in os.listdir(df) if '.tsv' in f]:
-        rd = pd.read_csv(open(os.path.join(df, key)), sep = '\t')
-        keys = list(rd.keys())
-        for k in keys:
-            if k!='cluster_id':
-                data[key.replace('.tsv','')+'_'+k] = rd[k]
-    return data
+ 
 
 def add_ephys(nwbfile, args,
             metadata=None,
@@ -154,6 +137,9 @@ def add_ephys(nwbfile, args,
             # ---- read the spike sorting output from ks & phy ---- #
             # only units that have been set as "good" in manual sorting #
             data = read_kilosort_phy_output(args.kilosort_folder)
+            print()
+            print(data.keys())
+            print()
             spike_time_indices, templates = fetch_good_units(data)
 
             #     ---  Spiking Module ---      #
