@@ -19,7 +19,8 @@ def build_args_for_ephys(args, dataset, i, directory):
     args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
     args.NPX_rec = dataset['Npx-Rec'][i]
     args.Location = dataset['Location'][i]
-    args.LFP, args.MUA, args.Spikes = dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
+    args.LFP, args.MUA, args.Spikes =\
+          dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
     args.electrode_range, args.electrode_subsampling = dataset['electrode-range'][i], dataset['electrode-subsampling'][i]
     args.bad_channels = dataset['bad-channels'][i]
     args.nStart, args.nStop = dataset['nStart'][i], dataset['nStop'][i]
@@ -70,7 +71,10 @@ def add_ephys(nwbfile, args,
         print()
         print(50*'-')
         print(' [!!]  no NIdaq tstop value available ... ')
-        print('         --> can not put the proper timestamps of the data')
+        print('         --> can not put the            spike_time_indices, templates = fetch_good_units(data)
+
+            #     ---  Spiking Module ---      #
+ proper timestamps of the data')
         print('                     (so putting non-sense)    ')
         print(50*'-')
         print()
@@ -137,9 +141,6 @@ def add_ephys(nwbfile, args,
             # ---- read the spike sorting output from ks & phy ---- #
             # only units that have been set as "good" in manual sorting #
             data = read_kilosort_phy_output(args.kilosort_folder)
-            print()
-            print(data.keys())
-            print()
             spike_time_indices, templates = fetch_good_units(data)
 
             #     ---  Spiking Module ---      #
