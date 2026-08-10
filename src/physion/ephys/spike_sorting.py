@@ -106,6 +106,7 @@ def fetch_good_units(data):
     cluster_ids = data['cluster_info_cluster_id'][good_units]
 
     spike_time_indices, templates = [], []
+    
     for unit_id in cluster_ids:
 
         # getting indices from kilosort

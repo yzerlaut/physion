@@ -71,10 +71,7 @@ def add_ephys(nwbfile, args,
         print()
         print(50*'-')
         print(' [!!]  no NIdaq tstop value available ... ')
-        print('         --> can not put the            spike_time_indices, templates = fetch_good_units(data)
-
-            #     ---  Spiking Module ---      #
- proper timestamps of the data')
+        print('         --> can not put the proper timestamps of the data')
         print('                     (so putting non-sense)    ')
         print(50*'-')
         print()
