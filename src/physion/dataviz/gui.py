@@ -88,17 +88,19 @@ def create_layout(self, tab, nRowImages):
 def create_modality_button_ticks(self, tab,
                                  nRowImages):
 
-    KEYS = ['visualStim', 'pupil', 'gaze',
+    KEYS = ['synch', 
+            'visualStim', 'pupil', 'gaze',
             'whisk', 'run',
             'photodiode',
             'rawFluo', 'neuropil',
             'LFP', 'MUA', 'spikes']
 
-    COLORS = ['grey', 'red', 'orange',
+    COLORS = ['white',
+              'grey', 'red', 'orange',
               'magenta', 'white',
               'grey',
               'lightgreen', 'darkred',
-              'blue', 'white', 'green']
+              'cyan', 'lightgreen', 'white']
 
     for i, key, color in zip(range(len(KEYS)),
                              KEYS, COLORS):
@@ -109,25 +111,17 @@ def create_modality_button_ticks(self, tab,
         tab.layout.addWidget(getattr(self, '%sSelect'%key),
                              nRowImages, self.nWidgetCol-1-i,
                              1, 1)
-        if key=='rawFluo':
+        if key in ['rawFluo', 'LFP', 'MUA']:
             setattr(self, '%sSettings'%key, QtWidgets.QLineEdit())
             getattr(self, '%sSettings'%key).setStyleSheet('color: %s;' % color)
             getattr(self, '%sSettings'%key).setMaximumWidth(130)
             getattr(self, '%sSettings'%key).setFont(physion.gui.parts.smallfont)
-            getattr(self, '%sSettings'%key).setText('{i:-1,n:10}')
             tab.layout.addWidget(getattr(self, '%sSettings'%key),
                                  nRowImages+1, self.nWidgetCol-1-i,
                                  1, 1)
-        if key=='LFP':
-            setattr(self, '%sSettings'%key, QtWidgets.QLineEdit())
-            getattr(self, '%sSettings'%key).setStyleSheet('color: %s;' % color)
-            getattr(self, '%sSettings'%key).setMaximumWidth(130)
-            getattr(self, '%sSettings'%key).setFont(physion.gui.parts.smallfont)
-            getattr(self, '%sSettings'%key).setText('{h:3,i:-1,n:10}')
-            tab.layout.addWidget(getattr(self, '%sSettings'%key),
-                                 nRowImages+1, self.nWidgetCol-1-i,
-                                 1, 1)
-
+    self.rawFluoSettings.setText('s:0,i:-1,n:10')
+    self.LFPSettings.setText('s:0,n:6')
+    self.MUASettings.setText('s:0,n:2')
 
     self.visualStimSelect.clicked.connect(self.select_visualStim)
     
@@ -209,37 +203,6 @@ def init_image_panels(self):
 
 def select_visualStim(self):
     pass
-
-# def select_imgDisplay(self):
-
-    # if self.imgSelect.isChecked():
-
-        # self.visualization(withRawImages=True)
-
-        # if 'FaceMotion' in self.data.nwbfile.processing:
-            # coords = self.data.nwbfile.processing['FaceMotion'].description.split('facemotion ROI: (x0,dx,y0,dy)=(')[1].split(')\n')[0].split(',')
-            # coords = [int(c) for c in coords]
-            # self.faceMotionContour.setData(np.concatenate([np.linspace(x1, x2, 20)\
-                                                # for x1, x2 in zip([coords[1], coords[1], coords[1]+coords[3], coords[1]+coords[3], coords[1]],                                                                                  [coords[1], coords[1]+coords[3], coords[1]+coords[3], coords[1], coords[1]])]),
-                                           # np.concatenate([np.linspace(y1, y2, 20)\
-                                                # for y1, y2 in zip([coords[0], coords[0]+coords[2], coords[0]+coords[2], coords[0], coords[0]],
-                                                                  # [coords[0]+coords[2], coords[0]+coords[2], coords[0], coords[0], coords[0]])]))
-            
-        # if 'Pupil' in self.data.nwbfile.processing:
-            # self.pupil_mm_to_pix = 1./float(self.data.nwbfile.processing['Pupil'].description.split('pix_to_mm=')[1].split('\n')[0])
-            # coords = self.data.nwbfile.processing['Pupil'].description.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')\n')[0].split(',')
-            # if len(coords)==3: # bug (fixed), typo in previous datafiles
-                # coords.append(coords[2][3:])
-                # coords[2] = coords[2][:3]
-            # coords = [int(c) for c in coords]
-            # self.facePupilContour.setData(np.concatenate([np.linspace(x1, x2, 10) for x1, x2 in zip([coords[2], coords[2], coords[3], coords[3]],
-                                                                                                    # [coords[2], coords[3], coords[3], coords[2]])]),
-                                           # np.concatenate([np.linspace(y1, y2, 10) for y1, y2 in zip([coords[0], coords[1], coords[1], coords[0]],
-                                                                                                     # [coords[1], coords[1], coords[0], coords[0]])]))
-        
-    # else:
-        # self.visualization(withRawImages=False)
-
 
 def analyze_datafile(self):
 

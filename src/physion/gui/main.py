@@ -359,6 +359,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.datafile = os.path.join(\
                 os.path.expanduser('~'), 'DATA', 'physion_Demo-Datasets',
                 'PYR-WT', 'NWBs', '2025_11_14-13-54-32.nwb')
+            self.datafile = '/Users/yann/DATA/Sally/Npx_WT_prelim_2026/NWBs/2026_08_04-18-48-12.nwb'
             self.data = Data(self.datafile)
             self.visualization()
             # self.trial_averaging()

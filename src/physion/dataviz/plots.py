@@ -2,6 +2,7 @@ import os, sys, pathlib
 import numpy as np
 import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore
+from scipy.ndimage import gaussian_filter1d
 
 from physion.dataviz.tools import convert_times_to_indices, convert_index_to_time,\
         convert_time_to_index, scale_and_position, settings
@@ -120,102 +121,156 @@ def raw_data_plot(self, tzoom,
                                    symbolPen=pg.mkPen(color=settings['colors']['Pupil'], width=0),                                      
                                    symbolBrush=pg.mkBrush(0, 0, 255, 255), symbolSize=7)
 
-        """
-        # plotting a circle for the pupil fit
-        coords = []
-        if t_pupil_frame is not None:
-            i0 = convert_time_to_index(t_pupil_frame, self.data.nwbfile.processing['Pupil'].data_interfaces['sx'])
-            for key in ['cx', 'cy', 'sx', 'sy']:
-                coords.append(self.data.nwbfile.processing['Pupil'].data_interfaces[key].data[i0]*self.pupil_mm_to_pix)
-            if 'angle' in self.data.nwbfile.processing['Pupil'].data_interfaces:
-                coords.append(self.data.nwbfile.processing['Pupil'].data_interfaces['angle'].data[i0])
-            else:
-                coords.append(0)
-
-            self.pupilContour.setData(*process.ellipse_coords(*coords, transpose=True), size=3, brush=pg.mkBrush(255,0,0))
-        """
             
-
-    # ## -------- Electrophy --------- ##
-    
-    if ('Electrophysiological-Signal' in self.data.nwbfile.acquisition) and self.ephysSelect.isChecked():
-        # deprecated
-        
-        i1 = convert_time_to_index(tzoom[0], self.data.nwbfile.acquisition['Electrophysiological-Signal'])+1
-        i2 = convert_time_to_index(tzoom[1], self.data.nwbfile.acquisition['Electrophysiological-Signal'])-1
-        if not self.sbsmplSelect.isChecked():
-            isampling = np.arange(i1,i2)
-        else:
-            isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
-
-        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Electrophysiological-Signal']), 
-                       scale_and_position(self,self.data.nwbfile.acquisition['Electrophysiological-Signal'].data[list(isampling),0]),
-                       pen=pg.mkPen(color=settings['colors']['Electrophy']))
-
-    if ('LFP' in self.data.nwbfile.acquisition) and self.ephysSelect.isChecked():
-        
-        i1 = convert_time_to_index(tzoom[0], self.data.nwbfile.acquisition['LFP'])+1
-        i2 = convert_time_to_index(tzoom[1], self.data.nwbfile.acquisition['LFP'])-1
-        if not self.sbsmplSelect.isChecked():
-            isampling = np.arange(i1,i2)
-        else:
-            isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
-
-        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['LFP']),
-                       scale_and_position(self,self.data.nwbfile.acquisition['LFP'].data[list(isampling),0]),
-                       pen=pg.mkPen(color=settings['colors']['LFP']))
-
-
-    if ('Vm' in self.data.nwbfile.acquisition) and self.ephysSelect.isChecked():
-        
-        i1 = convert_time_to_index(tzoom[0], self.data.nwbfile.acquisition['Vm'])+1
-        i2 = convert_time_to_index(tzoom[1], self.data.nwbfile.acquisition['Vm'])-1
-        if not self.sbsmplSelect.isChecked():
-            isampling = np.arange(i1,i2)
-        else:
-            isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
-
-        self.plot.plot(convert_index_to_time(isampling, self.data.nwbfile.acquisition['Vm']),
-                       scale_and_position(self,self.data.nwbfile.acquisition['Vm'].data[list(isampling),0]),
-                       pen=pg.mkPen(color=settings['colors']['Vm']))
         
     # ## -------------------------- ## 
     # ## --------   LFP   --------- ##
     # ## -------------------------- ## 
 
     if ('LFP' in self.data.nwbfile.processing) and\
-                            (self.LFPSelect.isChecked())
+                            (self.LFPSelect.isChecked()):
 
-        iHeight = 3 # default height of the CaImaging plot
-        print('LFP')
+        iHeight = 3 # default height of the LFP plot
+
+        try:
+            nTraces = int(str(self.LFPSettings.text()).split('n:')[1].split(',')[0])
+            smoothing = int(str(self.LFPSettings.text()).split('s:')[1].split(',')[0])
+        except BaseException as be:
+            print(be)
+            print(' LFP options not recognized ! setting defaults ')
+            nTraces, smoothing = 4, 10
+
+        i1 = convert_time_to_index(tzoom[0], self.data.nwbfile.processing['LFP'].data_interfaces['LFP'])+1
+        i2 = convert_time_to_index(tzoom[1], self.data.nwbfile.processing['LFP'].data_interfaces['LFP'])-1
+        if not self.sbsmplSelect.isChecked():
+            isampling = np.arange(i1,i2)
+        else:
+            isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
+
+        y = scale_and_position(self, np.arange(2), iHeight=iHeight)
+        width = (y[1]-y[0])*.95
+
+        elecs = self.data.nwbfile.processing['LFP'].data_interfaces['LFP'].electrodes
+        nElec = len(elecs.data[:])
+        elecRange = np.linspace(0, nElec, nTraces+1, dtype=int)
+
+        tt = convert_index_to_time(isampling, self.data.nwbfile.processing['LFP'].data_interfaces['LFP'])
+
+        for n, (e0, e1) in enumerate(zip(elecRange[:-1], elecRange[1:])):
+
+            rdm = np.random.randint(0, 255) # for color
+            loc = y[0]+n*width/nTraces
+            V = gaussian_filter1d(\
+                self.data.nwbfile.processing['LFP'].data_interfaces['LFP'].data[:,e0:e1].mean(axis=-1)[isampling],
+                smoothing+1e-6)
+            self.plot.plot(tt,
+                    loc+1.3*width*(V-V.min())/(V.max()-V.min())/nTraces,
+                    pen=pg.mkPen(color=(rdm, 255, 255, 255)))
+            
+            # roi number annotation
+            roiAnnot = pg.TextItem('%i-' % elecs.data[e0],
+                                   color=(rdm, 255, 255))
+            roiAnnot.setPos(tt[0], loc+width/nTraces/2.)
+            self.plot.addItem(roiAnnot)
 
     # ## -------------------------- ## 
     # ## --------   MUA   --------- ##
     # ## -------------------------- ## 
 
     if ('MUA' in self.data.nwbfile.processing) and\
-                            (self.MUASelect.isChecked())
+                            (self.MUASelect.isChecked()):
 
-        iHeight = 3 # default height of the CaImaging plot
-        print('MUA')
+        iHeight = 2 # default height of the MUA plot
 
+        try:
+            nTraces = int(str(self.MUASettings.text()).split('n:')[1].split(',')[0])
+            smoothing = int(str(self.MUASettings.text()).split('s:')[1].split(',')[0])
+        except BaseException as be:
+            print(be)
+            print(' MUA options not recognized ! setting defaults ')
+            nTraces, smoothing = 4, 10
+
+        i1 = convert_time_to_index(tzoom[0], self.data.nwbfile.processing['MUA'].data_interfaces['MUA'])+1
+        i2 = convert_time_to_index(tzoom[1], self.data.nwbfile.processing['MUA'].data_interfaces['MUA'])-1
+        if not self.sbsmplSelect.isChecked():
+            isampling = np.arange(i1,i2)
+        else:
+            isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
+
+        y = scale_and_position(self, np.arange(2), iHeight=iHeight)
+        width = (y[1]-y[0])*.95
+
+        elecs = self.data.nwbfile.processing['MUA'].data_interfaces['MUA'].electrodes
+        nElec = len(elecs.data[:])
+        elecRange = np.linspace(0, nElec, nTraces+1, dtype=int)
+
+        tt = convert_index_to_time(isampling, self.data.nwbfile.processing['MUA'].data_interfaces['MUA'])
+
+        for n, (e0, e1) in enumerate(zip(elecRange[:-1], elecRange[1:])):
+
+            rdm = np.random.randint(0, 255) # for color
+            loc = y[0]+n*width/nTraces
+            V = gaussian_filter1d(\
+                self.data.nwbfile.processing['MUA'].data_interfaces['MUA'].data[:,e0:e1].mean(axis=-1)[isampling],
+                smoothing+1e-6)
+            self.plot.plot(tt,
+                    loc+1.3*width*(V-V.min())/(V.max()-V.min())/nTraces,
+                    pen=pg.mkPen(color=(rdm, 255, rdm, 255)))
+            
+            # roi number annotation
+            roiAnnot = pg.TextItem('%i-' % elecs.data[e0],
+                                   color=(rdm, 255, rdm))
+            roiAnnot.setPos(tt[0], loc+width/nTraces/2.)
+            self.plot.addItem(roiAnnot)
+
+    # ## -------------------------- ## 
+    # ## --------  spikes --------- ##
+    # ## -------------------------- ## 
+
+    if ('Spiking' in self.data.nwbfile.processing) and\
+                            (self.MUASelect.isChecked()):
+
+        iHeight = 1 # default height of the spikes plot
+
+        i1 = convert_time_to_index(tzoom[0], self.data.nwbfile.processing['MUA'].data_interfaces['MUA'])+1
+        i2 = convert_time_to_index(tzoom[1], self.data.nwbfile.processing['MUA'].data_interfaces['MUA'])-1
+        if not self.sbsmplSelect.isChecked():
+            isampling = np.arange(i1,i2)
+        else:
+            isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
+
+        y = scale_and_position(self, np.arange(2), iHeight=iHeight)
+        width = (y[1]-y[0])*.95
+
+        for n, unit in enumerate(self.data.nwbfile.units):
+
+            spk_times = unit.spike_times[n][:]
+
+            cond = (spk_times>tzoom[0]) & (spk_times<tzoom[1])
+
+            loc = y[0]+n*width/len(self.data.nwbfile.units)
+
+            self.plot.plot(spk_times[cond],
+                           loc+np.zeros(len(spk_times[cond])),
+                           pen=None, symbol='o', symbolSize=2, symbolPen='w', symbolBrush='w')
 
     # ## -------------------------- ## 
     # ## -------- Calcium --------- ##
     # ## -------------------------- ## 
 
-    if ('ophys' in self.data.nwbfile.processing) and (roiIndices is not None) and\
+    if ('ophys' in self.data.nwbfile.processing) and\
             (self.rawFluoSelect.isChecked() or self.neuropilSelect.isChecked()):
 
         iHeight = 5 # default height of the CaImaging plot
 
         try:
-            iStart = int(str(self.rawFluoSettings.text()).split('i:')[1].split(',')[0].split('}')[0])
-            nROIs = int(str(self.rawFluoSettings.text()).split('n:')[1].split(',')[0].split('}')[0])
+            iStart = int(str(self.rawFluoSettings.text()).split('i:')[1].split(',')[0])
+            nROIs = int(str(self.rawFluoSettings.text()).split('n:')[1].split(',')[0])
+            smoothing = float(str(self.rawFluoSettings.text()).split('s:')[1].split(',')[0])
         except BaseException as be:
             print(be)
             print(' ophys options not recognized ! setting defaults ')
-            iStart, nROIs = -1, 10 
+            iStart, nROIs, smoothing = -1, 10, 0
 
         if iStart==-1:
             # random pick
@@ -228,11 +283,6 @@ def raw_data_plot(self, tzoom,
             roiIndices = np.arange(iStart,
                             np.min([iStart+nROIs, self.data.nROIs]))[::-1]
 
-        if not hasattr(self.data, 'rawFluo') and self.rawFluoSelect.isChecked():
-            self.data.build_rawFluo()
-        if not hasattr(self.data, 'neuropil') and self.neuropilSelect.isChecked():
-            self.data.build_neuropil()
-
         i1 = convert_time_to_index(tzoom[0], self.data.Neuropil, axis=1)
         i2 = convert_time_to_index(tzoom[1], self.data.Neuropil, axis=1)
 
@@ -243,12 +293,6 @@ def raw_data_plot(self, tzoom,
 
         tt = np.array(self.data.Neuropil.timestamps[:])[isampling]
 
-        F = self.data.rawFluo[:,isampling]
-        if self.neuropilSelect.isChecked():
-            Fneu = self.data.neuropil[:,isampling]
-        else:
-            Fneu = None
-
         y = scale_and_position(self, np.arange(2), iHeight=iHeight)
         width = (y[1]-y[0])
 
@@ -256,13 +300,16 @@ def raw_data_plot(self, tzoom,
 
             loc = y[0]+n*width/len(roiIndices)
 
-            if Fneu is not None:
+            F = gaussian_filter1d(self.data.Fluorescence.data[isampling,ir], smoothing+1e-6)
+
+            if self.neuropilSelect.isChecked():
+                Fneu = gaussian_filter1d(self.data.Neuropil.data[isampling,ir], smoothing+1e-6)
                 self.plot.plot(tt,
-                        loc+1.3*width*(Fneu[ir,:]-Fneu[ir,:].min())/(Fneu[ir,:].max()-Fneu[ir,:].min())/len(roiIndices),
+                        loc+1.3*width*(Fneu-Fneu.min())/(Fneu.max()-Fneu.min())/len(roiIndices),
                         pen=pg.mkPen(color=settings['colors']['neuropil']), linewidth=1)
 
             self.plot.plot(tt,
-                    loc+1.3*width*(F[ir,:]-F[ir,:].min())/(F[ir,:].max()-F[ir,:].min())/len(roiIndices),
+                    loc+1.3*width*(F-F.min())/(F.max()-F.min())/len(roiIndices),
                     pen=pg.mkPen(color=settings['colors']['rawFluo']), linewidth=1)
             
             # roi number annotation
