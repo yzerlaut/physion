@@ -150,7 +150,7 @@ class MainWindow(QtWidgets.QMainWindow):
         from physion.ephys.gui import spike_sorting_preprocessing_UI, open_phy,\
                 run_spike_sorting
     else:
-        from physion.gui.parts import inactivated as suite2p_preprocessing_UI
+        from physion.gui.parts import inactivated as spike_sorting_preprocessing_UI
 
 
     # # -- Assembling
