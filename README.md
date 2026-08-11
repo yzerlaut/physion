@@ -75,3 +75,4 @@ The different modules of the software are documented in the following links:
 ## Troubleshooting / Issues
 
 Use the dedicated [Issues](https://github.com/yzerlaut/physion/issues) interface of Github.
+
