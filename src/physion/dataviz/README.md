@@ -1,6 +1,16 @@
 # Data Visualization
 
-The data visualization module consists in cutom code relying on the excellent [PyQtGraph module](http://pyqtgraph.org/).
+This 
+
+
+## Interactive viewer for NWB files
+
+This interactive data visualization module relies on the excellent [PyQtGraph module](http://pyqtgraph.org/).
+
+
+## Producing figures showing raw data
+
+Demo in the notebook [Visualize-Raw-Data.py](../../../notebooks/Visualize-Raw-Data.py)
 
 ## Snapshot generation
 
@@ -21,3 +31,6 @@ python -m physion.dataviz.snapshot generate-template
 
 ## Movie generation
 
+```
+python -m physion.dataviz.movie 
+```
