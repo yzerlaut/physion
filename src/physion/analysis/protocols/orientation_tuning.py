@@ -84,6 +84,7 @@ def compute_tuning_response_per_cells(data, Episodes,
                                       filtering_cond=None,
                                       quantity='dFoF',
                                       contrast=1.0,
+                                      nMin_episodes = 2,
                                       start_angle=-22.5, 
                                       angle_range=180,
                                       verbose=False):
@@ -117,6 +118,7 @@ def compute_tuning_response_per_cells(data, Episodes,
                                            response_significance_threshold=response_significance_threshold,
                                            multiple_comparison_correction=False,
                                            loop_over_cells=True,
+                                           nMin_episodes = nMin_episodes,
                                            verbose=verbose)
         
     # if significant in at least one orientation
