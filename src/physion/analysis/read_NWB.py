@@ -738,19 +738,32 @@ class Data:
         setattr(self, 'Zscore_dFoF', 
             (self.dFoF-self.dFoF.mean(axis=0).reshape(1, self.dFoF.shape[1]))/self.dFoF.std(axis=0).reshape(1, self.dFoF.shape[1]))
 
-    def build_Deconvolved(self, Tau=1.3):
+    def build_Deconvolved(self, Tau=1.3, fluorescence_to_deconvolve='dFoF'):
         """
-        use the oasis library to deconvolve the dFoF signals
+        use the oasis library to deconvolve the fluorescence signals of choice (default: dFoF)
         """
-        if not hasattr(self, 'dFoF'):
-            print('\n deconvolution not possible \n --> need to build_dFoF(**options) first !! ')
-        else:
-            self.t_Deconvolved = self.t_dFoF
-            setattr(self, 'Deconvolved',
-                    oasis(self.dFoF, 
-                          self.dFoF.shape[0], # batch size
-                              Tau, 1./self.CaImaging_dt))
+        if self.check_fsignal_existence(fluorescence_to_deconvolve) : 
 
+            self.t_Deconvolved = self.t_dFoF
+            fsignal = self.get_fsignal_to_deconvolve(fluorescence_to_deconvolve)
+            setattr(self, 'Deconvolved_' + fluorescence_to_deconvolve,
+                    oasis(fsignal, 
+                          fsignal.shape[0], # batch size
+                              Tau, 1./self.CaImaging_dt))
+            
+    def check_fsignal_existence(self, fluorescence_to_deconvolve):
+        if type(fluorescence_to_deconvolve) == str :
+            if not hasattr(self, fluorescence_to_deconvolve):
+                print('\n deconvolution not possible \n --> ' + fluorescence_to_deconvolve + ' is missing')
+                return False
+        return True
+    
+    def get_fsignal_to_deconvolve(self, fluorescence_to_deconvolve) :
+        if type(fluorescence_to_deconvolve) == str :
+            return getattr(self, fluorescence_to_deconvolve)
+
+        elif type(fluorescence_to_deconvolve) == np.array :
+            return fluorescence_to_deconvolve
 
     def build_neuropil(self,
                        specific_time_sampling=None,
