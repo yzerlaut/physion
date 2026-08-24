@@ -335,7 +335,6 @@ def run_TSeries_analysis(self):
     my_settings = fetch_settings_from_UI(self)
 
 
-    """
     # we precede the python call by a "sleep Xm" command
     delay = float(self.delayBox.value())
     if delay>0:
@@ -388,7 +387,6 @@ def run_TSeries_analysis(self):
             p = subprocess.Popen(cmd,
                                  cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src'),
                                  shell=True)
-    """
 
 
 
