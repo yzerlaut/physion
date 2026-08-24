@@ -503,7 +503,7 @@ class Data:
 
 
 
-    #############################
+    #############################data.build_dFoF(**dFoF_parameters, verbose=False)
     #       Electrophysiology   #
     #############################
 
@@ -540,7 +540,7 @@ class Data:
                                     for i in range(self.LFP.shape[0])])
         else:
             print(' %s --> "LFP" not available ...' % self.df_name)
-            
+            data.build_dFoF(**dFoF_parameters, verbose=False)
 
     def has_MUA(self):
         return ('MUA' in self.nwbfile.processing)
@@ -738,33 +738,25 @@ class Data:
         setattr(self, 'Zscore_dFoF', 
             (self.dFoF-self.dFoF.mean(axis=0).reshape(1, self.dFoF.shape[1]))/self.dFoF.std(axis=0).reshape(1, self.dFoF.shape[1]))
 
-    def build_Deconvolved(self, Tau=1.3, fluorescence_to_deconvolve='dFoF'):
+    def build_Deconvolved(self, Tau=1.3, quantity='dFoF'):
         """
         use the oasis library to deconvolve the fluorescence signals of choice (default: dFoF)
         """
-        if self.check_fsignal_existence(fluorescence_to_deconvolve) : 
+        fluorescence_name = quantity[12:]
 
-            self.t_Deconvolved = self.t_dFoF
-            fsignal = self.get_fsignal_to_deconvolve(fluorescence_to_deconvolve)
-            setattr(self, 'Deconvolved_' + fluorescence_to_deconvolve,
+        if hasattr(self, fluorescence_name) : 
+
+            setattr(data, 't_' + quantity, data.t_dFoF)
+            fsignal = getattr(self, fluorescence_name)
+            setattr(self, 'Deconvolved_' + fluorescence_name,
                     oasis(fsignal, 
                           fsignal.shape[0], # batch size
                               Tau, 1./self.CaImaging_dt))
-            
-    def check_fsignal_existence(self, fluorescence_to_deconvolve):
-        if type(fluorescence_to_deconvolve) == str :
-            if not hasattr(self, fluorescence_to_deconvolve):
-                print('\n deconvolution not possible \n --> ' + fluorescence_to_deconvolve + ' is missing')
-                return False
-        return True
+        else : 
+            print('\n deconvolution not possible \n --> ' + fluorescence_name + ' does not exist')
+            print("build your signal before deconvolving using 'setattr(data, name of your signal, values of your signal)'")
+
     
-    def get_fsignal_to_deconvolve(self, fluorescence_to_deconvolve) :
-        if type(fluorescence_to_deconvolve) == str :
-            return getattr(self, fluorescence_to_deconvolve)
-
-        elif type(fluorescence_to_deconvolve) == np.array :
-            return fluorescence_to_deconvolve
-
     def build_neuropil(self,
                        specific_time_sampling=None,
                        interpolation='linear',

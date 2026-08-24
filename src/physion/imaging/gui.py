@@ -55,6 +55,12 @@ def suite2p_preprocessing_UI(self, tab_id=1):
         ' <a href="file:./physion/imaging/suite2p/presets.py">physion/imaging/suite2p/presets.py</a> '))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
+    self.subsamplingBox = QtWidgets.QCheckBox('subsampling ?', self)
+    self.subsamplingBox.setChecked(False)
+    self.add_side_widget(tab.layout, self.subsamplingBox, 'large-left')
+    self.subsamplingParamsBox = QtWidgets.QLineEdit('0:4000::2', self)
+    self.add_side_widget(tab.layout, self.subsamplingParamsBox, 'small-right')
+
     self.registrButton = QtWidgets.QCheckBox(' -- Registration --', self)
     self.registrButton.setChecked(True)
     self.add_side_widget(tab.layout, self.registrButton, 'large-left')
@@ -311,6 +317,10 @@ def run_TSeries_analysis(self):
     
     my_settings = fetch_settings_from_UI(self)
 
+    print(self.subsamplingBox.isChecked())
+    print(self.subsamplingParamsBox.text())
+
+    """
     # we precede the python call by a "sleep Xm" command
     delay = float(self.delayBox.value())
     if delay>0:
@@ -363,6 +373,7 @@ def run_TSeries_analysis(self):
             p = subprocess.Popen(cmd,
                                  cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src'),
                                  shell=True)
+    """
 
 
 
