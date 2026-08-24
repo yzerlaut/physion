@@ -170,6 +170,7 @@ if __name__=='__main__':
                 if index<len(Stim.experiment['index']):
                     print(' - episode %i/%i ' % (\
                             index+1, len(Stim.experiment['index'])),
+                          '   tstart: %.2f' % Stim.experiment['time_start'][index],
                           '   duration: ', 
                           Stim.experiment['time_duration'][index],
                         #   '   contrast: ', 

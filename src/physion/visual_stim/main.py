@@ -330,7 +330,8 @@ class visual_stim:
                 else:
                     self.experiment['time_start'].append(\
                         self.experiment['time_stop'][-1]+\
-                                protocol['presentation-interstim-period'])
+                            self.experiment['interstim'][-1])
+                            # protocol['presentation-interstim-period'])
 
                 self.experiment['time_stop'].append(\
                     self.experiment['time_start'][-1]+\
@@ -340,7 +341,6 @@ class visual_stim:
                     self.experiment['interstim'].append(\
                         np.random.uniform(-1, 1)*protocol['presentation-interstim-jitter']+\
                             protocol['presentation-interstim-period'])
-
                 else:
                     self.experiment['interstim'].append(\
                             protocol['presentation-interstim-period'])
@@ -679,6 +679,11 @@ class multiprotocol(visual_stim):
                 self.experiment['time_stop'] =\
                         [self.experiment['time_start'][0]+dur]
             else:
+
+                if 'presentation-interstim-jitter' in protocol:
+                    isi += np.random.uniform(-1, 1)*protocol['presentation-interstim-jitter']
+                    # adding jitter !!
+
                 self.experiment['time_start'].append(\
                         self.experiment['time_stop'][-1]+isi)
                 self.experiment['time_stop'].append(\
