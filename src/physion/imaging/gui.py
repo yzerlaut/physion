@@ -299,6 +299,23 @@ def fetch_settings_from_UI(self):
     my_settings['roidetect'] = self.roiDetectButton.isChecked()
     my_settings['cell_diameter'] = float(self.cellSizeBox.text())
 
+
+    my_settings['subsampling'] = self.subsamplingBox.isChecked()
+
+    try:
+        my_settings['subsampling_iStart'] = int(self.subsamplingParamsBox.text().split(':')[0])
+        my_settings['subsampling_iStop'] = int(self.subsamplingParamsBox.text().split(':')[1])
+        my_settings['subsampling_step'] = int(self.subsamplingParamsBox.text().split('::')[1])
+    except BaseException as be:
+        my_settings['subsampling_iStart'] = 0
+        my_settings['subsampling_iStop'] = 1000
+        my_settings['subsampling_step'] = 2
+        print()
+        print(' [!!] non-valid subsampling params [!!]')
+        print('       --> reset to "0:1000:2" ')
+        print()
+        self.subsamplingParamsBox.setText('0:1000::2')
+
     # if self.cellposeBox.isChecked():
 
     #     my_settings['anatomical_only'] = int(self.refImageBox.text())
@@ -317,8 +334,6 @@ def run_TSeries_analysis(self):
     
     my_settings = fetch_settings_from_UI(self)
 
-    print(self.subsamplingBox.isChecked())
-    print(self.subsamplingParamsBox.text())
 
     """
     # we precede the python call by a "sleep Xm" command

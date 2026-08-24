@@ -22,6 +22,22 @@ presets = {\
                 "threshold_scaling":1.0,
             }
         },
+        "cellpose-Interneurons":{\
+            "registration":{
+                "nimg_init": 2000,
+                "maxregshift": 0.15,
+                "nonrigid":False,
+                "batch_size":200,
+            },
+            "detection":{
+                "algorithm": "cellpose",
+                "denoise":False,
+                "cellpose_settings":{\
+                    "connected":True,
+                    },
+                "threshold_scaling":1.0,
+            }
+        },
         "hsyn-pyramidal":{\
                            # functional detection
                            "high_pass":300,
