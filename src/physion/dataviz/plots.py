@@ -8,14 +8,9 @@ from physion.dataviz.tools import convert_times_to_indices, convert_index_to_tim
         convert_time_to_index, scale_and_position, settings
 from physion.pupil import process
 
-def raw_data_plot(self, tzoom,
-                  plot_update=True,
-                  with_images=False,
-                  with_roi=False,
-                  with_scatter=False):
+def raw_data_plot(self, tzoom):
 
     self.iplot = 0
-    scatter = []
     self.plot.clear()
     
     y = np.zeros(2)
@@ -228,7 +223,7 @@ def raw_data_plot(self, tzoom,
     # ## -------------------------- ## 
 
     if ('Spiking' in self.data.nwbfile.processing) and\
-                            (self.MUASelect.isChecked()):
+                            (self.spikesSelect.isChecked()):
 
         iHeight = 1 # default height of the spikes plot
 
@@ -242,9 +237,13 @@ def raw_data_plot(self, tzoom,
         y = scale_and_position(self, np.arange(2), iHeight=iHeight)
         width = (y[1]-y[0])*.95
 
-        for n, unit in enumerate(self.data.nwbfile.units):
+        subsampling = 1 # by default
+        if self.sbsmplSelect.isChecked():
+            subsampling = 20
 
-            spk_times = unit.spike_times[n][:]
+        for n in np.arange(len(self.data.nwbfile.units))[::subsampling]:
+
+            spk_times = self.data.nwbfile.units[n].spike_times[n][::subsampling]
 
             cond = (spk_times>tzoom[0]) & (spk_times<tzoom[1])
 

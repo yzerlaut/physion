@@ -5,6 +5,7 @@ import matplotlib.pylab as plt
 
 from physion.dataviz import tools as dv_tools
 from physion.dataviz.imaging import *
+from physion.dataviz.ephys import *
 
 import matplotlib.patches as patches
 
@@ -25,29 +26,6 @@ def add_photodiode(data, tlim, ax,
                                 ax_fraction_extent=fig_fraction,
                                 ax_fraction_start=fig_fraction_start,
                                 color=color, scale_unit_string=' a.u.')
-
-    dv_tools.add_name_annotation(data, ax, name, tlim,
-            fig_fraction, fig_fraction_start, color=color)
-
-
-def add_LFP(data, tlim, ax,
-            fig_fraction_start=0., fig_fraction=1., subsampling=2, color='k',
-            scale_side='left',
-            name='LFP'):
-
-    i1, i2 = dv_tools.convert_times_to_indices(*tlim,
-            data.nwbfile.acquisition['Electrophysiological-Signal'])
-
-    t = dv_tools.convert_index_to_time(range(i1,i2),
-            data.nwbfile.acquisition['Electrophysiological-Signal'])[::subsampling]
-
-    y = data.nwbfile.acquisition['Electrophysiological-Signal'].data[i1:i2][::subsampling]
-
-    dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 0.2,
-                                ax_fraction_extent=fig_fraction,
-                                ax_fraction_start=fig_fraction_start,
-                                scale_side=scale_side,
-            color=color, scale_unit_string='%.1fmV')
 
     dv_tools.add_name_annotation(data, ax, name, tlim,
             fig_fraction, fig_fraction_start, color=color)
@@ -277,6 +255,20 @@ default_options = {
         'color':'#2ca02c',
         'fig_fraction':4, 
         'subsampling':5,
+        },
+    'spikes':{
+        'color':'k',
+        'fig_fraction':2, 
+        },
+    'LFP':{
+        'color':'#2ca02c',
+        'fig_fraction':4, 
+        'subsampling':10,
+        },
+    'MUA':{
+        'color':'#2ca02c',
+        'fig_fraction':2, 
+        'subsampling':10,
         },
     'visual_stim':{
         'color':'black',

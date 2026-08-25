@@ -22,7 +22,7 @@ MODALITIES = [\
         'neuropil',
         'dFoF',
         'spikes',
-        'spikeWaveforms',
+        # 'spikeWaveforms',
         'LFP',
         'MUA'
     ]
@@ -385,7 +385,7 @@ class Data:
         """
         if self.has_pupil():
 
-            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
+            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps[:]
             self.pupil =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:,0],
                                              self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:,0]], axis=0)
 
@@ -411,7 +411,7 @@ class Data:
         build distance from mean (x,y) position of pupil
         """
         if self.has_pupil():
-            self.t_gaze = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
+            self.t_gaze = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps[:]
             cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:,0]
             cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:,0]
             self.gaze = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
@@ -455,7 +455,7 @@ class Data:
 
         if self.has_facemotion():
 
-            self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps
+            self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps[:]
             self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:,0]
 
             if verbose:
