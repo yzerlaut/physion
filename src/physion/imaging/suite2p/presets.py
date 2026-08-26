@@ -22,6 +22,22 @@ presets = {\
                 "threshold_scaling":1.0,
             }
         },
+        "cellpose-Interneurons":{\
+            "registration":{
+                "nimg_init": 2000,
+                "maxregshift": 0.15,
+                "nonrigid":False,
+                "batch_size":200,
+            },
+            "detection":{
+                "algorithm": "cellpose",
+                "denoise":False,
+                "cellpose_settings":{\
+                    "connected":True,
+                    },
+                "threshold_scaling":1.0,
+            }
+        },
         "hsyn-pyramidal":{\
                            # functional detection
                            "high_pass":300,
@@ -67,6 +83,31 @@ presets = {\
                        "anatomical_only":2,
                        "flow_threshold": 0.1,
                        "cellprob_threshold": 0.8},
+
+        "Test Pyramidal 3":{\
+                    "frames_include":10,
+                    "registration":{
+                        "nonrigid":False
+                    }, 
+                    "detection":{
+                        "sparse_mode":False,
+                        "denoise":True,
+                        "spatial_scale":0,
+                        "allow_overlap":True,
+                        "max_overlap":0.5,
+                        "connected":True,
+                        "threshold_scalling":0.5,
+
+                        "algorithm": "sourcery",
+                        "sourcery_settings":{\
+                            "threshold_scalling":0.5,
+                            "diameter":10,
+                            "connected":True,
+                            "max_iterations":20,
+                            "smooth_masks":False,
+                            },
+                    }
+                },
 }
 
 if __name__=='__main__':

@@ -22,7 +22,7 @@ MODALITIES = [\
         'neuropil',
         'dFoF',
         'spikes',
-        'spikeWaveforms',
+        # 'spikeWaveforms',
         'LFP',
         'MUA'
     ]
@@ -385,7 +385,7 @@ class Data:
         """
         if self.has_pupil():
 
-            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
+            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps[:]
             self.pupil =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:,0],
                                              self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:,0]], axis=0)
 
@@ -411,7 +411,7 @@ class Data:
         build distance from mean (x,y) position of pupil
         """
         if self.has_pupil():
-            self.t_gaze = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
+            self.t_gaze = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps[:]
             cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:,0]
             cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:,0]
             self.gaze = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
@@ -455,7 +455,7 @@ class Data:
 
         if self.has_facemotion():
 
-            self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps
+            self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps[:]
             self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:,0]
 
             if verbose:
@@ -503,7 +503,7 @@ class Data:
 
 
 
-    #############################
+    #############################data.build_dFoF(**dFoF_parameters, verbose=False)
     #       Electrophysiology   #
     #############################
 
@@ -540,7 +540,7 @@ class Data:
                                     for i in range(self.LFP.shape[0])])
         else:
             print(' %s --> "LFP" not available ...' % self.df_name)
-            
+            data.build_dFoF(**dFoF_parameters, verbose=False)
 
     def has_MUA(self):
         return ('MUA' in self.nwbfile.processing)
@@ -738,20 +738,25 @@ class Data:
         setattr(self, 'Zscore_dFoF', 
             (self.dFoF-self.dFoF.mean(axis=0).reshape(1, self.dFoF.shape[1]))/self.dFoF.std(axis=0).reshape(1, self.dFoF.shape[1]))
 
-    def build_Deconvolved(self, Tau=1.3):
+    def build_Deconvolved(self, Tau=1.3, quantity='dFoF'):
         """
-        use the oasis library to deconvolve the dFoF signals
+        use the oasis library to deconvolve the fluorescence signals of choice (default: dFoF)
         """
-        if not hasattr(self, 'dFoF'):
-            print('\n deconvolution not possible \n --> need to build_dFoF(**options) first !! ')
-        else:
-            self.t_Deconvolved = self.t_dFoF
-            setattr(self, 'Deconvolved',
-                    oasis(self.dFoF, 
-                          self.dFoF.shape[0], # batch size
+        fluorescence_name = quantity[12:]
+
+        if hasattr(self, fluorescence_name) : 
+
+            setattr(data, 't_' + quantity, data.t_dFoF)
+            fsignal = getattr(self, fluorescence_name)
+            setattr(self, 'Deconvolved_' + fluorescence_name,
+                    oasis(fsignal, 
+                          fsignal.shape[0], # batch size
                               Tau, 1./self.CaImaging_dt))
+        else : 
+            print('\n deconvolution not possible \n --> ' + fluorescence_name + ' does not exist')
+            print("build your signal before deconvolving using 'setattr(data, name of your signal, values of your signal)'")
 
-
+    
     def build_neuropil(self,
                        specific_time_sampling=None,
                        interpolation='linear',

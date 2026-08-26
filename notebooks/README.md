@@ -1,6 +1,7 @@
 # Demo Notebooks
 
-Get the [ Folder of demo datafiles ](https://drive.google.com/drive/folders/1vWzhtpDkqN7JgHN07r5WvIWPdUy0aZWT?usp=sharing) and store it in `~/DATA/physion_Demo-Datasets`
+Get the [ Folder of demo datafiles ](https://instituteicm-my.sharepoint.com/:f:/g/personal/yann_zerlaut_icm-institute_org/IgDwyLQlMrXrQJvlkZUAUKsJAdK8O1S2X_5QEPDffxIIPJs?e=BEcmrR)
+and store it in `~/DATA/physion_Demo-Datasets`
 
 ## Usage 
 

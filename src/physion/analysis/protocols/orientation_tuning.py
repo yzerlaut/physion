@@ -84,6 +84,7 @@ def compute_tuning_response_per_cells(data, Episodes,
                                       filtering_cond=None,
                                       quantity='dFoF',
                                       contrast=1.0,
+                                      nMin_episodes = 2,
                                       start_angle=-22.5, 
                                       angle_range=180,
                                       verbose=False):
@@ -117,6 +118,7 @@ def compute_tuning_response_per_cells(data, Episodes,
                                            response_significance_threshold=response_significance_threshold,
                                            multiple_comparison_correction=False,
                                            loop_over_cells=True,
+                                           nMin_episodes = nMin_episodes,
                                            verbose=verbose)
         
     # if significant in at least one orientation
@@ -134,11 +136,12 @@ def compute_tuning_response_per_cells(data, Episodes,
                           summary['value'][roi, :])\
                             for roi in range(data.nROIs)])
 
-    RESPONSES, semRESPONSES = [], []
+    RESPONSES, semRESPONSES, Ntrials = [], [], []
     for roi in range(data.nROIs):
 
         RESPONSES.append(np.zeros(len(shifted_angle)))
         semRESPONSES.append(np.zeros(len(shifted_angle)))
+        Ntrials.append(np.zeros(len(shifted_angle)))
 
         for angle, value, std, ntrials in zip(\
             summary['angle'],
@@ -154,13 +157,16 @@ def compute_tuning_response_per_cells(data, Episodes,
 
             RESPONSES[-1][iangle] = value
             semRESPONSES[-1][iangle] = std/np.sqrt(ntrials)
+            Ntrials[-1][iangle] = ntrials
 
     return {'Responses':np.array(RESPONSES),
             'semResponses':np.array(semRESPONSES),
             'selectivities':np.array(selectivities),
             'shifted_angle':np.array(shifted_angle),
             'prefered_angles':np.array(prefered_angles),
-            'significant_ROIs':np.array(significant)}
+            'significant_ROIs':np.array(significant),
+            'std-values':summary['std-value'], 
+            'ntrials': np.array(Ntrials[0])}
 
 
 ###########################
@@ -335,6 +341,7 @@ def plot_orientation_tuning_curve(keys,
     if type(keys)==str:
         keys, colors = [keys], [colors[0]]
 
+
     fig, ax = pt.figure(**fig_args)
     x = np.linspace(-30, 180-30, 100)
 
@@ -342,7 +349,7 @@ def plot_orientation_tuning_curve(keys,
 
             # load data
             Tunings = \
-                    np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
+                    np.load(os.path.join(path, 'Deconvolved_Tunings_%s.npy' % key), 
                             allow_pickle=True)
     
             Responses = get_tuning_responses(Tunings,
@@ -350,9 +357,9 @@ def plot_orientation_tuning_curve(keys,
 
             # Gaussian Fit
             C, func = fit_gaussian(Tunings[0]['shifted_angle'],
-                                    np.mean([r/r[1] for r in Responses], axis=0))
+                                    np.nanmean([r/r[1] for r in Responses], axis=0))
 
-            pt.scatter(Tunings[0]['shifted_angle'], np.mean([r/r[1] for r in Responses], axis=0), 
+            pt.scatter(Tunings[0]['shifted_angle'], np.nanmean([r/r[1] for r in Responses], axis=0), 
                             sy=stats.sem([r/r[1] for r in Responses], axis=0), 
                             color=color, ax=ax, ms=2)
 

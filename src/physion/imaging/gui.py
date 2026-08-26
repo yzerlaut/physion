@@ -55,6 +55,12 @@ def suite2p_preprocessing_UI(self, tab_id=1):
         ' <a href="file:./physion/imaging/suite2p/presets.py">physion/imaging/suite2p/presets.py</a> '))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
+    self.subsamplingBox = QtWidgets.QCheckBox('subsampling ?', self)
+    self.subsamplingBox.setChecked(False)
+    self.add_side_widget(tab.layout, self.subsamplingBox, 'large-left')
+    self.subsamplingParamsBox = QtWidgets.QLineEdit('0:4000::2', self)
+    self.add_side_widget(tab.layout, self.subsamplingParamsBox, 'small-right')
+
     self.registrButton = QtWidgets.QCheckBox(' -- Registration --', self)
     self.registrButton.setChecked(True)
     self.add_side_widget(tab.layout, self.registrButton, 'large-left')
@@ -293,6 +299,23 @@ def fetch_settings_from_UI(self):
     my_settings['roidetect'] = self.roiDetectButton.isChecked()
     my_settings['cell_diameter'] = float(self.cellSizeBox.text())
 
+
+    my_settings['subsampling'] = self.subsamplingBox.isChecked()
+
+    try:
+        my_settings['subsampling_iStart'] = int(self.subsamplingParamsBox.text().split(':')[0])
+        my_settings['subsampling_iStop'] = int(self.subsamplingParamsBox.text().split(':')[1])
+        my_settings['subsampling_step'] = int(self.subsamplingParamsBox.text().split('::')[1])
+    except BaseException as be:
+        my_settings['subsampling_iStart'] = 0
+        my_settings['subsampling_iStop'] = 1000
+        my_settings['subsampling_step'] = 2
+        print()
+        print(' [!!] non-valid subsampling params [!!]')
+        print('       --> reset to "0:1000:2" ')
+        print()
+        self.subsamplingParamsBox.setText('0:1000::2')
+
     # if self.cellposeBox.isChecked():
 
     #     my_settings['anatomical_only'] = int(self.refImageBox.text())
@@ -310,6 +333,7 @@ def fetch_settings_from_UI(self):
 def run_TSeries_analysis(self):
     
     my_settings = fetch_settings_from_UI(self)
+
 
     # we precede the python call by a "sleep Xm" command
     delay = float(self.delayBox.value())

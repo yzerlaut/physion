@@ -796,7 +796,15 @@ if __name__=='__main__':
     import argparse, os
 
     parser=argparse.ArgumentParser(description="""
+
     Building NWB file from mutlimodal experimental recordings
+
+        from either 
+            - a day-folder
+            - a DataTable.xlsx
+            - a single-recording-folder
+            - a dataset folder (of day folders)
+
     """,formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument("datafolder", type=str, default='')

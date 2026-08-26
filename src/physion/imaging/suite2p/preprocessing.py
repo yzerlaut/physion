@@ -65,12 +65,14 @@ def build_suite2p_options(folder,
         np.save(os.path.join(folder, 'settings.npy'), settings)
 
     else:
+        """ suite2p version 2.x"""
 
         ops = default_ops()
         override_suite2p_default_ops(ops)
 
         ops['fs'], ops['diameter'] = acq_freq, diameter
         ops['spatial_scale'] = spatial_scale
+
 
         # all other keys here
         for key in my_settings:
@@ -83,8 +85,28 @@ def build_suite2p_options(folder,
             ops[key] = db[key]
         np.save(os.path.join(folder,'ops.npy'), ops)
 
+
     # we re-build the db
     db = build_db(folder, v1=my_settings['v1'])
+
+    # subsampling ?
+    if my_settings['subsampling']:
+        if 'Ch2 Green' in bruker_data:
+            func_chan = 'Ch2 Green'
+        else:
+            func_chan = bruker_data['channels'][0]
+            print()
+            print(' took %s as the functional channel' % bruker_data['channels'][0])
+            print()
+
+        for key in ['file_list', 'tiff_list']:
+            db[key] =\
+                bruker_data['Ch2 Green']['tifFile'][\
+                            my_settings['subsampling_iStart']:\
+                            my_settings['subsampling_iStop']:\
+                            my_settings['subsampling_step']]
+
+    # save:
     np.save(os.path.join(folder,'db.npy'), db)
 
 

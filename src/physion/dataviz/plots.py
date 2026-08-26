@@ -8,14 +8,9 @@ from physion.dataviz.tools import convert_times_to_indices, convert_index_to_tim
         convert_time_to_index, scale_and_position, settings
 from physion.pupil import process
 
-def raw_data_plot(self, tzoom,
-                  plot_update=True,
-                  with_images=False,
-                  with_roi=False,
-                  with_scatter=False):
+def raw_data_plot(self, tzoom):
 
     self.iplot = 0
-    scatter = []
     self.plot.clear()
     
     y = np.zeros(2)
@@ -161,8 +156,9 @@ def raw_data_plot(self, tzoom,
             rdm = np.random.randint(0, 255) # for color
             loc = y[0]+n*width/nTraces
             V = gaussian_filter1d(\
-                self.data.nwbfile.processing['LFP'].data_interfaces['LFP'].data[:,e0:e1].mean(axis=-1)[isampling],
-                smoothing+1e-6)
+                    self.data.nwbfile.processing['LFP'].data_interfaces['LFP'].data[:,e0:e1].mean(axis=-1)[isampling],
+                    smoothing+1e-6)
+                                
             self.plot.plot(tt,
                     loc+1.3*width*(V-V.min())/(V.max()-V.min())/nTraces,
                     pen=pg.mkPen(color=(rdm, 255, 255, 255)))
@@ -228,31 +224,25 @@ def raw_data_plot(self, tzoom,
     # ## -------------------------- ## 
 
     if ('Spiking' in self.data.nwbfile.processing) and\
-                            (self.MUASelect.isChecked()):
+                            (self.spikesSelect.isChecked()):
 
         iHeight = 1 # default height of the spikes plot
-
-        i1 = convert_time_to_index(tzoom[0], self.data.nwbfile.processing['MUA'].data_interfaces['MUA'])+1
-        i2 = convert_time_to_index(tzoom[1], self.data.nwbfile.processing['MUA'].data_interfaces['MUA'])-1
-        if not self.sbsmplSelect.isChecked():
-            isampling = np.arange(i1,i2)
-        else:
-            isampling = np.unique(np.linspace(i1, i2, settings['Npoints'], dtype=int))
 
         y = scale_and_position(self, np.arange(2), iHeight=iHeight)
         width = (y[1]-y[0])*.95
 
-        for n, unit in enumerate(self.data.nwbfile.units):
+        if not self.sbsmplSelect.isChecked():
+            for n, unit in enumerate(self.data.nwbfile.units):
 
-            spk_times = unit.spike_times[n][:]
+                spk_times = unit.spike_times[n][:]
 
-            cond = (spk_times>tzoom[0]) & (spk_times<tzoom[1])
+                cond = (spk_times>tzoom[0]) & (spk_times<tzoom[1])
 
-            loc = y[0]+n*width/len(self.data.nwbfile.units)
+                loc = y[0]+n*width/len(self.data.nwbfile.units)
 
-            self.plot.plot(spk_times[cond],
-                           loc+np.zeros(len(spk_times[cond])),
-                           pen=None, symbol='o', symbolSize=2, symbolPen='w', symbolBrush='w')
+                self.plot.plot(spk_times[cond],
+                            loc+np.zeros(len(spk_times[cond])),
+                            pen=None, symbol='o', symbolSize=2, symbolPen='w', symbolBrush='w')
 
     # ## -------------------------- ## 
     # ## -------- Calcium --------- ##
