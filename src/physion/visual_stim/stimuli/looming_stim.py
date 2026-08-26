@@ -14,9 +14,9 @@ params = {\
       "radius-end":110., # degree
       "x-center":0., # degree
       "y-center":0., # degree
-      "color":0., # degree
-      "looming-nonlinearity":2, # degree
-      "bg-color":0.5,
+      "color":0., # [0,1] based (black,white)
+      "looming-nonlinearity":2, # 
+      "bg-color":0.5, # [0,1] based (black,white) 
       "contrast":1.0,
 } 
     
@@ -46,7 +46,7 @@ class stim(visual_stim):
         return start_size + t_frac**nonlinearity * dSize
 
     def get_image(self, index, time_from_episode_start=0, parent=None):
-        print('t=', time_from_episode_start)
+        # print('t=', time_from_episode_start)
         img = self.experiment['bg-color'][index]+0.*self.x
 
         dColor = self.experiment['contrast'][index] * (self.experiment['color'][index] - self.experiment['bg-color'][index])
