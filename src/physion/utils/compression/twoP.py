@@ -27,6 +27,14 @@ from physion.utils.compression.mp4 import convert_to_log8bit_mp4, reconvert_to_t
 from physion.utils.compression.avi import convert_to_16bit_avi, reconvert_to_tiffs_from_16bit
 
  
+# def find_TSeries_folders(folder):
+#     return [f[0] for f in os.walk(folder)\
+#                     if 'TSeries' in f[0].split(os.path.sep)[-1]]
+
+def find_compressed_folders(folder, key='h5'):
+    return [f[0] for f in os.walk(folder)\
+                    if key in f[0].split(os.path.sep)[-1]]
+
 
 def imaging_to_movie_gui(self,
                        tab_id=3):
@@ -75,29 +83,6 @@ def imaging_to_movie_gui(self,
     self.refresh_tab(tab)
     self.show()
 
-
-def run_imaging_to_movie(self):
-
-    Fs = find_TSeries_folders(self.source_folder)
-    for f in Fs:
-
-        if '16bit' in self.typeBox.currentText():
-            convert_to_16bit_avi(f)
-        elif '8bit-LOG' in self.typeBox.currentText():
-            convert_to_log8bit_mp4(f)
-        elif 'binary' in self.typeBox.currentText():
-            convert_to_binary(f)
-        elif 'nwb' in self.typeBox.currentText():
-            convert_to_nwb(f)
-        elif 'h5' in self.typeBox.currentText():
-            convert_to_h5(f)
-        else:
-            print(' compression type not recognized')
-        print(f)
-
-###########################
-
-
 def create_compressed_folder(folder,
                              key='log8bit'):
 
@@ -118,16 +103,31 @@ def create_compressed_folder(folder,
     #                 os.path.join(folder.replace('TSeries', key), 'original_suite2p'))
 
 
-def find_TSeries_folders(folder):
-    return [f[0] for f in os.walk(folder)\
-                    if 'TSeries' in f[0].split(os.path.sep)[-1]]
+def run_imaging_to_movie(self):
 
-def find_compressed_folders(folder, key='log8bit'):
-    return [f[0] for f in os.walk(folder)\
-                    if key in f[0].split(os.path.sep)[-1]]
+    Fs = get_TSeries_folders(self.source_folder)
 
+    for f in Fs:
 
-##################  hjk
+        create_compressed_folder(f, 
+                                 self.typeBox.currentText())
+
+        if 'avi' in self.typeBox.currentText():
+            convert_to_16bit_avi(f)
+        elif 'mp4' in self.typeBox.currentText():
+            convert_to_log8bit_mp4(f)
+        elif 'binary' in self.typeBox.currentText():
+            convert_to_binary(f)
+        elif 'nwb' in self.typeBox.currentText():
+            convert_to_nwb(f)
+        elif 'h5' in self.typeBox.currentText():
+            convert_to_h5(f)
+        else:
+            print(' compression type not recognized')
+        print(f)
+
+###########################
+
 
 def remove_tiff_and_binary_files(TS_folder):
     """
@@ -211,20 +211,32 @@ if __name__=='__main__':
             create_compressed_folder(folder, 
                                      key=args.compression)
 
-            if args.compression=='nwb':
+            if 'nwb' in args.compression:
                 convert_to_nwb(folder)
 
-            elif args.compression=='h5':
+            elif 'h5' in args.compression:
                 convert_to_h5(folder)
 
-            elif args.compression=='binary':
+            elif 'binary' in args.compression:
                 convert_to_binary(folder)
 
-            elif args.compression=='lossless':
+            elif 'avi' in args.compression:
                 convert_to_16bit_avi(folder)
 
-            else:
+            elif 'mp4' in args.compression:
                 convert_to_log8bit_mp4(folder)
+
+            else:
+                print("""
+
+                compression not recognized, pick:
+                    - mp4
+                    - avi
+                    - binary
+                    - h5
+                    - nwb
+
+                """)
             
             if args.delete:
                 print(' - deleting tiffs and binary in ', folder, ' [...]')
