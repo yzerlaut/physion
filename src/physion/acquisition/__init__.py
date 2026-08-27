@@ -31,6 +31,9 @@ EXPERIMENTERS = {
     'Pan Sally Zhang':{
         'folder':'Sally'
         },
+    'Nelson Rebola':{
+        'folder':'Nelson'
+        },
     'Valentin Ritou':{
         'folder':'Valentin'
         },

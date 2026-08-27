@@ -140,7 +140,7 @@ def multimodal(self,
     ip+=1
     # -
     tab.layout.addWidget(\
-        QtWidgets.QLabel(40*' '+'** Visual Protocol **'+40*' ', self),
+        QtWidgets.QLabel(40*' '+'** Stimulation Protocol **'+40*' ', self),
                          ip, self.side_wdgt_length, 
                          1, width)
     ip+=1
@@ -151,18 +151,6 @@ def multimodal(self,
                          ip, self.side_wdgt_length+1, 
                          1, width)
     ip+=1
-    # -
-    # tab.layout.addWidget(\
-    #     QtWidgets.QLabel(40*' '+'** Rec. Settings **'+40*' ', self),
-    #                      ip, self.side_wdgt_length, 
-    #                      1, width)
-    # ip+=1
-    # # -
-    # self.recordingBox = QtWidgets.QComboBox(self)
-    # tab.layout.addWidget(self.recordingBox,\
-    #                      ip, self.side_wdgt_length+1, 
-    #                      1, width)
-    # ip+=1
 
     # image panels layout:
     self.winImg = pg.GraphicsLayoutWidget()
@@ -172,7 +160,7 @@ def multimodal(self,
                          self.nWidgetCol-self.side_wdgt_length)
     # image choice box
     tab.layout.addWidget(\
-        QtWidgets.QLabel('** live : **', self),
+        QtWidgets.QLabel('  =>  live :   ', self),
                          ip, self.nWidgetCol-2,
                          1, 2)
     ip+=1
