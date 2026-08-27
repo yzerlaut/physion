@@ -26,6 +26,9 @@ def update_config(self):
 
     experimenter = self.experimenterBox.currentText()
     config = self.configBox.currentText()
+    protocol_folder = os.path.join(os.path.expanduser('~'),
+                            'DATA', self.EXPERIMENTERS[experimenter]['folder'], 
+                            'visualStim-protocols')
 
     if config!='':
 
@@ -35,17 +38,25 @@ def update_config(self):
         with open(fn) as f:
             self.config = json.load(f)
 
+
         if hasattr(self, 'protocolBox'):
             # now update protocols
-            if self.config['protocols']=='all':
+
+            if os.path.isdir(protocol_folder):
+
                 self.protocol_list = [f for f in os.listdir(\
                                 os.path.join(
                                     os.path.expanduser('~'),
                                     'DATA', self.EXPERIMENTERS[experimenter]['folder'], 
                                     'visualStim-protocols')) if\
                             ((f!='_') and not ('DS' in f) and not ('._' in f))]
+
             else:
-                self.protocol_list = self.config['protocols']
+                print()
+                print(' no "visualStim-protocols" found in ~DATA/%s' % experimenter)
+                print()
+                self.protocol_list = []
+
             self.protocolBox.clear()
             self.protocolBox.addItems(['None']+self.protocol_list)
 
@@ -58,9 +69,6 @@ def update_config(self):
                 and not self.stopButton.isEnabled():
             self.runButton.setEnabled(True)
 
-     # now update screen 
-        # if 'Screen' in self.config:
-            # self.screenBox.setCurrentText(self.config['Screen'])
 
 def save_settings(self):
 

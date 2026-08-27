@@ -171,12 +171,31 @@ def multimodal(self,
                          self.nWidgetRow-ip, 
                          self.nWidgetCol-self.side_wdgt_length)
     # image choice box
-    self.imgButton = QtWidgets.QComboBox()
-    self.imgButton.addItems([' *pick camera* ', 'FaceCamera', 'RigCamera', 'ImagingCamera'])
-    tab.layout.addWidget(self.imgButton,
+    tab.layout.addWidget(\
+        QtWidgets.QLabel('** live : **', self),
                          ip, self.nWidgetCol-2,
                          1, 2)
-    # FaceCamera panel
+    ip+=1
+    self.liveFaceButton = QtWidgets.QPushButton('Face')
+    self.liveFaceButton.setCheckable(True)
+    tab.layout.addWidget(self.liveFaceButton,\
+                         ip, self.nWidgetCol-2,
+                         1, 2)
+    ip+=1
+    self.liveRigButton = QtWidgets.QPushButton('Rig')
+    self.liveRigButton.setCheckable(True)
+    tab.layout.addWidget(self.liveRigButton,\
+                         ip, self.nWidgetCol-2,
+                         1, 2)
+    ip+=1
+    self.liveImagingButton = QtWidgets.QPushButton('Imaging')
+    self.liveImagingButton.setCheckable(True)
+    tab.layout.addWidget(self.liveImagingButton,\
+                         ip, self.nWidgetCol-2,
+                         1, 2)
+    ip+=1
+
+    # FaceCamera/RigCamera/Imaging panel
     self.pFace = self.winImg.addViewBox(lockAspect=True,
                         invertY=True, border=[1, 1, 1])
     self.pCamImg = pg.ImageItem(np.ones((10,12))*50)

@@ -442,19 +442,19 @@ def run_update(self):
 
     # ----- online visualization here -----
     if (self.FaceCamera_process is not None) and\
-                    (self.imgButton.currentText()=='FaceCamera'):
+                    (self.liveFaceButton.isChecked()):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'FaceCamera-imgs')))
         self.pCamImg.setImage(image.T)
 
     elif (self.RigCamera_process is not None) and\
-                    (self.imgButton.currentText()=='RigCamera'):
+                    (self.liveRigButton.isChecked()):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'RigCamera-imgs')))
         self.pCamImg.setImage(image.T)
 
     elif (self.ImagingCamera_process is not None) and\
-                    (self.imgButton.currentText()=='ImagingCamera'):
+                    (self.liveImagingButton.isChecked()):
         image = np.load(get_latest_file(\
                 os.path.join(str(self.datafolder.get()), 'ImagingCamera-imgs')))
         self.pCamImg.setImage(image.T)
