@@ -23,8 +23,8 @@ from physion.utils.paths import FOLDERS
 from physion.utils.compression.nwb import convert_to_nwb
 from physion.utils.compression.h5 import convert_to_h5
 from physion.utils.compression.binary import convert_to_binary
-from physion.utils.compression.mp4 import convert_to_log8bit_mp4
-from physion.utils.compression.avi import convert_to_16bit_avi
+from physion.utils.compression.mp4 import convert_to_log8bit_mp4, reconvert_to_tiffs_from_log8bit
+from physion.utils.compression.avi import convert_to_16bit_avi, reconvert_to_tiffs_from_16bit
 
  
 
@@ -63,7 +63,7 @@ def imaging_to_movie_gui(self,
     self.add_side_widget(tab.layout, 
             QtWidgets.QLabel("Compression / Format : ", self))
     self.typeBox = QtWidgets.QComboBox()
-    self.typeBox.addItems(['nwb', 'binary', '8bit-LOG-mp4', '16bit-avi (lossless)'])
+    self.typeBox.addItems(['h5', 'nwb', 'binary', '8bit-LOG-mp4', '16bit-avi (lossless)'])
     self.add_side_widget(tab.layout, self.typeBox)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
@@ -82,10 +82,7 @@ def run_imaging_to_movie(self):
     for f in Fs:
 
         if '16bit' in self.typeBox.currentText():
-            print('')
-            print(' [!!] Not implemented yet [!!] ')
-            print('      use only from command line')
-            # convert_to_avi(f)
+            convert_to_16bit_avi(f)
         elif '8bit-LOG' in self.typeBox.currentText():
             convert_to_log8bit_mp4(f)
         elif 'binary' in self.typeBox.currentText():
