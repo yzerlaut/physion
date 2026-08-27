@@ -27,8 +27,8 @@ def update_config(self):
     experimenter = self.experimenterBox.currentText()
     config = self.configBox.currentText()
     protocol_folder = os.path.join(os.path.expanduser('~'),
-                            'DATA', self.EXPERIMENTERS[experimenter]['folder'], 
-                            'visualStim-protocols')
+                            'visualStim-protocols',
+                            self.EXPERIMENTERS[experimenter]['folder'])
 
     if config!='':
 
@@ -44,16 +44,12 @@ def update_config(self):
 
             if os.path.isdir(protocol_folder):
 
-                self.protocol_list = [f for f in os.listdir(\
-                                os.path.join(
-                                    os.path.expanduser('~'),
-                                    'DATA', self.EXPERIMENTERS[experimenter]['folder'], 
-                                    'visualStim-protocols')) if\
-                            ((f!='_') and not ('DS' in f) and not ('._' in f))]
+                self.protocol_list = [f for f in os.listdir(protocol_folder)\
+                                       if ((f!='_') and not ('DS' in f) and not ('._' in f))]
 
             else:
                 print()
-                print(' no "visualStim-protocols" found in ~DATA/%s' % experimenter)
+                print(' no "visualStim-protocols" found in ~/visualStim-protocol/%s' % experimenter)
                 print()
                 self.protocol_list = []
 

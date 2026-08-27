@@ -7,8 +7,8 @@ from PyQt5 import QtCore
 from physion.utils.files import get_latest_file
 from physion.acquisition.tools import find_line_props,\
         check_gui_to_init_metadata, set_filename_and_folder
-from physion.acquisition import recordings
-
+from physion.opto import stim as opto_stim
+from physion.ephys.synch import sequence as ephysSynch
 from physion.visual_stim.main import build_stim as build_VisualStim
 from physion.visual_stim.show import init_stimWindows
 
@@ -44,10 +44,9 @@ def init_VisualStim(self):
     movie_folder = \
         os.path.join(
             os.path.expanduser('~'),
-            'DATA', self.EXPERIMENTERS[\
+            'visualStim-protocols', self.EXPERIMENTERS[\
                         self.experimenterBox.currentText()\
                                         ]['folder'], 
-            'visualStim-protocols',
             self.protocolBox.currentText())
 
     with open(\
@@ -165,7 +164,7 @@ def run(self):
             #  -- find channel
             props = find_line_props(digital_line_labels,
                                     'ephys-synch-signal')
-            sequence = recordings.ephysSynch(self.max_time, freq=props['freq'])
+            sequence = ephysSynch(self.max_time, freq=props['freq'])
             digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.1}\
                                                     for e in sequence[:-1]]
 
@@ -173,27 +172,22 @@ def run(self):
             props = find_line_props(digital_line_labels,
                                     '2P-start-stop-trigger')
             
-            ###### EXTRACT THE DELAY FROM THE METADATA:  "2P-start-stop-trigger-with-0.1s-delay"
-
             digital_output_steps += [\
                 {'channel':props['chan'], 'onset':self.metadata['2P']['onset-delay'], 'duration':0.1},
                 {'channel':props['chan'], 'onset':self.max_time - self.metadata['2P']['offset-advance'], 'duration':0.1}]
             
-            ## --- old code using analog outputs --- 
-            # def trigger2P(t):
-            #     array = np.zeros(len(t), dtype=float)
-            #     array[(t>=TwoP_trigger_delay) & (t<(TwoP_trigger_delay+TwoP_pulse_length))] = 1.
-            #     return 5.*array 
-            # analog_output_funcs.append(recordings.trigger2P)
 
         if self.stim is not None:
-            #  means WITH VisualStim -- find channel
+            #  means WITH VisualStim -- find channel --> TTL for stim onsets
             props = find_line_props(digital_line_labels,
                                     'visual-stim-episode-start')
             digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.05}\
                                         for e in self.stim.experiment['time_start']]
 
+        ################################################################################
+        ##### ---> from here: WHAT IS THIS ?
         if (len(analog_output_labels)>0) and ('trigger-delay' in analog_output_labels[0]):
+            print('analog output trigger delay ... ')
             trigger_delay = float(analog_output_labels[0].split('trigger-delay-')[1].split('s')[0])
             def delayedTrigger(t):
                 array = np.zeros(len(t), dtype=float)
@@ -202,6 +196,7 @@ def run(self):
             analog_output_funcs.append(delayedTrigger)
 
         if (len(analog_output_labels)>1) and ('square-wave-TTL' in analog_output_labels[1]):
+            print('analog output square wave TTL ...')
             period = 1./2./float(analog_output_labels[1].split('square-wave-TTL-')[1].split('Hz')[0])
             def squareTTL(t):
                 array = np.zeros(len(t), dtype=float)
@@ -211,25 +206,14 @@ def run(self):
                     tt+=2*period
                 return 5.*array 
             analog_output_funcs.append(squareTTL)
+        ##### ---> end: WHAT IS THIS ?           TO BE REMOVED IF NOT USED...
+        ################################################################################
 
-        if 'Opto' in self.protocolBox.currentText():
-            ## -------------------------------------------------- ##
-            ## --------- OPTOGENETIC STEP STIMULATION !!! ------- ##
-            ##          the protocol name should have the suffix  ##
-            ##          of the form +1sPrePost, +0.5sPrePost, ... ##
-            ## -------------------------------------------------- ##
-            prepost_duration = float(self.protocolBox.currentText().split('+')[1].split('sPrePost')[0])
-            #  means WITH VisualStim -- find channel
-            props = find_line_props(\
-                self.metadata['NIdaq']['digital-outputs']['line-labels'],
-                                    'LED-optogenetics-activation')
-            digital_output_steps += [{'channel':props['chan'], 
-                                      'onset':e-prepost_duration, 
-                                      'duration':d+2*prepost_duration}\
-                                        for e, d, r in zip(\
-                                            self.stim.experiment['time_start'],
-                                            self.stim.experiment['time_duration'],
-                                            self.stim.experiment['repeat']) if (r%2==1)]
+        if 'Opto-stim' in self.protocol:
+
+            digital_output_steps += opto_stim.TTL_signal(self.stim, 
+                                                         self.metadata,
+                                                         self.protocol['Opto-stim'])
 
         if self.metadata['NIDAQ']:
 

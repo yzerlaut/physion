@@ -1,4 +1,4 @@
-from . import settings, tools, run, recordings
+from . import settings, tools, run
 
 MODALITIES = ['NIDAQ',
               'FaceCamera',

@@ -128,6 +128,9 @@ if __name__=='__main__':
     parser.add_argument("protocol", 
                         help="protocol as a json file", 
                         default='')
+    parser.add_argument('-o', "--output_folder", 
+                        help="protocol as a json file", 
+                        default='')
     parser.add_argument("--mp4", 
                         help="force to mp4 instead of wmv", 
                         action="store_true")
@@ -138,10 +141,15 @@ if __name__=='__main__':
     if os.path.isfile(args.protocol) and args.protocol.endswith('.json'):
             
             # create the associated protocol folder in the movies folder
-            protocol_folder = \
-                os.path.join(os.path.dirname(args.protocol),
-                    'movies',
-                    os.path.basename(args.protocol.replace('.json','')))
+            if args.output_folder!='':
+                protocol_folder = \
+                    os.path.join(args.output_folder,
+                        os.path.basename(args.protocol.replace('.json','')))
+            else:
+                protocol_folder = \
+                    os.path.join(
+                        os.path.expanduser('~'), 'visualStim-protocols',
+                        os.path.basename(args.protocol.replace('.json','')))
 
             if os.path.isfile(os.path.join(protocol_folder, 'protocol.json')):
                 # remove the previous content for security

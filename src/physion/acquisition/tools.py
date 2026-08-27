@@ -68,10 +68,10 @@ def check_gui_to_init_metadata(self):
     if self.protocolBox.currentText()!='None':
         fn = os.path.join(
                 os.path.expanduser('~'),
-                'DATA', self.EXPERIMENTERS[\
+                'visualStim-protocols',
+                self.EXPERIMENTERS[\
                             self.experimenterBox.currentText()\
                                             ]['folder'], 
-                'visualStim-protocols',
                 self.protocolBox.currentText(),
                           'protocol.json')
 
