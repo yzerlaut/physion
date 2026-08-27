@@ -17,6 +17,9 @@ _**Under the hood**_.  The stimulus presentation relies on `PyQt5` (`QMultimedia
 A given protocol is described by a `json` file.   
 It can be a single stimulus type or a "multiprotocol" (see below).
 
+The different stimuli are described in [stimuli/README.md](./stimuli/README.md)
+
+
 #### 1.a) Single Stimulus Protocol (with parameters variations)
 
 The syntax for a single stimulus with parameter variations is the following:
@@ -39,12 +42,57 @@ The syntax for a single stimulus with parameter variations is the following:
     "angle-1": 0.0, "angle-2": 135.0, "N-angle":4,
     "-------------------------------------------- 3": 0,
     "spatial-freq": 0.06,
-    "speed": 0, "radius": 10,
-    "json_location": "/Users/yann/Desktop/Visual-Stim-Bacci-Npx"
+    "speed": 0, 
+    "radius": 10
 }
 ```
 
 [ [!!] ]() N.B. make sure that your screen is correctly described in the [screens.py](./screens.py) script.
+
+
+now with optotgenetic stimulation:
+
+```
+{
+    "Presentation": "Stimuli-Sequence",
+    "Stimulus": "grating",
+    "Screen": "Dell-2020",
+    "shuffling": "full-with-alternate-even-odd-repeats",
+    "shuffling-seed": 34,
+    "presentation-duration": 2.0,
+    "presentation-interstim-period": 6.0,
+    "presentation-interstim-jitter": 3.0,
+    "presentation-prestim-period": 6,
+    "presentation-poststim-period": 6,
+    "presentation-blank-screen-color": 0.5,
+    "movie_refresh_freq": 30.0,
+    "units": "cm",
+    "-----------------------------------------------------------------0": 0,
+    "-------                 --> we photostimulate on odd trials ! ----": 0,
+    "-----------------------------------------------------------------1": 0,
+    "Opto-stim":{
+        "pre_window":1.0,
+        "post_window":1.0,
+        "Protocol-1":{
+            "trials":"odd"
+        }
+    },
+    "-----------------------------------------------------------------2": 0,
+    "angle-1": 0.0,
+    "angle-2": 90.0,
+    "N-angle": 2,
+    "contrast-1": 0.5,
+    "contrast-2": 1.0,
+    "N-contrast": 2,
+    "-----------------------------------------------------------------3": 0,
+    "spatial-freq": 0.04,
+    "speed": 0,
+    "phase": 90,
+    "radius": 200,
+    "-----------------------------------------------------------------4": 0,
+    "N-repeat": 2
+}
+```
 
 #### 1.b) Protocols made of Multiple Stimulus Types
 
