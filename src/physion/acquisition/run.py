@@ -6,7 +6,7 @@ from PyQt5 import QtCore
 
 from physion.utils.files import get_latest_file
 from physion.acquisition.tools import find_line_props,\
-        check_gui_to_init_metadata, set_filename_and_folder, stimulus_movies_folder
+        check_gui_to_init_metadata, set_filename_and_folder
 from physion.acquisition import recordings
 
 from physion.visual_stim.main import build_stim as build_VisualStim
@@ -42,8 +42,13 @@ except ModuleNotFoundError:
 def init_VisualStim(self):
 
     movie_folder = \
-        os.path.join(stimulus_movies_folder,
-                     self.protocolBox.currentText())
+        os.path.join(
+            os.path.expanduser('~'),
+            'DATA', self.EXPERIMENTERS[\
+                        self.experimenterBox.currentText()\
+                                        ]['folder'], 
+            'visualStim-protocols',
+            self.protocolBox.currentText())
 
     with open(\
             os.path.join(movie_folder,

@@ -8,14 +8,33 @@ MODALITIES = ['NIDAQ',
               'CaImaging',
               'onlyDemo']
 
-EXPERIMENTERS = [
-    '',
-    'Adrianna Nozownik',
-    'Cibele Martins Pinho',
-    'Dhanasak Dhanasobhon',
-    'Joana Lourenco',
-    'Laura Sofia Gonzalez',
-    'Pan Sally Zhang',
-    'Valentin Ritou',
-    'Yann Zerlaut',
-]
+EXPERIMENTERS = {
+    '':{'folder':''},
+    'Adrianna Nozownik':{
+        'folder':'Adrianna'
+        },
+    'Cibele Martins Pinho':{
+        'folder':'Cibele'
+        },
+    'Dhanasak Dhanasobhon':{
+        'folder':'Taddy'
+        },
+    'Joana Lourenco':{
+        'folder':'Joana'
+        },
+    'Laura Sofia Gonzalez':{
+        'folder':'Sofia'
+        },
+    'Nathan Mallet':{
+        'folder':'Nathan'
+        },
+    'Pan Sally Zhang':{
+        'folder':'Sally'
+        },
+    'Valentin Ritou':{
+        'folder':'Valentin'
+        },
+    'Yann Zerlaut':{
+        'folder':'Yann'
+        },
+}

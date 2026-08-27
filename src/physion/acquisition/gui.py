@@ -25,6 +25,7 @@ def multimodal(self,
     self.config = None
     self.subject, self.protocol = None, {}
     self.MODALITIES = MODALITIES
+    self.EXPERIMENTERS = EXPERIMENTERS
 
     ##########################################
     ######## Multiprocessing quantities  #####
@@ -55,13 +56,7 @@ def multimodal(self,
 
     # ========================================================
     #------------------- SIDE PANELS FIRST -------------------
-    # folder box
-    self.add_side_widget(tab.layout,
-            QtWidgets.QLabel('data folder:'))
-    self.folderBox = QtWidgets.QComboBox(self)
-    self.folderBox.addItems(FOLDERS.keys())
-    self.add_side_widget(tab.layout, self.folderBox)
-    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    # -------------------------------------------------------
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     # -------------------------------------------------------
     self.add_side_widget(tab.layout,
@@ -124,10 +119,11 @@ def multimodal(self,
                          ip, self.side_wdgt_length+1, 
                          1, int(width/2))
     self.experimenterBox = QtWidgets.QComboBox(self)
-    self.experimenterBox.addItems(EXPERIMENTERS)
+    self.experimenterBox.addItems(self.EXPERIMENTERS.keys())
     tab.layout.addWidget(self.experimenterBox,\
                          ip, self.side_wdgt_length+int(width/2)+1, 
                          1, int(width/2))
+    self.experimenterBox.activated.connect(self.update_config)
     ip+=1
     # -
     tab.layout.addWidget(\
@@ -223,8 +219,6 @@ def multimodal(self,
 def plot_NIdaq_of_last():
     # last folder
     folder = last_datafolder_in_dayfolder(\
-                # day_folder(FOLDERS[list(FOLDERS.keys())[0]]))
-                # day_folder(FOLDERS[self.folderBox.currentText()])
                 day_folder(os.path.expanduser('~/DATA')))
     print()
     print('[ ] loading NIdaq data of recording: ', folder)

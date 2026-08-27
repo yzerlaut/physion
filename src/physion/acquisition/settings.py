@@ -24,7 +24,10 @@ def get_config_list(self):
 
 def update_config(self):
 
-    if self.configBox.currentText()!='':
+    experimenter = self.experimenterBox.currentText()
+    config = self.configBox.currentText()
+
+    if config!='':
 
         # first read the new config
         fn = os.path.join(base_path, 'configs',
@@ -35,9 +38,12 @@ def update_config(self):
         if hasattr(self, 'protocolBox'):
             # now update protocols
             if self.config['protocols']=='all':
-                self.protocol_list = [f for f in os.listdir(os.path.join(base_path,
-                                        'protocols', 'movies')) if\
-                                            ((f!='_') and not ('DS' in f) and not ('._' in f))]
+                self.protocol_list = [f for f in os.listdir(\
+                                os.path.join(
+                                    os.path.expanduser('~'),
+                                    'DATA', self.EXPERIMENTERS[experimenter]['folder'], 
+                                    'visualStim-protocols')) if\
+                            ((f!='_') and not ('DS' in f) and not ('._' in f))]
             else:
                 self.protocol_list = self.config['protocols']
             self.protocolBox.clear()

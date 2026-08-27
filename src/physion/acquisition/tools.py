@@ -6,17 +6,13 @@ base_path = str(pathlib.Path(__file__).resolve().parents[0])
 from physion.utils.files0 import generate_datafolders, get_date, get_time
 from physion.utils.paths import FOLDERS
 
-stimulus_movies_folder = os.path.join(base_path, 
-                                      'protocols', 'movies')
-
 def set_filename_and_folder(self):
 
     self.date, self.time = get_date(), get_time()
-    if hasattr(self, 'folderBox'):
-        self.root_data_folder = FOLDERS[self.folderBox.currentText()]
-    else:
-        self.root_data_folder = os.path.join(\
-                            os.path.expanduser('~'), 'DATA')
+
+    self.root_data_folder = os.path.join(\
+                os.path.expanduser('~'), 'DATA', 
+                    self.EXPERIMENTERS[self.experimenterBox.currentText()]['folder'])
 
     self.date_time_folder = generate_datafolders(\
                                     self.root_data_folder,
@@ -70,9 +66,15 @@ def check_gui_to_init_metadata(self):
                 'subject_ID':self.subjectBox.text()}
 
     if self.protocolBox.currentText()!='None':
-        fn = os.path.join(stimulus_movies_folder,
-                          self.protocolBox.currentText(), 
+        fn = os.path.join(
+                os.path.expanduser('~'),
+                'DATA', self.EXPERIMENTERS[\
+                            self.experimenterBox.currentText()\
+                                            ]['folder'], 
+                'visualStim-protocols',
+                self.protocolBox.currentText(),
                           'protocol.json')
+
         with open(fn) as f:
             self.protocol = json.load(f)
     else:
