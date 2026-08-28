@@ -8,9 +8,6 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 
-# import the 2P trigger delay from the acquisition module !
-from physion.acquisition.recordings.Scan1Plane_Screen342V import TwoP_trigger_delay
-
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.to_nwb import add_ophys_processing_from_suite2p
 
@@ -376,6 +373,7 @@ def add_ophys(nwbfile, args,
     nwbfile.add_acquisition(image_series)
 
     if os.path.isdir(os.path.join(args.imaging, 'suite2p')):
+        TwoP_trigger_delay=0.1 # [!!] hard-coded here.... TOREMOVE [!!]
         print('=> Adding the suite2p processing for "%s" [...]' % args.imaging)
         add_ophys_processing_from_suite2p(os.path.join(args.imaging, 'suite2p'),
                                           nwbfile, xml,
