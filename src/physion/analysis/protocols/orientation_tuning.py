@@ -80,6 +80,7 @@ def fit_gaussian(angles, values,
 
 def compute_tuning_response_per_cells(data, Episodes,
                                       stat_test_props,
+                                      prefered_angles=None,
                                       response_significance_threshold = 0.05,
                                       filtering_cond=None,
                                       quantity='dFoF',
@@ -92,6 +93,10 @@ def compute_tuning_response_per_cells(data, Episodes,
 
     All cells are considered in this analysis !!
       --> think about filtering them by resp['significant_ROIs'] when needed !!
+
+
+    you can force the preferred angles
+        e.g. in rest / run analysis, you calculate it with the  
 
     """
 
@@ -124,25 +129,26 @@ def compute_tuning_response_per_cells(data, Episodes,
     # if significant in at least one orientation
     significant = (np.sum(summary['significant'], axis=1)>0)
 
-    # find preferred angle:
-    ipref = np.argmax(summary['value'], axis=1).flatten()
-    # print(ipref)
+    if prefered_angles is None:
+        # we calculate the preferred angle from the data
 
-    prefered_angles = np.array(\
-            [summary['angle'][i] for i in ipref])
+        # find preferred angle:
+        ipref = np.argmax(summary['value'], axis=1).flatten()
+        # print(ipref)
+
+        prefered_angles = np.array(\
+                [summary['angle'][i] for i in ipref])
 
     selectivities = np.array([\
         selectivity_index(summary['angle'],
                           summary['value'][roi, :])\
                             for roi in range(data.nROIs)])
 
-    RESPONSES, semRESPONSES, Ntrials = [], [], []
+    RESPONSES = np.zeros((data.nROIs, len(shifted_angle)))
+    semRESPONSES = np.zeros((data.nROIs, len(shifted_angle)))
+    Ntrials = np.zeros((data.nROIs, len(shifted_angle)), dtype=int)
+
     for roi in range(data.nROIs):
-
-        RESPONSES.append(np.zeros(len(shifted_angle)))
-        semRESPONSES.append(np.zeros(len(shifted_angle)))
-        Ntrials.append(np.zeros(len(shifted_angle)))
-
         for angle, value, std, ntrials in zip(\
             summary['angle'],
             summary['value'][roi,:], 
@@ -155,9 +161,9 @@ def compute_tuning_response_per_cells(data, Episodes,
                                                     angle_range=angle_range)
             iangle = np.flatnonzero(shifted_angle==new_angle)[0]
 
-            RESPONSES[-1][iangle] = value
-            semRESPONSES[-1][iangle] = std/np.sqrt(ntrials)
-            Ntrials[-1][iangle] = ntrials
+            RESPONSES[roi,iangle] = value
+            semRESPONSES[roi,iangle] = std/np.sqrt(ntrials)
+            Ntrials[roi,iangle] = ntrials
 
     return {'Responses':np.array(RESPONSES),
             'semResponses':np.array(semRESPONSES),
@@ -166,7 +172,7 @@ def compute_tuning_response_per_cells(data, Episodes,
             'prefered_angles':np.array(prefered_angles),
             'significant_ROIs':np.array(significant),
             'std-values':summary['std-value'], 
-            'ntrials': np.array(Ntrials[0])}
+            'ntrials': Ntrials}
 
 
 ###########################

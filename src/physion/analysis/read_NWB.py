@@ -294,6 +294,11 @@ class Data:
 
         self.initialize_ROIs()
                 
+    def build(self,
+              keys=['running', 'photodiode']):
+        # build modality with default options...
+        for key in keys:
+            getattr(self, 'build_%s' % key)()
 
     ######################
     #    LOCOMOTION
@@ -518,7 +523,7 @@ class Data:
     def build_LFP(self,
                     specific_time_sampling=None,
                     interpolation='linear',
-                    verbose=True):
+                    verbose=False):
 
         if self.has_LFP():
 
@@ -548,7 +553,7 @@ class Data:
     def build_MUA(self,
                     specific_time_sampling=None,
                     interpolation='linear',
-                    verbose=True):
+                    verbose=False):
 
         if self.has_MUA():
 
@@ -578,7 +583,7 @@ class Data:
             specific_time_sampling=None,
             dt=1e-3,
             interpolation='linear',
-            verbose=True):
+            verbose=False):
         """
         single-unit Spikes
 
@@ -637,48 +642,9 @@ class Data:
             print(' %s --> "spikeWaveforms" not available ...' % self.df_name)
 
 
-
-
-    def build_muEvents(self,
-            specific_time_sampling=None,
-            dt=1e-3,
-            interpolation='linear',
-            verbose=True):
-        """
-        multi-unit peak detection Events
-
-        builds a matrix (channels, times) of integer values
-            True -> means spike at that time for that unit
-
-
-        by default: dt=1ms
-        """
-        n = int((self.tlim[1]-self.tlim[0])/dt)
-        self.t_muEvents= np.arange(n)*dt
-        self.muEvents= np.zeros(\
-            (len(self.nwbfile.electrodes), n), dtype=np.uint8)
-        
-        channels = self.nwbfile.processing['Spiking'].data_interfaces['multi-unit Events'].data[:]
-        times = self.nwbfile.processing['Spiking'].data_interfaces['multi-unit Events'].data[:]
-        for chan in np.unique(channels):
-            channel_cond = channels==chan
-            for s in times[channel_cond]:
-                if int(s/dt)<n:
-                    self.muEvents[chan, int(s/dt)] += 1
-
-        if specific_time_sampling is not None:
-            return np.array([\
-                tools.resample(self.t_muEvents,
-                                self.muEvents[i,:],
-                                specific_time_sampling,
-                                interpolation=interpolation,
-                                verbose=verbose)\
-                                for i in range(self.muEvents.shape[0])])
-
     #############################
     #       Calcium Imaging     #
     #############################
-
         
     def build_dFoF(self,
                    roiIndex=None, 
@@ -1004,7 +970,7 @@ class Data:
 
         
 def scan_folder_for_NWBfiles(folder, 
-                             for_protocol=None,
+                             for_protocol='', # this includes all
                              for_protocols=[],
                              sorted_by='filename',
                              Nmax=1000000,
@@ -1013,14 +979,15 @@ def scan_folder_for_NWBfiles(folder,
     """
     scan folders for protocols and returns a list of datafiles
 
+    You can either filter by 
+        - full protocol name with "for_protocol=..."
+        - subprotocol name with "for_protocols=[..., ...]"
+
     by default: excludes the intrinsic imaging files
     """
     if verbose:
         print('inspecting the folder "%s" [...]' % folder)
         t0 = time.time()
-
-    if (for_protocol is not None) and (len(for_protocols)==0):
-        for_protocols = [for_protocol]
 
     FILES0 = get_files_with_extension(folder,
                     extension='.nwb', recursive=True)
@@ -1032,13 +999,14 @@ def scan_folder_for_NWBfiles(folder,
                                       ('up-' not in f))]
 
     DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES0])
-    FILES, SUBJECTS, PROTOCOLS, PROTOCOL_IDS= [], [], [], []
-    VIRUSES, AGES = [], []
+    FILES, SUBJECTS, VIRUSES, AGES = [], [], [], []
+    PROTOCOL, PROTOCOLS, PROTOCOL_IDS= [], [], []
 
     for f in FILES0[:Nmax]:
 
         try:
-            data = Data(f, metadata_only=True, verbose=False)
+            data = Data(f, metadata_only=True, 
+                        verbose=False)
 
             if len(for_protocols)>0:
 
@@ -1053,16 +1021,18 @@ def scan_folder_for_NWBfiles(folder,
                 if len(Protocols)>0:
                     # if it has at least one protocol, we include it
                     FILES.append(f)
+                    PROTOCOL.append(data.metadata['protocol'])
                     PROTOCOLS.append(Protocols)
                     PROTOCOL_IDS.append(iProtocols)
                     SUBJECTS.append(data.nwbfile.subject.subject_id)
                     AGES.append(data.age)
                     VIRUSES.append(data.virus)
 
-            else:
+            elif for_protocol in data.metadata['protocol']:
+                # with default '',  it includes all protocols
 
-                # we include with all protocols
                 FILES.append(f)
+                PROTOCOL.append(data.metadata['protocol'])
                 PROTOCOLS.append(data.protocols)
                 PROTOCOL_IDS.append(range(len(data.protocols)))
                 SUBJECTS.append(data.nwbfile.subject.subject_id)
@@ -1078,9 +1048,7 @@ def scan_folder_for_NWBfiles(folder,
     if verbose:
         print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES),
                                                         (time.time()-t0)))
-
     # sorted by filename
-
     if sorted_by=='filename':
         isorted = np.argsort(FILES)
     elif sorted_by=='subject':
@@ -1098,6 +1066,7 @@ def scan_folder_for_NWBfiles(folder,
             'subjects':np.array(SUBJECTS)[isorted],
             'ages':np.array(AGES)[isorted],
             'viruses':np.array(VIRUSES)[isorted],
+            'protocol':[PROTOCOL[i] for i in isorted],
             'protocol_ids':[PROTOCOL_IDS[i] for i in isorted],
             'protocols':[PROTOCOLS[i] for i in isorted]}
 
