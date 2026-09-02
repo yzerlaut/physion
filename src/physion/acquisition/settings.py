@@ -24,11 +24,18 @@ def get_config_list(self):
 
 def update_config(self):
 
-    experimenter = self.experimenterBox.currentText()
+    if hasattr(self, 'experimenterBox'):
+        experimenter = self.experimenterBox.currentText()
+    else:
+        experimenter = ''
+
     config = self.configBox.currentText()
-    protocol_folder = os.path.join(os.path.expanduser('~'),
-                            'visualStim-protocols',
-                            self.EXPERIMENTERS[experimenter]['folder'])
+    if hasattr(self, 'EXPERIMENTERS'):
+        protocol_folder = os.path.join(os.path.expanduser('~'),
+                                'visualStim-protocols',
+                                self.EXPERIMENTERS[experimenter]['folder'])
+    else:
+        protocol_folder = ''
 
     if config!='':
 
