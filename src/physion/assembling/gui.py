@@ -109,6 +109,20 @@ def build_NWB_from_DataTable_UI(self, tab_id=1):
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.add_side_widget(tab.layout, 
+                         QtWidgets.QLabel('assemble:'),
+                         spec='small-left')
+    self.datafilesBox = QtWidgets.QLineEdit(self)
+    self.datafilesBox.setText('all')
+    self.add_side_widget(tab.layout, self.datafilesBox, spec='large-right')
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('   possibilities, either: "all", "3", "3-7", '))
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
     self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
     self.runBtn.clicked.connect(self.runBuildNWBfromDTBL)
@@ -134,12 +148,31 @@ def choose_DataTable(self):
     print(self.DataTable_file)
 
 def runBuildNWBfromDTBL(self):
+
     if self.DataTable_file is not None:
 
 
         cmd = '%s -m physion.assembling.nwb %s' % (python_path,
                                                    self.DataTable_file)
         cmd += ' --destination_folder %s' % os.path.dirname(self.DataTable_file)
+
+        if self.datafilesBox.text()=='all':
+            pass
+        elif '-' in self.datafilesBox.text():
+            try:
+                i0 = int(self.datafilesBox.text().split('-')[0]) 
+                i1 = int(self.datafilesBox.text().split('-')[1]) 
+                cmd += ' -fi %i %i' % (i0, i1)
+            except BaseException as be:
+                print(be)
+                print('pb in extracting protocol name')
+        else:
+            try:
+                i0 = int(self.datafilesBox.text())
+                cmd += ' -fi %i %i' % (i0, i0+1)
+            except BaseException as be:
+                print(be)
+                print('pb in extracting protocol name')
 
         print('\n launching the command \n :  %s \n ' % cmd)
         p = subprocess.Popen(cmd, 
