@@ -11,6 +11,16 @@ absolute_path_to_dlls = os.path.join(Path(__file__).parent, 'camera_dlls')
 os.environ['PATH'] = absolute_path_to_dlls + os.pathsep + os.environ['PATH']
 if os.name not in ['posix']:
     os.add_dll_directory(absolute_path_to_dlls)
+else:
+    try:
+        os.add_dll_directory(absolute_path_to_dlls)
+    except BaseException as be:
+        print("""
+
+        missing DLLs for camera on windows
+            can not use this version to record cameras...
+
+        """)
 
 from thorlabs_tsi_sdk.tl_camera import TLCameraSDK
 
