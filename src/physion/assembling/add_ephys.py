@@ -31,6 +31,13 @@ def build_args_for_ephys(args, dataset, i, directory):
     args.stream_name='Record Node 101#OneBox-100.ProbeA' 
  
 
+def mean_func(hfRec, channel_range):
+    print('- averaging channels:', channel_range)
+    return hfRec.get_traces(\
+            channel_ids=\
+                hfRec.get_channel_ids()[channel_range]\
+                    ).mean(axis=1)
+
 def add_ephys(nwbfile, args,
             metadata=None,
             LFP_BAND = [0.5, 300.0],
@@ -225,26 +232,18 @@ def add_ephys(nwbfile, args,
                             resample_rate=resample_rate)
         
         print('- 4) computing traces by averaging groups of "electrode_subsampling"')
-        mua_traces = np.zeros(
-            (hfRec.get_num_frames(), len(elecSubsampling)))
-
-        def mean_func(channel_range):
-            return hfRec.get_traces(\
-                                  channel_ids=\
-                                        hfRec.get_channel_ids()[channel_range]\
-                                    ).mean(axis=1)
-
-        print(mua_traces.shape)
+        # mua_traces = np.zeros(
+        #       (hfRec.get_num_frames(), len(elecSubsampling)))
 
         channel_ranges = [\
             ee*args.electrode_subsampling+\
                         np.arange(args.electrode_subsampling)\
-                        for ee in 
-            ]
-        with mp.Pool(processes=int(0.8*mp.cpu_count)) as pool:
+                        for ee in range(len(elecSubsampling))]
+
+        with mp.Pool(processes=int(0.8*mp.cpu_count())) as pool:
             mua_traces = np.array(\
-                        pool.map(mean_func, channel_ranges))
-        print(mua_traces.shape)
+                        pool.starmap(mean_func,\
+                                [(hfRec, c) for c in channel_ranges])).T
 
         # ee=0
         # while ee<len(elecSubsampling):
