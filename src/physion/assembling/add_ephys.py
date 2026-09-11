@@ -223,7 +223,7 @@ def add_ephys(nwbfile, args,
         hfRec = si.resample(hfRec,
                             resample_rate=resample_rate)
         
-        print('- 4) computing traces by averaging groups of "electrode_subsampling"
+        print('- 4) computing traces by averaging groups of "electrode_subsampling"')
         mua_traces = np.zeros(
             (hfRec.get_num_frames(), len(elecSubsampling)))
         for ee in range(len(elecSubsampling)-1):
