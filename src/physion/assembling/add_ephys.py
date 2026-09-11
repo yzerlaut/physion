@@ -2,6 +2,7 @@ import tempfile, os
 import numpy as np
 import pandas as pd
 from scipy import signal
+import multiprocessing as mp
 
 from spikeinterface.extractors import read_openephys
 from spikeinterface.sortingcomponents import peak_detection
@@ -226,15 +227,40 @@ def add_ephys(nwbfile, args,
         print('- 4) computing traces by averaging groups of "electrode_subsampling"')
         mua_traces = np.zeros(
             (hfRec.get_num_frames(), len(elecSubsampling)))
-        for ee in range(len(elecSubsampling)-1):
-            channel_range = ee*args.electrode_subsampling+\
-                    np.arange(args.electrode_subsampling)
-            print('- averaging channels:', channel_range)
-            mua_traces[:,ee] =\
-                  hfRec.get_traces(\
-                      channel_ids=\
-                            hfRec.get_channel_ids()[channel_range]\
-                        ).mean(axis=1)
+
+        def mean_func(channel_range):
+            return hfRec.get_traces(\
+                                  channel_ids=\
+                                        hfRec.get_channel_ids()[channel_range]\
+                                    ).mean(axis=1)
+
+        print(mua_traces.shape)
+
+        channel_ranges = [\
+            ee*args.electrode_subsampling+\
+                        np.arange(args.electrode_subsampling)\
+                        for ee in 
+            ]
+        with mp.Pool(processes=int(0.8*mp.cpu_count)) as pool:
+            mua_traces = np.array(\
+                        pool.map(mean_func, channel_ranges))
+        print(mua_traces.shape)
+
+        # ee=0
+        # while ee<len(elecSubsampling):
+        #     for n in range(np.min([mp.cpu_count,
+        #                            len(elecSubsampling)-ee])):
+        #         channel_range = ee*args.electrode_subsampling+\
+        #                 np.arange(args.electrode_subsampling)
+        #         ee+=1
+
+        # for ee in range(len(elecSubsampling)-1):
+        #     print('- averaging channels:', channel_range)
+        #     mua_traces[:,ee] =\
+        #           hfRec.get_traces(\
+        #               channel_ids=\
+        #                     hfRec.get_channel_ids()[channel_range]\
+        #                 ).mean(axis=1)
 
         # compute mean traces 
 
