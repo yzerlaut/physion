@@ -36,7 +36,7 @@ def add_ephys(nwbfile, args,
             MUA_BAND = [300.0, 6000.0],
             resampling_factor = 24, # int,  gives a resampled_rate = 1250,
             margin_ms = 10000,
-            chunking_window = '60s'):
+            chunking_window = '5s'):
     """
     See:
     https://pynwb.readthedocs.io/en/dev/tutorials/domain/ecephys.html
@@ -211,25 +211,25 @@ def add_ephys(nwbfile, args,
         #      but we average those in between the contacts we don't keep
         # in order, we do:
 
-        # print('- 1) bandpass filtering')
+        print('- 1) bandpass filtering')
         hfRec = si.bandpass_filter(siRec,
                     freq_min=MUA_BAND[0], 
                     freq_max=MUA_BAND[1])
 
-        # print('- 2) rectifying')
+        print('- 2) rectifying')
         hfRec = si.rectify(hfRec)
 
-        # print('- 3) resampling')
+        print('- 3) resampling')
         hfRec = si.resample(hfRec,
                             resample_rate=resample_rate)
         
-        # print('- 4) computing traces by averaging groups of "electrode_subsampling"
+        print('- 4) computing traces by averaging groups of "electrode_subsampling"
         mua_traces = np.zeros(
             (hfRec.get_num_frames(), len(elecSubsampling)))
         for ee in range(len(elecSubsampling)-1):
             channel_range = ee*args.electrode_subsampling+\
                     np.arange(args.electrode_subsampling)
-            # print('- averaging channels:', channel_range)
+            print('- averaging channels:', channel_range)
             mua_traces[:,ee] =\
                   hfRec.get_traces(\
                       channel_ids=\
@@ -282,7 +282,7 @@ def add_ephys(nwbfile, args,
                         folder=temp_folder, 
                         chunk_duration=chunking_window,
                         overwrite=True,
-                        n_jobs=0.8, #
+                        n_jobs=0.8, # 
                         progress_bar=True)
 
         rec = si.load(temp_folder,
