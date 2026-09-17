@@ -355,7 +355,7 @@ def plot_orientation_tuning_curve(keys,
 
             # load data
             Tunings = \
-                    np.load(os.path.join(path, 'Deconvolved_Tunings_%s.npy' % key), 
+                    np.load(os.path.join(path, 'Tunings_%s.npy' % key), 
                             allow_pickle=True)
     
             Responses = get_tuning_responses(Tunings,
