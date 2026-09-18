@@ -27,10 +27,12 @@ data.build_dFoF(method_for_F0='sliding_percentile',
                 percentile=10., 
                 verbose=False)
 
+# %%
 Episodes = EpisodeData(data,
-                    quantities=['dFoF', 'running_speed', 'pupil_diameter'],
+                    quantities=['dFoF', 'running', 'pupil'],
                     protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
                     verbose=False,
+                    prestim_duration=1.,
                     dt_sampling=10)
 
 # %%
