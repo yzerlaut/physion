@@ -236,9 +236,10 @@ def add_ephys(nwbfile, args,
         #       (hfRec.get_num_frames(), len(elecSubsampling)))
 
         channel_ranges = [\
-            ee*args.electrode_subsampling+\
-                        np.arange(args.electrode_subsampling)\
-                        for ee in range(len(elecSubsampling))]
+            np.arange(\
+                ee*args.electrode_subsampling,
+                np.min([ee*args.electrode_subsampling+args.electrode_subsampling,
+                        e1])) for ee in range(len(elecSubsampling))]
 
         with mp.Pool(processes=int(0.8*mp.cpu_count())) as pool:
             mua_traces = np.array(\
