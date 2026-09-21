@@ -304,6 +304,7 @@ def add_ephys(nwbfile, args,
         temp_folder = os.path.join(tempfile.gettempprefix(), 'temp')
         # ── 1. We save the data in the memory with an **extended** chunk size to avoid boundary artefacts
         if True: 
+            print('- 1) rewriting the raw data with extended chunk windows')
             siRec.save(format='binary', 
                         folder=temp_folder, 
                         chunk_duration=chunking_window,
@@ -311,10 +312,12 @@ def add_ephys(nwbfile, args,
                         n_jobs=0.8, # 
                         progress_bar=True)
 
+        print('- 2) loading the raw data with extended chunk windows')
         rec = si.load(temp_folder,
                     chunk_duration=chunking_window)
 
         # ── 2. Apply filter + resample pipeline on the extended chunk ─────
+        print('- 3) applying the LFP filter')
         rec_lfp = si.resample(
                 si.bandpass_filter(rec, 
                     freq_min=LFP_BAND[0], 
@@ -325,6 +328,7 @@ def add_ephys(nwbfile, args,
                 resample_rate=resample_rate)
 
         # ── 3. Build NWB LFP objects ───────────────────────────────────────
+        print('- 4) writing the LFP data in nwbfile')
         lfp_es = ElectricalSeries(
             name          = "LFP",
             data          = rec_lfp.get_traces(),
