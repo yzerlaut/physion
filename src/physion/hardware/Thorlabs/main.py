@@ -9,9 +9,7 @@ from scipy.ndimage import gaussian_filter
 absolute_path_to_dlls = os.path.join(Path(__file__).parent, 'camera_dlls')
 
 os.environ['PATH'] = absolute_path_to_dlls + os.pathsep + os.environ['PATH']
-if os.name not in ['posix']:
-    os.add_dll_directory(absolute_path_to_dlls)
-else:
+if os.name!='posix':
     try:
         os.add_dll_directory(absolute_path_to_dlls)
     except BaseException as be:
