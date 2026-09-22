@@ -704,21 +704,27 @@ class Data:
         setattr(self, 'Zscore_dFoF', 
             (self.dFoF-self.dFoF.mean(axis=0).reshape(1, self.dFoF.shape[1]))/self.dFoF.std(axis=0).reshape(1, self.dFoF.shape[1]))
 
-    def build_Deconvolved(self, Tau=1.3, quantity='dFoF'):
+    def build_Deconvolved(self, Tau=1.3, 
+                          quantity='dFoF'):
         """
         use the oasis library to deconvolve the fluorescence signals of choice (default: dFoF)
         """
         fluorescence_name = quantity[12:]
 
-        if hasattr(self, fluorescence_name) : 
+        if hasattr(self, fluorescence_name): 
 
             setattr(data, 't_' + quantity, data.t_dFoF)
             fsignal = getattr(self, fluorescence_name)
-            setattr(self, 'Deconvolved_' + fluorescence_name,
-                    oasis(fsignal, 
+            deconv = oasis(fsignal, 
                           fsignal.shape[0], # batch size
-                              Tau, 1./self.CaImaging_dt))
-        else : 
+                              Tau, 1./self.CaImaging_dt)
+            setattr(self, 'Deconvolved_' + fluorescence_name,
+                    deconv)
+
+            self.t_Deconvolved = self.t_dFoF
+            self.Deconvolved = deconv
+
+        else: 
             print('\n deconvolution not possible \n --> ' + fluorescence_name + ' does not exist')
             print("build your signal before deconvolving using 'setattr(data, name of your signal, values of your signal)'")
 
