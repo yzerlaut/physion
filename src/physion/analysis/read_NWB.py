@@ -705,7 +705,8 @@ class Data:
             (self.dFoF-self.dFoF.mean(axis=0).reshape(1, self.dFoF.shape[1]))/self.dFoF.std(axis=0).reshape(1, self.dFoF.shape[1]))
 
     def build_Deconvolved(self, Tau=1.3, 
-                          quantity='dFoF'):
+                          quantity='dFoF',
+                          verbose=False):
         """
         use the oasis library to deconvolve the fluorescence signals of choice (default: dFoF)
         """
