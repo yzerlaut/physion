@@ -721,6 +721,7 @@ class Data:
             setattr(self, 'Deconvolved_' + quantity,
                     deconv)
 
+            # for backward compatibilty
             self.t_Deconvolved = self.t_dFoF
             self.Deconvolved = deconv
 
