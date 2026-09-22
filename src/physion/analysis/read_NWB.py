@@ -713,7 +713,9 @@ class Data:
 
         if hasattr(self, quantity): 
 
-            setattr(data, 't_' + quantity, data.t_dFoF)
+            self.t_Deconvolved = self.t_dFoF
+
+            # for backward compatibilty
             fsignal = getattr(self, quantity)
             deconv = oasis(fsignal,
                             fsignal.shape[0], # batch size
@@ -721,8 +723,6 @@ class Data:
             setattr(self, 'Deconvolved_' + quantity,
                     deconv)
 
-            # for backward compatibilty
-            self.t_Deconvolved = self.t_dFoF
             self.Deconvolved = deconv
 
         else: 
