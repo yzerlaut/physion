@@ -710,23 +710,22 @@ class Data:
         """
         use the oasis library to deconvolve the fluorescence signals of choice (default: dFoF)
         """
-        fluorescence_name = quantity[12:]
 
-        if hasattr(self, fluorescence_name): 
+        if hasattr(self, quantity): 
 
             setattr(data, 't_' + quantity, data.t_dFoF)
             fsignal = getattr(self, fluorescence_name)
-            deconv = oasis(fsignal, 
+            deconv = oasis(getattr(self, quantity),
                           fsignal.shape[0], # batch size
                               Tau, 1./self.CaImaging_dt)
-            setattr(self, 'Deconvolved_' + fluorescence_name,
+            setattr(self, 'Deconvolved_' + quantity,
                     deconv)
 
             self.t_Deconvolved = self.t_dFoF
             self.Deconvolved = deconv
 
         else: 
-            print('\n deconvolution not possible \n --> ' + fluorescence_name + ' does not exist')
+            print('\n deconvolution not possible \n --> ' + quantity + ' does not exist')
             print("build your signal before deconvolving using 'setattr(data, name of your signal, values of your signal)'")
 
     
