@@ -714,9 +714,9 @@ class Data:
         if hasattr(self, quantity): 
 
             setattr(data, 't_' + quantity, data.t_dFoF)
-            fsignal = getattr(self, fluorescence_name)
-            deconv = oasis(getattr(self, quantity),
-                          fsignal.shape[0], # batch size
+            fsignal = getattr(self, quantity)
+            deconv = oasis(fsignal,
+                            fsignal.shape[0], # batch size
                               Tau, 1./self.CaImaging_dt)
             setattr(self, 'Deconvolved_' + quantity,
                     deconv)
