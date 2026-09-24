@@ -27,6 +27,10 @@ def trial_averaging(self,
                     box_width=250,
                     tab_id=2):
 
+    if self.data is None:
+        self.statusBar.showMessage(' [!!] need to load a NWB file first [!!] ')
+        return
+
     self.windows[tab_id] = 'trial_averaging'
     self.roiIndices, self.CaImaging_key = [0], 'rawFluo'
     self.EPISODES, self.l = None, None

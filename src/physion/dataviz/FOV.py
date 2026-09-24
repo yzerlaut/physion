@@ -13,6 +13,10 @@ KEYS = ['meanImg', 'max_proj', 'meanImgE',
 def FOV(self, useless=0,
         tab_id=3):
 
+    if self.data is None:
+        self.statusBar.showMessage(' [!!] need to load a NWB file first [!!] ')
+        return
+
     self.windows[tab_id] = 'FOV'
 
     tab = self.tabs[tab_id]
