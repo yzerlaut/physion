@@ -5,6 +5,8 @@ import h5py
 from physion.utils.paths import python_path_suite2p_env
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
+from physion.imaging.folders import is_TSeries_folder, is_h5_folder,\
+        find_imaging_folders, plane_file
 from physion.imaging.suite2p.default_ops import default_ops, default_settings
 from physion.imaging.suite2p.presets import presets
 
@@ -36,41 +38,13 @@ def build_db(folder, v1=False):
 H5_INPUT = 'suite2p-input.h5' # virtual dataset read by suite2p
 H5_KEY = 'data'
 
-def is_h5_folder(folder):
-    return os.path.basename(os.path.normpath(folder)).startswith('h5-')
-
-
-def is_TSeries_folder(folder):
-    return os.path.basename(os.path.normpath(folder)).startswith('TSeries-')
-
-
-def find_imaging_folders(folder, recursive=True):
-    """
-    "TSeries-" and "h5-" folders in folder (no search inside them)
-        "h5-" folders are skipped if their "TSeries-" folder is still there
-    """
-    FOLDERS = []
-    for root, subdirs, _ in os.walk(folder):
-        for d in sorted(subdirs):
-            if is_TSeries_folder(d) or\
-                    (is_h5_folder(d) and\
-                        (d.replace('h5-', 'TSeries-', 1) not in subdirs)):
-                FOLDERS.append(os.path.join(root, d))
-        subdirs[:] = [d for d in subdirs\
-                        if not (is_TSeries_folder(d) or is_h5_folder(d))]
-        if not recursive:
-            break
-    return sorted(FOLDERS)
-
-
 def get_h5_files(folder, bruker_data):
     """
     h5 files ordered as [plane][channel], None if one is missing
     """
     planes = np.unique(\
             bruker_data[bruker_data['channels'][0]]['depth_index'])
-    files = [[os.path.join(folder, '%s-plane%i.h5' %\
-                                    (chan.replace(' ','-'), p))\
+    files = [[plane_file(folder, chan, p, 'h5')\
                     for chan in bruker_data['channels']] for p in planes]
     if np.all([os.path.isfile(f) for plane in files for f in plane]):
         return files

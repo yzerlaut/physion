@@ -2,6 +2,7 @@ import os
 from PIL import Image
 import numpy as np
 
+from physion.imaging.folders import compressed_folder, plane_file
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 
@@ -14,8 +15,8 @@ def convert_to_binary(TS_folder):
     Ly, Lx = int(xml['settings']['linesPerFrame']),\
                     int(xml['settings']['pixelsPerLine'])
 
-    if not os.path.isdir(os.path.join(TS_folder.replace('TSeries', 'binary'))):
-        os.mkdir(os.path.join(TS_folder.replace('TSeries', 'binary')))
+    if not os.path.isdir(compressed_folder(TS_folder, 'binary')):
+        os.mkdir(compressed_folder(TS_folder, 'binary'))
 
     print('\n Analyzing: "%s" ' % TS_folder)
     for chan in xml['channels']:
@@ -29,9 +30,7 @@ def convert_to_binary(TS_folder):
         
         for p in np.unique(xml[chan]['depth_index']):
 
-            vid_name = os.path.join(TS_folder.replace('TSeries', 'binary'),
-                                     '%s-plane%i.bin' %\
-                                    (chan.replace(' ','-'), p))
+            vid_name = plane_file(compressed_folder(TS_folder, 'binary'), chan, p, 'bin')
 
             plane_cond = (xml[chan]['depth_index']==p)
             success = np.zeros(len(FILES[plane_cond]), dtype=bool)
@@ -56,7 +55,7 @@ def convert_to_binary(TS_folder):
             print(' [ok] "%s" succesfully created !' % vid_name)
             DICT['Frames_succesfully_in_movie-plane%i'%p]= success
 
-        np.save(os.path.join(TS_folder.replace('TSeries', 'binary'), 
+        np.save(os.path.join(compressed_folder(TS_folder, 'binary'), 
                              '%s-summary.npy'%chan.replace(' ','-')),
                 DICT)
         print(' [ok] Frames-summary.npy succesfully created !')

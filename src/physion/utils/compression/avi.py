@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 import ffmpeg
 
+from physion.imaging.folders import compressed_folder, plane_file
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.progressBar import printProgressBar
@@ -17,14 +18,14 @@ def convert_to_16bit_avi(TS_folder):
 
     print('\n Analyzing: "%s" ' % TS_folder)
 
-    if not os.path.isdir(os.path.join(TS_folder.replace('TSeries', 'lossless'))):
-        os.mkdir(os.path.join(TS_folder.replace('TSeries', 'lossless')))
+    if not os.path.isdir(compressed_folder(TS_folder, 'lossless')):
+        os.mkdir(compressed_folder(TS_folder, 'lossless'))
 
     for chan in xml['channels']:
    
         print('    --> Channel: ', chan)
 
-        vid_name = os.path.join(TS_folder.replace('TSeries', 'lossless'),
+        vid_name = os.path.join(compressed_folder(TS_folder, 'lossless'),
                                 '%s.avi' % chan.replace(' ','-'))
 
         cmd  = 'ffmpeg -i %s' % os.path.join(TS_folder,\

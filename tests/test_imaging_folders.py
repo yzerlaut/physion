@@ -64,3 +64,42 @@ def test_create_compressed_folder_refuses_non_TSeries(tmp_path):
     make_dirs(tmp_path, ['log8bit-X'])
     with pytest.raises(ValueError):
         twoP.create_compressed_folder(str(tmp_path/'log8bit-X'), 'h5')
+
+
+###########################################################################
+####     physion.imaging.folders (the other modules use these)       #####
+###########################################################################
+
+from physion.imaging import folders
+
+
+def test_compressed_folder_and_plane_file():
+    assert folders.compressed_folder('/data/my-TSeries-exp/TSeries-001', 'h5') ==\
+            '/data/my-TSeries-exp/h5-001'
+    assert folders.compressed_folder('/data/TSeries-001/', 'log8bit') ==\
+            '/data/log8bit-001'
+    with pytest.raises(ValueError):
+        folders.compressed_folder('/data/TSeries-exp/h5-001', 'nwb')
+    assert folders.plane_file('/data/h5-001', 'Ch2 Green', 1, 'h5') ==\
+            '/data/h5-001/Ch2-Green-plane1.h5'
+
+
+def test_find_compressed_folders(tmp_path):
+    make_dirs(tmp_path, ['s1/log8bit-X', 's1/h5-X', 's2/log8bit-Y/sub/log8bit-Z',
+                         's2/TSeries-log8bit'])
+    assert [os.path.relpath(f, tmp_path)\
+                for f in folders.find_compressed_folders(tmp_path, 'log8bit')] ==\
+            ['s1/log8bit-X', 's2/log8bit-Y']
+
+
+@pytest.mark.parametrize('content, expected', [
+    (['TSeries-001', 'h5-001', 'FaceCamera-imgs'], ['TSeries-001']),
+    (['h5-001', 'FaceCamera-imgs'], ['h5-001']),     # after conversion
+    (['TSeries-001', 'TSeries-002'], ['TSeries-001', 'TSeries-002']),
+    (['FaceCamera-imgs'], []),
+])
+def test_session_imaging_folders(tmp_path, content, expected):
+    make_dirs(tmp_path, content)
+    (tmp_path/'TSeries-notes.txt').write_text('') # files are ignored
+    assert [os.path.basename(f)\
+                for f in folders.session_imaging_folders(tmp_path)] == expected

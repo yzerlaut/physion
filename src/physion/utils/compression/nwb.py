@@ -2,6 +2,7 @@ import os
 from PIL import Image
 import numpy as np
 
+from physion.imaging.folders import compressed_folder, plane_file
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.paths import FOLDERS
@@ -159,8 +160,8 @@ def convert_to_nwb(TS_folder):
                                         extension='.xml')[0]
     xml = bruker_xml_parser(xml_file)
 
-    if not os.path.isdir(os.path.join(TS_folder.replace('TSeries', 'nwb'))):
-        os.mkdir(os.path.join(TS_folder.replace('TSeries', 'nwb')))
+    if not os.path.isdir(compressed_folder(TS_folder, 'nwb')):
+        os.mkdir(compressed_folder(TS_folder, 'nwb'))
 
     print('\n Analyzing: "%s" ' % TS_folder)
     for chan in xml['channels']:
@@ -175,9 +176,7 @@ def convert_to_nwb(TS_folder):
 
             plane_cond = (xml[chan]['depth_index']==p)
 
-            vid_name = os.path.join(TS_folder.replace('TSeries', 'nwb'),
-                                     '%s-plane%i.nwb' %\
-                                    (chan.replace(' ','-'), p))
+            vid_name = plane_file(compressed_folder(TS_folder, 'nwb'), chan, p, 'nwb')
 
             nwbfile = build_nwbfile(
                 TS_folder,
@@ -197,7 +196,7 @@ def convert_to_nwb(TS_folder):
             write_nwb(nwbfile, vid_name)
             print(f" [ok] succesfully wrote {len(FILES[plane_cond])} frames to ", vid_name)
 
-        np.save(os.path.join(TS_folder.replace('TSeries', 'nwb'), 
+        np.save(os.path.join(compressed_folder(TS_folder, 'nwb'), 
                              '%s-summary.npy'%chan.replace(' ','-')),
                 DICT)
         print(' [ok] Frames-summary.npy succesfully created !')
