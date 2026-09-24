@@ -40,7 +40,7 @@ def bruker_xml_parser(filename,
                     for f in x:
                         if ('channelName' in f.attrib) and (f.attrib['channelName'] not in CHANNELS):
                             CHANNELS.append(f.attrib['channelName'])
-    except BaseException as be:
+    except Exception as be:
         print(be)
         CHANNELS = ['Ch1', 'Ch2']
         print(' \n \n  [!!]  Channel Names not found [!!] taking the defaults: %s \n ' % CHANNELS)
@@ -111,7 +111,7 @@ def bruker_xml_parser(filename,
                         depth_start_piezo = depths[key][0]
                 depth_middle_piezo = 200 # SHOULD BE ALWAYS CENTER AT 200um
                 data['depth_shift'] = np.linspace(-1, 1, Ndepth)*(depth_middle_piezo-depth_start_piezo)
-            except BaseException as be:
+            except (NameError, IndexError, KeyError) as be:
                 if verbose:
                     print(be)
                     print(' [!!] plane info was not found [!!] ')

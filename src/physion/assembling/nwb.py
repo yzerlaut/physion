@@ -626,7 +626,7 @@ def build_NWB_func(args, Subject=None):
                                 imgFM1 = fcamData.get(i0).astype(np.uint8)[condF].reshape(*new_shapeF)
                                 imgFM2 = fcamData.get(i0+1).astype(np.uint8)[condF].reshape(*new_shapeF)
                                 yield imgFM2-imgFM1
-                            except BaseException as be:
+                            except Exception as be:
                                 print(be)
                                 print('\n Pb in FaceCamera with frame #', i)
                                 yield np.zeros(new_shapeF)

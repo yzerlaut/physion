@@ -28,7 +28,7 @@ def update_metadata(args):
             metadata['config'] = args.config.split(os.path.sep)[-1].replace('.json', '')
             for key in config:
                 metadata[key] = config[key]
-        except BaseException as be:
+        except (OSError, ValueError, KeyError) as be:
             print(be)
             print(' [!!] update of "Config" metadata failed [!!] ')
 
@@ -40,7 +40,7 @@ def update_metadata(args):
             metadata['protocol'] = args.protocol.split(os.path.sep)[-1].replace('.json', '')
             for key in protocol:
                 metadata[key] = protocol[key]
-        except BaseException as be:
+        except (OSError, ValueError, KeyError) as be:
             print(be)
             print(' [!!] update of "Protocol" metadata failed [!!] ')
             
@@ -52,7 +52,7 @@ def update_metadata(args):
                 subjects = json.load(f)
             metadata['subject_ID'] = args.subject
             metadata['subject_props'] = subjects[args.subject]
-        except BaseException as be:
+        except (OSError, ValueError, KeyError) as be:
             print(be)
             print(' [!!] update of "Subject" metadata failed [!!] ')
     

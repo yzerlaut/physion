@@ -163,14 +163,14 @@ def runBuildNWBfromDTBL(self):
                 i0 = int(self.datafilesBox.text().split('-')[0]) 
                 i1 = int(self.datafilesBox.text().split('-')[1]) 
                 cmd += ' -fi %i %i' % (i0, i1)
-            except BaseException as be:
+            except ValueError as be:
                 print(be)
                 print('pb in extracting protocol name')
         else:
             try:
                 i0 = int(self.datafilesBox.text())
                 cmd += ' -fi %i %i' % (i0, i0+1)
-            except BaseException as be:
+            except ValueError as be:
                 print(be)
                 print('pb in extracting protocol name')
 

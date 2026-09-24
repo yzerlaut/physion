@@ -255,10 +255,8 @@ def add_ophys(nwbfile, args,
 
     try:
         CaFn = get_files_with_extension(args.imaging, extension='.xml')[0]# get Tseries metadata
-    except BaseException as be:
-        print(be)
-        print('\n [!!]  Problem with the CA-IMAGING data in %s  [!!] ' % args.imaging)
-        raise Exception
+    except IndexError as be:
+        raise FileNotFoundError('no xml file in the CA-IMAGING folder "%s"' % args.imaging) from be
         
     xml = bruker_xml_parser(CaFn) # metadata
 

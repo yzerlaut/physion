@@ -219,7 +219,7 @@ def draw_image_RCL(self):
    
     try:
         exponent = float(self.expT.text())
-    except BaseException as be:
+    except ValueError as be:
         print(be)
         self.expT.setText('0.25')
         exponent = 0.25
