@@ -183,12 +183,12 @@ class Data:
                     self.tlim = [self.nwbfile.acquisition[key].starting_time,
                                  self.nwbfile.acquisition[key].starting_time+\
                                  (self.nwbfile.acquisition[key].data.shape[0]-1)/self.nwbfile.acquisition[key].rate]
-                except BaseException as be:
+                except (AttributeError, TypeError, IndexError) as be:
                     safety_counter += 1
                 try:
                     self.tlim = [self.nwbfile.acquisition[key].timestamps[0],
                                  self.nwbfile.acquisition[key].timestamps[-1]]
-                except BaseException as be:
+                except (AttributeError, TypeError, IndexError) as be:
                     safety_counter += 1
 
         if self.tlim is None:
@@ -377,7 +377,7 @@ class Data:
                 ['xmin','xmax','ymin','ymax'],
                 pd.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')')[0].split(',')):
                 self.pupil_ROI[key] = int(val)
-        except BaseException as be:
+        except (KeyError, IndexError, ValueError) as be:
             self.pupil_ROI = None
 
 
@@ -446,7 +446,7 @@ class Data:
         try:
             fd = str(self.nwbfile.processing['FaceMotion'].description)
             self.FaceMotion_ROI = [int(i) for i in fd.split('y0,dy)=(')[1].split(')')[0].split(',')]
-        except BaseException as be:
+        except (KeyError, IndexError, ValueError) as be:
             self.FaceMotion_ROI = None
 
 
@@ -1046,7 +1046,7 @@ def scan_folder_for_NWBfiles(folder,
                 AGES.append(data.age)
                 VIRUSES.append(data.virus)
 
-        except BaseException as be:
+        except Exception as be:
             SUBJECTS.append('N/A')
             if verbose:
                 print(be)

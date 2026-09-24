@@ -205,7 +205,7 @@ class EpisodeData:
                     QUANTITY_VALUES.append(getattr(full_data, quantity))
                     QUANTITY_TIMES.append(getattr(full_data, 't_%s' % quantity))
                     QUANTITIES.append(quantity)
-                except BaseException as be:
+                except Exception as be:
                     print()
                     print(be)
                     print()
@@ -250,7 +250,7 @@ class EpisodeData:
                                         kind=interpolation)
                         RESPS.append(func(self.t))
 
-                except BaseException as be:
+                except (ValueError, IndexError) as be:
 
                     success=False # we switch this off to remove the episode in all modalities
                     if self.verbose:
@@ -269,7 +269,7 @@ class EpisodeData:
                 for key in full_data.nwbfile.stimulus.keys():
                     try:
                         getattr(self, key).append(full_data.nwbfile.stimulus[key].data[iEp,0])
-                    except BaseException as be:
+                    except (IndexError, ValueError, TypeError) as be:
                         pass # we skip thise variable
 
         # transform stim params to np.array
