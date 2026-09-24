@@ -32,7 +32,7 @@ def gui(self,
     self.cleanup_tab(tab)
     
     self.datafolder, self.IMAGES = '', {} 
-    self.subject, self.timestamps, self.data = '', '', None
+    self.subject, self.timestamps, self.intrinsicData = '', '', None
 
 
     ##########################################################
@@ -163,15 +163,15 @@ def gui(self,
 
     self.refresh_tab(tab)
 
-    self.data = None
+    self.intrinsicData = None
 
     self.show()
     
 def set_pixROI(self):
 
-    if self.data is not None:
+    if self.intrinsicData is not None:
 
-        img = self.data[0,:,:]
+        img = self.intrinsicData[0,:,:]
         self.pixROI.setSize((img.shape[0]/10., img.shape[1]/10))
         xpix, ypix = get_pixel_value(self)
         self.pixROI.setPos((int(img.shape[0]/2), int(img.shape[1]/2)))
@@ -187,7 +187,7 @@ def moved_pixels(self):
     for plot in [self.raw_trace, self.spectrum_power, self.spectrum_phase]:
         plot.clear()
 
-    if self.data is not None:
+    if self.intrinsicData is not None:
         show_raw_data(self)         
 
 def update_img(self, img, imgButton):
@@ -278,12 +278,12 @@ def load_SS_intrinsic_data(self):
             plot.clear()
 
         # load data
-        self.params, (self.t, self.data) = load_raw_data(datafolder, self.numBox.currentText())
+        self.params, (self.t, self.intrinsicData) = load_raw_data(datafolder, self.numBox.currentText())
 
         if float(self.ssBox.text())>0:
 
             print('    - spatial subsampling [...]')
-            self.data = intrinsic_analysis.resample_img(self.data,
+            self.intrinsicData = intrinsic_analysis.resample_img(self.intrinsicData,
                                                         int(self.ssBox.text()))
             
 
@@ -296,9 +296,9 @@ def load_SS_intrinsic_data(self):
             else:
                 self.IMAGES['vasculature'] = np.load(vasc_img)
 
-        self.IMAGES['raw-img-start'] = self.data[0,:,:]
-        self.IMAGES['raw-img-mid'] = self.data[int(self.data.shape[0]/2.)-1,:,:]
-        self.IMAGES['raw-img-stop'] = self.data[-2,:,:]
+        self.IMAGES['raw-img-start'] = self.intrinsicData[0,:,:]
+        self.IMAGES['raw-img-mid'] = self.intrinsicData[int(self.intrinsicData.shape[0]/2.)-1,:,:]
+        self.IMAGES['raw-img-stop'] = self.intrinsicData[-2,:,:]
        
         update_imgButtons(self)
 
@@ -319,7 +319,7 @@ def show_raw_data(self):
 
     xpix, ypix = get_pixel_value(self)
 
-    new_data = self.data[:,xpix, ypix]
+    new_data = self.intrinsicData[:,xpix, ypix]
 
     self.raw_trace.plot(self.t, new_data)
 
@@ -345,7 +345,7 @@ def compute_SS_power_maps(self):
     print('- computing power maps [...]')
 
     maps = {}
-    maps['power'], _ = intrinsic_analysis.perform_fft_analysis(self.data,
+    maps['power'], _ = intrinsic_analysis.perform_fft_analysis(self.intrinsicData,
                                                     self.params['Nrepeat'])
 
 
@@ -359,10 +359,10 @@ def compute_SS_power_maps(self):
 
 def save_SS_intrinsic(self):
 
-    if self.data is not None:
+    if self.intrinsicData is not None:
 
         np.save(os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject),
-                self.data)
+                self.intrinsicData)
         print('\n         current maps saved as: ', \
            os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject))
 
