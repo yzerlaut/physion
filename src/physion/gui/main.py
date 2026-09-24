@@ -1,6 +1,8 @@
 import time, sys
 from PyQt5 import QtWidgets
 
+from physion.gui.window import current_window
+
 # import pdb # for DEBUG
 
 Acquisition = ('acquisition' in sys.argv) or ('all' in sys.argv)
@@ -147,9 +149,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # # -- H5 Imaging - ROI extraction
     if (not Acquisition) and (not Intrinsic):
-        from physion.imaging.h5_gui import h5_imaging_UI, open_h5_imaging,\
-                update_mean_img_h5, draw_mean_img_h5, add_ROI_h5, reset_ROIs_h5,\
-                extract_fluo_h5, save_ROIs_h5
+        def h5_imaging_UI(self, tab_id=2):
+            from physion.imaging.h5_gui import H5ImagingWindow
+            return H5ImagingWindow(self, tab_id)
     else:
         from physion.gui.parts import inactivated as h5_imaging_UI
 
@@ -241,6 +243,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.data, self.acq, self.stim = None, None, None
         self.bridge = None # bridge to camera
         self.windows = ['' for i in range(Ntabs)] # one window name per tab_id
+        self.window_objects = [None for i in range(Ntabs)] # see physion.gui.window
         self.quit_event = None
 
         self.setWindowTitle('Physion -- Vision Physiology Software')
@@ -317,17 +320,30 @@ class MainWindow(QtWidgets.QMainWindow):
 
         print(' -> GUI init took %.1fs: ' % (time.time()-tic))
    
+    def window_shortcut(self, action):
+        """
+        the keyboard shortcut is handled by the window of the current tab
+            if it is a physion.gui.window.Window implementing it
+        """
+        window = current_window(self)
+        if (window is not None) and hasattr(window, action):
+            getattr(window, action)()
+            return True
+        return False
+
     def open(self):
+        if self.window_shortcut('open'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.folder = self.open_folder()
             self.load_RCL()
-        elif self.windows[tab_id] =='h5_imaging':
-            self.open_h5_imaging()
         else:
             self.open_file()
             
     def save(self):
+        if self.window_shortcut('save'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             print('save')
@@ -339,6 +355,8 @@ class MainWindow(QtWidgets.QMainWindow):
         """
         for now used as a debuggin tool for the UI
         """
+        if self.window_shortcut('hitting_space'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.switch_roi_RCL()
@@ -378,6 +396,8 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.intrinsic()
 
     def refresh(self):
+        if self.window_shortcut('refresh'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='visualization':
             tzoom = self.plot.getAxis('bottom').range
@@ -395,6 +415,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print('no shortcut')
 
     def process(self):
+        if self.window_shortcut('process'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.prev_roi_RCL()
@@ -408,6 +430,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print('no shortcut')
 
     def toggle(self):
+        if self.window_shortcut('toggle'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='FOV':
             self.toggle_FOV()
@@ -417,6 +441,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print('no shortcut')
 
     def next(self):
+        if self.window_shortcut('next'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.next_roi_RCL()
@@ -448,6 +474,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
     def press1(self):
+        if self.window_shortcut('press1'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='pupil':
             self.set_cursor_1_pupil()
@@ -455,6 +483,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print('no shortcut')
 
     def press2(self):
+        if self.window_shortcut('press2'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='pupil':
             self.set_cursor_2_pupil()
@@ -462,6 +492,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print('no shortcut')
 
     def press3(self):
+        if self.window_shortcut('press3'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='pupil':
             self.process_outliers_pupil()
@@ -469,6 +501,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print('no shortcut')
 
     def press4(self):
+        if self.window_shortcut('press4'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='pupil':
             self.interpolate_pupil()
@@ -476,6 +510,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print('no shortcut')
 
     def press5(self):
+        if self.window_shortcut('press5'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='pupil':
             self.find_outliers_pupil()
@@ -483,6 +519,8 @@ class MainWindow(QtWidgets.QMainWindow):
             print('no shortcut')
 
     def fit(self):
+        if self.window_shortcut('fit'):
+            return
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='trial_averaging':
             self.next_and_plot_TA()
