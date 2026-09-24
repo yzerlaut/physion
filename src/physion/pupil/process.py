@@ -286,19 +286,19 @@ def load_folder(cls):
 
 def load_ROI(cls, with_plot=True):
 
-    saturation = cls.data['ROIsaturation']
+    saturation = cls.pupilData['ROIsaturation']
     if hasattr(cls, 'sl'):
         cls.sl.setValue(int(saturation))
     cls.ROI = roi.sROI(parent=cls,
-                       pos = roi.ellipse_props_to_ROI(cls.data['ROIellipse']))
+                       pos = roi.ellipse_props_to_ROI(cls.pupilData['ROIellipse']))
     cls.bROI, cls.reflectors = [], []
-    if 'blanks' in cls.data:
-        for r in cls.data['blanks']:
+    if 'blanks' in cls.pupilData:
+        for r in cls.pupilData['blanks']:
             cls.bROI.append(roi.reflectROI(len(cls.bROI),
                                            pos = roi.ellipse_props_to_ROI(r),
                                            moveable=True, parent=cls))
-    if 'reflectors' in cls.data:
-        for r in cls.data['reflectors']:
+    if 'reflectors' in cls.pupilData:
+        for r in cls.pupilData['reflectors']:
             cls.reflectors.append(roi.reflectROI(len(cls.reflectors),
                                                  pos = roi.ellipse_props_to_ROI(r),
                                                  moveable=True, parent=cls))

@@ -29,7 +29,7 @@ def gui(self,
     ##### module quantities #####
     #############################
 
-    self.ROI, self.data = None, None
+    self.ROI, self.facemotionData = None, None
     self.camData = None
     self.cframe = 0
     self.grooming_threshold = -1
@@ -211,29 +211,29 @@ def open_facemotion_data(self):
 
         if os.path.isfile(os.path.join(self.datafolder, 'facemotion.npy')):
             
-            self.data = np.load(os.path.join(self.datafolder, 'facemotion.npy'),
+            self.facemotionData = np.load(os.path.join(self.datafolder, 'facemotion.npy'),
                                 allow_pickle=True).item()
             
-            if 'ROI' in self.data:
+            if 'ROI' in self.facemotionData:
                 self.ROI = roi.faceROI(moveable=True, parent=self,
-                                       pos=self.data['ROI'])
+                                       pos=self.facemotionData['ROI'])
                 
 
-            if 'ROIsaturation' in self.data:
-                self.sl.setValue(int(self.data['ROIsaturation']))
+            if 'ROIsaturation' in self.facemotionData:
+                self.sl.setValue(int(self.facemotionData['ROIsaturation']))
 
-            if 'grooming_threshold' in self.data:
-                self.grooming_threshold = self.data['grooming_threshold']
+            if 'grooming_threshold' in self.facemotionData:
+                self.grooming_threshold = self.facemotionData['grooming_threshold']
             else:
-                self.grooming_threshold = int(self.data['motion'].max())+1
+                self.grooming_threshold = int(self.facemotionData['motion'].max())+1
                 
             self.groomingBox.setText(str(self.grooming_threshold))
                 
-            if 'frame' in self.data:
+            if 'frame' in self.facemotionData:
                 plot_motion_trace(self)
             
         else:
-            self.data = None
+            self.facemotionData = None
 
         if self.camData is not None:
             self.refresh_facemotion()
@@ -247,7 +247,7 @@ def reset_facemotion(self):
 
     self.saturation = 255
     self.cframe1, self.cframe2 = 0, -1
-    self.data = None
+    self.facemotionData = None
 
 def save_gui_settings(self):
     
@@ -269,15 +269,15 @@ def load_last_facemotion_gui_settings(self):
 
 def save_facemotion_data(self):
 
-    if self.data is None:
-        self.data = {}
+    if self.facemotionData is None:
+        self.facemotionData = {}
         
     if self.ROI is not None:
-        self.data['ROI'] = self.ROI.position(self)
+        self.facemotionData['ROI'] = self.ROI.position(self)
 
-    self.data['grooming_threshold'] = self.grooming_threshold
+    self.facemotionData['grooming_threshold'] = self.grooming_threshold
 
-    np.save(os.path.join(self.datafolder, 'facemotion.npy'), self.data)
+    np.save(os.path.join(self.datafolder, 'facemotion.npy'), self.facemotionData)
     save_gui_settings(self)
     
     print('data saved as: "%s"' % os.path.join(self.datafolder, 'facemotion.npy'))
@@ -328,16 +328,16 @@ def refresh_facemotion(self):
 
         self.tracePlot.removeItem(self.scatter)
         
-    if (self.data is not None) and ('frame' in self.data):
+    if (self.facemotionData is not None) and ('frame' in self.facemotionData):
 
-        self.iframe = np.argmin((self.data['frame']-self.cframe)**2)
+        self.iframe = np.argmin((self.facemotionData['frame']-self.cframe)**2)
         self.scatter.setData([self.cframe],
-                             [self.data['motion'][self.iframe]],
+                             [self.facemotionData['motion'][self.iframe]],
                              size=10, brush=pg.mkBrush(255,255,255))
         self.tracePlot.addItem(self.scatter)
         self.tracePlot.show()
 
-        # self.currentTime.setText('%.1f s' % (self.data['t'][self.iframe]-self.data['t'][0]))
+        # self.currentTime.setText('%.1f s' % (self.facemotionData['t'][self.iframe]-self.facemotionData['t'][0]))
 
     self.show()
 
@@ -350,10 +350,10 @@ def process_facemotion(self):
     frames, motion = process.compute_motion(self,
             time_subsampling=int(self.TsamplingBox.text()) if self.temporalBox.isChecked() else 1,
                                     with_ProgressBar=True)
-    self.data = {'frame':frames, 't':self.camData.times[frames],
+    self.facemotionData = {'frame':frames, 't':self.camData.times[frames],
                  'motion':motion, 'grooming':0*frames}
     if self.grooming_threshold==-1:
-        self.grooming_threshold = int(self.data['motion'].max())+1
+        self.grooming_threshold = int(self.facemotionData['motion'].max())+1
         
     plot_motion_trace(self)
 
@@ -364,8 +364,8 @@ def update_grooming_threshold(self):
 
 def plot_motion_trace(self, xrange=None):
     self.tracePlot.clear()
-    self.tracePlot.plot(self.data['frame'],
-                 self.data['motion'], pen=(0,0,255))
+    self.tracePlot.plot(self.facemotionData['frame'],
+                 self.facemotionData['motion'], pen=(0,0,255))
 
     if xrange is None:
         xrange = (0, self.camData.nFrames)
@@ -374,31 +374,31 @@ def plot_motion_trace(self, xrange=None):
     self.tracePlot.addItem(self.line)
     
     self.tracePlot.setRange(xRange=xrange,
-                     yRange=(self.data['motion'].min()-.1,
-                             np.max([self.grooming_threshold, self.data['motion'].max()])),
+                     yRange=(self.facemotionData['motion'].min()-.1,
+                             np.max([self.grooming_threshold, self.facemotionData['motion'].max()])),
                      padding=0.0)
     self.tracePlot.show()
 
 
 def process_grooming(self):
 
-    if self.data is not None:
+    if self.facemotionData is not None:
 
-        if not 'motion_before_grooming' in self.data:
-            self.data['motion_before_grooming'] = self.data['motion'].copy()
+        if not 'motion_before_grooming' in self.facemotionData:
+            self.facemotionData['motion_before_grooming'] = self.facemotionData['motion'].copy()
 
         self.grooming_threshold = int(self.line.value())
         print(' --> grooming_threshold = %.1f' % self.grooming_threshold) 
 
-        up_cond = self.data['motion_before_grooming']>self.grooming_threshold
-        self.data['motion'][up_cond] = self.grooming_threshold
-        self.data['motion'][~up_cond] = self.data['motion_before_grooming'][~up_cond]
+        up_cond = self.facemotionData['motion_before_grooming']>self.grooming_threshold
+        self.facemotionData['motion'][up_cond] = self.grooming_threshold
+        self.facemotionData['motion'][~up_cond] = self.facemotionData['motion_before_grooming'][~up_cond]
 
-        if 'grooming' not in self.data:
-            self.data['grooming'] = 0*self.data['motion']
+        if 'grooming' not in self.facemotionData:
+            self.facemotionData['grooming'] = 0*self.facemotionData['motion']
 
-        self.data['grooming'][up_cond] = 1
-        self.data['grooming'][~up_cond] = 0
+        self.facemotionData['grooming'][up_cond] = 1
+        self.facemotionData['grooming'][~up_cond] = 0
 
         plot_motion_trace(self)
     else:

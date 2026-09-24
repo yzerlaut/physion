@@ -29,7 +29,7 @@ def gui(self,
     self.gaussian_smoothing = 0
     self.subsampling = 1
     self.ROI, self.pupil, self.camData = None, None, None
-    self.data = None
+    self.pupilData = None
     self.bROI, self.reflectors = [], []
     self.scatter, self.fit= None, None # the pupil size contour
         
@@ -312,23 +312,23 @@ def open_pupil_data(self):
 
         if os.path.isfile(os.path.join(self.datafolder, 'pupil.npy')):
             
-            self.data = np.load(os.path.join(self.datafolder, 'pupil.npy'),
+            self.pupilData = np.load(os.path.join(self.datafolder, 'pupil.npy'),
                                 allow_pickle=True).item()
             
             if self.camData.nFrames is None:
-                self.camData.nFrames = self.data['frame'].max()
+                self.camData.nFrames = self.pupilData['frame'].max()
             
-            self.smoothBox.setText('%i' % self.data['gaussian_smoothing'])
+            self.smoothBox.setText('%i' % self.pupilData['gaussian_smoothing'])
 
-            self.sl.setValue(int(self.data['ROIsaturation']))
+            self.sl.setValue(int(self.pupilData['ROIsaturation']))
 
             self.ROI = roi.sROI(parent=self,
-                                pos=roi.ellipse_props_to_ROI(self.data['ROIellipse']))
+                                pos=roi.ellipse_props_to_ROI(self.pupilData['ROIellipse']))
 
             plot_pupil_trace(self)
             
         else:
-            self.data = None
+            self.pupilData = None
             self.p1.clear()
 
         if self.camData is not None:
@@ -441,43 +441,43 @@ def add_ROI_pupil(self):
 
 def interpolate_pupil(self, with_blinking_flag=False):
     
-    if self.data is not None and (self.cframe1!=0) and (self.cframe2!=0):
+    if self.pupilData is not None and (self.cframe1!=0) and (self.cframe2!=0):
         
-        i1 = np.arange(len(self.data['frame']))[self.data['frame']>=self.cframe1][0]
-        i2 = np.arange(len(self.data['frame']))[self.data['frame']>=self.cframe2][0]
+        i1 = np.arange(len(self.pupilData['frame']))[self.pupilData['frame']>=self.cframe1][0]
+        i2 = np.arange(len(self.pupilData['frame']))[self.pupilData['frame']>=self.cframe2][0]
         if i1>0:
             new_i1 = i1-1
         else:
             new_i1 = i2
-        if i2<len(self.data['frame'])-1:
+        if i2<len(self.pupilData['frame'])-1:
             new_i2 = i2+1
         else:
             new_i2 = i1
 
         if with_blinking_flag:
             
-            if 'blinking' not in self.data:
-                self.data['blinking'] = np.zeros(len(self.data['frame']), dtype=np.uint)
+            if 'blinking' not in self.pupilData:
+                self.pupilData['blinking'] = np.zeros(len(self.pupilData['frame']), dtype=np.uint)
 
-            self.data['blinking'][i1:i2] = 1
+            self.pupilData['blinking'][i1:i2] = 1
         
         for key in ['cx', 'cy', 'sx', 'sy', 'residual', 'angle']:
             I = np.arange(i1, i2)
-            self.data[key][i1:i2] = self.data[key][new_i1]+(I-i1)/(i2-i1)*(self.data[key][new_i2]-self.data[key][new_i1])
+            self.pupilData[key][i1:i2] = self.pupilData[key][new_i1]+(I-i1)/(i2-i1)*(self.pupilData[key][new_i2]-self.pupilData[key][new_i1])
 
         plot_pupil_trace(self, xrange=self.xaxis.range)
         self.cframe1, self.cframe2 = 0, 0
 
     elif self.cframe1==0:
-        i2 = np.arange(len(self.data['frame']))[self.data['frame']>=self.cframe2][0]
+        i2 = np.arange(len(self.pupilData['frame']))[self.pupilData['frame']>=self.cframe2][0]
         for key in ['cx', 'cy', 'sx', 'sy', 'residual', 'angle']:
-            self.data[key][self.cframe1:i2] = self.data[key][i2] # set to i2 level !!
+            self.pupilData[key][self.cframe1:i2] = self.pupilData[key][i2] # set to i2 level !!
         plot_pupil_trace(self, xrange=self.xaxis.range)
         self.cframe1, self.cframe2 = 0, 0
-    elif self.cframe2==(len(self.data['frame'])-1):
-        i1 = np.arange(len(self.data['frame']))[self.data['frame']>=self.cframe1][0]
+    elif self.cframe2==(len(self.pupilData['frame'])-1):
+        i1 = np.arange(len(self.pupilData['frame']))[self.pupilData['frame']>=self.cframe1][0]
         for key in ['cx', 'cy', 'sx', 'sy', 'residual', 'angle']:
-            self.data[key][i1:self.cframe2] = self.data[key][i1] # set to i2 level !!
+            self.pupilData[key][i1:self.cframe2] = self.pupilData[key][i1] # set to i2 level !!
         plot_pupil_trace(self, xrange=self.xaxis.range)
         self.cframe1, self.cframe2 = 0, 0
     else:
@@ -491,21 +491,21 @@ def find_outliers_pupil(self):
 
     if not hasattr(self, 'data_before_outliers') or (self.data_before_outliers==None):
 
-        self.data['std_exclusion_factor'] = float(self.stdBox.text())
-        self.data['exclusion_width'] = float(self.wdthBox.text())
+        self.pupilData['std_exclusion_factor'] = float(self.stdBox.text())
+        self.pupilData['exclusion_width'] = float(self.wdthBox.text())
         self.data_before_outliers = {}
-        for key in self.data:
-            self.data_before_outliers[key] = self.data[key]
-        process.remove_outliers(self.data,
-                                std_criteria=self.data['std_exclusion_factor'],
-                                width_criteria=self.data['exclusion_width'])
+        for key in self.pupilData:
+            self.data_before_outliers[key] = self.pupilData[key]
+        process.remove_outliers(self.pupilData,
+                                std_criteria=self.pupilData['std_exclusion_factor'],
+                                width_criteria=self.pupilData['exclusion_width'])
 
     else:
 
         # we revert to before
         for key in self.data_before_outliers:
-            self.data[key] = self.data_before_outliers[key]
-        self.data['blinking'] = 0*self.data['frame']
+            self.pupilData[key] = self.data_before_outliers[key]
+        self.pupilData['blinking'] = 0*self.pupilData['frame']
         self.data_before_outliers = None
 
     plot_pupil_trace(self)
@@ -562,23 +562,23 @@ def jump_to_frame(self):
     if self.fit is not None:
         self.fit.remove(self)
         
-    if self.data is not None:
+    if self.pupilData is not None:
         
-        self.iframe = np.arange(len(self.data['frame']))[self.data['frame']>=self.cframe][0]
-        self.scatter.setData(self.data['frame'][self.iframe]*np.ones(1),
-                             self.data['sx'][self.iframe]*np.ones(1),
+        self.iframe = np.arange(len(self.pupilData['frame']))[self.pupilData['frame']>=self.cframe][0]
+        self.scatter.setData(self.pupilData['frame'][self.iframe]*np.ones(1),
+                             self.pupilData['sx'][self.iframe]*np.ones(1),
                              size=10, brush=pg.mkBrush(255,255,255))
         self.p1.addItem(self.scatter)
         self.p1.show()
         coords = []
-        if 'sx-corrected' in self.data:
+        if 'sx-corrected' in self.pupilData:
             for key in ['cx-corrected', 'cy-corrected',
                         'sx-corrected', 'sy-corrected',
                         'angle-corrected']:
-                coords.append(self.data[key][self.iframe])
+                coords.append(self.pupilData[key][self.iframe])
         else:
             for key in ['cx', 'cy', 'sx', 'sy', 'angle']:
-                coords.append(self.data[key][self.iframe])
+                coords.append(self.pupilData[key][self.iframe])
 
         plot_pupil_ellipse(self, coords)
         # self.fit = roi.pupilROI(moveable=True,
@@ -619,12 +619,12 @@ def extract_ROI(self, data):
 def save_pupil_data(self):
     """ """
 
-    extract_ROI(self, self.data)
+    extract_ROI(self, self.pupilData)
 
-    if self.data is not None:
-        self.data['gaussian_smoothing'] = int(self.smoothBox.text())
-        # self.data = process.clip_to_finite_values(self.data, ['cx', 'cy', 'sx', 'sy', 'residual', 'angle'])
-        np.save(os.path.join(self.datafolder, 'pupil.npy'), self.data)
+    if self.pupilData is not None:
+        self.pupilData['gaussian_smoothing'] = int(self.smoothBox.text())
+        # self.pupilData = process.clip_to_finite_values(self.pupilData, ['cx', 'cy', 'sx', 'sy', 'residual', 'angle'])
+        np.save(os.path.join(self.datafolder, 'pupil.npy'), self.pupilData)
         print('Data successfully saved as "%s"' % os.path.join(self.datafolder, 'pupil.npy'))
         save_gui_settings(self)
     else:
@@ -633,9 +633,9 @@ def save_pupil_data(self):
     
 def process_pupil(self):
 
-    if (self.data is None) or ('frame' in self.data):
-        self.data = {}
-        extract_ROI(self, self.data)
+    if (self.pupilData is None) or ('frame' in self.pupilData):
+        self.pupilData = {}
+        extract_ROI(self, self.pupilData)
 
     if self.sampLabel.isChecked():
         self.subsampling = int(self.samplingBox.text())
@@ -654,8 +654,8 @@ def process_pupil(self):
                                 with_ProgressBar=True)
 
     for key in temp:
-        self.data[key] = temp[key]
-    self.data['times'] = self.camData.times[self.data['frame']]
+        self.pupilData[key] = temp[key]
+    self.pupilData['times'] = self.camData.times[self.pupilData['frame']]
             
     # self.save_gui_settings()
     
@@ -667,24 +667,24 @@ def process_pupil(self):
 
 def plot_pupil_trace(self, xrange=None):
     self.p1.clear()
-    if self.data is not None:
-        # self.data = process.remove_outliers(self.data)
-        cond = np.isfinite(self.data['sx'])
-        self.p1.plot(self.data['frame'][cond],
-                     self.data['sx'][cond], pen=(0,255,0))
+    if self.pupilData is not None:
+        # self.pupilData = process.remove_outliers(self.pupilData)
+        cond = np.isfinite(self.pupilData['sx'])
+        self.p1.plot(self.pupilData['frame'][cond],
+                     self.pupilData['sx'][cond], pen=(0,255,0))
         if xrange is None:
             if self.camData is not None:
                 xrange = (0, self.camData.nFrames)
             else:
-                xrange = (0, self.data['frame'][cond][-1])
+                xrange = (0, self.pupilData['frame'][cond][-1])
         self.p1.setRange(xRange=xrange,
-                         yRange=(self.data['sx'][cond].min()-.1,
-                                 self.data['sx'][cond].max()+.1),
+                         yRange=(self.pupilData['sx'][cond].min()-.1,
+                                 self.pupilData['sx'][cond].max()+.1),
                          padding=0.0)
-        if ('blinking' in self.data) and (np.sum(self.data['blinking'])>0):
-            cond = self.data['blinking']>0
-            self.p1.plot(self.data['frame'][cond],
-                         0*self.data['frame'][cond]+self.data['sx'][cond].min(),
+        if ('blinking' in self.pupilData) and (np.sum(self.pupilData['blinking'])>0):
+            cond = self.pupilData['blinking']>0
+            self.p1.plot(self.pupilData['frame'][cond],
+                         0*self.pupilData['frame'][cond]+self.pupilData['sx'][cond].min(),
                          symbolPen=pg.mkPen(color=(0, 0, 255, 255), width=0),                                      
                          symbolBrush=pg.mkBrush(0, 0, 255, 255), symbolSize=7,
                          pen=None, symbol='o')
@@ -716,11 +716,11 @@ def fit_pupil(self, value=0, coords_only=False):
 
 def interpolate_data(self):
     for key in ['cx', 'cy', 'sx', 'sy', 'residual', 'angle']:
-        func = interp1d(self.data['frame'], self.data[key],
+        func = interp1d(self.pupilData['frame'], self.pupilData[key],
                         kind='linear')
-        self.data[key] = func(np.arange(self.camData.nFrames))
-    self.data['frame'] = np.arange(self.camData.nFrames)
-    self.data['times'] = self.camData.times[self.data['frame']]
+        self.pupilData[key] = func(np.arange(self.camData.nFrames))
+    self.pupilData['frame'] = np.arange(self.camData.nFrames)
+    self.pupilData['times'] = self.camData.times[self.pupilData['frame']]
 
     plot_pupil_trace(self)
     print('[ok] interpolation successfull !')

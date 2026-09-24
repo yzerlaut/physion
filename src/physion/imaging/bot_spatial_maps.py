@@ -17,7 +17,7 @@ def gui(self,
     self.cleanup_tab(tab)
     
     self.datafolder, self.IMAGES = '', {} 
-    self.subject, self.timestamps, self.data = '', '', None
+    self.subject, self.timestamps = '', ''
 
     ##########################################################
     ####### GUI settings
@@ -109,7 +109,6 @@ def gui(self,
 
     self.refresh_tab(tab)
 
-    self.data = None
 
     self.show()
 

@@ -37,7 +37,7 @@ def gui(self,
     self.cleanup_tab(tab)
     
     self.datafolder, self.IMAGES = '', {} 
-    self.subject, self.timestamps, self.data = '', '', None
+    self.subject, self.timestamps, self.intrinsicData = '', '', None
 
     ##########################################################
     ####### GUI settings
@@ -270,7 +270,7 @@ def gui(self,
 
     self.refresh_tab(tab)
 
-    self.data = None
+    self.intrinsicData = None
 
     self.show()
 
@@ -334,9 +334,9 @@ def open_intrinsic_folder(self):
     
 def set_pixROI(self):
 
-    if self.data is not None:
+    if self.intrinsicData is not None:
 
-        img = self.data[0,:,:]
+        img = self.intrinsicData[0,:,:]
         self.pixROI.setSize((img.shape[0]/10., img.shape[1]/10))
         xpix, ypix = get_pixel_value(self)
         self.pixROI.setPos((int(img.shape[0]/2), int(img.shape[1]/2)))
@@ -352,7 +352,7 @@ def moved_pixels(self):
     for plot in [self.raw_trace, self.spectrum_power, self.spectrum_phase]:
         plot.clear()
 
-    if self.data is not None:
+    if self.intrinsicData is not None:
         show_raw_data(self)         
 
 def update_img(self, img, imgButton):
@@ -405,14 +405,14 @@ def load_intrinsic_data(self):
 
         # load data
         self.params,\
-            (self.t, self.data) = intrinsic_analysis.load_raw_data(get_datafolder(self),
+            (self.t, self.intrinsicData) = intrinsic_analysis.load_raw_data(get_datafolder(self),
                                                                   self.protocolBox.currentText(),
                                                                   run_id=self.numBox.currentText())
 
         if float(self.ssBox.text())>0:
 
             print('    - spatial subsampling [...]')
-            self.data = intrinsic_analysis.resample_img(self.data,
+            self.intrinsicData = intrinsic_analysis.resample_img(self.intrinsicData,
                                                         int(self.ssBox.text()))
             
 
@@ -425,9 +425,9 @@ def load_intrinsic_data(self):
             else:
                 self.IMAGES['vasculature'] = np.load(vasc_img)
 
-        self.IMAGES['raw-img-start'] = self.data[0,:,:]
-        self.IMAGES['raw-img-mid'] = self.data[int(self.data.shape[0]/2.)-1,:,:]
-        self.IMAGES['raw-img-stop'] = self.data[-2,:,:]
+        self.IMAGES['raw-img-start'] = self.intrinsicData[0,:,:]
+        self.IMAGES['raw-img-mid'] = self.intrinsicData[int(self.intrinsicData.shape[0]/2.)-1,:,:]
+        self.IMAGES['raw-img-stop'] = self.intrinsicData[-2,:,:]
 
         self.IMAGES['datafolder'] = datafolder
        
@@ -450,7 +450,7 @@ def show_raw_data(self):
 
     xpix, ypix = get_pixel_value(self)
 
-    new_data = self.data[:,xpix, ypix]
+    new_data = self.intrinsicData[:,xpix, ypix]
 
     self.raw_trace.plot(self.t, new_data)
 
@@ -481,7 +481,7 @@ def compute_phase_maps(self):
 
     intrinsic_analysis.compute_phase_power_maps(get_datafolder(self), 
                                                 self.protocolBox.currentText(),
-                                                p=self.params, t=self.t, data=self.data,
+                                                p=self.params, t=self.t, data=self.intrinsicData,
                                                 run_id=self.numBox.currentText(),
                                                 maps=self.IMAGES)
 
@@ -548,7 +548,7 @@ def perform_area_segmentation(self):
     print('- performing area segmentation [...]')
 
     # format images and load default params
-    self.data = intrinsic_analysis.build_trial_data(self.IMAGES, 
+    self.intrinsicData = intrinsic_analysis.build_trial_data(self.IMAGES, 
                                                subject=self.subject,
                                                comments='',
                                                dateRecorded=self.timestamps,
@@ -562,9 +562,9 @@ def perform_area_segmentation(self):
                 'mergeOverlapThr',
                 'splitOverlapThr']:
 
-        self.data['params'][key] = float(getattr(self, key+'Box').text())
+        self.intrinsicData['params'][key] = float(getattr(self, key+'Box').text())
 
-    trial = RetinotopicMapping.RetinotopicMappingTrial(**self.data)
+    trial = RetinotopicMapping.RetinotopicMappingTrial(**self.intrinsicData)
     _ = trial._getSignMap(onlySMplot=True)
     _ = trial._getRawPatchMap()
     _ = trial._getRawPatches()
@@ -586,10 +586,10 @@ def save_intrinsic(self):
     print('         current maps saved as: ', \
             os.path.join(self.datafolder, 'raw-maps.npy'))
 
-    if self.data is not None:
+    if self.intrinsicData is not None:
 
         np.save(os.path.join(self.datafolder, 'RetinotopicMappingData.npy'),
-                self.data)
+                self.intrinsicData)
         print('         current Retinotopic-Mapping saved as: ', \
                 os.path.join(self.datafolder, 'RetinotopicMappingData.npy'))
 

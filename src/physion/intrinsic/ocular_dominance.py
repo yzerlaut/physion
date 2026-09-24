@@ -346,7 +346,7 @@ def analysis_gui(self,
     self.cleanup_tab(tab)
     
     self.datafolder, self.IMAGES = '', {} 
-    self.subject, self.timestamps, self.data = '', '', None
+    self.subject, self.timestamps, self.intrinsicData = '', '', None
 
     ##########################################################
     ####### GUI settings
@@ -551,7 +551,7 @@ def analysis_gui(self,
 
     self.refresh_tab(tab)
 
-    self.data = None
+    self.intrinsicData = None
 
     self.show()
 
