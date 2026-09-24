@@ -221,8 +221,10 @@ def draw_image_RCL(self):
         exponent = float(self.expT.text())
     except BaseException as be:
         print(be)
-        self.expT.setText(0.25)
+        self.expT.setText('0.25')
         exponent = 0.25
+    if not hasattr(self, 'ops'):
+        return # no data loaded yet
     img = self.ops[self.imgB.currentText()].T 
     img = (img-img.min())/(img.max()-img.min())
     self.img.setImage(img**exponent)

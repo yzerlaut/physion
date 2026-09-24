@@ -40,6 +40,8 @@ def open_folder(self):
 def open_NWB_folder(self):
 
     folder = self.open_folder()
+    if folder=='':
+        return folder # dialog cancelled
     self.calendar()
     self.scan_folder(folder=folder)
 
