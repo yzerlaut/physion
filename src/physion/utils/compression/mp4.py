@@ -3,6 +3,7 @@ import cv2 as cv
 from PIL import Image
 import numpy as np
 
+from physion.imaging.folders import compressed_folder, plane_file
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.progressBar import printProgressBar
@@ -20,8 +21,8 @@ def convert_to_log8bit_mp4(TS_folder):
                     int(xml['settings']['pixelsPerLine'])
 
 
-    if not os.path.isdir(os.path.join(TS_folder.replace('TSeries', 'log8bit'))):
-        os.mkdir(os.path.join(TS_folder.replace('TSeries', 'log8bit')))
+    if not os.path.isdir(compressed_folder(TS_folder, 'log8bit')):
+        os.mkdir(compressed_folder(TS_folder, 'log8bit'))
 
     print('\n Analyzing: "%s" ' % TS_folder)
     for chan in xml['channels']:
@@ -36,9 +37,7 @@ def convert_to_log8bit_mp4(TS_folder):
         
         for p in np.unique(xml[chan]['depth_index']):
 
-            vid_name = os.path.join(TS_folder.replace('TSeries', 'log8bit'),
-                                     '%s-plane%i.%s' %\
-                                    (chan.replace(' ','-'), p, Format))
+            vid_name = plane_file(compressed_folder(TS_folder, 'log8bit'), chan, p, Format)
             out = cv.VideoWriter(vid_name,
                                  cv.VideoWriter_fourcc(*'mp4v'), 
                                  movie_rate,
@@ -68,7 +67,7 @@ def convert_to_log8bit_mp4(TS_folder):
             print(' [ok] "%s" succesfully created !' % vid_name)
             DICT['Frames_succesfully_in_movie-plane%i'%p]= success
 
-        np.save(os.path.join(TS_folder.replace('TSeries', 'log8bit'), 
+        np.save(os.path.join(compressed_folder(TS_folder, 'log8bit'), 
                              '%s-summary.npy'%chan.replace(' ','-')),
                 DICT)
         print(' [ok] Frames-summary.npy succesfully created !')

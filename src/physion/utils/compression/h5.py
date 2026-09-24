@@ -6,6 +6,7 @@ import h5py
 from hdmf.data_utils import DataChunkIterator
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 
+from physion.imaging.folders import compressed_folder, plane_file
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.paths import FOLDERS
@@ -102,8 +103,8 @@ def convert_to_h5(TS_folder):
                                         extension='.xml')[0]
     xml = bruker_xml_parser(xml_file)
 
-    if not os.path.isdir(os.path.join(TS_folder.replace('TSeries', 'h5'))):
-        os.mkdir(os.path.join(TS_folder.replace('TSeries', 'h5')))
+    if not os.path.isdir(compressed_folder(TS_folder, 'h5')):
+        os.mkdir(compressed_folder(TS_folder, 'h5'))
 
     print('\n Analyzing: "%s" ' % TS_folder)
     for chan in xml['channels']:
@@ -116,9 +117,7 @@ def convert_to_h5(TS_folder):
 
             plane_cond = (xml[chan]['depth_index']==p)
 
-            vid_name = os.path.join(TS_folder.replace('TSeries', 'h5'),
-                                     '%s-plane%i.h5' %\
-                                    (chan.replace(' ','-'), p))
+            vid_name = plane_file(compressed_folder(TS_folder, 'h5'), chan, p, 'h5')
 
             h5_file = tiffs_to_h5(
                 TS_folder,
@@ -127,7 +126,7 @@ def convert_to_h5(TS_folder):
         
             print(f" [ok] succesfully wrote {len(FILES[plane_cond])} frames to ", vid_name)
 
-        # np.save(os.path.join(TS_folder.replace('TSeries', 'h5'), 
+        # np.save(os.path.join(compressed_folder(TS_folder, 'h5'), 
         #                      '%s-summary.npy'%chan.replace(' ','-')),
         #         DICT)
         # print(' [ok] Frames-summary.npy succesfully created !')

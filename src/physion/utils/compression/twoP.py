@@ -18,6 +18,8 @@ from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.progressBar import printProgressBar
 from physion.utils.paths import FOLDERS
+from physion.imaging.folders import compressed_folder,\
+        find_TSeries_folders, find_compressed_folders
 
 from physion.utils.compression.nwb import convert_to_nwb
 from physion.utils.compression.h5 import convert_to_h5
@@ -34,21 +36,6 @@ FOLDER_KEYS = {'h5':'h5',
                '16bit-avi (lossless)':'lossless',
                'lossless':'lossless'}
 
-def find_TSeries_folders(folder):
-    """
-    only the raw "TSeries-" folders (not the already compressed ones)
-        and no search inside them
-    """
-    FOLDERS = []
-    for root, subdirs, _ in os.walk(folder):
-        FOLDERS += [os.path.join(root, d) for d in subdirs\
-                            if d.startswith('TSeries-')]
-        subdirs[:] = [d for d in subdirs if not d.startswith('TSeries-')]
-    return sorted(FOLDERS)
-
-def find_compressed_folders(folder, key='h5'):
-    return [f[0] for f in os.walk(folder)\
-                    if key in f[0].split(os.path.sep)[-1]]
 
 
 def imaging_to_movie_gui(self,
@@ -101,12 +88,7 @@ def imaging_to_movie_gui(self,
 def create_compressed_folder(folder,
                              key='log8bit'):
 
-    key = FOLDER_KEYS.get(key, key)
-    # replace only in the folder name (not in the parent path)
-    new_folder = os.path.join(os.path.dirname(folder),
-                    os.path.basename(folder).replace('TSeries', key, 1))
-    if os.path.abspath(new_folder)==os.path.abspath(folder):
-        raise ValueError('"%s" is not a "TSeries-" folder' % folder)
+    new_folder = compressed_folder(folder, FOLDER_KEYS.get(key, key))
 
     pathlib.Path(new_folder).mkdir(parents=True, exist_ok=True)
 

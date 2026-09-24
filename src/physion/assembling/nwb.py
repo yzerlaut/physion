@@ -12,6 +12,7 @@ from physion.utils.paths import python_path
 from physion.visual_stim.build import build_stim as build_visualStim
 
 from physion.utils.camera import CameraData
+from physion.imaging.folders import session_imaging_folders
 
 from .subject import reformat_props, cleanup_keys, subject_template
 from .add_ophys import add_ophys # optical physiology
@@ -719,16 +720,11 @@ def build_NWB_func(args, Subject=None):
     ####         Calcium Imaging              #######
     #################################################
     # see: add_ophys.py script
-    # look for 'TSeries' folder
-    #   or for its 'h5-' version (see physion.utils.compression.h5)
+    # look for the 'TSeries' folder, or its 'h5-' version (see physion.imaging.folders)
     if metadata['CaImaging'] and ('processed_CaImaging' in args.modalities):
-        TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
-        if len(TSeries)==0:
-            TSeries = [f for f in os.listdir(args.datafolder) if\
-                    f.startswith('h5-') and\
-                    os.path.isdir(os.path.join(args.datafolder, f))]
+        TSeries = session_imaging_folders(args.datafolder)
         if len(TSeries)==1:
-            args.imaging = os.path.join(args.datafolder, TSeries[0])
+            args.imaging = TSeries[0]
 
             add_ophys(nwbfile, args,
                     metadata=metadata)
