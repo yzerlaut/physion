@@ -34,7 +34,7 @@ class H5ImagingWindow(Window):
         ##### module quantities #####
         #############################
 
-        self.filename, self.h5File, self.data, self.meanImg = None, None, None, None
+        self.filename, self.h5File, self.movie, self.meanImg = None, None, None, None
         self.ROIs, self.fluo = [], None
 
         ##########################################################
@@ -145,15 +145,11 @@ class H5ImagingWindow(Window):
             self.h5File.close()
         self.h5File = None
 
-    def root_folder(self):
-        key = self.folderBox.currentText()
-        return FOLDERS[key] if key in FOLDERS else os.path.expanduser('~')
-
     def open(self):
 
         filename, _  = QtWidgets.QFileDialog.getOpenFileName(self.main,
                      "Open Imaging Data (h5 file)",
-                     self.root_folder(),
+                     self.choose_root_folder(),
                      filter="*.h5 *.hdf5")
 
         if filename=='':
@@ -175,11 +171,11 @@ class H5ImagingWindow(Window):
 
         # the dataset is read lazily (no full loading in memory)
         self.h5File, self.filename = h5File, filename
-        self.data = self.h5File[H5_KEY]
+        self.movie = self.h5File[H5_KEY]
         self.fluo = None
 
         self.label.setText('%s \n (%i frames, %ix%i px)' %\
-                (os.path.basename(filename), *self.data.shape))
+                (os.path.basename(filename), *self.movie.shape))
         self.statusBar.showMessage(' loaded: "%s"' % filename)
 
         self.update_mean_img()
@@ -188,10 +184,10 @@ class H5ImagingWindow(Window):
 
     def update_mean_img(self):
 
-        if self.data is None:
+        if self.movie is None:
             return
 
-        nFrames = self.data.shape[0]
+        nFrames = self.movie.shape[0]
         try:
             i0, i1 = [int(i) for i in self.meanFramesBox.text().split(':')]
         except ValueError:
@@ -203,7 +199,7 @@ class H5ImagingWindow(Window):
             i0, i1 = 0, min([nFrames, 100])
         self.meanFramesBox.setText('%i:%i' % (i0, i1))
 
-        self.meanImg = np.mean(self.data[i0:i1], axis=0)
+        self.meanImg = np.mean(self.movie[i0:i1], axis=0)
         self.draw_mean_img()
 
     def draw_mean_img(self):
@@ -218,11 +214,11 @@ class H5ImagingWindow(Window):
 
     def add_ROI(self):
 
-        if self.data is None:
+        if self.movie is None:
             print(' [!!] need to load data first [!!] ')
             return
 
-        _, Ny, Nx = self.data.shape
+        _, Ny, Nx = self.movie.shape
         color = colors[len(self.ROIs) % len(colors)]
         pen = pg.mkPen(color, width=2)
         roi = pg.EllipseROI([3*Nx/8, 3*Ny/8], [Nx/8, Ny/8],
@@ -252,11 +248,11 @@ class H5ImagingWindow(Window):
 
     def extract_fluo(self):
 
-        if (self.data is None) or (len(self.ROIs)==0):
+        if (self.movie is None) or (len(self.ROIs)==0):
             print(' [!!] need to load data and add ROIs first [!!] ')
             return
 
-        nFrames, Ny, Nx = self.data.shape
+        nFrames, Ny, Nx = self.movie.shape
         masks = [ROI_mask(roi, (Ny, Nx)) for roi in self.ROIs]
         for i, mask in enumerate(masks):
             if mask.sum()==0:
@@ -272,7 +268,7 @@ class H5ImagingWindow(Window):
                 (len(masks), nFrames))
         self.fluo = np.zeros((len(masks), nFrames))
         for i0 in range(0, nFrames, chunk):
-            frames = self.data[i0:i0+chunk]
+            frames = self.movie[i0:i0+chunk]
             for i, mask in enumerate(masks):
                 if mask.sum()>0:
                     self.fluo[i, i0:i0+chunk] = frames[:, mask].mean(axis=1)
@@ -302,7 +298,7 @@ class H5ImagingWindow(Window):
         output = {'h5file':self.filename,
                   'ROIs':[(*roi.pos(), *roi.size(), roi.angle())\
                                 for roi in self.ROIs], # x0, y0, w, h, angle(deg)
-                  'masks':np.array([ROI_mask(roi, self.data.shape[1:])\
+                  'masks':np.array([ROI_mask(roi, self.movie.shape[1:])\
                                         for roi in self.ROIs]),
                   'fluorescence':self.fluo, # shape (nROIs, nFrames)
                   'meanImg':self.meanImg,

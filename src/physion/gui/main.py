@@ -116,12 +116,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # # -- FaceMotion tracking
     if (not Acquisition) and (not Intrinsic):
-        from physion.facemotion.gui import gui as facemotion 
-        from physion.facemotion.gui import open_facemotion_data,\
-                reset_facemotion, load_last_facemotion_gui_settings,\
-                save_facemotion_data, refresh_facemotion,\
-                process_facemotion, process_grooming, add_facemotion_ROI,\
-                update_grooming_threshold
+        def facemotion(self, tab_id=2):
+            from physion.facemotion.gui import FaceMotionWindow
+            return FaceMotionWindow(self, tab_id)
     else:
         from physion.gui.parts import inactivated as facemotion 
 
@@ -164,8 +161,9 @@ class MainWindow(QtWidgets.QMainWindow):
             choose_DataTable, runBuildNWBfromDTBL, build_NWB_UI, runBuildNWB
         # from physion.assembling.add_ophys import add_imaging, loadNWBfile,\
             # loadNWBfolder, loadCafolder, runAddOphys, check_ordered
-        from physion.assembling.FOV_coordinates import gui as FOV_coords_UI,\
-                load_intrinsic_maps_FOV
+        def FOV_coords_UI(self, tab_id=2):
+            from physion.assembling.FOV_coordinates import FOVCoordinatesWindow
+            return FOVCoordinatesWindow(self, tab_id)
     else:
         from physion.gui.parts import inactivated as add_imaging
         from physion.gui.parts import inactivated as build_NWB_UI 
@@ -396,8 +394,6 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='visualization':
             tzoom = self.plot.getAxis('bottom').range
             self.raw_data_plot(tzoom)
-        elif self.windows[tab_id] =='facemotion':
-            self.refresh_facemotion()
         elif self.windows[tab_id] =='trial_averaging':
             self.refresh_TA()
         elif self.windows[tab_id] =='FOV':
