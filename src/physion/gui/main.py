@@ -145,6 +145,14 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
         from physion.gui.parts import inactivated as suite2p_preprocessing_UI
 
+    # # -- H5 Imaging - ROI extraction
+    if (not Acquisition) and (not Intrinsic):
+        from physion.imaging.h5_gui import h5_imaging_UI, open_h5_imaging,\
+                update_mean_img_h5, draw_mean_img_h5, add_ROI_h5, reset_ROIs_h5,\
+                extract_fluo_h5, save_ROIs_h5
+    else:
+        from physion.gui.parts import inactivated as h5_imaging_UI
+
     # # -- Spike Sorting Preprocesssing
     if (not Acquisition) and (not Intrinsic):
         from physion.ephys.gui import spike_sorting_preprocessing_UI, open_phy,\
@@ -314,6 +322,8 @@ class MainWindow(QtWidgets.QMainWindow):
         if self.windows[tab_id] =='red_channel_labelling':
             self.folder = self.open_folder()
             self.load_RCL()
+        elif self.windows[tab_id] =='h5_imaging':
+            self.open_h5_imaging()
         else:
             self.open_file()
             

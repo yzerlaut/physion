@@ -77,7 +77,9 @@ def build_menu(self):
     self.visualizationMenu = self.mainMenu.addMenu('  &Visualization')
     self.visualizationMenu.addAction('  ** &Raw Data', 
                                       self.visualization)
-    self.visualizationMenu.addAction('  **** &FOV / ROIs', 
+    self.visualizationMenu.addAction('  *** &H5 Imaging ROIs',
+                                      self.h5_imaging_UI)
+    self.visualizationMenu.addAction('  **** &FOV / ROIs',
                                       self.FOV)
 
     # # ##### ------- Analysis -------------------------------
