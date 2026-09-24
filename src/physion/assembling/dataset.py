@@ -62,7 +62,7 @@ def read_spreadsheet(filename,
                 protocols[-1] = metadata['protocol']
                 FOVs[-1] = metadata['FOV']
 
-            except BaseException as be:
+            except (OSError, ValueError, KeyError) as be:
 
                 if verbose:
                     print(be)
@@ -79,7 +79,7 @@ def read_spreadsheet(filename,
                 protocols[-1] = analysis['protocol'][i]
                 FOVs[-1] = dataset['FOV'][i]
 
-            except BaseException as be:
+            except (KeyError, IndexError) as be:
 
                 if verbose:
                     print(be)

@@ -308,7 +308,7 @@ def fetch_settings_from_UI(self):
         my_settings['subsampling_iStart'] = int(self.subsamplingParamsBox.text().split(':')[0])
         my_settings['subsampling_iStop'] = int(self.subsamplingParamsBox.text().split(':')[1])
         my_settings['subsampling_step'] = int(self.subsamplingParamsBox.text().split('::')[1])
-    except BaseException as be:
+    except (ValueError, IndexError) as be:
         my_settings['subsampling_iStart'] = 0
         my_settings['subsampling_iStop'] = 1000
         my_settings['subsampling_step'] = 2
