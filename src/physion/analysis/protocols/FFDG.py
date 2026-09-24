@@ -213,7 +213,7 @@ def generate_figs(nwbfile,
                        color_key=('contrast' if 'contrast' in episodes.varied_parameters else ''),
                        column_key='angle',
                        xbar=1, xbarlabel='1s', 
-                       ybar=0.1, ybarlabel='0.1$\Delta$F/F',
+                       ybar=0.1, ybarlabel='0.1$\\Delta$F/F',
                        with_screen_inset=True,
                        with_std_over_rois=True, 
                        figsize=(7,1.5))
@@ -239,7 +239,7 @@ def generate_figs(nwbfile,
                        color_key=('contrast' if 'contrast' in episodes.varied_parameters else ''),
                        column_key='angle',
                        xbar=1, xbarlabel='1s', 
-                       ybar=0.5, ybarlabel='0.5$\Delta$F/F',
+                       ybar=0.5, ybarlabel='0.5$\\Delta$F/F',
                        with_std=True, no_set=False, with_annotation=True,
                        figsize=(7,1.5))
         
@@ -411,7 +411,7 @@ def compute_activity_modulation_by_light(data):
         parts['bodies'][0].set_alpha(1)
         ax3.plot([i], [np.median(RESP[key+'-skew'])], 'r_')
 
-    for label, ax in zip(['mean $\Delta$F/F', 'mean $\Delta$F/F    \n norm. to "black"    ', '$\Delta$F/F skewness    '],
+    for label, ax in zip(['mean $\\Delta$F/F', 'mean $\\Delta$F/F    \n norm. to "black"    ', '$\\Delta$F/F skewness    '],
                           [ax1, ax2, ax3]):
 
         ylim = [np.max([0, ax.get_ylim()[0]]), np.min([4, ax.get_ylim()[1]])]

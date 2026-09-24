@@ -2,7 +2,7 @@ import os, sys, pathlib
 import numpy as np
 import matplotlib.pylab as plt
 plt.style.use(os.path.join(pathlib.Path(__file__).resolve().parents[1],\
-                'utils', 'matplotlib_style.py'))
+                'utils', 'matplotlib_style.mplstyle'))
 
 #############################################
 ##           Matplotlib Display      ########

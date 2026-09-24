@@ -226,13 +226,13 @@ def generate_figs(args,
                            column_key='x-center',
                            row_key='y-center',
                            xbar=1, xbarlabel='1s',
-                           ybar=0.1, ybarlabel='0.1$\Delta$F/F',
+                           ybar=0.1, ybarlabel='0.1$\\Delta$F/F',
                            with_screen_inset=True,
                            with_std_over_rois=True,
                            with_annotation=True,
                            no_set=False, AX=AX)
 
-        fig.suptitle('centered ROIs: n=%i/%i (%.1f%%)\nmean$\pm$s.d. over rois' %\
+        fig.suptitle('centered ROIs: n=%i/%i (%.1f%%)\nmean$\\pm$s.d. over rois' %\
                                                         (len(CENTERED_ROIS), data.nROIs,
                                                         100*len(CENTERED_ROIS)/data.nROIs))
         fig.savefig(os.path.join(tempfile.tempdir,
@@ -268,7 +268,7 @@ def generate_figs(args,
                                index=CENTERED_ROIS[irdm],
                                column_key='radius',
                                xbar=1, xbarlabel='1s',
-                               ybar=0.1, ybarlabel='0.1$\Delta$F/F',
+                               ybar=0.1, ybarlabel='0.1$\\Delta$F/F',
                                with_stat_test=True, stat_test_props=stat_test_props,
                                with_annotation=(i==0),
                                no_set=False, AX=[AX[i]])
@@ -277,7 +277,7 @@ def generate_figs(args,
                     xycoords='axes fraction', rotation=90, ha='right')
             inset = pt.inset(AX[i][-1], [2.2,0.2,1.1,0.6])
             inset.plot(radii, size_resps[irdm], 'ko-')
-            inset.set_ylabel('$\delta$ $\Delta$F/F')
+            inset.set_ylabel('$\\delta$ $\\Delta$F/F')
             inset.set_xlabel('size ($^o$)')
 
         while i<(Nexamples-1):
@@ -293,7 +293,7 @@ def generate_figs(args,
         pt.plt.subplots_adjust(right=.9, top=.85, left=0.25, bottom=0.25)
         ax.plot(radii, np.mean(size_resps, axis=0), 'ko-')
         ax.set_title('n=%i ROIs' % len(CENTERED_ROIS))
-        ax.set_ylabel('$\delta$ $\Delta$F/F')
+        ax.set_ylabel('$\\delta$ $\\Delta$F/F')
         ax.set_xlabel('size ($^o$)')
 
 
@@ -323,7 +323,7 @@ def generate_figs(args,
                            column_key='x-center',
                            row_key='y-center',
                            xbar=1, xbarlabel='1s',
-                           ybar=0.1, ybarlabel='0.1$\Delta$F/F',
+                           ybar=0.1, ybarlabel='0.1$\\Delta$F/F',
                            with_screen_inset=True,
                            with_std_over_rois=True,
                            with_annotation=True,
