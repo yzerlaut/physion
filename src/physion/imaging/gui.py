@@ -4,9 +4,9 @@ import numpy as np
 
 from physion.utils.paths import FOLDERS, python_path_suite2p_env
 from physion.utils.files import get_files_with_extension,\
-        list_dayfolder, get_TSeries_folders
+        list_dayfolder
 from physion.imaging.suite2p.preprocessing import build_suite2p_options,\
-        default_ops
+        default_ops, is_TSeries_folder, is_h5_folder, find_imaging_folders
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.presets import presets
 from physion.utils.compression.twoP import reconvert_to_tiffs_from_log8bit
@@ -193,13 +193,12 @@ def load_TSeries_folder(self):
     
     if folder!='':
 
-        print('log8bit' in folder)
-        if ('TSeries-' in folder) or ('log8bit-' in folder) or ('lossless' in folder):
-            print('"%s" is a recognize as a single TSeries folder' % folder)
+        if is_TSeries_folder(folder) or is_h5_folder(folder):
+            print('"%s" is a recognize as a single TSeries/h5 folder' % folder)
             folders = [folder]
         else:
-            print('"%s" is recognized as a folder containing sets of TSeries' % folder)
-            folders = get_TSeries_folders(folder)
+            print('"%s" is recognized as a folder containing sets of TSeries/h5' % folder)
+            folders = find_imaging_folders(folder)
 
         for i, folder in enumerate(folders):
            
@@ -215,7 +214,10 @@ def load_TSeries_folder(self):
                 self.Nchans.append(xml['Nchannels'])
                 getattr(self, 'tseriesBtn%i' % (i+1)).setChecked(True)
 
-        i+=1
+        if len(folders)==0:
+            print(' [!!] no "TSeries-" or "h5-" folder found in "%s" ' % folder)
+
+        i = len(folders) # reset the remaining rows
         while i<self.nWidgetRow-1:
             getattr(self, 'tseries%i' % (i+1)).setText(' - ')
             getattr(self, 'tseriesBtn%i' % (i+1)).setChecked(False)

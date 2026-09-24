@@ -16,7 +16,7 @@ filename = os.path.join(os.path.expanduser('~'),
                         'DATA', 'physion_Demo-Datasets', 'NDNF-WT', 'NWBs',
                         '2022_12_14-13-27-41.nwb')
 data = NWB_to_dataframe(filename,
-                        visual_stim_features='per-protocol',
+                        # visual_stim_features='per-protocol',
                         #visual_stim_label='per-protocol-and-parameters',
                         #visual_stim_label='per-protocol-and-parameters-and-timepoints', #
                         subsampling = 10,

@@ -23,7 +23,7 @@ filename = os.path.join(os.path.expanduser('~'), 'DATA',
                         '2023_02_15-13-30-47.nwb')
 
 data = Data(filename, verbose=False)
-data.build_available_modalities()
+# data.build_available_modalities()
 
 # %% [markdown]
 # ## Build episodes (stimulus-aligned)

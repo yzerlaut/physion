@@ -10,7 +10,7 @@ def realign_from_photodiode(signal,
                             shift_time=0.3, # MODIFY IT HERE IN CASE NEEDED
                             debug=False, istart_debug=0, n_vis=5,
                             max_episode=-1,
-                            ignore_episodes=[],
+                            exclude_episodes=[],
                             indices_forced=[],
                             times_forced=[],
                             durations_forced=[],
@@ -70,7 +70,7 @@ def realign_from_photodiode(signal,
             tstart = times_forced[iforced]
             tshift = 0.5
 
-        elif i in ignore_episodes:
+        elif i in exclude_episodes:
             # we just skip this episodes:
             success = True
 

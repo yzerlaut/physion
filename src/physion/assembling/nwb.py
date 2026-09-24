@@ -341,7 +341,7 @@ def build_NWB_func(args, Subject=None):
             success, metadata = \
                     realign_from_photodiode(Psignal, metadata,
                                     max_episode=args.max_episode,
-                                    ignore_episodes=args.ignore_episodes,
+                                    exclude_episodes=args.exclude_episodes,
                                     sampling_rate=(args.photodiode_sampling\
                                             if args.photodiode_sampling>0 else None),
                                     indices_forced=indices_forced,
@@ -719,16 +719,21 @@ def build_NWB_func(args, Subject=None):
     ####         Calcium Imaging              #######
     #################################################
     # see: add_ophys.py script
-    # look for 'TSeries' folder 
+    # look for 'TSeries' folder
+    #   or for its 'h5-' version (see physion.utils.compression.h5)
     if metadata['CaImaging'] and ('processed_CaImaging' in args.modalities):
         TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
+        if len(TSeries)==0:
+            TSeries = [f for f in os.listdir(args.datafolder) if\
+                    f.startswith('h5-') and\
+                    os.path.isdir(os.path.join(args.datafolder, f))]
         if len(TSeries)==1:
             args.imaging = os.path.join(args.datafolder, TSeries[0])
 
             add_ophys(nwbfile, args,
                     metadata=metadata)
         else:
-            print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
+            print('\n[X] [!!]  Problem with the TSeries/h5 folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
     
     #################################################
     ####    add Intrinsic Imaging MAPS         ######
@@ -815,7 +820,7 @@ if __name__=='__main__':
     ##             IN CASE SOMETHING WENT WRONG IN THE RECORDING    ####
     parser.add_argument("--max_episode", type=int, default=-1)
     ######## AND THE POSSIBILITY TO REMOVE SPECIFIC EPISODES
-    parser.add_argument("--ignore_episodes", nargs='*', type=int, default=[])
+    parser.add_argument("--exclude_episodes", nargs='*', type=int, default=[])
     ######## ALSO THE ABILITY TO FORCE EPISODE START AND DURATION   ####
     ##  e.g. for the protocols without the photodiode (screen off)  ####
     parser.add_argument("--indices_forced", nargs='*', type=int, default=[])
@@ -882,6 +887,10 @@ if __name__=='__main__':
                         'reverse_photodiodeSignal']:
                 setattr(args, key, True if dataset[key].values[i]=='Yes'\
                             else False)
+            for key in ['exclude_episodes']:
+                if (key in dataset) and (dataset[key].values[i]!=''):
+                    print()
+                    # setattr(args, key, dataset[key].values[i]=='Yes' else False)
                 
             # for Neuropix recording, getting the whole-session-level infos
             if 'Npx-Folder' in dataset and dataset['Npx-Folder'][i]!='':

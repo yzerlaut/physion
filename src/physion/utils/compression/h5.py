@@ -9,6 +9,7 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.paths import FOLDERS
+from physion.utils.progressBar import printProgressBar
 
 from physion.utils.compression.nwb import peek_frame_shape_and_dtype
 
@@ -20,6 +21,7 @@ def tiffs_to_h5(
     dataset_key="data",
     compression="gzip",
     batch_size=32,
+    with_ProgressBar=True,
 ):
     """Write `tiff_files` into out_path as an HDF5 dataset under `dataset_key`,
     shape (n_frames, height, width), reading/writing `batch_size` frames at a
@@ -50,8 +52,17 @@ def tiffs_to_h5(
                 return write_start
             stacked = np.stack(buffer)
             dset[write_start:write_start + len(buffer)] = stacked
+            if with_ProgressBar:
+                printProgressBar(write_start + len(buffer), n_frames,
+                                 prefix='    writing h5:',
+                                 suffix='(%i/%i frames)' %\
+                                    (write_start + len(buffer), n_frames))
             return write_start + len(buffer)
- 
+
+        if with_ProgressBar:
+            printProgressBar(0, n_frames, prefix='    writing h5:',
+                             suffix='(0/%i frames)' % n_frames)
+
         for i, f in enumerate(tiff_files):
 
             frame = np.array(Image.open(os.path.join(TS_folder, f)),

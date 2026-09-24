@@ -14,8 +14,7 @@ import numpy as np
 
 from PyQt5 import QtWidgets
 
-from physion.utils.files import get_files_with_extension,\
-        get_TSeries_folders
+from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.progressBar import printProgressBar
 from physion.utils.paths import FOLDERS
@@ -26,10 +25,26 @@ from physion.utils.compression.binary import convert_to_binary
 from physion.utils.compression.mp4 import convert_to_log8bit_mp4, reconvert_to_tiffs_from_log8bit
 from physion.utils.compression.avi import convert_to_16bit_avi, reconvert_to_tiffs_from_16bit
 
- 
-# def find_TSeries_folders(folder):
-#     return [f[0] for f in os.walk(folder)\
-#                     if 'TSeries' in f[0].split(os.path.sep)[-1]]
+# compression type (UI) -> folder key (same as in the "convert_to_..." functions)
+FOLDER_KEYS = {'h5':'h5',
+               'nwb':'nwb',
+               'binary':'binary',
+               '8bit-LOG-mp4':'log8bit',
+               'log8bit':'log8bit',
+               '16bit-avi (lossless)':'lossless',
+               'lossless':'lossless'}
+
+def find_TSeries_folders(folder):
+    """
+    only the raw "TSeries-" folders (not the already compressed ones)
+        and no search inside them
+    """
+    FOLDERS = []
+    for root, subdirs, _ in os.walk(folder):
+        FOLDERS += [os.path.join(root, d) for d in subdirs\
+                            if d.startswith('TSeries-')]
+        subdirs[:] = [d for d in subdirs if not d.startswith('TSeries-')]
+    return sorted(FOLDERS)
 
 def find_compressed_folders(folder, key='h5'):
     return [f[0] for f in os.walk(folder)\
@@ -86,10 +101,17 @@ def imaging_to_movie_gui(self,
 def create_compressed_folder(folder,
                              key='log8bit'):
 
-    pathlib.Path(folder.replace('TSeries', key)).mkdir(parents=True, exist_ok=True)
+    key = FOLDER_KEYS.get(key, key)
+    # replace only in the folder name (not in the parent path)
+    new_folder = os.path.join(os.path.dirname(folder),
+                    os.path.basename(folder).replace('TSeries', key, 1))
+    if os.path.abspath(new_folder)==os.path.abspath(folder):
+        raise ValueError('"%s" is not a "TSeries-" folder' % folder)
 
-    shutil.copytree(os.path.join(folder), 
-                    folder.replace('TSeries', key),
+    pathlib.Path(new_folder).mkdir(parents=True, exist_ok=True)
+
+    shutil.copytree(os.path.join(folder),
+                    new_folder,
                     dirs_exist_ok=True,
                     ignore=shutil.ignore_patterns('*.ome.tif', #'Reference*', 
                                                   'CYCLE*', '*.bin'))
@@ -105,7 +127,7 @@ def create_compressed_folder(folder,
 
 def run_imaging_to_movie(self):
 
-    Fs = get_TSeries_folders(self.source_folder)
+    Fs = find_TSeries_folders(self.source_folder)
 
     for f in Fs:
 

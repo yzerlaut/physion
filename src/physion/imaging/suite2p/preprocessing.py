@@ -1,5 +1,6 @@
 import sys, os, pathlib, shutil, glob, time, subprocess
 import numpy as np
+import h5py
 
 from physion.utils.paths import python_path_suite2p_env
 from physion.utils.files import get_files_with_extension
@@ -27,12 +28,136 @@ def build_db(folder, v1=False):
                 'fast_disk': folder,
                 'input_format': 'bruker'}
 
+#####################################################################
+#  h5 input: "h5-" folders from physion.utils.compression.h5
+#            (one h5 file per channel and plane, key: "data")
+#####################################################################
+
+H5_INPUT = 'suite2p-input.h5' # virtual dataset read by suite2p
+H5_KEY = 'data'
+
+def is_h5_folder(folder):
+    return os.path.basename(os.path.normpath(folder)).startswith('h5-')
+
+
+def is_TSeries_folder(folder):
+    return os.path.basename(os.path.normpath(folder)).startswith('TSeries-')
+
+
+def find_imaging_folders(folder, recursive=True):
+    """
+    "TSeries-" and "h5-" folders in folder (no search inside them)
+        "h5-" folders are skipped if their "TSeries-" folder is still there
+    """
+    FOLDERS = []
+    for root, subdirs, _ in os.walk(folder):
+        for d in sorted(subdirs):
+            if is_TSeries_folder(d) or\
+                    (is_h5_folder(d) and\
+                        (d.replace('h5-', 'TSeries-', 1) not in subdirs)):
+                FOLDERS.append(os.path.join(root, d))
+        subdirs[:] = [d for d in subdirs\
+                        if not (is_TSeries_folder(d) or is_h5_folder(d))]
+        if not recursive:
+            break
+    return sorted(FOLDERS)
+
+
+def get_h5_files(folder, bruker_data):
+    """
+    h5 files ordered as [plane][channel], None if one is missing
+    """
+    planes = np.unique(\
+            bruker_data[bruker_data['channels'][0]]['depth_index'])
+    files = [[os.path.join(folder, '%s-plane%i.h5' %\
+                                    (chan.replace(' ','-'), p))\
+                    for chan in bruker_data['channels']] for p in planes]
+    if np.all([os.path.isfile(f) for plane in files for f in plane]):
+        return files
+    else:
+        return None
+
+
+def build_interleaved_h5(folder, h5_files,
+                         subsampling=slice(None)):
+    """
+    suite2p reads h5 data as a single stream of frames interleaved as:
+        t0: plane0-chan0, plane0-chan1, plane1-chan0, ..., t1: ...
+    we build this stream as a virtual dataset (no data copy)
+        pointing to the h5 files of each channel and plane
+    """
+    nplanes, nchannels = len(h5_files), len(h5_files[0])
+    shapes, dtypes = {}, []
+    for fn in np.array(h5_files).flatten():
+        with h5py.File(fn, 'r') as f:
+            shapes[fn] = f[H5_KEY].shape
+            dtypes.append(f[H5_KEY].dtype)
+    # same number of frames for all channels & planes (interrupted acquisitions)
+    nframes = min([s[0] for s in shapes.values()])
+    frames = range(nframes)[subsampling] # (a VirtualSource can be sliced once)
+    nsel = len(frames)
+
+    layout = h5py.VirtualLayout(shape=(nsel*nplanes*nchannels,)+\
+                                        shapes[h5_files[0][0]][1:],
+                                dtype=dtypes[0])
+    for p in range(nplanes):
+        for c in range(nchannels):
+            # relative path -> resolved from the folder of the virtual file
+            source = h5py.VirtualSource(os.path.basename(h5_files[p][c]),
+                                        H5_KEY, shape=shapes[h5_files[p][c]])
+            layout[p*nchannels+c::nplanes*nchannels] =\
+                    source[frames.start:frames.stop:frames.step]
+
+    with h5py.File(os.path.join(folder, H5_INPUT), 'w') as f:
+        f.create_virtual_dataset(H5_KEY, layout)
+
+    print(' [ok] "%s" built: %i frames x %i planes x %i channels' %\
+            (H5_INPUT, nsel, nplanes, nchannels))
+    return nplanes, nchannels
+
+
+def build_h5_db(folder, bruker_data, h5_files, my_settings):
+    """ suite2p options to read the h5 data """
+
+    if my_settings.get('subsampling', False):
+        subsampling = slice(my_settings['subsampling_iStart'],
+                            my_settings['subsampling_iStop'],
+                            my_settings['subsampling_step'])
+    else:
+        subsampling = slice(None)
+
+    nplanes, nchannels = build_interleaved_h5(folder, h5_files,
+                                              subsampling=subsampling)
+
+    # functional channel: "Ch2 Green" by default (see override_suite2p_default_ops)
+    if (nchannels>1) and ('Ch2 Green' in bruker_data['channels']):
+        functional_chan = bruker_data['channels'].index('Ch2 Green')+1
+    else:
+        functional_chan = 1
+
+    return {'input_format':'h5',
+            'file_list':[H5_INPUT],
+            'h5py_key':H5_KEY,
+            'nplanes':nplanes,
+            'nchannels':nchannels,
+            'functional_chan':functional_chan}
+
+
 def build_suite2p_options(folder,
                           my_settings):
-    
+
     xml_file = get_files_with_extension(folder, extension='.xml')[0]
 
     bruker_data = bruker_xml_parser(xml_file)
+
+    if is_h5_folder(folder):
+        h5_files = get_h5_files(folder, bruker_data)
+        if h5_files is None:
+            raise FileNotFoundError(\
+                ' [!!] h5 files of "%s" missing for some channels/planes' % folder)
+        h5_db = build_h5_db(folder, bruker_data, h5_files, my_settings)
+    else:
+        h5_db = None
 
     # acquisition frequency per plane - (bruker framePeriod i already per plane)
     nplanes = my_settings['nplanes']\
@@ -83,14 +208,23 @@ def build_suite2p_options(folder,
         for key in ['data_path', 'subfolders', 'save_path0',
                     'fast_disk', 'input_format']:
             ops[key] = db[key]
+        if h5_db is not None:
+            ops.update(h5_db)
+            ops['bruker'] = False
+            ops['h5py'] = [os.path.join(folder, H5_INPUT)]
+            ops['align_by_chan'] = h5_db['functional_chan']
         np.save(os.path.join(folder,'ops.npy'), ops)
 
 
     # we re-build the db
     db = build_db(folder, v1=my_settings['v1'])
 
+    if h5_db is not None:
+        # h5 input (subsampling is included in the virtual dataset)
+        db.update(h5_db)
+
     # subsampling ?
-    if my_settings['subsampling']:
+    elif my_settings['subsampling']:
         if 'Ch2 Green' in bruker_data:
             func_chan = 'Ch2 Green'
         else:
@@ -150,18 +284,16 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     if os.path.isdir(str(args.CaImaging_folder)) and\
-        (\
-            ('TSeries' in str(args.CaImaging_folder)) or
-            ('log8bit' in str(args.CaImaging_folder)) or
-            ('lossless' in str(args.CaImaging_folder)) ):
+            (is_TSeries_folder(args.CaImaging_folder) or\
+                    is_h5_folder(args.CaImaging_folder)):
         run_preprocessing(args)
         print('--> preprocessing of "%s" done !' % args.CaImaging_folder)
     elif os.path.isdir(str(args.CaImaging_folder)):
-        folders = [os.path.join(args.CaImaging_folder, f) for f in os.listdir(args.CaImaging_folder) if ('TSeries' in f)]
+        folders = find_imaging_folders(args.CaImaging_folder, recursive=False)
         for args.CaImaging_folder in folders:
             run_preprocessing(args)
     else:
-        print('[!!] Need to provide a valid "TSeries" folder [!!] ')
+        print('[!!] Need to provide a valid "TSeries-" or "h5-" folder [!!] ')
         
 
 
