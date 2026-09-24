@@ -11,13 +11,15 @@ the data for the modality "X" need to have the following specs:
             - there should be a "X-summary.npy" file
 """
 
-import os, sys
+import os, sys, logging
 import cv2 as cv
 import numpy as np
 
 from physion.assembling.tools import load_FaceCamera_data
 from physion.utils.progressBar import printProgressBar
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
+
+logger = logging.getLogger(__name__)
 
 class CameraData:
 
@@ -253,13 +255,14 @@ class CameraData:
 
             """
 
-            print("""
-
-                [!!] be aware that you can not *precisely read* specific frames from videos [!!]
-                        -> for precision: convert to binary to use this video first !
-                  
-                  python -m physion.utils.camera /path/to/your/video to-binary
-                  """)
+            if not getattr(self, '_warned_about_video_frames', False):
+                # once per video (this is called for every frame)
+                logger.warning(
+                    'you can not *precisely read* specific frames from videos'
+                    ' ("%s")\n    -> for precision: convert to binary to use'
+                    ' this video first:\n    python -m physion.utils.camera'
+                    ' /path/to/your/video to-binary' % self.name)
+                self._warned_about_video_frames = True
 
             # ---------------------------------------------
             #     transform to movie index (movies have low fps precision)
