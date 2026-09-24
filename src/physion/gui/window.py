@@ -5,9 +5,11 @@ the state of a window lives on the window object (not on the main window):
     windows opened in different tabs do not interfere
 
 a subclass builds its widgets in `__init__` (after calling Window.__init__)
-    and can implement the keyboard shortcuts of the main window, as methods:
-        open [O], save [S], refresh [R], process [P], next [N],
-        toggle [T], fit [F], hitting_space [Space], press1 ... press5 [1-5]
+    and can implement the keyboard shortcuts of the main window, as methods
+    named "on_" + the shortcut (not to collide with the window attributes):
+        on_open [O], on_save [S], on_refresh [R], on_process [P], on_next [N],
+        on_toggle [T], on_fit [F], on_hitting_space [Space],
+        on_press1 ... on_press5 [1-5]
 
 usage in the main window (physion.gui.main):
 
@@ -15,8 +17,9 @@ usage in the main window (physion.gui.main):
         return MyWindow(self, tab_id)
 """
 
-SHORTCUTS = ['open', 'save', 'refresh', 'process', 'next', 'toggle', 'fit',
-             'hitting_space', 'press1', 'press2', 'press3', 'press4', 'press5']
+SHORTCUTS = ['on_'+s for s in ['open', 'save', 'refresh', 'process', 'next',
+                'toggle', 'fit', 'hitting_space',
+                'press1', 'press2', 'press3', 'press4', 'press5']]
 
 
 class Window:

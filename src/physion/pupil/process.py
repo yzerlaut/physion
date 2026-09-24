@@ -81,6 +81,8 @@ def find_ellipse_props_of_binary_image_from_PCA(x, y, img):
 
     try:
         EVALs, EVECS = np.linalg.eig(C)
+        # C is symmetric: real eigen values/vectors (numpy>=2 returns them as complex)
+        EVALs, EVECS = np.real(EVALs), np.real(EVECS)
         # eigen_vecs = []
         eigen_vals, eigen_vec_angles, eigen_vec_stds = [np.zeros(xydist.shape[1]) for i in range(3)]
         for e, i in enumerate(np.argsort(EVALs)[::-1]):

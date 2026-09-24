@@ -150,7 +150,6 @@ class H5ImagingWindow(Window):
         return FOLDERS[key] if key in FOLDERS else os.path.expanduser('~')
 
     def open(self):
-        """ [O] shortcut """
 
         filename, _  = QtWidgets.QFileDialog.getOpenFileName(self.main,
                      "Open Imaging Data (h5 file)",
@@ -295,7 +294,6 @@ class H5ImagingWindow(Window):
             self.plot.autoRange()
 
     def save(self):
-        """ [S] shortcut """
 
         if (self.filename is None) or (self.fluo is None):
             print(' [!!] need to extract fluorescence first [!!] ')
@@ -314,6 +312,12 @@ class H5ImagingWindow(Window):
         np.save(filename, output)
         print('Data successfully saved as "%s"' % filename)
         self.statusBar.showMessage(' saved as "%s"' % filename)
+
+    # ----------------------------------------------------------
+    #   keyboard shortcuts (see physion.gui.window)
+    # ----------------------------------------------------------
+    on_open = open    # [O]
+    on_save = save    # [S]
 
 
 def ROI_mask(roi, shape):
