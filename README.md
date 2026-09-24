@@ -34,6 +34,11 @@ Then either install:
 ```
 pip install physion
 ```
+  with optional dependencies for electrophysiology (spike sorting, LFP, ephys notebooks) and/or for acquisition setups:
+```
+pip install "physion[ephys]"
+pip install "physion[ephys,acquisition]"
+```
 - from source with:
 ```
 git clone https://github.com/yzerlaut/physion --recurse-submodules

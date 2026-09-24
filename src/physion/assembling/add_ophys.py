@@ -6,7 +6,6 @@ import pynwb, time, ast
 from hdmf.data_utils import DataChunkIterator
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.to_nwb import add_ophys_processing_from_suite2p

@@ -32,14 +32,27 @@ dependencies = [
     "ffmpeg-python",
     "pyqt5",
     "openpyxl",
+    # imported directly (previously only installed through other packages)
+    "h5py",
+    "hdmf",
+    "pillow",
+    "python-dateutil",
+]
+
+[project.optional-dependencies]
+# electrophysiology: spike sorting, LFP, "Ephys-Analysis" and "CSD-Analysis" notebooks
+ephys = [
     "open-ephys-python-tools>=1.0",
     "spikeinterface[full]",
     "probeinterface",
     "elephant==1.0.0",
     "neo==0.14.4",
 ]
-
-[project.optional-dependencies]
+# acquisition setups (camera SDKs: see docs/install/acquisition.md)
+acquisition = [
+    "nidaqmx",
+    "requests",
+]
 test = ["pytest"]
 
 [tool.pytest.ini_options]

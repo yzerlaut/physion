@@ -4,12 +4,11 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 from scipy.interpolate import interp1d
 
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 from physion.facemotion import process, roi
 from physion.gui.parts import Slider
 from physion.utils.paths import FOLDERS
-from utils.camera import CameraData
+from physion.utils.camera import CameraData
 
 
 def gui(self,
