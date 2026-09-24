@@ -39,6 +39,13 @@ dependencies = [
     "neo==0.14.4",
 ]
 
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]  # the other scripts of tests/ are not collected
+
 [tool.setuptools.packages.find]
 where = ["src"]
 [tool.setuptools.package-data]
