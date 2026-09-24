@@ -49,24 +49,37 @@ def test_h5_imaging_UI(gui, tmp_path, monkeypatch):
     fn = str(tmp_path/'movie.h5')
     with h5py.File(fn, 'w') as f:
         f['data'] = movie
-    monkeypatch.setattr(QtWidgets.QFileDialog, 'getOpenFileName',
-                        staticmethod(lambda *a, **k: (fn, '')))
+    folders = []
+    def dialog(parent, title, folder, **kwargs):
+        folders.append(folder)
+        return (fn, '')
+    monkeypatch.setattr(QtWidgets.QFileDialog, 'getOpenFileName', staticmethod(dialog))
 
-    gui.h5_imaging_UI()
-    gui.open_h5_imaging()
-    np.testing.assert_allclose(gui.h5MeanImg, movie[:100].mean(axis=0))
+    window = gui.h5_imaging_UI()
+    gui.open() # [O] shortcut -> handled by the window of the current tab
+    np.testing.assert_allclose(window.meanImg, movie[:100].mean(axis=0))
+    assert folders == [window.root_folder()] # its own folder box
 
-    gui.h5ExpBox.setValue(0.5) # display exponent -> redraw
-    norm = gui.h5MeanImg-gui.h5MeanImg.min()
-    np.testing.assert_allclose(gui.h5Img.image, (norm/norm.max())**0.5)
+    window.expBox.setValue(0.5) # display exponent -> redraw
+    norm = window.meanImg-window.meanImg.min()
+    np.testing.assert_allclose(window.img.image, (norm/norm.max())**0.5)
 
-    gui.add_ROI_h5()
-    roi = gui.h5ROIs[0]
+    window.add_ROI()
+    roi = window.ROIs[0]
     roi.setPos((11, 11)); roi.setSize((8, 8))
-    gui.extract_fluo_h5()
-    np.testing.assert_allclose(gui.h5Fluo[0], 1+signal, rtol=1e-5)
+    window.extract_fluo()
+    np.testing.assert_allclose(window.fluo[0], 1+signal, rtol=1e-5)
 
-    gui.save_ROIs_h5()
+    gui.save() # [S] shortcut
     saved = np.load(str(tmp_path/'movie_ROIs.npy'), allow_pickle=True).item()
     assert saved['fluorescence'].shape == (1, T)
     assert gui.slot_errors == []
+
+
+def test_shortcuts_ignore_a_replaced_window(gui):
+    """ a window replaced by another one in the same tab gets no shortcut """
+    from physion.gui.window import current_window
+    window = gui.h5_imaging_UI(tab_id=2)
+    assert current_window(gui) is window
+    gui.pupil(tab_id=2)  # not a physion.gui.window.Window (yet)
+    assert current_window(gui) is None
