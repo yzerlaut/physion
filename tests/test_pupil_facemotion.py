@@ -57,3 +57,24 @@ def test_pupil_window_shortcuts(gui, monkeypatch):
 
     assert gui.data is loaded
     assert gui.slot_errors == []
+
+
+@pytest.mark.skipif(not os.path.isfile(os.path.join(SESSION, 'facemotion.npy')),
+                    reason='no facemotion data at "%s"' % SESSION)
+def test_facemotion_window(gui, monkeypatch):
+    monkeypatch.setattr(QtWidgets.QFileDialog, 'getExistingDirectory',
+                        staticmethod(lambda *a, **k: SESSION))
+    gui.data = loaded = object()
+
+    window = gui.facemotion()
+    gui.open()                          # [O]
+    assert len(window.facemotionData['frame'])>0
+    window.cframe = 300
+    gui.refresh()                       # [R]
+    window.TsamplingBox.setText('500')
+    window.temporalBox.setChecked(True)
+    window.process_facemotion()
+    assert window.Nx>0 and window.Ny>0
+
+    assert gui.data is loaded
+    assert gui.slot_errors == []

@@ -58,7 +58,7 @@ def test_h5_imaging_UI(gui, tmp_path, monkeypatch):
     window = gui.h5_imaging_UI()
     gui.open() # [O] shortcut -> handled by the window of the current tab
     np.testing.assert_allclose(window.meanImg, movie[:100].mean(axis=0))
-    assert folders == [window.root_folder()] # its own folder box
+    assert folders == [window.choose_root_folder()] # its own folder box
 
     window.expBox.setValue(0.5) # display exponent -> redraw
     norm = window.meanImg-window.meanImg.min()
@@ -85,7 +85,7 @@ def test_shortcuts_ignore_a_replaced_window(gui):
     assert current_window(gui) is None
 
 
-@pytest.mark.parametrize('window', ['h5_imaging_UI', 'pupil'])
+@pytest.mark.parametrize('window', ['h5_imaging_UI', 'pupil', 'facemotion'])
 def test_shortcut_handlers_are_not_shadowed(gui, window):
     """ the "on_*" shortcut handlers are not hidden by window attributes """
     from physion.gui.window import Window, SHORTCUTS
