@@ -45,7 +45,7 @@ class StatTest:
             else:
                 print(' "%s" test not implemented ! ' % test)
 
-        except BaseException as be:
+        except ValueError as be:
             print(' -----------------   ')
             print(be)
             print('x, y = ', x, y)

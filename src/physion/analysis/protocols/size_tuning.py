@@ -302,7 +302,7 @@ def generate_figs(args,
         if not args.debug:
             pt.plt.close(fig)
 
-    except BaseException as be:
+    except Exception as be:
 
         print(be)
 

@@ -177,7 +177,7 @@ def select_ROI_TA(self):
         try:
             self.roiIndices = [int(self.roiPickTA.text())]
             self.statusBar.showMessage('ROIs set to %s' % self.roiIndices)
-        except BaseException:
+        except ValueError:
             self.roiIndices = [0]
             self.roiPickTA.setText('0')
             self.statusBar.showMessage('[!!] ROI string not recognized [!!] --> ROI set to [0]')
