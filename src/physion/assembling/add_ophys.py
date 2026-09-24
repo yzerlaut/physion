@@ -14,7 +14,8 @@ from physion.imaging.suite2p.to_nwb import add_ophys_processing_from_suite2p
 from physion.utils.files import get_files_with_extension, get_TSeries_folders
 from physion.utils.binary import BinaryFile
 
-from physion.assembling.tools import build_subsampling_from_freq
+from physion.assembling.tools import build_subsampling_from_freq,\
+        stringdatetime_to_date, StartTime_to_day_seconds
 from physion.utils.paths import FOLDERS, python_path
 from physion.analysis.read_NWB import Data
 
@@ -189,25 +190,6 @@ def runAddOphys(self):
 # ------------------------------------------------ # 
 # ---- check that the timestamps match ! --------- # 
 # ------------------------------------------------ # 
-
-def stringdatetime_to_date(s):
-
-    Month, Day, Year = s.split('/')[0], s.split('/')[1], s.split('/')[2][:4]
-
-    if len(Month)==1:
-        Month = '0'+Month
-    if len(Day)==1:
-        Day = '0'+Day
-
-    return '%s_%s_%s' % (Year, Month, Day)
-
-
-def StartTime_to_day_seconds(StartTime):
-
-    Hour = int(StartTime[0:2])
-    Min = int(StartTime[3:5])
-    Seconds = float(StartTime[6:])
-    return 60*60*Hour+60*Min+Seconds
 
 def estimate_time_overlap(nwb, imaging):
     """

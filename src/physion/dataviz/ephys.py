@@ -53,7 +53,7 @@ def show_waveforms(data,
     pt.draw_bar_scales(ax,
                        loc='top-right',
                     Xbar=30, Xbar_label='1ms',
-                    Ybar=2, Ybar_label='2$\mu$V',
+                    Ybar=2, Ybar_label='2$\\mu$V',
                     color=color)
     return fig, ax 
 

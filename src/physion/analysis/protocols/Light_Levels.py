@@ -250,10 +250,10 @@ def compute_activity_modulation_by_light(data):
         # AX[1].plot([i], [np.mean(RESP[key+'-mean']/RESP['black-mean'])], 'r_')
 
 
-    for label, ax in zip(['mean $\Delta$F/F',
-                          # 'mean $\Delta$F/F    \n norm. to "black"    ',
-                          '$\Delta$F/F std ',
-                          '$\Delta$F/F skewness    '],
+    for label, ax in zip(['mean $\\Delta$F/F',
+                          # 'mean $\\Delta$F/F    \n norm. to "black"    ',
+                          '$\\Delta$F/F std ',
+                          '$\\Delta$F/F skewness    '],
                           AX):
 
         ylim = [np.max([0, ax.get_ylim()[0]]), np.min([4, ax.get_ylim()[1]])]

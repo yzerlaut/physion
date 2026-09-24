@@ -6,7 +6,9 @@ from pynwb import NWBHDF5IO, NWBFile
 
 import physion
 
-from physion.acquisition.recordings.Scan1Plane_Screen342V import 2P_trigger_delay
+# delay of the 2P trigger in the "Scan1Plane_Screen342V" recordings
+# (value from acquisition/recordings/Scan1Plane_Screen342V.py, removed in d74c155)
+TwoP_trigger_delay = 0.1 # second
 
 
 def prepare_dataset(args):
@@ -209,9 +211,9 @@ def create_new_NWB(old_NWBfile, new_NWBfile, new_subject, args):
 
                 old_RRS = old_proc.data_interfaces[key]
                     
-                if old_RRS[key].timestamps[0]<2P_trigger_delay:
-                    print(" \n / ! \ the 2P-trigger-delay was ommited, adding it ! / ! \ \n ")
-                    new_timestamps = old_RRS[key].timestamps[:]+2P_trigger_delay
+                if old_RRS[key].timestamps[0]<TwoP_trigger_delay:
+                    print(" \n / ! \\ the 2P-trigger-delay was ommited, adding it ! / ! \\ \n ")
+                    new_timestamps = old_RRS[key].timestamps[:]+TwoP_trigger_delay
                 else:
                     new_timestamps = old_RRS[key].timestamps[:]
 
