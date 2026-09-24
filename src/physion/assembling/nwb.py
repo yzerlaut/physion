@@ -31,14 +31,49 @@ ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
 
 def build_NWB_func(args, Subject=None):
     """
+    build the NWB file of the recording in "args.datafolder"
+
+    each modality is added by its own function below
     """
     if args.verbose:
         print()
         print('=> Initializing NWB file for "%s" [...]' % args.datafolder)
 
-    #################################################
-    ####         PREPARING THE METADATA       #######
-    #################################################
+    metadata, protocol, session_description, identifier, start_time =\
+            prepare_metadata(args)
+    subject, subject_props = build_subject(args, metadata, Subject)
+    nwbfile = create_nwbfile(metadata, protocol, session_description,
+                             identifier, start_time, subject, subject_props)
+
+    if not hasattr(args, 'filename') or args.filename=='':
+        if args.destination_folder=='':
+            args.filename = os.path.join(pathlib.Path(args.datafolder).parent,
+                                         '%s.nwb' % identifier)
+        else:
+            args.filename = os.path.join(args.destination_folder,
+                                         '%s.nwb' % identifier)
+
+    
+    manager = pynwb.get_manager() # we need a manager to link raw and processed data
+
+    NIdaq_Tstart, NIdaq_data = load_NIdaq(args)
+
+    add_locomotion(nwbfile, metadata, NIdaq_data, args)
+    add_optogenetics(nwbfile, metadata, NIdaq_data)
+    # (the realignement from the photodiode updates the metadata)
+    metadata = add_visual_stimulation(nwbfile, metadata, NIdaq_data, args)
+    add_FaceCamera(nwbfile, metadata, NIdaq_Tstart, args)
+    add_neuropixels(nwbfile, metadata, NIdaq_data, args)
+    add_CaImaging(nwbfile, metadata, args)
+
+    return write_nwbfile(nwbfile, manager, args)
+
+
+#################################################
+####         PREPARING THE METADATA       #######
+#################################################
+
+def prepare_metadata(args):
 
     metadata = read_metadata(args.datafolder)
 
@@ -81,6 +116,10 @@ def build_NWB_func(args, Subject=None):
     identifier = metadata['date']+'-'+metadata['time']
     start_time = datetime.datetime(*day, *Time, tzinfo=tzlocal())
 
+    return metadata, protocol, session_description, identifier, start_time
+
+
+def build_subject(args, metadata, Subject=None):
     # --------------------------------------------------------------
     #                       subject info 
     # --------------------------------------------------------------
@@ -110,10 +149,12 @@ def build_NWB_func(args, Subject=None):
                                  strain=subject_props['strain'],
                                  date_of_birth=\
         datetime.datetime(*subject_props['Date-of-Birth'], tzinfo=tzlocal()))
-                                 
-    # --------------------------------------------------------------
-    #    ---------  building the pynwb NWBfile object   ----------
-    # --------------------------------------------------------------
+
+    return subject, subject_props
+
+
+def create_nwbfile(metadata, protocol, session_description,
+                   identifier, start_time, subject, subject_props):
     nwbfile = pynwb.NWBFile(\
                 identifier=identifier,
                 session_description=session_description,
@@ -132,20 +173,14 @@ def build_NWB_func(args, Subject=None):
                 file_create_date=\
                    datetime.datetime.now(datetime.UTC).replace(tzinfo=tzlocal()))
 
-    if not hasattr(args, 'filename') or args.filename=='':
-        if args.destination_folder=='':
-            args.filename = os.path.join(pathlib.Path(args.datafolder).parent,
-                                         '%s.nwb' % identifier)
-        else:
-            args.filename = os.path.join(args.destination_folder,
-                                         '%s.nwb' % identifier)
+    return nwbfile
 
-    
-    manager = pynwb.get_manager() # we need a manager to link raw and processed data
-    
-    #################################################
-    ####         IMPORTING NI-DAQ data        #######
-    #################################################
+
+#################################################
+####         IMPORTING NI-DAQ data        #######
+#################################################
+
+def load_NIdaq(args):
     if args.verbose:
         print('=> Loading NIdaq.start timestamps data for "%s" [...]' % args.datafolder)
     try:
@@ -167,9 +202,15 @@ def build_NWB_func(args, Subject=None):
         print('\n   [!!] No NI-DAQ data found [!!] \n')
         NIdaq_data = None
 
-    # #################################################
-    # ####         Locomotion                   #######
-    # #################################################
+    return NIdaq_Tstart, NIdaq_data
+
+
+#################################################
+####         Locomotion                   #######
+#################################################
+
+def add_locomotion(nwbfile, metadata, NIdaq_data, args):
+
     if ('Locomotion' in args.modalities) and\
         ( ('Locomotion' in metadata) and (metadata['Locomotion'] )
                     or ( ('NIdaq' in metadata) and metadata['NIdaq'] ) ):
@@ -232,10 +273,13 @@ def build_NWB_func(args, Subject=None):
                                    rate=running_sampling)
         nwbfile.add_acquisition(running)
 
-    # #################################################
-    # ####            OPTOGENETICS              #######
-    # #################################################
-    
+
+#################################################
+####            OPTOGENETICS              #######
+#################################################
+
+def add_optogenetics(nwbfile, metadata, NIdaq_data):
+
     if 'Opto' in metadata['protocol']:
 
         # find the channel that has the LED copy
@@ -260,11 +304,16 @@ def build_NWB_func(args, Subject=None):
 
         nwbfile.add_stimulus(ogen_series)
 
-            
-    # #################################################
-    # ####         Visual Stimulation           #######
-    # #################################################
-    
+
+#################################################
+####         Visual Stimulation           #######
+#################################################
+
+def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
+    """
+    returns the metadata (updated by the realignement from the photodiode)
+    """
+
     if (metadata['VisualStim'] and ('VisualStim' in args.modalities))\
             and os.path.isfile(os.path.join(args.datafolder, 'visual-stim.npy')):
 
@@ -406,11 +455,15 @@ def build_NWB_func(args, Subject=None):
             NI = pynwb.image.GrayscaleImage(name, data)
             nwbfile.add_stimulus(NI)
 
-        
-    #################################################
-    ####         FaceCamera Recording         #######
-    #################################################
-    
+    return metadata
+
+
+#################################################
+####         FaceCamera Recording         #######
+#################################################
+
+def add_FaceCamera(nwbfile, metadata, NIdaq_Tstart, args):
+
     if metadata['FaceCamera']:
         
         if args.verbose:
@@ -452,230 +505,239 @@ def build_NWB_func(args, Subject=None):
         else:
             print('     --> no raw_FaceCamera added !! ' )
 
-            
-        #################################################
-        ####         Pupil from FaceCamera        #######
-        #################################################
-        
-        if 'Pupil' in args.modalities:
+        add_pupil(nwbfile, metadata, fcamData, FC_times, args)
+        add_facemotion(nwbfile, fcamData, FC_times, args)
 
-            if os.path.isfile(os.path.join(args.datafolder, 'pupil.npy')):
+
+#################################################
+####         Pupil from FaceCamera        #######
+#################################################
+
+def add_pupil(nwbfile, metadata, fcamData, FC_times, args):
+
+    if 'Pupil' in args.modalities:
+
+        if os.path.isfile(os.path.join(args.datafolder, 'pupil.npy')):
                 
-                if args.verbose:
-                    print('=> Adding processed pupil data for "%s" [...]' % args.datafolder)
+            if args.verbose:
+                print('=> Adding processed pupil data for "%s" [...]' % args.datafolder)
                     
-                dataP = np.load(os.path.join(args.datafolder, 'pupil.npy'),
-                                allow_pickle=True).item()
+            dataP = np.load(os.path.join(args.datafolder, 'pupil.npy'),
+                            allow_pickle=True).item()
 
-                if 'FaceCamera-1cm-in-pix' in metadata:
-                    pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
-                else:
-                    pix_to_mm = 1
-                    
-                pupil_module = nwbfile.create_processing_module(name='Pupil', 
-                            description='processed quantities of Pupil dynamics,\n'+\
-                    ' pupil ROI: (xmin,xmax,ymin,ymax)=(%i,%i,%i,%i)\n' % (\
-                            dataP['xmin'], dataP['xmax'], dataP['ymin'], dataP['ymax'])+\
-                    ' pix_to_mm=%.3f' % pix_to_mm)
-                
-                for key, scale in zip(['cx', 'cy', 'sx', 'sy', 'angle', 'blinking'],
-                                      [pix_to_mm for i in range(4)]+[1,1]):
-                    if type(dataP[key]) is np.ndarray:
-                        signal = dataP[key]*scale
-                        signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
-                                          signal, FC_times)
-                        PupilProp = pynwb.TimeSeries(name=key,
-                                 data = np.reshape(signal,
-                                                   (len(FC_times),1)),
-                                 unit='seconds',
-                                 timestamps=FC_times)
-                        pupil_module.add(PupilProp)
-
-                # then add the frames subsampled
-                if len(fcamData.times)>0:
-                    imgP = fcamData.get(0)
-                    x, y = np.meshgrid(np.arange(0,imgP.shape[0]), np.arange(0,imgP.shape[1]), indexing='ij')
-                    cond = (x>=dataP['xmin']) & (x<=dataP['xmax']) & (y>=dataP['ymin']) & (y<=dataP['ymax'])
-
-                    PUPIL_SUBSAMPLING = build_subsampling_from_freq(args.Pupil_frame_sampling,
-                                                 1./np.mean(np.diff(fcamData.times)), 
-                                                 fcamData.nFrames-1, Nmin=3)
-
-                    new_shapeP = dataP['xmax']-dataP['xmin']+1, dataP['ymax']-dataP['ymin']+1
-                    def Pupil_frame_generator():
-                        for i in PUPIL_SUBSAMPLING:
-                            try:
-                                im = fcamData.get(i).astype(np.uint8)[cond].reshape(*new_shapeP)
-                                yield im
-                            except ValueError:
-                                print('Pb in FaceCamera with frame #', i)
-                                yield np.zeros(new_shapeP)
-                                
-                    PUC_dataI = DataChunkIterator(data=Pupil_frame_generator(),
-                                                  maxshape=(None, *new_shapeP),
-                                                  dtype=np.dtype(np.uint8))
-                    Pupil_frames = pynwb.image.ImageSeries(name='Pupil',
-                                                           data=PUC_dataI,
-                                                           unit='NA',
-                                                           timestamps=fcamData.times[PUPIL_SUBSAMPLING])
-                    nwbfile.add_acquisition(Pupil_frames)
-
-            elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt','faceit.npz')):
-                
-                if args.verbose:
-                    print('=> Adding processed pupil data for "%s" [...]' % args.datafolder)
-                    
-                dataP = np.load(os.path.join(args.datafolder, 'FaceIt','faceit.npz'),
-                                allow_pickle=True)
-                FC_timesP = FC_times[:len(dataP['pupil_dilation'])]
-
-                if 'FaceCamera-1cm-in-pix' in metadata:
-                    pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
-                else:
-                    pix_to_mm = 1
-                    
-                pupil_module = nwbfile.create_processing_module(name='Pupil', 
-                            description='processed quantities of Pupil dynamics,\n'+\
-                    ' pupil ROI: (xmin,xmax,ymin,ymax)=(%i,%i,%i,%i)\n' % (\
-                            0, 0, 0, 0)+\
-                    ' pix_to_mm=%.3f' % pix_to_mm)
-
-                for key, key2, coef in zip(['cx', 'cy', 'sx', 'sy', 'blinking', 'area'],
-                                     ['pupil_center_X', 'pupil_center_y', 'width', 'height', 
-                                      'blinking_ids', 'pupil_dilation_blinking_corrected'],
-                                     [pix_to_mm, pix_to_mm, pix_to_mm*2, pix_to_mm*2, 1, pix_to_mm**2]):
-                    if type(dataP[key2]) is np.ndarray:
-                        PupilProp = pynwb.TimeSeries(name=key,
-                                 data = np.reshape(dataP[key2]*coef, 
-                                                   (len(FC_timesP),1)),
-                                 unit='seconds',
-                                 timestamps=FC_timesP)
-                        pupil_module.add(PupilProp)
-
+            if 'FaceCamera-1cm-in-pix' in metadata:
+                pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
             else:
-                print(' [!!] No processed pupil data found',
-                      'for "%s" [!!] ' % args.datafolder)
-
-                
-        #################################################
-        ####      FaceMotion from FaceCamera        #######
-        #################################################
-    
-        if 'FaceMotion' in args.modalities:
-            
-            if os.path.isfile(os.path.join(args.datafolder, 'facemotion.npy')):
-                
-                if args.verbose:
-                    print('=> Adding processed facemotion data',
-                          'for "%s" [...]' % args.datafolder)
+                pix_to_mm = 1
                     
-                dataF = np.load(os.path.join(args.datafolder, 'facemotion.npy'),
-                                allow_pickle=True).item()
-                FC_timesF = FC_times[:len(dataF['motion'])]
+            pupil_module = nwbfile.create_processing_module(name='Pupil', 
+                        description='processed quantities of Pupil dynamics,\n'+\
+                ' pupil ROI: (xmin,xmax,ymin,ymax)=(%i,%i,%i,%i)\n' % (\
+                        dataP['xmin'], dataP['xmax'], dataP['ymin'], dataP['ymax'])+\
+                ' pix_to_mm=%.3f' % pix_to_mm)
+                
+            for key, scale in zip(['cx', 'cy', 'sx', 'sy', 'angle', 'blinking'],
+                                  [pix_to_mm for i in range(4)]+[1,1]):
+                if type(dataP[key]) is np.ndarray:
+                    signal = dataP[key]*scale
+                    signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                      signal, FC_times)
+                    PupilProp = pynwb.TimeSeries(name=key,
+                             data = np.reshape(signal,
+                                               (len(FC_times),1)),
+                             unit='seconds',
+                             timestamps=FC_times)
+                    pupil_module.add(PupilProp)
 
-                faceMotion_module = nwbfile.create_processing_module(\
-                        name='FaceMotion', 
-                        description='face motion dynamics,\n'+\
-                            ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n'\
-                                        % (dataF['ROI'][0],dataF['ROI'][1],
-                                           dataF['ROI'][2],dataF['ROI'][3]))
-                signal = dataF['motion']
+            # then add the frames subsampled
+            if len(fcamData.times)>0:
+                imgP = fcamData.get(0)
+                x, y = np.meshgrid(np.arange(0,imgP.shape[0]), np.arange(0,imgP.shape[1]), indexing='ij')
+                cond = (x>=dataP['xmin']) & (x<=dataP['xmax']) & (y>=dataP['ymin']) & (y<=dataP['ymax'])
+
+                PUPIL_SUBSAMPLING = build_subsampling_from_freq(args.Pupil_frame_sampling,
+                                             1./np.mean(np.diff(fcamData.times)), 
+                                             fcamData.nFrames-1, Nmin=3)
+
+                new_shapeP = dataP['xmax']-dataP['xmin']+1, dataP['ymax']-dataP['ymin']+1
+                def Pupil_frame_generator():
+                    for i in PUPIL_SUBSAMPLING:
+                        try:
+                            im = fcamData.get(i).astype(np.uint8)[cond].reshape(*new_shapeP)
+                            yield im
+                        except ValueError:
+                            print('Pb in FaceCamera with frame #', i)
+                            yield np.zeros(new_shapeP)
+                                
+                PUC_dataI = DataChunkIterator(data=Pupil_frame_generator(),
+                                              maxshape=(None, *new_shapeP),
+                                              dtype=np.dtype(np.uint8))
+                Pupil_frames = pynwb.image.ImageSeries(name='Pupil',
+                                                       data=PUC_dataI,
+                                                       unit='NA',
+                                                       timestamps=fcamData.times[PUPIL_SUBSAMPLING])
+                nwbfile.add_acquisition(Pupil_frames)
+
+        elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt','faceit.npz')):
+                
+            if args.verbose:
+                print('=> Adding processed pupil data for "%s" [...]' % args.datafolder)
+                    
+            dataP = np.load(os.path.join(args.datafolder, 'FaceIt','faceit.npz'),
+                            allow_pickle=True)
+            FC_timesP = FC_times[:len(dataP['pupil_dilation'])]
+
+            if 'FaceCamera-1cm-in-pix' in metadata:
+                pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
+            else:
+                pix_to_mm = 1
+                    
+            pupil_module = nwbfile.create_processing_module(name='Pupil', 
+                        description='processed quantities of Pupil dynamics,\n'+\
+                ' pupil ROI: (xmin,xmax,ymin,ymax)=(%i,%i,%i,%i)\n' % (\
+                        0, 0, 0, 0)+\
+                ' pix_to_mm=%.3f' % pix_to_mm)
+
+            for key, key2, coef in zip(['cx', 'cy', 'sx', 'sy', 'blinking', 'area'],
+                                 ['pupil_center_X', 'pupil_center_y', 'width', 'height', 
+                                  'blinking_ids', 'pupil_dilation_blinking_corrected'],
+                                 [pix_to_mm, pix_to_mm, pix_to_mm*2, pix_to_mm*2, 1, pix_to_mm**2]):
+                if type(dataP[key2]) is np.ndarray:
+                    PupilProp = pynwb.TimeSeries(name=key,
+                             data = np.reshape(dataP[key2]*coef, 
+                                               (len(FC_timesP),1)),
+                             unit='seconds',
+                             timestamps=FC_timesP)
+                    pupil_module.add(PupilProp)
+
+        else:
+            print(' [!!] No processed pupil data found',
+                  'for "%s" [!!] ' % args.datafolder)
+
+
+#################################################
+####      FaceMotion from FaceCamera      #######
+#################################################
+
+def add_facemotion(nwbfile, fcamData, FC_times, args):
+
+    if 'FaceMotion' in args.modalities:
+            
+        if os.path.isfile(os.path.join(args.datafolder, 'facemotion.npy')):
+                
+            if args.verbose:
+                print('=> Adding processed facemotion data',
+                      'for "%s" [...]' % args.datafolder)
+                    
+            dataF = np.load(os.path.join(args.datafolder, 'facemotion.npy'),
+                            allow_pickle=True).item()
+            FC_timesF = FC_times[:len(dataF['motion'])]
+
+            faceMotion_module = nwbfile.create_processing_module(\
+                    name='FaceMotion', 
+                    description='face motion dynamics,\n'+\
+                        ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n'\
+                                    % (dataF['ROI'][0],dataF['ROI'][1],
+                                       dataF['ROI'][2],dataF['ROI'][3]))
+            signal = dataF['motion']
+            signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                signal, FC_times)
+            FaceMotionProp = pynwb.TimeSeries(name='face-motion',
+                                  data = np.reshape(signal,
+                                                    (len(FC_times),1)),
+                                              unit='seconds',
+                                              timestamps=FC_times)
+            faceMotion_module.add(FaceMotionProp)
+
+            if 'grooming' in dataF:
+                signal = dataF['grooming']
                 signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
                                     signal, FC_times)
-                FaceMotionProp = pynwb.TimeSeries(name='face-motion',
-                                      data = np.reshape(signal,
-                                                        (len(FC_times),1)),
-                                                  unit='seconds',
-                                                  timestamps=FC_times)
-                faceMotion_module.add(FaceMotionProp)
+                GroomingProp = pynwb.TimeSeries(name='grooming',
+                                    data = np.reshape(signal,
+                                                    (len(FC_times),1)),
+                                                unit='seconds',
+                                              timestamps=FC_times)
+                faceMotion_module.add(GroomingProp)
 
-                if 'grooming' in dataF:
-                    signal = dataF['grooming']
-                    signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
-                                        signal, FC_times)
-                    GroomingProp = pynwb.TimeSeries(name='grooming',
-                                        data = np.reshape(signal,
-                                                        (len(FC_times),1)),
-                                                    unit='seconds',
-                                                  timestamps=FC_times)
-                    faceMotion_module.add(GroomingProp)
+            # then add the motion frames subsampled
+            if fcamData is not None:
+                    
+                FACEMOTION_SUBSAMPLING=build_subsampling_from_freq(
+                                    args.FaceMotion_frame_sampling,
+                                    1./np.mean(np.diff(fcamData.times)),
+                                    fcamData.nFrames-1, Nmin=3)
+                    
+                imgFM = fcamData.get(0)
+                x, y = np.meshgrid(np.arange(0,imgFM.shape[0]), 
+                                   np.arange(0,imgFM.shape[1]), 
+                                   indexing='ij')
+                condF = (x>=dataF['ROI'][0]) &\
+                        (x<=(dataF['ROI'][0]+dataF['ROI'][2])) &\
+                        (y>=dataF['ROI'][1]) &\
+                        (y<=(dataF['ROI'][1]+dataF['ROI'][3]))
 
-                # then add the motion frames subsampled
-                if fcamData is not None:
+                new_shapeF = len(np.unique(x[condF])), len(np.unique(y[condF]))
                     
-                    FACEMOTION_SUBSAMPLING=build_subsampling_from_freq(
-                                        args.FaceMotion_frame_sampling,
-                                        1./np.mean(np.diff(fcamData.times)),
-                                        fcamData.nFrames-1, Nmin=3)
-                    
-                    imgFM = fcamData.get(0)
-                    x, y = np.meshgrid(np.arange(0,imgFM.shape[0]), 
-                                       np.arange(0,imgFM.shape[1]), 
-                                       indexing='ij')
-                    condF = (x>=dataF['ROI'][0]) &\
-                            (x<=(dataF['ROI'][0]+dataF['ROI'][2])) &\
-                            (y>=dataF['ROI'][1]) &\
-                            (y<=(dataF['ROI'][1]+dataF['ROI'][3]))
-
-                    new_shapeF = len(np.unique(x[condF])), len(np.unique(y[condF]))
-                    
-                    def FaceMotion_frame_generator():
-                        for i in FACEMOTION_SUBSAMPLING:
-                            i0 = np.min([i, fcamData.nFrames-2])
-                            try:
-                                imgFM1 = fcamData.get(i0).astype(np.uint8)[condF].reshape(*new_shapeF)
-                                imgFM2 = fcamData.get(i0+1).astype(np.uint8)[condF].reshape(*new_shapeF)
-                                yield imgFM2-imgFM1
-                            except Exception as be:
-                                print(be)
-                                print('\n Pb in FaceCamera with frame #', i)
-                                yield np.zeros(new_shapeF)
+                def FaceMotion_frame_generator():
+                    for i in FACEMOTION_SUBSAMPLING:
+                        i0 = np.min([i, fcamData.nFrames-2])
+                        try:
+                            imgFM1 = fcamData.get(i0).astype(np.uint8)[condF].reshape(*new_shapeF)
+                            imgFM2 = fcamData.get(i0+1).astype(np.uint8)[condF].reshape(*new_shapeF)
+                            yield imgFM2-imgFM1
+                        except Exception as be:
+                            print(be)
+                            print('\n Pb in FaceCamera with frame #', i)
+                            yield np.zeros(new_shapeF)
             
-                    FMCI_dataI = DataChunkIterator(data=FaceMotion_frame_generator(),
-                                                   maxshape=(None, *new_shapeF),
-                                                   dtype=np.dtype(np.uint8))
-                    FaceMotion_frames = pynwb.image.ImageSeries(name='FaceMotion',
-                                                                data=FMCI_dataI, unit='NA',
-                                                                timestamps=fcamData.times[FACEMOTION_SUBSAMPLING])
-                    nwbfile.add_acquisition(FaceMotion_frames)
+                FMCI_dataI = DataChunkIterator(data=FaceMotion_frame_generator(),
+                                               maxshape=(None, *new_shapeF),
+                                               dtype=np.dtype(np.uint8))
+                FaceMotion_frames = pynwb.image.ImageSeries(name='FaceMotion',
+                                                            data=FMCI_dataI, unit='NA',
+                                                            timestamps=fcamData.times[FACEMOTION_SUBSAMPLING])
+                nwbfile.add_acquisition(FaceMotion_frames)
             
-            elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz')):
+        elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz')):
 
-                if args.verbose:
-                    print('=> Adding processed facemotion data',
-                          'for "%s" [...]' % args.datafolder)
+            if args.verbose:
+                print('=> Adding processed facemotion data',
+                      'for "%s" [...]' % args.datafolder)
                     
-                dataF = np.load(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz'),
-                                allow_pickle=True)
-                FC_timesF = FC_times[:len(dataF['motion_energy'])]
+            dataF = np.load(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz'),
+                            allow_pickle=True)
+            FC_timesF = FC_times[:len(dataF['motion_energy'])]
 
-                faceMotion_module = nwbfile.create_processing_module(\
-                        name='FaceMotion', 
-                        description='face motion dynamics,\n'+\
-                            ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n'\
-                                        % (0,0,0,0))
-                FaceMotionProp = pynwb.TimeSeries(name='face-motion',
-                                      data = np.reshape(dataF['motion_energy'],
-                                                        (len(FC_timesF),1)),
-                                                  unit='seconds',
-                                                  timestamps=FC_timesF)
-                faceMotion_module.add(FaceMotionProp)
+            faceMotion_module = nwbfile.create_processing_module(\
+                    name='FaceMotion', 
+                    description='face motion dynamics,\n'+\
+                        ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n'\
+                                    % (0,0,0,0))
+            FaceMotionProp = pynwb.TimeSeries(name='face-motion',
+                                  data = np.reshape(dataF['motion_energy'],
+                                                    (len(FC_timesF),1)),
+                                              unit='seconds',
+                                              timestamps=FC_timesF)
+            faceMotion_module.add(FaceMotionProp)
 
-                if not np.isnan(dataF['grooming_threshold'][0]):
-                    GroomingProp = pynwb.TimeSeries(name='grooming',
-                                        data = np.reshape(dataF['grooming_ids'],
-                                                        (len(FC_timesF),1)),
-                                                    unit='seconds',
-                                                  timestamps=FC_timesF)
-                    faceMotion_module.add(GroomingProp)
+            if not np.isnan(dataF['grooming_threshold'][0]):
+                GroomingProp = pynwb.TimeSeries(name='grooming',
+                                    data = np.reshape(dataF['grooming_ids'],
+                                                    (len(FC_timesF),1)),
+                                                unit='seconds',
+                                              timestamps=FC_timesF)
+                faceMotion_module.add(GroomingProp)
 
-            else:
-                print(' [!!] No processed facemotion data found for "%s" [!!] ' % args.datafolder)
-                
+        else:
+            print(' [!!] No processed facemotion data found for "%s" [!!] ' % args.datafolder)
 
-    #################################################
-    ####    Electrophysiological Recording    #######
-    #################################################
+
+#################################################
+####    Electrophysiological Recording    #######
+#################################################
+
+def add_neuropixels(nwbfile, metadata, NIdaq_data, args):
 
     if ('Neuropixels' in metadata) and metadata['Neuropixels']:
     
@@ -716,9 +778,12 @@ def build_NWB_func(args, Subject=None):
         nwbfile.add_acquisition(lfp)
     """
 
-    #################################################
-    ####         Calcium Imaging              #######
-    #################################################
+
+#################################################
+####         Calcium Imaging              #######
+#################################################
+
+def add_CaImaging(nwbfile, metadata, args):
     # see: add_ophys.py script
     # look for the 'TSeries' folder, or its 'h5-' version (see physion.imaging.folders)
     if metadata['CaImaging'] and ('processed_CaImaging' in args.modalities):
@@ -730,15 +795,13 @@ def build_NWB_func(args, Subject=None):
                     metadata=metadata)
         else:
             print('\n[X] [!!]  Problem with the TSeries/h5 folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
-    
-    #################################################
-    ####    add Intrinsic Imaging MAPS         ######
-    #################################################
-    
-    
-    #################################################
-    ####         Writing NWB file             #######
-    #################################################
+
+
+#################################################
+####         Writing NWB file             #######
+#################################################
+
+def write_nwbfile(nwbfile, manager, args):
 
     if os.path.isfile(args.filename):
         temp = str(tempfile.NamedTemporaryFile().name)+'.nwb'
@@ -758,7 +821,6 @@ def build_NWB_func(args, Subject=None):
     print(f"                [ok] File size: {file_size_mb:.1f} MB")
  
     return args.filename
-
 
 
 def build_cmd(datafolder,
