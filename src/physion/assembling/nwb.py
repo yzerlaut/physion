@@ -371,9 +371,9 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
             durations_forced=args.durations_forced
 
         else:
-            indices_forced=(metadata['realignement_indices_forced'] if ('realignement_indices_forced' in metadata) else []),
-            times_forced=(metadata['realignement_times_forced'] if ('realignement_times_forced' in metadata) else []),
-            durations_forced=(metadata['realignement_durations_forced'] if ('realignement_durations_forced' in metadata) else []),
+            indices_forced=(metadata['realignement_indices_forced'] if ('realignement_indices_forced' in metadata) else [])
+            times_forced=(metadata['realignement_times_forced'] if ('realignement_times_forced' in metadata) else [])
+            durations_forced=(metadata['realignement_durations_forced'] if ('realignement_durations_forced' in metadata) else [])
 
         if args.force_to_visualStimTimestamps or (NIdaq_data is None):
             if args.verbose:
@@ -382,6 +382,7 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
             success = True
             for key in ['time_start', 'time_stop']:
                 metadata['%s_realigned' % key] = np.array(metadata['%s' % key], dtype=float)
+            episode_indices = np.arange(len(metadata['time_start_realigned']))
         else:
             # using the photodiod signal for the realignement
             if args.verbose:
@@ -398,6 +399,7 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
                                     times_forced=times_forced,
                                     durations_forced=durations_forced,
                                     verbose=args.verbose)
+            episode_indices = metadata['realigned_episode_indices']
 
         if success:
             timestamps = metadata['time_start_realigned']
@@ -409,6 +411,7 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
                                   timestamps=timestamps)
                 nwbfile.add_stimulus(VisualStimProp)
                 
+            # stimulus parameters of the realigned episodes (some can be excluded)
             for key in VisualStim:
 
                 # Dealing with None conds (replacing with 666 in nwb):
@@ -428,7 +431,7 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
                     array = VisualStim[key]
 
                 VisualStimProp = pynwb.TimeSeries(name=key,
-                        data = np.reshape(array[:len(timestamps)], 
+                        data = np.reshape(np.asarray(array)[episode_indices[:len(timestamps)]],
                                             (len(timestamps),1)),
                                 unit='NA',
                                 timestamps=timestamps)
