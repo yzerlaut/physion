@@ -3,14 +3,18 @@ import sys, os, shutil
 import numpy as np
 import pandas as pd
 
-import spikeinterface.full as si
-import spikeinterface.sorters as ss
 from physion.assembling.dataset import read_spreadsheet
 
 def run_spike_sorting(self, 
                       datatable=None):
     """   
     """
+    try: # optional dependency (only needed here)
+        import spikeinterface.full as si
+        import spikeinterface.sorters as ss
+    except ImportError as e:
+        raise ImportError('the ephys dependencies are missing -> pip install "physion[ephys]"') from e
+
     if not os.path.isfile(datatable):
         datatable = self.DataTable_file
 
@@ -153,7 +157,6 @@ if __name__=='__main__':
 # %%
 if False:
     import sys
-    sys.path.append('/home/user/lab-notebook/yann/physion/src')
     from physion.ephys.spike_sorting import read_kilosort_output, fetch_good_units
     data = read_kilosort_output(\
                 os.path.join('/media/user/DATA2/2026_08_04/',

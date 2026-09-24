@@ -3,7 +3,6 @@ import numpy as np
 from scipy.interpolate import RectBivariateSpline
 
 import itertools, string, sys, pathlib
-sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 try:
     from skimage import color, io

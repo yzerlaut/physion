@@ -417,8 +417,7 @@ if __name__=='__main__':
 
     import matplotlib.pylab as plt
     import sys, os, pathlib
-    sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
-    from analysis.read_NWB import Data
+    from physion.analysis.read_NWB import Data
 
     filename = sys.argv[-1]
 

@@ -4,10 +4,6 @@ import pandas as pd
 from scipy import signal
 import multiprocessing as mp
 
-from spikeinterface.extractors import read_openephys
-from spikeinterface.sortingcomponents import peak_detection
-from spikeinterface import preprocessing
-import spikeinterface.full as si
 from pynwb.ecephys import (
     ElectricalSeries,
     FeatureExtraction,
@@ -49,6 +45,12 @@ def add_ephys(nwbfile, args,
     See:
     https://pynwb.readthedocs.io/en/dev/tutorials/domain/ecephys.html
     """
+    try: # optional dependency (only needed here)
+        from spikeinterface.extractors import read_openephys
+        import spikeinterface.full as si
+    except ImportError as e:
+        raise ImportError('the ephys dependencies are missing -> pip install "physion[ephys]"') from e
+
 
     #   create the device 
     device = nwbfile.create_device(
