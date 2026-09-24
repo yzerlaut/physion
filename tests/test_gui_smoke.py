@@ -81,5 +81,16 @@ def test_shortcuts_ignore_a_replaced_window(gui):
     from physion.gui.window import current_window
     window = gui.h5_imaging_UI(tab_id=2)
     assert current_window(gui) is window
-    gui.pupil(tab_id=2)  # not a physion.gui.window.Window (yet)
+    gui.red_channel_labelling(tab_id=2)  # not a physion.gui.window.Window (yet)
     assert current_window(gui) is None
+
+
+@pytest.mark.parametrize('window', ['h5_imaging_UI', 'pupil'])
+def test_shortcut_handlers_are_not_shadowed(gui, window):
+    """ the "on_*" shortcut handlers are not hidden by window attributes """
+    from physion.gui.window import Window, SHORTCUTS
+    obj = getattr(gui, window)()
+    assert isinstance(obj, Window)
+    for handler in SHORTCUTS:
+        if hasattr(type(obj), handler):
+            assert callable(getattr(obj, handler)), handler

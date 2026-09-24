@@ -127,15 +127,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # # -- Pupil tracking
     if (not Acquisition) and (not Intrinsic):
-        from physion.pupil.gui import gui as pupil
-        from physion.pupil.gui import open_pupil_data,\
-                jump_to_frame, add_blankROI, add_reflectROI,\
-                save_pupil_data, fit_pupil, process_pupil,\
-                process_outliers_pupil,\
-                interpolate_pupil, find_outliers_pupil,\
-                reset_pupil, set_cursor_1_pupil, set_cursor_2_pupil,\
-                set_precise_time_pupil, go_to_frame_pupil, add_ROI_pupil,\
-                load_last_gui_settings_pupil, save_pupil_data
+        def pupil(self, tab_id=2):
+            from physion.pupil.gui import PupilWindow
+            return PupilWindow(self, tab_id)
     else:
         from physion.gui.parts import inactivated as pupil 
 
@@ -323,11 +317,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def window_shortcut(self, action):
         """
         the keyboard shortcut is handled by the window of the current tab
-            if it is a physion.gui.window.Window implementing it
+            if it is a physion.gui.window.Window implementing it ("on_"+action)
         """
         window = current_window(self)
-        if (window is not None) and hasattr(window, action):
-            getattr(window, action)()
+        if (window is not None) and callable(getattr(window, 'on_'+action, None)):
+            getattr(window, 'on_'+action)()
             return True
         return False
 
@@ -404,8 +398,6 @@ class MainWindow(QtWidgets.QMainWindow):
             self.raw_data_plot(tzoom)
         elif self.windows[tab_id] =='facemotion':
             self.refresh_facemotion()
-        elif self.windows[tab_id] =='pupil':
-            self.jump_to_frame()
         elif self.windows[tab_id] =='trial_averaging':
             self.refresh_TA()
         elif self.windows[tab_id] =='FOV':
@@ -420,8 +412,6 @@ class MainWindow(QtWidgets.QMainWindow):
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='red_channel_labelling':
             self.prev_roi_RCL()
-        elif self.windows[tab_id] =='pupil':
-            self.process_pupil()
         elif self.windows[tab_id] =='trial_averaging':
             self.prev_ROI_TA()
         elif self.windows[tab_id] =='FOV':
@@ -476,47 +466,27 @@ class MainWindow(QtWidgets.QMainWindow):
     def press1(self):
         if self.window_shortcut('press1'):
             return
-        tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='pupil':
-            self.set_cursor_1_pupil()
-        else:
-            print('no shortcut')
+        print('no shortcut')
 
     def press2(self):
         if self.window_shortcut('press2'):
             return
-        tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='pupil':
-            self.set_cursor_2_pupil()
-        else:
-            print('no shortcut')
+        print('no shortcut')
 
     def press3(self):
         if self.window_shortcut('press3'):
             return
-        tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='pupil':
-            self.process_outliers_pupil()
-        else:
-            print('no shortcut')
+        print('no shortcut')
 
     def press4(self):
         if self.window_shortcut('press4'):
             return
-        tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='pupil':
-            self.interpolate_pupil()
-        else:
-            print('no shortcut')
+        print('no shortcut')
 
     def press5(self):
         if self.window_shortcut('press5'):
             return
-        tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='pupil':
-            self.find_outliers_pupil()
-        else:
-            print('no shortcut')
+        print('no shortcut')
 
     def fit(self):
         if self.window_shortcut('fit'):
@@ -524,8 +494,6 @@ class MainWindow(QtWidgets.QMainWindow):
         tab_id = self.tabWidget.currentIndex()
         if self.windows[tab_id] =='trial_averaging':
             self.next_and_plot_TA()
-        elif self.windows[tab_id] =='pupil':
-            self.fit_pupil()
         else:
             print('no shortcut')
 
