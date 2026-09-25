@@ -3,7 +3,7 @@ import pynwb # NWB python API
 import numpy as np
 from scipy.interpolate import interp1d
 
-from physion.utils.files import get_files_with_extension
+from physion.utils.files import get_NWBfiles
 from physion.visual_stim.build import build_stim
 from physion.analysis import tools
 from physion.imaging.Calcium import compute_dFoF,\
@@ -996,14 +996,8 @@ def scan_folder_for_NWBfiles(folder,
         print('inspecting the folder "%s" [...]' % folder)
         t0 = time.time()
 
-    FILES0 = get_files_with_extension(folder,
-                    extension='.nwb', recursive=True)
-    
-    if exclude_intrinsic_imaging_files:
-        FILES0 = [f for f in FILES0 if (('left-' not in f) and\
-                                      ('down-' not in f) and\
-                                      ('right-' not in f) and\
-                                      ('up-' not in f))]
+    FILES0 = get_NWBfiles(folder, recursive=True,
+            exclude_intrinsic_imaging_files=exclude_intrinsic_imaging_files)
 
     DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES0])
     FILES, SUBJECTS, VIRUSES, AGES = [], [], [], []

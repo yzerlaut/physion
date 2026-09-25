@@ -95,6 +95,35 @@ def get_latest_file(folder):
     latest_file = max(list_of_files, key=os.path.getctime)
     return latest_file
 
+def is_intrinsic_imaging_file(filename):
+    """
+    raw intrinsic imaging datafiles (see intrinsic/acquisition.py)
+        have an NWB session description starting with "Intrinsic Imaging data"
+
+    only reads the header (fast), unreadable files are not considered as intrinsic
+    """
+    import h5py
+    try:
+        with h5py.File(filename, 'r') as f:
+            description = f['session_description'][()]
+        if isinstance(description, bytes):
+            description = description.decode()
+        return 'Intrinsic Imaging data' in str(description)
+    except BaseException:
+        return False
+
+def get_NWBfiles(folder, recursive=True,
+                 exclude_intrinsic_imaging_files=True):
+    """
+    list the NWB datafiles of a folder,
+        by default: excludes the raw intrinsic imaging datafiles
+    """
+    FILES = get_files_with_extension(folder, extension='.nwb',
+                                     recursive=recursive)
+    if exclude_intrinsic_imaging_files:
+        FILES = [f for f in FILES if not is_intrinsic_imaging_file(f)]
+    return FILES
+
 if __name__=='__main__':
     import sys
     print(get_latest_file(sys.argv[-1]))

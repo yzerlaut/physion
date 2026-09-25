@@ -294,8 +294,8 @@ script to build a summary pdf either from:
 
     elif os.path.isdir(args.datafile):
         directory = args.datafile
-        for f in physion.utils.files.get_files_with_extension(directory,
-                                extension='.nwb', recursive=True)[:args.Nmax]:
+        for f in physion.utils.files.get_NWBfiles(directory,
+                                recursive=True)[:args.Nmax]:
             args.datafile = f
             generate_pdf(args, debug=args.verbose)
     else:

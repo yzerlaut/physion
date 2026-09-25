@@ -3,7 +3,7 @@ import numpy as np
 from PyQt5 import QtWidgets, QtGui, QtCore
 
 from physion.utils.paths import FOLDERS
-from physion.utils.files import get_files_with_extension
+from physion.utils.files import get_NWBfiles
 from physion.analysis.read_NWB import Data
 from physion.gui.window import Window
 
@@ -208,9 +208,8 @@ class CalendarWindow(Window):
 
         print('inspecting the folder "%s" [...]' % self.folder)
 
-        FILES0 = get_files_with_extension(self.folder, 
-                                          extension='.nwb',
-                                          recursive=True)
+        # (excludes the raw intrinsic imaging datafiles)
+        FILES0 = get_NWBfiles(self.folder, recursive=True)
 
         TIMES, DATES, FILES = [], [], []
         for ii, f in enumerate(FILES0):
@@ -272,8 +271,7 @@ class CalendarWindow(Window):
     def compute_subjects(self):
 
         print(' computing subjects [...]')
-        FILES = get_files_with_extension(self.folder,
-                                         extension='.nwb', recursive=True)
+        FILES = get_NWBfiles(self.folder, recursive=True)
 
         print(' looping over n=%i datafiles to fetch "subjects" metadata [...]' % len(FILES))
         DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES])
