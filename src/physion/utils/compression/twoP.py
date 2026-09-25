@@ -22,7 +22,7 @@ from physion.imaging.folders import compressed_folder,\
         find_TSeries_folders, find_compressed_folders
 
 from physion.utils.compression.nwb import convert_to_nwb
-from physion.utils.compression.h5 import convert_to_h5
+from physion.utils.compression.h5 import convert_to_h5, remove_TSeries_if_converted
 from physion.utils.compression.binary import convert_to_binary
 from physion.utils.compression.mp4 import convert_to_log8bit_mp4, reconvert_to_tiffs_from_log8bit
 from physion.utils.compression.avi import convert_to_16bit_avi, reconvert_to_tiffs_from_16bit
@@ -146,6 +146,10 @@ class ImagingToMovieWindow(Window):
         self.add_side_widget(QtWidgets.QLabel("" , self.main))
 
         self.rm = QtWidgets.QCheckBox(' rm raw ? ', self.main)
+        self.rm.setToolTip('h5 only: removes each "TSeries-" folder after checking that\n'
+                           ' - all its tiffs are in the xml file\n'
+                           ' - the h5 files match the tiffs, frame by frame (pixel-exact)\n'
+                           ' - all its other files are copied to the "h5-" folder')
         self.add_side_widget(self.rm)
 
         self.add_side_widget(QtWidgets.QLabel("" , self.main))
@@ -183,8 +187,15 @@ class ImagingToMovieWindow(Window):
                 convert_to_nwb(f)
             elif 'h5' in self.typeBox.currentText():
                 convert_to_h5(f)
+                if self.rm.isChecked():
+                    # only after checking the conversion (see the h5 module)
+                    removed, _ = remove_TSeries_if_converted(f)
+                    self.statusBar.showMessage('"%s" %s' % (os.path.basename(f),
+                            'removed' if removed else 'NOT removed (see terminal)'))
             else:
                 print(' compression type not recognized')
+            if self.rm.isChecked() and ('h5' not in self.typeBox.currentText()):
+                print(' [!!] "rm raw" only for the h5 conversion (checked pixel-exact): %s kept' % f)
             print(f)
 
 
