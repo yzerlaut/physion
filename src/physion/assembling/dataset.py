@@ -179,6 +179,7 @@ if __name__=='__main__':
                 for time in [t for t in os.listdir(os.path.join(folder,day)) if (len(t.split('-'))==3)]:
                     days.append(day)
                     times.append(time)
+                    params = load_metadata_file(os.path.join(folder, day, time))
                     if params is not None:
                         protocols.append(params['protocol'])
                         mice.append(params['subject_ID'])

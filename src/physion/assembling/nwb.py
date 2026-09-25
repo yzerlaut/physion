@@ -23,7 +23,6 @@ from .tools import build_subsampling_from_freq, StartTime_to_day_seconds
 
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   'raw_FaceCamera', 'Pupil', 'FaceMotion',
-                  # 'EphysLFP', 'EphysUnits', 'EphysVm',
                   'Neuropixels',
                   'VisualStim',
                   'Locomotion'] 
@@ -383,6 +382,12 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
             for key in ['time_start', 'time_stop']:
                 metadata['%s_realigned' % key] = np.array(metadata['%s' % key], dtype=float)
             episode_indices = np.arange(len(metadata['time_start_realigned']))
+            if len(args.exclude_episodes)>0:
+                print('=> EXCLUDING episodes: ', args.exclude_episodes)
+                for key in ['time_start', 'time_stop']:
+                    metadata['%s_realigned' % key] = np.delete(metadata['%s_realigned' % key], args.exclude_episodes)
+                episode_indices = np.delete(episode_indices, args.exclude_episodes)
+
         else:
             # using the photodiod signal for the realignement
             if args.verbose:
@@ -860,6 +865,7 @@ def check_times(times, t0):
 if __name__=='__main__':
 
     import argparse, os
+    from physion.utils.misc import parse_int_list
 
     parser=argparse.ArgumentParser(description="""
 
@@ -950,8 +956,7 @@ if __name__=='__main__':
                             else False)
             for key in ['exclude_episodes']:
                 if (key in dataset) and (dataset[key].values[i]!=''):
-                    print()
-                    # setattr(args, key, dataset[key].values[i]=='Yes' else False)
+                    args.exclude_episodes = parse_int_list(dataset[key].values[i]) 
                 
             # for Neuropix recording, getting the whole-session-level infos
             if 'Npx-Folder' in dataset and dataset['Npx-Folder'][i]!='':
