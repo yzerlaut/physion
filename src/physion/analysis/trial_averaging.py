@@ -8,6 +8,10 @@ from physion.gui.window import Window
 
 NMAX_PARAMS=7 # max number of parameters varied
 
+# quantities that EpisodeData can build (see physion.analysis.read_NWB.MODALITIES)
+EPISODE_QUANTITIES = ['dFoF', 'rawFluo', 'neuropil', 'pupil', 'facemotion',
+                      'running', 'photodiode', 'LFP', 'MUA']
+
 
 def build_colors_from_array(array,
                             # discretization=10,
@@ -59,28 +63,15 @@ class TrialAveragingWindow(Window):
         self.add_side_widget(self.pbox)
 
         # # -- quantity
-        self.add_side_widget(QtWidgets.QLabel('Quantity / Sub-Quantity: '))
+        self.add_side_widget(QtWidgets.QLabel('Quantity: '))
         self.qbox = QtWidgets.QComboBox(self.main)
-        # self.qbox.setMaximumWidth(box_width)
         self.qbox.addItem('')
-        if 'ophys' in self.data.nwbfile.processing:
-            self.qbox.addItem('CaImaging')
-        if 'Pupil' in self.data.nwbfile.processing:
-            self.qbox.addItem('pupil-size')
-            self.qbox.addItem('gaze-movement')
-        if 'FaceMotion' in self.data.nwbfile.processing:
-            self.qbox.addItem('facemotion')
-        for key in self.data.nwbfile.acquisition:
-            if len(self.data.nwbfile.acquisition[key].data.shape)==1:
-                self.qbox.addItem(key) # only for scalar variables
-        self.qbox.activated.connect(self.update_quantity_TA)
+        self.qbox.addItems([q for q in self.data.available_modalities()\
+                                        if q in EPISODE_QUANTITIES])
         self.add_side_widget(self.qbox)
 
-        # # -- subquantity
-        # self.add_side_widget(# QtWidgets.QLabel('Sub-Quantity: '))
-        self.sqbox = QtWidgets.QComboBox(self.main)
-        self.sqbox.addItem('')
-        self.add_side_widget(self.sqbox)
+        if self.data.has_ophys() and not hasattr(self.data, 'nROIs'):
+            self.data.initialize_ROIs()
 
         self.guiKeywords = QtWidgets.QLineEdit()
         self.guiKeywords.setText('  [GUI keywords]  ')
@@ -146,22 +137,16 @@ class TrialAveragingWindow(Window):
         self.show()
 
     def update_protocol_TA(self):
-        # using the Photodiode signal
+        # only the parameters of the protocol (no quantity needed)
         EPISODES = EpisodeData(self.data,
                                protocol_id=self.pbox.currentIndex()-1,
-                               quantities=['Photodiode-Signal'],
-                               dt_sampling=100,
-                               verbose=True)
+                               quantities=[],
+                               dt_sampling=100)
         for i in range(NMAX_PARAMS):
             getattr(self, "box%i"%i).clear()
         for i, key in enumerate(EPISODES.varied_parameters.keys()):
             for k in ['(merge)', '(color-code)', '(row)', '(column)']:
                 getattr(self, "box%i"%i).addItem(key+((30-len(k)-len(key))*' ')+k)
-
-    def update_quantity_TA(self):
-        self.sqbox.clear()
-        self.sqbox.addItems(self.data.list_subquantities(self.qbox.currentText()))
-        self.sqbox.setCurrentIndex(0)
 
     def prev_ROI_TA(self):
         self.prev_ROI()
@@ -173,7 +158,7 @@ class TrialAveragingWindow(Window):
 
     def select_ROI_TA(self):
         if self.roiPickTA.text() in ['sum', 'all']:
-            self.roiIndices = np.arange(self.data.iscell.sum())
+            self.roiIndices = np.arange(self.data.nROIs)
         else:
             try:
                 self.roiIndices = [int(self.roiPickTA.text())]
@@ -186,15 +171,12 @@ class TrialAveragingWindow(Window):
     def compute_episodes(self):
         self.select_ROI_TA()
         if (self.qbox.currentIndex()>0) and (self.pbox.currentIndex()>0):
-            self.cQ = (self.qbox.currentText()\
-                    if (self.sqbox.currentText()=='')\
-                    else self.sqbox.currentText()) # CURRENT QUANTITY
+            self.cQ = self.qbox.currentText() # CURRENT QUANTITY
             self.EPISODES = EpisodeData(self.data,
                                         protocol_id=self.pbox.currentIndex()-1,
                                         quantities=[self.cQ],
                                         dt_sampling=self.samplingBox.value(), # ms
                                         verbose=True)
-            self.cQ = self.cQ.replace('-','').replace('_','') # CURRENT QUANTITY
         else:
             print(' [!!] Pick a protocol an a quantity')
 
@@ -211,7 +193,6 @@ class TrialAveragingWindow(Window):
 
     def plot_row_column_of_quantity(self):
 
-        self.Pcond = self.data.get_protocol_cond(self.pbox.currentIndex()-1)
         COL_CONDS = self.build_column_conditions()
         ROW_CONDS = self.build_row_conditions()
         COLOR_CONDS = self.build_color_conditions()
@@ -235,7 +216,7 @@ class TrialAveragingWindow(Window):
             for icol, col_cond in enumerate(COL_CONDS):
                 self.AX[irow].append(self.l.addPlot())
                 for icolor, color_cond in enumerate(COLOR_CONDS):
-                    ep_cond = np.array(col_cond & row_cond & color_cond)[:getattr(self.EPISODES, self.cQ).shape[0]]
+                    ep_cond = col_cond & row_cond & color_cond
                     pen = pg.mkPen(color=COLORS[icolor], width=2)
                     if getattr(self.EPISODES, self.cQ)[ep_cond,:].shape[0]>0:
                         if len(getattr(self.EPISODES, self.cQ).shape)>2:
@@ -273,30 +254,35 @@ class TrialAveragingWindow(Window):
             self.l.nextRow()
         self.AX[0][0].setRange(xRange=[self.EPISODES.t[0], self.EPISODES.t[-1]], yRange=ylim, padding=0.0)
 
+    def build_conditions(self, option):
+        """
+        episode conditions for the parameters set to "(option)" in the
+        display boxes, from the parameters of the episodes of self.EPISODES
+        (some episodes of the protocol can be missing, e.g. outside the recording)
+        """
+        K = [key for i, key in enumerate(self.EPISODES.varied_parameters.keys())
+                if getattr(self, 'box%i'%i).currentText().endswith('(%s)' % option)]
+        if len(K)==0:
+            return [np.ones(len(self.EPISODES.time_start), dtype=bool)]
+        if option=='color-code':
+            self.color_condition = K[-1]
+        CONDS = []
+        XK = np.meshgrid(*[self.EPISODES.varied_parameters[k] for k in K])
+        for i in range(len(XK[0].flatten())): # looping over joint conditions
+            cond = np.ones(len(self.EPISODES.time_start), dtype=bool)
+            for k, xk in zip(K, XK):
+                cond = cond & (getattr(self.EPISODES, k)==xk.flatten()[i])
+            CONDS.append(cond)
+        return CONDS
+
     def build_column_conditions(self):
-        X, K = [], []
-        for i, key in enumerate(self.EPISODES.varied_parameters.keys()):
-            if len(getattr(self, 'box%i'%i).currentText().split('column'))>1:
-                X.append(np.sort(np.unique(self.data.nwbfile.stimulus[key].data[self.Pcond])))
-                K.append(key)
-        return self.data.get_stimulus_conditions(X, K, self.pbox.currentIndex()-1)
+        return self.build_conditions('column')
 
     def build_row_conditions(self):
-        X, K = [], []
-        for i, key in enumerate(self.EPISODES.varied_parameters.keys()):
-            if len(getattr(self, 'box%i'%i).currentText().split('row'))>1:
-                X.append(np.sort(np.unique(self.data.nwbfile.stimulus[key].data[self.Pcond])))
-                K.append(key)
-        return self.data.get_stimulus_conditions(X, K, self.pbox.currentIndex()-1)
+        return self.build_conditions('row')
 
     def build_color_conditions(self):
-        X, K = [], []
-        for i, key in enumerate(self.EPISODES.varied_parameters.keys()):
-            if len(getattr(self, 'box%i'%i).currentText().split('color-code'))>1:
-                X.append(np.sort(np.unique(self.data.nwbfile.stimulus[key].data[self.Pcond])))
-                K.append(key)
-                self.color_condition = key
-        return self.data.get_stimulus_conditions(X, K, self.pbox.currentIndex()-1)
+        return self.build_conditions('color-code')
 
     # ----------------------------------------------------------
     #   keyboard shortcuts (see physion.gui.window)
