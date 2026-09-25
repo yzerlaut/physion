@@ -89,6 +89,22 @@ class visual_stim:
         print('[ok] visual-stimulation time course saved as "%s"' %\
                 os.path.join(folder, 'visual-stim.npy'))
 
+    def check_episode_overlap(self):
+        """
+        checks that each episode ends ("time_start"+"time_duration")
+                    before the start of the next one ("time_start")
+
+        raises an Exception listing the overlapping episodes otherwise
+        """
+        t_start = np.array(self.experiment['time_start'], dtype=float)
+        t_end = t_start+np.array(self.experiment['time_duration'], dtype=float)
+        overlaps = np.flatnonzero(t_start[1:]<t_end[:-1])
+        if len(overlaps)>0:
+            raise Exception('\n [!!] %i overlapping episodes in the visual stim. [!!] \n' %\
+                    len(overlaps)+'\n'.join(\
+                        '    - episode #%i ends at %.3fs, episode #%i starts at %.3fs' %\
+                            (i, t_end[i], i+1, t_start[i+1]) for i in overlaps))
+
     ################################
     #  ---   Gamma correction  --- #
     ################################
@@ -361,6 +377,9 @@ class visual_stim:
         # we write a tstop 
         self.tstop = self.experiment['time_stop'][-1]+\
                             protocol['presentation-poststim-period']
+
+        # we check that episodes do not overlap
+        self.check_episode_overlap()
         
 
 
@@ -709,6 +728,9 @@ class multiprotocol(visual_stim):
         # we write a tstop 
         self.tstop = self.experiment['time_stop'][-1]+\
                             protocol['presentation-poststim-period']
+
+        # we check that episodes do not overlap
+        self.check_episode_overlap()
 
     ##############################################
     ##  ----  MAPPING TO CHILD PROTOCOLS --- #####
