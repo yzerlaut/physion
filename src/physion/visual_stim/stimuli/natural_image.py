@@ -9,6 +9,10 @@ from physion.visual_stim.preprocess_NI import load,\
 ##  ----    NATURAL IMAGES    --- #####
 #######################################
 
+# default folder of natural images: physion/visual_stim/NI_bank
+#   (relative to this file, whatever the working directory)
+NI_BANK = os.path.join(pathlib.Path(__file__).resolve().parents[1], 'NI_bank')
+
 params = {"Image-ID":1,
           "contrast":0.3,
           "x-center":0,
@@ -18,8 +22,6 @@ params = {"Image-ID":1,
 
 
 def get_NaturalImages_as_array(NI_FOLDER, screen):
-    
-    # NI_FOLDER = os.path.join(str(pathlib.Path(__file__).resolve().parents[1]), 'NI_bank')
     
     NIarray = []
 
@@ -31,7 +33,7 @@ def get_NaturalImages_as_array(NI_FOLDER, screen):
         return NIarray
     else:
         print(' [!!]  Natural Images folder not found !!! [!!]  ')
-        return [np.ones((10,10))*0.5 for i in range(5)]
+        return [np.ones(screen['resolution']).T*0.5 for i in range(5)]
 
 class stim(visual_stim):
     """
@@ -48,7 +50,7 @@ class stim(visual_stim):
                             in the protocol [!!]
                   """)
             print()
-            protocol['NI_FOLDER'] = os.path.join('physion', 'visual_stim', 'NI_bank')
+            protocol['NI_FOLDER'] = NI_BANK
 
         # initializing set of NI
         self.NIarray = get_NaturalImages_as_array(protocol['NI_FOLDER'], self.screen)

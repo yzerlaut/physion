@@ -6,7 +6,7 @@ from physion.visual_stim.preprocess_NI import load,\
         img_after_hist_normalization, adapt_to_screen_resolution
 from physion.visual_stim.stimuli import virtual_scene_exploration as vse
 from physion.visual_stim.stimuli.natural_image\
-                        import get_NaturalImages_as_array
+                        import get_NaturalImages_as_array, NI_BANK
 
 #######################################
 ##  ----    NATURAL IMAGES    --- #####
@@ -39,15 +39,15 @@ class stim(visual_stim):
                             in the protocol [!!]
                   """)
             print()
-            protocol['NI_FOLDER'] = os.path.join('physion', 'visual_stim', 'NI_bank')
+            protocol['NI_FOLDER'] = NI_BANK
 
         # backward compatibility:
         if 'saccade-amplitude' not in protocol:
             protocol['saccade-amplitude'] = 200.
 
         # initializing set of NI
-        self.NIarray = get_NaturalImages_as_array(protocol['NI_FOLDER'], self.screen)
-
+        self.NIarray = get_NaturalImages_as_array(protocol['NI_FOLDER'], 
+                                                  self.screen)
         self.vse = vse.generate_sequence(seed=protocol['seed'],
                                 min_saccade_duration=protocol['min-saccade-duration'],
                                 max_saccade_duration=protocol['max-saccade-duration'],
@@ -60,6 +60,7 @@ class stim(visual_stim):
         im0 = np.rot90(\
                 self.NIarray[int(self.experiment['Image-ID'][index])], 
                         k=1)
+
         if self.screen['nScreens']>1:
             im0 = np.concatenate(\
                 [im0 for i in range(self.screen['nScreens'])])
