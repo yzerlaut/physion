@@ -118,50 +118,57 @@ class VisualizationWindow(Window):
     def create_modality_button_ticks(self, tab,
                                      nRowImages):
 
-        KEYS = ['synch', 
+        KEYS = ['synch', 'opto',
                 'visualStim', 'pupil', 'gaze',
                 'whisk', 'run',
                 'photodiode',
                 'rawFluo', 'neuropil',
                 'LFP', 'MUA', 'spikes']
 
-        COLORS = ['white',
+        COLORS = ['white', 'dodgerblue',
                   'grey', 'red', 'orange',
                   'magenta', 'white',
                   'grey',
                   'lightgreen', 'darkred',
                   'cyan', 'lightgreen', 'white']
 
+        # the ticks have more entries than the tab has columns
+        #   -> own sub-grid (checkboxes on row 0, settings on row 1)
+        ticks = QtWidgets.QWidget()
+        ticksLayout = QtWidgets.QGridLayout(ticks)
+        ticksLayout.setContentsMargins(0, 0, 0, 0)
+        tab.layout.addWidget(ticks,
+                             nRowImages, 0,
+                             2, self.nWidgetCol-1)
+
         for i, key, color in zip(range(len(KEYS)),
                                  KEYS, COLORS):
-        
+
             setattr(self, '%sSelect'%key, QtWidgets.QCheckBox(key+' '))
             getattr(self, '%sSelect'%key).setStyleSheet('color: %s;' % color)
             getattr(self, '%sSelect'%key).setFont(physion.gui.parts.smallfont)
-            tab.layout.addWidget(getattr(self, '%sSelect'%key),
-                                 nRowImages, self.nWidgetCol-1-i,
-                                 1, 1)
+            if i==0:
+                # "synch" stays in the last column of the tab
+                tab.layout.addWidget(self.synchSelect,
+                                     nRowImages, self.nWidgetCol-1,
+                                     1, 1)
+            else:
+                ticksLayout.addWidget(getattr(self, '%sSelect'%key),
+                                      0, len(KEYS)-1-i,
+                                      1, 1)
             if key in ['rawFluo', 'LFP', 'MUA']:
                 setattr(self, '%sSettings'%key, QtWidgets.QLineEdit())
                 getattr(self, '%sSettings'%key).setStyleSheet('color: %s;' % color)
                 getattr(self, '%sSettings'%key).setMaximumWidth(130)
                 getattr(self, '%sSettings'%key).setFont(physion.gui.parts.smallfont)
-                tab.layout.addWidget(getattr(self, '%sSettings'%key),
-                                     nRowImages+1, self.nWidgetCol-1-i,
-                                     1, 1)
+                ticksLayout.addWidget(getattr(self, '%sSettings'%key),
+                                      1, len(KEYS)-1-i,
+                                      1, 1)
         self.rawFluoSettings.setText('s:0,i:-1,n:10')
         self.LFPSettings.setText('s:0,n:6')
         self.MUASettings.setText('s:0,n:2')
 
         self.visualStimSelect.clicked.connect(self.select_visualStim)
-
-        # optogenetics: below "visualStim" (blue overlay when the opto is on)
-        self.optoSelect = QtWidgets.QCheckBox('opto ')
-        self.optoSelect.setStyleSheet('color: dodgerblue;')
-        self.optoSelect.setFont(physion.gui.parts.smallfont)
-        tab.layout.addWidget(self.optoSelect,
-                             nRowImages+1, self.nWidgetCol-2,
-                             1, 1)
     
         for i, key in enumerate(['sbsmpl', 'annot']):
         
