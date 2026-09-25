@@ -37,6 +37,7 @@ dependencies = [
     "hdmf",
     "pillow",
     "python-dateutil",
+    "requests",
 ]
 
 [project.optional-dependencies]
@@ -51,7 +52,6 @@ ephys = [
 # acquisition setups (camera SDKs: see docs/install/acquisition.md)
 acquisition = [
     "nidaqmx",
-    "requests",
 ]
 test = ["pytest"]
 
