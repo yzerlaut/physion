@@ -40,9 +40,12 @@ def test_realign_with_excluded_episode():
                                DURATIONS[kept])
 
 
-def build(tmp_path, exclude_episodes=[], metadata_extra={}):
-    """ add_visual_stimulation on a synthetic session """
+def build(tmp_path, exclude_episodes=[], metadata_extra={},
+          t_end=None, force_to_visualStimTimestamps=False):
+    """ add_visual_stimulation on a synthetic session (recording stopped at "t_end") """
     time_start, time_stop, signal = protocol_and_photodiode()
+    if t_end is not None:
+        signal = signal[:int(t_end*RATE)]
     np.save(tmp_path/'visual-stim.npy',
             {'time_start':time_start, 'time_stop':time_stop,
              'index':np.arange(len(DURATIONS)), 'protocol_id':np.zeros(len(DURATIONS), dtype=int),
@@ -53,7 +56,7 @@ def build(tmp_path, exclude_episodes=[], metadata_extra={}):
     metadata.update(metadata_extra)
     args = types.SimpleNamespace(datafolder=str(tmp_path), modalities=['VisualStim'],
                     photodiode_sampling=RATE, reverse_photodiodeSignal=False,
-                    force_to_visualStimTimestamps=False, max_episode=-1,
+                    force_to_visualStimTimestamps=force_to_visualStimTimestamps, max_episode=-1,
                     exclude_episodes=exclude_episodes, indices_forced=None,
                     times_forced=None, durations_forced=None, verbose=False)
     nwbfile = pynwb.NWBFile(session_description='test', identifier='test',
@@ -85,3 +88,19 @@ def test_forced_realignement_from_metadata(tmp_path):
                                            'realignement_durations_forced':[2.]})
     assert stim['time_start_realigned'][0] == 1.5
     assert len(stim['index']) == len(DURATIONS)
+
+
+# recording stopped before the end of the protocol:
+#   we stop one episode before the last episode start
+START = protocol_and_photodiode()[0]
+STOP = protocol_and_photodiode()[1]
+TRUNCATED = [(START[5]+1., 5),   # during episode 5 -> episodes 0-4
+             (STOP[5]+2., 5),    # between episodes 5 and 6 -> episodes 0-4
+             (START[7]+0.5, 7)]  # during the last episode -> episodes 0-6
+
+@pytest.mark.parametrize('t_end, n_kept', TRUNCATED)
+@pytest.mark.parametrize('force', [False, True])
+def test_recording_stopped_before_end_of_protocol(tmp_path, t_end, n_kept, force):
+    stim = build(tmp_path, t_end=t_end, force_to_visualStimTimestamps=force)
+    np.testing.assert_array_equal(stim['index'], np.arange(n_kept))
+    np.testing.assert_array_equal(stim['angle'], ANGLES[:n_kept])

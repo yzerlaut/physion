@@ -388,6 +388,23 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
                     metadata['%s_realigned' % key] = np.delete(metadata['%s_realigned' % key], args.exclude_episodes)
                 episode_indices = np.delete(episode_indices, args.exclude_episodes)
 
+            if NIdaq_data is not None:
+                # if the recording was stopped before the end of the protocol,
+                #   we stop one episode before the last episode start (it might be truncated)
+                freq = float(metadata['NIdaq-acquisition-frequency']\
+                        if ('NIdaq-acquisition-frequency' in metadata)\
+                            else metadata['NIdaq']['acquisition-frequency'])
+                t_end = len(NIdaq_data['analog'][0])/freq
+                if t_end<metadata['time_stop_realigned'][-1]:
+                    started = np.flatnonzero(metadata['time_start_realigned']<t_end)
+                    keep = started[:-1]
+                    print('=> Recording stopped before the end of the protocol (at t=%.1fs):' % t_end)
+                    print('      keeping n=%i episodes over the %i of the protocol' % (len(keep),
+                                                                    len(metadata['time_start'])))
+                    for key in ['time_start', 'time_stop']:
+                        metadata['%s_realigned' % key] = metadata['%s_realigned' % key][keep]
+                    episode_indices = episode_indices[keep]
+
         else:
             # using the photodiod signal for the realignement
             if args.verbose:

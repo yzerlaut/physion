@@ -57,7 +57,8 @@ def realign_from_photodiode(signal,
 
     # looping over episodes
     i=0
-    while (i<max_episode) and (tstart<(t[-1]-metadata['time_duration'][i])) and success:
+    # (we look for all episodes that could have started before the end of the recording)
+    while (i<max_episode) and (tstart<t[-1]) and success:
 
         # the next time point above being above threshold
         cond_thresh = (t[:-2]>tstart+shift_time) & (smooth_signal[1:]>=(baseline+threshold)) & (smooth_signal[:-1]<(baseline+threshold))
@@ -117,8 +118,10 @@ def realign_from_photodiode(signal,
         np.array(metadata['time_duration'])[metadata['realigned_episode_indices']]
     
     # if the protocol is not complete, the last one might be truncated, we remove it !
-    # (not complete = the loop stopped before the last episode, excluded episodes do not count)
-    if i<len(metadata['time_start']):
+    # (not complete = the loop stopped before the last episode, excluded episodes do not count,
+    #       or the recording was stopped during the last episode)
+    if (i<len(metadata['time_start'])) or\
+            ((len(metadata['time_stop_realigned'])>0) and (metadata['time_stop_realigned'][-1]>t[-1])):
         for key in ['time_start_realigned', 'time_stop_realigned', 'realigned_episode_indices']:
             metadata[key] = metadata[key][:-1]
         
