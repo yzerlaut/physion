@@ -23,11 +23,11 @@ class RedChannelLabellingWindow(Window):
     def __init__(self, main,
                               tab_id=2):
 
+        super().__init__(main, tab_id)
+        tab = self.tab
         self.folder, self.rois_on = '', True
         self.roi_index = 0
 
-        super().__init__(main, tab_id)
-        tab = self.tab
 
 
         ##########################################################

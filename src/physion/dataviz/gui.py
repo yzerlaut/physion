@@ -3,255 +3,282 @@ import pyqtgraph as pg
 import numpy as np
 
 import physion
-
-def update_frame(self):
-    """
-    update the time points after one moves the time slder
-    """
-    pass
-
-def snapshot(self):
-    pass
-
-def movie(self):
-    pass
-
-
-def visualization(self, 
-                  withRawImages=False,
-                  tab_id=1,
-                  nRowImages=5):
-
-    self.windows[tab_id] = 'visualization'
-
-    tab = self.tabs[tab_id]
-
-    self.cleanup_tab(tab)
-
-    # the layout changes with and without the raw images
-
-    create_layout(self, tab, 
-                 (nRowImages if withRawImages else 0))
-
-    create_modality_button_ticks(self, tab,
-                                 (nRowImages if withRawImages else 0))
-
-    create_slider(self, tab)
-
-    self.refresh_tab(tab)
-
-    if self.data is not None:
-
-        analyze_datafile(self)
-        self.raw_data_plot(self.data.tlim)
-
-    self.statusBar.showMessage(' [R]efresh, [M]aximize/minimize, [O]pen file"')
-
-
-def create_layout(self, tab, nRowImages):
-
-    if nRowImages>0:
-        # image panels layout:
-        self.winImg = pg.GraphicsLayoutWidget()
-        self.winImg.setMaximumHeight(300)
-        tab.layout.addWidget(self.winImg,
-                             0, 0,
-                             nRowImages, self.nWidgetCol)
-        init_image_panels(self)
-        
-        # a button to shift to the cell selection interface
-        self.roiSelectButton = QtWidgets.QPushButton('FOV')
-        self.roiSelectButton.clicked.connect(self.FOV)
-        tab.layout.addWidget(self.roiSelectButton,
-                             0, self.nWidgetCol-1,
-                             1, 1)
-
-    # time traces layout: 
-    self.winTrace = pg.GraphicsLayoutWidget()
-    tab.layout.addWidget(self.winTrace,
-                         nRowImages, 0,
-                         self.nWidgetRow-1-nRowImages, self.nWidgetCol)
-
-    # plotting traces
-    self.plot = self.winTrace.addPlot()
-    self.plot.hideAxis('left')
-    self.plot.setMouseEnabled(x=True,y=False)
-    self.plot.setLabel('bottom', 'time (s)')
-
-    # plotting dots
-    self.scatter = pg.ScatterPlotItem()
-    self.plot.addItem(self.scatter)
-
-    self.xaxis = self.plot.getAxis('bottom')
-
-
-def create_modality_button_ticks(self, tab,
-                                 nRowImages):
-
-    KEYS = ['synch', 
-            'visualStim', 'pupil', 'gaze',
-            'whisk', 'run',
-            'photodiode',
-            'rawFluo', 'neuropil',
-            'LFP', 'MUA', 'spikes']
-
-    COLORS = ['white',
-              'grey', 'red', 'orange',
-              'magenta', 'white',
-              'grey',
-              'lightgreen', 'darkred',
-              'cyan', 'lightgreen', 'white']
-
-    for i, key, color in zip(range(len(KEYS)),
-                             KEYS, COLORS):
-        
-        setattr(self, '%sSelect'%key, QtWidgets.QCheckBox(key+' '))
-        getattr(self, '%sSelect'%key).setStyleSheet('color: %s;' % color)
-        getattr(self, '%sSelect'%key).setFont(physion.gui.parts.smallfont)
-        tab.layout.addWidget(getattr(self, '%sSelect'%key),
-                             nRowImages, self.nWidgetCol-1-i,
-                             1, 1)
-        if key in ['rawFluo', 'LFP', 'MUA']:
-            setattr(self, '%sSettings'%key, QtWidgets.QLineEdit())
-            getattr(self, '%sSettings'%key).setStyleSheet('color: %s;' % color)
-            getattr(self, '%sSettings'%key).setMaximumWidth(130)
-            getattr(self, '%sSettings'%key).setFont(physion.gui.parts.smallfont)
-            tab.layout.addWidget(getattr(self, '%sSettings'%key),
-                                 nRowImages+1, self.nWidgetCol-1-i,
-                                 1, 1)
-    self.rawFluoSettings.setText('s:0,i:-1,n:10')
-    self.LFPSettings.setText('s:0,n:6')
-    self.MUASettings.setText('s:0,n:2')
-
-    self.visualStimSelect.clicked.connect(self.select_visualStim)
-    
-    for i, key in enumerate(['sbsmpl', 'annot']):
-        
-        setattr(self, '%sSelect'%key, QtWidgets.QCheckBox(key))
-        getattr(self, '%sSelect'%key).setStyleSheet('color: dimgrey')
-        getattr(self, '%sSelect'%key).setFont(physion.gui.parts.smallfont)
-        tab.layout.addWidget(getattr(self, '%sSelect'%key),
-                             nRowImages+2+i, self.nWidgetCol-1,
-                             1, 1)
-
-    for i, key in enumerate(['snapshot', 'movie']):
-        
-        setattr(self, '%sButton'%key, QtWidgets.QPushButton(key))
-        getattr(self, '%sButton'%key).setStyleSheet('color: dimgrey')
-        getattr(self, '%sButton'%key).setFont(physion.gui.parts.smallfont)
-        getattr(self, '%sButton'%key).clicked.connect(getattr(self, key))
-        tab.layout.addWidget(getattr(self, '%sButton'%key),
-                             nRowImages+4+i, self.nWidgetCol-1,
-                             1, 1)
-    self.sbsmplSelect.setChecked(True)
-
-
-def init_panel_imgs(self):
-    
-    self.pScreenimg.setImage(np.ones((10,12))*50)
-    self.pFaceimg.setImage(np.ones((10,12))*50)
-    self.pPupilimg.setImage(np.ones((10,12))*50)
-    self.pFacemotionimg.setImage(np.ones((10,12))*50)
-    self.pCaimg.setImage(np.ones((50,50))*100)
-    self.pupilContour.setData([0], [0], size=1, brush=pg.mkBrush(0,0,0))
-    self.faceMotionContour.setData([0], [0], size=2,
-                brush=pg.mkBrush(*settings['colors']['FaceMotion'][:3]))
-    self.facePupilContour.setData([0], [0], size=2,
-                brush=pg.mkBrush(*settings['colors']['Pupil'][:3]))
+from physion.gui.window import Window
 
 
 
-def init_image_panels(self):
-
-    # screen panel
-    self.pScreen = self.winImg.addViewBox(lockAspect=True,
-                                invertY=False, border=[1, 1, 1], colspan=2)
-    self.pScreenimg = pg.ImageItem(np.ones((10,12))*50)
-
-    # FaceCamera panel
-    self.pFace = self.winImg.addViewBox(lockAspect=True,
-                                invertY=True, border=[1, 1, 1], colspan=2)
-    self.whiskContour = pg.ScatterPlotItem()
-    self.facePupilContour = pg.ScatterPlotItem()
-    self.pFaceimg = pg.ImageItem(np.ones((10,12))*50)
-    # Pupil panel
-    self.pPupil=self.winImg.addViewBox(lockAspect=True,
-                                invertY=True, border=[1, 1, 1])
-    self.pupilContour = pg.ScatterPlotItem()
-    self.pPupilimg = pg.ImageItem(np.ones((10,12))*50)
-    # Facemotion panel
-    self.pFacemotion=self.winImg.addViewBox(lockAspect=True,
-                                invertY=True, border=[1, 1, 1])
-    self.facemotionROI = pg.ScatterPlotItem()
-    self.pFacemotionimg = pg.ImageItem(np.ones((10,12))*50)
-    # Ca-Imaging panel
-    self.pCa=self.winImg.addViewBox(lockAspect=True,
-                                invertY=True, border=[1, 1, 1])
-    self.pCaimg = pg.ImageItem(np.ones((50,50))*100)
-    
-    for x, y in zip([self.pScreen, self.pFace,self.pPupil, self.pPupil,
-                     self.pFacemotion,self.pFacemotion,
-                     self.pCa,
-                     self.pFace, self.pFace],
-                    [self.pScreenimg, self.pFaceimg, 
-                     self.pPupilimg, self.pupilContour,
-                     self.pFacemotionimg, self.facemotionROI,
-                     self.pCaimg, 
-                     self.faceMotionContour, self.facePupilContour]):
-        x.addItem(y)
 
 
-def select_visualStim(self):
-    pass
 
-def analyze_datafile(self):
 
-    """ should be a minimal processing so that the loading is fast"""
 
-    self.time = self.data.tlim[0]
 
-    if 'ophys' in self.data.nwbfile.processing:
-        self.rawFluoSelect.setChecked(True)
 
-    for key1, key2 in zip(['LFP', 'MUA', 'Spiking'], 
-                          ['LFP', 'MUA', 'spikes']):
-        if key1 in self.data.nwbfile.processing:
-            getattr(self, '%sSelect' % key2).setChecked(True)
-        
-    if 'Running-Speed' in self.data.nwbfile.acquisition:
-        self.runSelect.setChecked(True)
-        self.runSelect.isChecked()
 
-    if 'FaceMotion' in self.data.nwbfile.processing:
-        self.whiskSelect.setChecked(True)
 
-    if 'Pupil' in self.data.nwbfile.processing:
-        self.pupilSelect.setChecked(True)
 
-    if 'Pupil' in self.data.nwbfile.processing:
-        self.gaze_center = [np.mean(self.data.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:]),
-                            np.mean(self.data.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:])]
+
+
+
+
+
+
         # self.gazeSelect.setChecked(True)
 
 
-def create_slider(self, tab, SliderResolution=200):
+class VisualizationWindow(Window):
 
-    self.SliderResolution = SliderResolution
+    name = 'visualization'
 
-    self.frameSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+    # functions of other modules, used as methods
+    from physion.dataviz.plots import raw_data_plot
 
-    self.frameSlider.setMinimum(0)
-    self.frameSlider.setMaximum(self.SliderResolution)
-    self.frameSlider.setTickInterval(1)
-    self.frameSlider.setValue(0)
-    self.frameSlider.setTracking(False)
-
-    self.frameSlider.sliderReleased.connect(self.update_frame)
-    # self.frameSlider.setMaximumHeight(20)
-    # self.frameSlider.adjustSize()
-    # self.frameSlider.resize(1000, 1000)
-
-    tab.layout.addWidget(self.frameSlider, self.nWidgetRow-1, 0,
-                         1, self.nWidgetCol)
+    def __init__(self, main, 
+                      withRawImages=False,
+                      tab_id=1,
+                      nRowImages=5):
 
 
+        super().__init__(main, tab_id)
+        tab = self.tab
+
+
+        # the layout changes with and without the raw images
+
+        self.create_layout(tab, 
+                     (nRowImages if withRawImages else 0))
+
+        self.create_modality_button_ticks(tab,
+                                     (nRowImages if withRawImages else 0))
+
+        self.create_slider(tab)
+
+        self.refresh_tab()
+
+        if self.data is not None:
+
+            self.analyze_datafile()
+            self.raw_data_plot(self.data.tlim)
+
+        self.statusBar.showMessage(' [R]efresh, [M]aximize/minimize, [O]pen file"')
+
+    def refresh_plot(self):
+        """ [R] shortcut: redraw the current time window """
+        tzoom = self.plot.getAxis('bottom').range
+        self.raw_data_plot(tzoom)
+
+    def update_frame(self):
+        """
+        update the time points after one moves the time slder
+        """
+        pass
+
+    def snapshot(self):
+        pass
+
+    def movie(self):
+        pass
+
+    def create_layout(self, tab, nRowImages):
+
+        if nRowImages>0:
+            # image panels layout:
+            self.winImg = pg.GraphicsLayoutWidget()
+            self.winImg.setMaximumHeight(300)
+            tab.layout.addWidget(self.winImg,
+                                 0, 0,
+                                 nRowImages, self.nWidgetCol)
+            self.init_image_panels()
+        
+            # a button to shift to the cell selection interface
+            self.roiSelectButton = QtWidgets.QPushButton('FOV')
+            self.roiSelectButton.clicked.connect(self.main.FOV)
+            tab.layout.addWidget(self.roiSelectButton,
+                                 0, self.nWidgetCol-1,
+                                 1, 1)
+
+        # time traces layout: 
+        self.winTrace = pg.GraphicsLayoutWidget()
+        tab.layout.addWidget(self.winTrace,
+                             nRowImages, 0,
+                             self.nWidgetRow-1-nRowImages, self.nWidgetCol)
+
+        # plotting traces
+        self.plot = self.winTrace.addPlot()
+        self.plot.hideAxis('left')
+        self.plot.setMouseEnabled(x=True,y=False)
+        self.plot.setLabel('bottom', 'time (s)')
+
+        # plotting dots
+        self.scatter = pg.ScatterPlotItem()
+        self.plot.addItem(self.scatter)
+
+        self.xaxis = self.plot.getAxis('bottom')
+
+    def create_modality_button_ticks(self, tab,
+                                     nRowImages):
+
+        KEYS = ['synch', 
+                'visualStim', 'pupil', 'gaze',
+                'whisk', 'run',
+                'photodiode',
+                'rawFluo', 'neuropil',
+                'LFP', 'MUA', 'spikes']
+
+        COLORS = ['white',
+                  'grey', 'red', 'orange',
+                  'magenta', 'white',
+                  'grey',
+                  'lightgreen', 'darkred',
+                  'cyan', 'lightgreen', 'white']
+
+        for i, key, color in zip(range(len(KEYS)),
+                                 KEYS, COLORS):
+        
+            setattr(self, '%sSelect'%key, QtWidgets.QCheckBox(key+' '))
+            getattr(self, '%sSelect'%key).setStyleSheet('color: %s;' % color)
+            getattr(self, '%sSelect'%key).setFont(physion.gui.parts.smallfont)
+            tab.layout.addWidget(getattr(self, '%sSelect'%key),
+                                 nRowImages, self.nWidgetCol-1-i,
+                                 1, 1)
+            if key in ['rawFluo', 'LFP', 'MUA']:
+                setattr(self, '%sSettings'%key, QtWidgets.QLineEdit())
+                getattr(self, '%sSettings'%key).setStyleSheet('color: %s;' % color)
+                getattr(self, '%sSettings'%key).setMaximumWidth(130)
+                getattr(self, '%sSettings'%key).setFont(physion.gui.parts.smallfont)
+                tab.layout.addWidget(getattr(self, '%sSettings'%key),
+                                     nRowImages+1, self.nWidgetCol-1-i,
+                                     1, 1)
+        self.rawFluoSettings.setText('s:0,i:-1,n:10')
+        self.LFPSettings.setText('s:0,n:6')
+        self.MUASettings.setText('s:0,n:2')
+
+        self.visualStimSelect.clicked.connect(self.select_visualStim)
+    
+        for i, key in enumerate(['sbsmpl', 'annot']):
+        
+            setattr(self, '%sSelect'%key, QtWidgets.QCheckBox(key))
+            getattr(self, '%sSelect'%key).setStyleSheet('color: dimgrey')
+            getattr(self, '%sSelect'%key).setFont(physion.gui.parts.smallfont)
+            tab.layout.addWidget(getattr(self, '%sSelect'%key),
+                                 nRowImages+2+i, self.nWidgetCol-1,
+                                 1, 1)
+
+        for i, key in enumerate(['snapshot', 'movie']):
+        
+            setattr(self, '%sButton'%key, QtWidgets.QPushButton(key))
+            getattr(self, '%sButton'%key).setStyleSheet('color: dimgrey')
+            getattr(self, '%sButton'%key).setFont(physion.gui.parts.smallfont)
+            getattr(self, '%sButton'%key).clicked.connect(getattr(self, key))
+            tab.layout.addWidget(getattr(self, '%sButton'%key),
+                                 nRowImages+4+i, self.nWidgetCol-1,
+                                 1, 1)
+        self.sbsmplSelect.setChecked(True)
+
+    def init_panel_imgs(self):
+    
+        self.pScreenimg.setImage(np.ones((10,12))*50)
+        self.pFaceimg.setImage(np.ones((10,12))*50)
+        self.pPupilimg.setImage(np.ones((10,12))*50)
+        self.pFacemotionimg.setImage(np.ones((10,12))*50)
+        self.pCaimg.setImage(np.ones((50,50))*100)
+        self.pupilContour.setData([0], [0], size=1, brush=pg.mkBrush(0,0,0))
+        self.faceMotionContour.setData([0], [0], size=2,
+                    brush=pg.mkBrush(*settings['colors']['FaceMotion'][:3]))
+        self.facePupilContour.setData([0], [0], size=2,
+                    brush=pg.mkBrush(*settings['colors']['Pupil'][:3]))
+
+    def init_image_panels(self):
+
+        # screen panel
+        self.pScreen = self.winImg.addViewBox(lockAspect=True,
+                                    invertY=False, border=[1, 1, 1], colspan=2)
+        self.pScreenimg = pg.ImageItem(np.ones((10,12))*50)
+
+        # FaceCamera panel
+        self.pFace = self.winImg.addViewBox(lockAspect=True,
+                                    invertY=True, border=[1, 1, 1], colspan=2)
+        self.whiskContour = pg.ScatterPlotItem()
+        self.facePupilContour = pg.ScatterPlotItem()
+        self.pFaceimg = pg.ImageItem(np.ones((10,12))*50)
+        # Pupil panel
+        self.pPupil=self.winImg.addViewBox(lockAspect=True,
+                                    invertY=True, border=[1, 1, 1])
+        self.pupilContour = pg.ScatterPlotItem()
+        self.pPupilimg = pg.ImageItem(np.ones((10,12))*50)
+        # Facemotion panel
+        self.pFacemotion=self.winImg.addViewBox(lockAspect=True,
+                                    invertY=True, border=[1, 1, 1])
+        self.facemotionROI = pg.ScatterPlotItem()
+        self.pFacemotionimg = pg.ImageItem(np.ones((10,12))*50)
+        # Ca-Imaging panel
+        self.pCa=self.winImg.addViewBox(lockAspect=True,
+                                    invertY=True, border=[1, 1, 1])
+        self.pCaimg = pg.ImageItem(np.ones((50,50))*100)
+    
+        for x, y in zip([self.pScreen, self.pFace,self.pPupil, self.pPupil,
+                         self.pFacemotion,self.pFacemotion,
+                         self.pCa,
+                         self.pFace, self.pFace],
+                        [self.pScreenimg, self.pFaceimg, 
+                         self.pPupilimg, self.pupilContour,
+                         self.pFacemotionimg, self.facemotionROI,
+                         self.pCaimg, 
+                         self.faceMotionContour, self.facePupilContour]):
+            x.addItem(y)
+
+    def select_visualStim(self):
+        pass
+
+    def analyze_datafile(self):
+
+        """ should be a minimal processing so that the loading is fast"""
+
+        self.time = self.data.tlim[0]
+
+        if 'ophys' in self.data.nwbfile.processing:
+            self.rawFluoSelect.setChecked(True)
+
+        for key1, key2 in zip(['LFP', 'MUA', 'Spiking'], 
+                              ['LFP', 'MUA', 'spikes']):
+            if key1 in self.data.nwbfile.processing:
+                getattr(self, '%sSelect' % key2).setChecked(True)
+        
+        if 'Running-Speed' in self.data.nwbfile.acquisition:
+            self.runSelect.setChecked(True)
+            self.runSelect.isChecked()
+
+        if 'FaceMotion' in self.data.nwbfile.processing:
+            self.whiskSelect.setChecked(True)
+
+        if 'Pupil' in self.data.nwbfile.processing:
+            self.pupilSelect.setChecked(True)
+
+        if 'Pupil' in self.data.nwbfile.processing:
+            self.gaze_center = [np.mean(self.data.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:]),
+                                np.mean(self.data.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:])]
+
+    def create_slider(self, tab, SliderResolution=200):
+
+        self.SliderResolution = SliderResolution
+
+        self.frameSlider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+
+        self.frameSlider.setMinimum(0)
+        self.frameSlider.setMaximum(self.SliderResolution)
+        self.frameSlider.setTickInterval(1)
+        self.frameSlider.setValue(0)
+        self.frameSlider.setTracking(False)
+
+        self.frameSlider.sliderReleased.connect(self.update_frame)
+        # self.frameSlider.setMaximumHeight(20)
+        # self.frameSlider.adjustSize()
+        # self.frameSlider.resize(1000, 1000)
+
+        tab.layout.addWidget(self.frameSlider, self.nWidgetRow-1, 0,
+                             1, self.nWidgetCol)
+
+    # ----------------------------------------------------------
+    #   keyboard shortcuts (see physion.gui.window)
+    # ----------------------------------------------------------
+    on_refresh = refresh_plot
