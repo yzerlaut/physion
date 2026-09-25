@@ -38,3 +38,25 @@ def test_EpisodeData(data):
     assert response.shape[0] == len(ep.time_start) # one row per episode
     assert response.shape[-1] == len(ep.t)
     assert np.isfinite(response).all()
+
+
+def test_NWB_windows_and_shortcuts(gui, monkeypatch):
+    """ raw data [O] [R], FOV [N] [P] [T] [R] share the loaded NWB and the ROI selection """
+    from PyQt5 import QtWidgets
+    from physion.gui.window import current_window
+    monkeypatch.setattr(QtWidgets.QFileDialog, 'getOpenFileName',
+                        staticmethod(lambda *a, **k: (NWB, '')))
+    gui.open()                                  # [O] -> raw data window
+    assert type(gui.data).__name__ == 'Data'
+    assert current_window(gui).name == 'visualization'
+    gui.refresh()                               # [R]
+
+    fov = gui.FOV()
+    assert current_window(gui) is fov
+    i0 = gui.roiIndices[0]
+    gui.next(); gui.next()                      # [N] [N]
+    assert list(gui.roiIndices) == [i0+2]       # selection shared by the windows
+    gui.process()                               # [P]
+    assert list(fov.roiIndices) == [i0+1]
+    gui.toggle(); gui.refresh()                 # [T] [R]
+    assert gui.slot_errors == []

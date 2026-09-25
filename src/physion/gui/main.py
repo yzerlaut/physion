@@ -32,20 +32,21 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # # calendar interface
     if (not Acquisition) and (not Intrinsic):
-        from physion.gui.calendar import calendar, pick_date,\
-                reinit_calendar, pick_subject, scan_folder,\
-                pick_datafile, show_metadata 
+        def calendar(self, *args, **kwargs):
+            from physion.gui.calendar import CalendarWindow
+            return CalendarWindow(self, *args, **kwargs)
         # from physion.analysis.summary_pdf import generate_pdf, open_pdf
     else:
         from physion.gui.parts import inactivated as calendar 
 
     # # -- Data Visualization
     if (not Acquisition) and (not Intrinsic):
-        from physion.dataviz.gui import visualization, update_frame,\
-            select_visualStim, snapshot, movie
-        from physion.dataviz.plots import raw_data_plot
-        from physion.dataviz.FOV import FOV, select_ROI_FOV,\
-            next_ROI_FOV, prev_ROI_FOV, toggle_FOV, draw_image_FOV
+        def visualization(self, *args, **kwargs):
+            from physion.dataviz.gui import VisualizationWindow
+            return VisualizationWindow(self, *args, **kwargs)
+        def FOV(self, *args, **kwargs):
+            from physion.dataviz.FOV import FOVWindow
+            return FOVWindow(self, *args, **kwargs)
     else:
         from physion.gui.parts import inactivated as visualization
         from physion.gui.parts import inactivated as raw_data_plot
@@ -179,10 +180,9 @@ class MainWindow(QtWidgets.QMainWindow):
 
     # # -- Data Analysis 
     if (not Acquisition) and (not Intrinsic):
-        from physion.analysis.trial_averaging import trial_averaging,\
-            update_protocol_TA, update_quantity_TA, select_ROI_TA,\
-            compute_episodes, refresh_TA, next_ROI_TA, prev_ROI_TA,\
-            next_and_plot_TA
+        def trial_averaging(self, *args, **kwargs):
+            from physion.analysis.trial_averaging import TrialAveragingWindow
+            return TrialAveragingWindow(self, *args, **kwargs)
     else:
         from physion.gui.parts import inactivated as trial_averaging
 
@@ -312,8 +312,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.data = Data(filename)
             self.visualization()
         elif folder is not None:
-            self.calendar()
-            self.scan_folder(folder=folder)
+            self.calendar().scan_folder(folder=folder)
         else:
             self.calendar()
         self.show()
@@ -334,13 +333,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def open(self):
         if self.window_shortcut('open'):
             return
-        tab_id = self.tabWidget.currentIndex()
         self.open_file()
             
     def save(self):
         if self.window_shortcut('save'):
             return
-        tab_id = self.tabWidget.currentIndex()
         print('no shortcut')
 
     def hitting_space(self):
@@ -386,49 +383,19 @@ class MainWindow(QtWidgets.QMainWindow):
             # self.intrinsic()
 
     def refresh(self):
-        if self.window_shortcut('refresh'):
-            return
-        tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='visualization':
-            tzoom = self.plot.getAxis('bottom').range
-            self.raw_data_plot(tzoom)
-        elif self.windows[tab_id] =='trial_averaging':
-            self.refresh_TA()
-        elif self.windows[tab_id] =='FOV':
-            self.draw_image_FOV()
-        else:
-            # print(self.tabWidget.currentWidget())
+        if not self.window_shortcut('refresh'):
             print('no shortcut')
 
     def process(self):
-        if self.window_shortcut('process'):
-            return
-        tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='trial_averaging':
-            self.prev_ROI_TA()
-        elif self.windows[tab_id] =='FOV':
-            self.prev_ROI_FOV()
-        else:
+        if not self.window_shortcut('process'):
             print('no shortcut')
 
     def toggle(self):
-        if self.window_shortcut('toggle'):
-            return
-        tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='FOV':
-            self.toggle_FOV()
-        else:
+        if not self.window_shortcut('toggle'):
             print('no shortcut')
 
     def next(self):
-        if self.window_shortcut('next'):
-            return
-        tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='trial_averaging':
-            self.next_ROI_TA()
-        elif self.windows[tab_id] =='FOV':
-            self.next_ROI_FOV()
-        else:
+        if not self.window_shortcut('next'):
             print('no shortcut')
 
     def next_ROI(self):
@@ -477,12 +444,7 @@ class MainWindow(QtWidgets.QMainWindow):
         print('no shortcut')
 
     def fit(self):
-        if self.window_shortcut('fit'):
-            return
-        tab_id = self.tabWidget.currentIndex()
-        if self.windows[tab_id] =='trial_averaging':
-            self.next_and_plot_TA()
-        else:
+        if not self.window_shortcut('fit'):
             print('no shortcut')
 
     def home(self):

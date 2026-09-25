@@ -17,10 +17,10 @@ class TransferWindow(Window):
     def __init__(self, main,
                      tab_id=3):
 
-        self.source_folder, self.destination_folder = '', ''
-
         super().__init__(main, tab_id)
         tab = self.tab
+        self.source_folder, self.destination_folder = '', ''
+
 
         self.add_side_widget(QtWidgets.QLabel(' _-* FILE TRANSFER *-_ '))
 

@@ -91,7 +91,8 @@ def test_shortcuts_ignore_a_replaced_window(gui):
         'intrinsic', 'SS_intrinsic', 'OD_analysis', 'bot_spatial_maps', 'suite2p_preprocessing_UI',
         'red_channel_labelling', 'spike_sorting_preprocessing_UI', 'build_DataTable_UI',
         'build_NWB_from_DataTable_UI', 'build_NWB_UI', 'transfer_gui', 'cameraData_to_movie_gui',
-        'imaging_to_movie_gui', 'deletion_gui'])
+        'imaging_to_movie_gui', 'deletion_gui', 'calendar', 'visualization', 'FOV',
+        'trial_averaging'])
 def test_shortcut_handlers_are_not_shadowed(gui, window):
     """ the "on_*" shortcut handlers are not hidden by window attributes """
     from physion.gui.window import Window, SHORTCUTS
