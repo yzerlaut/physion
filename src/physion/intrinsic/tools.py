@@ -1,11 +1,11 @@
 import os, sys, pathlib, json, pynwb, itertools, skimage
-from scipy.ndimage.filters import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 import numpy as np
 import matplotlib.pylab as plt
 from matplotlib import colorbar, colors
 from skimage import measure
 from scipy.interpolate import interp1d
-from scipy.ndimage.filters import gaussian_filter1d, gaussian_filter
+from scipy.ndimage import gaussian_filter1d, gaussian_filter
 from PIL import Image
 
 from physion.utils import plot_tools as pt

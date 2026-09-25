@@ -1,7 +1,7 @@
 import numpy as np
 import os, time
 from scipy.signal import argrelextrema
-from scipy.ndimage.filters import gaussian_filter1d
+from scipy.ndimage import gaussian_filter1d
 
 def realign_from_photodiode(signal,
                             metadata,
