@@ -4,7 +4,6 @@ import numpy as np
 
 from physion.utils.paths import FOLDERS
 from physion.utils.plot_tools import plt, figure
-from physion.imaging.red_label import preprocess_RCL
 
 KEYS = ['meanImg', 'max_proj', 'meanImgE', 
         'meanImg_chan2', 'meanImgE_chan2',
