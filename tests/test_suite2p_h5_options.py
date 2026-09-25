@@ -68,10 +68,17 @@ def test_TSeries_db_unchanged(make_TSeries):
 
 
 def test_legacy_suite2p_ops(make_TSeries):
+    """ suite2p<1.0: the input is read from "data_path", a folder with
+        only the virtual dataset (suite2p<1.0 reads all the h5 files of the
+        folder; its "h5py" key changed format across the 0.x versions) """
     folder, _ = make_h5_folder(make_TSeries, nframes=5)
     build_suite2p_options(folder, settings(v1=False))
-    ops = np.load(os.path.join(folder, 'ops.npy'), allow_pickle=True).item()
-    assert ops['input_format'] == 'h5'
-    assert ops['h5py'] == [os.path.join(folder, H5_INPUT)]
-    assert ops['functional_chan'] == ops['align_by_chan'] == 2
-    assert not ops['bruker']
+    for f in ['ops.npy', 'db.npy']: # (db overrides ops in suite2p)
+        ops = np.load(os.path.join(folder, f), allow_pickle=True).item()
+        assert ops['input_format'] == 'h5'
+        assert ops['h5py'] == []
+        assert len(ops['data_path']) == 1
+        assert [f for f in os.listdir(ops['data_path'][0]) if f.endswith('.h5')] ==\
+                [os.path.basename(H5_INPUT)]
+        assert ops['save_path0'] == folder
+    assert ops['functional_chan'] == 2

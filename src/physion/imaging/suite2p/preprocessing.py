@@ -35,7 +35,10 @@ def build_db(folder, v1=False):
 #            (one h5 file per channel and plane, key: "data")
 #####################################################################
 
-H5_INPUT = 'suite2p-input.h5' # virtual dataset read by suite2p
+# virtual dataset read by suite2p, alone in its folder:
+#   suite2p<1.0 reads all the h5 files of the folder of its input
+H5_INPUT_FOLDER = 'suite2p-input'
+H5_INPUT = os.path.join(H5_INPUT_FOLDER, 'suite2p-input.h5')
 H5_KEY = 'data'
 
 def get_h5_files(folder, bruker_data):
@@ -77,11 +80,13 @@ def build_interleaved_h5(folder, h5_files,
     for p in range(nplanes):
         for c in range(nchannels):
             # relative path -> resolved from the folder of the virtual file
-            source = h5py.VirtualSource(os.path.basename(h5_files[p][c]),
+            #   ("/" also on Windows, for a file readable on all systems)
+            source = h5py.VirtualSource('../%s' % os.path.basename(h5_files[p][c]),
                                         H5_KEY, shape=shapes[h5_files[p][c]])
             layout[p*nchannels+c::nplanes*nchannels] =\
                     source[frames.start:frames.stop:frames.step]
 
+    os.makedirs(os.path.join(folder, H5_INPUT_FOLDER), exist_ok=True)
     with h5py.File(os.path.join(folder, H5_INPUT), 'w') as f:
         f.create_virtual_dataset(H5_KEY, layout)
 
@@ -115,6 +120,21 @@ def build_h5_db(folder, bruker_data, h5_files, my_settings):
             'nplanes':nplanes,
             'nchannels':nchannels,
             'functional_chan':functional_chan}
+
+
+def legacy_h5_db(folder, h5_db):
+    """
+    h5 input for suite2p<1.0: the h5 files are read from "data_path"
+        (the "h5py" key is interpreted differently across the 0.x versions:
+         a list up to 0.14.3, a single file from 0.14.4)
+    """
+    db = {k: v for k, v in h5_db.items() if k!='file_list'}
+    db.update({'h5py':[],
+               'data_path':[os.path.join(folder, H5_INPUT_FOLDER)],
+               'look_one_level_down':False,
+               'save_path0':folder, # -> results in the "h5-" folder
+               'fast_disk':folder})
+    return db
 
 
 def build_suite2p_options(folder,
@@ -183,9 +203,8 @@ def build_suite2p_options(folder,
                     'fast_disk', 'input_format']:
             ops[key] = db[key]
         if h5_db is not None:
-            ops.update(h5_db)
+            ops.update(legacy_h5_db(folder, h5_db))
             ops['bruker'] = False
-            ops['h5py'] = [os.path.join(folder, H5_INPUT)]
             ops['align_by_chan'] = h5_db['functional_chan']
         np.save(os.path.join(folder,'ops.npy'), ops)
 
@@ -195,7 +214,7 @@ def build_suite2p_options(folder,
 
     if h5_db is not None:
         # h5 input (subsampling is included in the virtual dataset)
-        db.update(h5_db)
+        db.update(h5_db if my_settings['v1'] else legacy_h5_db(folder, h5_db))
 
     # subsampling ?
     elif my_settings['subsampling']:
