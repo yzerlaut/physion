@@ -261,7 +261,8 @@ settings = {
               'MUA':(255,255,255,255),#'blue',
               'spikes':(255,255,255,255),#'blue',
               'rawFluo':(0,255,0,255),#'green'},
-              'neuropil':(255,30,30,255)}, #'darkred'
+              'neuropil':(255,30,30,255), #'darkred'
+              'Opto':(30,144,255,70)}, # transparent blue (overlay when opto is on)
     # general settings
     'Npoints':500}
 

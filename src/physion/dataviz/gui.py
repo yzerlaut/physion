@@ -154,6 +154,14 @@ class VisualizationWindow(Window):
         self.MUASettings.setText('s:0,n:2')
 
         self.visualStimSelect.clicked.connect(self.select_visualStim)
+
+        # optogenetics: below "visualStim" (blue overlay when the opto is on)
+        self.optoSelect = QtWidgets.QCheckBox('opto ')
+        self.optoSelect.setStyleSheet('color: dodgerblue;')
+        self.optoSelect.setFont(physion.gui.parts.smallfont)
+        tab.layout.addWidget(self.optoSelect,
+                             nRowImages+1, self.nWidgetCol-2,
+                             1, 1)
     
         for i, key in enumerate(['sbsmpl', 'annot']):
         
@@ -235,6 +243,10 @@ class VisualizationWindow(Window):
         """ should be a minimal processing so that the loading is fast"""
 
         self.time = self.data.tlim[0]
+
+        # opto only when the data has an optogenetic stimulation
+        self.optoSelect.setEnabled(self.data.has_opto())
+        self.optoSelect.setChecked(self.data.has_opto())
 
         if 'ophys' in self.data.nwbfile.processing:
             self.rawFluoSelect.setChecked(True)

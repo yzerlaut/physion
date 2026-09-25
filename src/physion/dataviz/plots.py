@@ -8,6 +8,22 @@ from physion.dataviz.tools import convert_times_to_indices, convert_index_to_tim
         convert_time_to_index, scale_and_position, settings
 from physion.pupil import process
 
+def opto_periods(data):
+    """
+    (start, stop) times of the periods where the opto is on
+        (the digital signal is > 0), computed once per data file
+    """
+    if getattr(data, '_opto_periods', None) is None:
+        data.build_opto(verbose=False)
+        on = (np.asarray(data.opto).flatten()>0).astype(int)
+        t = np.asarray(data.t_opto).flatten()
+        # 0->1 and 1->0 transitions (opto on at the start / at the end included)
+        changes = np.diff(np.concatenate([[0], on, [0]]))
+        istart, istop = np.flatnonzero(changes==1), np.flatnonzero(changes==-1)
+        data._opto_periods = (t[istart], t[np.clip(istop, 0, len(t)-1)])
+    return data._opto_periods
+
+
 def raw_data_plot(self, tzoom):
 
     self.iplot = 0
@@ -376,6 +392,18 @@ def raw_data_plot(self, tzoom):
                     self.StimAnnots[-1].setPos(t0, 0.95*y.max())
                     self.plot.addItem(self.StimAnnots[-1])
                     
+    # ## ------------------------------------- ##
+    # ## -------- Optogenetics --------------- ##
+    # ## ------------------------------------- ##
+
+    if self.optoSelect.isChecked() and self.data.has_opto():
+        # transparent blue overlay when the opto is on
+        t_on, t_off = opto_periods(self.data)
+        visible = (t_off>=tzoom[0]) & (t_on<=tzoom[1])
+        for t0, t1 in zip(t_on[visible], t_off[visible]):
+            self.plot.plot([t0, t1], [0, 0], fillLevel=y.max(),
+                           pen=None, brush=settings['colors']['Opto'])
+
     self.plot.setRange(xRange=tzoom, yRange=[0,y.max()], padding=0.0)
     self.frameSlider.setValue(int(self.SliderResolution*(self.time-tzoom[0])/(tzoom[1]-tzoom[0])))
     
