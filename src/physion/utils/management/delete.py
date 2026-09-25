@@ -14,51 +14,9 @@ from physion.utils.files import get_files_with_extension,\
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.progressBar import printProgressBar
 from physion.utils.paths import FOLDERS
+from physion.gui.window import Window
 
-def deletion_gui(self,
-               tab_id=3):
 
-    self.source_folder = ''
-    self.windows[tab_id] = 'delete_data'
-
-    tab = self.tabs[tab_id]
-    self.cleanup_tab(tab)
-
-    self.add_side_widget(tab.layout, 
-            QtWidgets.QLabel(' _-* Data Deletion UI *-_ '))
-
-    self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
-
-    self.add_side_widget(tab.layout, 
-            QtWidgets.QLabel("Root Folder:", self))
-    self.sourceBox = QtWidgets.QComboBox(self)
-    self.sourceBox.addItems(FOLDERS)
-    self.add_side_widget(tab.layout, self.sourceBox)
-
-    self.load = QtWidgets.QPushButton('Set source folder  \u2b07', self)
-    self.load.clicked.connect(self.set_source_folder)
-    self.add_side_widget(tab.layout, self.load)
-
-    self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
-    self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
-
-    self.add_side_widget(tab.layout, 
-            QtWidgets.QLabel("Type : ", self))
-    self.typeBox = QtWidgets.QComboBox()
-    self.typeBox.addItems(['TIFF files', 'Camera files'])
-    self.add_side_widget(tab.layout, self.typeBox)
-
-    self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
-
-    self.gen = QtWidgets.QPushButton(' -= LAUNCH =-  ', self)
-    self.gen.clicked.connect(self.run_deletion)
-    self.add_side_widget(tab.layout, self.gen)
-    
-    self.refresh_tab(tab)
-    self.show()
-
-def run_deletion(self):
-    print('run')
     # Fs = find_subfolders(self.source_folder)
     # for f in Fs:
 
@@ -78,6 +36,57 @@ def find_subfolders(folder):
     return [f[0] for f in os.walk(folder)\
                     if 'TSeries' in f[0].split(os.path.sep)[-1]]
 
+
+class DeletionWindow(Window):
+
+    name = 'delete_data'
+
+    # functions of other modules, used as methods
+    from physion.utils.transfer.gui import TransferWindow as _TransferWindow
+    set_source_folder = _TransferWindow.set_source_folder
+
+    def __init__(self, main,
+                   tab_id=3):
+
+        self.source_folder = ''
+
+        super().__init__(main, tab_id)
+        tab = self.tab
+
+        self.add_side_widget(QtWidgets.QLabel(' _-* Data Deletion UI *-_ '))
+
+        self.add_side_widget(QtWidgets.QLabel("" , self.main))
+
+        self.add_side_widget(QtWidgets.QLabel("Root Folder:", self.main))
+        self.sourceBox = QtWidgets.QComboBox(self.main)
+        self.sourceBox.addItems(FOLDERS)
+        self.add_side_widget(self.sourceBox)
+
+        self.load = QtWidgets.QPushButton('Set source folder  \u2b07', self.main)
+        self.load.clicked.connect(self.set_source_folder)
+        self.add_side_widget(self.load)
+
+        self.add_side_widget(QtWidgets.QLabel("" , self.main))
+        self.add_side_widget(QtWidgets.QLabel("" , self.main))
+
+        self.add_side_widget(QtWidgets.QLabel("Type : ", self.main))
+        self.typeBox = QtWidgets.QComboBox()
+        self.typeBox.addItems(['TIFF files', 'Camera files'])
+        self.add_side_widget(self.typeBox)
+
+        self.add_side_widget(QtWidgets.QLabel("" , self.main))
+
+        self.gen = QtWidgets.QPushButton(' -= LAUNCH =-  ', self.main)
+        self.gen.clicked.connect(self.run_deletion)
+        self.add_side_widget(self.gen)
+    
+        self.refresh_tab()
+        self.show()
+
+    def run_deletion(self):
+        print('run')
+
+
 if __name__=='__main__':
 
     import argparse
@@ -93,4 +102,3 @@ if __name__=='__main__':
     for folder in find_subfolders(args.folder):
 
         print(' - processing', folder, ' [...]')
-

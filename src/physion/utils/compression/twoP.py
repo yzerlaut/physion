@@ -26,6 +26,7 @@ from physion.utils.compression.h5 import convert_to_h5
 from physion.utils.compression.binary import convert_to_binary
 from physion.utils.compression.mp4 import convert_to_log8bit_mp4, reconvert_to_tiffs_from_log8bit
 from physion.utils.compression.avi import convert_to_16bit_avi, reconvert_to_tiffs_from_16bit
+from physion.gui.window import Window
 
 # compression type (UI) -> folder key (same as in the "convert_to_..." functions)
 FOLDER_KEYS = {'h5':'h5',
@@ -38,52 +39,6 @@ FOLDER_KEYS = {'h5':'h5',
 
 
 
-def imaging_to_movie_gui(self,
-                       tab_id=3):
-
-    self.source_folder = ''
-    self.windows[tab_id] = 'movie conversion'
-
-    tab = self.tabs[tab_id]
-    self.cleanup_tab(tab)
-
-    self.add_side_widget(tab.layout, 
-            QtWidgets.QLabel(' _-* Conversion of 2P Imaging *-_ '))
-
-    self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
-
-    self.add_side_widget(tab.layout, 
-            QtWidgets.QLabel("Root Folder:", self))
-    self.sourceBox = QtWidgets.QComboBox(self)
-    self.sourceBox.addItems(FOLDERS)
-    self.add_side_widget(tab.layout, self.sourceBox)
-
-    self.load = QtWidgets.QPushButton('Set source folder  \u2b07', self)
-    self.load.clicked.connect(self.set_source_folder)
-    self.add_side_widget(tab.layout, self.load)
-
-    self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
-    self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
-
-    self.rm = QtWidgets.QCheckBox(' rm raw ? ', self)
-    self.add_side_widget(tab.layout, self.rm)
-
-    self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
-
-    self.add_side_widget(tab.layout, 
-            QtWidgets.QLabel("Compression / Format : ", self))
-    self.typeBox = QtWidgets.QComboBox()
-    self.typeBox.addItems(['h5', 'nwb', 'binary', '8bit-LOG-mp4', '16bit-avi (lossless)'])
-    self.add_side_widget(tab.layout, self.typeBox)
-
-    self.add_side_widget(tab.layout, QtWidgets.QLabel("" , self))
-
-    self.gen = QtWidgets.QPushButton(' -= RUN =-  ', self)
-    self.gen.clicked.connect(self.run_imaging_to_movie)
-    self.add_side_widget(tab.layout, self.gen)
-    
-    self.refresh_tab(tab)
-    self.show()
 
 def create_compressed_folder(folder,
                              key='log8bit'):
@@ -107,28 +62,6 @@ def create_compressed_folder(folder,
     #                 os.path.join(folder.replace('TSeries', key), 'original_suite2p'))
 
 
-def run_imaging_to_movie(self):
-
-    Fs = find_TSeries_folders(self.source_folder)
-
-    for f in Fs:
-
-        create_compressed_folder(f, 
-                                 self.typeBox.currentText())
-
-        if 'avi' in self.typeBox.currentText():
-            convert_to_16bit_avi(f)
-        elif 'mp4' in self.typeBox.currentText():
-            convert_to_log8bit_mp4(f)
-        elif 'binary' in self.typeBox.currentText():
-            convert_to_binary(f)
-        elif 'nwb' in self.typeBox.currentText():
-            convert_to_nwb(f)
-        elif 'h5' in self.typeBox.currentText():
-            convert_to_h5(f)
-        else:
-            print(' compression type not recognized')
-        print(f)
 
 ###########################
 
@@ -178,7 +111,81 @@ def remove_tiff_and_binary_files(TS_folder):
                             or f.endswith('.env'):
                         print(f)
                         os.remove(os.path.join(TS_folder, f))
+
+
+class ImagingToMovieWindow(Window):
+
+    name = 'movie conversion'
+
+    # functions of other modules, used as methods
+    from physion.utils.transfer.gui import TransferWindow as _TransferWindow
+    set_source_folder = _TransferWindow.set_source_folder
+
+    def __init__(self, main,
+                           tab_id=3):
+
+        self.source_folder = ''
+
+        super().__init__(main, tab_id)
+        tab = self.tab
+
+        self.add_side_widget(QtWidgets.QLabel(' _-* Conversion of 2P Imaging *-_ '))
+
+        self.add_side_widget(QtWidgets.QLabel("" , self.main))
+
+        self.add_side_widget(QtWidgets.QLabel("Root Folder:", self.main))
+        self.sourceBox = QtWidgets.QComboBox(self.main)
+        self.sourceBox.addItems(FOLDERS)
+        self.add_side_widget(self.sourceBox)
+
+        self.load = QtWidgets.QPushButton('Set source folder  \u2b07', self.main)
+        self.load.clicked.connect(self.set_source_folder)
+        self.add_side_widget(self.load)
+
+        self.add_side_widget(QtWidgets.QLabel("" , self.main))
+        self.add_side_widget(QtWidgets.QLabel("" , self.main))
+
+        self.rm = QtWidgets.QCheckBox(' rm raw ? ', self.main)
+        self.add_side_widget(self.rm)
+
+        self.add_side_widget(QtWidgets.QLabel("" , self.main))
+
+        self.add_side_widget(QtWidgets.QLabel("Compression / Format : ", self.main))
+        self.typeBox = QtWidgets.QComboBox()
+        self.typeBox.addItems(['h5', 'nwb', 'binary', '8bit-LOG-mp4', '16bit-avi (lossless)'])
+        self.add_side_widget(self.typeBox)
+
+        self.add_side_widget(QtWidgets.QLabel("" , self.main))
+
+        self.gen = QtWidgets.QPushButton(' -= RUN =-  ', self.main)
+        self.gen.clicked.connect(self.run_imaging_to_movie)
+        self.add_side_widget(self.gen)
     
+        self.refresh_tab()
+        self.show()
+
+    def run_imaging_to_movie(self):
+
+        Fs = find_TSeries_folders(self.source_folder)
+
+        for f in Fs:
+
+            create_compressed_folder(f, 
+                                     self.typeBox.currentText())
+
+            if 'avi' in self.typeBox.currentText():
+                convert_to_16bit_avi(f)
+            elif 'mp4' in self.typeBox.currentText():
+                convert_to_log8bit_mp4(f)
+            elif 'binary' in self.typeBox.currentText():
+                convert_to_binary(f)
+            elif 'nwb' in self.typeBox.currentText():
+                convert_to_nwb(f)
+            elif 'h5' in self.typeBox.currentText():
+                convert_to_h5(f)
+            else:
+                print(' compression type not recognized')
+            print(f)
 
 
 if __name__=='__main__':

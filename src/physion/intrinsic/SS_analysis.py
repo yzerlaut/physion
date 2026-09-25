@@ -10,6 +10,8 @@ from physion.utils.paths import FOLDERS, python_path
 from physion.utils.files import last_datafolder_in_dayfolder, day_folder
 from physion.intrinsic.tools import default_segmentation_params
 from physion.intrinsic import tools as intrinsic_analysis
+from physion.gui.window import Window
+from physion.intrinsic.analysis import IntrinsicWindow
 
 power_color_map = pg.ColorMap(pos=np.linspace(0.0, 1.0, 3),
                               color=[(0, 0, 0),
@@ -21,151 +23,6 @@ signal_color_map = pg.ColorMap(pos=np.linspace(0.0, 1.0, 3),
                                       (100, 100, 100),
                                       (255, 255, 255)]).getLookupTable(0.0, 1.0, 256)
 
-def gui(self,
-        box_width=250,
-        tab_id=2):
-
-    self.windows[tab_id] = 'ISI_analysis'
-
-    tab = self.tabs[tab_id]
-
-    self.cleanup_tab(tab)
-    
-    self.datafolder, self.IMAGES = '', {} 
-    self.subject, self.timestamps, self.intrinsicData = '', '', None
-
-
-    ##########################################################
-    ####### GUI settings
-    ##########################################################
-
-    # ========================================================
-    #------------------- SIDE PANELS FIRST -------------------
-    self.add_side_widget(tab.layout, 
-            QtWidgets.QLabel('     _-* INTRINSIC IMAGING MAPS *-_ '))
-    # folder box
-    self.add_side_widget(tab.layout,QtWidgets.QLabel('folder:'),
-                         spec='small-left')
-    self.folderBox = QtWidgets.QComboBox(self)
-    self.folderBox.addItems(FOLDERS.keys())
-    self.add_side_widget(tab.layout, self.folderBox, spec='large-right')
-        
-    self.folderButton = QtWidgets.QPushButton("Open folder [Ctrl+O]", self)
-    self.folderButton.clicked.connect(self.open_intrinsic_folder)
-    self.add_side_widget(tab.layout,self.folderButton, spec='large-left')
-    self.lastBox = QtWidgets.QCheckBox("last ")
-    self.lastBox.setStyleSheet("color: gray;")
-    self.add_side_widget(tab.layout,self.lastBox, spec='small-right')
-    self.lastBox.setChecked(True)
-
-    self.add_side_widget(tab.layout,QtWidgets.QLabel('  - protocol:'),
-                    spec='large-left')
-    self.numBox = QtWidgets.QComboBox(self)
-    self.numBox.addItems(['sum']+[str(i) for i in range(1,10)])
-    self.add_side_widget(tab.layout,self.numBox,
-                    spec='small-right')
-
-    self.add_side_widget(\
-            tab.layout,QtWidgets.QLabel('  - spatial-subsampling (pix):'),
-            spec='large-left')
-    self.ssBox = QtWidgets.QLineEdit()
-    self.ssBox.setText('0')
-    self.add_side_widget(tab.layout,self.ssBox, spec='small-right')
-
-    self.loadButton = QtWidgets.QPushButton(" === load data === ", self)
-    self.loadButton.clicked.connect(self.load_SS_intrinsic_data)
-    self.add_side_widget(tab.layout,self.loadButton)
-
-    # -------------------------------------------------------
-    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
-
-    self.pmButton = QtWidgets.QPushButton(\
-            " == compute power maps == ", self)
-    self.pmButton.clicked.connect(self.compute_SS_power_maps)
-    self.add_side_widget(tab.layout,self.pmButton)
-   
-    self.add_side_widget(tab.layout,QtWidgets.QLabel('scale: '), 'small-left')
-    self.scaleButton = QtWidgets.QDoubleSpinBox(self)
-    self.scaleButton.setRange(0, 10)
-    self.scaleButton.setSuffix(' (mm, image height)')
-    self.scaleButton.setValue(2.7)
-    self.add_side_widget(tab.layout,self.scaleButton, 'large-right')
-
-    self.add_side_widget(tab.layout,QtWidgets.QLabel('angle: '), 'small-left')
-    self.angleButton = QtWidgets.QSpinBox(self)
-    self.angleButton.setRange(-360, 360)
-    self.angleButton.setSuffix(' (°)')
-    self.angleButton.setValue(15)
-
-    self.add_side_widget(tab.layout,self.angleButton, 'small-middle')
-    self.pdfButton = QtWidgets.QPushButton("PDF", self)
-    self.pdfButton.clicked.connect(self.pdf_intrinsic)
-    self.add_side_widget(tab.layout,self.pdfButton, 'small-right')
-
-    # -------------------------------------------------------
-    self.add_side_widget(tab.layout,QtWidgets.QLabel('Image 1: '), 'small-left')
-    self.img1Button = QtWidgets.QComboBox(self)
-    self.add_side_widget(tab.layout,self.img1Button, 'large-right')
-    self.img1Button.currentIndexChanged.connect(self.update_img1)
-
-    self.add_side_widget(tab.layout,QtWidgets.QLabel('Image 2: '), 'small-left')
-    self.img2Button = QtWidgets.QComboBox(self)
-    self.add_side_widget(tab.layout,self.img2Button, 'large-right')
-    self.img2Button.currentIndexChanged.connect(self.update_img2)
-
-    # ========================================================
-    #------------------- THEN MAIN PANEL   -------------------
-
-    self.graphics_layout= pg.GraphicsLayoutWidget()
-
-    tab.layout.addWidget(self.graphics_layout,
-                         0, self.side_wdgt_length,
-                         self.nWidgetRow, 
-                         self.nWidgetCol-self.side_wdgt_length)
-
-    self.raw_trace = self.graphics_layout.addPlot(row=0, col=0, rowspan=1, colspan=23)
-    
-    self.spectrum_power = self.graphics_layout.addPlot(row=1, col=0, rowspan=2, colspan=9)
-    self.spDot = pg.ScatterPlotItem()
-    self.spectrum_power.addItem(self.spDot)
-    
-    self.spectrum_phase = self.graphics_layout.addPlot(row=1, col=9, rowspan=2, colspan=9)
-    self.sphDot = pg.ScatterPlotItem()
-    self.spectrum_phase.addItem(self.sphDot)
-
-    # images
-    self.img1B = self.graphics_layout.addViewBox(row=3, col=0,
-                                                 rowspan=10, colspan=10,
-                                                 lockAspect=True, invertY=True)
-    self.img1 = pg.ImageItem()
-    self.img1B.addItem(self.img1)
-
-    self.img2B = self.graphics_layout.addViewBox(row=3, col=10,
-                                                 rowspan=10, colspan=9,
-                                                 lockAspect=True, invertY=True)
-    self.img2 = pg.ImageItem()
-    self.img2B.addItem(self.img2)
-
-    for i in range(3):
-        self.graphics_layout.ci.layout.setColumnStretchFactor(i, 1)
-    self.graphics_layout.ci.layout.setColumnStretchFactor(3, 2)
-    self.graphics_layout.ci.layout.setColumnStretchFactor(12, 2)
-    self.graphics_layout.ci.layout.setRowStretchFactor(0, 3)
-    self.graphics_layout.ci.layout.setRowStretchFactor(1, 4)
-    self.graphics_layout.ci.layout.setRowStretchFactor(3, 5)
-        
-    # -------------------------------------------------------
-    self.pixROI = pg.ROI((0, 0), size=(10,10),
-                         pen=pg.mkPen((255,0,0,255)),
-                         rotatable=False,resizable=False)
-    self.pixROI.sigRegionChangeFinished.connect(self.moved_pixels)
-    self.img1B.addItem(self.pixROI)
-
-    self.refresh_tab(tab)
-
-    self.intrinsicData = None
-
-    self.show()
     
 def set_pixROI(self):
 
@@ -262,53 +119,6 @@ def load_raw_data(datafolder, run_id):
 
 
 
-def load_SS_intrinsic_data(self):
-    
-    tic = time.time()
-
-    datafolder = get_datafolder(self)
-
-    print(datafolder)
-    if os.path.isdir(datafolder):
-
-        print('- loading and preprocessing data [...]')
-
-        # clear previous plots
-        for plot in [self.raw_trace, self.spectrum_power, self.spectrum_phase]:
-            plot.clear()
-
-        # load data
-        self.params, (self.t, self.intrinsicData) = load_raw_data(datafolder, self.numBox.currentText())
-
-        if float(self.ssBox.text())>0:
-
-            print('    - spatial subsampling [...]')
-            self.intrinsicData = intrinsic_analysis.resample_img(self.intrinsicData,
-                                                        int(self.ssBox.text()))
-            
-
-        vasc_img = os.path.join(get_datafolder(self), 'vasculature.npy')
-        if os.path.isfile(vasc_img):
-            if float(self.ssBox.text())>0:
-                self.IMAGES['vasculature'] = intrinsic_analysis.resample_img(\
-                                                    np.load(vasc_img),
-                                                    int(self.ssBox.text()))
-            else:
-                self.IMAGES['vasculature'] = np.load(vasc_img)
-
-        self.IMAGES['raw-img-start'] = self.intrinsicData[0,:,:]
-        self.IMAGES['raw-img-mid'] = self.intrinsicData[int(self.intrinsicData.shape[0]/2.)-1,:,:]
-        self.IMAGES['raw-img-stop'] = self.intrinsicData[-2,:,:]
-       
-        update_imgButtons(self)
-
-        set_pixROI(self) 
-        show_raw_data(self)
-
-        print('- data loaded !    (in %.1fs)' % (time.time()-tic))
-
-    else:
-        print(' Data "%s" not found' % datafolder)
 
 
 def show_raw_data(self):
@@ -340,34 +150,8 @@ def show_raw_data(self):
                              size=10, symbolPen='g',
                              symbol='o')
 
-def compute_SS_power_maps(self):
-
-    print('- computing power maps [...]')
-
-    maps = {}
-    maps['power'], _ = intrinsic_analysis.perform_fft_analysis(self.intrinsicData,
-                                                    self.params['Nrepeat'])
-
-
-    fig, ax = plt.subplots(figsize=(4,2.3))
-    intrinsic_analysis.plot_power_map(ax, fig, maps['power'])
-    print(' -> power maps calculus done !')
-
-    plt.show()
-    update_imgButtons(self)
     
 
-def save_SS_intrinsic(self):
-
-    if self.intrinsicData is not None:
-
-        np.save(os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject),
-                self.intrinsicData)
-        print('\n         current maps saved as: ', \
-           os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject))
-
-    else:
-        print(' need to perform Area Segmentation first ')
 
 
 def get_datafolder(self):
@@ -398,3 +182,226 @@ def pdf_intrinsic(self):
                          cwd=cwd,
                          shell=True)
 
+
+class SSIntrinsicWindow(IntrinsicWindow):
+
+    name = 'ISI_analysis'
+
+    def __init__(self, main,
+            box_width=250,
+            tab_id=2):
+
+
+        Window.__init__(self, main, tab_id)
+        tab = self.tab
+
+    
+        self.datafolder, self.IMAGES = '', {} 
+        self.subject, self.timestamps, self.intrinsicData = '', '', None
+
+
+        ##########################################################
+        ####### GUI settings
+        ##########################################################
+
+        # ========================================================
+        #------------------- SIDE PANELS FIRST -------------------
+        self.add_side_widget(QtWidgets.QLabel('     _-* INTRINSIC IMAGING MAPS *-_ '))
+        # folder box
+        self.add_side_widget(QtWidgets.QLabel('folder:'),
+                             spec='small-left')
+        self.folderBox = QtWidgets.QComboBox(self.main)
+        self.folderBox.addItems(FOLDERS.keys())
+        self.add_side_widget(self.folderBox, spec='large-right')
+        
+        self.folderButton = QtWidgets.QPushButton("Open folder [Ctrl+O]", self.main)
+        self.folderButton.clicked.connect(self.open_intrinsic_folder)
+        self.add_side_widget(self.folderButton, spec='large-left')
+        self.lastBox = QtWidgets.QCheckBox("last ")
+        self.lastBox.setStyleSheet("color: gray;")
+        self.add_side_widget(self.lastBox, spec='small-right')
+        self.lastBox.setChecked(True)
+
+        self.add_side_widget(QtWidgets.QLabel('  - protocol:'),
+                        spec='large-left')
+        self.numBox = QtWidgets.QComboBox(self.main)
+        self.numBox.addItems(['sum']+[str(i) for i in range(1,10)])
+        self.add_side_widget(self.numBox,
+                        spec='small-right')
+
+        self.add_side_widget(QtWidgets.QLabel('  - spatial-subsampling (pix):'),
+                spec='large-left')
+        self.ssBox = QtWidgets.QLineEdit()
+        self.ssBox.setText('0')
+        self.add_side_widget(self.ssBox, spec='small-right')
+
+        self.loadButton = QtWidgets.QPushButton(" === load data === ", self.main)
+        self.loadButton.clicked.connect(self.load_SS_intrinsic_data)
+        self.add_side_widget(self.loadButton)
+
+        # -------------------------------------------------------
+        self.add_side_widget(QtWidgets.QLabel(''))
+
+        self.pmButton = QtWidgets.QPushButton(\
+                " == compute power maps == ", self.main)
+        self.pmButton.clicked.connect(self.compute_SS_power_maps)
+        self.add_side_widget(self.pmButton)
+   
+        self.add_side_widget(QtWidgets.QLabel('scale: '), 'small-left')
+        self.scaleButton = QtWidgets.QDoubleSpinBox(self.main)
+        self.scaleButton.setRange(0, 10)
+        self.scaleButton.setSuffix(' (mm, image height)')
+        self.scaleButton.setValue(2.7)
+        self.add_side_widget(self.scaleButton, 'large-right')
+
+        self.add_side_widget(QtWidgets.QLabel('angle: '), 'small-left')
+        self.angleButton = QtWidgets.QSpinBox(self.main)
+        self.angleButton.setRange(-360, 360)
+        self.angleButton.setSuffix(' (°)')
+        self.angleButton.setValue(15)
+
+        self.add_side_widget(self.angleButton, 'small-middle')
+        self.pdfButton = QtWidgets.QPushButton("PDF", self.main)
+        self.pdfButton.clicked.connect(self.pdf_intrinsic)
+        self.add_side_widget(self.pdfButton, 'small-right')
+
+        # -------------------------------------------------------
+        self.add_side_widget(QtWidgets.QLabel('Image 1: '), 'small-left')
+        self.img1Button = QtWidgets.QComboBox(self.main)
+        self.add_side_widget(self.img1Button, 'large-right')
+        self.img1Button.currentIndexChanged.connect(self.update_img1)
+
+        self.add_side_widget(QtWidgets.QLabel('Image 2: '), 'small-left')
+        self.img2Button = QtWidgets.QComboBox(self.main)
+        self.add_side_widget(self.img2Button, 'large-right')
+        self.img2Button.currentIndexChanged.connect(self.update_img2)
+
+        # ========================================================
+        #------------------- THEN MAIN PANEL   -------------------
+
+        self.graphics_layout= pg.GraphicsLayoutWidget()
+
+        tab.layout.addWidget(self.graphics_layout,
+                             0, self.side_wdgt_length,
+                             self.nWidgetRow, 
+                             self.nWidgetCol-self.side_wdgt_length)
+
+        self.raw_trace = self.graphics_layout.addPlot(row=0, col=0, rowspan=1, colspan=23)
+    
+        self.spectrum_power = self.graphics_layout.addPlot(row=1, col=0, rowspan=2, colspan=9)
+        self.spDot = pg.ScatterPlotItem()
+        self.spectrum_power.addItem(self.spDot)
+    
+        self.spectrum_phase = self.graphics_layout.addPlot(row=1, col=9, rowspan=2, colspan=9)
+        self.sphDot = pg.ScatterPlotItem()
+        self.spectrum_phase.addItem(self.sphDot)
+
+        # images
+        self.img1B = self.graphics_layout.addViewBox(row=3, col=0,
+                                                     rowspan=10, colspan=10,
+                                                     lockAspect=True, invertY=True)
+        self.img1 = pg.ImageItem()
+        self.img1B.addItem(self.img1)
+
+        self.img2B = self.graphics_layout.addViewBox(row=3, col=10,
+                                                     rowspan=10, colspan=9,
+                                                     lockAspect=True, invertY=True)
+        self.img2 = pg.ImageItem()
+        self.img2B.addItem(self.img2)
+
+        for i in range(3):
+            self.graphics_layout.ci.layout.setColumnStretchFactor(i, 1)
+        self.graphics_layout.ci.layout.setColumnStretchFactor(3, 2)
+        self.graphics_layout.ci.layout.setColumnStretchFactor(12, 2)
+        self.graphics_layout.ci.layout.setRowStretchFactor(0, 3)
+        self.graphics_layout.ci.layout.setRowStretchFactor(1, 4)
+        self.graphics_layout.ci.layout.setRowStretchFactor(3, 5)
+        
+        # -------------------------------------------------------
+        self.pixROI = pg.ROI((0, 0), size=(10,10),
+                             pen=pg.mkPen((255,0,0,255)),
+                             rotatable=False,resizable=False)
+        self.pixROI.sigRegionChangeFinished.connect(self.moved_pixels)
+        self.img1B.addItem(self.pixROI)
+
+        self.refresh_tab()
+
+        self.intrinsicData = None
+
+        self.show()
+
+    def load_SS_intrinsic_data(self):
+    
+        tic = time.time()
+
+        datafolder = get_datafolder(self)
+
+        print(datafolder)
+        if os.path.isdir(datafolder):
+
+            print('- loading and preprocessing data [...]')
+
+            # clear previous plots
+            for plot in [self.raw_trace, self.spectrum_power, self.spectrum_phase]:
+                plot.clear()
+
+            # load data
+            self.params, (self.t, self.intrinsicData) = load_raw_data(datafolder, self.numBox.currentText())
+
+            if float(self.ssBox.text())>0:
+
+                print('    - spatial subsampling [...]')
+                self.intrinsicData = intrinsic_analysis.resample_img(self.intrinsicData,
+                                                            int(self.ssBox.text()))
+            
+
+            vasc_img = os.path.join(get_datafolder(self), 'vasculature.npy')
+            if os.path.isfile(vasc_img):
+                if float(self.ssBox.text())>0:
+                    self.IMAGES['vasculature'] = intrinsic_analysis.resample_img(\
+                                                        np.load(vasc_img),
+                                                        int(self.ssBox.text()))
+                else:
+                    self.IMAGES['vasculature'] = np.load(vasc_img)
+
+            self.IMAGES['raw-img-start'] = self.intrinsicData[0,:,:]
+            self.IMAGES['raw-img-mid'] = self.intrinsicData[int(self.intrinsicData.shape[0]/2.)-1,:,:]
+            self.IMAGES['raw-img-stop'] = self.intrinsicData[-2,:,:]
+       
+            update_imgButtons(self)
+
+            set_pixROI(self) 
+            show_raw_data(self)
+
+            print('- data loaded !    (in %.1fs)' % (time.time()-tic))
+
+        else:
+            print(' Data "%s" not found' % datafolder)
+
+    def compute_SS_power_maps(self):
+
+        print('- computing power maps [...]')
+
+        maps = {}
+        maps['power'], _ = intrinsic_analysis.perform_fft_analysis(self.intrinsicData,
+                                                        self.params['Nrepeat'])
+
+
+        fig, ax = plt.subplots(figsize=(4,2.3))
+        intrinsic_analysis.plot_power_map(ax, fig, maps['power'])
+        print(' -> power maps calculus done !')
+
+        plt.show()
+        update_imgButtons(self)
+
+    def save_SS_intrinsic(self):
+
+        if self.intrinsicData is not None:
+
+            np.save(os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject),
+                    self.intrinsicData)
+            print('\n         current maps saved as: ', \
+               os.path.join(self.datafolder, '..', '..', '%s_ISImaps.npy' % self.subject))
+
+        else:
+            print(' need to perform Area Segmentation first ')
