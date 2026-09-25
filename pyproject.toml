@@ -66,6 +66,7 @@ where = ["src"]
 "physion.acquisition.configs" = ["*.json"]
 "physion.acquisition" = ["DataTable.xlsx"]
 "physion.utils" = ["*.mplstyle"]
+"physion.visual_stim" = ["NI_bank/*.jpg"]
 
 [project.urls]
 "Homepage" = "https://github.com/yzerlaut/physion"
