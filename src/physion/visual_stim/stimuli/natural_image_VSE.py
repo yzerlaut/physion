@@ -41,6 +41,10 @@ class stim(visual_stim):
             print()
             protocol['NI_FOLDER'] = os.path.join('physion', 'visual_stim', 'NI_bank')
 
+        # backward compatibility:
+        if 'saccade-amplitude' not in protocol:
+            protocol['saccade-amplitude'] = 200.
+
         # initializing set of NI
         self.NIarray = get_NaturalImages_as_array(protocol['NI_FOLDER'], self.screen)
 
