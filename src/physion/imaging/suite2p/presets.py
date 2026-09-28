@@ -42,7 +42,7 @@ presets = {\
                            # functional detection
                            "high_pass":300,
                            # cell detection settings with cellpose 
-                           "diameter": 12},\
+                           "diameter": 20},\
         "hsyn-Ventricle-inj":{\
                            # registration
                            "nonrigid": False,
