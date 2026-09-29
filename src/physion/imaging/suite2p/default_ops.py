@@ -92,7 +92,7 @@ def default_ops():
         "pad_fft": False,  # if True, pads image during FFT part of registration
 
         # non rigid registration settings
-        "nonrigid": True,  # whether to use nonrigid registration
+        "nonrigid": False,  # whether to use nonrigid registration
         "block_size": [128,
                        128],  # block size to register (** keep this a multiple of 2 **)
         "snr_thresh":
