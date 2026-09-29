@@ -57,7 +57,8 @@ def process_in_chunks(rec, process_chunk, n_out_channels,
     def run(start):
         end = min(start+chunk, n)
         s0, s1 = max(start-m, 0), min(end+m, n)
-        x = rec.get_traces(start_frame=s0, end_frame=s1).astype(np.float32)
+        # raw data type (int16), the conversion to float is done in "process_chunk"
+        x = rec.get_traces(start_frame=s0, end_frame=s1)
         y = process_chunk(x, fs)
         output[start//resampling_factor:int(np.ceil(end/resampling_factor))] =\
                 y[start-s0:end-s0:resampling_factor]
@@ -85,17 +86,25 @@ def LFP_chunk(band, resampling_factor):
     """ lowpass filter at full rate (the highpass is applied after downsampling) """
     def func(x, fs):
         sos = signal.butter(5, band[1], btype='lowpass', fs=fs, output='sos')
-        return antialiasing(signal.sosfiltfilt(sos, x, axis=0), fs, resampling_factor)
+        return antialiasing(signal.sosfiltfilt(sos, x.astype(np.float32), axis=0),
+                            fs, resampling_factor)
     return func
 
 
 def MUA_chunk(band, channel_groups, resampling_factor):
-    """ bandpass, rectify, average over groups of channels """
+    """ 
+    bandpass, rectify, average over groups of channels
+
+    one group at a time: the filtering of all channels at once (~400 channels)
+        takes several GB per chunk
+    """
     def func(x, fs):
         sos = signal.butter(5, band, btype='bandpass', fs=fs, output='sos')
-        x = np.abs(signal.sosfiltfilt(sos, x, axis=0))
-        x = np.array([x[:,g].mean(axis=1) for g in channel_groups]).T
-        return antialiasing(x, fs, resampling_factor)
+        y = np.zeros((x.shape[0], len(channel_groups)), dtype=np.float32)
+        for i, g in enumerate(channel_groups):
+            y[:,i] = np.abs(signal.sosfiltfilt(sos, x[:,g].astype(np.float32),
+                                                 axis=0)).mean(axis=1)
+        return antialiasing(y, fs, resampling_factor)
     return func
 
 
