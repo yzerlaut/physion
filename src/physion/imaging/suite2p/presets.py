@@ -40,9 +40,8 @@ presets = {\
         },
         "hsyn-pyramidal":{\
                            # functional detection
-                           "high_pass":300,
-                           # cell detection settings with cellpose 
-                           "diameter": 20},\
+                           "high_pass":300},\
+                           # (ROI diameter from the "cell size" box of the UI)
         "hsyn-Ventricle-inj":{\
                            # registration
                            "nonrigid": False,

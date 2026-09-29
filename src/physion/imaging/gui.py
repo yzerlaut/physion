@@ -323,6 +323,9 @@ class Suite2pWindow(Window):
             my_settings.setdefault('detection', {})['threshold_scaling'] = threshold_scaling
         else:
             my_settings['threshold_scaling'] = threshold_scaling
+            # no sparse mode by default (as with the former "sparse mode" checkbox):
+            #   in sparse mode, the ROI size is set by "spatial_scale" and "diameter" is not used
+            my_settings.setdefault('sparse_mode', False)
 
 
         my_settings['subsampling'] = self.subsamplingBox.isChecked()
