@@ -1,4 +1,4 @@
-import os, sys, pathlib, shutil, time, subprocess
+import os, sys, pathlib, shutil, time, subprocess, copy
 from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
@@ -209,6 +209,9 @@ class Suite2pWindow(Window):
             getattr(self, 'tseriesBtn%i' % ip).setChecked(False)
         # ========================================================
 
+        # UI values (threshold, cell size) from the preset selected at start
+        self.change_presets()
+
         self.refresh_tab()
 
     def load_TSeries_folder(self):
@@ -280,6 +283,9 @@ class Suite2pWindow(Window):
 
         if ('threshold_scaling' in preset):
             self.threshScalingBox.setText('%.1f'%preset['threshold_scaling'])
+        elif ('threshold_scaling' in preset.get('detection', {})):
+            # suite2p>=1.0 presets
+            self.threshScalingBox.setText('%.1f'%preset['detection']['threshold_scaling'])
         else:
             self.threshScalingBox.setText('-0')
 
@@ -288,7 +294,9 @@ class Suite2pWindow(Window):
 
     def fetch_settings_from_UI(self):
 
-        my_settings = presets[self.presetBox.currentText()]
+        # a copy: the preset is not modified (otherwise the UI values
+        #    of a run would persist in the next runs)
+        my_settings = copy.deepcopy(presets[self.presetBox.currentText()])
 
         my_settings['v1'] = ('sourcery' in self.presetBox.currentText()) or\
                                 ('sparsery' in self.presetBox.currentText()) or\
@@ -308,6 +316,13 @@ class Suite2pWindow(Window):
         # -------------
         my_settings['roidetect'] = self.roiDetectButton.isChecked()
         my_settings['cell_diameter'] = float(self.cellSizeBox.text())
+
+        # threshold for the ROI detection (from the preset, can be modified in the UI)
+        threshold_scaling = float(self.threshScalingBox.text())+0. # "-0" -> 0.0
+        if my_settings['v1']:
+            my_settings.setdefault('detection', {})['threshold_scaling'] = threshold_scaling
+        else:
+            my_settings['threshold_scaling'] = threshold_scaling
 
 
         my_settings['subsampling'] = self.subsamplingBox.isChecked()
