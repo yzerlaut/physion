@@ -40,6 +40,19 @@ presets = {\
         },
         "hsyn-pyramidal":{\
                            # functional detection
+                           "sparse_mode":False,
+                           "sig_baseline":10.0,
+                           'smooth_sigma':1.15,
+                           'smooth_sigma_time':0,
+                           'snr_thresh':1.2,
+                           'soma_crop':True,
+                           'sparse_mode':False,
+                           'spatial_hp_cp':0,
+                           'spatial_hp_detect':25,
+                           'spatial_hp_reg':42,
+                           'spatial_taper':40,
+                           'spatscale_pix':12,
+                           'subpixel':10,
                            "high_pass":300},\
                            # (ROI diameter from the "cell size" box of the UI)
         "hsyn-Ventricle-inj":{\
