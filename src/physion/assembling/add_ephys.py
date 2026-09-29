@@ -1,8 +1,7 @@
-import tempfile, os
+import os
 import numpy as np
 import pandas as pd
 from scipy import signal
-import multiprocessing as mp
 
 from pynwb.ecephys import (
     ElectricalSeries,
@@ -27,20 +26,86 @@ def build_args_for_ephys(args, dataset, i, directory):
     args.stream_name='Record Node 101#OneBox-100.ProbeA' 
  
 
-def mean_func(hfRec, channel_range):
-    print('- averaging channels:', channel_range)
-    return hfRec.get_traces(\
-            channel_ids=\
-                hfRec.get_channel_ids()[channel_range]\
-                    ).mean(axis=1)
+def process_in_chunks(rec, process_chunk, n_out_channels,
+                      resampling_factor=24,
+                      chunk_duration=10., # s
+                      margin=1., # s
+                      n_jobs=4,
+                      desc=''):
+    """
+    loops over the recording in chunks (with margins to avoid boundary artefacts),
+        "process_chunk" filters a chunk (time, channels) sampled at full rate
+        and we keep one sample every "resampling_factor"
+
+    -> memory usage only scales with the chunk size (not the recording length)
+
+    returns the (time, channels) array downsampled by "resampling_factor"
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    from tqdm import tqdm
+
+    n = rec.get_num_frames()
+    fs = rec.get_sampling_frequency()
+    # chunks and margins as multiples of the resampling factor
+    #    (so that the downsampled samples are the ones of "timestamps[::resampling_factor]")
+    chunk = int(chunk_duration*fs/resampling_factor)*resampling_factor
+    m = int(margin*fs/resampling_factor)*resampling_factor
+
+    output = np.zeros((int(np.ceil(n/resampling_factor)), n_out_channels),
+                      dtype=np.float32)
+
+    def run(start):
+        end = min(start+chunk, n)
+        s0, s1 = max(start-m, 0), min(end+m, n)
+        x = rec.get_traces(start_frame=s0, end_frame=s1).astype(np.float32)
+        y = process_chunk(x, fs)
+        output[start//resampling_factor:int(np.ceil(end/resampling_factor))] =\
+                y[start-s0:end-s0:resampling_factor]
+
+    starts = range(0, n, chunk)
+    with ThreadPoolExecutor(max_workers=n_jobs) as executor:
+        for _ in tqdm(executor.map(run, starts),
+                      total=len(starts), desc=desc, unit='chunk'):
+            pass
+
+    return output
+
+
+def antialiasing(x, fs, resampling_factor):
+    """ 
+    lowpass before downsampling,
+        same filter than scipy.signal.decimate (used by spikeinterface.resample):
+        Chebyshev type I of order 8 at 0.8 of the new Nyquist frequency, zero-phase
+    """
+    sos = signal.cheby1(8, 0.05, 0.8*fs/2./resampling_factor, fs=fs, output='sos')
+    return signal.sosfiltfilt(sos, x, axis=0)
+
+
+def LFP_chunk(band, resampling_factor):
+    """ lowpass filter at full rate (the highpass is applied after downsampling) """
+    def func(x, fs):
+        sos = signal.butter(5, band[1], btype='lowpass', fs=fs, output='sos')
+        return antialiasing(signal.sosfiltfilt(sos, x, axis=0), fs, resampling_factor)
+    return func
+
+
+def MUA_chunk(band, channel_groups, resampling_factor):
+    """ bandpass, rectify, average over groups of channels """
+    def func(x, fs):
+        sos = signal.butter(5, band, btype='bandpass', fs=fs, output='sos')
+        x = np.abs(signal.sosfiltfilt(sos, x, axis=0))
+        x = np.array([x[:,g].mean(axis=1) for g in channel_groups]).T
+        return antialiasing(x, fs, resampling_factor)
+    return func
+
 
 def add_ephys(nwbfile, args,
             metadata=None,
             LFP_BAND = [0.5, 300.0],
             MUA_BAND = [300.0, 6000.0],
             resampling_factor = 24, # int,  gives a resampled_rate = 1250,
-            margin_ms = 10000,
-            chunking_window = '5s'):
+            chunk_duration = 10., # s, processing window (memory ~ chunk size)
+            n_jobs = 4):
     """
     See:
     https://pynwb.readthedocs.io/en/dev/tutorials/domain/ecephys.html
@@ -219,66 +284,33 @@ def add_ephys(nwbfile, args,
 
         # strategy to subsample, we do it on all channels,
         #      but we average those in between the contacts we don't keep
-        # in order, we do:
+        channel_groups = [np.arange(ee*args.electrode_subsampling,
+                                    min((ee+1)*args.electrode_subsampling,
+                                        len(channel_ids)))\
+                                for ee in range(len(elecSubsampling))]
 
-        print('- 1) bandpass filtering')
-        hfRec = si.bandpass_filter(siRec,
-                    freq_min=MUA_BAND[0], 
-                    freq_max=MUA_BAND[1])
-
-        print('- 2) rectifying')
-        hfRec = si.rectify(hfRec)
-
-        print('- 3) resampling')
-        hfRec = si.resample(hfRec,
-                            resample_rate=resample_rate)
-        
-        print('- 4) computing traces by averaging groups of "electrode_subsampling"')
-        # mua_traces = np.zeros(
-        #       (hfRec.get_num_frames(), len(elecSubsampling)))
-
-        channel_ranges = [\
-            np.arange(\
-                ee*args.electrode_subsampling,
-                np.min([ee*args.electrode_subsampling+args.electrode_subsampling,
-                        e1])) for ee in range(len(elecSubsampling))]
-
-        with mp.Pool(processes=int(0.8*mp.cpu_count())) as pool:
-            mua_traces = np.array(\
-                        pool.starmap(mean_func,\
-                                [(hfRec, c) for c in channel_ranges])).T
-
-        # ee=0
-        # while ee<len(elecSubsampling):
-        #     for n in range(np.min([mp.cpu_count,
-        #                            len(elecSubsampling)-ee])):
-        #         channel_range = ee*args.electrode_subsampling+\
-        #                 np.arange(args.electrode_subsampling)
-        #         ee+=1
-
-        # for ee in range(len(elecSubsampling)-1):
-        #     print('- averaging channels:', channel_range)
-        #     mua_traces[:,ee] =\
-        #           hfRec.get_traces(\
-        #               channel_ids=\
-        #                     hfRec.get_channel_ids()[channel_range]\
-        #                 ).mean(axis=1)
-
-        # compute mean traces 
+        mua_traces = process_in_chunks(siRec,
+                            MUA_chunk(MUA_BAND, channel_groups, resampling_factor),
+                            len(channel_groups),
+                            resampling_factor=resampling_factor,
+                            chunk_duration=chunk_duration,
+                            n_jobs=n_jobs,
+                            desc='           MUA')
 
         # ── Build NWB MUA objects ───────────────────────────────────────
         mua_es = ElectricalSeries(
             name          = "MUA",
             data          = mua_traces,
             electrodes    = electrodes,
-            timestamps    = timestamps[::resampling_factor][:mua_traces.shape[0]],
+            timestamps    = timestamps[::resampling_factor],
             conversion    = 1e-6,   # µV → V
             description   = (
                 f"MUA signal in uV "
                 f"electrode channels : {args.electrode_range}"
                 f"electrode subsampling: {args.electrode_subsampling}"
                 f"MUA band ({MUA_BAND[0]}–{MUA_BAND[1]} Hz, "
-                f"Butterworth order 5, zero-phase), "
+                f"Butterworth order 5, zero-phase), rectified, averaged over the "
+                f"groups of subsampled electrodes, "
                 f"downsampled to {resample_rate} Hz. "
             ),
         )
@@ -303,48 +335,37 @@ def add_ephys(nwbfile, args,
             channel_ids = siRec.get_channel_ids()[elecSubsampling]
         ) 
 
-        temp_folder = os.path.join(tempfile.gettempprefix(), 'temp')
-        # ── 1. We save the data in the memory with an **extended** chunk size to avoid boundary artefacts
-        if True: 
-            print('- 1) rewriting the raw data with extended chunk windows')
-            siRec.save(format='binary', 
-                        folder=temp_folder, 
-                        chunk_duration=chunking_window,
-                        overwrite=True,
-                        n_jobs=0.8, # 
-                        progress_bar=True)
+        # ── 1. lowpass filter (full rate) + downsampling, in chunks
+        lfp_traces = process_in_chunks(siRec,
+                            LFP_chunk(LFP_BAND, resampling_factor),
+                            len(elecSubsampling),
+                            resampling_factor=resampling_factor,
+                            chunk_duration=chunk_duration,
+                            n_jobs=n_jobs,
+                            desc='           LFP')
 
-        print('- 2) loading the raw data with extended chunk windows')
-        rec = si.load(temp_folder,
-                    chunk_duration=chunking_window)
-
-        # ── 2. Apply filter + resample pipeline on the extended chunk ─────
-        print('- 3) applying the LFP filter')
-        rec_lfp = si.resample(
-                si.bandpass_filter(rec, 
-                    freq_min=LFP_BAND[0], 
-                    freq_max=LFP_BAND[1],
-                    ignore_low_freq_error=True,
-                    margin_ms=margin_ms
-                ),
-                resample_rate=resample_rate)
+        # ── 2. highpass filter on the downsampled data (all at once, no chunk boundaries)
+        print('           -> highpass filtering')
+        sos = signal.butter(5, LFP_BAND[0], btype='highpass',
+                            fs=siRec.get_sampling_frequency()/resampling_factor,
+                            output='sos')
+        lfp_traces = signal.sosfiltfilt(sos, lfp_traces, axis=0).astype(np.float32)
 
         # ── 3. Build NWB LFP objects ───────────────────────────────────────
-        print('- 4) writing the LFP data in nwbfile')
         lfp_es = ElectricalSeries(
             name          = "LFP",
-            data          = rec_lfp.get_traces(),
+            data          = lfp_traces,
             electrodes    = electrodes,
-            timestamps    = timestamps[::resampling_factor][:rec_lfp.get_num_frames()],
+            timestamps    = timestamps[::resampling_factor],
             conversion    = 1e-6,   # µV → V
             description   = (
                 f"LFP signal in uV "
                 f"electrode channels : {args.electrode_range}"
                 f"electrode subsampling: {args.electrode_subsampling}"
                 f"LFP band ({LFP_BAND[0]}–{LFP_BAND[1]} Hz, "
-                f"Butterworth order 5, zero-phase), "
+                f"Butterworth order 5, zero-phase: lowpass at full rate, "
+                f"highpass after downsampling), "
                 f"downsampled to {resample_rate} Hz. "
-                f"Chunk margin: {margin_ms} ms per side, Chunking window: {chunking_window}"
             ),
         )
     
