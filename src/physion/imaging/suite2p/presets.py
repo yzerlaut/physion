@@ -40,7 +40,6 @@ presets = {\
         },
         "hsyn-pyramidal":{\
                            # functional detection
-                           "sparse_mode":False,
                            "sig_baseline":10.0,
                            'smooth_sigma':1.15,
                            'smooth_sigma_time':0,
