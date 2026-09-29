@@ -349,7 +349,11 @@ def raw_data_plot(self, tzoom):
 
         X, Y = [], []
         if len(icond)>0:
-            
+
+            # annotations start ~80 pixels below the top of the plot
+            height = self.plot.getViewBox().height()
+            y_annot = y.max()*(1.-(80./height if height>160 else 0.1))
+
             self.StimFill, self.StimAnnots = [], []
 
             # looping over episodes
@@ -388,8 +392,10 @@ def raw_data_plot(self, tzoom):
                                             if self.data.nwbfile.stimulus['protocol_id'].data.ndim == 1 \
                                             else self.data.nwbfile.stimulus['protocol_id'].data[i, 0]
                         text += '\n* %s *\n' % self.data.protocols[value_prot][:20]
-                    self.StimAnnots[-1].setPlainText(text)                    
-                    self.StimAnnots[-1].setPos(t0, 0.95*y.max())
+                    self.StimAnnots[-1].setPlainText(text)
+                    # below the checkboxes and settings overlaid on top of the plot
+                    #    (otherwise they hide the episode number)
+                    self.StimAnnots[-1].setPos(t0, y_annot)
                     self.plot.addItem(self.StimAnnots[-1])
                     
     # ## ------------------------------------- ##
