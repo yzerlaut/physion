@@ -148,7 +148,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # # -- Spike Sorting Preprocesssing
     if (not Acquisition) and (not Intrinsic):
         def spike_sorting_preprocessing_UI(self, **kwargs):
-            from physion.ephys.gui import SpikeSortingWindow
+            from physion.ephys.spike_sorting_gui import SpikeSortingWindow
             return SpikeSortingWindow(self, **kwargs)
     else:
         from physion.gui.parts import inactivated as spike_sorting_preprocessing_UI
