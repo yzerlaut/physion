@@ -52,7 +52,7 @@ presets = {\
                            'spatial_taper':40,
                            'spatscale_pix':12,
                            'subpixel':10,
-                           'treshold_scaling':0.0,
+                           'threshold_scaling':0.0,
                            "high_pass":300},\
                            # (ROI diameter from the "cell size" box of the UI)
         "hsyn-Ventricle-inj":{\
@@ -97,6 +97,7 @@ presets = {\
                        "cellprob_threshold": 0.8},
 
         "hsyn-Cibele":{\
+            'threshold_scaling':0.0,
         },
 
         "Test Pyramidal 3":{\
@@ -111,8 +112,7 @@ presets = {\
                         "allow_overlap":True,
                         "max_overlap":0.5,
                         "connected":True,
-                        "threshold_scalling":0.5,
-
+                        "threshold_scaling":0.5,
                         "algorithm": "sourcery",
                         "sourcery_settings":{\
                             "threshold_scalling":0.5,
