@@ -64,6 +64,8 @@ def build_menu(self):
                                   self.build_NWB_from_DataTable_UI)
     self.assemblingMenu.addAction('Build NWBs (deprecated)',
                                   self.build_NWB_UI)
+    self.assemblingMenu.addAction('Add Channel Location to NWB',
+                                  self.add_channel_location_UI)
     self.assemblingMenu.addAction('Add Spike-Sorted Data to NWB (TODO)',
                                   self.in_progress)
     self.assemblingMenu.addAction('Add Ca-Imaging Data to NWB (TODO)',

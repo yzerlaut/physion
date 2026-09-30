@@ -170,12 +170,16 @@ class MainWindow(QtWidgets.QMainWindow):
         def FOV_coords_UI(self, tab_id=2):
             from physion.assembling.FOV_coordinates import FOVCoordinatesWindow
             return FOVCoordinatesWindow(self, tab_id)
+        def add_channel_location_UI(self, **kwargs):
+            from physion.ephys.location_gui import ChannelLocationWindow
+            return ChannelLocationWindow(self, **kwargs)
     else:
         from physion.gui.parts import inactivated as add_imaging
         from physion.gui.parts import inactivated as build_NWB_UI 
         from physion.gui.parts import inactivated as build_DataTable_UI
         from physion.gui.parts import inactivated as build_NWB_from_DataTable_UI
         from physion.gui.parts import inactivated as FOV_coords_UI
+        from physion.gui.parts import inactivated as add_channel_location_UI
 
 
     # # -- Data Analysis 
