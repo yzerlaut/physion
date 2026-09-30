@@ -15,9 +15,6 @@ from physion.ephys.spike_sorting\
 def build_args_for_ephys(args, dataset, i, directory):
     args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
     args.NPX_rec = dataset['Npx-Rec'][i]
-    # [deprecated] "Location" of the DataTable: the brain regions of the
-    #    electrodes are written after the assembling (see add_electrode_table)
-    args.Location = dataset['Location'][i] if ('Location' in dataset) else ''
     args.LFP, args.MUA, args.Spikes =\
           dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
     args.electrode_range, args.electrode_subsampling = dataset['electrode-range'][i], dataset['electrode-subsampling'][i]

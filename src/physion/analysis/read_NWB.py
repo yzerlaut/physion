@@ -508,7 +508,7 @@ class Data:
 
 
 
-    #############################data.build_dFoF(**dFoF_parameters, verbose=False)
+    #############################
     #       Electrophysiology   #
     #############################
 
@@ -616,6 +616,51 @@ class Data:
                                     interpolation=interpolation,
                                     verbose=verbose)\
                                     for i in range(self.spikes.shape[0])])
+
+        else:
+            print(' %s --> "spikes" not available ...' % self.df_name)
+
+    def has_firing(self):
+        return getattr(self.nwbfile, 'units')!=None
+
+    def build_firing(self,
+            specific_time_sampling=None,
+            dt=1e-2,
+            interpolation='linear',
+            verbose=False):
+        """
+        single-unit Spikes
+
+        builds a matrix (units, times) of firing rate values 
+                    ** in spikes/time-bin-duration **
+            True -> means spike at that time for that unit
+
+
+        by default: dt=10ms
+        """
+        if self.has_spikes():
+
+            n = int((self.tlim[1]-self.tlim[0])/dt)
+            self.t_firing = np.arange(n)*dt
+            self.firing = np.zeros(\
+                (len(self.nwbfile.units), n), dtype=bool)
+            
+            for i, unit in enumerate(self.nwbfile.units):
+                for s in unit.spike_times.values[:][0]:
+                    if int(s/dt)<n:
+                        self.firing[i, int(s/dt)] += 1./dt
+
+            if verbose:
+                print(' [ok] --> "firing" built successfully ')
+
+            if specific_time_sampling is not None:
+                return np.array([\
+                    tools.resample(self.t_firing,
+                                    self.firing[i,:],
+                                    specific_time_sampling,
+                                    interpolation=interpolation,
+                                    verbose=verbose)\
+                                    for i in range(self.firing.shape[0])])
 
         else:
             print(' %s --> "spikes" not available ...' % self.df_name)
