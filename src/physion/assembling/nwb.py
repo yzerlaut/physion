@@ -499,9 +499,11 @@ def add_FaceCamera(nwbfile, metadata, NIdaq_Tstart, args):
                               dont_load_from_video=True)
 
         FC_times = fcamData.original_times
-        FC_times = check_times(FC_times, NIdaq_Tstart)
 
-        if ('raw_FaceCamera' in args.modalities) and (len(fcamData.times)>0):
+        if len(FC_times)>0:
+            FC_times = check_times(FC_times, NIdaq_Tstart)
+
+        if ('raw_FaceCamera' in args.modalities) and (len(FC_times)>0):
            
             imgR = fcamData.get(0)
             FC_SUBSAMPLING = build_subsampling_from_freq(args.FaceCamera_frame_sampling,
