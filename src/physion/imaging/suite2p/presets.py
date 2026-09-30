@@ -96,6 +96,9 @@ presets = {\
                        "flow_threshold": 0.1,
                        "cellprob_threshold": 0.8},
 
+        "hsyn-Cibele":{\
+        },
+
         "Test Pyramidal 3":{\
                     "frames_include":10,
                     "registration":{
