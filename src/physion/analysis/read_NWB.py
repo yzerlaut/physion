@@ -644,7 +644,7 @@ class Data:
             n = int((self.tlim[1]-self.tlim[0])/dt)
             self.t_firing = np.arange(n)*dt
             self.firing = np.zeros(\
-                (len(self.nwbfile.units), n), dtype=bool)
+                (len(self.nwbfile.units), n), dtype=float)
             
             for i, unit in enumerate(self.nwbfile.units):
                 for s in unit.spike_times.values[:][0]:
