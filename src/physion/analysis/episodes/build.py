@@ -32,6 +32,7 @@ class EpisodeData:
         'neuropil',
         'dFoF',
         'spikes',
+        'firing',
         'LFP',
         'MUA'
     """
