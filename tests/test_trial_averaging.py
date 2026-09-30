@@ -5,7 +5,7 @@ import os, glob, types
 import numpy as np
 import pytest
 
-from physion.analysis.trial_averaging import TrialAveragingWindow
+from physion.analysis.episodes.gui import TrialAveragingWindow
 
 
 def test_conditions_follow_the_built_episodes():

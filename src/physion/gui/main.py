@@ -185,7 +185,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # # -- Data Analysis 
     if (not Acquisition) and (not Intrinsic):
         def trial_averaging(self, *args, **kwargs):
-            from physion.analysis.trial_averaging import TrialAveragingWindow
+            from physion.analysis.episodes.gui import TrialAveragingWindow
             return TrialAveragingWindow(self, *args, **kwargs)
     else:
         from physion.gui.parts import inactivated as trial_averaging
