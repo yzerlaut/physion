@@ -8,13 +8,16 @@ from pynwb.ecephys import (
     FeatureExtraction,
     SpikeEventSeries,
 )
+from hdmf.common import DynamicTable
 from physion.ephys.spike_sorting\
       import read_kilosort_output, fetch_good_units
 
 def build_args_for_ephys(args, dataset, i, directory):
     args.NPX_folder = os.path.join(directory, dataset['Npx-Folder'][i])
     args.NPX_rec = dataset['Npx-Rec'][i]
-    args.Location = dataset['Location'][i]
+    # [deprecated] "Location" of the DataTable: the brain regions of the
+    #    electrodes are written after the assembling (see add_electrode_table)
+    args.Location = dataset['Location'][i] if ('Location' in dataset) else ''
     args.LFP, args.MUA, args.Spikes =\
           dataset['LFP'][i], dataset['MUA'][i], dataset['Spikes'][i]
     args.electrode_range, args.electrode_subsampling = dataset['electrode-range'][i], dataset['electrode-subsampling'][i]
@@ -25,6 +28,96 @@ def build_args_for_ephys(args, dataset, i, directory):
    # to update, hard-coded for now ...
     args.stream_name='Record Node 101#OneBox-100.ProbeA' 
  
+
+#######################################################
+# ── Electrode table and landmarks ───────────────────────
+#######################################################
+#
+#   - brain region of each electrode: "location" column (Allen CCF acronyms,
+#           e.g. VISp, SUB), "unknown" at the assembling (NWB requires a value),
+#           written in a later stage
+#   - position of the contacts on the probe (um): "rel_x", "rel_y"
+#   - "probe_channel": channel index on the probe (the channel unit used
+#           for the "electrode-range" and for the landmarks)
+#   - "channel_name": channel id in the recording
+#
+#   landmarks (e.g. the layer 4 channel): "Landmarks" table in the
+#       "Landmarks" processing module, one row per landmark,
+#       channel=-1 until it is determined (written in a later stage)
+
+LANDMARKS = ['L4']
+
+def add_electrode_table(nwbfile, device, probe,
+                        channel_ids, probe_channels,
+                        contact_positions=None,
+                        pitch=25.):
+    """
+    returns the electrode group and the table region of all electrodes
+
+    channel_ids      : channel ids of the kept channels (recording)
+    probe_channels   : their index on the probe
+    contact_positions: dict with "x" and "y" arrays in um (e.g. the
+                       "contact_vector" property of spikeinterface)
+    """
+    electrode_group = nwbfile.create_electrode_group(
+        name        = probe['model_name'],
+        description = probe['description']+\
+            ' (location of the electrodes: brain regions as Allen CCF acronyms,'+\
+            ' rel_x, rel_y: position of the contacts on the probe in um)',
+        location    = 'unknown', # brain regions: "location" column of the electrodes
+        device      = device,
+    )
+
+    nwbfile.add_electrode_column(name='probe_channel',
+            description='channel index on the probe')
+    nwbfile.add_electrode_column(name='channel_name',
+            description='channel id in the recording')
+
+    for i in range(len(channel_ids)):
+
+        if contact_positions is not None:
+            rel_x = float(contact_positions["x"][i])
+            rel_y = float(contact_positions["y"][i])
+        else:
+            rel_x, rel_y = 0.0, float(probe_channels[i])*pitch
+
+        nwbfile.add_electrode(
+            location      = 'unknown', # written after the assembling
+            group         = electrode_group,
+            rel_x         = rel_x,
+            rel_y         = rel_y,
+            probe_channel = int(probe_channels[i]),
+            channel_name  = str(channel_ids[i]),
+        )
+
+    all_electrodes = nwbfile.create_electrode_table_region(
+        region      = list(range(len(channel_ids))),
+        description = "Electrodes kept (in the brain + good channels)",
+    )
+    return electrode_group, all_electrodes
+
+
+def add_landmarks_table(nwbfile, landmarks=LANDMARKS):
+    """
+    anatomical/functional landmarks along the probe (in channel unit),
+        channel=-1 : not determined yet (written after the assembling)
+    """
+    table = DynamicTable(name='Landmarks',
+            description='landmarks along the probe (channel: index on '+\
+                        'the probe, -1 if not determined)')
+    table.add_column(name='landmark', description='name of the landmark, e.g. L4')
+    table.add_column(name='channel', description='channel index on the probe')
+    table.add_column(name='method', description='how the landmark was determined')
+    table.add_column(name='date', description='when the landmark was determined')
+    for landmark in landmarks:
+        table.add_row(landmark=landmark, channel=-1, method='', date='')
+
+    module = nwbfile.create_processing_module(
+        name        = 'Landmarks',
+        description = 'landmarks along the probe',
+    )
+    module.add(table)
+
 
 def process_in_chunks(rec, process_chunk, n_out_channels,
                       resampling_factor=24,
@@ -169,6 +262,7 @@ def add_ephys(nwbfile, args,
 
     print("         -> restricting to electrode range [...]")
     e0, e1 = [int(e) for e in args.electrode_range.split('-')]
+    probe_channel_ids = list(siRec.get_channel_ids()) # all channels of the probe
     siRec = siRec.select_channels(siRec.get_channel_ids()[e0:e1])
 
     print("         -> removing bad channels [...]")
@@ -183,32 +277,12 @@ def add_ephys(nwbfile, args,
     channel_ids = siRec.get_channel_ids()
     np.save(os.path.join(args.NPX_folder,
             'channel_ids_in_%s' % os.path.basename(args.filename).replace('nwb','py')), channel_ids)
-    locations = siRec.get_property('contact_vector')
+    electrode_group, all_electrodes = add_electrode_table(nwbfile, device, probe,
+            channel_ids,
+            [probe_channel_ids.index(c) for c in channel_ids],
+            contact_positions=siRec.get_property('contact_vector'))
 
-    electrode_group = nwbfile.create_electrode_group(
-        name        = probe['model_name'],
-        description = probe['description'],
-        location    = args.Location, # from the DataTable
-        device      = device,
-    )
-    # NWB requires x, y, z; Neuropixels provides x (horizontal) and y (depth).
-    # We set z = 0 for a single-shank probe.
-    for i in range(len(channel_ids)):
-
-        x = float(locations["x"][i]) if locations is not None else 0.0
-        y = float(locations["y"][i]) if locations is not None else float(i) * 25.0
-
-        nwbfile.add_electrode(
-            x             = x,
-            y             = y,
-            z             = 0.0,
-            location      = args.Location,
-            group         = electrode_group,
-        )
-    all_electrodes = nwbfile.create_electrode_table_region(
-        region      = list(range(len(channel_ids))),
-        description = "Electrodes kept (in the brain + good channels)",
-    )
+    add_landmarks_table(nwbfile)
 
     # 3)
     #######################################################

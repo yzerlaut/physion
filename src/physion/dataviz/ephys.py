@@ -4,6 +4,14 @@ from scipy.ndimage import gaussian_filter1d
 import physion.utils.plot_tools as pt
 from physion.dataviz import tools as dv_tools
 
+def contact_position(data, i):
+    """ position of the contact on the probe (um), "x", "y" in former files """
+    elecs = data.nwbfile.electrodes
+    if 'rel_y' in elecs.colnames:
+        return elecs['rel_x'][i], elecs['rel_y'][i]
+    else:
+        return elecs['x'][i], elecs['y'][i]
+
 def find_center_channel(data, unit_id):
     return np.argmax(np.std(data.spikeWaveforms[:,:,unit_id],axis=0))
 
@@ -23,8 +31,7 @@ def show_waveforms(data,
     """
     n = find_center_channel(data, unit_id)
 
-    x0 = data.nwbfile.electrodes[n].x[n]
-    y0 = data.nwbfile.electrodes[n].y[n]
+    x0, y0 = contact_position(data, n)
 
     if ax is None:
         fig, ax = pt.figure(ax_scale=ax_scale)
@@ -35,8 +42,7 @@ def show_waveforms(data,
             np.arange(n-channels_around, n+channels_around-1),
             0, len(data.nwbfile.electrodes)-1):
 
-        x = data.nwbfile.electrodes[i].x[i]
-        y = data.nwbfile.electrodes[i].y[i]
+        x, y = contact_position(data, i)
 
         t = (x-x0)*x_shift_factor+\
             np.arange(data.spikeWaveforms.shape[0])
