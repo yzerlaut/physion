@@ -21,7 +21,8 @@ MODALITIES = [\
         'rawFluo',
         'neuropil',
         'dFoF',
-        'spikes',
+        # 'spikes',
+        'firing',
         # 'spikeWaveforms',
         'LFP',
         'MUA'
