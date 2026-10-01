@@ -53,6 +53,7 @@ class Data(VisualStimMixin, LocomotionMixin, FaceCameraMixin, OptoMixin, OphysMi
     - data.spikeWaveforms # single unit spike waveforms
     - data.LFP          # Local Field Potential 
     - data.MUA          # Multi-Unit Activity
+    - data.selected_channels # ephys channels considered (data.restrict_to_region)
 
     # others/common
     data.metadata       # dictionary of metadata
@@ -203,6 +204,9 @@ class Data(VisualStimMixin, LocomotionMixin, FaceCameraMixin, OptoMixin, OphysMi
             for key in ['Segmentation', 'Fluorescence', 'redcell', 'plane',
                         'valid_roiIndices', 'neuropil']:
                 setattr(self, key, None)
+
+        # electrophysiology: all channels and units (see restrict_to_region)
+        self.select_all_channels()
 
         # behavioral monitoring
         if self.has_pupil():
