@@ -180,3 +180,29 @@ class EphysMixin:
                 print(' [ok] --> "spikeWaveforms" built successfully ')
         else:
             print(' %s --> "spikeWaveforms" not available ...' % self.df_name)
+
+    def find_main_channel_of_units(self,
+                                   verbose=False):
+        """
+        main channel of each single unit: the channel where the variance
+            of its spike waveform (over time) is the highest
+
+        sets self.main_channel_of_units: array (units,) of channel indices,
+            i.e. rows of the electrodes table (self.nwbfile.electrodes),
+            the channels of the waveforms
+            (self.spikeWaveforms: (time, channel, unit))
+        """
+        if self.has_spikeWaveforms():
+
+            if not hasattr(self, 'spikeWaveforms'):
+                self.build_spikeWaveforms(verbose=verbose)
+
+            # variance over time -> (channel, unit), then the max over channels
+            variance = np.var(self.spikeWaveforms, axis=0)
+            self.main_channel_of_units = np.argmax(variance, axis=0)
+
+            if verbose:
+                print(' [ok] --> "main_channel_of_units" found for %i units ' %\
+                        len(self.main_channel_of_units))
+        else:
+            print(' %s --> "spikeWaveforms" not available ...' % self.df_name)
