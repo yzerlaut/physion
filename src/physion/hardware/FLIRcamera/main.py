@@ -40,6 +40,14 @@ class CameraAcquisition:
         ########################################################################
 
 
+    def print_sampling_frequency(self):
+        """ from the times of the saved images """
+        if len(self.times)>1:
+            print('%s -- effective sampling frequency: %.1f Hz ' %\
+                    (self.name, 1./np.mean(np.diff(self.times))))
+        else:
+            print('%s -- %i image(s) saved ' % (self.name, len(self.times)))
+
     def rec_and_check(self, run_flag, quit_flag, folder,
                       debug=False):
         
@@ -77,21 +85,20 @@ class CameraAcquisition:
             elif self.running and not run_flag.is_set(): # running and we need to stop
 
                 self.running=False
-                print('%s -- effective sampling frequency: %.1f Hz ' %\
-                        (self.name, 1./np.mean(np.diff(self.times))))
+                self.print_sampling_frequency()
                 
 
             # after the update
             if self.running and image is not None:
                 try:
                     np.save(os.path.join(self.imgs_folder, '%s.npy' % Time), image)
+                    self.times.append(Time)
                 except BaseException as be:
                     # print(be)
                     print('[X] problem SAVING image', os.path.join(self.imgs_folder, '%s.npy' % Time), ' -> not saved ! ')
 
-        if len(self.times)>0:
-            print('%s -- effective sampling frequency: %.1f Hz ' % (\
-                    self.name, 1./np.mean(np.diff(self.times))))
+        if self.running:
+            self.print_sampling_frequency()
         
         self.running=False
         self.cam.stop()

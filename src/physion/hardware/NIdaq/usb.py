@@ -5,16 +5,34 @@ Interface for (cheap) USB DAQ from NI
     (WIP)
 """
 import nidaqmx
-import time
+import time, threading
 import numpy as np
 
+from nidaqmx.utils import flatten_channel_string
+from nidaqmx.constants import Edge, WAIT_INFINITELY
+from nidaqmx.stream_readers import (
+    AnalogMultiChannelReader,
+    DigitalMultiChannelReader
+)
+from nidaqmx.stream_writers import AnalogMultiChannelWriter
+
 from physion.hardware.NIdaq.config import\
-         find_usb_devices, get_digital_input_channels
+         find_usb_devices, get_digital_input_channels,\
+         get_analog_input_channels, get_analog_output_channels
 
 class Acquisition:
+    """
+    the input buffers are read by "reading_task_callback" on the NIdaq thread
+        (as in physion.hardware.NIdaq.main):
+        - they are stored in a list, concatenated in "close"
+            (no copy of the whole recording at each buffer)
+        - "self.lock" protects them: "close" waits for a callback in progress
+            and the callbacks do nothing after the acquisition is stopped
+    """
 
     def __init__(self,
                  sampling_rate=1000,
+                 Nchannel_analog_in=0,
                  Nchannel_digital_in=1,
                  max_time=10,
                  buffer_time=0.5,
@@ -26,29 +44,32 @@ class Acquisition:
                  verbose=False):
         
         self.running, self.data_saved = False, False
+        self.lock = threading.Lock()
+        self.analog_buffers, self.digital_buffers = [], []
 
         self.sampling_rate = sampling_rate
         self.dt = 1./self.sampling_rate
 
         self.buffer_size = int(buffer_time*self.sampling_rate)
         self.Nsamples = int(max_time/buffer_time)*self.buffer_size # ENFORCE multiple of buffer time !! 
-        self.max_time = self.Nsamples*self.sampling_rate
+        self.max_time = self.Nsamples/self.sampling_rate
+        self.Nchannel_analog_in = Nchannel_analog_in
         self.Nchannel_digital_in = Nchannel_digital_in
         self.filename = filename
 
         if device is None:
-            device = find_usb_devices()[0]
+            self.device = find_usb_devices()[0]
         else:
             self.device = device
 
         # preparing input channels
         # - analog:
-        self.analog_data = np.zeros((Nchannel_analog_in, 1), dtype=np.float64)
+        self.analog_data = np.zeros((Nchannel_analog_in, 0), dtype=np.float64)
         if self.Nchannel_analog_in>0:
             self.analog_input_channels = \
                     get_analog_input_channels(self.device)[:Nchannel_analog_in]
         # - digital:
-        self.digital_data = np.zeros((1, 1), dtype=np.uint32)
+        self.digital_data = np.zeros((1, 0), dtype=np.uint32)
         if self.Nchannel_digital_in>0:
             self.digital_input_channels = \
                     get_digital_input_channels(self.device)[:Nchannel_digital_in]
@@ -139,16 +160,22 @@ class Acquisition:
         
         if self.Nchannel_analog_in>0:
             self.analog_reader = AnalogMultiChannelReader(self.read_analog_task.in_stream)
-            self.read_analog_task.register_every_n_samples_acquired_into_buffer_event(self.buffer_size,
-                                                                                      self.reading_task_callback)
         if self.Nchannel_digital_in>0:
             self.digital_reader = DigitalMultiChannelReader(self.read_digital_task.in_stream)
-            self.read_digital_task.register_every_n_samples_acquired_into_buffer_event(self.buffer_size,
-                                                                                       self.reading_task_callback)
+
+        # callback on ONE task only (it reads both): avoids double-reading
+        primary = self.read_analog_task if self.Nchannel_analog_in>0 else\
+                    (self.read_digital_task if self.Nchannel_digital_in>0 else None)
+        if primary is not None:
+            primary.register_every_n_samples_acquired_into_buffer_event(self.buffer_size,
+                                                                        self.reading_task_callback)
 
         if self.outputs is not None:
             self.writer = AnalogMultiChannelWriter(self.write_task.out_stream)
             self.writer.write_many_sample(self.outputs)
+
+        self.analog_buffers, self.digital_buffers = [], []
+        self.running, self.data_saved = True, False
 
         # Start the read task before starting the sample clock source task.            
         if self.Nchannel_analog_in>0:
@@ -166,8 +193,6 @@ class Acquisition:
             # saving the time stamp of the start !
             np.save(self.filename.replace('.npy', '.start.npy'), 
                     self.t0*np.ones(1))
-
-        self.running, self.data_saved = True, False
         
     def close(self, return_data=False):
         """
@@ -175,7 +200,12 @@ class Acquisition:
         
         nidaqmx has weird behaviors sometimes... :(
         """
-        if self.running:
+        # stop the reading callbacks before closing the tasks:
+        #   waits for a callback in progress (lock), the next ones do nothing
+        with self.lock:
+            was_running, self.running = self.running, False
+
+        if was_running:
             if self.Nchannel_digital_in>0:
                 self.read_digital_task.close()
             if self.Nchannel_analog_in>0:
@@ -184,40 +214,74 @@ class Acquisition:
                 self.write_task.close()
             self.sample_clk_task.close()
 
+        if not self.data_saved:
+            self.gather_data()
+
         if (self.filename is not None):
             if self.data_saved:
                 print('[ok] NIdaq data already saved as: %s ' % self.filename)
             else:
                 np.save(self.filename,
-                        {'analog':self.analog_data[:,1:],
-                         'digital':self.digital_data[:,1:],
+                        {'analog':self.analog_data,
+                         'digital':self.digital_data,
                          'dt':self.dt})
                 print('[ok] NIdaq data saved as: %s ' % self.filename)
             self.data_saved = True
-            
-        self.running = False
 
         if return_data:
-            return self.analog_data[:,1:], self.digital_data[:,1:], self.dt
-        
+            return self.analog_data, self.digital_data, self.dt
+
+    def gather_data(self):
+        """
+        concatenates the buffers read during the acquisition
+            into self.analog_data (channels, samples)
+             and self.digital_data (1, samples)
+        both cut to the same number of samples
+        """
+        if len(self.analog_buffers)>0:
+            self.analog_data = np.concatenate([self.analog_data]+self.analog_buffers, axis=1)
+        if len(self.digital_buffers)>0:
+            self.digital_data = np.concatenate([self.digital_data]+self.digital_buffers, axis=1)
+        self.analog_buffers, self.digital_buffers = [], []
+
+        if (self.Nchannel_analog_in>0) and (self.Nchannel_digital_in>0) and\
+                (self.analog_data.shape[1]!=self.digital_data.shape[1]):
+            n = min([self.analog_data.shape[1], self.digital_data.shape[1]])
+            print(' [!!] NIdaq: %i analog and %i digital samples, cut to %i ' %\
+                    (self.analog_data.shape[1], self.digital_data.shape[1], n))
+            self.analog_data = self.analog_data[:,:n]
+            self.digital_data = self.digital_data[:,:n]
+
     def reading_task_callback(self, task_idx, event_type, num_samples, callback_data=None):
-        if self.running:
+        """
+        called on the NIdaq thread every "buffer_size" samples
+            (stored in buffers, see "gather_data")
+        """
+        with self.lock:
+
+            if not self.running:
+                # acquisition stopped ("close"), the tasks are being closed
+                return 0
+
             try:
                 if self.Nchannel_analog_in>0:
                     analog_buffer = np.zeros((self.Nchannel_analog_in, num_samples), dtype=np.float64)
                     self.analog_reader.read_many_sample(analog_buffer, num_samples, timeout=WAIT_INFINITELY)
-                    self.analog_data = np.append(self.analog_data, analog_buffer, axis=1)
-                
+
                 if self.Nchannel_digital_in>0:
                     digital_buffer = np.zeros((1, num_samples), dtype=np.uint32)
                     self.digital_reader.read_many_sample_port_uint32(digital_buffer,
                                                                  num_samples, timeout=WAIT_INFINITELY)
-                    self.digital_data = np.append(self.digital_data, digital_buffer, axis=1)
-            except nidaqmx.errors.DaqError:
-                # print('process already closed')
-                pass
-        else:
-            self.close()
+
+                # both stored together: same number of analog and digital samples
+                if self.Nchannel_analog_in>0:
+                    self.analog_buffers.append(analog_buffer)
+                if self.Nchannel_digital_in>0:
+                    self.digital_buffers.append(digital_buffer)
+
+            except nidaqmx.errors.DaqError as error:
+                print(' [!!] NIdaq: buffer of %i samples not read ' % num_samples, error)
+
         return 0  # needed for this callback to be well defined (see nidaqmx doc).
 
 
