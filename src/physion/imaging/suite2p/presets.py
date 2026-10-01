@@ -97,10 +97,21 @@ presets = {\
                        "cellprob_threshold": 0.8},
 
         "hsyn-Cibele":{\
-            'threshold_scaling':0.0,
-            'sparse_mode':False,
-        },
-
+                    # functional detection
+                    "sig_baseline":10.0,
+                    'smooth_sigma':1.15,
+                    'smooth_sigma_time':0,
+                    'snr_thresh':1.2,
+                    'soma_crop':True,
+                    'sparse_mode':False,
+                    'spatial_hp_cp':0,
+                    'spatial_hp_detect':25,
+                    'spatial_hp_reg':42,
+                    'spatial_taper':40,
+                    'spatscale_pix':12,
+                    'subpixel':10,
+                    'threshold_scaling':0.0,
+                    "high_pass":300},\
         "Test Pyramidal 3":{\
                     "frames_include":10,
                     "registration":{
