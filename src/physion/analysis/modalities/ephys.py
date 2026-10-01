@@ -14,6 +14,26 @@ class EphysMixin:
         self.NPX_folder = \
             self.nwbfile.devices['Neuropixels OneBox'].description.split('**')[-1]
 
+    def electrode_depths(self, key):
+        """
+        depth (um) of the channels of the electrical series "key" (LFP, MUA)
+            0 for the top electrode of the datafile (electrodes table),
+            negative below: deeper = lower probe channel index
+
+        from the position of the contacts along the probe:
+            "rel_y" column of the electrodes table ("y" in older files)
+        """
+        columns = self.nwbfile.electrodes.colnames
+        column = 'rel_y' if 'rel_y' in columns else ('y' if 'y' in columns else None)
+        if column is None:
+            print(' %s --> no electrode position, "depth_%s" not available ...' %\
+                    (self.df_name, key))
+            return None
+        position = np.array(self.nwbfile.electrodes[column][:], dtype=float)
+        # rows of the electrodes table, in the order of the channels of the data
+        rows = np.array(self.nwbfile.processing[key].data_interfaces[key].electrodes.data[:])
+        return position[rows]-position.max()
+
     def has_LFP(self):
         return ('LFP' in self.nwbfile.processing)
 
@@ -28,6 +48,7 @@ class EphysMixin:
             self.LFP = np.transpose(\
                 self.nwbfile.processing['LFP'].data_interfaces['LFP'].data[:])
             self.t_LFP = self.nwbfile.processing['LFP'].data_interfaces['LFP'].timestamps[:]
+            self.depth_LFP = self.electrode_depths('LFP')
 
             if verbose:
                 print(' [ok] --> "LFP" built successfully ')
@@ -57,6 +78,7 @@ class EphysMixin:
             self.MUA = np.transpose(\
                 self.nwbfile.processing['MUA'].data_interfaces['MUA'].data[:])
             self.t_MUA = self.nwbfile.processing['MUA'].data_interfaces['MUA'].timestamps[:]
+            self.depth_MUA = self.electrode_depths('MUA')
 
             if verbose:
                 print(' [ok] --> "MUA" built successfully ')
