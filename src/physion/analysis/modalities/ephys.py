@@ -14,14 +14,16 @@ class EphysMixin:
         self.NPX_folder = \
             self.nwbfile.devices['Neuropixels OneBox'].description.split('**')[-1]
 
-    def electrode_depths(self, key):
+    def depth_of_electrodes(self, rows, key):
         """
-        depth (um) of the channels of the electrical series "key" (LFP, MUA)
+        depth (um) of the electrodes at "rows" of the electrodes table
             0 for the top electrode of the datafile (electrodes table),
-            negative below: deeper = lower probe channel index
+            positive below: deeper = lower probe channel index
 
         from the position of the contacts along the probe:
             "rel_y" column of the electrodes table ("y" in older files)
+
+        "key" only names the quantity in the message when positions are missing
         """
         columns = self.nwbfile.electrodes.colnames
         column = 'rel_y' if 'rel_y' in columns else ('y' if 'y' in columns else None)
@@ -30,9 +32,16 @@ class EphysMixin:
                     (self.df_name, key))
             return None
         position = np.array(self.nwbfile.electrodes[column][:], dtype=float)
+        return position.max()-position[np.asarray(rows)]
+
+    def electrode_depths(self, key):
+        """
+        depth (um) of the channels of the electrical series "key" (LFP, MUA)
+            (see depth_of_electrodes)
+        """
         # rows of the electrodes table, in the order of the channels of the data
         rows = np.array(self.nwbfile.processing[key].data_interfaces[key].electrodes.data[:])
-        return position[rows]-position.max()
+        return self.depth_of_electrodes(rows, key)
 
     def has_LFP(self):
         return ('LFP' in self.nwbfile.processing)
@@ -228,3 +237,24 @@ class EphysMixin:
                         len(self.main_channel_of_units))
         else:
             print(' %s --> "spikeWaveforms" not available ...' % self.df_name)
+
+    def build_depth_units(self,
+                          verbose=False):
+        """
+        depth (um) of each single unit: the depth of its main channel
+            (self.main_channel_of_units, see find_main_channel_of_units)
+            0 for the top electrode of the datafile, positive deeper
+            -- same reference as self.depth_LFP and self.depth_MUA --
+
+        sets self.depth_units: array (units,)
+        """
+        if not hasattr(self, 'main_channel_of_units'):
+            self.find_main_channel_of_units(verbose=verbose)
+
+        if hasattr(self, 'main_channel_of_units'):
+            self.depth_units = self.depth_of_electrodes(self.main_channel_of_units,
+                                                        'units')
+            if verbose and (self.depth_units is not None):
+                print(' [ok] --> "depth_units" built successfully ')
+        else:
+            self.depth_units = None
