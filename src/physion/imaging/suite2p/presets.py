@@ -98,6 +98,7 @@ presets = {\
 
         "hsyn-Cibele":{\
             'threshold_scaling':0.0,
+            'sparse_mode':False,
         },
 
         "Test Pyramidal 3":{\
