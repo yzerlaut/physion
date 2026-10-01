@@ -132,7 +132,7 @@ class MainWindow(QtWidgets.QMainWindow):
     # # -- Suite2P Preprocesssing
     if (not Acquisition) and (not Intrinsic):
         def suite2p_preprocessing_UI(self, **kwargs):
-            from physion.imaging.gui import Suite2pWindow
+            from physion.imaging.suite2p_gui import Suite2pWindow
             return Suite2pWindow(self, **kwargs)
     else:
         from physion.gui.parts import inactivated as suite2p_preprocessing_UI
