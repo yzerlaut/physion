@@ -3,6 +3,7 @@ Imaging data from h5 files:
     - display the mean image
     - draw elliptic ROIs
     - extract the fluorescence time course of each ROI
+    - export the suite2p mean image of an "h5-xxx" folder (png on the Desktop)
 
 the h5 files are expected to store the movie under the "data" key,
     with shape (nFrames, Ny, Nx)
@@ -15,6 +16,7 @@ import pyqtgraph as pg
 
 from physion.utils.paths import FOLDERS
 from physion.gui.window import Window
+from physion.imaging.folders import is_h5_folder
 
 H5_KEY = 'data'
 
@@ -106,6 +108,14 @@ class H5ImagingWindow(Window):
         self.saveBtn = QtWidgets.QPushButton('save ROIs && traces [S]')
         self.saveBtn.clicked.connect(self.save)
         self.add_side_widget(self.saveBtn)
+
+        self.add_side_widget(QtWidgets.QLabel(' '))
+
+        self.exportBtn = QtWidgets.QPushButton('export suite2p meanImg to Desktop')
+        self.exportBtn.setToolTip('suite2p/plane0 "meanImg" of the "h5-xxx" folder\n'+\
+                                  ' (of the loaded file, otherwise a folder is asked)')
+        self.exportBtn.clicked.connect(self.export_meanImg)
+        self.add_side_widget(self.exportBtn)
 
         while main.i_wdgt<(main.nWidgetRow-1):
             self.add_side_widget(QtWidgets.QLabel(' '))
@@ -309,6 +319,29 @@ class H5ImagingWindow(Window):
         print('Data successfully saved as "%s"' % filename)
         self.statusBar.showMessage(' saved as "%s"' % filename)
 
+    def export_meanImg(self):
+        """
+        suite2p mean image of the "h5-xxx" folder of the loaded file
+            (or of a chosen "h5-xxx" folder) exported as a png on the Desktop
+        """
+        if (self.filename is not None) and\
+                is_h5_folder(os.path.dirname(self.filename)):
+            folder = os.path.dirname(self.filename)
+        else:
+            folder = QtWidgets.QFileDialog.getExistingDirectory(self.main,
+                        'Choose an "h5-xxx" folder',
+                        self.choose_root_folder())
+            if folder=='':
+                return
+
+        try:
+            filename = export_suite2p_meanImg(folder)
+            print(' [ok] suite2p meanImg exported as "%s"' % filename)
+            self.statusBar.showMessage(' meanImg exported as "%s"' % filename)
+        except FileNotFoundError as error:
+            print(' [!!]', error)
+            self.statusBar.showMessage(' [!!] %s' % error)
+
     # ----------------------------------------------------------
     #   keyboard shortcuts (see physion.gui.window)
     # ----------------------------------------------------------
@@ -333,3 +366,42 @@ def ROI_mask(roi, shape):
     lx = np.cos(theta)*dx+np.sin(theta)*dy
     ly = -np.sin(theta)*dx+np.cos(theta)*dy
     return ((lx-w/2)/(w/2))**2+((ly-h/2)/(h/2))**2<=1
+
+
+def suite2p_meanImg(folder, plane=0):
+    """
+    "meanImg" of the suite2p output of an imaging folder ("h5-xxx", "TSeries-xxx")
+        in "suite2p/plane{plane}/": "ops.npy" ("reg_outputs.npy" in suite2p v1)
+    """
+    plane_folder = os.path.join(str(folder), 'suite2p', 'plane%i' % plane)
+    for name in ['ops.npy', 'reg_outputs.npy']:
+        filename = os.path.join(plane_folder, name)
+        if os.path.isfile(filename):
+            outputs = np.load(filename, allow_pickle=True).item()
+            if 'meanImg' in outputs:
+                return np.array(outputs['meanImg'])
+    raise FileNotFoundError('no suite2p "meanImg" in "%s"' % plane_folder)
+
+
+def export_suite2p_meanImg(folder, plane=0,
+                           destination=None,
+                           percentiles=(1, 99)):
+    """
+    png of the suite2p "meanImg" of an imaging folder (one pixel per image pixel),
+        grey levels between the "percentiles" of the image (as in the suite2p GUI)
+
+    saved as "{destination}/{folder-name}_plane{plane}_meanImg.png", returns its path
+        destination: the Desktop by default (the home folder if there is no Desktop)
+    """
+    from matplotlib import pyplot as plt
+
+    meanImg = suite2p_meanImg(folder, plane=plane)
+    vmin, vmax = np.percentile(meanImg, percentiles)
+    if destination is None:
+        destination = os.path.join(os.path.expanduser('~'), 'Desktop')
+        if not os.path.isdir(destination):
+            destination = os.path.expanduser('~')
+    filename = os.path.join(destination, '%s_plane%i_meanImg.png' %\
+                    (os.path.basename(os.path.normpath(str(folder))), plane))
+    plt.imsave(filename, meanImg, cmap='gray', vmin=vmin, vmax=vmax)
+    return filename

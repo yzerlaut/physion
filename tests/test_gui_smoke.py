@@ -76,6 +76,43 @@ def test_h5_imaging_UI(gui, tmp_path, monkeypatch):
     assert gui.slot_errors == []
 
 
+def test_h5_imaging_UI_export_suite2p_meanImg(gui, tmp_path, monkeypatch):
+    """ "export suite2p meanImg to Desktop": png of suite2p/plane0 "meanImg" """
+    from PIL import Image
+    folder = tmp_path/'h5-01012025-001'
+    (folder/'suite2p'/'plane0').mkdir(parents=True)
+    meanImg = np.arange(30*40, dtype=np.float32).reshape(30, 40)
+    np.save(folder/'suite2p'/'plane0'/'ops.npy', {'meanImg':meanImg})
+    with h5py.File(str(folder/'Ch2-Green-plane0.h5'), 'w') as f:
+        f['data'] = np.ones((10, 30, 40), dtype=np.float32)
+    (tmp_path/'home'/'Desktop').mkdir(parents=True)
+    monkeypatch.setenv('HOME', str(tmp_path/'home'))
+    monkeypatch.setattr(QtWidgets.QFileDialog, 'getOpenFileName',
+            staticmethod(lambda *args, **kwargs: (str(folder/'Ch2-Green-plane0.h5'), '')))
+
+    window = gui.h5_imaging_UI()
+    gui.open()
+    window.exportBtn.click()   # the "h5-" folder of the loaded file
+    png = tmp_path/'home'/'Desktop'/'h5-01012025-001_plane0_meanImg.png'
+    image = np.array(Image.open(png).convert('L'), dtype=float)
+    assert image.shape == meanImg.shape
+    # grey levels increase with the meanImg (clipped at the 1-99 percentiles)
+    assert image[0, 0] == 0 and image[-1, -1] == 255
+    assert np.all(np.diff(image[15]) >= 0)
+    assert gui.slot_errors == []
+
+
+def test_suite2p_meanImg_of_suite2p_v1_and_missing(tmp_path):
+    from physion.imaging.h5_gui import suite2p_meanImg
+    plane0 = tmp_path/'suite2p'/'plane0'
+    with pytest.raises(FileNotFoundError):
+        suite2p_meanImg(tmp_path)
+    plane0.mkdir(parents=True)
+    np.save(plane0/'ops.npy', {'nframes':10})                      # suite2p v1:
+    np.save(plane0/'reg_outputs.npy', {'meanImg':np.ones((3, 4))})  # in reg_outputs
+    np.testing.assert_array_equal(suite2p_meanImg(tmp_path), np.ones((3, 4)))
+
+
 def test_shortcuts_ignore_a_replaced_window(gui):
     """ a window replaced by another one in the same tab gets no shortcut """
     from physion.gui.window import current_window
