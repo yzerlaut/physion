@@ -150,6 +150,10 @@ def load_raw_data(datafolder, protocol,
     elif os.path.isfile(os.path.join(datafolder, 'metadata.npy')):
         params = np.load(os.path.join(datafolder, 'metadata.npy'),
                        allow_pickle=True).item()
+    else:
+        raise FileNotFoundError('no "metadata.json" or "metadata.npy" in "%s"' %\
+                                    datafolder)
+
     if run_id=='sum':
         Data, n = None, 0
         for i in range(1, 15): # no more than 15 repeats...(but some can be removed, hence the "for" loop)

@@ -329,6 +329,14 @@ def NWB_to_dataframe(nwbfile,
 
 ############################################################################
 
+def episode_value(data, key, i):
+    """
+    value of the stimulus quantity "key" for episode "i" as a scalar
+        (older files store the episode quantities with shape (episodes, 1))
+    """
+    return float(np.ravel(data.nwbfile.stimulus[key].data[i])[0])
+
+
 def build_stim_specific_array(data, index_cond, time, 
                               normalize=False):
 
@@ -338,11 +346,11 @@ def build_stim_specific_array(data, index_cond, time,
     for i in np.flatnonzero(index_cond):
 
         if i<data.nwbfile.stimulus['time_start_realigned'].num_samples:
-            tstart = data.nwbfile.stimulus['time_start_realigned'].data[i]
-            tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i]
+            tstart = episode_value(data, 'time_start_realigned', i)
+            tstop = episode_value(data, 'time_stop_realigned', i)
             
 
-            t_cond = (time>=float(tstart)) & (time<float(tstop))
+            t_cond = (time>=tstart) & (time<tstop)
             array[t_cond] = True
 
     # TO BE FIXED
@@ -382,7 +390,7 @@ def build_timelag_set_of_stim_specific_arrays(data, DF, index_cond,
 
     Nframe_pre = max([1, int(pre_interval/DF.dt)]) # at least one frame
     Nframe_post = int(post_interval/DF.dt)
-    Nframe_stim = int(np.min([data.nwbfile.stimulus['time_duration'].data[i]\
+    Nframe_stim = int(np.min([episode_value(data, 'time_duration', i)\
             for i in np.flatnonzero(index_cond)])/DF.dt)
 
 
@@ -394,8 +402,8 @@ def build_timelag_set_of_stim_specific_arrays(data, DF, index_cond,
     for i in np.flatnonzero(index_cond):
 
         if i<data.nwbfile.stimulus['time_start_realigned'].num_samples:
-            tstart = data.nwbfile.stimulus['time_start_realigned'].data[i]
-            tstop = data.nwbfile.stimulus['time_stop_realigned'].data[i]
+            tstart = episode_value(data, 'time_start_realigned', i)
+            tstop = episode_value(data, 'time_stop_realigned', i)
 
             iT0 = np.argmin((DF['time']-tstart)**2)
            

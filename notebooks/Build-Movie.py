@@ -20,6 +20,10 @@ import os, sys
 import numpy as np
 sys.path += ['../src']
 import physion
+import physion.analysis.read_NWB
+import physion.dataviz.movie
+import physion.dataviz.snapshot
+import physion.utils.camera
 
 # %%
 # example data from physion_Demo-Datasets:
@@ -36,18 +40,18 @@ raw_data_folder =\
 
 # %%
 data = physion.analysis.read_NWB.Data(nwbfile)
-data.init_visual_stim(force_degree=True)
+data.build_visual_stim(force_degree=True)
 
 data.build_dFoF()
-data.build_running_speed()
+data.build_running()
 
 # add some smoothing for display
 from scipy.ndimage import gaussian_filter1d
 
 data.build_facemotion()
 # data.facemotion = gaussian_filter1d(data.facemotion, 3)
-data.build_pupil_diameter()
-# data.pupil_diameter = gaussian_filter1d(data.pupil_diameter, 3)
+data.build_pupil()
+# data.pupil = gaussian_filter1d(data.pupil, 3)
 
 # %%
 from physion.dataviz.raw import plot as plot_raw, find_default_plot_settings
@@ -59,16 +63,14 @@ roiIndex = [0,35,29,27]
 # ##  Load FaceCamera data
 
 # %%
-NIdaq_Tstart = np.load(os.path.join(raw_data_folder, 'NIdaq.start.npy'))[0]
+# times relative to the NIdaq start (NIdaq.start.npy of the folder)
 faceCamera = physion.utils.camera.CameraData(\
-                        'FaceCamera', raw_data_folder,
-                        t0=NIdaq_Tstart)
+                        'FaceCamera', raw_data_folder)
 
 
 # %%
 rigCamera = physion.utils.camera.CameraData(\
-                        'RigCamera', raw_data_folder,
-                        t0=NIdaq_Tstart)
+                        'RigCamera', raw_data_folder)
 
 # %% [markdown]
 # ## Load Imaging data

@@ -19,6 +19,8 @@ import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
 import physion
+import physion.analysis.read_NWB
+import physion.analysis.episodes.build
 from physion.analysis.protocols.contrast_sensitivity\
           import compute_sensitivity_per_cells
 
@@ -36,19 +38,18 @@ data.build_dFoF(neuropil_correction_factor=0.9,
 from physion.dataviz.raw import plot
 
 settings = {\
- 'Locomotion': {'fig_fraction': 1, 'subsampling': 1, 'color': '#1f77b4'},
- 'FaceMotion': {'fig_fraction': 1, 'subsampling': 1, 'color': 'purple'},
-#  'GazeMovement': {'fig_fraction': 0.5, 'subsampling': 1, 'color': '#ff7f0e'},
- 'Pupil': {'fig_fraction': 1, 'subsampling': 1, 'color': '#d62728'},
+ 'running': {'fig_fraction': 1, 'subsampling': 1, 'color': '#1f77b4'},
+ 'facemotion': {'fig_fraction': 1, 'subsampling': 1, 'color': 'purple'},
+#  'gaze': {'fig_fraction': 0.5, 'subsampling': 1, 'color': '#ff7f0e'},
+ 'pupil': {'fig_fraction': 1, 'subsampling': 1, 'color': '#d62728'},
  'CaImaging': {'fig_fraction': 4, 'subsampling': 1, 'subquantity': 'dFoF',
   'color': '#2ca02c',
   'roiIndices': np.random.choice(np.arange(data.nROIs), 10)},
  'CaImagingRaster': {'fig_fraction': 2, 'subsampling': 1,
   'roiIndices': 'all', 'normalization': 'per-line', 'subquantity': 'dF/F'},
- 'VisualStim': {'fig_fraction': 0.2, 'color': 'black'}}
+ 'visual_stim': {'fig_fraction': 0.2, 'color': 'black'}}
 plot(data, tlim=[100,250], 
-     settings=settings,
-     figsize=(12,8))
+     settings=settings)
 
 # %%
 from physion.dataviz.imaging import show_CaImaging_FOV
@@ -213,14 +214,14 @@ for angle in [0, 90]:
                 Sensitivities.append(Sensitivity)
 
         # saving data
-        np.save(os.path.join(tempfile.tempdir, 
+        np.save(os.path.join(tempfile.gettempdir(), 
                         'Sensitivities_WT_angle-%.1f.npy' % angle),
                 Sensitivities)
 
 # %%
 
 # loading data
-Sensitivities = np.load(os.path.join(tempfile.tempdir, 
+Sensitivities = np.load(os.path.join(tempfile.gettempdir(), 
                                      'Sensitivities_WT_angle-0.0.npy'), 
                   allow_pickle=True)
 
@@ -253,20 +254,20 @@ fig, ax = plot_contrast_sensitivity(\
                          'WT_angle-90.0'],
                         #  average_by='ROIs',
                          average_by='subjects',
-                        path=tempfile.tempdir)
+                        path=tempfile.gettempdir())
 
 fig, ax = plot_contrast_responsiveness(\
                         ['WT_angle-0.0', 
                          'WT_angle-90.0'],
                          sign='negative',
                          nROIs='final', # "original" or "final", before/after dFoF criterion
-                        path=tempfile.tempdir)
+                        path=tempfile.gettempdir())
 
 fig, ax = plot_contrast_responsiveness(\
                         ['WT_angle-0.0', 
                          'WT_angle-90.0'],
                          sign='positive',
                          nROIs='final', # "original" or "final", before/after dFoF criterion
-                        path=tempfile.tempdir)
+                        path=tempfile.gettempdir())
     
 # %%

@@ -34,11 +34,11 @@ for unit in range(data.spikeWaveforms.shape[-1]):
     fig.suptitle(' unit #%i' % (unit+1) )
 
 # %%
-# data.build_running_speed()
-# data.build_pupil()
+# data.build_running()
+data.build_pupil()
 # data.build_LFP()
-# data.build_MUA()
-# data.build_opto() # builds data.opto
+data.build_MUA()
+data.build_opto() # builds data.opto (if available)
 # data.build_muEvents() # builds data.muEvents
 
 #
@@ -53,19 +53,24 @@ fig, AX = pt.figure(axes=(1,3), ax_scale=(2,1), hspace=0)
 
 tmax = 160
 # 1) opto
-cond = (data.t_opto<tmax)
-AX[1].plot(data.t_opto[cond], data.opto[cond])
+if data.has_opto():
+    cond = (data.t_opto<tmax)
+    AX[1].plot(data.t_opto[cond], data.opto[cond])
 # 2) Pupil
-cond = (data.t_pupil[:]<tmax)
-AX[0].plot(data.t_pupil[cond], data.pupil[cond])
-# 2) Firing count across units
-cond = (data.t_spikes<tmax)
+if data.has_pupil():
+    cond = (data.t_pupil[:]<tmax)
+    AX[0].plot(data.t_pupil[cond], data.pupil[cond])
+# 3) MUA summed across channels
+cond = (data.t_MUA<tmax)
 firing = gaussian_filter1d(
            data.MUA[:,cond].sum(axis=0), 30)
 AX[2].plot(data.t_MUA[cond], firing) 
 
 
 # %%
+# a recording with the opto protocol
+filename = [f for f, protocol in zip(dataset['files'], dataset['protocol'])\
+                if 'ffDG-4dir-2ctrst+1sPrePostOpto' in protocol][0]
 data = Data(filename)
 data.build_MUA()
 data.build_opto() # builds data.opto

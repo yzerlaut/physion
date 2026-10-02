@@ -51,8 +51,8 @@ figRaw, _ = plot(data,
 # Compute average behavior within episodes
 withinEpisode_cond = (Episodes.t>0) & (Episodes.t<Episodes.time_duration[0])
 
-Ep_run_speed = Episodes.running_speed[:,withinEpisode_cond].mean(axis=1)
-Ep_pupil_size = Episodes.pupil_diameter[:,withinEpisode_cond].mean(axis=1)
+Ep_run_speed = Episodes.running[:,withinEpisode_cond].mean(axis=1)
+Ep_pupil_size = Episodes.pupil[:,withinEpisode_cond].mean(axis=1)
 
 # binning the data according to pupil level for analysis:
 pupil_bins = np.linspace(Ep_pupil_size.min(), Ep_pupil_size.max(), 15)
@@ -139,24 +139,24 @@ for ax, title in zip(AX, ['rest / run', 'constricted / dilated', 'mixed states']
 fig, AX = pt.figure(axes=(3,2), figsize=(1.2,1.2), hspace=0.5)
 
 for cond, color in zip([run, ~run], ['tab:orange', 'tab:blue']):
-    pt.plot(Episodes.t, Episodes.running_speed[cond,:].mean(axis=0), 
-            sy=Episodes.running_speed[cond,:].std(axis=0), color=color, ax=AX[0][0])
-    pt.plot(Episodes.t, Episodes.pupil_diameter[cond,:].mean(axis=0), 
-            sy=Episodes.pupil_diameter[cond,:].std(axis=0), color=color, ax=AX[1][0])
+    pt.plot(Episodes.t, Episodes.running[cond,:].mean(axis=0), 
+            sy=Episodes.running[cond,:].std(axis=0), color=color, ax=AX[0][0])
+    pt.plot(Episodes.t, Episodes.pupil[cond,:].mean(axis=0), 
+            sy=Episodes.pupil[cond,:].std(axis=0), color=color, ax=AX[1][0])
     
 for cond, color in zip([dilated, ~dilated], ['tab:orange', 'tab:blue']):
-    pt.plot(Episodes.t, Episodes.running_speed[cond,:].mean(axis=0), 
-            sy=Episodes.running_speed[cond,:].std(axis=0), color=color, ax=AX[0][1])
-    pt.plot(Episodes.t, Episodes.pupil_diameter[cond,:].mean(axis=0), 
-            sy=Episodes.pupil_diameter[cond,:].std(axis=0), color=color, ax=AX[1][1])
+    pt.plot(Episodes.t, Episodes.running[cond,:].mean(axis=0), 
+            sy=Episodes.running[cond,:].std(axis=0), color=color, ax=AX[0][1])
+    pt.plot(Episodes.t, Episodes.pupil[cond,:].mean(axis=0), 
+            sy=Episodes.pupil[cond,:].std(axis=0), color=color, ax=AX[1][1])
 
 for i, cond, color in zip(range(4),
                           [dilated & run, dilated & ~run, ~dilated & ~run, ~dilated & run],
                           ['tab:orange', 'tab:green', 'tab:blue', 'r']):
-    pt.plot(Episodes.t, Episodes.running_speed[cond,:].mean(axis=0), 
-            sy=Episodes.running_speed[cond,:].std(axis=0), color=color, ax=AX[0][2])
-    pt.plot(Episodes.t, Episodes.pupil_diameter[cond,:].mean(axis=0), 
-            sy=Episodes.pupil_diameter[cond,:].std(axis=0), color=color, ax=AX[1][2])
+    pt.plot(Episodes.t, Episodes.running[cond,:].mean(axis=0), 
+            sy=Episodes.running[cond,:].std(axis=0), color=color, ax=AX[0][2])
+    pt.plot(Episodes.t, Episodes.pupil[cond,:].mean(axis=0), 
+            sy=Episodes.pupil[cond,:].std(axis=0), color=color, ax=AX[1][2])
     
 pt.set_common_ylims(AX[0])
 pt.set_common_ylims(AX[1])
@@ -247,14 +247,14 @@ for f in DATASET['files']:
     data.build_dFoF(method_for_F0='sliding_percentile', neuropil_correction_factor=0.7, percentile=10., verbose=False)
 
     Episodes = physion.analysis.episodes.build.EpisodeData(data, 
-                                                    quantities=['dFoF', 'running_speed', 'pupil_diameter'],
+                                                    quantities=['dFoF', 'running', 'pupil'],
                                                     protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
                                                     verbose=False, prestim_duration=3,
                                                     dt_sampling=10)
 
     # Run vs Rest :
     withinEpisode_cond = (Episodes.t>0) & (Episodes.t<Episodes.time_duration[0])
-    Ep_run_speed = Episodes.running_speed[:,withinEpisode_cond].mean(axis=1)
+    Ep_run_speed = Episodes.running[:,withinEpisode_cond].mean(axis=1)
     run = Ep_run_speed>speed_threshold
     
     Responses['run'].append(Episodes.dFoF[run,:,:].mean(axis=(0,1)))

@@ -3,8 +3,10 @@ import os, sys, shutil
 import pandas as pd
 import numpy as np
 
-sys.path.append('../src')
+sys.path.append('../../src')
 import physion
+import physion.analysis.read_NWB
+import physion.assembling.dataset
 
 # %% [markdown]
 # # Read Dataset from Spreasheet
@@ -50,7 +52,7 @@ dataset_female_recordings
 ## ORIGINAL DATASET :
 # -------------------
 filename = os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'SST-WT-GluN1KO-GluN3KO-2023', 'DataTable.xlsx')
-dataset, subjects, analysis = physion.assembling.dataset.read_dataset_spreadsheet(filename, verbose=False)
+dataset, subjects, analysis = physion.assembling.dataset.read_spreadsheet(filename, verbose=False)
 
 # -------------------
 ## FILTER :
@@ -74,7 +76,7 @@ for i in range(len(subjects)):
 datafolder = os.path.join(os.path.expanduser('~'), 'DATA', 'Taddy', 'SST-GluN3KO', 'Orient-Tuning')
 
 # # copy physion DataTable template to datafolder:
-shutil.copy('../src/physion/acquisition/DataTable.xlsx', os.path.join(datafolder, 'DataTable.xlsx'))
+shutil.copy('../../src/physion/acquisition/DataTable.xlsx', os.path.join(datafolder, 'DataTable.xlsx'))
 
 # fill with filtered recordings
 for key in dataset.keys()[:-2]:
@@ -98,7 +100,7 @@ subjects[subjects_filter]
 # --------------------------
 
 filename = os.path.join(os.path.expanduser('~'), 'DATA', 'Taddy', 'SST-GluN3KO', 'Orient-Tuning', 'DataTable.xlsx')
-dataset, subjects, analysis = physion.assembling.dataset.read_dataset_spreadsheet(filename, verbose=False)
+dataset, subjects, analysis = physion.assembling.dataset.read_spreadsheet(filename, verbose=False)
 
 original = os.path.join(os.path.expanduser('~'), 'UNPROCESSED', 'SST-WT-GluN1KO-GluN3KO-2023', 'processed')
 
@@ -175,7 +177,7 @@ pd.DataFrame(subjects)
 datafolder = os.path.join(os.path.expanduser('~'), 'UNPROCESSED/SST-WT-GluN1KO-GluN3KO-2023')
 
 import shutil
-shutil.copy('../src/physion/acquisition/DataTable.xlsx',
+shutil.copy('../../src/physion/acquisition/DataTable.xlsx',
             os.path.join(datafolder, 'DataTable.xlsx'))
 
 # recordings

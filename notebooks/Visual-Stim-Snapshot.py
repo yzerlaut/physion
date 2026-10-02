@@ -26,7 +26,7 @@ from physion.analysis.read_NWB import Data
 # load the datafile
 data = Data(filename,
             verbose=False)
-data.init_visual_stim()
+data.build_visual_stim()
 
 # %% [markdown]
 # ### Show a single episode

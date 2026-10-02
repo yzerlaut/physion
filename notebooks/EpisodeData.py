@@ -8,7 +8,7 @@
 #find_episode_cond <br>
 #stat_test_for_evoked_responses <br>
 #compute_summary_data <br>
-#init_visual_stim <br>
+#build_visual_stim <br>
 
 
 # %%
@@ -40,13 +40,13 @@ data = Data(filename,
             verbose=False)
 
 data.build_dFoF(**dFoF_options, verbose=True)
-data.build_pupil_diameter()
-data.build_running_speed()
+data.build_pupil()
+data.build_running()
 
 # %% [markdown]
 # ### init
 # %%
-quantities = ['dFoF', 'running_speed'] #, 'pupil_diameter']
+quantities = ['dFoF', 'running'] #, 'pupil']
 protocol = "static-patch"
 ep = EpisodeData(data, 
                  quantities = quantities, 
@@ -111,11 +111,11 @@ response = ep.get_response2D(quantity="dFoF", averaging_dimension='episodes')
 plot(response, 'mean over episodes, n=%i ROIs' % response.shape[0])
 
 #3 dimensions (dFoF) - roi = 3 
-response = ep.get_response2D(quantity="dFoF", roiIndex = 3)
+response = ep.get_response2D(quantity="dFoF", index = 3)
 plot(response, 'n=%i eps' % response.shape[0])
 
-#2 dimensions (running_speed) 
-response = ep.get_response2D(quantity="running_speed")
+#2 dimensions (running) 
+response = ep.get_response2D(quantity="running")
 plot(response, 'n=%i eps' % response.shape[0])
 
 
@@ -178,7 +178,7 @@ stat_test_props = dict(interval_pre=[-1.,0],
                        interval_post=[1.,2.],                                   
                        test='ttest')
 
-response_args = dict(quantity='running_speed')
+response_args = dict(quantity='running')
 
 
 summary = ep.pre_post_statistics(episode_cond = ep.find_episode_cond(),
@@ -188,7 +188,7 @@ summary = ep.pre_post_statistics(episode_cond = ep.find_episode_cond(),
 for key in summary:
     print(key, summary[key])
 
-response_args = dict(quantity='dFoF', roiIndex=9)
+response_args = dict(quantity='dFoF', index=9)
 
 summary = ep.pre_post_statistics(episode_cond = ep.find_episode_cond(),
                                  response_args = response_args,
@@ -203,6 +203,5 @@ for key in summary:
 # PROBLEM - CHECK WHY THE visual_stim CAN HAVE DIFFERENT VALUES THAN THE DATA <br>
 # does not return anything <br>
 #%%
-data.init_visual_stim()
-ep.init_visual_stim(ep.data)
+data.build_visual_stim()
 # %%

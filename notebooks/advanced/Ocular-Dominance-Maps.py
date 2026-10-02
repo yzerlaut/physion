@@ -11,7 +11,7 @@
 
 # %%
 
-import sys
+import sys, os
 import numpy as np
 sys.path += ['../../src']
 from physion.intrinsic.ocular_dominance import plot_power_map

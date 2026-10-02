@@ -21,6 +21,8 @@ import physion.utils.plot_tools as pt
 pt.set_style('dark')
 
 import physion
+import physion.analysis.read_NWB
+import physion.analysis.episodes.build
 from physion.analysis.protocols.orientation_tuning\
           import compute_tuning_response_per_cells, fit_gaussian
 
@@ -33,7 +35,7 @@ data = physion.analysis.read_NWB.Data(filename, verbose=False)
 data.build_dFoF(neuropil_correction_factor=0.9, percentile=10., verbose=False)
 
 Episodes = physion.analysis.episodes.build.EpisodeData(data,
-                                                       quantities=['dFoF', 'running_speed'],
+                                                       quantities=['dFoF', 'running'],
                                                        protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
                                                        verbose=False)
 
@@ -52,7 +54,7 @@ response_significance_threshold = 0.001 # very very conservative
 
 # possibility to **FILTER THE EPISODES**:
 # stim_cond = (Episodes.t>0) & (Episodes.t<Episodes.time_duration[0])
-# filtering_cond = Episodes.running_speed[:,stim_cond].mean(axis=1)<0.1
+# filtering_cond = Episodes.running[:,stim_cond].mean(axis=1)<0.1
 
 Tuning = compute_tuning_response_per_cells(data, Episodes,
                                         #    filtering_cond=filtering_cond,
@@ -163,14 +165,14 @@ for contrast in [0.5, 1.0]:
                 Tunings.append(Tuning)
 
         # saving data
-        np.save(os.path.join(tempfile.tempdir, 
+        np.save(os.path.join(tempfile.gettempdir(), 
                         'Tunings_WT_contrast-%.1f.npy' % contrast),
                 Tunings)
 
 # %%
 
 # loading data
-Tunings = np.load(os.path.join(tempfile.tempdir, 'Tunings_WT_contrast-1.0.npy'), 
+Tunings = np.load(os.path.join(tempfile.gettempdir(), 'Tunings_WT_contrast-1.0.npy'), 
                   allow_pickle=True)
 
 # mean significant responses per session
@@ -217,7 +219,7 @@ fig, ax = plot_selectivity(\
                         #  average_by='subjects',
                         #  average_by='ROIs',
                         #  using='fit',
-                        path=tempfile.tempdir)
+                        path=tempfile.gettempdir())
     
 fig, ax = plot_orientation_tuning_curve(\
                                         ['WT_contrast-1.0', 
@@ -225,7 +227,7 @@ fig, ax = plot_orientation_tuning_curve(\
                                          'WT_contrast-0.5'],
                                         #   average_by='subjects',
                                         #  average_by='ROIs',
-                                        path=tempfile.tempdir)
+                                        path=tempfile.gettempdir())
     
 # %%
 
@@ -234,5 +236,5 @@ fig, ax = plot_responsiveness(\
          'WT_contrast-1.0', 
          'WT_contrast-0.5'],
         #  average_by='ROIs',
-        path=tempfile.tempdir)
+        path=tempfile.gettempdir())
 # %%

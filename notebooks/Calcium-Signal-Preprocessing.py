@@ -19,6 +19,7 @@ from scipy import stats
 sys.path += ['../src'] # add src code directory for physion
 
 import physion
+import physion.analysis.read_NWB
 import matplotlib.pylab as plt
 import physion.utils.plot_tools as pt
 pt.set_style('dark')
