@@ -17,6 +17,20 @@ def bruker_xml_parser(filename,
             'date':root.attrib['date'],
             'Prairie-version':root.attrib['version']}
 
+    # ------------------------------------------- #
+    #  Looking for X-Y coordinates of recorded FOV
+    # ------------------------------------------- #
+    for r in root[1]:
+        if r.attrib['key']=='positionCurrent':
+            for k in r:
+                if k.attrib['index']=='XAxis':
+                    data['xcenter-position-um'] = k[0].attrib['value']
+                if k.attrib['index']=='YAxis':
+                    data['ycenter-position-um'] = k[0].attrib['value']
+
+    # ------------------------------------------- #
+    #   .   channels                               
+    # ------------------------------------------- #
     try:
         # to find channel names
         CHANNELS = []

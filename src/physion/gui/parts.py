@@ -34,6 +34,7 @@ def open_folder(self):
     folder = QtWidgets.QFileDialog.getExistingDirectory(self,\
                                     "Choose datafolder",
                                     self.choose_root_folder())
+    self.folder = folder
     return folder
 
 def open_NWB_folder(self):

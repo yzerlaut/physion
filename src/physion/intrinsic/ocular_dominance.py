@@ -22,26 +22,30 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import pyqtgraph as pg
 from dateutil.tz import tzlocal
 
-#################################################
-###        Select the Camera Interface    #######
-#################################################
-from physion.intrinsic.load_camera import *
-
-#################################################
-###        Now set up the Acquisition     #######
-#################################################
-
 from physion.utils.paths import FOLDERS
-from physion.acquisition.settings import get_config_list, update_config
-from physion.visual_stim.main import visual_stim
-from physion.visual_stim.show import init_stimWindow
-from physion.utils.files import generate_filename_path
-from physion.acquisition.tools import base_path
-from physion.intrinsic.acquisition import take_fluorescence_picture,\
-        take_vasculature_picture, write_data,\
-        save_intrinsic_metadata, live_intrinsic,\
-        stop_intrinsic, get_frame, update_Image, update_dt_intrinsic,\
-        initialize_stimWindow
+
+if ('all' in sys.argv) or ('OD' in sys.argv) or ('ocular-dominance' in sys.argv):
+    # launched in acquisition mode...
+
+    #################################################
+    ###        Select the Camera Interface    #######
+    #################################################
+    from physion.intrinsic.load_camera import *
+
+    #################################################
+    ###        Now set up the Acquisition     #######
+    #################################################
+    from physion.acquisition.settings import get_config_list, update_config
+    from physion.visual_stim.main import visual_stim
+    from physion.visual_stim.show import init_stimWindows
+    from physion.utils.files import generate_filename_path
+    from physion.acquisition.tools import base_path
+    from physion.intrinsic.acquisition import take_fluorescence_picture,\
+            take_vasculature_picture, write_data,\
+            save_intrinsic_metadata, live_intrinsic,\
+            stop_intrinsic, get_frame, update_Image, update_dt_intrinsic,\
+            initialize_stimWindow
+    
 from physion.intrinsic.tools import *
 
 def gui(self,
@@ -136,31 +140,37 @@ def gui(self,
     
     self.add_side_widget(tab.layout, QtWidgets.QLabel(30*' - '))
     
-    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - protocol:'),
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - **stim. eye **:'),
                          spec='large-left')
-    self.ISIprotocolBox = QtWidgets.QComboBox(self)
-    self.ISIprotocolBox.addItems(['ALL', 
-                                  'left-up', 'left-down',
-                                  'right-up', 'right-down'])
-    self.add_side_widget(tab.layout, self.ISIprotocolBox,
+    self.eyeBox = QtWidgets.QComboBox(self)
+    self.eyeBox.addItems(['contra', ' ipsi'])
+    self.add_side_widget(tab.layout, self.eyeBox,
                          spec='small-right')
 
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('  - stim. side:'),
+                         spec='large-left')
+    self.ISIprotocolBox = QtWidgets.QComboBox(self)
+    #self.ISIprotocolBox.addItems(['left', 'right'])
+    self.ISIprotocolBox.addItems(['left'])
+    self.add_side_widget(tab.layout, self.ISIprotocolBox,
+                         spec='small-right')
+       
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - Nrepeat :'),
                     spec='large-left')
     self.repeatBox = QtWidgets.QLineEdit()
-    self.repeatBox.setText('10')
+    self.repeatBox.setText('4')
     self.add_side_widget(tab.layout, self.repeatBox, spec='small-right')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - stim. period (s):'),
                     spec='large-left')
     self.periodBox = QtWidgets.QComboBox()
-    self.periodBox.addItems(['12', '6'])
+    self.periodBox.addItems(['6', '12'])
     self.add_side_widget(tab.layout, self.periodBox, spec='small-right')
     
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - spatial sub-sampling (px):'),
                     spec='large-left')
     self.spatialBox = QtWidgets.QLineEdit()
-    self.spatialBox.setText('4')
+    self.spatialBox.setText('8')
     self.add_side_widget(tab.layout, self.spatialBox, spec='small-right')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel('  - acq. freq. (Hz):'),
@@ -287,22 +297,18 @@ def run(self):
     self.angle_start, self.angle_max, self.protocol, self.label = 0, 0, '', ''
     self.Npoints = int(self.period/self.dt)
 
-    if self.ISIprotocolBox.currentText()=='ALL':
-        self.STIM = {'angle_start':[zmin, xmax, zmax, xmin],
-                     'angle_stop':[zmax, xmin, zmin, xmax],
-                     'label': ['left-up', 'left-down', 'right-up', 'right-down'],
+    if self.ISIprotocolBox.currentText()=='left':
+        self.STIM = {'angle_start':[zmin, xmax],
+                     'angle_stop':[zmax, xmin],
+                     'label': ['left-up', 'left-down'],
                      'xmin':xmin, 'xmax':xmax, 'zmin':zmin, 'zmax':zmax}
         self.label = 'left-up' # starting point
-    else:
-        self.STIM = {'label': [self.ISIprotocolBox.currentText()],
+    elif self.ISIprotocolBox.currentText()=='right':
+        self.STIM = {'angle_start':[zmax, xmin],
+                     'angle_stop':[zmin, xmax],
+                     'label': ['right-up', 'right-down'],
                      'xmin':xmin, 'xmax':xmax, 'zmin':zmin, 'zmax':zmax}
-        if 'up' in self.ISIprotocolBox.currentText()=='up':
-            self.STIM['angle_start'] = [zmin]
-            self.STIM['angle_stop'] = [zmax]
-        elif 'down' in self.ISIprotocolBox.currentText()=='down':
-            self.STIM['angle_start'] = [zmax]
-            self.STIM['angle_stop'] = [zmin]
-        self.label = self.ISIprotocolBox.currentText()
+        self.label = 'right-up' # starting point
         
     for il, label in enumerate(self.STIM['label']):
         self.STIM[label+'-times'] = np.arange(self.Npoints*self.Nrepeat)*self.dt
@@ -405,6 +411,10 @@ def analysis_gui(self,
             " == compute phase/power maps == ", self)
     self.pmButton.clicked.connect(self.compute_phase_maps)
     self.add_side_widget(tab.layout,self.pmButton)
+
+    self.rmButton = QtWidgets.QPushButton(" = retinotopic maps = ", self)
+    self.rmButton.clicked.connect(self.compute_retinotopic_maps)
+    self.add_side_widget(tab.layout,self.rmButton) #, spec='large-right')
     
     """
     # Map shift
@@ -424,25 +434,25 @@ def analysis_gui(self,
     
     # -------------------------------------------------------
 
-    self.add_side_widget(tab.layout,QtWidgets.QLabel('  - ipsi side :'),
-                    spec='large-left')
-    self.ipsiBox = QtWidgets.QComboBox(self)
-    self.ipsiBox.addItems(['right', 'left'])
-    self.add_side_widget(tab.layout,self.ipsiBox, spec='small-right')
+    # self.add_side_widget(tab.layout,QtWidgets.QLabel('  - ipsi side :'),
+    #                 spec='large-left')
+    # self.ipsiBox = QtWidgets.QComboBox(self)
+    # self.ipsiBox.addItems(['right', 'left'])
+    # self.add_side_widget(tab.layout,self.ipsiBox, spec='small-right')
 
-    self.add_side_widget(\
-            tab.layout,QtWidgets.QLabel('  - detect. Thresh.:'),
-                    spec='large-left')
-    self.threshBox = QtWidgets.QLineEdit()
-    self.threshBox.setText('0.35')
-    self.add_side_widget(tab.layout, self.threshBox, spec='small-right')
+    # self.add_side_widget(\
+    #         tab.layout,QtWidgets.QLabel('  - detect. Thresh.:'),
+    #                 spec='large-left')
+    # self.threshBox = QtWidgets.QLineEdit()
+    # self.threshBox.setText('0.35')
+    # self.add_side_widget(tab.layout, self.threshBox, spec='small-right')
 
-    # RUN ANALYSIS
-    self.odButton  = QtWidgets.QPushButton(" = calc. Ocular Dom. = ", self)
-    self.odButton .clicked.connect(self.calc_OD)
-    self.add_side_widget(tab.layout,self.odButton)
+    # # RUN ANALYSIS
+    # self.odButton  = QtWidgets.QPushButton(" = calc. Ocular Dom. = ", self)
+    # self.odButton .clicked.connect(self.calc_OD)
+    # self.add_side_widget(tab.layout,self.odButton)
 
-    self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
+    # self.add_side_widget(tab.layout,QtWidgets.QLabel(''))
 
 
     self.saveButton = QtWidgets.QPushButton("SAVE", self)

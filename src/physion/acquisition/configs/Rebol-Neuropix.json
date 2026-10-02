@@ -1,0 +1,71 @@
+{
+    "Rig":"Neuropix-LN-U3screens", "physion-version":2.0,
+    "-----------------------------------------":"",
+    "Screen":"LN-VR-3screens",
+    "-----------------------------------------":"",
+    "NIdaq":{
+        "acquisition-frequency":5000,
+        "analog-outputs":{
+            "N-channels":0
+        },
+        "analog-inputs":{
+            "N-channels":1,
+            "channel-labels":[
+                "photodiode-signal-from-screen"
+            ]
+        },
+        "digital-outputs":{
+            "lines":"port0/line0:2",
+            "line-labels":[
+                "ephys-synch-signal-2Hz",
+                "visual-stim-episode-start",
+                "LED-optogenetics-activation"
+            ]
+        },
+        "digital-inputs":{
+            "lines":"port0/line3:7",
+            "line-labels":[
+                "copy-ephys-synch-signal",
+                "locomotion-channel1",
+                "locomotion-channel2",
+                "copy-visual-stim-episode-start",
+                "copy-LED-optogenetics-activation"
+            ]
+        }
+    },
+    "-----------------------------------------":"",
+    "FaceCamera":{
+        "frame-rate":30,
+        "1cm-in-pix":480
+    },
+    "-----------------------------------------":"",
+    "RigCamera":{
+        "frame-rate":20,
+        "1cm-in-pix":33
+    },
+    "-----------------------------------------":"",
+    "ImagingCamera":{
+        "frame-rate":20,
+        "1cm-in-pix":33
+    },
+    "Height-of-Microscope-Camera-Image-in-mm":2.7,
+    "-----------------------------------------":"",
+    "LED":{
+        "wavelength":455.0,
+        "description":"TTL-controlled LED-driver",
+        "manufacturer":"Thorlabs",
+        "fiber-location": "VIS"
+    },
+    "-----------------------------------------":"",
+    "treadmill":{
+        "radius-position-on-disk-cm":5
+    },
+    "-----------------------------------------":"",
+    "default-modalities":["NIDAQ",  
+                          "Neuropixels"],
+    "-----------------------------------------":"",
+    "root_datafolder":"DATA",
+    "lab":"Rebola and Bacci labs",
+    "institution":"Institut du Cerveau et de la Moelle, Paris",
+    "protocols":"all"
+}

@@ -1,6 +1,6 @@
-import nidaqmx, collections
+import nidaqmx
 
-from nidaqmx.constants import ProductCategory, UsageTypeAI
+from nidaqmx.constants import ProductCategory #, UsageTypeAI
 
 acq_freq = 1000. # seconds
 
@@ -9,6 +9,9 @@ def get_analog_input_channels(device):
 
 def get_digital_input_channels(device):
     return  [c.name for c in device.di_lines]
+
+def get_digital_output_channels(device):
+    return  [c.name for c in device.do_lines]
 
 def get_counter_input_channels(device):
     return  [c.name for c in device.co_physical_chans]
@@ -21,7 +24,8 @@ def find_x_series_devices():
 
     DEVICES = []
     for device in system.devices:
-        if (not device.dev_is_simulated and
+        # if (not device.dev_is_simulated and
+        if (not device.is_simulated and
                 device.product_category == ProductCategory.X_SERIES_DAQ and
                 len(device.ao_physical_chans) >= 2 and
                 len(device.ai_physical_chans) >= 4 and
@@ -36,10 +40,22 @@ def find_m_series_devices():
 
     DEVICES = []
     for device in system.devices:
-        if (not device.dev_is_simulated and
+        # if (not device.dev_is_simulated and
+        if (not device.is_simulated and
                 device.product_category == ProductCategory.M_SERIES_DAQ and
                 len(device.ao_physical_chans) >= 2 and
                 len(device.ai_physical_chans) >= 4):
+            DEVICES.append(device)
+    return DEVICES
+
+def find_usb_devices():
+    system = nidaqmx.system.System.local()
+
+    DEVICES = []
+    for device in system.devices:
+        # if (not device.dev_is_simulated and
+        if (not device.is_simulated and
+                device.product_category == ProductCategory.USBDAQ):
             DEVICES.append(device)
     return DEVICES
 
@@ -49,10 +65,19 @@ if __name__=='__main__':
     print('looking for M-series devices [...]')
     DEVICES = find_m_series_devices()
     print(DEVICES)
+    print()
     print('----------------------')
     print('looking for X-series devices [...]')
     DEVICES = find_x_series_devices()
     print(DEVICES)
+    print()
+    print('----------------------')
+    print('looking for USB devices [...]')
+    DEVICES = find_usb_devices()
+    print(DEVICES)
+    print()
+
+
     # device = DEVICES[0]
     # print(dir(device))
     system = nidaqmx.system.System.local()
@@ -69,3 +94,5 @@ if __name__=='__main__':
         print(get_counter_input_channels(device))
         print('Analog Output channels:')
         print(get_analog_output_channels(device))
+        print('Digital Output channels:')
+        print(get_digital_output_channels(device))

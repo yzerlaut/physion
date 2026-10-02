@@ -2,40 +2,43 @@
 import pynwb, os, sys, pathlib, itertools
 import numpy as np
 import matplotlib.pylab as plt
+from scipy.ndimage import gaussian_filter1d
 
 # custom modules
 import physion.utils.plot_tools as pt
 from physion.analysis import tools
 from physion.dataviz.raw import format_key_value
-from physion.visual_stim.build import build_stim
+from physion.analysis.episodes import trial_statistics
+from . import common
 
 ### ---------------------------------
 ###  -- Trial Average response  --
 ### ---------------------------------
 
+
 def plot(episodes,
            # episodes props
-           quantity='dFoF', roiIndex=None, roiIndices='all',
-           norm='',
-           interpolation='linear',
-           baseline_substraction=False,
+           quantity='running', index=None,
+           smoothing=0,
            condition=None,
            COL_CONDS=None, column_keys=[], column_key='',
            ROW_CONDS=None, row_keys=[], row_key='',
            COLOR_CONDS = None, color_keys=[], color_key='',
-           fig_preset=' ',
            Xbar=0., Xbar_label='',
            Ybar=0., Ybar_label='',
-           with_std=True, with_std_over_trials=False, with_std_over_rois=False,
+           with_std=True, 
+           with_std_over_rois=False,
            with_screen_inset=False,
+           screen_inset=[.75, .9, .35, .25],
            with_stim=True,
            with_axis=False,
-           with_stat_test=False, stat_test_props=dict(interval_pre=[-1,0],
-                                                      interval_post=[1,2],
-                                                      test='wilcoxon',
-                                                      positive=True),
+           with_stat_test=False, 
+           stat_test_props=dict(interval_pre=[-1,0],
+                                interval_post=[1,2],
+                                test='wilcoxon',
+                                sign='positive'),
            with_annotation=False,
-           color='k',
+           color=None,
            label='',
            ylim=None, xlim=None,
            fig=None, AX=None, figsize=(5,3),
@@ -46,90 +49,40 @@ def plot(episodes,
         - "Zscore-per-roi"
         - "minmax-per-roi"
     """
-    if with_std:
-        with_std_over_trials = True # for backward compatibility --- DEPRECATED you need to specify !!
 
-    response_args = dict(roiIndex=roiIndex, roiIndices=roiIndices, average_over_rois=False)
-
-    if with_screen_inset and (episodes.visual_stim is None):
-        print('\n [!!] visual stim of episodes was not initialized  [!!]  ')
-        print('    --> screen_inset display desactivated ' )
-        with_screen_inset = False
-
-    if condition is None:
-        condition = np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)
-
-    elif len(condition)==len(episodes.protocol_cond_in_full_data):
-        condition = condition[episodes.protocol_cond_in_full_data]
-
-    # ----- building conditions ------
-
-    # columns
-    if column_key!='':
-        COL_CONDS = [episodes.find_episode_cond(column_key, index) for index in range(len(episodes.varied_parameters[column_key]))]
-    elif len(column_keys)>0:
-        COL_CONDS = [episodes.find_episode_cond(column_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in column_keys])]
-    elif (COL_CONDS is None):
-        COL_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
-
-    # rows
-    if row_key!='':
-        ROW_CONDS = [episodes.find_episode_cond(row_key, index) for index in range(len(episodes.varied_parameters[row_key]))]
-    elif len(row_keys)>0:
-        ROW_CONDS = [episodes.find_episode_cond(row_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in row_keys])]
-    elif (ROW_CONDS is None):
-        ROW_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
-
-    # colors
-    if color_key!='':
-        COLOR_CONDS = [episodes.find_episode_cond(color_key, index) for index in range(len(episodes.varied_parameters[color_key]))]
-    elif len(color_keys)>0:
-        COLOR_CONDS = [episodes.find_episode_cond(color_keys, indices) for indices in itertools.product(*[range(len(episodes.varied_parameters[key])) for key in color_keys])]
-    elif (COLOR_CONDS is None):
-        COLOR_CONDS = [np.ones(np.sum(episodes.protocol_cond_in_full_data), dtype=bool)]
-
-    if (len(COLOR_CONDS)>1):
-        try:
-            COLORS= [color[c] for c in np.arange(len(COLOR_CONDS))]
-        except BaseException:
-            COLORS = [plt.cm.tab10((c%10)/10.) for c in np.arange(len(COLOR_CONDS))]
-    else:
-        COLORS = [color for ic in range(len(COLOR_CONDS))]
-
-    # single-value
-    # condition = [...]
-
-    if (fig is None) and (AX is None):
-        fig, AX = plt.subplots(len(ROW_CONDS), len(COL_CONDS),
-                            figsize=figsize,
-                            squeeze=False)
-        no_set=False
-    else:
-        no_set=no_set
-
-    # get response reshape in
-    response = tools.normalize(episodes.get_response(**dict(quantity=quantity,
-                                                        roiIndex=roiIndex,
-                                                        roiIndices=roiIndices,
-                                                        average_over_rois=False)),
-                                norm,
-                                verbose=verbose)
+    condition, COL_CONDS, ROW_CONDS,\
+            with_screen_inset, fig, AX, no_set = \
+                    common.prepare_panels(episodes,
+                            condition,
+                            COL_CONDS, column_keys, column_key,
+                            ROW_CONDS, row_keys, row_key,
+                            with_screen_inset,
+                            fig, AX, figsize)
+    COLOR_CONDS, COLORS = common.prepare_colors(episodes,\
+        COLOR_CONDS, color_keys, color_key, color)
 
     episodes.ylim = [np.inf, -np.inf]
+
     for irow, row_cond in enumerate(ROW_CONDS):
         for icol, col_cond in enumerate(COL_CONDS):
             for icolor, color_cond in enumerate(COLOR_CONDS):
 
                 cond = np.array(condition & col_cond & row_cond & color_cond)
+                avg_dim = 'episodes' if with_std_over_rois else 'ROIs'  #check
 
-                my = response[cond,:,:].mean(axis=(0,1))
+                response = episodes.get_response2D(\
+                                quantity=quantity,
+                                episode_cond=cond,
+                                index=index,
+                                averaging_dimension=avg_dim)
 
-                if with_std_over_trials or with_std_over_rois:
-                    if with_std_over_rois:
-                        sy = response[cond,:,:].mean(axis=0).std(axis=-2)
-                    else:
-                        sy = response[cond,:,:].std(axis=(0,1))
+                my = response.mean(axis=0) # mean response
 
+                if smoothing>0:
+                    my = gaussian_filter1d(my, smoothing)
+
+                if with_std:
+                    sy = response.std(axis=0)
                     pt.plot(episodes.t, my, sy=sy,
                             ax=AX[irow][icol], color=COLORS[icolor], lw=1)
                     episodes.ylim = [min([episodes.ylim[0], np.min(my-sy)]),
@@ -144,19 +97,13 @@ def plot(episodes,
                     AX[irow][icol].axis('off')
 
                 if with_screen_inset:
-                    inset = pt.inset(AX[irow][icol], [.83, .9, .3, .25])
-                    istim = np.flatnonzero(cond)[0]
-                    # start -- QUICK FIX
-                    if 'protocol_id' in episodes.visual_stim.experiment:
-                        if type(episodes.visual_stim.experiment['protocol_id']) in [int, np.int64]:
-                            episodes.visual_stim.experiment['protocol_id'] = np.zeros(len(cond), dtype=int)+\
-                                                        int(episodes.visual_stim.experiment['protocol_id'])
-                        else:
-                            episodes.visual_stim.experiment['protocol_id'] = np.zeros(len(cond), dtype=int)+\
-                                                        int(episodes.visual_stim.experiment['protocol_id'][0])
 
-                    # end -- QUICK FIX
-                    episodes.visual_stim.plot_stim_picture(istim, ax=inset)
+                    inset = pt.inset(AX[irow][icol],
+                                     screen_inset)
+
+                    istim = np.flatnonzero(cond)[0] # first episode with that condition
+                    episodes.plot_stim_picture(istim, 
+                                               ax=inset)
 
                 if with_annotation:
 
@@ -169,13 +116,15 @@ def plot(episodes,
                         # ge.annotate(AX[irow][icol], s, (1, 1), ha='right', va='bottom', size='small')
                         AX[irow][icol].annotate(s[:-1], (0.5, 1),
                                 ha='center', va='bottom', size='small', xycoords='axes fraction')
+
                     # row label
                     if (len(ROW_CONDS)>1) and (icol==0) and (icolor==0):
                         s = ''
                         for i, key in enumerate(episodes.varied_parameters.keys()):
                             if (key==row_key) or (key in row_keys):
                                 try:
-                                    s+=format_key_value(key, getattr(episodes, key)[cond][0])+', ' # should have a unique value
+                                    s+=format_key_value(key, 
+                                        getattr(episodes, key)[cond][0])+', ' # should have a unique value
                                 except IndexError:
                                     pass
 
@@ -198,22 +147,6 @@ def plot(episodes,
                                 AX[0][0].annotate(s+'  '+icolor*'\n', (1,0), color=COLORS[icolor],
                                         ha='right', va='bottom', size='small', xycoords='figure fraction')
 
-    if with_stat_test:
-        for irow, row_cond in enumerate(ROW_CONDS):
-            for icol, col_cond in enumerate(COL_CONDS):
-                for icolor, color_cond in enumerate(COLOR_CONDS):
-
-                    cond = np.array(condition & col_cond & row_cond & color_cond)[:response.shape[0]]
-                    results = episodes.stat_test_for_evoked_responses(episode_cond=cond,
-                                                                  response_args=dict(roiIndex=roiIndex, roiIndices=roiIndices),
-                                                                  **stat_test_props)
-
-                    ps, size = results.pval_annot()
-                    AX[irow][icol].annotate(icolor*'\n'+ps, ((stat_test_props['interval_post'][0]+stat_test_props['interval_pre'][1])/2.,
-                                                             episodes.ylim[0]), va='top', ha='center', size=size-1, xycoords='data', color=COLORS[icolor])
-                    AX[irow][icol].plot(stat_test_props['interval_pre'], episodes.ylim[0]*np.ones(2), 'k-', lw=1)
-                    AX[irow][icol].plot(stat_test_props['interval_post'], episodes.ylim[0]*np.ones(2), 'k-', lw=1)
-
     if xlim is None:
         episodes.xlim = [episodes.t[0], episodes.t[-1]]
     else:
@@ -222,6 +155,22 @@ def plot(episodes,
     if ylim is not None:
         episodes.ylim = ylim
 
+    if with_stat_test:
+        for irow, row_cond in enumerate(ROW_CONDS):
+            for icol, col_cond in enumerate(COL_CONDS):
+                for icolor, color_cond in enumerate(COLOR_CONDS):
+
+                    cond = np.array(condition & col_cond & row_cond & color_cond)#[:response.shape[0]]
+                    results = trial_statistics.stat_test_for_evoked_responses(episodes,
+                                                                              episode_cond=cond,
+                                                                              response_args=dict(quantity=quantity, index=index),
+                                                                              **stat_test_props)
+
+                    ps, size = results.pval_annot()
+                    AX[irow][icol].annotate(icolor*'\n'+ps, ((stat_test_props['interval_post'][0]+stat_test_props['interval_pre'][1])/2.,
+                                                             episodes.ylim[0]), va='top', ha='center', size=size-1, xycoords='data', color=COLORS[icolor])
+                    AX[irow][icol].plot(stat_test_props['interval_pre'], episodes.ylim[0]*np.ones(2), 'k-', lw=1)
+                    AX[irow][icol].plot(stat_test_props['interval_post'], episodes.ylim[0]*np.ones(2), 'k-', lw=1)
 
     for irow, row_cond in enumerate(ROW_CONDS):
         for icol, col_cond in enumerate(COL_CONDS):
@@ -249,8 +198,8 @@ def plot(episodes,
     # if with_annotation:
         # S = ''
         # if hasattr(episodes, 'rawFluo') or hasattr(episodes, 'dFoF') or hasattr(episodes, 'neuropil'):
-            # if roiIndex is not None:
-                # S+='roi #%i' % roiIndex
+            # if index is not None:
+                # S+='roi #%i' % index
             # elif roiIndices in ['sum', 'mean', 'all']:
                 # S+='n=%i rois' % len(episodes.data.valid_roiIndices)
             # else:
@@ -274,17 +223,17 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    import physion
     if os.path.isfile(args.datafile):
-        data = physion.analysis.read_NWB.Data(args.datafile)
-        data.init_visual_stim()
-        episodes = physion.analysis.process_NWB.EpisodeData(data,
-                quantities=['dFoF'],
-                protocol_id=args.protocol_id)
-        episodes.init_visual_stim(data)
 
-        plot_trial_average(episodes,
-                           with_screen_inset=True)
+        quantity, episodes = common.test_data(args)
+
+        keys = list(episodes.varied_parameters.keys())
+        plot(episodes,
+             quantity=quantity,
+             column_key=keys[0] if len(keys)>0 else None,
+             row_key=keys[1] if len(keys)>1 else '',
+             color_key=keys[2] if len(keys)>2 else '',
+             with_screen_inset=True)
         pt.plt.show()
 
     else:

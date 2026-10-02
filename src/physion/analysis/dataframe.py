@@ -1,7 +1,8 @@
 import os, sys, itertools, pandas
 import numpy as np
 
-from physion.analysis import read_NWB, process_NWB
+from physion.analysis import read_NWB
+from physion.analysis.episodes.build import EpisodeData
 
 from warnings import simplefilter
 simplefilter(action="ignore", category=pandas.errors.PerformanceWarning)
@@ -55,7 +56,7 @@ def NWB_to_dataframe(nwbfile,
         time = np.array(data.Fluorescence.timestamps[:])[::subsampling]
     else:
         print('taking running speed by default')
-        time = data.t_running_speed[::subsampling]
+        time = data.t_running[::subsampling]
 
     dataframe = pandas.DataFrame({'time':time})
     dataframe.dt = time[1]-time[0] # store the time step in the metadata
@@ -86,34 +87,34 @@ def NWB_to_dataframe(nwbfile,
     # --- behavioral characterization --- #
     # - - - - - - - - - - - - - - - - - - #
     
-    if 'Running-Speed' in data.nwbfile.acquisition:
+    if data.has_running():
 
         # get:
-        running_speed = data.build_running_speed(\
-                                            specific_time_sampling=time,
-                                            verbose=verbose)
+        running = data.build_running(\
+                            specific_time_sampling=time,
+                            verbose=verbose)
         # normalize:
-        running_speed,\
-                dataframe.running_speed_mean,\
-                dataframe.running_speed_std = Normalize(running_speed)
+        running,\
+            dataframe.running_mean,\
+                dataframe.running_std = Normalize(running)
 
         if add_shifted_behavior_features:
 
             build_timelag_set_of_behavior_arrays(data, 
-                                                 dataframe, 
-                                                 running_speed,
-                                                 'Running-Speed',
-                                                 behavior_shifting_range)
+                                        dataframe, 
+                                        running,
+                                        'Running-Speed',
+                                        behavior_shifting_range)
 
         else:
 
-            dataframe['Running-Speed'] = running_speed 
+            dataframe['Running-Speed'] = running 
 
 
-    if 'Pupil' in data.nwbfile.processing:
+    if data.has_pupil():
 
         # get:
-        pupil_size = data.build_pupil_diameter(\
+        pupil_size = data.build_pupil(\
                             specific_time_sampling=time, verbose=verbose)
 
         # normalize:
@@ -133,12 +134,12 @@ def NWB_to_dataframe(nwbfile,
             dataframe['Pupil-Diameter'] = pupil_size
 
     
-    if 'Pupil' in data.nwbfile.processing:
+    if data.has_gaze():
 
         # get:
-        gaze_mov= data.build_gaze_movement(\
-                                    specific_time_sampling=time,
-                                    verbose=verbose)
+        gaze_mov= data.build_gaze(\
+                        specific_time_sampling=time,
+                        verbose=verbose)
 
         # normalize:
         gaze_mov,\
@@ -158,7 +159,7 @@ def NWB_to_dataframe(nwbfile,
             dataframe['Gaze-Position'] = gaze_mov
 
         
-    if 'FaceMotion' in data.nwbfile.processing:
+    if data.has_facemotion():
 
         # get:
         facemotion = data.build_facemotion(\
@@ -190,9 +191,9 @@ def NWB_to_dataframe(nwbfile,
 
         if (protocol not in exclude_from_stim):
 
-            episodes = process_NWB.EpisodeData(data, 
-                                               protocol_id=p,
-                                               verbose=verbose)
+            episodes = EpisodeData(data, 
+                                   protocol_id=p,
+                                   verbose=verbose)
 
             protocol_cond = data.get_protocol_cond(p)
 

@@ -2,6 +2,7 @@
 # import os, sys, pathlib
 import numpy as np
 import matplotlib.pylab as plt
+from scipy.ndimage import filters
 
 from physion.dataviz import tools as dv_tools
 import physion.utils.plot_tools as pt
@@ -18,8 +19,8 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
                         #
                         cmap=plt.cm.binary, 
                         axb=None,
-                        bar_inset_start=-0.01, bar_inset_width=0.01,
-                        normalization='None', subsampling=1,
+                        bar_inset_start=-0.02, bar_inset_width=0.01,
+                        normalization='per-line', subsampling=1,
                         name=''):
 
     if (subquantity in ['Fluorescence', 'rawFluo']) and (raster is None):
@@ -47,46 +48,49 @@ def add_CaImagingRaster(data, tlim, ax, raster=None,
     elif (type(roiIndices)==str) and (roiIndices=='all') and (subquantity in ['dFoF', 'dF/F']):
         roiIndices = np.arange(data.nROIs)
         
-    if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
-        raster = np.array([(raster[i,:]-np.min(raster[i,:]))/(np.max(raster[i,:])-\
-                                np.min(raster[i,:])) for i in range(raster.shape[0])])
+    if len(roiIndices)>1:
+        # checking more than one ROI to plot the raster
+
+        if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
+            raster = np.array([(raster[i,:]-np.min(raster[i,:]))/(np.max(raster[i,:])-\
+                                    np.min(raster[i,:])) for i in range(raster.shape[0])])
+            
+        indices=np.arange(*dv_tools.convert_times_to_indices(*tlim,
+                                    data.Neuropil, axis=1))[::subsampling]
         
-    indices=np.arange(*dv_tools.convert_times_to_indices(*tlim,
-                                data.Neuropil, axis=1))[::subsampling]
-    
-    ims = ax.imshow(raster[:,indices], origin='lower', cmap=cmap,
-              aspect='auto', interpolation='none', vmin=0, vmax=1,
-              extent=(dv_tools.convert_index_to_time(indices[0], data.Neuropil),
-                      dv_tools.convert_index_to_time(indices[-1], data.Neuropil),
-                      fig_fraction_start, fig_fraction_start+fig_fraction))
+        ims = ax.imshow(raster[:,indices], origin='lower', cmap=cmap,
+                aspect='auto', interpolation='none', vmin=0, vmax=1,
+                extent=(dv_tools.convert_index_to_time(indices[0], data.Neuropil),
+                        dv_tools.convert_index_to_time(indices[-1], data.Neuropil),
+                        fig_fraction_start, fig_fraction_start+fig_fraction))
 
-    if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
+        if normalization in ['per line', 'per-line', 'per cell', 'per-cell']:
 
-        if axb is None:
-            axb = pt.inset(ax, [bar_inset_start, fig_fraction_start+.2*fig_fraction,
-                                bar_inset_width, .6*fig_fraction], facecolor='w')
+            if axb is None:
+                axb = pt.inset(ax, [bar_inset_start, fig_fraction_start+.1*fig_fraction,
+                                    bar_inset_width, .6*fig_fraction], facecolor='w')
 
-        cb = plt.colorbar(ims, cax=axb)
-        cb.set_ticks([])
-        axb.set_ylabel('$\\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.', fontsize=9)
-        axb.annotate('max', (0.5,1.1), fontsize=7,
-                xycoords='axes fraction', ha='center')
-        axb.annotate('min', (0.5,-0.1), fontsize=7, va='top',
-                xycoords='axes fraction', ha='center')
+            cb = plt.colorbar(ims, cax=axb)
+            cb.set_ticks([])
+            axb.set_ylabel('$\\Delta$F/F' if (subquantity in ['dFoF', 'dF/F']) else ' fluo.', fontsize=9)
+            axb.annotate('max', (0.5,1.1), fontsize=7,
+                    xycoords='axes fraction', ha='center')
+            axb.annotate('min', (0.5,-0.1), fontsize=7, va='top',
+                    xycoords='axes fraction', ha='center')
 
-        
-    dv_tools.add_name_annotation(data, ax, name, tlim,
-            fig_fraction, fig_fraction_start, rotation=90)
+            
+        dv_tools.add_name_annotation(data, ax, name, tlim,
+                fig_fraction, fig_fraction_start, rotation=90)
 
-    ax.annotate('1', (tlim[1], fig_fraction_start), xycoords='data')
-    ax.annotate('%i' % raster.shape[0],
-                (tlim[1], fig_fraction_start+fig_fraction), va='top', xycoords='data')
-    ax.annotate('ROIs', 
-                (tlim[1], fig_fraction_start+fig_fraction/2.),
-                va='center',
-                rotation=-90,
-                xycoords='data',
-                fontsize=8)
+        ax.annotate('1', (tlim[1], fig_fraction_start), xycoords='data')
+        ax.annotate('%i' % raster.shape[0],
+                    (tlim[1], fig_fraction_start+fig_fraction), va='top', xycoords='data')
+        ax.annotate('ROIs', 
+                    (tlim[1], fig_fraction_start+fig_fraction/2.),
+                    va='center',
+                    # rotation=-90,
+                    xycoords='data',
+                    fontsize=8)
 
     
     
@@ -99,7 +103,8 @@ def add_CaImaging(data, tlim, ax,
                   vicinity_factor=1, 
                   subsampling=1, 
                   name='[Ca] imaging',
-                  annotation_side='left'):
+                  annotation_side='left',
+                  sigma=0):
 
     if (subquantity in ['dF/F', 'dFoF']) and (not hasattr(data, 'dFoF')):
         data.build_dFoF(**dFoF_args)
@@ -121,7 +126,10 @@ def add_CaImaging(data, tlim, ax,
                 fig_fraction_start # bottom position
 
         if (subquantity in ['dF/F', 'dFoF']):
-            y = data.dFoF[ir, np.arange(i1,i2)][::subsampling]
+            if sigma > 0 :
+                y = filters.gaussian_filter1d(data.dFoF[ir, np.arange(i1,i2)][::subsampling], sigma)
+            else : 
+                y = data.dFoF[ir, np.arange(i1,i2)][::subsampling]
             dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 1.,
                               ax_fraction_extent=fig_fraction/len(roiIndices),
                               ax_fraction_start=ypos,
@@ -129,7 +137,10 @@ def add_CaImaging(data, tlim, ax,
                               scale_side=scale_side,
                              scale_unit_string=('%.0f$\\Delta$F/F' if (n==0) else ' '))
         else:
-            y = data.rawFluo[ir,np.arange(i1,i2)][::subsampling]
+            if sigma > 0 :
+                y = filters.gaussian_filter1d(data.rawFluo[ir,np.arange(i1,i2)][::subsampling], sigma)
+            else : 
+                y = data.rawFluo[ir,np.arange(i1,i2)][::subsampling]
             dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1.,
                    ax_fraction_extent=fig_fraction/len(roiIndices),
                    ax_fraction_start=ypos, color=color,
@@ -199,8 +210,7 @@ def find_roi_cond(data, roiIndex,
                   force_square=False,
                   roi_zoom_factor=10.):
 
-    mx, my, sx, sy = find_roi_coords(data, roiIndex,
-                                     force_square=force_square)
+    mx, my, sx, sy = find_roi_coords(data, roiIndex)
 
     img_shape = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images['meanImg'][:].shape
 
@@ -218,31 +228,118 @@ def add_roi_ellipse(data, roiIndex, ax,
                     roi_lw=3):
 
     mx, my, sx, sy = find_roi_coords(data, roiIndex)
-    ellipse = plt.Circle((mx, my), size_factor*(sy+sx), edgecolor='lightgray', facecolor='none', lw=roi_lw)
+    ellipse = plt.Circle((my, mx), 
+                         size_factor*(sy+sx), 
+                         edgecolor='lightgray', 
+                         facecolor='none', lw=roi_lw)
     ax.add_patch(ellipse)
+
+def get_FOV_image(data, key):
+
+    img = getattr(\
+            getattr(data.nwbfile.processing['ophys'],
+                  'data_interfaces')['Backgrounds_0'],
+                  'images')[key][:]
+
+    extent=(0, img.shape[1], 
+            0, img.shape[0])
+    
+    return img, extent
+
 
 def show_CaImaging_FOV(data, 
                        key='meanImg', 
                        NL=1, 
                        cmap=pt.get_linear_colormap('k', 'g'), 
                        ax=None,
-                       roiIndex=None, roiIndices=[],
-                       roi_zoom_factor=10,
-                       roi_lw=3,
+                       roiIndex=None, 
                        with_ROI_annotation=False,
                        with_annotation=True,
-                       with_roi_zoom=False,):
-    
+                       fig_args=dict(ax_scale=(1.4,2.4)),
+                       roi_colors = None
+                       ):
+
+    # set up axes 
     if ax is None:
-        fig, ax = plt.subplots()
+        fig, ax = pt.figure(**fig_args)
     else:
         fig = None
     ax.axis('equal')
 
-    img = data.nwbfile.processing['ophys'].data_interfaces['Backgrounds_0'].images[key][:]
-    extent=(0,img.shape[1], 0, img.shape[0])
+    img, extent = get_FOV_image(data, key)
 
-    if with_roi_zoom and roiIndex is not None:
+    img = (img-img.min())/(img.max()-img.min())
+    img = np.power(img, 1/NL)
+    img = ax.imshow(img, vmin=0, vmax=1, 
+                    cmap=cmap, 
+                    aspect='equal', 
+                    interpolation='none', 
+                    origin='lower', 
+                    extent=extent)
+    ax.axis('off')
+
+    if roiIndex is not None:
+
+        if type(roiIndex)==int:
+            roiIndex = [roiIndex]
+
+        for roi in roiIndex:
+            x, y = find_full_roi_coords(data, roi)
+            if roi_colors==None:
+                # color=plt.cm.tab10(roiIndex%10), 
+                # color=plt.cm.hsv(np.random.uniform(0,1)),
+                color = plt.cm.autumn(np.random.uniform(0,1))
+            else: 
+                color = roi_colors[roi]
+            ax.plot(x, y, '.', 
+                    color=color,
+                    alpha=0.5,
+                    ms=0.1)
+
+            if with_ROI_annotation:
+                ax.annotate('%i' % (roi+1), (np.mean(x), np.mean(y)), 
+                            color='w', fontsize=7)
+
+    if with_annotation:
+        ax.annotate('%i ROIs' % data.nROIs, 
+                    (0, 0), xycoords='axes fraction', 
+                    rotation=90, ha='right')
+        ax.set_title(key)
+    
+    return fig, ax, img
+
+
+def show_singleROI_in_FOV(data, 
+                       key='meanImg', 
+                       NL=1, 
+                       cmap=pt.get_linear_colormap('k', 'g'), 
+                       ax=None,
+                       roiIndex=None, 
+                       roi_zoom_factor=10,
+                       roi_lw=3,
+                       with_ROI_annotation=False,
+                       with_annotation=True,
+                       with_roi_zoom=False,
+                       fig_args=dict(ax_scale=(1.4,2.4)),
+                       ):
+
+    # set up axes 
+    if ax is None:
+        fig, ax = pt.figure(**fig_args)
+    else:
+        fig = None
+    ax.axis('equal')
+
+    # get FOV image
+    img = getattr(\
+            getattr(data.nwbfile.processing['ophys'],
+                  'data_interfaces')['Backgrounds_0'],
+                  'images')[key][:]
+
+    extent=(0, img.shape[1], 
+            0, img.shape[0])
+
+    if with_roi_zoom and type(roiIndex)==int:
         zoom_cond, zoom_cond_shape = find_roi_cond(data, roiIndex,
                                             roi_zoom_factor=roi_zoom_factor)
         img = img[zoom_cond].reshape(*zoom_cond_shape)
@@ -251,37 +348,47 @@ def show_CaImaging_FOV(data,
     
     img = (img-img.min())/(img.max()-img.min())
     img = np.power(img, 1/NL)
-    img = ax.imshow(img, vmin=0, vmax=1, cmap=cmap, aspect='equal', 
-                    interpolation='none', origin='lower', extent=extent)
+    img = ax.imshow(img, vmin=0, vmax=1, 
+                    cmap=cmap, 
+                    aspect='equal', 
+                    interpolation='none', 
+                    origin='lower', 
+                    extent=extent)
     ax.axis('off')
 
-    if roiIndex is not None:
-        add_roi_ellipse(data, roiIndex, ax, roi_lw=roi_lw)
+    if type(roiIndex)==int:
+        # if single ROI
+        add_roi_ellipse(data, roiIndex, 
+                        ax, roi_lw=roi_lw)
 
-    if (type(roiIndices)==str) and roiIndices=='all':
-        roiIndices = data.valid_roiIndices
+    else:
+        # multiple ROIs
+        if roiIndex is None:
+            roiIndex = np.arange(data.nROIs)
 
-    for roiIndex in roiIndices:
-        x, y = find_full_roi_coords(data, roiIndex)
-        ax.plot(x, y, '.', 
-                # color=plt.cm.tab10(roiIndex%10), 
-                # color=plt.cm.hsv(np.random.uniform(0,1)),
-                color=plt.cm.autumn(np.random.uniform(0,1)),
-                alpha=0.5,
-                ms=0.1)
+        for roi in roiIndex:
+            x, y = find_full_roi_coords(data, roi)
+            ax.plot(x, y, '.', 
+                    # color=plt.cm.tab10(roiIndex%10), 
+                    # color=plt.cm.hsv(np.random.uniform(0,1)),
+                    color=plt.cm.autumn(np.random.uniform(0,1)),
+                    alpha=0.5,
+                    ms=0.1)
 
-        if with_ROI_annotation:
-            ax.annotate('%i' % (roiIndex+1), (np.mean(x), np.mean(y)), 
-                        color='w', fontsize=7)
+            if with_ROI_annotation:
+                ax.annotate('%i' % (roi+1), (np.mean(x), np.mean(y)), 
+                            color='w', fontsize=7)
 
     if with_annotation:
-        ax.annotate('%i ROIs' % data.nROIs, (0, 0), xycoords='axes fraction', rotation=90, ha='right')
+        ax.annotate('%i ROIs' % data.nROIs, 
+                    (0, 0), xycoords='axes fraction', 
+                    rotation=90, ha='right')
         ax.set_title(key)
     
     return fig, ax, img
 
 
-    
+
 def format_key_value(key, value):
     if key in ['angle','direction']:
         return '$\\theta$=%.0f$^{o}$' % value
@@ -376,7 +483,7 @@ if __name__=='__main__':
                                              # subquantity='dF/F', color='#2ca02c',
                                              # roiIndices=np.sort(np.random.choice(np.arange(np.sum(data.iscell)), np.min([args.Nmax, data.iscell.sum()]), replace=False))),
                             # 'Locomotion':dict(fig_fraction=1, subsampling=1, color='#1f77b4'),
-                            # 'Pupil':dict(fig_fraction=2, subsampling=1, color='#d62728'),
+                            # 'pupil':dict(fig_fraction=2, subsampling=1, color='#d62728'),
                             # 'GazeMovement':dict(fig_fraction=1, subsampling=1, color='#ff7f0e'),
                             # 'Photodiode':dict(fig_fraction=.5, subsampling=1, color='grey'),
                             # 'VisualStim':dict(fig_fraction=.5, color='black')},

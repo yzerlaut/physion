@@ -4,17 +4,30 @@ import numpy as np
 
 import physion
 
+def build_stim(protocol, 
+               from_file=None):
+    """
+    """
+    if from_file is not None:
+        # we only build the time course of the associated video
+        return physion.visual_stim.main.visual_stim(\
+                                                protocol, 
+                                        from_file=from_file)
 
-def build_stim(protocol):
-    """
-    """
-    if (protocol['Presentation']=='multiprotocol'):
-        return physion.visual_stim.main.multiprotocol(protocol)
+    elif (protocol['Presentation']=='multiprotocol'):
+        #
+        return physion.visual_stim.main.multiprotocol(\
+                                                protocol)
+
     else:
+        # single protocol
         protocol_name = protocol['Stimulus'].replace('-', '_').replace('+', '_')
         try:
-            return getattr(getattr(physion.visual_stim.stimuli,\
-                                protocol_name), 'stim')(protocol)
+            return getattr(\
+                        getattr(\
+                            physion.visual_stim.stimuli,\
+                                            protocol_name),
+                                              'stim')(protocol)
         except ModuleNotFoundError:
             print('\n [!!] Protocol not recognized ! [!!] \n ')
             return None
@@ -22,10 +35,14 @@ def build_stim(protocol):
 def get_default_params(protocol_name):
     """
     """
-    protocol_name = protocol_name.replace('-', '_').replace('+', '_')
+    protocol_name = protocol_name.replace('-',
+                                    '_').replace('+', '_')
 
     try:
-        Dparams = getattr(getattr(physion.visual_stim.stimuli, protocol_name), 'params')
+        Dparams = getattr(\
+                        getattr(\
+                            physion.visual_stim.stimuli, protocol_name), 
+                                'params')
         params = {}
         # set all params to default values
         for key in Dparams:
@@ -82,11 +99,11 @@ class MonitoringSquare:
     def find_mask(self, Stim):
         """ find the position of the square """
 
-        self.mask = np.zeros(Stim.screen['resolution'],
+        self.mask = np.array(Stim.get_null_image(),
                              dtype=bool)
 
         S = int(Stim.screen['monitoring_square']['size'])
-        X, Y = Stim.screen['resolution'] # x,y sizes
+        X, Y = self.mask.shape
 
         if Stim.screen['monitoring_square']['location']=='top-right':
             self.mask[X-S:,Y-S:] = True
@@ -109,20 +126,30 @@ if __name__=='__main__':
 
     parser=argparse.ArgumentParser()
     parser.add_argument("protocol", 
-                        help="protocol a json file", 
+                        help="protocol as a json file", 
                         default='')
-    parser.add_argument("--wmv", 
-                        help="protocol a json file", 
+    parser.add_argument('-o', "--output_folder", 
+                        help="protocol as a json file", 
+                        default='')
+    parser.add_argument("--mp4", 
+                        help="force to mp4 instead of wmv", 
+                        action="store_true")
+    parser.add_argument('-v', "--verbose", 
                         action="store_true")
     args = parser.parse_args()
 
     if os.path.isfile(args.protocol) and args.protocol.endswith('.json'):
-
-            # create the associated protocol folder in the binary folder
-            protocol_folder = \
-                os.path.join(os.path.dirname(args.protocol),
-                    'movies',
-                    os.path.basename(args.protocol.replace('.json','')))
+            
+            # create the associated protocol folder in the movies folder
+            if args.output_folder!='':
+                protocol_folder = \
+                    os.path.join(args.output_folder,
+                        os.path.basename(args.protocol.replace('.json','')))
+            else:
+                protocol_folder = \
+                    os.path.join(
+                        os.path.expanduser('~'), 'visualStim-protocols',
+                        os.path.basename(args.protocol.replace('.json','')))
 
             if os.path.isfile(os.path.join(protocol_folder, 'protocol.json')):
                 # remove the previous content for security
@@ -132,23 +159,38 @@ if __name__=='__main__':
             pathlib.Path(protocol_folder).mkdir(\
                                     parents=True, exist_ok=True)
 
-            #  copy the protocol infos
-            shutil.copyfile(args.protocol,
-                            os.path.join(protocol_folder, 'protocol.json'))
-
-
             # build the protocol
             with open(args.protocol, 'r') as f:
                 protocol = json.load(f)
 
+            protocol['json_location'] = os.path.dirname(args.protocol)
+
+            if args.verbose:
+                protocol['verbose'] = True
+
             Stim = build_stim(protocol)
+
+            #  copy the protocol infos
+            with open(os.path.join(protocol_folder, 'protocol.json'), 'w') as f:
+                json.dump(Stim.protocol, f, indent=4)
 
             def update(Stim, index):
                 if index<len(Stim.experiment['index']):
                     print(' - episode %i/%i ' % (\
                             index+1, len(Stim.experiment['index'])),
+                          '   tstart: %.2f' % Stim.experiment['time_start'][index],
+                          '   duration: ', 
+                          Stim.experiment['time_duration'][index],
+                        #   '   contrast: ', 
+                        #   Stim.experiment['contrast'][index],
+                          '   repeat: ', 
+                          Stim.experiment['repeat'][index],
                           '   protocol-id : ', 
                           Stim.experiment['protocol_id'][index])
+                    if 'verbose' in protocol:
+                        for k in Stim.experiment:
+                            print(18*' '+'- %s:%.1f ' %\
+                                    (k, Stim.experiment[k][index]))
                     tstart = Stim.experiment['time_start'][index]
                     tstop= Stim.experiment['time_stop'][index]
                     return tstart, tstop
@@ -160,13 +202,25 @@ if __name__=='__main__':
                 square = MonitoringSquare(Stim)
 
             # prepare video file
-            Format = 'wmv' if (('win32' in sys.platform) or args.wmv) else 'mp4'
-            out = cv.VideoWriter(os.path.join(protocol_folder, 'movie.%s' % Format),
-                                  cv.VideoWriter_fourcc(*'mp4v'), 
-                                  Stim.movie_refresh_freq,
-                                  Stim.screen['resolution'],
-                                  False)
+            Format = 'mp4' if (('linux' in sys.platform) or args.mp4) else 'wmv'
+            out = []
+            for s in range(Stim.screen['nScreens']):
 
+                if s==0 and Stim.screen['nScreens']==1:
+                    filename = os.path.join(protocol_folder, 
+                                            'movie.%s' % Format)
+                else:
+                    filename = os.path.join(protocol_folder, 
+                                            'movie-%i.%s' % (s+1, Format))
+                print("""
+                    Screen %i, %s""" % (s+1, filename))
+                
+                out.append(cv.VideoWriter(filename,
+                              cv.VideoWriter_fourcc(*'mp4v'), 
+                                 Stim.movie_refresh_freq,
+                                     Stim.screen['resolution'],
+                                         False))
+            print()
             # prepare the loop
             t, tend = 0, Stim.experiment['time_stop'][-1]+\
                     Stim.experiment['interstim'][-1]
@@ -181,26 +235,35 @@ if __name__=='__main__':
                     tstart, tstop = update(Stim, index)
                     
                 # data in [0,1]
+                # GAMMA CORRECTION ONLY AT THAT POINT !
                 if (t>=tstart) and (t<tstop):
                     data = Stim.gamma_correction(\
                             Stim.get_image(index, t-tstart))
                 else:
-                    data = Stim.blank_color*\
-                            np.ones(Stim.screen['resolution'])
+                    data = Stim.gamma_correction(\
+                                Stim.blank_color+\
+                                    Stim.get_null_image())
 
                 # put the monitoring square
                 if 'monitoring_square' in Stim.screen:
                     data = square.draw(data, t, tstart, tstop)
 
-                out.write(np.array(255*np.rot90(data, k=1),
-                                   dtype='uint8'))
+                for s, o in enumerate(out):
+                    dataS = Stim.restrict_to_screen(data, 
+                                                    screen_id=s+1)
+                    o.write(np.array(255*np.rot90(dataS, k=1),
+                                    dtype='uint8'))
+
                 t+= 1./Stim.movie_refresh_freq
+
+            for o in out:
+                o.release()
 
             np.save(os.path.join(protocol_folder, 'visual-stim.npy'), 
                     Stim.experiment)
+
             print('\n [ok] video file and metadata saved in: "%s" \n ' % protocol_folder)
 
-            out.release()
-
     else:
+
         print('\nERROR: need to provide a valid json file as argument\n')

@@ -3,14 +3,16 @@ from scipy.stats import sem
 
 import physion.utils.plot_tools as pt
 from physion.dataviz.raw import plot as plot_raw
-from physion.analysis.process_NWB import EpisodeData
-from physion.dataviz.episodes.trial_average import plot as plot_trial_average
-from .orientation_tuning import compute_tuning_response_per_cells, fit_gaussian
+from physion.analysis.episodes.build import EpisodeData
+from physion.dataviz.episodes.trial_average\
+      import plot as plot_trial_average
+from .orientation_tuning import\
+      compute_tuning_response_per_cells, fit_gaussian
 
 stat_test = dict(interval_pre=[-1.5,-0.5],
                  interval_post=[0.5,1.5],
                  test='anova',
-                 positive=True)
+                 sign='positive')
 
 response_significance_threshold=0.01
 
@@ -46,7 +48,7 @@ def zoom_view(ax, data, tlim=[17*60,17*60+120]):
 
     settings={}
     if 'Running-Speed' in data.nwbfile.acquisition:
-        settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
+        settings['running'] = dict(fig_fraction=1, subsampling=2, color='blue')
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=6,
                                     subsampling=1, 
@@ -58,7 +60,7 @@ def zoom_view(ax, data, tlim=[17*60,17*60+120]):
                                                         replace=False))
         settings['CaImagingRaster']= dict(fig_fraction=3,
                                           subquantity='dFoF')
-    settings['VisualStim'] = dict(fig_fraction=0, color='black',
+    settings['visual_stim'] = dict(fig_fraction=0, color='black',
                                   with_screen_inset=True)
 
     plot_raw(data, tlim, 
@@ -72,11 +74,12 @@ def zoom_view(ax, data, tlim=[17*60,17*60+120]):
 
 
 def plot(fig, data, args=None,
+         quantity='dFoF',
          stat_test=stat_test):
 
     Episodes = EpisodeData(data,
+                           quantities=[quantity],
                            protocol_name=[p for p in data.protocols if 'gratings' in p][0],
-                           quantities=['dFoF'],
                            prestim_duration=3,
                            verbose=True)
 
@@ -90,6 +93,7 @@ def plot(fig, data, args=None,
             for i in range(8)] for j in range(2)]
     
     plot_trial_average(Episodes,
+                       quantity=quantity,
                        row_key='contrast',
                        column_key='angle',
                        with_annotation=True, 
@@ -137,7 +141,9 @@ def plot(fig, data, args=None,
         AX = [[pt.inset(fig, [0.22+i*0.085, 0.035+0.026*j, 0.09, 0.03])\
                 for i in range(8)]]
         
-        plot_trial_average(Episodes, roiIndex=n,
+        plot_trial_average(Episodes, 
+                           quantity=quantity,
+                           index=n,
                            color_key='contrast',
                            column_key='angle',
                            Xbar=1, Xbar_label='1s', 
@@ -152,27 +158,29 @@ def plot(fig, data, args=None,
                     (1,0.5), va='center',
                     color='tab:green' if resp['significant_ROIs'][n] else 'lightcoral')
 
-    AX = [pt.inset(fig, [0.08, 0.06+0.05*j, 0.1, 0.045]) for j in range(2)]
+    if np.sum(resp['significant_ROIs'])>0:
 
-    pt.plot(resp['shifted_angle'], 
-            np.mean(resp['Responses'][resp['significant_ROIs'],:], axis=0),
-            sy = np.std(resp['Responses'][resp['significant_ROIs'],:], axis=0), 
-            ax=AX[1], no_set=True)
-    pt.set_plot(AX[1], xticks_labels=[], ylabel='$\\Delta$F/F')
+        AX = [pt.inset(fig, [0.08, 0.06+0.05*j, 0.1, 0.045]) for j in range(2)]
 
-    tuning = np.array([r/r[1] for r in resp['Responses'][resp['significant_ROIs'],:]])
-    pt.scatter(resp['shifted_angle'], np.mean(tuning, axis=0),
-                sy = sem(tuning, axis=0), ax=AX[0], ms=3)
-    # add gaussian fit
-    C, func = fit_gaussian(resp['shifted_angle'], np.mean(tuning, axis=0))
-    x = np.linspace(-30, 180-30, 100)
-    AX[0].plot(x, func(x), lw=2, alpha=.5, color='dimgrey')
+        pt.plot(resp['shifted_angle'], 
+                np.mean(resp['Responses'][resp['significant_ROIs'],:], axis=0),
+                sy = np.std(resp['Responses'][resp['significant_ROIs'],:], axis=0), 
+                ax=AX[1], no_set=True)
+        pt.set_plot(AX[1], xticks_labels=[], ylabel='$\\Delta$F/F')
 
-    # selectivity index from fit
-    pt.annotate(AX[0], 'SI=%.2f' % (1-C[2]), (1., 0.9), ha='right', va='top')
+        tuning = np.array([r/r[1] for r in resp['Responses'][resp['significant_ROIs'],:]])
+        pt.scatter(resp['shifted_angle'], np.mean(tuning, axis=0),
+                    sy = sem(tuning, axis=0), ax=AX[0], ms=3)
+        # add gaussian fit
+        C, func = fit_gaussian(resp['shifted_angle'], np.mean(tuning, axis=0))
+        x = np.linspace(-30, 180-30, 100)
+        AX[0].plot(x, func(x), lw=2, alpha=.5, color='dimgrey')
 
-    pt.set_plot(AX[0], yticks=[0, 0.5, 1],
-                xlabel='angle from pref. ($^o$)', ylabel='n. $\\Delta$F/F')
+        # selectivity index from fit
+        pt.annotate(AX[0], 'SI=%.2f' % (1-C[2]), (1., 0.9), ha='right', va='top')
+
+        pt.set_plot(AX[0], yticks=[0, 0.5, 1],
+                    xlabel='angle from pref. ($^o$)', ylabel='n. $\\Delta$F/F')
 
 
 if __name__=='__main__':
@@ -180,7 +188,7 @@ if __name__=='__main__':
     import sys
 
     from physion.analysis.read_NWB import Data
-    from physion.analysis.process_NWB import EpisodeData
+    from physion.analysis.episodes.build import EpisodeData
     from physion.utils import plot_tools as pt
 
     fig = pt.plt.figure(figsize=(8.27, 11.7), dpi=75)

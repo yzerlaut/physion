@@ -1,10 +1,43 @@
-from . import settings, tools, run, recordings
+from . import settings, tools, run
 
-MODALITIES = ['Locomotion',
+MODALITIES = ['NIDAQ',
               'FaceCamera',
               'RigCamera',
-              # 'EphysLFP',
-              # 'EphysVm',
+              'ImagingCamera',
               'Neuropixels',
               'CaImaging',
               'onlyDemo']
+
+EXPERIMENTERS = {
+    '':{'folder':''},
+    'Adrianna Nozownik':{
+        'folder':'Adrianna'
+        },
+    'Cibele Martins Pinho':{
+        'folder':'Cibele'
+        },
+    'Dhanasak Dhanasobhon':{
+        'folder':'Taddy'
+        },
+    'Joana Lourenco':{
+        'folder':'Joana'
+        },
+    'Laura Sofia Gonzalez':{
+        'folder':'Sofia'
+        },
+    'Nathan Mallet':{
+        'folder':'Nathan'
+        },
+    'Pan Sally Zhang':{
+        'folder':'Sally'
+        },
+    'Nelson Rebola':{
+        'folder':'Nelson'
+        },
+    'Valentin Ritou':{
+        'folder':'Valentin'
+        },
+    'Yann Zerlaut':{
+        'folder':'Yann'
+        },
+}

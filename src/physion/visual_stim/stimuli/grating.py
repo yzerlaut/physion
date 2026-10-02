@@ -44,13 +44,39 @@ class stim(visual_stim):
         super().__init__(protocol, params)
 
     def get_image(self, episode, 
-                  time_from_episode_start=0):
+                  time_from_episode_start=0,
+                  screen_id=None):
 
         img = init_bg_image(self, episode)
+        
+        if self.experiment['radius-surround'][episode] is not None : 
 
+            if self.experiment['radius-surround'][episode]>0:
+
+                self.add_grating_patch(img,
+                                    #    screen_id=screen_id,
+                        angle=self.experiment['angle-surround'][episode],                        
+                        radius=self.experiment['radius-surround'][episode],
+                        phase_shift_Deg=self.experiment['phase-surround'][episode]\
+                                if 'phase-surround' in self.experiment else 90.,
+                        spatial_freq=self.experiment['spatial-freq-surround'][episode],
+                        contrast=self.experiment['contrast-surround'][episode],
+                        xcenter=self.experiment['x-center'][episode],
+                        zcenter=self.experiment['y-center'][episode],
+                        time_phase=self.experiment['speed-surround'][episode]*time_from_episode_start)
+
+                self.add_dot(img,
+                            #  screen_id=screen_id,
+                            (self.experiment['x-center'][episode],
+                            self.experiment['y-center'][episode]),
+                            self.experiment['radius'][episode],
+                            self.experiment['bg-color'][episode], type='circle')
+
+        '''
         if self.experiment['radius-surround'][episode]>0:
 
             self.add_grating_patch(img,
+                                #    screen_id=screen_id,
                        angle=self.experiment['angle-surround'][episode],
                        radius=self.experiment['radius-surround'][episode],
                        phase_shift_Deg=self.experiment['phase-surround'][episode]\
@@ -62,12 +88,15 @@ class stim(visual_stim):
                        time_phase=self.experiment['speed-surround'][episode]*time_from_episode_start)
 
             self.add_dot(img,
+                        #  screen_id=screen_id,
                          (self.experiment['x-center'][episode],
                            self.experiment['y-center'][episode]),
                            self.experiment['radius'][episode],
                            self.experiment['bg-color'][episode], type='circle')
+        '''
 
         self.add_grating_patch(img,
+                            #    screen_id=screen_id,
                angle=self.experiment['angle'][episode],
                radius=self.experiment['radius'][episode],
                spatial_freq=self.experiment['spatial-freq'][episode],
@@ -102,7 +131,7 @@ if __name__=='__main__':
 
     params = get_default_params('grating')
     params['radius'] = 20.
-    params['speed'] = 2.
+    params['speed'] = 1.
     params['angle-surround'] = 90.
     params['radius-surround'] = 50.
     params['speed-surround'] = 2.

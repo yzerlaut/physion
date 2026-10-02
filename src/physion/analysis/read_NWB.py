@@ -8,16 +8,59 @@ from physion.visual_stim.build import build_stim
 from physion.analysis import tools
 from physion.imaging.Calcium import compute_dFoF,\
         ROI_TO_NEUROPIL_INCLUSION_FACTOR, METHOD,\
-        T_SLIDING, PERCENTILE, NEUROPIL_CORRECTION_FACTOR
+        T_SLIDING, PERCENTILE, NEUROPIL_CORRECTION_FACTOR, ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC
 from physion.imaging.dcnv import oasis
+
+MODALITIES = [\
+        'photodiode',
+        'visual_stim',
+        'pupil',
+        'facemotion',
+        'running',
+        'opto',
+        'rawFluo',
+        'neuropil',
+        'dFoF',
+        'spikes',
+        # 'spikeWaveforms',
+        'LFP',
+        'MUA'
+    ]
 
 class Data:
     
     """
     a basic class to read NWB
     this class if thought to be the parent for specific applications
+
+    attributes:
+
+    # visual stimulation
+    - data.photodiode    # photodiode trace
+    - data.visual_stim   # object: physion.visual_stim.main.VisualStim
+
+    # behavioral monitoring
+    - data.pupil         # pupil diameter trace
+    - data.facemotion    # motion energy in whisking pad over time 
+    - data.running       # running speed time trace
+
+    # ophys
+    - data.rawFluo       # raw fluorescence of single ROIs
+    - data.neuropil      # neuropil fluorescence associated to single ROIs
+    - data.dFoF          # delta F over F trace
+
+    # ephys
+    - data.spikes       # single unit spike trains
+    - data.spikeWaveforms # single unit spike waveforms
+    - data.LFP          # Local Field Potential 
+    - data.MUA          # Multi-Unit Activity
+
+    # others/common
+    data.metadata       # dictionary of metadata
+    data.df_name        # formatted name with protocol
+
     """
-    
+
     def __init__(self, filename,
                  with_tlim=True,
                  metadata_only=False,
@@ -33,13 +76,13 @@ class Data:
 
         if verbose:
             print('starting reading [...]')
-        # try:
+
         self.io = pynwb.NWBHDF5IO(filename, 'r')
         self.nwbfile = self.io.read()
 
         self.read_metadata()
         if verbose:
-            print(' [ok] -> metadata')
+            print(' [ok] -> metadata loaded')
             print(self.metadata)
 
         if with_tlim:
@@ -49,24 +92,16 @@ class Data:
 
         if not metadata_only:
             self.read_data()
-        if verbose:
-            print(' [ok] -> data ')
+            if verbose:
+                print(' [ok] -> modality-specific metadata loaded ')
 
         if with_visual_stim:
-            self.init_visual_stim(verbose=verbose)
+            self.build_visual_stim(verbose=verbose)
             if verbose:
-                print(' [ok] -> visual stim')
+                print(' [ok] -> visual stim loaded')
 
         if metadata_only:
             self.close()
-            
-        # except BaseException as be:
-        #     print('-----------------------------------------')
-        #     print(be)
-        #     print('-----------------------------------------')
-        #     print(' [!!] Pb with datafile: "%s"' % filename)
-        #     print('-----------------------------------------')
-        #     print('')
             
         if verbose:
             print('NWB-file reading time: %.1fms' % (1e3*(time.time()-t0)))
@@ -76,20 +111,28 @@ class Data:
         
         self.df_name = self.nwbfile.session_start_time.strftime(\
                                     "%Y/%m/%d -- %H:%M:%S")+\
-                        ' ---- '+self.nwbfile.experiment_description
+                        ' -- '+self.nwbfile.experiment_description
         
         self.metadata = ast.literal_eval(\
-                self.nwbfile.session_description)
+            # self.nwbfile.session_description # DOESN'T WORK ANYMORE, tuple instead of string ??? need to replace with below...
+            self.nwbfile.session_description.replace('("', '').replace('",)','')
+        )
 
         space = '        '
         self.description = '\n - Subject: %s %s \n' % (space,
-                                        self.metadata['subject_ID'])
+                                        self.nwbfile.subject.subject_id)
+
+        if 'protocol' not in self.metadata.keys():
+            self.metadata['protocol'] = self.nwbfile.experiment_description
 
         if self.metadata['protocol']=='None':
             self.description += '\n - Spont. Act. (no visual stim.)\n'
         else:
             self.description += '\n - Visual-Stim: \n %s' % space
 
+
+        if self.nwbfile.protocol is not None:
+            self.metadata |= ast.literal_eval(self.nwbfile.protocol)
 
         # deal with multi-protocols
         if ('Presentation' in self.metadata) and\
@@ -117,38 +160,34 @@ class Data:
                 
         self.description += '\n - Intervention: %s %s\n' % (space, self.metadata['intervention'] if 'intervention' in self.metadata else 'None')
 
-        self.description += '\n - Notes: %s %s\n' % (space, self.metadata['notes'])
+        self.description += '\n - Notes: %s %s\n' % (space, self.nwbfile.notes)
 
         if hasattr(self.nwbfile.subject, 'age') and self.nwbfile.subject.age!=None:
             self.age = int(str(self.nwbfile.subject.age).replace('P','').replace('D',''))
         else:
             self.age = -1
 
-        # FIND A BETTER WAY TO DESCRIBE
-        # if self.metadata['protocol']!='multiprotocols':
-        #     self.keys = []
-        #     for key in self.nwbfile.stimulus.keys():
-        #         if key not in ['index', 'time_start', 'time_start_realigned',
-        #                        'time_stop', 'time_stop_realigned', 'visual-stimuli', 'frame_run_type']:
-        #             if len(np.unique(self.nwbfile.stimulus[key].data[:]))>1:
-        #                 s = '-*  N-%s = %i' % (key,len(np.unique(self.nwbfile.stimulus[key].data[:])))
-        #                 self.description += s+(35-len(s))*' '+'[%.1f, %.1f]\n' % (np.min(self.nwbfile.stimulus[key].data[:]),
-        #                                                                         np.max(self.nwbfile.stimulus[key].data[:]))
-        #                 self.keys.append(key)
-        #             else:
-        #                 self.description += '- %s=%.1f\n' % (key, np.unique(self.nwbfile.stimulus[key].data[:]))
-                    
-        
+        if hasattr(self.nwbfile, 'virus') and self.nwbfile.virus!=None:
+            self.virus = self.nwbfile.virus
+        else:
+            self.virus = ''
+
+    
     def read_tlim(self):
         
         self.tlim, safety_counter = None, 0
         
-        while (self.tlim is None) and (safety_counter<10):
+        while (self.tlim is None) and (safety_counter<20):
             for key in self.nwbfile.acquisition:
                 try:
                     self.tlim = [self.nwbfile.acquisition[key].starting_time,
                                  self.nwbfile.acquisition[key].starting_time+\
                                  (self.nwbfile.acquisition[key].data.shape[0]-1)/self.nwbfile.acquisition[key].rate]
+                except BaseException as be:
+                    safety_counter += 1
+                try:
+                    self.tlim = [self.nwbfile.acquisition[key].timestamps[0],
+                                 self.nwbfile.acquisition[key].timestamps[-1]]
                 except BaseException as be:
                     safety_counter += 1
 
@@ -157,26 +196,36 @@ class Data:
 
 
     def read_data(self):
+        """
+        only reads metadata of modalitites...
+            they still need to be built afterwards
+        """
 
         # ophys data
-        if 'ophys' in self.nwbfile.processing:
-            self.read_and_format_ophys_data()
+        if self.has_ophys():
+            self.read_ophys()
         else:
             for key in ['Segmentation', 'Fluorescence', 'redcell', 'plane',
                         'valid_roiIndices', 'neuropil']:
                 setattr(self, key, None)
-                
-        if 'Pupil' in self.nwbfile.processing:
+
+        # behavioral monitoring
+        if self.has_pupil():
             self.read_pupil()
-            
-        if 'FaceMotion' in self.nwbfile.processing:
+        if self.has_facemotion():
             self.read_facemotion()
-            
 
     #########################################################
     #       CALCIUM IMAGING DATA (from suite2p output)      #
     #########################################################
-    
+
+    def has_rawFluo(self):
+        return self.has_ophys()
+    def has_neuropil(self):
+        return self.has_ophys()
+    def has_dFoF(self):
+        return self.has_ophys()
+
     def initialize_ROIs(self, 
                         valid_roiIndices=None):
 
@@ -212,9 +261,10 @@ class Data:
         self.planeID = planeID[self.valid_roiIndices]
         self.redcell= redcell[self.valid_roiIndices]
             
+    def has_ophys(self):
+        return ('ophys' in self.nwbfile.processing)
 
-
-    def read_and_format_ophys_data(self):
+    def read_ophys(self):
        
         self.TSeries_folder = self.nwbfile.acquisition[\
                 'CaImaging-TimeSeries'].comments.split('**')[-1]
@@ -244,102 +294,161 @@ class Data:
 
         self.initialize_ROIs()
                 
-        
+    def build(self,
+              keys=['running', 'photodiode']):
+        # build modality with default options...
+        for key in keys:
+            getattr(self, 'build_%s' % key)()
+
     ######################
     #    LOCOMOTION
-    ######################
-    def build_running_speed(self,
-                            specific_time_sampling=None,
-                            interpolation='linear',
-                            verbose=False):
+    ######################    
+    def has_running(self):
+        return ('Running-Speed' in self.nwbfile.acquisition)
+    
+    def build_running(self,
+                      specific_time_sampling=None,
+                      interpolation='linear',
+                      verbose=False, 
+                      absolute=True):
         """
-        build distance from mean (x,y) position of pupil
-        """
-        if 'Running-Speed' in self.nwbfile.acquisition:
+        Build running speed from NWB acquisition.
+        
+        Parameters
+        ----------
+        specific_time_sampling : array-like or None - If provided, resample running speed to these time points.
+        interpolation : str - Interpolation method for resampling ('linear', 'nearest', etc.).
+        verbose : bool - If True, print progress messages.
+        absolute : bool - If True, running speed values are converted to absolute values.
 
-            self.running_speed = self.nwbfile.acquisition['Running-Speed'].data[:,0]
-            self.t_running_speed = self.nwbfile.acquisition['Running-Speed'].starting_time+\
-                np.arange(self.nwbfile.acquisition['Running-Speed'].num_samples)\
-                                        /self.nwbfile.acquisition['Running-Speed'].rate
+        Returns
+        -------
+        running_resampled : np.ndarray - Resampled running speed if specific_time_sampling is provided, otherwise None.
+        """
+        if self.has_running():
+            if absolute:
+                self.running = np.abs(self.nwbfile.acquisition['Running-Speed'].data[:, 0])
+            else : 
+                self.running = self.nwbfile.acquisition['Running-Speed'].data[:, 0]
+
+            self.t_running = tools.build_timestamps(\
+                        self.nwbfile.acquisition, 'Running-Speed')
+
+            if verbose:
+                print(' [ok] --> "running" built successfully ')
 
             if specific_time_sampling is not None:
-                return tools.resample(self.t_running_speed, 
-                                      self.running_speed, 
-                                      specific_time_sampling, 
-                                      interpolation=interpolation,
-                                      verbose=verbose)
+                return tools.resample(self.t_running,
+                                    self.running,
+                                    specific_time_sampling,
+                                    interpolation=interpolation,
+                                    verbose=verbose)
+
         else:
-            return None
+            print(' %s --> "running" not available ...' % self.df_name)
 
     
     ######################
     #       PUPIL 
     ######################        
 
+    def has_pupil(self):
+        return ('Pupil' in self.nwbfile.processing)
+    def has_gaze(self):
+        return self.has_pupil()
+
     def read_pupil(self):
+        """
+        read metadata
+        """
 
         pd = str(self.nwbfile.processing['Pupil'].description)
+
+        # extract pupil scale
         if len(pd.split('pix_to_mm='))>1:
             self.FaceCamera_mm_to_pix = int(1./float(pd.split('pix_to_mm=')[-1]))
         else:
             self.FaceCamera_mm_to_pix = 1
 
-    def build_pupil_diameter(self,
-                             specific_time_sampling=None,
-                             interpolation='linear',
-                             verbose=False):
+        # extract pupil ROI
+        try:
+            self.pupil_ROI = {}
+            for key, val in zip(\
+                ['xmin','xmax','ymin','ymax'],
+                pd.split('pupil ROI: (xmin,xmax,ymin,ymax)=(')[1].split(')')[0].split(',')):
+                self.pupil_ROI[key] = int(val)
+        except BaseException as be:
+            self.pupil_ROI = None
+
+
+    def build_pupil(self,
+                    specific_time_sampling=None,
+                    interpolation='linear',
+                    verbose=False):
         """
         build pupil diameter trace, i.e. twice the maximum of the ellipse radius at each time point
         """
-        if 'Pupil' in self.nwbfile.processing:
+        if self.has_pupil():
 
-            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
-            self.pupil_diameter =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:,0],
+            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps[:]
+            self.pupil =  2*np.max([self.nwbfile.processing['Pupil'].data_interfaces['sx'].data[:,0],
                                              self.nwbfile.processing['Pupil'].data_interfaces['sy'].data[:,0]], axis=0)
 
+            if verbose:
+                print(' [ok] --> "pupil" built successfully ')
+
             if specific_time_sampling is not None:
-                return tools.resample(self.t_pupil, self.pupil_diameter,
+                return tools.resample(self.t_pupil, self.pupil,
                                       specific_time_sampling, 
                                       interpolation=interpolation, 
                                       verbose=verbose)
 
         else:
-            return None
+            print(' %s --> pupil diameter not available ...' % self.df_name)
 
-
-    def build_gaze_movement(self,
+    def build_gaze(self,
                             specific_time_sampling=None,
                             interpolation='linear',
                             verbose=False):
         """
+        build gaze movement 
+
         build distance from mean (x,y) position of pupil
         """
-
-        if 'Pupil' in self.nwbfile.processing:
-
-            self.t_pupil = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps
+        if self.has_pupil():
+            self.t_gaze = self.nwbfile.processing['Pupil'].data_interfaces['cx'].timestamps[:]
             cx = self.nwbfile.processing['Pupil'].data_interfaces['cx'].data[:,0]
             cy = self.nwbfile.processing['Pupil'].data_interfaces['cy'].data[:,0]
-            self.gaze_movement = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
+            self.gaze = np.sqrt((cx-np.mean(cx))**2+(cy-np.mean(cy))**2)
 
             if specific_time_sampling is not None:
-                return tools.resample(self.t_pupil, self.gaze_movement, 
+                return tools.resample(self.t_gaze, self.gaze, 
                                       specific_time_sampling, 
                                       interpolation=interpolation, 
                                       verbose=verbose)
 
+            if verbose:
+                print(' [ok] --> "gaze" built successfully ')
+
         else:
-            return None
+            print(' %s --> gaze movement not available ...' % self.df_name)
         
 
     #########################
     #       FACEMOTION  
     #########################      
     
+    def has_facemotion(self):
+        return ('FaceMotion' in self.nwbfile.processing)
+
     def read_facemotion(self):
         
-        fd = str(self.nwbfile.processing['FaceMotion'].description)
-        self.FaceMotion_ROI = [int(i) for i in fd.split('y0,dy)=(')[1].split(')')[0].split(',')]
+        try:
+            fd = str(self.nwbfile.processing['FaceMotion'].description)
+            self.FaceMotion_ROI = [int(i) for i in fd.split('y0,dy)=(')[1].split(')')[0].split(',')]
+        except BaseException as be:
+            self.FaceMotion_ROI = None
+
 
     def build_facemotion(self,
                          specific_time_sampling=None,
@@ -349,10 +458,13 @@ class Data:
         build facemotion
         """
 
-        if 'FaceMotion' in self.nwbfile.processing:
+        if self.has_facemotion():
 
-            self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps
+            self.t_facemotion = self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].timestamps[:]
             self.facemotion =  self.nwbfile.processing['FaceMotion'].data_interfaces['face-motion'].data[:,0]
+
+            if verbose:
+                print(' [ok] --> "facemotion" built successfully ')
 
             if specific_time_sampling is not None:
                 return tools.resample(self.t_facemotion, self.facemotion, 
@@ -361,19 +473,183 @@ class Data:
                                       verbose=verbose)
 
         else:
-            return None
+            print(' %s --> "facemotion" not available ...' % self.df_name)
+
+    #############################
+    #       Optogenetics        #
+    #############################
+
+    def has_opto(self):
+        return ('OptogeneticSeries' in self.nwbfile.stimulus)
+
+    def build_opto(self,
+        specific_time_sampling=None,
+        interpolation='linear',
+        verbose=True):
+
+        if self.has_opto():
+
+            self.opto = self.nwbfile.stimulus['OptogeneticSeries'].data[:]
+
+            self.t_opto = tools.build_timestamps(\
+                        self.nwbfile.stimulus, 'OptogeneticSeries')
+
+            if verbose:
+                print(' [ok] --> "opto" built successfully ')
+
+            if specific_time_sampling is not None:
+                return tools.resample(self.t_opto,
+                                    self.opto,
+                                    specific_time_sampling,
+                                    interpolation=interpolation,
+                                    verbose=verbose)
+        else:
+            print(' %s --> "opto" not available ...' % self.df_name)
+
+
+
+    #############################data.build_dFoF(**dFoF_parameters, verbose=False)
+    #       Electrophysiology   #
+    #############################
+
+    def read_ephys(self):
+       
+        self.NPX_folder = \
+            data.nwbfile.devices['Neuropixels OneBox'].description.split('**')[-1]
+
+    def has_LFP(self):
+        return ('LFP' in self.nwbfile.processing)
+
+    def build_LFP(self,
+                    specific_time_sampling=None,
+                    interpolation='linear',
+                    verbose=False):
+
+        if self.has_LFP():
+
+            # we transpose to have a matrix of shape (channels, timestamps)
+            self.LFP = np.transpose(\
+                self.nwbfile.processing['LFP'].data_interfaces['LFP'].data[:])
+            self.t_LFP = self.nwbfile.processing['LFP'].data_interfaces['LFP'].timestamps[:]
+
+            if verbose:
+                print(' [ok] --> "LFP" built successfully ')
+
+            if specific_time_sampling is not None:
+                return np.array([\
+                    tools.resample(self.t_LFP,
+                                    self.LFP[i,:],
+                                    specific_time_sampling,
+                                    interpolation=interpolation,
+                                    verbose=verbose)\
+                                    for i in range(self.LFP.shape[0])])
+        else:
+            print(' %s --> "LFP" not available ...' % self.df_name)
+            data.build_dFoF(**dFoF_parameters, verbose=False)
+
+    def has_MUA(self):
+        return ('MUA' in self.nwbfile.processing)
+
+    def build_MUA(self,
+                    specific_time_sampling=None,
+                    interpolation='linear',
+                    verbose=False):
+
+        if self.has_MUA():
+
+            # we transpose to have a matrix of shape (channels, timestamps)
+            self.MUA = np.transpose(\
+                self.nwbfile.processing['MUA'].data_interfaces['MUA'].data[:])
+            self.t_MUA = self.nwbfile.processing['MUA'].data_interfaces['MUA'].timestamps[:]
+
+            if verbose:
+                print(' [ok] --> "MUA" built successfully ')
+
+            if specific_time_sampling is not None:
+                return np.array([\
+                    tools.resample(self.t_MUA,
+                                    self.MUA[i,:],
+                                    specific_time_sampling,
+                                    interpolation=interpolation,
+                                    verbose=verbose)\
+                                    for i in range(self.MUA.shape[0])])
+        else:
+            print(' %s --> "MUA" not available ...' % self.df_name)
+
+    def has_spikes(self):
+        return getattr(self.nwbfile, 'units')!=None
+
+    def build_spikes(self,
+            specific_time_sampling=None,
+            dt=1e-3,
+            interpolation='linear',
+            verbose=False):
+        """
+        single-unit Spikes
+
+        builds a matrix (units, times) of boolean values
+            True -> means spike at that time for that unit
+
+
+        by default: dt=1ms
+        """
+        if self.has_spikes():
+
+            n = int((self.tlim[1]-self.tlim[0])/dt)
+            self.t_spikes = np.arange(n)*dt
+            self.spikes = np.zeros(\
+                (len(self.nwbfile.units), n), dtype=bool)
+            
+            for i, unit in enumerate(self.nwbfile.units):
+                for s in unit.spike_times.values[:][0]:
+                    if int(s/dt)<n:
+                        self.spikes[i, int(s/dt)] = True
+
+            if verbose:
+                print(' [ok] --> "spikes" built successfully ')
+
+            if specific_time_sampling is not None:
+                return np.array([\
+                    tools.resample(self.t_spikes,
+                                    self.spikes[i,:],
+                                    specific_time_sampling,
+                                    interpolation=interpolation,
+                                    verbose=verbose)\
+                                    for i in range(self.spikes.shape[0])])
+
+        else:
+            print(' %s --> "spikes" not available ...' % self.df_name)
+
+
+    def has_spikeWaveforms(self):
+        return ('Spiking' in self.nwbfile.processing) and\
+            ('single-unit Waveforms' in self.nwbfile.processing['Spiking'].data_interfaces)
+
+    def build_spikeWaveforms(self,
+                             verbose=False):
+        """ 
+        load the spike template waveforms 
+        """
+        if self.has_spikeWaveforms():
+
+            k1, k2 = 'Spiking', 'single-unit Waveforms'
+            self.t_spikeWaveforms = self.nwbfile.processing[k1].data_interfaces[k2].times[:]
+            self.spikeWaveforms = self.nwbfile.processing[k1].data_interfaces[k2].features[:]
+
+            if verbose:
+                print(' [ok] --> "spikeWaveforms" built successfully ')
+        else:
+            print(' %s --> "spikeWaveforms" not available ...' % self.df_name)
+
 
     #############################
     #       Calcium Imaging     #
     #############################
-
         
     def build_dFoF(self,
-                   roiIndex=None, roiIndices='all',
-                   roi_to_neuropil_fluo_inclusion_factor=\
-                           ROI_TO_NEUROPIL_INCLUSION_FACTOR,
-                   neuropil_correction_factor=\
-                           NEUROPIL_CORRECTION_FACTOR,
+                   roiIndex=None, 
+                   roi_to_neuropil_fluo_inclusion_factor=ROI_TO_NEUROPIL_INCLUSION_FACTOR,
+                   neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
                    method_for_F0=METHOD,
                    percentile=PERCENTILE,
                    sliding_window=T_SLIDING,
@@ -381,6 +657,8 @@ class Data:
                    specific_time_sampling=None,
                    smoothing=None,
                    interpolation='linear',
+                   with_computed_neuropil_fact=False,
+                   roi_to_neuropil_fluo_inclusion_factor_metric=ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC,
                    verbose=True):
         """
         creates self.dFoF, self.t_dFoF
@@ -408,26 +686,43 @@ class Data:
                             with_correctedFluo_and_F0=\
                                     with_correctedFluo_and_F0,
                             smoothing=smoothing,
+                            with_computed_neuropil_fact=with_computed_neuropil_fact,
+                            roi_to_neuropil_fluo_inclusion_factor_metric=\
+                                    roi_to_neuropil_fluo_inclusion_factor_metric,
                             verbose=verbose)
+        
+
 
     def build_Zscore_dFoF(self, verbose=True):
         """
         [!!] do not deal with specific time sampling [!!] 
         """
+
         if not hasattr(self, 'dFoF'):
             self.build_dFoF(verbose=verbose)
-        setattr(self, 'Zscore_dFoF', (self.dFoF-self.dFoF.mean(axis=0).reshape(1, self.dFoF.shape[1]))/self.dFoF.std(axis=0).reshape(1, self.dFoF.shape[1]))
 
-    def build_Deconvolved(self, Tau=1.3):
-        if not hasattr(self, 'dFoF'):
-            print('\n deconvolution not possible \n --> need to build_dFoF(**options) first !! ')
-        else:
-            setattr(self, 'Deconvolved',
-                    oasis(self.dFoF, 
-                          self.dFoF.shape[0], # batch size
+        setattr(self, 'Zscore_dFoF', 
+            (self.dFoF-self.dFoF.mean(axis=0).reshape(1, self.dFoF.shape[1]))/self.dFoF.std(axis=0).reshape(1, self.dFoF.shape[1]))
+
+    def build_Deconvolved(self, Tau=1.3, quantity='dFoF'):
+        """
+        use the oasis library to deconvolve the fluorescence signals of choice (default: dFoF)
+        """
+        fluorescence_name = quantity[12:]
+
+        if hasattr(self, fluorescence_name) : 
+
+            setattr(data, 't_' + quantity, data.t_dFoF)
+            fsignal = getattr(self, fluorescence_name)
+            setattr(self, 'Deconvolved_' + fluorescence_name,
+                    oasis(fsignal, 
+                          fsignal.shape[0], # batch size
                               Tau, 1./self.CaImaging_dt))
+        else : 
+            print('\n deconvolution not possible \n --> ' + fluorescence_name + ' does not exist')
+            print("build your signal before deconvolving using 'setattr(data, name of your signal, values of your signal)'")
 
-
+    
     def build_neuropil(self,
                        specific_time_sampling=None,
                        interpolation='linear',
@@ -495,14 +790,87 @@ class Data:
             # then we update the timestamps
             self.t_rawFluo= specific_time_sampling
 
+
     ################################################
     #       episodes and visual stim protocols     #
     ################################################
-    
-    def init_visual_stim(self, verbose=True):
-        self.metadata['verbose'] = verbose
-        self.visual_stim = build_stim(self.metadata)
 
+    def has_photodiode(self):
+        return ('Photodiode-Signal' in self.nwbfile.acquisition)
+
+    def build_photodiode(self,
+                      specific_time_sampling=None,
+                      interpolation='linear',
+                      verbose=False):
+
+        if self.has_photodiode():
+
+            self.photodiode = self.nwbfile.acquisition[\
+                                    'Photodiode-Signal'].data[:, 0]
+
+            self.t_photodiode = tools.build_timestamps(\
+                    self.nwbfile.acquisition, 'Photodiode-Signal')
+
+            if verbose:
+                print(' [ok] --> "photodiode" built successfully ')
+
+            if specific_time_sampling is not None:
+                return tools.resample(self.t_photodiode,
+                                    self.photodiode,
+                                    specific_time_sampling,
+                                    interpolation=interpolation,
+                                    verbose=verbose)
+            else:
+                return None
+        else:
+            print(' %s --> photodiode not available ...' % self.df_name)
+            return None
+
+
+
+    def has_visual_stim(self):
+        return ('time_start_realigned' in self.nwbfile.stimulus)
+
+    def build_visual_stim(self, 
+                         verbose=False, 
+                         force_degree=False):
+        """
+        Builds an initial visual stim  - well built?
+        Overwrites it by: 
+        Looping for each episode: 
+            Looks for keys that are both in the experiment keys and the stimulus keys and 
+            for each one : 
+                the value from the NWB file is stored in the good place in self.visual_stim.experiment
+
+        if force_degree=True : forces degrees when re-initializing from data (for plots in degrees)
+
+        """
+
+        if self.has_visual_stim():
+
+            self.metadata['verbose'] = verbose
+            if force_degree:
+                self.metadata['units'] = 'deg'
+
+            # build an initial visual_stim 
+            self.visual_stim = build_stim(protocol=self.metadata)
+            
+            # then force to what was really shown (NWB file)
+            for i in range(self.nwbfile.stimulus['time_start_realigned'].num_samples):
+                for key in self.visual_stim.experiment: 
+                    if key in self.nwbfile.stimulus:
+                        self.visual_stim.experiment[key][i]=\
+                            self.nwbfile.stimulus[key].data[i,0]
+                    
+            if force_degree and\
+                hasattr(self.visual_stim, 'STIM'):
+                for s in self.visual_stim.STIM:
+                    s.set_angle_meshgrid(force_degree=True)
+
+            if verbose:
+                print(' [ok] --> "visual_stim" built successfully ')
+        else:
+            print(' %s --> visual stim not available ...' % self.df_name)
         
     def get_protocol_id(self, protocol_name):
         cond = np.argwhere(self.protocols==protocol_name).flatten()
@@ -582,18 +950,27 @@ class Data:
     #       other methods     #
     ###########################
     
+    def available_modalities(self,
+                             verbose=False):
+        self.modalities = []
+        for key in MODALITIES:
+            if getattr(self, 'has_%s' % key)():
+                self.modalities.append(key)
+                if verbose:
+                    print(' --> available: "%s" ' % key)
+        return self.modalities
+
+    def build_available_modalities(self,
+                                   verbose=True):
+        for key in self.available_modalities(verbose=verbose):
+            getattr(self, 'build_%s' % key)(verbose=verbose)
+
     def close(self):
         self.io.close()
-        
-    def list_subquantities(self, quantity):
-        if quantity=='CaImaging':
-            return ['rawFluo', 'neuropil', 'dFoF', 'Deconvolved']
-        else:
-            return ['']
-            
+
         
 def scan_folder_for_NWBfiles(folder, 
-                             for_protocol=None,
+                             for_protocol='', # this includes all
                              for_protocols=[],
                              sorted_by='filename',
                              Nmax=1000000,
@@ -602,14 +979,15 @@ def scan_folder_for_NWBfiles(folder,
     """
     scan folders for protocols and returns a list of datafiles
 
+    You can either filter by 
+        - full protocol name with "for_protocol=..."
+        - subprotocol name with "for_protocols=[..., ...]"
+
     by default: excludes the intrinsic imaging files
     """
     if verbose:
         print('inspecting the folder "%s" [...]' % folder)
         t0 = time.time()
-
-    if (for_protocol is not None) and (len(for_protocols)==0):
-        for_protocols = [for_protocol]
 
     FILES0 = get_files_with_extension(folder,
                     extension='.nwb', recursive=True)
@@ -621,12 +999,14 @@ def scan_folder_for_NWBfiles(folder,
                                       ('up-' not in f))]
 
     DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES0])
-    FILES, SUBJECTS, PROTOCOLS, PROTOCOL_IDS, AGES = [], [], [], [], []
+    FILES, SUBJECTS, VIRUSES, AGES = [], [], [], []
+    PROTOCOL, PROTOCOLS, PROTOCOL_IDS= [], [], []
 
     for f in FILES0[:Nmax]:
 
         try:
-            data = Data(f, metadata_only=True, verbose=False)
+            data = Data(f, metadata_only=True, 
+                        verbose=False)
 
             if len(for_protocols)>0:
 
@@ -641,19 +1021,23 @@ def scan_folder_for_NWBfiles(folder,
                 if len(Protocols)>0:
                     # if it has at least one protocol, we include it
                     FILES.append(f)
+                    PROTOCOL.append(data.metadata['protocol'])
                     PROTOCOLS.append(Protocols)
                     PROTOCOL_IDS.append(iProtocols)
                     SUBJECTS.append(data.nwbfile.subject.subject_id)
                     AGES.append(data.age)
+                    VIRUSES.append(data.virus)
 
-            else:
+            elif for_protocol in data.metadata['protocol']:
+                # with default '',  it includes all protocols
 
-                # we include with all protocols
                 FILES.append(f)
+                PROTOCOL.append(data.metadata['protocol'])
                 PROTOCOLS.append(data.protocols)
                 PROTOCOL_IDS.append(range(len(data.protocols)))
                 SUBJECTS.append(data.nwbfile.subject.subject_id)
                 AGES.append(data.age)
+                VIRUSES.append(data.virus)
 
         except BaseException as be:
             SUBJECTS.append('N/A')
@@ -664,9 +1048,7 @@ def scan_folder_for_NWBfiles(folder,
     if verbose:
         print(' -> found n=%i datafiles (in %.1fs) ' % (len(FILES),
                                                         (time.time()-t0)))
-
     # sorted by filename
-
     if sorted_by=='filename':
         isorted = np.argsort(FILES)
     elif sorted_by=='subject':
@@ -683,6 +1065,8 @@ def scan_folder_for_NWBfiles(folder,
             'dates':np.array(DATES)[isorted],
             'subjects':np.array(SUBJECTS)[isorted],
             'ages':np.array(AGES)[isorted],
+            'viruses':np.array(VIRUSES)[isorted],
+            'protocol':[PROTOCOL[i] for i in isorted],
             'protocol_ids':[PROTOCOL_IDS[i] for i in isorted],
             'protocols':[PROTOCOLS[i] for i in isorted]}
 
@@ -690,8 +1074,13 @@ def scan_folder_for_NWBfiles(folder,
 if __name__=='__main__':
 
     if '.nwb' in sys.argv[-1]:
+        import pprint
         data = Data(sys.argv[-1], verbose=True)
-        print(data.metadata)
+        pprint.pprint(data.metadata)
+        print()
+        for key in data.available_modalities(True):
+            # building modalities:
+            getattr(data, 'build_%s' % key)(verbose=True)
     else:
         datafolder = sys.argv[-1]
         DATASET = \

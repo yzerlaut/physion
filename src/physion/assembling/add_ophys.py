@@ -8,9 +8,6 @@ from hdmf.backends.hdf5.h5_utils import H5DataIO
 
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
 
-# import the 2P trigger delay from the acquisition module !
-from physion.acquisition.recordings.Scan1Plane_Screen342V import TwoP_trigger_delay
-
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.to_nwb import add_ophys_processing_from_suite2p
 
@@ -312,9 +309,26 @@ def add_ophys(nwbfile, args,
              float(xml['settings']['laserWavelength'][laser_key]))
 
     multiplane = (True if len(np.unique(xml['depth_shift']))>1 else False)
-    
+
+
+    if ('xcenter-position-um' in xml) and \
+            ('ycenter-position-um' in xml):
+        Location = 'coords from 0-ref: (x=%s, y=%s)' % \
+            (xml['xcenter-position-um'], xml['ycenter-position-um'])
+    else:
+        Location = 'V1'
+
     if not multiplane:
-        corrected_depth =(float(metadata['Z-sign-correction-for-rig'])*Depth if ('Z-sign-correction-for-rig' in metadata) else Depth) 
+
+        # depth correction (sign of the microscope)
+        if ('2P'  in metadata):
+            corrected_depth =float(metadata['2P']['Z-sign-correction-for-rig'])*Depth
+        elif ('Z-sign-correction-for-rig' in metadata):
+            # DEPRECATED SOON
+            corrected_depth =float(metadata['Z-sign-correction-for-rig'])*Depth 
+        else:
+            corrected_depth = Depth 
+
         imaging_plane = nwbfile.create_imaging_plane(\
                 'my_imgpln', optical_channel,
                  description='Depth=%.1f[um]' % corrected_depth,
@@ -322,7 +336,7 @@ def add_ophys(nwbfile, args,
                  excitation_lambda=float(xml['settings']['laserWavelength'][laser_key]),
                  imaging_rate=1./float(xml['settings']['framePeriod']),
                  indicator='GCamp',
-                 location='V1', # ADD METADATA HERE
+                 location=Location,
                  # reference_frame='A frame to refer to',
                  grid_spacing=(\
                          float(xml['settings']['micronsPerPixel']['YAxis']),
@@ -337,7 +351,7 @@ def add_ophys(nwbfile, args,
              excitation_lambda=float(xml['settings']['laserWavelength'][laser_key]),
              imaging_rate=1./float(xml['settings']['framePeriod']),
              indicator='GCamp',
-             location='V1', # ADD METADATA HERE
+             location=Location,
              # reference_frame='A frame to refer to',
              grid_spacing=(float(xml['settings']['micronsPerPixel']['YAxis']),
                            float(xml['settings']['micronsPerPixel']['XAxis'])))
@@ -359,6 +373,7 @@ def add_ophys(nwbfile, args,
     nwbfile.add_acquisition(image_series)
 
     if os.path.isdir(os.path.join(args.imaging, 'suite2p')):
+        TwoP_trigger_delay=0.1 # [!!] hard-coded here.... TOREMOVE [!!]
         print('=> Adding the suite2p processing for "%s" [...]' % args.imaging)
         add_ophys_processing_from_suite2p(os.path.join(args.imaging, 'suite2p'),
                                           nwbfile, xml,

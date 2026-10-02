@@ -1,18 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.16.7
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
-
 # %% [markdown]
 # # Behavioral modulation of visually Evoked Activity
 
@@ -21,9 +6,13 @@ import sys, os
 import numpy as np
 from scipy.optimize import minimize
 
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+sys.path += ['../src'] # add src code directory for physion
 import physion
+from physion.analysis.read_NWB import Data
+from physion.analysis.episodes.build import EpisodeData
+from physion.dataviz.raw import plot, find_default_plot_settings
 import physion.utils.plot_tools as pt
+pt.set_style('dark')
 
 # %% [markdown]
 # ## Load the Episodes of a given Protocol in a Datafile 
@@ -33,20 +22,25 @@ filename = os.path.join(os.path.expanduser('~'),
                         'DATA', 'physion_Demo-Datasets', 'SST-WT', 'NWBs',
                         '2023_02_15-13-30-47.nwb')
 
-data = physion.analysis.read_NWB.Data(filename, verbose=False)
-data.build_dFoF(method_for_F0='sliding_percentile', percentile=10., verbose=False)
+data = Data(filename, verbose=False)
+data.build_dFoF(method_for_F0='sliding_percentile', 
+                percentile=10., 
+                verbose=False)
 
-Episodes = physion.analysis.process_NWB.EpisodeData(data,
-                                                    quantities=['dFoF', 'running_speed', 'pupil_diameter'],
-                                                    protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
-                                                    verbose=False,
-                                                    dt_sampling=10)
+Episodes = EpisodeData(data,
+                    quantities=['dFoF', 'running_speed', 'pupil_diameter'],
+                    protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
+                    verbose=False,
+                    dt_sampling=10)
 
 # %%
 # visualize those data
 t0 = Episodes.time_start_realigned[0]-1
-figRaw, _ = physion.dataviz.raw.plot(data, tlim=[t0,t0+300],
-                                     settings=physion.dataviz.raw.find_default_plot_settings(data, with_subsampling=True))
+figRaw, _ = plot(data, 
+                tlim=[t0,t0+300],
+                settings=\
+                find_default_plot_settings(data, 
+                                            with_subsampling=True))
 
 # %% [markdown]
 # ## Split Episodes according to Behavioral States
@@ -250,7 +244,7 @@ for f in DATASET['files']:
     data = physion.analysis.read_NWB.Data(f, verbose=False)
     data.build_dFoF(method_for_F0='sliding_percentile', neuropil_correction_factor=0.7, percentile=10., verbose=False)
 
-    Episodes = physion.analysis.process_NWB.EpisodeData(data, 
+    Episodes = physion.analysis.episodes.build.EpisodeData(data, 
                                                     quantities=['dFoF', 'running_speed', 'pupil_diameter'],
                                                     protocol_name=[p for p in data.protocols if 'ff-gratings' in p][0],
                                                     verbose=False, prestim_duration=3,

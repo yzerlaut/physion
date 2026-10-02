@@ -2,14 +2,14 @@ import numpy as np
 
 import physion.utils.plot_tools as pt
 from physion.dataviz.raw import plot as plot_raw
-from physion.analysis.process_NWB import EpisodeData
+from physion.analysis.episodes.build import EpisodeData
 from physion.dataviz.episodes.trial_average import plot as plot_trial_average
 from .contrast_sensitivity import compute_sensitivity_per_cells
 
 stat_test = dict(interval_pre=[-1.5,-0.5],
                  interval_post=[0.5,1.5],
                  test='anova',
-                 positive=True)
+                 sign='positive')
 
 response_significance_threshold=0.01
 
@@ -18,11 +18,11 @@ def zoom_view(ax, data, args, tlim=[300,420]):
 
     settings={}
     if 'Running-Speed' in data.nwbfile.acquisition:
-        settings['Locomotion'] = dict(fig_fraction=1, subsampling=2, color='blue')
+        settings['running'] = dict(fig_fraction=1, subsampling=2, color='blue')
     if 'ophys' in data.nwbfile.processing:
         settings['CaImaging']= dict(fig_fraction=6,
                                     subsampling=1, 
-                                    subquantity=args.imaging_quantity, 
+                                    subquantity='dFoF',
                                     color='green',
                                     annotation_side='right',
                                     roiIndices=np.random.choice(data.nROIs,
@@ -30,7 +30,7 @@ def zoom_view(ax, data, args, tlim=[300,420]):
                                                         replace=False))
         settings['CaImagingRaster']= dict(fig_fraction=3,
                                           subquantity='dFoF')
-    settings['VisualStim'] = dict(fig_fraction=0, color='black',
+    settings['visual_stim'] = dict(fig_fraction=0, color='black',
                                   with_screen_inset=True)
 
     plot_raw(data, tlim, 
@@ -43,28 +43,29 @@ def zoom_view(ax, data, args, tlim=[300,420]):
 
 
 
-def plot(fig, data, args, 
+def plot(fig, data, args=None, 
+         quantity='dFoF',
          stat_test=stat_test):
 
     Episodes = EpisodeData(data,
-                           quantities=['dFoF'],
+                           quantities=[quantity],
                            prestim_duration=3,
                            verbose=True)
 
     ax = pt.inset(fig, [0.07, 0.41, 0.84, 0.2])
     zoom_view(ax, data, args)
-
     
     AX = [[pt.inset(fig, [0.06+i*0.11, 0.28+0.07*j, 0.1, 0.06])\
             for i in range(8)] for j in range(2)]
-    
+
     plot_trial_average(Episodes,
+                       quantity=quantity,
                        row_key='angle',
                        column_key='contrast',
                        with_annotation=True, 
                        Xbar=1, Xbar_label='1s', 
                        Ybar=0.1, Ybar_label='0.1$\\Delta$F/F',
-                       with_screen_inset=True,
+                    #    with_screen_inset=True,
                        with_std_over_rois=True,
                        AX=AX)
 
@@ -80,11 +81,11 @@ def plot(fig, data, args,
                                              response_significance_threshold=\
                                                 response_significance_threshold/8.) # adjusted for multiple comp.
 
-        r = np.sum(resp['significant_ROIs'])/data.nROIs
+        r = np.sum(resp['significant_pos'][:,-1])/data.nROIs
         pt.pie([100*r, 100*(1-r)],
            COLORS=['green', 'lightcoral'], ax=ax)
         pt.annotate(ax, 'a=%.1f$^o$ \n  %.1f%%\n  (n=%i)'%(\
-                    angle, 100*r, np.sum(resp['significant_ROIs'])),
+                    angle, 100*r, np.sum(resp['significant_pos'][:,-1])),
                     (0,1), va='top', ha='right', fontsize=7)
 
         if len(resp['Responses'])>0:
@@ -109,7 +110,9 @@ def plot(fig, data, args,
         AX = [[pt.inset(fig, [0.22+i*0.085, 0.035+0.026*j, 0.09, 0.03])\
                 for i in range(8)]]
         
-        plot_trial_average(Episodes, roiIndex=n,
+        plot_trial_average(Episodes, 
+                           quantity=quantity,
+                           index=n,
                            color_key='angle',
                            column_key='contrast',
                            Xbar=1, Xbar_label='1s', 
@@ -122,3 +125,20 @@ def plot(fig, data, args,
 
         pt.annotate(AX[-1][-1], 'roi #%i' % n, (1,0.5), va='center')
         # color='tab:green' if n in responsive['c=1.0'] else 'lightcoral')
+
+if __name__=='__main__':
+
+    import sys
+
+    from physion.analysis.read_NWB import Data
+    from physion.analysis.episodes.build import EpisodeData
+    from physion.utils import plot_tools as pt
+
+    fig = pt.plt.figure(figsize=(8.27, 11.7), dpi=75)
+
+    data = Data(sys.argv[-1])
+    data.build_dFoF(verbose=False)
+
+    plot(fig, data)
+
+    pt.plt.show()

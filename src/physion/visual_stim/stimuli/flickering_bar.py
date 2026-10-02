@@ -71,7 +71,9 @@ class stim(visual_stim):
             for i, f1, f2 in zip(range(len(flickSpace)-1),
                                  flickSpace[:-1], flickSpace[1:]):
                 cond = bar_cond & (self.x>=f1) & (self.x<f2)
-                img[cond] = (iFlicker+i%2)%2
+                img[cond] = ( (iFlicker+i%2)%2 ) * self.experiment['contrast'][episode]
+                # img[cond] = 1. # to have a bright bar only
+
             img[(self.x<(self.experiment['bar-center'][episode]-\
                             self.experiment['bar-length'][episode]/2.)) |\
                 (self.x>(self.experiment['bar-center'][episode]+\
@@ -91,7 +93,9 @@ class stim(visual_stim):
             for i, f1, f2 in zip(range(len(flickSpace)-1),
                                  flickSpace[:-1], flickSpace[1:]):
                 cond = bar_cond & (self.z>=f1) & (self.z<f2)
-                img[cond] = (iFlicker+i%2)%2
+                img[cond] = ( (iFlicker+i%2)%2 ) * self.experiment['contrast'][episode]
+                # img[cond] = 1.
+
             img[(self.z<(self.experiment['bar-center'][episode]-\
                             self.experiment['bar-length'][episode]/2.)) |\
                 (self.z>(self.experiment['bar-center'][episode]+\

@@ -1,0 +1,187 @@
+import numpy as np
+
+def shuffle_from_protocol_info(indices, repeats, protocol_ids, 
+                               protocol,
+                               default_seed=1):
+    """
+    takes a protocol and a visual_stim object as argument
+
+    performs the shuffling of the array in visual_stim.experiment
+    """
+
+    # initialize random seed if provided
+    if 'shuffling-seed' in protocol:
+        np.random.seed(protocol['shuffling-seed']) 
+    else:
+        np.random.seed(default_seed)
+
+    # -----------------------------------------------------------------
+    # TO REMOVE WHEN NOT USING "Randomized-Sequence" ANYMORE
+    #   backward compatbility, sometimes no "shuffling" key anymore
+    # if 'shuffling' not in protocol:
+    #     # this means that protocol['Presentation']=='Randomized-Sequence'
+    #     protocol['shuffling'] = 'full'
+    # -----------------------------------------------------------------
+
+    # DEFAULT --> NO SHUFFLING !!
+    full_indices = np.arange(len(indices))
+
+    if 'shuffling' in protocol:
+
+        if (protocol['shuffling']=='full'):
+
+            np.random.shuffle(full_indices)
+
+        elif (protocol['shuffling']==\
+                'full-with-alternate-even-odd-repeats'):
+
+            # extracting even and odd full indices
+            full_indices_even = full_indices[repeats%2==0]
+            full_indices_odd = full_indices[repeats%2==1]
+
+            # shuffle them
+            np.random.shuffle(full_indices_even)
+            np.random.shuffle(full_indices_odd)
+
+            # refill full_indices by alternating even and odd episodes
+            for i in range(int(len(indices)/2)):
+
+                full_indices[2*i] = full_indices_even[i]
+                full_indices[2*i+1] = full_indices_odd[i]
+        elif protocol['shuffling'] in ['none']:
+            pass
+        else:
+            print()
+            print("""
+                ###############################################
+                ###  [!!] shuffling key not recognized [!!] ### 
+                ###        ---> data won't be shuffled !!   ### 
+                ###############################################
+                key: '%s'
+                """ % protocol['shuffling'])
+            print()
+
+    return full_indices
+
+def shuffle_single_protocol(indices, repeats, protocol,
+                            default_seed=1):
+    """
+    takes a protocol and a visual_stim object as argument
+
+    performs the shuffling of the array in visual_stim.experiment
+    """
+
+    # initialize random seed if provided
+    if 'shuffling-seed' in protocol:
+        np.random.seed(protocol['shuffling-seed']) 
+    else:
+        np.random.seed(default_seed)
+
+    # -----------------------------------------------------------------
+    # TO REMOVE WHEN NOT USING "Randomized-Sequence" ANYMORE
+    #   backward compatbility, sometimes no "shuffling" key anymore
+    if 'shuffling' not in protocol:
+        # this means that protocol['Presentation']=='Randomized-Sequence'
+        protocol['shuffling'] = 'full'
+    # -----------------------------------------------------------------
+
+    full_indices = np.arange(len(indices))
+
+    if (protocol['shuffling']=='full'):
+
+        np.random.shuffle(full_indices)
+
+    elif (protocol['shuffling']==\
+            'full-with-alternate-even-odd-repeats'):
+
+        # extracting even and odd full indices
+        full_indices_even = full_indices[repeats%2==0]
+        full_indices_odd = full_indices[repeats%2==1]
+
+        # shuffle them
+        np.random.shuffle(full_indices_even)
+        np.random.shuffle(full_indices_odd)
+
+        # refill full_indices by alternating even and odd episodes
+        for i in range(int(len(indices)/2)):
+
+            full_indices[2*i] = full_indices_even[i]
+            full_indices[2*i+1] = full_indices_odd[i]
+    elif protocol['shuffling'] in ['none']:
+        pass
+    else:
+        print()
+        print("""
+            ###############################################
+            ###  [!!] shuffling key not recognized [!!] ### 
+            ###        ---> data won't be shuffled !!   ### 
+            ###############################################
+                key: '%s'
+        """ % protocol['shuffling'])
+        print()
+
+    return indices[full_indices], repeats[full_indices]
+
+def shuffle_multiprotocol(indices, repeats, protocol_id,
+                          protocol,
+                          default_seed=1):
+    
+    # print(indices)
+    full_indices = np.arange(len(indices))
+
+    if (protocol['shuffling']=='full'):
+
+        np.random.shuffle(full_indices)
+
+    elif (protocol['shuffling']==\
+            'full-with-alternate-even-odd-repeats'):
+
+        # extracting even and odd full indices
+        full_indices_even = full_indices[repeats%2==0]
+        full_indices_odd = full_indices[repeats%2==1]
+
+        # shuffle them
+        np.random.shuffle(full_indices_even)
+        np.random.shuffle(full_indices_odd)
+
+        # refill full_indices by alternating even and odd episodes
+        for i in range(int(len(indices)/2)):
+
+            full_indices[2*i] = full_indices_even[i]
+            full_indices[2*i+1] = full_indices_odd[i]
+    elif protocol['shuffling'] in ['none']:
+        pass
+    else:
+        print()
+        print("""
+            ###############################################
+            ###  [!!] shuffling key not recognized [!!] ### 
+            ###        ---> data won't be shuffled !!   ### 
+            ###############################################
+                key: '%s'
+        """ % protocol['shuffling'])
+        print()
+
+    return indices[full_indices], repeats[full_indices], protocol_id[full_indices]
+
+
+if __name__=='__main__':
+
+    import json, sys, os
+    from physion.visual_stim.build import build_stim
+
+    filename = sys.argv[-1]
+    if '.json' in filename:
+        with open(filename, 'r') as fp:
+            protocol = json.load(fp)
+        protocol['json_location'] = os.path.dirname(filename)
+        stim = build_stim(protocol)
+        # print(stim.experiment)
+        print(stim.experiment['repeat'])
+        print(stim.experiment['index'])
+        print(stim.experiment['protocol_id'])
+    else:
+        print("""
+                need to provide a json file as argument
+              """)
+

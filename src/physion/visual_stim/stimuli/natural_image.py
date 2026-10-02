@@ -9,11 +9,17 @@ from physion.visual_stim.preprocess_NI import load,\
 ##  ----    NATURAL IMAGES    --- #####
 #######################################
 
-params = {"Image-ID":1}
+params = {"Image-ID":1,
+          "contrast":0.3,
+          "x-center":0,
+          "y-center":0,
+          "radius":30
+}
 
-def get_NaturalImages_as_array(screen):
+
+def get_NaturalImages_as_array(NI_FOLDER, screen):
     
-    NI_FOLDER = os.path.join(str(pathlib.Path(__file__).resolve().parents[1]), 'NI_bank')
+    # NI_FOLDER = os.path.join(str(pathlib.Path(__file__).resolve().parents[1]), 'NI_bank')
     
     NIarray = []
 
@@ -35,16 +41,40 @@ class stim(visual_stim):
 
         super().__init__(protocol, params)
 
+        if not 'NI_FOLDER' in protocol or not os.path.isdir(protocol['NI_FOLDER']):
+            print()
+            print("""
+                [!!] need to add a valid "NI_FOLDER" folder location containing natural images
+                            in the protocol [!!]
+                  """)
+            print()
+            protocol['NI_FOLDER'] = os.path.join('physion', 'visual_stim', 'NI_bank')
+
         # initializing set of NI
-        self.NIarray = get_NaturalImages_as_array(self.screen)
+        self.NIarray = get_NaturalImages_as_array(protocol['NI_FOLDER'], self.screen)
 
     def get_image(self, index,
                   time_from_episode_start=0,
                   parent=None):
-        return np.rot90(\
-                self.NIarray[int(self.experiment['Image-ID'][index])], 
-                        k=1)
+        
+        im_id = int(self.experiment['Image-ID'][index])
+        
+        im0 = np.rot90(\
+                self.NIarray[im_id], k=1)
 
+        if self.screen['nScreens']>1:
+            im0 = np.concatenate(\
+                [im0 for i in range(self.screen['nScreens'])])
+
+        im1 = self.experiment['bg-color'][index]+\
+            self.experiment['contrast'][index]*(im0-0.5)
+        
+        return self.blank_surround(im1, 
+                        bg_color=self.experiment['bg-color'][index],
+                          xcenter=self.experiment['x-center'][index],
+                          zcenter=self.experiment['y-center'][index],
+                          radius = self.experiment['radius'][index])
+    
 """
     def plot_stim_picture(self, episode, parent=None, 
                           vse=True, ax=None, label=None,
@@ -73,6 +103,7 @@ if __name__=='__main__':
     from physion.visual_stim.build import get_default_params
 
     params = get_default_params('natural-image')
+    params['NI_FOLDER'] = '/Users/yann/code-NB/Natural-Images-Allen'
     print(params)
 
     import time

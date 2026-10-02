@@ -1,29 +1,29 @@
-import os, sys, pathlib, shutil, time, datetime, tempfile, json
+import os, sys, pathlib, shutil, datetime, tempfile, json
 from PIL import Image
 import numpy as np
 
 import pynwb
 from hdmf.data_utils import DataChunkIterator
-from hdmf.backends.hdf5.h5_utils import H5DataIO
 from dateutil.tz import tzlocal
 
 from physion.behavior.locomotion import compute_speed
-from physion.analysis.tools import resample_signal
+from physion.analysis.tools import resample, resample_signal
 from physion.utils.paths import python_path
 from physion.visual_stim.build import build_stim as build_visualStim
 
 from physion.utils.camera import CameraData
 
 from .subject import reformat_props, cleanup_keys, subject_template
-from .add_ophys import add_ophys
+from .add_ophys import add_ophys # optical physiology
+from .add_ephys import build_args_for_ephys, add_ephys # electrophysiology
 from .realign_from_photodiode import realign_from_photodiode
 from .dataset import read_spreadsheet, read_metadata
-from .tools import load_FaceCamera_data,\
-        build_subsampling_from_freq, StartTime_to_day_seconds
+from .tools import build_subsampling_from_freq, StartTime_to_day_seconds
 
 ALL_MODALITIES = ['raw_CaImaging', 'processed_CaImaging',
                   'raw_FaceCamera', 'Pupil', 'FaceMotion',
-                  # 'EphysLFP', 'EphysVm',
+                  # 'EphysLFP', 'EphysUnits', 'EphysVm',
+                  'Neuropixels',
                   'VisualStim',
                   'Locomotion'] 
 
@@ -41,6 +41,11 @@ def build_NWB_func(args, Subject=None):
 
     metadata = read_metadata(args.datafolder)
 
+    key_not_included_session_description = ['date', 'time', 'protocol', 'experimenter', 
+                                             'lab', 'institution', 'notes']
+    session_description = str({k: metadata[k] for k in metadata.keys() 
+                               if k not in key_not_included_session_description})
+
     # add visual stimulation protocol parameters to the metadata:
     if os.path.isfile(os.path.join(args.datafolder, 'protocol.json')):
         with open(os.path.join(args.datafolder, 'protocol.json'),
@@ -56,6 +61,8 @@ def build_NWB_func(args, Subject=None):
         # we add all protocol parameters to the metadata:
         for key in protocol:
             metadata[key] = protocol[key]
+    else:
+        protocol = {'name':metadata['protocol']}
 
     # some cleanup
     if 'date' not in metadata:
@@ -76,13 +83,19 @@ def build_NWB_func(args, Subject=None):
     # --------------------------------------------------------------
     #                       subject info 
     # --------------------------------------------------------------
-
     if Subject is not None:
-        subject_props = reformat_props(Subject, debug=args.verbose)
+        subject_props = reformat_props(Subject, 
+                                       debug=args.verbose) 
     else:
-        subject_props = subject_template.copy()
-    cleanup_keys(subject_props, metadata, debug=args.verbose)
 
+        subject_props = subject_template.copy()
+        # in case if was filled in the "metadata.json" --> keep !
+        if metadata['subject_ID'] != "demo-Mouse":
+            subject_props['subject_id'] = metadata["subject_ID"]
+        
+    # some cleanup -- + calculating "age" here:
+    cleanup_keys(subject_props, metadata, 
+                 debug=args.verbose)
     # --------------------------------------------------------------
     #    ---------  building the pynwb subject object   ----------
     # --------------------------------------------------------------
@@ -97,16 +110,16 @@ def build_NWB_func(args, Subject=None):
                                  date_of_birth=\
         datetime.datetime(*subject_props['Date-of-Birth'], tzinfo=tzlocal()))
                                  
-
     # --------------------------------------------------------------
     #    ---------  building the pynwb NWBfile object   ----------
     # --------------------------------------------------------------
     nwbfile = pynwb.NWBFile(\
                 identifier=identifier,
-                session_description=str(metadata),
+                session_description=session_description,
                 experiment_description=metadata['protocol'],
-                experimenter=metadata['experimenter'],
+                experimenter=metadata['experimenter'] if ('experimenter' in protocol) else '',
                 lab=metadata['lab'],
+                protocol=str({k: protocol[k] for k in protocol if len(k)<66}),
                 institution=metadata['institution'],
                 notes=metadata['notes'],
                 virus=subject_props['virus'],
@@ -147,7 +160,8 @@ def build_NWB_func(args, Subject=None):
     if args.verbose:
         print('=> Loading NIdaq data for "%s" [...]' % args.datafolder)
     try:
-        NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), allow_pickle=True).item()
+        NIdaq_data = np.load(os.path.join(args.datafolder, 'NIdaq.npy'), 
+                             allow_pickle=True).item()
     except FileNotFoundError:
         print('\n   [!!] No NI-DAQ data found [!!] \n')
         NIdaq_data = None
@@ -155,27 +169,97 @@ def build_NWB_func(args, Subject=None):
     # #################################################
     # ####         Locomotion                   #######
     # #################################################
+    if ('Locomotion' in args.modalities) and\
+        ( ('Locomotion' in metadata) and (metadata['Locomotion'] )
+                    or ( ('NIdaq' in metadata) and metadata['NIdaq'] ) ):
+        # --> compute running speed from binary NI-daq signal and storing it
 
-    if metadata['Locomotion'] and ('Locomotion' in args.modalities):
-        # compute running speed from binary NI-daq signal
-        if args.verbose:
-            print('=> Computing and storing running-speed for "%s" [...]' % args.datafolder)
+        # can we use a previously calculated speed ? (because that's a bit long...)
+        if (not args.force_recalculation_of_speed) and\
+            os.path.isfile(os.path.join(args.datafolder, 'locomotion.npy')):
 
-        speed = compute_speed(NIdaq_data['digital'][0],
-                acq_freq=float(metadata['NIdaq-acquisition-frequency']),
-                radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']),
-                rotoencoder_value_per_rotation=float(metadata['rotating-disk']['roto-encoder-value-per-rotation']))
-        _, speed = resample_signal(speed,
-                                   original_freq=float(metadata['NIdaq-acquisition-frequency']),
-                                   new_freq=args.running_sampling,
-                                   pre_smoothing=2./args.running_sampling)
+            if args.verbose:
+                print('=> Using pre-computed running-speed for "%s" [...]' % args.datafolder)
+
+            L = np.load(os.path.join(args.datafolder, 'locomotion.npy'), 
+                         allow_pickle=True).item()
+            speed, running_sampling = L['speed'], L['running_sampling']
+
+        else:
+            # --> compute the speed !
+
+            if args.verbose:
+                print('=> Computing and storing running-speed for "%s" [...]' % args.datafolder)
+
+            if 'NIdaq-acquisition-frequency' in metadata:
+                # OLD WAY FOR BACKWARD COMPATIBILITY
+                from physion.behavior.locomotion import legacy_speed_calculation 
+                running_sampling, speed = legacy_speed_calculation(NIdaq_data, metadata, args)
+            else:
+
+                # find the two digital channels of the rotary encoder for locomotion
+                chan1 = np.flatnonzero(np.array(metadata['NIdaq']['digital-inputs']['line-labels'])=='locomotion-channel1')[0]
+                chan2 = np.flatnonzero(np.array(metadata['NIdaq']['digital-inputs']['line-labels'])=='locomotion-channel2')[0]
+
+                binary = NIdaq_data['digital'][chan1]*1+2*NIdaq_data['digital'][chan2]
+
+                if 'treadmill' in metadata:
+                    speed = compute_speed(binary,
+                            acq_freq=float(metadata['NIdaq']['acquisition-frequency']),
+                            radius_position_on_disk=float(metadata['treadmill']['radius-position-on-disk-cm']))
+                elif 'rotating-disk' in metadata:
+                    speed = compute_speed(binary,
+                        acq_freq=float(metadata['NIdaq']['acquisition-frequency']),
+                        radius_position_on_disk=float(metadata['rotating-disk']['radius-position-on-disk-cm']))
+                else:
+                    print(" [!!] Problem calculating speed [!!] ")    
+                
+
+                _, speed = resample_signal(speed,
+                                        original_freq=float(metadata['NIdaq']['acquisition-frequency']),
+                                        new_freq=args.running_sampling,
+                                        pre_smoothing=2./args.running_sampling)
+                running_sampling = args.running_sampling
+
+            np.save(os.path.join(args.datafolder, 'locomotion.npy'),
+                    dict(speed=speed, running_sampling=running_sampling))
+
         running = pynwb.TimeSeries(name='Running-Speed',
                                    data = np.reshape(speed, (len(speed),1)),
                                    starting_time=0.,
                                    unit='cm/s',
-                                   rate=args.running_sampling)
+                                   rate=running_sampling)
         nwbfile.add_acquisition(running)
 
+    # #################################################
+    # ####            OPTOGENETICS              #######
+    # #################################################
+    
+    if 'Opto' in metadata['protocol']:
+
+        # find the channel that has the LED copy
+        chan = np.flatnonzero(np.array(metadata['NIdaq']['digital-inputs']['line-labels'])=='copy-LED-optogenetics-activation')[0]
+
+        led = nwbfile.create_device(name="LED",
+                                    description=metadata['LED']['description'] if 'LED' in metadata else '',
+                                    manufacturer=metadata['LED']['manufacturer'] if 'LED' in metadata else '')
+        ogen_stim_site = pynwb.ogen.OptogeneticStimulusSite(
+                        name="OptogeneticStimulusSite",
+                        device=led,
+                        description=" ",
+                        excitation_lambda=metadata['LED']['wavelength'] if 'LED' in metadata else 0.0,
+                        location=metadata['LED']['fiber-location'] if 'LED' in metadata else 'VIS')
+        nwbfile.add_ogen_site(ogen_stim_site)
+
+        ogen_series = pynwb.ogen.OptogeneticSeries(
+                            name="OptogeneticSeries",
+                            data=NIdaq_data['digital'][chan].astype(int),
+                            site=ogen_stim_site,
+                            rate=float(metadata['NIdaq']['acquisition-frequency']))
+
+        nwbfile.add_stimulus(ogen_series)
+
+            
     # #################################################
     # ####         Visual Stimulation           #######
     # #################################################
@@ -204,10 +288,19 @@ def build_NWB_func(args, Subject=None):
 
         if NIdaq_data is not None:
             # preprocessing photodiode signal
-            _, Psignal = resample_signal(NIdaq_data['analog'][0],
-                                         original_freq=float(metadata['NIdaq-acquisition-frequency']),
-                                         pre_smoothing=2./float(metadata['NIdaq-acquisition-frequency']),
-                                         new_freq=args.photodiode_sampling)
+            if 'NIdaq-acquisition-frequency' in metadata:
+                # OLD WAY FOR BACKWARD COMPATIBILITY
+                _, Psignal = resample_signal(NIdaq_data['analog'][0],
+                                            original_freq=float(metadata['NIdaq-acquisition-frequency']), pre_smoothing=2./float(metadata['NIdaq-acquisition-frequency']),
+                                            new_freq=args.photodiode_sampling)
+            else:
+
+                chan = np.flatnonzero(np.array(metadata['NIdaq']['analog-inputs']['channel-labels'])=='photodiode-signal-from-screen')[0]
+                _, Psignal = resample_signal(NIdaq_data['analog'][chan],
+                                            original_freq=float(metadata['NIdaq']['acquisition-frequency']),
+                                            pre_smoothing=2./float(metadata['NIdaq']['acquisition-frequency']),
+                                            new_freq=args.photodiode_sampling)
+
             if args.reverse_photodiodeSignal:
                Psignal *=-1 # reversing sign on the setup
 	
@@ -267,7 +360,10 @@ def build_NWB_func(args, Subject=None):
                 nwbfile.add_stimulus(VisualStimProp)
                 
             for key in VisualStim:
-                None_cond = np.array([isinstance(e, type(None)) for e in VisualStim[key]]) # just checks for 'None' values
+
+                # Dealing with None conds (replacing with 666 in nwb):
+                None_cond = np.array(\
+                    [isinstance(e, type(None)) for e in VisualStim[key]]) # just checks for 'None' values
                 if key in ['protocol_id', 'index']:
                     array = np.array(VisualStim[key])
                 elif key in ['protocol-name']:
@@ -276,14 +372,16 @@ def build_NWB_func(args, Subject=None):
                     # need to remove the None elements
                     for i in np.arange(len(VisualStim[key]))[None_cond]:
                         VisualStim[key][i] = 666 # 666 means None !!
-                    array = np.array(VisualStim[key], dtype=type(np.array(VisualStim[key])[~None_cond][0]))
+                    array = np.array(VisualStim[key],\
+                            dtype=type(np.array(VisualStim[key])[~None_cond][0]))
                 else:
                     array = VisualStim[key]
+
                 VisualStimProp = pynwb.TimeSeries(name=key,
                         data = np.reshape(array[:len(timestamps)], 
                                             (len(timestamps),1)),
-                                  unit='NA',
-                                  timestamps=timestamps)
+                                unit='NA',
+                                timestamps=timestamps)
                 nwbfile.add_stimulus(VisualStimProp)
                 
         else:
@@ -300,6 +398,13 @@ def build_NWB_func(args, Subject=None):
                                           rate=args.photodiode_sampling)
             nwbfile.add_acquisition(photodiode)
 
+        ####################
+        ## put addition of natural images here
+        if False:
+            # checking that you have some NI in your stimulus
+            NI = pynwb.image.GrayscaleImage(name, data)
+            nwbfile.add_stimulus(NI)
+
         
     #################################################
     ####         FaceCamera Recording         #######
@@ -310,17 +415,20 @@ def build_NWB_func(args, Subject=None):
         if args.verbose:
             print('=> Storing FaceCamera acquisition for "%s" [...]' % args.datafolder)
 
-        fcamData = CameraData('FaceCamera', folder=args.datafolder)
+        fcamData = CameraData('FaceCamera', 
+                              folder=args.datafolder, 
+                              dont_load_from_video=True)
+
         FC_times = fcamData.original_times
         FC_times = check_times(FC_times, NIdaq_Tstart)
-        # print(len(FC_times))
 
         if ('raw_FaceCamera' in args.modalities) and (len(fcamData.times)>0):
            
             imgR = fcamData.get(0)
             FC_SUBSAMPLING = build_subsampling_from_freq(args.FaceCamera_frame_sampling,
                                              1./np.mean(np.diff(fcamData.times)), 
-                                            fcamData.nFrames, Nmin=3)
+                                            fcamData.nFrames-1, Nmin=3)
+
             def FaceCamera_frame_generator():
                 for i in FC_SUBSAMPLING:
                     try:
@@ -344,7 +452,6 @@ def build_NWB_func(args, Subject=None):
             print('     --> no raw_FaceCamera added !! ' )
 
             
-
         #################################################
         ####         Pupil from FaceCamera        #######
         #################################################
@@ -358,7 +465,6 @@ def build_NWB_func(args, Subject=None):
                     
                 dataP = np.load(os.path.join(args.datafolder, 'pupil.npy'),
                                 allow_pickle=True).item()
-                FC_timesP = FC_times[:len(dataP['cx'])]
 
                 if 'FaceCamera-1cm-in-pix' in metadata:
                     pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
@@ -374,11 +480,14 @@ def build_NWB_func(args, Subject=None):
                 for key, scale in zip(['cx', 'cy', 'sx', 'sy', 'angle', 'blinking'],
                                       [pix_to_mm for i in range(4)]+[1,1]):
                     if type(dataP[key]) is np.ndarray:
+                        signal = dataP[key]*scale
+                        signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                          signal, FC_times)
                         PupilProp = pynwb.TimeSeries(name=key,
-                                 data = np.reshape(dataP[key]*scale, 
-                                                   (len(FC_timesP),1)),
+                                 data = np.reshape(signal,
+                                                   (len(FC_times),1)),
                                  unit='seconds',
-                                 timestamps=FC_timesP)
+                                 timestamps=FC_times)
                         pupil_module.add(PupilProp)
 
                 # then add the frames subsampled
@@ -388,7 +497,8 @@ def build_NWB_func(args, Subject=None):
                     cond = (x>=dataP['xmin']) & (x<=dataP['xmax']) & (y>=dataP['ymin']) & (y<=dataP['ymax'])
 
                     PUPIL_SUBSAMPLING = build_subsampling_from_freq(args.Pupil_frame_sampling,
-                                                 1./np.mean(np.diff(fcamData.times)), fcamData.nFrames, Nmin=3)
+                                                 1./np.mean(np.diff(fcamData.times)), 
+                                                 fcamData.nFrames-1, Nmin=3)
 
                     new_shapeP = dataP['xmax']-dataP['xmin']+1, dataP['ymax']-dataP['ymin']+1
                     def Pupil_frame_generator():
@@ -406,9 +516,41 @@ def build_NWB_func(args, Subject=None):
                     Pupil_frames = pynwb.image.ImageSeries(name='Pupil',
                                                            data=PUC_dataI,
                                                            unit='NA',
-                                                           timestamps=FC_times[PUPIL_SUBSAMPLING])
+                                                           timestamps=fcamData.times[PUPIL_SUBSAMPLING])
                     nwbfile.add_acquisition(Pupil_frames)
-                        
+
+            elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt','faceit.npz')):
+                
+                if args.verbose:
+                    print('=> Adding processed pupil data for "%s" [...]' % args.datafolder)
+                    
+                dataP = np.load(os.path.join(args.datafolder, 'FaceIt','faceit.npz'),
+                                allow_pickle=True)
+                FC_timesP = FC_times[:len(dataP['pupil_dilation'])]
+
+                if 'FaceCamera-1cm-in-pix' in metadata:
+                    pix_to_mm = 10./float(metadata['FaceCamera-1cm-in-pix']) # IN MILLIMETERS FROM HERE
+                else:
+                    pix_to_mm = 1
+                    
+                pupil_module = nwbfile.create_processing_module(name='Pupil', 
+                            description='processed quantities of Pupil dynamics,\n'+\
+                    ' pupil ROI: (xmin,xmax,ymin,ymax)=(%i,%i,%i,%i)\n' % (\
+                            0, 0, 0, 0)+\
+                    ' pix_to_mm=%.3f' % pix_to_mm)
+
+                for key, key2, coef in zip(['cx', 'cy', 'sx', 'sy', 'blinking', 'area'],
+                                     ['pupil_center_X', 'pupil_center_y', 'width', 'height', 
+                                      'blinking_ids', 'pupil_dilation_blinking_corrected'],
+                                     [pix_to_mm, pix_to_mm, pix_to_mm*2, pix_to_mm*2, 1, pix_to_mm**2]):
+                    if type(dataP[key2]) is np.ndarray:
+                        PupilProp = pynwb.TimeSeries(name=key,
+                                 data = np.reshape(dataP[key2]*coef, 
+                                                   (len(FC_timesP),1)),
+                                 unit='seconds',
+                                 timestamps=FC_timesP)
+                        pupil_module.add(PupilProp)
+
             else:
                 print(' [!!] No processed pupil data found',
                       'for "%s" [!!] ' % args.datafolder)
@@ -430,27 +572,31 @@ def build_NWB_func(args, Subject=None):
                                 allow_pickle=True).item()
                 FC_timesF = FC_times[:len(dataF['motion'])]
 
-                # print(len(FC_times), len(dataF['motion']))
-
                 faceMotion_module = nwbfile.create_processing_module(\
                         name='FaceMotion', 
                         description='face motion dynamics,\n'+\
                             ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n'\
                                         % (dataF['ROI'][0],dataF['ROI'][1],
                                            dataF['ROI'][2],dataF['ROI'][3]))
+                signal = dataF['motion']
+                signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                    signal, FC_times)
                 FaceMotionProp = pynwb.TimeSeries(name='face-motion',
-                                      data = np.reshape(dataF['motion'],
-                                                        (len(FC_timesF),1)),
+                                      data = np.reshape(signal,
+                                                        (len(FC_times),1)),
                                                   unit='seconds',
-                                                  timestamps=FC_timesF)
+                                                  timestamps=FC_times)
                 faceMotion_module.add(FaceMotionProp)
 
                 if 'grooming' in dataF:
+                    signal = dataF['grooming']
+                    signal = resample(np.linspace(FC_times[0], FC_times[-1], len(signal)),
+                                        signal, FC_times)
                     GroomingProp = pynwb.TimeSeries(name='grooming',
-                                        data = np.reshape(dataF['grooming'],
-                                                        (len(FC_timesF),1)),
+                                        data = np.reshape(signal,
+                                                        (len(FC_times),1)),
                                                     unit='seconds',
-                                                  timestamps=FC_timesF)
+                                                  timestamps=FC_times)
                     faceMotion_module.add(GroomingProp)
 
                 # then add the motion frames subsampled
@@ -459,7 +605,7 @@ def build_NWB_func(args, Subject=None):
                     FACEMOTION_SUBSAMPLING=build_subsampling_from_freq(
                                         args.FaceMotion_frame_sampling,
                                         1./np.mean(np.diff(fcamData.times)),
-                                        fcamData.nFrames, Nmin=3)
+                                        fcamData.nFrames-1, Nmin=3)
                     
                     imgFM = fcamData.get(0)
                     x, y = np.meshgrid(np.arange(0,imgFM.shape[0]), 
@@ -489,9 +635,39 @@ def build_NWB_func(args, Subject=None):
                                                    dtype=np.dtype(np.uint8))
                     FaceMotion_frames = pynwb.image.ImageSeries(name='FaceMotion',
                                                                 data=FMCI_dataI, unit='NA',
-                                                                timestamps=FC_times[FACEMOTION_SUBSAMPLING])
+                                                                timestamps=fcamData.times[FACEMOTION_SUBSAMPLING])
                     nwbfile.add_acquisition(FaceMotion_frames)
-                        
+            
+            elif os.path.isfile(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz')):
+
+                if args.verbose:
+                    print('=> Adding processed facemotion data',
+                          'for "%s" [...]' % args.datafolder)
+                    
+                dataF = np.load(os.path.join(args.datafolder, 'FaceIt', 'faceit.npz'),
+                                allow_pickle=True)
+                FC_timesF = FC_times[:len(dataF['motion_energy'])]
+
+                faceMotion_module = nwbfile.create_processing_module(\
+                        name='FaceMotion', 
+                        description='face motion dynamics,\n'+\
+                            ' facemotion ROI: (x0,dx,y0,dy)=(%i,%i,%i,%i)\n'\
+                                        % (0,0,0,0))
+                FaceMotionProp = pynwb.TimeSeries(name='face-motion',
+                                      data = np.reshape(dataF['motion_energy'],
+                                                        (len(FC_timesF),1)),
+                                                  unit='seconds',
+                                                  timestamps=FC_timesF)
+                faceMotion_module.add(FaceMotionProp)
+
+                if not np.isnan(dataF['grooming_threshold'][0]):
+                    GroomingProp = pynwb.TimeSeries(name='grooming',
+                                        data = np.reshape(dataF['grooming_ids'],
+                                                        (len(FC_timesF),1)),
+                                                    unit='seconds',
+                                                  timestamps=FC_timesF)
+                    faceMotion_module.add(GroomingProp)
+
             else:
                 print(' [!!] No processed facemotion data found for "%s" [!!] ' % args.datafolder)
                 
@@ -500,9 +676,16 @@ def build_NWB_func(args, Subject=None):
     ####    Electrophysiological Recording    #######
     #################################################
 
-    """
-    iElectrophy = 1 # start on channel 1
+    if ('Neuropixels' in metadata) and metadata['Neuropixels']:
     
+        if args.verbose:
+            print('=> Storing Neuropixels data for "%s" [...]' % args.datafolder)
+
+        args.tstop_NIdaq = len(NIdaq_data['analog'][0])*NIdaq_data['dt']
+        add_ephys(nwbfile, args,
+                    metadata=metadata)
+
+    """
     if metadata['EphysVm'] and ('EphysVm' in args.modalities):
     
         if args.verbose:
@@ -537,14 +720,15 @@ def build_NWB_func(args, Subject=None):
     #################################################
     # see: add_ophys.py script
     # look for 'TSeries' folder 
-    TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
-    if len(TSeries)==1:
-        args.imaging = os.path.join(args.datafolder, TSeries[0])
+    if metadata['CaImaging'] and ('processed_CaImaging' in args.modalities):
+        TSeries = [f for f in os.listdir(args.datafolder) if 'TSeries' in f]
+        if len(TSeries)==1:
+            args.imaging = os.path.join(args.datafolder, TSeries[0])
 
-        add_ophys(nwbfile, args,
-                  metadata=metadata)
-    else:
-        print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
+            add_ophys(nwbfile, args,
+                    metadata=metadata)
+        else:
+            print('\n[X] [!!]  Problem with the TSeries folders (either None or multiples) in "%s"  [!!] ' % args.datafolder)
     
     #################################################
     ####    add Intrinsic Imaging MAPS         ######
@@ -567,8 +751,11 @@ def build_NWB_func(args, Subject=None):
     print("""     ----> Saving the NWB file: "%s" """ % args.filename)
     io.write(nwbfile, link_data=False)
     io.close()
-    print('---> done !')
-    
+
+    # print('---> done !')
+    file_size_mb = os.path.getsize(args.filename) / 1e6
+    print(f"                [ok] File size: {file_size_mb:.1f} MB")
+ 
     return args.filename
 
 
@@ -609,7 +796,15 @@ if __name__=='__main__':
     import argparse, os
 
     parser=argparse.ArgumentParser(description="""
+
     Building NWB file from mutlimodal experimental recordings
+
+        from either 
+            - a day-folder
+            - a DataTable.xlsx
+            - a single-recording-folder
+            - a dataset folder (of day folders)
+
     """,formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument("datafolder", type=str, default='')
@@ -629,6 +824,7 @@ if __name__=='__main__':
     # or we just simply force the timestamps to the ones desired by visualStim
     parser.add_argument("--force_to_visualStimTimestamps", action="store_true")
     parser.add_argument("--reverse_photodiodeSignal", action="store_true")
+    parser.add_argument("--force_recalculation_of_speed", action="store_true")
 
     parser.add_argument('-rs', "--running_sampling", default=50., type=float)
     parser.add_argument('-ps', "--photodiode_sampling", default=1000., type=float)
@@ -664,7 +860,10 @@ if __name__=='__main__':
 
         filename, directory = args.datafolder, os.path.dirname(args.datafolder)
         dataset, subjects, _ = read_spreadsheet(filename)
-        args.destination_folder = os.path.join(directory, 'NWBs')
+        if args.destination_folder=='':
+            args.destination_folder = os.path.join(directory, 'NWBs')\
+                     if os.path.isdir(os.path.join(directory, 'NWBs')) else directory
+        
         for i in np.arange(args.files_indices[0], 
                            min([len(dataset), args.files_indices[1]])):
             print('\n \n     [%i] -- %s \n ' % (i+1, dataset['datafolder'][i]))
@@ -683,17 +882,21 @@ if __name__=='__main__':
                         'reverse_photodiodeSignal']:
                 setattr(args, key, True if dataset[key].values[i]=='Yes'\
                             else False)
+                
+            # for Neuropix recording, getting the whole-session-level infos
+            if 'Npx-Folder' in dataset and dataset['Npx-Folder'][i]!='':
+                build_args_for_ephys(args, dataset, i, directory)
+
             # building the modalities
             args.modalities = []
             for key in ALL_MODALITIES: 
-                if dataset[key].values[i]=='Yes':
+                if (key in dataset) and (dataset[key].values[i]=='Yes'):
                     args.modalities.append(key)
 
             # run the build:
             build_NWB_func(args, Subject=Subject)
         
     elif args.recursive:
-
         i = -1
         for f, _, __ in os.walk(args.datafolder):
             timeFolder = f.split(os.path.sep)[-1]

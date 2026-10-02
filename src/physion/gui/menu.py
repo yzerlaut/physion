@@ -1,4 +1,7 @@
-from PyQt5 import QtWidgets
+"""
+Docstring for physion.gui.menu
+"""
+
 
 def build_menu(self):
 
@@ -45,18 +48,28 @@ def build_menu(self):
                                      self.OD_analysis)
     self.preprocessingMenu.addAction('&Whisker Maps',
                                      self.SS_intrinsic)
-    self.preprocessingMenu.addAction('&Suite2P Preprocessing',
+    self.preprocessingMenu.addAction('&Suite2P',
                                      self.suite2p_preprocessing_UI)
+    self.preprocessingMenu.addAction('&Spike Sorting',
+                                     self.spike_sorting_preprocessing_UI)
     self.preprocessingMenu.addAction('&Red Channel Labelling',
                                      self.red_channel_labelling)
 
     ##### ---------  Assembling   ------------------------
     self.assemblingMenu = self.mainMenu.addMenu('  * Assembling')
     # --
-    self.assemblingMenu.addAction('Build NWB',
+    self.assemblingMenu.addAction('Build DataTable',
+                                  self.build_DataTable_UI)
+    self.assemblingMenu.addAction('Build NWBs from DataTable',
+                                  self.build_NWB_from_DataTable_UI)
+    self.assemblingMenu.addAction('Build NWBs (deprecated)',
                                   self.build_NWB_UI)
-    # self.assemblingMenu.addAction('Add Imaging',
+    self.assemblingMenu.addAction('Add Spike-Sorted Data to NWB (TODO)',
+                                  self.in_progress)
+    self.assemblingMenu.addAction('Add Ca-Imaging Data to NWB (TODO)',
                                   # self.add_imaging)
+                                  self.in_progress)
+    # self.assemblingMenu.addAction('Add Imaging',
     self.assemblingMenu.addAction('FOV coordinates',
                                   self.FOV_coords_UI)
 
@@ -67,9 +80,11 @@ def build_menu(self):
     self.visualizationMenu.addAction('  **** &FOV / ROIs', 
                                       self.FOV)
 
-    # ##### ------- Analysis -------------------------------
+    # # ##### ------- Analysis -------------------------------
     self.analysisMenu = self.mainMenu.addMenu('  *** &Analysis')
     # --
+    self.analysisMenu.addAction('&BOT Spatial Maps',
+                                self.bot_spatial_maps)
     self.analysisMenu.addAction('&Behavior',
                                 self.in_progress)
     self.analysisMenu.addAction('&Trial Averaging',
@@ -78,13 +93,13 @@ def build_menu(self):
                                 self.in_progress)
 
     ##### ------   Other   -------------
-    self.otherMenu = self.mainMenu.addMenu('     Others')
+    self.otherMenu = self.mainMenu.addMenu('     Data-Management')
     # --
     self.otherMenu.addAction('&Transfer Data',
                               self.transfer_gui)
-    self.otherMenu.addAction('&Convert Behavior to Movies',
-                              self.behav_to_movie_gui)
-    self.otherMenu.addAction('&Convert Imaging to Movies',
+    self.otherMenu.addAction('&Convert Camera to Movies',
+                              self.cameraData_to_movie_gui)
+    self.otherMenu.addAction('&Convert 2P-Imaging to Movies',
                               self.imaging_to_movie_gui)
     #self.otherMenu.addAction('&Delete Data',
     #                          self.in_progress)

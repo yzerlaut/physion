@@ -1,28 +1,13 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.16.7
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
+# %% [markdown]
+# # Read Dataset from Spreasheet
 
 # %%
 import os, sys, shutil
 import pandas as pd
 import numpy as np
 
-sys.path.append('../src')
+sys.path += ['../src'] # add src code directory for physion
 import physion
-
-# %% [markdown]
-# # Read Dataset from Spreasheet
 
 # %%
 sheets = os.path.join(os.path.expanduser('~'), 
@@ -30,8 +15,9 @@ sheets = os.path.join(os.path.expanduser('~'),
                       'DataTable.xlsx')
 
 # loading dataset from spreadsheet:
-dataset, subjects, analysis = physion.assembling.dataset.read_spreadsheet(sheets,
-                                                                                      get_metadata_from='table')
+dataset, subjects, analysis = \
+    physion.assembling.dataset.read_spreadsheet(sheets, 
+                                                get_metadata_from='table')
 
 # printing dataset sheet:
 dataset[['subject', 'day', 'time', 'protocol', 'FOV']]

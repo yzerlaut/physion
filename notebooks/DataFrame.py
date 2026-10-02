@@ -1,18 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.16.7
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
-
 # %% [markdown]
 # # Convert NWB files to pandas Dataframes
 
@@ -20,20 +5,22 @@
 import sys, os
 import numpy as np
 
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+sys.path += ['../src'] # add src code directory for physion
 import physion
 import physion.utils.plot_tools as pt
+from physion.analysis.dataframe import NWB_to_dataframe
+pt.set_style('dark')
 
 # %%
 filename = os.path.join(os.path.expanduser('~'), 
                         'DATA', 'physion_Demo-Datasets', 'NDNF-WT', 'NWBs',
                         '2022_12_14-13-27-41.nwb')
-data = physion.analysis.dataframe.NWB_to_dataframe(filename,
-                                                   visual_stim_features='per-protocol',
-                                                   #visual_stim_label='per-protocol-and-parameters',
-                                                   #visual_stim_label='per-protocol-and-parameters-and-timepoints', #
-                                                   subsampling = 10,
-                                                   verbose=False)
+data = NWB_to_dataframe(filename,
+                        visual_stim_features='per-protocol',
+                        #visual_stim_label='per-protocol-and-parameters',
+                        #visual_stim_label='per-protocol-and-parameters-and-timepoints', #
+                        subsampling = 10,
+                        verbose=False)
 
 # %%
 def min_max(array):
@@ -53,7 +40,7 @@ def color(key):
     else:
         return pt.plt.cm.Greens(np.random.uniform(0.5, .8))
     
-fig, ax = pt.plt.subplots(figsize=(8,10))
+fig, ax = pt.plt.subplots(figsize=(8,18))
 i = 0
 for key in data.keys():
     if key !='time':

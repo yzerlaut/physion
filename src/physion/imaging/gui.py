@@ -1,4 +1,4 @@
-import os, sys, pathlib, shutil, time, datetime, tempfile, subprocess
+import os, sys, pathlib, shutil, time, subprocess
 from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
@@ -9,7 +9,7 @@ from physion.imaging.suite2p.preprocessing import build_suite2p_options,\
         default_ops
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.suite2p.presets import presets
-from physion.imaging.convert_to_movie import reconvert_to_tiffs_from_log8bit
+from physion.utils.compression.twoP import reconvert_to_tiffs_from_log8bit
 
 def suite2p_preprocessing_UI(self, tab_id=1):
 
@@ -40,11 +40,8 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.loadFolderBtn.clicked.connect(self.load_TSeries_folder)
     self.add_side_widget(tab.layout, self.loadFolderBtn)
 
-    # self.lastBox= QtWidgets.QCheckBox('last', self)
-    # self.lastBox.setChecked(True)
-    # self.add_side_widget(tab.layout, self.lastBox, 'small-right')
-
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' -- * Presets * --  '))
     self.presetBox = QtWidgets.QComboBox()
     self.presetBox.addItems(list(presets.keys()))
@@ -52,38 +49,47 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.add_side_widget(tab.layout, self.presetBox)
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
-
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' modify your suite2p presets '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('     by updating the following file:'))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(\
+        ' <a href="file:./physion/imaging/suite2p/presets.py">physion/imaging/suite2p/presets.py</a> '))
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.subsamplingBox = QtWidgets.QCheckBox('subsampling ?', self)
+    self.subsamplingBox.setChecked(False)
+    self.add_side_widget(tab.layout, self.subsamplingBox, 'large-left')
+    self.subsamplingParamsBox = QtWidgets.QLineEdit('0:4000::2', self)
+    self.add_side_widget(tab.layout, self.subsamplingParamsBox, 'small-right')
 
     self.registrButton = QtWidgets.QCheckBox(' -- Registration --', self)
     self.registrButton.setChecked(True)
-    self.add_side_widget(tab.layout, self.registrButton)
+    self.add_side_widget(tab.layout, self.registrButton, 'large-left')
 
-    self.rigidBox = QtWidgets.QCheckBox('rigid ? ', self)
-    self.rigidBox.setChecked(False)
-    self.add_side_widget(tab.layout, self.rigidBox, 'large-right')
+    self.redoBox = QtWidgets.QCheckBox('redo ? ', self)
+    self.redoBox.setChecked(False)
+    self.add_side_widget(tab.layout, self.redoBox, 'small-right')
 
     self.roiDetectButton = QtWidgets.QCheckBox(' -- ROI detection --', self)
     self.roiDetectButton.setChecked(True)
     self.add_side_widget(tab.layout, self.roiDetectButton)
 
 
-    # self.add_side_widget(tab.layout,\
-            # QtWidgets.QLabel('- functional Chan.'), 'large-left')
-    # self.functionalChanBox = QtWidgets.QLineEdit('2', self)
-    # self.add_side_widget(tab.layout, self.functionalChanBox, 'small-right')
+    self.add_side_widget(tab.layout,\
+            QtWidgets.QLabel('- functional Chan.'), 'large-left')
+    self.functionalChanBox = QtWidgets.QLineEdit('2', self)
+    self.add_side_widget(tab.layout, self.functionalChanBox, 'small-right')
 
     # self.add_side_widget(tab.layout,\
-            # QtWidgets.QLabel('- aligned by Chan.'), 'large-left')
+    #         QtWidgets.QLabel('- aligned by Chan.'), 'large-left')
     # self.alignChanBox = QtWidgets.QLineEdit('2', self)
     # self.add_side_widget(tab.layout, self.alignChanBox, 'small-right')
 
-    self.sparseBox = QtWidgets.QCheckBox('sparse mode', self)
-    self.add_side_widget(tab.layout, self.sparseBox, 'large-right')
+    # self.sparseBox = QtWidgets.QCheckBox('sparse mode', self)
+    # self.add_side_widget(tab.layout, self.sparseBox, 'large-right')
 
-    self.connectedBox = QtWidgets.QCheckBox('connected ROIs', self)
-    self.add_side_widget(tab.layout, self.connectedBox, 'large-right')
-    self.connectedBox.setChecked(True)
+    # self.connectedBox = QtWidgets.QCheckBox('connected ROIs', self)
+    # self.add_side_widget(tab.layout, self.connectedBox, 'large-right')
+    # self.connectedBox.setChecked(True)
 
     # self.add_side_widget(tab.layout,\
             # QtWidgets.QLabel('- Ca-Indicator decay (s)'), 'large-left')
@@ -101,25 +107,25 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.add_side_widget(tab.layout, self.threshScalingBox, 'small-right')
     self.threshScalingBox.setToolTip('(float, default: 1.0) this controls the threshold at which to detect ROIs (how much the ROIs have to stand out from the noise to be detected). if you set this higher, then fewer ROIs will be detected, and if you set it lower, more ROIs will be detected.')
 
-    self.cellposeBox= QtWidgets.QCheckBox('use CELLPOSE', self)
-    self.add_side_widget(tab.layout, self.cellposeBox, 'large-right')
-    self.add_side_widget(tab.layout,\
-            QtWidgets.QLabel('- ref. image'), 'large-left')
-    self.refImageBox = QtWidgets.QLineEdit('3', self)
-    self.refImageBox.setToolTip('1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj')
-    self.add_side_widget(tab.layout, self.refImageBox, 'small-right')
+    # self.cellposeBox= QtWidgets.QCheckBox('use CELLPOSE', self)
+    # self.add_side_widget(tab.layout, self.cellposeBox, 'large-right')
+    # self.add_side_widget(tab.layout,\
+    #         QtWidgets.QLabel('- ref. image'), 'large-left')
+    # self.refImageBox = QtWidgets.QLineEdit('3', self)
+    # self.refImageBox.setToolTip('1: max_proj / mean_img; 2: mean_img; 3: mean_img enhanced, 4: max_proj')
+    # self.add_side_widget(tab.layout, self.refImageBox, 'small-right')
 
-    self.add_side_widget(tab.layout,\
-            QtWidgets.QLabel('- flow thresh.'), 'large-left')
-    self.flowThreshBox = QtWidgets.QLineEdit('0.4', self)
-    self.flowThreshBox.setToolTip('The flow_threshold parameter is the maximum allowed error of the flows for each mask. The default is flow_threshold=0.4. Increase this threshold if cellpose is not returning as many ROIs as you’d expect. Similarly, decrease this threshold if cellpose is returning too many ill-shaped ROIs.')
-    self.add_side_widget(tab.layout, self.flowThreshBox, 'small-right')
+    # self.add_side_widget(tab.layout,\
+    #         QtWidgets.QLabel('- flow thresh.'), 'large-left')
+    # self.flowThreshBox = QtWidgets.QLineEdit('0.4', self)
+    # self.flowThreshBox.setToolTip('The flow_threshold parameter is the maximum allowed error of the flows for each mask. The default is flow_threshold=0.4. Increase this threshold if cellpose is not returning as many ROIs as you’d expect. Similarly, decrease this threshold if cellpose is returning too many ill-shaped ROIs.')
+    # self.add_side_widget(tab.layout, self.flowThreshBox, 'small-right')
 
-    self.add_side_widget(tab.layout,\
-            QtWidgets.QLabel('- prob. thresh.'), 'large-left')
-    self.probThreshBox = QtWidgets.QLineEdit('0.', self)
-    self.add_side_widget(tab.layout, self.probThreshBox, 'small-right')
-    self.probThreshBox.setToolTip('they vary from around -6 to +6. The pixels greater than the cellprob_threshold are used to run dynamics and determine ROIs. The default is cellprob_threshold=0.0. Decrease this threshold if cellpose is not returning as many ROIs as you’d expect. Similarly, increase this threshold if cellpose is returning too ROIs particularly from dim areas')
+    # self.add_side_widget(tab.layout,\
+    #         QtWidgets.QLabel('- prob. thresh.'), 'large-left')
+    # self.probThreshBox = QtWidgets.QLineEdit('0.', self)
+    # self.add_side_widget(tab.layout, self.probThreshBox, 'small-right')
+    # self.probThreshBox.setToolTip('they vary from around -6 to +6. The pixels greater than the cellprob_threshold are used to run dynamics and determine ROIs. The default is cellprob_threshold=0.0. Decrease this threshold if cellpose is not returning as many ROIs as you’d expect. Similarly, increase this threshold if cellpose is returning too ROIs particularly from dim areas')
 
     self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
 
@@ -127,8 +133,14 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.add_side_widget(tab.layout, self.delBox)
 
     self.add_side_widget(tab.layout,\
-            QtWidgets.QLabel('Delay (min)'), 'small-left')
-    self.delayBox = QtWidgets.QLineEdit('0', self)
+            QtWidgets.QLabel('Delay:'), 'small-left')
+    self.delayBox = QtWidgets.QDoubleSpinBox(self)
+    self.delayBox.setMinimumWidth(100)
+    self.delayBox.setValue(0)
+    self.delayBox.setMaximum(500)
+    self.delayBox.setMinimum(0)
+    self.delayBox.setSuffix(' (min)')
+
     self.add_side_widget(tab.layout, self.delayBox, 'small-middle')
     self.firstBox = QtWidgets.QCheckBox('1st ?', self)
     self.add_side_widget(tab.layout, self.firstBox, 'small-right')
@@ -136,6 +148,12 @@ def suite2p_preprocessing_UI(self, tab_id=1):
     self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
     self.runBtn.clicked.connect(self.run_TSeries_analysis)
     self.add_side_widget(tab.layout, self.runBtn)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.suite2pBtn = QtWidgets.QPushButton('suite2p')
+    self.suite2pBtn.clicked.connect(self.open_suite2p)
+    self.add_side_widget(tab.layout, self.suite2pBtn, 'small-right')
 
     while self.i_wdgt<(self.nWidgetRow-1):
         self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
@@ -175,7 +193,8 @@ def load_TSeries_folder(self):
     
     if folder!='':
 
-        if 'TSeries-' in folder:
+        print('log8bit' in folder)
+        if ('TSeries-' in folder) or ('log8bit-' in folder) or ('lossless' in folder):
             print('"%s" is a recognize as a single TSeries folder' % folder)
             folders = [folder]
         else:
@@ -218,20 +237,20 @@ def change_presets(self):
     else:
         preset = default_ops()
 
-    if ('nonrigid' in preset) and preset['nonrigid']:
-        self.rigidBox.setChecked(True)
-    else:
-        self.rigidBox.setChecked(False)
+    # if ('nonrigid' in preset) and preset['nonrigid']:
+    #     self.redoBox.setChecked(True)
+    # else:
+    #     self.redoBox.setChecked(False)
 
-    if ('sparse_mode' in preset) and preset['sparse_mode']:
-        self.sparseBox.setChecked(True)
-    else:
-        self.sparseBox.setChecked(False)
+    # if ('sparse_mode' in preset) and preset['sparse_mode']:
+    #     self.sparseBox.setChecked(True)
+    # else:
+    #     self.sparseBox.setChecked(False)
 
-    if ('connected' in preset) and preset['connected']:
-        self.connectedBox.setChecked(True)
-    else:
-        self.connectedBox.setChecked(False)
+    # if ('connected' in preset) and preset['connected']:
+    #     self.connectedBox.setChecked(True)
+    # else:
+    #     self.connectedBox.setChecked(False)
 
     if ('threshold_scaling' in preset):
         self.threshScalingBox.setText('%.1f'%preset['threshold_scaling'])
@@ -241,61 +260,83 @@ def change_presets(self):
     if ('cell_diameter' in preset):
         self.cellSizeBox.setText('%.1f' % preset['cell_diameter'])
 
-    if ('flow_threshold' in preset):
-        self.flowThreshBox.setText('%.2f'%preset['flow_threshold'])
+    # if ('flow_threshold' in preset):
+    #     self.flowThreshBox.setText('%.2f'%preset['flow_threshold'])
 
-    if ('cellprob_threshold' in preset):
-        self.probThreshBox.setText('%.2f'%preset['cellprob_threshold'])
+    # if ('cellprob_threshold' in preset):
+    #     self.probThreshBox.setText('%.2f'%preset['cellprob_threshold'])
 
-    if ('anatomical_only' in preset) and\
-            (preset['anatomical_only']>0):
-        self.cellposeBox.setChecked(True)
-        self.refImageBox.setText('%i' % preset['anatomical_only'])
-    else:
-        self.cellposeBox.setChecked(False)
-        self.refImageBox.setText('N.A.')
-        self.flowThreshBox.setText('N.A.')
-        self.flowThreshBox.setText('N.A.')
+    # if ('anatomical_only' in preset) and\
+    #         (preset['anatomical_only']>0):
+    #     self.cellposeBox.setChecked(True)
+    #     self.refImageBox.setText('%i' % preset['anatomical_only'])
+    # else:
+    #     self.cellposeBox.setChecked(False)
+    #     self.refImageBox.setText('N.A.')
+    #     self.flowThreshBox.setText('N.A.')
+    #     self.flowThreshBox.setText('N.A.')
 
 def fetch_settings_from_UI(self):
 
-    settings = presets[self.presetBox.currentText()]
+    my_settings = presets[self.presetBox.currentText()]
+
+    my_settings['v1'] = ('sourcery' in self.presetBox.currentText()) or\
+                            ('sparsery' in self.presetBox.currentText()) or\
+                                 ('cellpose' in self.presetBox.currentText())
 
     # -------------
     # Registration
     # -------------
     if not self.registrButton.isChecked():
-        settings['do_registration'] = 0
-    # settings['functional_chan'] = int(self.functionalChanBox.text())
-    # settings['align_by_chan'] = int(self.alignChanBox.text())
-    settings['nonrigid'] = (not self.rigidBox.isChecked())
+        my_settings['do_registration'] = 0
+    # my_settings['functional_chan'] = int(self.functionalChanBox.text())
+    # my_settings['align_by_chan'] = int(self.alignChanBox.text())
+    # my_settings['nonrigid'] = (not self.redoBox.isChecked())
 
     # -------------
     # ROI detection
     # -------------
-    settings['roidetect'] = self.roiDetectButton.isChecked()
-    settings['cell_diameter'] = float(self.cellSizeBox.text())
+    my_settings['roidetect'] = self.roiDetectButton.isChecked()
+    my_settings['cell_diameter'] = float(self.cellSizeBox.text())
 
-    if self.cellposeBox.isChecked():
 
-        settings['anatomical_only'] = int(self.refImageBox.text())
-        settings['flow_threshold'] = float(self.flowThreshBox.text())
-        settings['cellprob_threshold'] = float(self.probThreshBox.text())
+    my_settings['subsampling'] = self.subsamplingBox.isChecked()
+
+    try:
+        my_settings['subsampling_iStart'] = int(self.subsamplingParamsBox.text().split(':')[0])
+        my_settings['subsampling_iStop'] = int(self.subsamplingParamsBox.text().split(':')[1])
+        my_settings['subsampling_step'] = int(self.subsamplingParamsBox.text().split('::')[1])
+    except BaseException as be:
+        my_settings['subsampling_iStart'] = 0
+        my_settings['subsampling_iStop'] = 1000
+        my_settings['subsampling_step'] = 2
+        print()
+        print(' [!!] non-valid subsampling params [!!]')
+        print('       --> reset to "0:1000:2" ')
+        print()
+        self.subsamplingParamsBox.setText('0:1000::2')
+
+    # if self.cellposeBox.isChecked():
+
+    #     my_settings['anatomical_only'] = int(self.refImageBox.text())
+    #     my_settings['flow_threshold'] = float(self.flowThreshBox.text())
+    #     my_settings['cellprob_threshold'] = float(self.probThreshBox.text())
     
-    else:
+    # else:
 
-        settings['sparse_mode'] = self.sparseBox.isChecked()
-        settings['connected'] = self.connectedBox.isChecked()
-        settings['threshold_scaling'] = float(self.threshScalingBox.text())
+    #     my_settings['sparse_mode'] = self.sparseBox.isChecked()
+    #     my_settings['connected'] = self.connectedBox.isChecked()
+    #     my_settings['threshold_scaling'] = float(self.threshScalingBox.text())
 
-    return settings
+    return my_settings
 
 def run_TSeries_analysis(self):
     
-    settings = fetch_settings_from_UI(self)
+    my_settings = fetch_settings_from_UI(self)
+
 
     # we precede the python call by a "sleep Xm" command
-    delay = float(self.delayBox.text())
+    delay = float(self.delayBox.value())
     if delay>0:
         delays = delay*np.ones(len(self.folders))
         if not self.firstBox.isChecked():
@@ -325,11 +366,19 @@ def run_TSeries_analysis(self):
                     reconvert_to_tiffs_from_log8bit(folder)
 
 
-            settings['nplanes'] = self.Nplanes[i]
-            settings['nchannels'] = self.Nchans[i]
-            build_suite2p_options(folder, settings)
-            cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
-                                                            os.path.join(folder,'db.npy'),
+            my_settings['nplanes'] = self.Nplanes[i]
+            my_settings['nchannels'] = self.Nchans[i]
+            build_suite2p_options(folder, my_settings)
+
+            if my_settings['v1']:
+                # changed to "ops" to "settings " in >=v1.1
+                cmd = '%s -m suite2p --db "%s" --settings "%s" --verbose &'\
+                      % (python_path_suite2p_env,
+                         os.path.join(folder,'db.npy'),
+                         os.path.join(folder,'settings.npy'))
+            else:
+                cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
+                                                                os.path.join(folder,'db.npy'),
                                                             os.path.join(folder,'ops.npy'))
             print('sleeping for %.1f min [...]' % delays[i])
             time.sleep(delays[i]*60)

@@ -1,21 +1,18 @@
-import json, os, shutil, pathlib, pandas
-import numpy as np
+import json, os, pathlib, datetime
 
 # path to reach the 'physion/acquisition' folder:
 base_path = str(pathlib.Path(__file__).resolve().parents[0])
 
-from physion.utils.files import generate_filename_path,\
-        get_date, get_time, generate_datafolders
+from physion.utils.files0 import generate_datafolders, get_date, get_time
 from physion.utils.paths import FOLDERS
 
 def set_filename_and_folder(self):
 
     self.date, self.time = get_date(), get_time()
-    if hasattr(self, 'folderBox'):
-        self.root_data_folder = FOLDERS[self.folderBox.currentText()]
-    else:
-        self.root_data_folder = os.path.join(\
-                            os.path.expanduser('~'), 'DATA')
+
+    self.root_data_folder = os.path.join(\
+                os.path.expanduser('~'), 'DATA', 
+                    self.EXPERIMENTERS[self.experimenterBox.currentText()]['folder'])
 
     self.date_time_folder = generate_datafolders(\
                                     self.root_data_folder,
@@ -41,6 +38,16 @@ def save_experiment(self, metadata):
     print('[ok] Metadata data saved as: %s ' % filename)
     self.statusBar.showMessage('Metadata saved as: "%s" ' % filename)
 
+def find_line_props(line_labels,
+                    string='ephys-synch-signal'):
+
+    couples = [(i,l) for i,l in enumerate(line_labels) if string in l]
+    if len(couples)==1:
+        props = {'chan':couples[0][0]}
+        if couples[0][1][-2:]=='Hz':
+            props['freq'] = float(\
+                couples[0][1].split('-')[-1].replace('Hz', ''))
+        return props
 
 
 def check_gui_to_init_metadata(self):
@@ -51,14 +58,23 @@ def check_gui_to_init_metadata(self):
                 'time':self.time,
                 'protocol':self.protocolBox.currentText(),
                 'VisualStim':self.protocolBox.currentText()!='None',
-                'recording':self.recordingBox.currentText(),
+                #'recording':self.recordingBox.currentText(),
+                'experimenter':self.experimenterBox.currentText(),
                 'notes':self.qmNotes.toPlainText(),
                 'FOV':self.fovPick.text(),
+                # 'cmd':self.cmdPick.text(),
                 'subject_ID':self.subjectBox.text()}
 
     if self.protocolBox.currentText()!='None':
-        fn = os.path.join(base_path, 'protocols',
-                          self.protocolBox.currentText()+'.json')
+        fn = os.path.join(
+                os.path.expanduser('~'),
+                'visualStim-protocols',
+                self.EXPERIMENTERS[\
+                            self.experimenterBox.currentText()\
+                                            ]['folder'], 
+                self.protocolBox.currentText(),
+                          'protocol.json')
+
         with open(fn) as f:
             self.protocol = json.load(f)
     else:
@@ -72,20 +88,3 @@ def check_gui_to_init_metadata(self):
         metadata[k] = bool(getattr(self, k+'Button').isChecked())
 
     return metadata
-
-def NIdaq_metadata_init(self):
-    # --------------- #
-    ### NI daq init ###   ## we override parameters based on the chosen modalities if needed
-    # --------------- #
-    if self.metadata['VisualStim'] and (self.metadata['NIdaq-analog-input-channels']<1):
-        self.metadata['NIdaq-analog-input-channels'] = 1 # at least one (AI0), -> the photodiode
-    if self.metadata['Locomotion'] and (self.metadata['NIdaq-digital-input-channels']<2):
-        self.metadata['NIdaq-digital-input-channels'] = 2
-    """
-    if self.metadata['EphysLFP'] and self.metadata['EphysVm']:
-        self.metadata['NIdaq-analog-input-channels'] = 3 # both channels, -> channel AI1 for Vm, AI2 for LFP 
-    elif self.metadata['EphysLFP']:
-        self.metadata['NIdaq-analog-input-channels'] = 2 # AI1 for LFP 
-    elif self.metadata['EphysVm']:
-        self.metadata['NIdaq-analog-input-channels'] = 2 # AI1 for Vm
-    """

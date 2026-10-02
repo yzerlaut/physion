@@ -4,61 +4,110 @@ import numpy as np
 from physion.utils.paths import python_path_suite2p_env
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
-from physion.imaging.suite2p.default_ops import default_ops
+from physion.imaging.suite2p.default_ops import default_ops, default_settings
 from physion.imaging.suite2p.presets import presets
 
 from physion.imaging.suite2p.default_ops import default_ops
 
 
 # we override some of suite2p defaults (see default_ops)
-def override_suite2p_defaults(ops):
+def override_suite2p_default_ops(ops, v1=False):
     ops['bruker']=True
-    # no need of deconvolution yet
-    ops['spikedetect']=False
     ops['functional_chan']= 2
     ops['align_by_chan'] = 2
     ops['batch_size'] = 500
 
-def build_db(folder):
-    db = {'data_path':[folder],
-          'subfolders': [],
-          'save_path0': folder,
-          'fast_disk': folder,
-          'input_format': 'bruker'}
-    return db
-
+def build_db(folder, v1=False):
+    if v1:
+        return {'data_path':[folder]}
+    else:
+        return {'data_path':[folder],
+                'subfolders': [],
+                'save_path0': folder,
+                'fast_disk': folder,
+                'input_format': 'bruker'}
 
 def build_suite2p_options(folder,
-                          settings_dict):
+                          my_settings):
     
     xml_file = get_files_with_extension(folder, extension='.xml')[0]
 
     bruker_data = bruker_xml_parser(xml_file)
-    ops = default_ops()
-    override_suite2p_defaults(ops)
 
     # acquisition frequency per plane - (bruker framePeriod i already per plane)
-    nplanes = settings_dict['nplanes']\
-                        if 'nplanes' in settings_dict else 1 
-    ops['fs'] = 1./float(bruker_data['settings']['framePeriod'])/nplanes
+    nplanes = my_settings['nplanes']\
+                        if 'nplanes' in my_settings else 1 
+    acq_freq = 1./float(bruker_data['settings']['framePeriod'])/nplanes
 
     # hints for the size of the ROI
     um_per_pixel = float(bruker_data['settings']['micronsPerPixel']['XAxis'])
-    ops['diameter'] = int(settings_dict['cell_diameter']/um_per_pixel) # in pixels (int 20um)
-    ops['spatial_scale'] = int(settings_dict['cell_diameter']/6/um_per_pixel)
+    diameter = int(my_settings['cell_diameter']/um_per_pixel) # in pixels (int 20um)
+    spatial_scale = int(my_settings['cell_diameter']/6/um_per_pixel)
 
-    # all other keys here
-    for key in settings_dict:
-        if key in ops:
-            ops[key] = settings_dict[key]
+    if my_settings['v1']:
+
+        settings = default_settings()
+        settings['diameter'] = (diameter, diameter)
+        settings['fs'] = acq_freq
+
+        for key in my_settings:
+            if key in settings:
+                print(' - ', key)
+                if type(settings[key]==dict):
+                    for k in my_settings[key]:
+                        print(10*' ', key, k, ' = ', my_settings[key][k])
+                        if k in settings[key]:
+                            settings[key][k] = my_settings[key][k]
+                else:
+                    print('         changed -> ', my_settings[key])
+                    settings[key] = my_settings[key]
+
+        np.save(os.path.join(folder, 'settings.npy'), settings)
+
+    else:
+        """ suite2p version 2.x"""
+
+        ops = default_ops()
+        override_suite2p_default_ops(ops)
+
+        ops['fs'], ops['diameter'] = acq_freq, diameter
+        ops['spatial_scale'] = spatial_scale
+
+
+        # all other keys here
+        for key in my_settings:
+            if key in ops:
+                ops[key] = my_settings[key]
     
-    db = build_db(folder)
-    for key in ['data_path', 'subfolders', 'save_path0',
-                'fast_disk', 'input_format']:
-        ops[key] = db[key]
+        db = build_db(folder)
+        for key in ['data_path', 'subfolders', 'save_path0',
+                    'fast_disk', 'input_format']:
+            ops[key] = db[key]
+        np.save(os.path.join(folder,'ops.npy'), ops)
 
+
+    # we re-build the db
+    db = build_db(folder, v1=my_settings['v1'])
+
+    # subsampling ?
+    if my_settings['subsampling']:
+        if 'Ch2 Green' in bruker_data:
+            func_chan = 'Ch2 Green'
+        else:
+            func_chan = bruker_data['channels'][0]
+            print()
+            print(' took %s as the functional channel' % bruker_data['channels'][0])
+            print()
+
+        for key in ['file_list', 'tiff_list']:
+            db[key] =\
+                bruker_data['Ch2 Green']['tifFile'][\
+                            my_settings['subsampling_iStart']:\
+                            my_settings['subsampling_iStop']:\
+                            my_settings['subsampling_step']]
+
+    # save:
     np.save(os.path.join(folder,'db.npy'), db)
-    np.save(os.path.join(folder,'ops.npy'), ops)
 
 
 def run_preprocessing(args):
@@ -101,7 +150,10 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     if os.path.isdir(str(args.CaImaging_folder)) and\
-            ('TSeries' in str(args.CaImaging_folder)):
+        (\
+            ('TSeries' in str(args.CaImaging_folder)) or
+            ('log8bit' in str(args.CaImaging_folder)) or
+            ('lossless' in str(args.CaImaging_folder)) ):
         run_preprocessing(args)
         print('--> preprocessing of "%s" done !' % args.CaImaging_folder)
     elif os.path.isdir(str(args.CaImaging_folder)):

@@ -1,10 +1,11 @@
 # general modules
-import pynwb, os, sys, pathlib, itertools
+import os
 import numpy as np
 import matplotlib.pylab as plt
 
 # physion
 from physion.assembling.tools import load_FaceCamera_data
+from physion.utils.camera import CameraData
 
 
 def loadCameraData(metadata, raw_folder):
@@ -16,7 +17,7 @@ def loadCameraData(metadata, raw_folder):
     # --- FaceCamera --- #
     ######################
 
-    imgfolder = os.path.join(raw_folder, 'FaceCamera-imgs')
+    # imgfolder = os.path.join(raw_folder, 'FaceCamera-imgs')
 
     if os.path.isdir(imgfolder):
         times, FILES, nframes, Lx, Ly =\

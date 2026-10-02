@@ -1,18 +1,3 @@
-# ---
-# jupyter:
-#   jupytext:
-#     formats: ipynb,py:percent
-#     text_representation:
-#       extension: .py
-#       format_name: percent
-#       format_version: '1.3'
-#       jupytext_version: 1.16.0
-#   kernelspec:
-#     display_name: Python 3 (ipykernel)
-#     language: python
-#     name: python3
-# ---
-
 # %% [markdown]
 # # Preprocessing of Calcium Signals
 
@@ -24,21 +9,22 @@
 #
 #
 #
-# see the function `compute_dFoF` in  [Calcium.py](./Calcium.py)
+# see the function `compute_dFoF` in  [Calcium.py](../src/physion/imaging/Calcium.py)
 
 # %%
 import sys, os
 import numpy as np
 from scipy import stats
 
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src')) # update to your "physion" location
+sys.path += ['../src'] # add src code directory for physion
 
 import physion
-import physion.utils.plot_tools as pt
 import matplotlib.pylab as plt
+import physion.utils.plot_tools as pt
+pt.set_style('dark')
 
 # %% [markdown]
-# ## Baseline determination to compute $\Delta$F/F (on synthetic data)
+# ## Baseline determination to compute ∆F/F (on synthetic data)
 #
 # I illustrate below a few different options to determine the baseline of a signal
 
@@ -50,7 +36,8 @@ sWindow = 30
 percentile = 10
 
 # %%
-from physion.imaging.Calcium import compute_percentile, compute_minimum
+from physion.imaging.Calcium import compute_percentile,\
+                                    compute_minimum
 
 fig, AX = plt.subplots(1, 2, figsize=(10,2))
 
@@ -64,7 +51,8 @@ for ax, title, x0 in zip(AX,
         ax.plot(t, 6*roi+x0[roi,:], color='tab:red')
 
 # %%
-from physion.imaging.Calcium import compute_sliding_percentile, compute_sliding_minimum
+from physion.imaging.Calcium import compute_sliding_percentile,\
+                                    compute_sliding_minimum
 
 
 fig, AX = plt.subplots(2, 2, figsize=(10,4))
@@ -93,15 +81,7 @@ AX[1][0].set_ylabel('with smoothing')
 # ## Illustration of discarding criteria
 
 # %%
-import numpy as np
-import matplotlib.pylab as plt
-import os, sys
-from scipy import stats
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src'))
-from physion.analysis.read_NWB import Data
-sys.path.append(os.path.join(os.path.expanduser('~'), 'work', 'physion', 'src', 'physion', 'utils'))
-import plot_tools as pt
-from Calcium import compute_F0
+from physion.imaging.Calcium import compute_F0
 
 # %%
 filename = os.path.join(os.path.expanduser('~'), 
@@ -114,14 +94,16 @@ dFoF_options = dict(\
     method_for_F0='percentile',
     percentile=5.,
     roi_to_neuropil_fluo_inclusion_factor=1.15,
-    neuropil_correction_factor=1.)
+    neuropil_correction_factor=0.8,
+    with_computed_neuropil_fact=False,
+    roi_to_neuropil_fluo_inclusion_factor_metric='mean')
 
 # %%
 # we first perform the dFoF determination with the above params
 #    (this restrict the available ROIs in the future)
 data.build_dFoF(**dFoF_options, verbose=True)
 valid = data.valid_roiIndices
-rejected = [i for i in range(data.nROIs) if (i not in valid)]
+rejected = [i for i in range(data.Fluorescence.data.shape[1]) if (i not in valid)]
 # we re-initialize the fluo and neuropil to get back to all ROIs
 data.initialize_ROIs(valid_roiIndices=None)
 data.build_rawFluo()
@@ -139,9 +121,9 @@ for roi in np.concatenate([np.random.choice(valid, 7, replace=False),
 plt.xlabel('time (s)');
 
 # %%
-correctedFluo = data.rawFluo-dFoF_options['neuropil_correction_factor']*data.neuropil
+correctedFluo = data.rawFluo-data.neuropil_correction_factor*data.neuropil
 baseline = physion.imaging.Calcium.compute_F0(data, correctedFluo, 
-                                              method='sliding_percentile',
+                                              method=dFoF_options['method_for_F0'],
                                               percentile=dFoF_options['percentile'])
 np.random.seed(1)
 for roi in np.concatenate([np.random.choice(valid, 7, replace=False),
@@ -183,7 +165,8 @@ Dcnv = oasis(data.dFoF, len(data.t_dFoF), TAU, 1./data.CaImaging_dt)
 tzoom = [10,50]
 
 np.random.seed(1)
-for roi in np.random.choice(range(data.nROIs), 10):
+for roi in np.random.choice(range(data.nROIs), 10, 
+                            replace=False):
     fig, ax = plt.subplots(1, figsize=(10,1))
     ax2 = ax.twinx()
     cond = (data.t_dFoF>tzoom[0]) & (data.t_dFoF<tzoom[1])

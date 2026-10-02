@@ -10,7 +10,7 @@ from physion.analysis.summary_pdf import summary_pdf_folder,\
         metadata_fig, generate_FOV_fig, generate_raw_data_figs, join_pdf
 from physion.dataviz.tools import format_key_value
 from physion.dataviz.episodes.trial_average import plot_trial_average
-from physion.analysis.process_NWB import EpisodeData
+from physion.analysis.episodes.build import EpisodeData
 from physion.utils.plot_tools import pie
 
 tempfile.gettempdir()
@@ -77,7 +77,7 @@ def extract_centered_rois(data, episodes,
 
         resp = episodes.compute_summary_data(stat_test_props,
                                              response_args={'quantity':imaging_quantity,
-                                                            'roiIndex':roi},
+                                                            'index':roi},
                             response_significance_threshold=response_significance_threshold)
         # print(resp)
         center_cond = (resp['x-center']==0) & (resp['y-center']==0)
@@ -103,7 +103,7 @@ def compute_size_tuning_curves(data, episodes, centered_rois, angles,
 
         resp = episodes.compute_summary_data(stat_test_props,
                                              response_args={'quantity':imaging_quantity,
-                                                            'roiIndex':roi},
+                                                            'index':roi},
                                              response_significance_threshold=response_significance_threshold)
         angle_cond = (resp['angle']==angle)
         isort = np.argsort(resp['radius'][angle_cond])
@@ -265,7 +265,7 @@ def generate_figs(args,
             plot_trial_average(episodes,
                                condition=angle_cond,
                                quantity=args.imaging_quantity,
-                               roiIndex=CENTERED_ROIS[irdm],
+                               index=CENTERED_ROIS[irdm],
                                column_key='radius',
                                xbar=1, xbarlabel='1s',
                                ybar=0.1, ybarlabel='0.1$\Delta$F/F',

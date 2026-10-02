@@ -100,20 +100,24 @@ def gui(self,
     self.add_side_widget(tab.layout,self.pmButton)
     
     # Map shift
+    self.add_side_widget(tab.layout,QtWidgets.QLabel('shift:'), spec='small-left')
+    self.phaseButton = QtWidgets.QDoubleSpinBox(self)
+    self.phaseButton.setRange(0, 2*3.14)
+    self.phaseButton.setSuffix(' (phase in Rd)')
+    self.phaseButton.setValue(0.0)
+    self.add_side_widget(tab.layout, self.phaseButton, 
+                         spec='large-right')
+
     # self.add_side_widget(tab.layout,QtWidgets.QLabel('  - (Azimuth, Altitude) shift:'),
                     # spec='large-left')
-    self.phaseMapShiftBox = QtWidgets.QLineEdit()
-    self.phaseMapShiftBox.setText('(0, 0)')
+    # self.phaseMapShiftBox = QtWidgets.QLineEdit()
+    # self.phaseMapShiftBox.setText('(0, 0)')
     # self.add_side_widget(tab.layout,self.phaseMapShiftBox, spec='small-right')
 
     self.rmButton = QtWidgets.QPushButton(" = retinotopic maps = ", self)
     self.rmButton.clicked.connect(self.compute_retinotopic_maps)
-    self.add_side_widget(tab.layout,self.rmButton, spec='large-left')
+    self.add_side_widget(tab.layout,self.rmButton) #, spec='large-right')
 
-    self.twoPiBox = QtWidgets.QCheckBox("[0,2pi]")
-    self.twoPiBox.setStyleSheet("color: gray;")
-    self.add_side_widget(tab.layout,self.twoPiBox, spec='small-right')
-    # -------------------------------------------------------
 
     # === -- parameters for area segmentation -- ===
     
@@ -479,9 +483,7 @@ def compute_phase_maps(self):
                                                 self.protocolBox.currentText(),
                                                 p=self.params, t=self.t, data=self.data,
                                                 run_id=self.numBox.currentText(),
-                                                maps=self.IMAGES,
-                    phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
-
+                                                maps=self.IMAGES)
 
     intrinsic_analysis.plot_phase_power_maps(self.IMAGES,
                                              self.protocolBox.currentText())
@@ -498,14 +500,8 @@ def compute_retinotopic_maps(self):
         print('- computing altitude map [...]')
         intrinsic_analysis.compute_retinotopic_maps(get_datafolder(self), 'altitude',
                                                     maps=self.IMAGES,
+                                                    phase_shift=self.phaseButton.value(),
                                                     keep_maps=True)
-                    # phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
-        try:
-            alt_shift = float(self.phaseMapShiftBox.text().split(',')[1].replace(')',''))
-            self.IMAGES['altitude-retinotopy'] += alt_shift
-        except BaseException as be:
-            print(be)
-            print('Pb with altitude shift:', self.phaseMapShiftBox.text())
         fig1 = intrinsic_analysis.plot_retinotopic_maps(self.IMAGES,
                                                         'altitude')
     else:
@@ -516,14 +512,8 @@ def compute_retinotopic_maps(self):
         print('- computing azimuth map [...]')
         intrinsic_analysis.compute_retinotopic_maps(get_datafolder(self), 'azimuth',
                                                     maps=self.IMAGES,
+                                                    phase_shift=self.phaseButton.value(),
                                                     keep_maps=True)
-                    # phase_range='0:2*pi' if self.twoPiBox.isChecked() else '-pi:pi')
-        try:
-            azi_shift = float(self.phaseMapShiftBox.text().split(',')[0].replace('(',''))
-            self.IMAGES['azimuth-retinotopy'] += azi_shift
-        except BaseException as be:
-            print(be)
-            print('Pb with azimuth shift:', self.phaseMapShiftBox.text())
         fig2 = intrinsic_analysis.plot_retinotopic_maps(self.IMAGES,
                                                         'azimuth')
     else:

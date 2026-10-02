@@ -4,13 +4,15 @@ copy the file in suite2p/default_ops.py and paste it here
 add the version manually (get it with: "python -m suite2p --version")
 """
 
-version = 'v0.9.3.dev528+gc88e1ba.d20240604'
-
 def default_ops():
-    """ default options to run pipeline """
+    """ 
+    default options to run pipeline 
+
+    version = 'v0.9.3.dev528+gc88e1ba.d20240604'
+    """
     return {
         # Suite2p version
-        "suite2p_version": version,  #current version of suite2p used for pipeline
+        "suite2p_version": 'v0.9.3.dev528+gc88e1ba.d20240604',  #current version of suite2p used for pipeline
 
         # file input/output settings
         "look_one_level_down":
@@ -109,7 +111,7 @@ def default_ops():
 
         # cell detection settings with suite2p
         "roidetect": True,  # whether or not to run ROI extraction
-        "spikedetect": True,  # whether or not to run spike deconvolution
+        "spikedetect": False,  # whether or not to run spike deconvolution
         "sparse_mode": True,  # whether or not to run sparse_mode
         "spatial_scale":
             0,  # 0: multi-scale; 1: 6 pixels, 2: 12 pixels, 3: 24 pixels, 4: 48 pixels
@@ -164,4 +166,90 @@ def default_ops():
         "sig_baseline": 10.,  # smoothing constant for gaussian filter
         "prctile_baseline": 8.,  # optional (whether to use a percentile baseline)
         "neucoeff": 0.7,  # neuropil coefficient
-    }
+        "version" : 'v0.9.3.dev528+gc88e1ba.d20240604',
+        }
+
+
+def default_settings():
+    """ from suite2p >=v1.0, 
+    default settings to run pipeline """
+    return {
+            'classification': {'classifier_path': None,
+                                'preclassify': 0.0,
+                                'use_builtin_classifier': False},
+            'dcnv_preprocess': {'baseline': 'maximin',
+                                'prctile_baseline': 8.0,
+                                'sig_baseline': 10.0,
+                                'win_baseline': 60.0},
+            'detection': {'algorithm': 'sparsery',
+                        'bin_size': None,
+                        'block_size': [64.0, 64.0],
+                        'cellpose_chan2': False,
+                        'cellpose_settings': {'cellpose_model': 'cpsam',
+                                                'cellprob_threshold': 0.0,
+                                                'flow_threshold': 0.4,
+                                                'highpass_spatial': 0,
+                                                'img': 'max_proj / meanImg',
+                                                'params': None,
+                                                'params_chan2': None},
+                        'chan2_threshold': 0.25,
+                        'denoise': False,
+                        'highpass_time': 100,
+                        'max_overlap': 0.75,
+                        'nbins': 5000,
+                        'npix_norm_max': 100.0,
+                        'npix_norm_min': 0.0,
+                        'soma_crop': True,
+                        'sourcery_settings': {'connected': True,
+                                                'max_iterations': 20,
+                                                'smooth_masks': False},
+                        'sparsery_settings': {'active_percentile': 0.0,
+                                                'highpass_neuropil': 25,
+                                                'max_ROIs': 5000,
+                                                'spatial_scale': 0},
+                        'threshold_scaling': 1.0},
+            'diameter': [12.0, 12.0],
+            'extraction': {'allow_overlap': False,
+                            'batch_size': 500,
+                            'circular_neuropil': False,
+                            'inner_neuropil_radius': 2,
+                            'lam_percentile': 50.0,
+                            'min_neuropil_pixels': 350,
+                            'neuropil_coefficient': 0.7,
+                            'neuropil_extract': True,
+                            'snr_threshold': 0.0},
+            'fs': 10.0,
+            'io': {'combined': True,
+                    'delete_bin': False,
+                    'move_bin': False,
+                    'save_NWB': False,
+                    'save_mat': False,
+                    'save_ops_orig': True},
+            'registration': {'align_by_chan2': False,
+                            'batch_size': 100,
+                            'bidiphase': 0.0,
+                            'block_size': [128.0, 128.0],
+                            'do_bidiphase': False,
+                            'maxregshift': 0.1,
+                            'maxregshiftNR': 5,
+                            'nimg_init': 400,
+                            'nonrigid': True,
+                            'norm_frames': True,
+                            'reg_tif': False,
+                            'reg_tif_chan2': False,
+                            'smooth_sigma': 1.15,
+                            'smooth_sigma_time': 0.0,
+                            'snr_thresh': 1.2,
+                            'spatial_taper': 3.45,
+                            'subpixel': 10,
+                            'th_badframes': 1.0,
+                            'two_step_registration': False},
+            'run': {'do_deconvolution': False,
+                    'do_detection': True,
+                    'do_registration': 1,
+                    'do_regmetrics': True,
+                    'multiplane_parallel': False},
+            'tau': 1.0,
+            'torch_device': 'cuda',
+            'version': '1.0.0.1'
+            }

@@ -1,8 +1,10 @@
 [project]
 name = "physion"
-version = "1.2.1"
+version = "1.2.2"
 authors = [
-  { name="Yann Zerlaut", email="yann.zerlaut@gmail.com" },
+  { name="Yann Zerlaut", email="yann.zerlaut@icm-institute.org" },
+  { name="Mai-An Nguyen", email="mai-an.nguyen@icm-institute.org" },
+  { name="Laura Sofia Gonzalez", email="laura.gonzalez@icm-institute.org" },
 ]
 description = "Vision Physiology Software"
 readme = "README.md"
@@ -18,6 +20,7 @@ dependencies = [
     "scipy",
     "matplotlib",
     "scikit-image",
+    "scikit-learn",
     "natsort",
     "pynwb",
     "pandas>=1.4.4",
@@ -29,6 +32,11 @@ dependencies = [
     "ffmpeg-python",
     "pyqt5",
     "openpyxl",
+    "open-ephys-python-tools>=1.0",
+    "spikeinterface[full]",
+    "probeinterface",
+    "elephant==1.0.0",
+    "neo==0.14.4",
 ]
 
 [tool.setuptools.packages.find]
@@ -36,8 +44,7 @@ where = ["src"]
 [tool.setuptools.package-data]
 "physion.acquisition.protocols" = ["*.json"]
 "physion.acquisition.configs" = ["*.json"]
-"physion.acquisition.interventions" = ["*.json"]
-"physion.acquisition.subjects" = ["*.xlsx"]
+"physion.acquisition" = ["DataTable.xlsx"]
 
 [project.urls]
 "Homepage" = "https://github.com/yzerlaut/physion"

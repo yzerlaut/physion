@@ -6,11 +6,13 @@ from physion.visual_stim.main import visual_stim, init_bg_image
 ##  ----    UNIFORM BACKGROUND   --- #####
 ##########################################
 
-params = {"presentation-duration":10, "bg-color":0.5}
+params = {"presentation-duration":10, 
+          "screen-color":0.5}
+        # don't call this "bg-color", clashes with the existing bg-color
 
 class stim(visual_stim):
     """
-    stimulus specific visual stimulation object
+    stimulus-specific visual stimulation object
 
     all functions should accept a "parent" argument that can be the 
     multiprotocol holding this protocol
@@ -26,7 +28,8 @@ class stim(visual_stim):
         """ 
         return the frame at a given time point
         """
-        return init_bg_image(self, index)
+        return init_bg_image(self, index)*0+\
+            self.experiment['screen-color'][index]
 
 
 if __name__=='__main__':

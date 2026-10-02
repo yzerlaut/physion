@@ -2,11 +2,176 @@ import os, sys, pathlib, shutil, time, datetime, tempfile, subprocess
 from PyQt5 import QtWidgets, QtCore
 import numpy as np
 
-from physion.utils.paths import FOLDERS
-from physion.utils.files import get_files_with_extension, list_dayfolder, get_TSeries_folders
+from physion.utils.paths import FOLDERS, python_path
 from physion.assembling.nwb import build_cmd, ALL_MODALITIES
 
 defaults = [True for m in ALL_MODALITIES]
+
+def build_DataTable_UI(self, tab_id=1):
+
+    tab = self.tabs[tab_id]
+    self.cleanup_tab(tab)
+
+    ##########################################################
+    ####### GUI settings
+    ##########################################################
+
+    # ========================================================
+    #------------------- SIDE PANELS FIRST -------------------
+    self.add_side_widget(tab.layout, 
+            QtWidgets.QLabel(' _-* BUILD DATATABLE *-_ '))
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' from a processed folder'))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('from:'),
+                         spec='small-left')
+    self.folderBox = QtWidgets.QComboBox(self)
+    self.folderBox.addItems(FOLDERS.keys())
+    self.add_side_widget(tab.layout, self.folderBox, spec='large-right')
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' select a "processed" folder '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('        in an arborescence of type: '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' DATASET/ '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('        /processed/ '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('                  /2020_01_01/ '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('                  /... '))
+
+    self.loadFolderBtn = QtWidgets.QPushButton(' select folder \u2b07')
+    self.loadFolderBtn.clicked.connect(self.open_folder)
+    self.add_side_widget(tab.layout, self.loadFolderBtn)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
+    self.runBtn.clicked.connect(self.runBuildDTBL)
+    self.add_side_widget(tab.layout, self.runBtn)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' will create a "DataTable0.xlsx'))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('        '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('at the location: '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' DATASET/ '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('        /DataTable0.xlsx'))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('        /processed/ '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('                  /2020_01_01/ '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('                  /... '))
+
+    self.refresh_tab(tab)
+
+def runBuildDTBL(self):
+    if self.folder is not None:
+
+        cmd = '%s -m physion.assembling.dataset build-DataTable %s' % (python_path,
+                                                                    self.folder)
+
+        print('\n launching the command \n :  %s \n ' % cmd)
+        p = subprocess.Popen(cmd, 
+                             cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src'),
+                             shell=True)
+    else:
+        print('\n')
+        print(' ----> no folder selected, choose a valid one ...')
+        print()
+        
+
+def build_NWB_from_DataTable_UI(self, tab_id=1):
+
+    tab = self.tabs[tab_id]
+    self.cleanup_tab(tab)
+    self.DataTable_file = None
+
+    ##########################################################
+    ####### GUI settings
+    ##########################################################
+
+    # ========================================================
+    #------------------- SIDE PANELS FIRST -------------------
+    self.add_side_widget(tab.layout, 
+            QtWidgets.QLabel(' _-* BUILD NWB FILES *-_ '))
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel('from:'),
+                         spec='small-left')
+    self.folderBox = QtWidgets.QComboBox(self)
+    self.folderBox.addItems(FOLDERS.keys())
+    self.add_side_widget(tab.layout, self.folderBox, spec='large-right')
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.loadNWBfolderBtn = QtWidgets.QPushButton(' choose DataTable.xlsx \u2b07')
+    self.loadNWBfolderBtn.clicked.connect(self.choose_DataTable)
+    self.add_side_widget(tab.layout, self.loadNWBfolderBtn)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
+    self.runBtn.clicked.connect(self.runBuildNWBfromDTBL)
+    self.add_side_widget(tab.layout, self.runBtn)
+
+    self.add_side_widget(tab.layout, QtWidgets.QLabel(' '))
+
+    self.refresh_tab(tab)
+
+def choose_DataTable(self):
+
+    filename, _  = QtWidgets.QFileDialog.getOpenFileName(self,
+                 "Select DataTable (xlsx file) ",
+                 self.choose_root_folder(),
+                 options=QtWidgets.QFileDialog.DontUseNativeDialog,
+                 filter="*.xlsx")
+
+    if filename!='':
+        self.DataTable_file = filename
+    else:
+        self.DataTable_file = None
+
+    print(self.DataTable_file)
+
+def runBuildNWBfromDTBL(self):
+    if self.DataTable_file is not None:
+
+
+        cmd = '%s -m physion.assembling.nwb %s' % (python_path,
+                                                   self.DataTable_file)
+        cmd += ' --destination_folder %s' % os.path.dirname(self.DataTable_file)
+
+        print('\n launching the command \n :  %s \n ' % cmd)
+        p = subprocess.Popen(cmd, 
+                             cwd = os.path.join(pathlib.Path(__file__).resolve().parents[3], 'src'),
+                             shell=True)
+    else:
+        print('\n')
+        print(' ----> no DataTable file selected, choose a valid one ...')
+        print()
+        
+###############################################################
+###############################################################
+###############################################################
+###############################################################
+
+def load_NWB_folder(self):
+
+    self.folder = self.open_folder()
+
+    self.folders = []
+    
+    if self.folder!='':
+
+        for subfolder, _, files in os.walk(self.folder):
+            if ('NIdaq.npy' in files) and\
+                (('metadata.npy' in files) or ('metadata.json' in files)):
+                self.folders.append(os.path.join(self.folder, subfolder))
+
+        if len(self.folders)==0:
+            print(' ---------   [!!] no data-folder recognized [!!] -----------')
+            print('           missing either "metadata" or "NIdaq" datafiles ')
+            print('                 --> nothing to assemble !')
 
 
 def build_NWB_UI(self, tab_id=1):
