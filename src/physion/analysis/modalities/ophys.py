@@ -153,17 +153,14 @@ class OphysMixin:
 
         if hasattr(self, quantity): 
 
+            self.quantity_Deconvolved = quantity
             self.t_Deconvolved = self.t_dFoF
 
-            # for backward compatibilty
             fsignal = getattr(self, quantity)
-            deconv = oasis(fsignal,
-                            fsignal.shape[0], # batch size
-                              Tau, 1./self.CaImaging_dt)
-            setattr(self, 'Deconvolved_' + quantity,
-                    deconv)
-
-            self.Deconvolved = deconv
+            self.Deconvolved = \
+                oasis(fsignal,
+                        fsignal.shape[0], # batch size
+                            Tau, 1./self.CaImaging_dt)
 
         else: 
             print('\n deconvolution not possible \n --> ' + quantity + ' does not exist')
