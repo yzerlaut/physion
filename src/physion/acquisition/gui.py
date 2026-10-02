@@ -95,7 +95,7 @@ def multimodal(self,
     # self.add_side_widget(tab.layout, self.saveSetB)
 
     self.buildNWB = QtWidgets.QPushButton('plot NIdaq of last', self)
-    self.buildNWB.clicked.connect(plot_NIdaq_of_last)
+    self.buildNWB.clicked.connect(lambda: plot_NIdaq_of_last(self))
     self.add_side_widget(tab.layout, self.buildNWB)
 
     # ========================================================
@@ -223,10 +223,13 @@ def multimodal(self,
         self.runButton.setEnabled(False)
         self.stopButton.setEnabled(False)
 
-def plot_NIdaq_of_last():
-    # last folder
+def plot_NIdaq_of_last(self):
+    # last folder (in the experimenter subfolder)
+    root_data_folder = os.path.join(\
+                os.path.expanduser('~'), 'DATA',
+                    self.EXPERIMENTERS[self.experimenterBox.currentText()]['folder'])
     folder = last_datafolder_in_dayfolder(\
-                day_folder(os.path.expanduser('~/DATA')))
+                day_folder(root_data_folder))
     print()
     print('[ ] loading NIdaq data of recording: ', folder)
     print()
