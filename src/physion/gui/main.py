@@ -145,6 +145,11 @@ class MainWindow(QtWidgets.QMainWindow):
     else:
         from physion.gui.parts import inactivated as h5_imaging_UI
 
+    # # -- Matching imaging FOV across days (acquisition, available in all modes)
+    def matching_FOV_UI(self, tab_id=1):
+        from physion.imaging.matching_FOV_gui import MatchingFOVWindow
+        return MatchingFOVWindow(self, tab_id)
+
     # # -- Spike Sorting Preprocesssing
     if (not Acquisition) and (not Intrinsic):
         def spike_sorting_preprocessing_UI(self, **kwargs):

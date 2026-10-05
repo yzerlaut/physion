@@ -31,7 +31,8 @@ def test_all_menu_actions_open_without_data(gui, qapp):
 
 @pytest.mark.parametrize('window', ['pupil', 'facemotion', 'bot_spatial_maps',
                                     'intrinsic', 'SS_intrinsic', 'OD_analysis',
-                                    'h5_imaging_UI', 'suite2p_preprocessing_UI'])
+                                    'h5_imaging_UI', 'suite2p_preprocessing_UI',
+                                    'matching_FOV_UI'])
 def test_windows_keep_the_loaded_NWB(gui, window):
     """ a window opened in another tab should not reset the loaded data """
     loaded = object() # stands for a physion.analysis.read_NWB.Data
@@ -129,7 +130,7 @@ def test_shortcuts_ignore_a_replaced_window(gui):
         'red_channel_labelling', 'spike_sorting_preprocessing_UI', 'build_DataTable_UI',
         'build_NWB_from_DataTable_UI', 'build_NWB_UI', 'transfer_gui', 'cameraData_to_movie_gui',
         'imaging_to_movie_gui', 'deletion_gui', 'calendar', 'visualization', 'FOV',
-        'trial_averaging'])
+        'trial_averaging', 'matching_FOV_UI'])
 def test_shortcut_handlers_are_not_shadowed(gui, window):
     """ the "on_*" shortcut handlers are not hidden by window attributes """
     from physion.gui.window import Window, SHORTCUTS

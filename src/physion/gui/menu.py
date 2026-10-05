@@ -30,6 +30,8 @@ def build_menu(self):
                                   self.intrinsic_acq)
     self.experimentMenu.addAction('Whisker Mapping',
                                   self.SS_intrinsic_acq)
+    self.experimentMenu.addAction('Finding Matching FOV',
+                                  self.matching_FOV_UI)
     self.experimentMenu.addAction('Face Camera',
                                   self.in_progress)
     self.experimentMenu.addAction('Webcam',
