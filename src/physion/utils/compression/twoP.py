@@ -22,7 +22,8 @@ from physion.imaging.folders import compressed_folder,\
         find_TSeries_folders, find_compressed_folders
 
 from physion.utils.compression.nwb import convert_to_nwb
-from physion.utils.compression.h5 import convert_to_h5, remove_TSeries_if_converted
+from physion.utils.compression.h5 import convert_to_h5, remove_TSeries_if_converted,\
+        check_tiffs_before_h5, MissingTiffsError
 from physion.utils.compression.binary import convert_to_binary
 from physion.utils.compression.mp4 import convert_to_log8bit_mp4, reconvert_to_tiffs_from_log8bit
 from physion.utils.compression.avi import convert_to_16bit_avi, reconvert_to_tiffs_from_16bit
@@ -113,9 +114,10 @@ def remove_tiff_and_binary_files(TS_folder):
                         os.remove(os.path.join(TS_folder, f))
 
 
-class ImagingToMovieWindow(Window):
+class _ImagingConversionWindow(Window):
+    """ common UI: root folder + source folder selection """
 
-    name = 'movie conversion'
+    title = ' _-* Conversion of 2P Imaging *-_ '
 
     # functions of other modules, used as methods
     from physion.utils.transfer.gui import TransferWindow as _TransferWindow
@@ -125,11 +127,9 @@ class ImagingToMovieWindow(Window):
                            tab_id=3):
 
         super().__init__(main, tab_id)
-        tab = self.tab
         self.source_folder = ''
 
-
-        self.add_side_widget(QtWidgets.QLabel(' _-* Conversion of 2P Imaging *-_ '))
+        self.add_side_widget(QtWidgets.QLabel(self.title))
 
         self.add_side_widget(QtWidgets.QLabel("" , self.main))
 
@@ -145,34 +145,74 @@ class ImagingToMovieWindow(Window):
         self.add_side_widget(QtWidgets.QLabel("" , self.main))
         self.add_side_widget(QtWidgets.QLabel("" , self.main))
 
-        self.rm = QtWidgets.QCheckBox(' rm raw ? ', self.main)
-        self.rm.setToolTip('h5 only: removes each "TSeries-" folder after checking that\n'
-                           ' - all its tiffs are in the xml file\n'
-                           ' - the h5 files match the tiffs, frame by frame (pixel-exact)\n'
-                           ' - all its other files are copied to the "h5-" folder')
-        self.add_side_widget(self.rm)
-
-        self.add_side_widget(QtWidgets.QLabel("" , self.main))
-
-        self.add_side_widget(QtWidgets.QLabel("Compression / Format : ", self.main))
-        self.typeBox = QtWidgets.QComboBox()
-        self.typeBox.addItems(['h5', 'nwb', 'binary', '8bit-LOG-mp4', '16bit-avi (lossless)'])
-        self.add_side_widget(self.typeBox)
+        self.add_options()
 
         self.add_side_widget(QtWidgets.QLabel("" , self.main))
 
         self.gen = QtWidgets.QPushButton(' -= RUN =-  ', self.main)
-        self.gen.clicked.connect(self.run_imaging_to_movie)
+        self.gen.clicked.connect(self.run)
         self.add_side_widget(self.gen)
     
         self.refresh_tab()
         self.show()
 
-    def run_imaging_to_movie(self):
+    def add_options(self):
+        pass
 
-        Fs = find_TSeries_folders(self.source_folder)
+    def run(self):
+        pass
 
-        for f in Fs:
+
+class ImagingToH5Window(_ImagingConversionWindow):
+
+    name = 'h5 conversion'
+    title = ' _-* Conversion of 2P Imaging to H5 *-_ '
+
+    def add_options(self):
+
+        self.rm = QtWidgets.QCheckBox(' rm raw ? ', self.main)
+        self.rm.setToolTip('removes each "TSeries-" folder after checking that\n'
+                           ' - all its tiffs are in the xml file\n'
+                           ' - the h5 files match the tiffs, frame by frame (pixel-exact)\n'
+                           ' - all its other files are copied to the "h5-" folder')
+        self.add_side_widget(self.rm)
+
+    def run(self):
+
+        for f in find_TSeries_folders(self.source_folder):
+
+            try:
+                check_tiffs_before_h5(f)
+            except MissingTiffsError as e:
+                print(' [!!] %s --> skipped' % e)
+                continue
+
+            create_compressed_folder(f, 'h5')
+            convert_to_h5(f)
+
+            if self.rm.isChecked():
+                # only after checking the conversion (see the h5 module)
+                removed, _ = remove_TSeries_if_converted(f)
+                self.statusBar.showMessage('"%s" %s' % (os.path.basename(f),
+                        'removed' if removed else 'NOT removed (see terminal)'))
+            print(f)
+
+
+class ImagingToMovieWindow(_ImagingConversionWindow):
+
+    name = 'movie conversion'
+    title = ' _-* Conversion of 2P Imaging to Movies *-_ '
+
+    def add_options(self):
+
+        self.add_side_widget(QtWidgets.QLabel("Compression / Format : ", self.main))
+        self.typeBox = QtWidgets.QComboBox()
+        self.typeBox.addItems(['8bit-LOG-mp4', '16bit-avi (lossless)', 'nwb', 'binary'])
+        self.add_side_widget(self.typeBox)
+
+    def run(self):
+
+        for f in find_TSeries_folders(self.source_folder):
 
             create_compressed_folder(f, 
                                      self.typeBox.currentText())
@@ -185,17 +225,8 @@ class ImagingToMovieWindow(Window):
                 convert_to_binary(f)
             elif 'nwb' in self.typeBox.currentText():
                 convert_to_nwb(f)
-            elif 'h5' in self.typeBox.currentText():
-                convert_to_h5(f)
-                if self.rm.isChecked():
-                    # only after checking the conversion (see the h5 module)
-                    removed, _ = remove_TSeries_if_converted(f)
-                    self.statusBar.showMessage('"%s" %s' % (os.path.basename(f),
-                            'removed' if removed else 'NOT removed (see terminal)'))
             else:
                 print(' compression type not recognized')
-            if self.rm.isChecked() and ('h5' not in self.typeBox.currentText()):
-                print(' [!!] "rm raw" only for the h5 conversion (checked pixel-exact): %s kept' % f)
             print(f)
 
 
@@ -229,6 +260,13 @@ if __name__=='__main__':
         for folder in find_TSeries_folders(args.folder):
 
             print(' - processing', folder, ' [...]')
+
+            if 'h5' in args.compression:
+                try:
+                    check_tiffs_before_h5(folder)
+                except MissingTiffsError as e:
+                    print(' [!!] %s --> skipped' % e)
+                    continue
 
             create_compressed_folder(folder, 
                                      key=args.compression)

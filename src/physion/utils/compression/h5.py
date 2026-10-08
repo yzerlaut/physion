@@ -97,9 +97,27 @@ def tiffs_to_h5(
     return out_path
 
 
+class MissingTiffsError(Exception):
+    """ some tiffs of the Bruker xml are not in the "TSeries-" folder """
+    pass
+
+
+def check_tiffs_before_h5(TS_folder):
+    """ raises MissingTiffsError if tiffs of the xml are missing """
+    missing, _ = check_tiff_coverage(TS_folder,
+                                     build_conversion_plan(TS_folder))
+    if len(missing)>0:
+        raise MissingTiffsError(
+            '%i tiffs of the xml are missing in "%s" (e.g. %s)' %\
+                (len(missing), TS_folder, sorted(missing)[0]))
+
+
 def convert_to_h5(TS_folder):
 
-    xml_file = get_files_with_extension(TS_folder, 
+    # nothing is written if tiffs are missing
+    check_tiffs_before_h5(TS_folder)
+
+    xml_file = get_files_with_extension(TS_folder,
                                         extension='.xml')[0]
     xml = bruker_xml_parser(xml_file)
 
