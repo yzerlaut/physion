@@ -23,7 +23,7 @@ from physion.imaging.folders import compressed_folder,\
 
 from physion.utils.compression.nwb import convert_to_nwb
 from physion.utils.compression.h5 import convert_to_h5, remove_TSeries_if_converted,\
-        check_tiffs_before_h5, MissingTiffsError
+        check_tiffs_before_h5, MissingTiffsError, remove_failed_h5_folder
 from physion.utils.compression.binary import convert_to_binary
 from physion.utils.compression.mp4 import convert_to_log8bit_mp4, reconvert_to_tiffs_from_log8bit
 from physion.utils.compression.avi import convert_to_16bit_avi, reconvert_to_tiffs_from_16bit
@@ -186,15 +186,34 @@ class ImagingToH5Window(_ImagingConversionWindow):
             except MissingTiffsError as e:
                 print(' [!!] %s --> skipped' % e)
                 continue
+            except Exception as e:
+                print(' [!!] "%s" not converted, %s: %s --> skipped' %\
+                        (f, type(e).__name__, e))
+                continue
 
-            create_compressed_folder(f, 'h5')
-            convert_to_h5(f)
+            # only a folder created here is removed if the conversion fails
+            new_h5_folder = not os.path.isdir(compressed_folder(f, 'h5'))
+            try:
+                create_compressed_folder(f, 'h5')
+                convert_to_h5(f)
+            except Exception as e:
+                print('\n [!!] conversion of "%s" failed, %s: %s --> skipped' %\
+                        (f, type(e).__name__, e))
+                if new_h5_folder:
+                    remove_failed_h5_folder(f)
+                continue
 
-            if self.rm.isChecked():
-                # only after checking the conversion (see the h5 module)
-                removed, _ = remove_TSeries_if_converted(f)
-                self.statusBar.showMessage('"%s" %s' % (os.path.basename(f),
-                        'removed' if removed else 'NOT removed (see terminal)'))
+            try:
+                if self.rm.isChecked():
+                    # only after checking the conversion (see the h5 module)
+                    removed, _ = remove_TSeries_if_converted(f)
+                    self.statusBar.showMessage('"%s" %s' % (os.path.basename(f),
+                            'removed' if removed else 'NOT removed (see terminal)'))
+            except Exception as e:
+                # the h5 folder is kept: the raw data might be partially removed
+                print('\n [!!] removal of "%s" failed, %s: %s' %\
+                        (f, type(e).__name__, e))
+                continue
             print(f)
 
 
@@ -267,37 +286,52 @@ if __name__=='__main__':
                 except MissingTiffsError as e:
                     print(' [!!] %s --> skipped' % e)
                     continue
+                except Exception as e:
+                    print(' [!!] "%s" not converted, %s: %s --> skipped' %\
+                            (folder, type(e).__name__, e))
+                    continue
 
-            create_compressed_folder(folder, 
-                                     key=args.compression)
+            # only a folder created here is removed if the conversion fails
+            new_h5_folder = ('h5' in args.compression) and\
+                    (not os.path.isdir(compressed_folder(folder, 'h5')))
+            try:
+                create_compressed_folder(folder, 
+                                         key=args.compression)
 
-            if 'nwb' in args.compression:
-                convert_to_nwb(folder)
+                if 'nwb' in args.compression:
+                    convert_to_nwb(folder)
 
-            elif 'h5' in args.compression:
-                convert_to_h5(folder)
+                elif 'h5' in args.compression:
+                    convert_to_h5(folder)
 
-            elif 'binary' in args.compression:
-                convert_to_binary(folder)
+                elif 'binary' in args.compression:
+                    convert_to_binary(folder)
 
-            elif 'avi' in args.compression:
-                convert_to_16bit_avi(folder)
+                elif 'avi' in args.compression:
+                    convert_to_16bit_avi(folder)
 
-            elif 'mp4' in args.compression:
-                convert_to_log8bit_mp4(folder)
+                elif 'mp4' in args.compression:
+                    convert_to_log8bit_mp4(folder)
 
-            else:
-                print("""
+                else:
+                    print("""
 
-                compression not recognized, pick:
-                    - mp4
-                    - avi
-                    - binary
-                    - h5
-                    - nwb
+                    compression not recognized, pick:
+                        - mp4
+                        - avi
+                        - binary
+                        - h5
+                        - nwb
 
-                """)
-            
+                    """)
+
+            except Exception as e:
+                print('\n [!!] conversion of "%s" failed, %s: %s --> skipped' %\
+                        (folder, type(e).__name__, e))
+                if new_h5_folder:
+                    remove_failed_h5_folder(folder)
+                continue
+
             if args.delete:
                 print(' - deleting tiffs and binary in ', folder, ' [...]')
                 remove_tiff_and_binary_files(folder)
