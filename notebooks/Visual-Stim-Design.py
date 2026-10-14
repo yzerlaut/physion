@@ -170,9 +170,18 @@ import json, sys, os
 sys.path += ['../src']
 from physion.visual_stim.build import build_stim
 import physion.utils.plot_tools as pt
-with open(os.path.join('..', 'src', 'physion', 'acquisition', 'protocols',
-                       'demo', '2-screens.json')) as j:
-    protocol = json.load(j)
+# minimal protocol: centered full-field grating
+#   (same content as a json protocol file, all other parameters: defaults of the stimulus)
+protocol = {
+    "Presentation": "Stimuli-Sequence",
+    "Stimulus": "grating",
+    "Screen": "LN-2screens",
+    "presentation-duration": 3,
+    "presentation-prestim-period": 1,
+    "presentation-poststim-period": 1,
+    "presentation-interstim-period": 1,
+    "N-repeat": 1
+}
 
 stim = build_stim(protocol)
 
@@ -217,9 +226,18 @@ AX[1].invert_xaxis()
 # %%
 import json
 import physion
-with open(os.path.join('..', 'src', 'physion', 'acquisition', 'protocols',
-                       'demo', '3-screens.json')) as j:
-    protocol = json.load(j)
+# minimal protocol: centered full-field grating
+#   (same content as a json protocol file, all other parameters: defaults of the stimulus)
+protocol = {
+    "Presentation": "Stimuli-Sequence",
+    "Stimulus": "grating",
+    "Screen": "LN-VR-3screens",
+    "presentation-duration": 3,
+    "presentation-prestim-period": 1,
+    "presentation-poststim-period": 1,
+    "presentation-interstim-period": 1,
+    "N-repeat": 1
+}
 
 stim = physion.visual_stim.build.build_stim(protocol)
 
@@ -254,10 +272,18 @@ for ax in AX:
 import json, os, sys
 import numpy as np
 import matplotlib.pylab as plt
-with open(os.path.join('..', 'src', 'physion', 
-                       'acquisition', 'protocols', 'demo', 
-                       'moving-dots.json')) as j:
-    protocol = json.load(j)
+# minimal protocol: a line of dots moving downward
+#   (same content as a json protocol file, all other parameters: defaults of the stimulus)
+protocol = {
+    "Presentation": "Stimuli-Sequence",
+    "Stimulus": "line-moving-dots",
+    "Screen": "Dell-2020",
+    "presentation-duration": 3,
+    "presentation-prestim-period": 1,
+    "presentation-poststim-period": 1,
+    "presentation-interstim-period": 1,
+    "N-repeat": 1
+}
     
 sys.path.append('../src')
 from physion.visual_stim.build import build_stim
@@ -281,9 +307,18 @@ for i, t in enumerate(times):
 # %%
 # start from a simple protocol to load all required data
 import json, os
-with open(os.path.join('..', 'src', 'physion', 'acquisition', 'protocols',
-                       'demo', 'uniform-bg.json')) as j:
-    protocol = json.load(j)
+# minimal protocol: uniform gray screen
+#   (same content as a json protocol file, all other parameters: defaults of the stimulus)
+protocol = {
+    "Presentation": "Stimuli-Sequence",
+    "Stimulus": "uniform-bg",
+    "Screen": "Dell-2020",
+    "presentation-duration": 3,
+    "presentation-prestim-period": 1,
+    "presentation-poststim-period": 1,
+    "presentation-interstim-period": 1,
+    "N-repeat": 1
+}
     
 from physion.visual_stim.build import build_stim #, init_bg_image
 from physion.visual_stim.main import init_bg_image
