@@ -150,7 +150,50 @@ def set_angle_meshgrid_U3Screens(self,
     self.x *= 180./np.pi
     self.z *= 180./np.pi
 
-def set_angle_meshgrid_V2Screens(self, 
+def V2Screens_angles(X, Z, lF, screen_ids):
+    """
+    azimuth and altitude angles (radians) of the points (X, Z) of the V-shaped screens
+        screen 1: y = X + lF (X<0),  screen 2: y = lF - X (X>0)
+    see the "Visual-Stim-Design" notebook for the calculation
+    """
+    x, z = 0*X, 0*X
+
+    # - screen 1
+    cond1 = (screen_ids==1)
+    # radius
+    r = np.sqrt(
+       X[cond1]**2 +\
+        (X[cond1]+lF)**2 +\
+            Z[cond1]**2 )
+    # altitude angle
+    z[cond1] = np.arcsin(Z[cond1]/r)
+    # azimuth angle
+    x[cond1] =\
+        np.arctan(-X[cond1]/(X[cond1]+lF))
+    # [0,2pi] -> [-pi,pi]
+    cond1h = cond1 & (x<0)
+    x[cond1h] += np.pi
+
+    # - screen 2
+    cond2 = (screen_ids==2)
+    # radius
+    r = np.sqrt(
+       X[cond2]**2 +\
+        (lF-X[cond2])**2 +\
+            Z[cond2]**2 )
+    # altitude angle
+    z[cond2] = np.arcsin(Z[cond2]/r)
+    # azimuth angle
+    x[cond2] =\
+        np.arctan(-X[cond2]/(lF-X[cond2]))
+    # [0,2pi] -> [-pi,pi]
+    cond2h = cond2 & (x>0)
+    x[cond2h] -= np.pi
+
+    return x, z
+
+
+def set_angle_meshgrid_V2Screens(self,
                                  force_degree=False):
     """
     see the notebook for the calculation
@@ -197,66 +240,51 @@ def set_angle_meshgrid_V2Screens(self,
                                     for i in range(self.screen['nScreens'])],
                                 axis=0)
 
-    self.mask = np.ones(self.widths.shape, 
+    self.mask = np.ones(self.widths.shape,
                         dtype=bool) # stim mask, True by default
 
     if force_degree or (self.units=='deg'):
 
-        altitudeMax, altitudeMin = np.max(self.Z), np.min(self.Z)
-        dZ = altitudeMax-altitudeMin
-        azimuthMax = dZ*self.X.shape[0]/self.X.shape[1]/2.
+        # angles of the screen pixels (cm geometry), for the extent of the visual field
+        _, z_screen = V2Screens_angles(self.X, self.Z, lF, self.screen_ids)
+
+        # angular grid, linear in angle, with the same angle per pixel in both directions
+        #   (as in the 1-screen 'deg' mode): the altitude spans that of the screens,
+        #   the azimuth is centered on the front edge of the "V" (decreasing from
+        #   screen 1 to screen 2, as in the 'cm' mode)
+        altitudeMin, altitudeMax = np.min(z_screen), np.max(z_screen)
+        dAngle = (altitudeMax-altitudeMin)/(self.X.shape[1]-1)
+        azimuthMax = dAngle*(self.X.shape[0]-1)/2.
 
         self.x, self.z = np.meshgrid(\
-                     np.linspace(-azimuthMax, azimuthMax,
+                     np.linspace(azimuthMax, -azimuthMax,
                                  self.X.shape[0]),
                      np.linspace(altitudeMin, altitudeMax,
                                   self.X.shape[1]),
                               indexing='ij')
-        
-        # for this, we get back to widths, height screen coords
-        self.widths, self.heights = X, Z
+
+        # screen coordinates of the angular grid: intersection of the line of sight
+        #   with the screen planes (screen 1: y=x+lF for x<0, screen 2: y=lF-x for x>0),
+        #   azimuth convention of the 'cm' mode: tan(azimuth) = -x/y
+        dx = -np.cos(self.z)*np.sin(self.x)
+        dy = np.cos(self.z)*np.cos(self.x)
+        dz = np.sin(self.z)
+        on1 = (self.x>=0)          # positive azimuth -> screen 1
+        with np.errstate(divide='ignore', invalid='ignore'):
+            t = np.where(on1, lF/(dy-dx), lF/(dy+dx))   # distance along the line of sight
+        Xs, Zs = t*dx, t*dz
+
+        # screen-local coordinates, as in the 'cm' mode (widths: L*X/xMax, heights: Z)
+        self.widths, self.heights = L*Xs/xMax, Zs
+        self.mask = (t>0) &\
+            np.where(on1, (Xs>=-xMax) & (Xs<=0), (Xs>=0) & (Xs<=xMax)) &\
+            (Zs>=-hB) & (Zs<=H-hB)
 
     elif self.units=='cm':
         # by default, we go through the cm unit
 
         # we convert to angles in the x and z directions
-        self.x, self.z = 0*self.widths, 0*self.widths
-
-        # 
-        #       screen by screen for the angular positions
-        # 
-
-        # - screen 1
-        cond1 = (self.screen_ids==1)
-        # radius
-        r = np.sqrt(
-           self.X[cond1]**2 +\
-            (self.X[cond1]+lF)**2 +\
-                self.Z[cond1]**2 )
-        # altitude angle
-        self.z[cond1] = np.arcsin(self.Z[cond1]/r)
-        # azimuth angle
-        self.x[cond1] =\
-            np.arctan(-self.X[cond1]/(self.X[cond1]+lF))
-        # [0,2pi] -> [-pi,pi]  
-        cond1h = cond1 & (self.x<0)
-        self.x[cond1h] += np.pi
-
-        # - screen 2
-        cond2 = (self.screen_ids==2)
-        # radius
-        r = np.sqrt(
-           self.X[cond2]**2 +\
-            (lF-self.X[cond2])**2 +\
-                self.Z[cond2]**2 )
-        # altitude angle
-        self.z[cond2] = np.arcsin(self.Z[cond2]/r)
-        # azimuth angle
-        self.x[cond2] =\
-            np.arctan(-self.X[cond2]/(lF-self.X[cond2]))
-        # [0,2pi] -> [-pi,pi]  
-        cond2h = cond2 & (self.x>0)
-        self.x[cond2h] -= np.pi
+        self.x, self.z = V2Screens_angles(self.X, self.Z, lF, self.screen_ids)
 
     # convert back to angles in degrees
     self.x *= 180./np.pi
