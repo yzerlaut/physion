@@ -262,6 +262,61 @@ def set_angle_meshgrid_V2Screens(self,
     self.x *= 180./np.pi
     self.z *= 180./np.pi
 
+def deg_per_pixel(screen, units='cm', image_shape=None,
+                  where='center', screen_id=1):
+    """
+    visual angle (deg.) covered by one pixel, from the screen parameters (screens.py)
+        and the pixel -> angle mapping of the protocol `units` (set_angle_meshgrid_* above)
+
+    screen:      key of SCREENS (screens.py) or a screen dictionary
+    units:       'cm' (default of the protocols), 'deg' or 'lin-deg'
+    image_shape: (height, width) of an image stretched over the full screen
+                    (as in the "natural_image" stimulus)
+                    -> deg. per image pixel, otherwise deg. per screen pixel
+    where:       'center': at the center of the screen (in 'cm' units, the pixel angle
+                    decreases with eccentricity: largest value)
+                 'mean': angular extent of the screen / number of pixels
+    screen_id:   for multi-screen setups, the screen considered
+
+    returns (along the width / azimuth, along the height / altitude)
+    """
+    from types import SimpleNamespace
+    from physion.visual_stim.screens import SCREENS
+
+    stim = SimpleNamespace(screen=SCREENS[screen] if isinstance(screen, str) else screen,
+                           units=units)
+    # same dispatch as visual_stim.set_angle_meshgrid (main.py)
+    if stim.screen['nScreens']==1:
+        set_angle_meshgrid_1screen(stim)
+    elif stim.screen['nScreens']==2:
+        set_angle_meshgrid_V2Screens(stim)
+    else:
+        set_angle_meshgrid_U3Screens(stim)
+
+    # angles of the pixels of the considered screen: x varies along axis 0, z along axis 1
+    resolution = stim.screen['resolution']
+    cond = (stim.screen_ids==screen_id)
+    x = stim.x[cond].reshape(resolution)
+    z = stim.z[cond].reshape(resolution)
+
+    if where=='center':
+        i, j = resolution[0]//2, resolution[1]//2
+        dx = np.abs(x[i+1, j]-x[i-1, j])/2.
+        dz = np.abs(z[i, j+1]-z[i, j-1])/2.
+    elif where=='mean':
+        dx = (x[:, resolution[1]//2].max()-x[:, resolution[1]//2].min())/(resolution[0]-1)
+        dz = (z[resolution[0]//2, :].max()-z[resolution[0]//2, :].min())/(resolution[1]-1)
+    else:
+        raise ValueError('where should be "center" or "mean"')
+
+    if image_shape is not None:
+        # image stretched over the screen: screen pixels per image pixel
+        dx *= resolution[0]/image_shape[1]
+        dz *= resolution[1]/image_shape[0]
+
+    return dx, dz
+
+
 if __name__=='__main__':
 
     import argparse, os, pathlib, json

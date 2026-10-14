@@ -53,6 +53,13 @@ ephys = [
 acquisition = [
     "nidaqmx",
 ]
+# diffusion-model morphing of natural images (visual_stim/natural_images/diffusion.py)
+diffusion = [
+    "torch",
+    "diffusers",
+    "transformers",
+    "accelerate",
+]
 test = ["pytest"]
 
 [tool.pytest.ini_options]
