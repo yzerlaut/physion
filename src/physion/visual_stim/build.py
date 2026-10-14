@@ -110,7 +110,7 @@ class MonitoringSquare:
         elif Stim.screen['monitoring_square']['location']=='top-left':
             self.mask[X-S:,:S] = True
         elif Stim.screen['monitoring_square']['location']=='bottom-right':
-            self.mask[X-S:,:S] = True
+            self.mask[:S,Y-S:] = True
         elif Stim.screen['monitoring_square']['location']=='bottom-left':
             self.mask[:S,:S] = True
         else:
