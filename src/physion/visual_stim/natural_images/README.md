@@ -12,6 +12,7 @@ Decoding distinct natural images from V1 activity is usually perfect. A graded s
 | module | content |
 |---|---|
 | [images.py](./images.py) | load images (grayscale, `[0,1]`), set mean luminance / RMS contrast, downsample, save |
+| [preprocess.py](./preprocess.py) | preprocessing of the images displayed by the `natural_image` stimuli: grayscale conversion, resizing to the screen, histogram equalization (formerly `visual_stim/preprocess_NI.py`) |
 | [spectrum.py](./spectrum.py) | Fourier tools: periodic + smooth decomposition, amplitude/phase spectra, spectrum equalization within a pair, phase scrambling |
 | [morphing.py](./morphing.py) | Fourier phase morphing (`phase_morph`, `PhaseMorpher`), stimulus-pair weights for a similarity `s` (`pair_weights`) |
 | [diffusion.py](./diffusion.py) | Stable Diffusion latent morphing (`DiffusionMorpher`), optional dependencies |
@@ -37,6 +38,15 @@ python -m physion.visual_stim.natural_images.run_naturalness        --img-dir pa
 **Set the display geometry** with `--screen`, a key of [screens.py](../screens.py), and `--units`, the units of the visual stimulation protocol (`'cm'` by default, as in the protocols). Images are stretched over the full screen, as in the `natural_image` stimulus. The size of one image pixel in visual degrees is computed by `visual_stim.geometry.deg_per_pixel` from the screen parameters and the pixel-to-angle mapping of `geometry.py`, at the center of the screen. In `'cm'` units the angle covered by a pixel decreases with eccentricity. A warning is raised if the image pixels are not square on the screen, which happens when the aspect ratio of the images differs from that of the screen. For a setup that is not in `screens.py`, give the geometry directly with `--deg-per-px`. The mouse-acuity filter, the V1 model and the naturalness index all depend on this geometry.
 
 ## Methods
+
+### Two different normalizations
+
+- **`preprocess.img_after_hist_normalization`**, used by the `natural_image` and `natural_image_VSE` stimuli, is a histogram equalization. It is non-linear: the luminance histogram becomes uniform, which changes the relative luminance of image regions and the spatial-frequency content of the image.
+- **`images.normalize`**, used for the morphed stimuli of this module, is linear. It only sets the mean luminance and the RMS contrast and keeps the shape of the histogram.
+
+The grayscale conversions also differ: scikit-image `rgb2gray` in `preprocess.py`, Pillow `"L"` in `images.py`.
+
+Morphed stimuli displayed through the `natural_image` stimulus are histogram-equalized again, which changes their calibrated similarity. Display them without that step.
 
 ### Phase morphing
 

@@ -2,8 +2,6 @@ import os, pathlib
 import numpy as np
 
 from physion.visual_stim.main import visual_stim, init_bg_image
-from physion.visual_stim.preprocess_NI import load,\
-        img_after_hist_normalization, adapt_to_screen_resolution
 from physion.visual_stim.stimuli import virtual_scene_exploration as vse
 from physion.visual_stim.stimuli.natural_image\
                         import get_NaturalImages_as_array, NI_BANK

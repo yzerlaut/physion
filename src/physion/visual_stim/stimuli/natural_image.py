@@ -2,7 +2,7 @@ import os, pathlib
 import numpy as np
 
 from physion.visual_stim.main import visual_stim, init_bg_image
-from physion.visual_stim.preprocess_NI import load,\
+from physion.visual_stim.natural_images.preprocess import load,\
         img_after_hist_normalization, adapt_to_screen_resolution
 
 #######################################

@@ -3,6 +3,8 @@ natural images: loading, morphing with a controlled similarity, mouse-relevant
 similarity metrics, calibration and naturalness (see README.md)
 
     images        loading / normalizing / saving images
+    preprocess    preprocessing of the images displayed by the "natural_image" stimuli
+                  (histogram equalization, formerly visual_stim/preprocess_NI.py)
     spectrum      Fourier tools: periodic+smooth decomposition, spectrum equalization, scrambling
     morphing      Fourier phase morphing (PhaseMorpher), pair weights for a similarity s
     diffusion     Stable Diffusion latent morphing (DiffusionMorpher, optional dependencies:
@@ -15,4 +17,4 @@ similarity metrics, calibration and naturalness (see README.md)
     run_phase_morphing, run_diffusion_morphing, run_naturalness: pipelines
         (python -m physion.visual_stim.natural_images.run_... --help)
 """
-from . import images, spectrum, morphing, mouse_vision, sparseness, calibration, plots
+from . import images, preprocess, spectrum, morphing, mouse_vision, sparseness, calibration, plots
