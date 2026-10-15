@@ -2,8 +2,6 @@ import numpy as np
 from scipy.ndimage import gaussian_filter1d, minimum_filter1d, maximum_filter1d
 from scipy.signal import convolve, windows
 from scipy.interpolate import interp1d
-from sklearn.linear_model import LinearRegression
-import time
 
 ##############################################################################
 # -------------------------------------------------------------------------- #
@@ -124,10 +122,16 @@ def compute_hamming(array, Window, percentile) :
     
     return np.array(Flow)
 
-def compute_F0(data, F,
+def compute_F0(F, dt,
                method=METHOD,
                percentile=PERCENTILE,
                sliding_window=T_SLIDING):
+    """
+    baseline F0 of the fluorescence F, shape (nROIs, nTimes)
+
+    dt: time interval between the samples of F (s), converts the
+            sliding window (s) into a number of samples
+    """
 
     if method=='minimum':
         return compute_minimum(F)
@@ -137,176 +141,61 @@ def compute_F0(data, F,
 
     elif method=='sliding_minimum':
         return compute_sliding_minimum(F,
-                                       int(sliding_window/data.CaImaging_dt),
+                                       int(sliding_window/dt),
                                        with_smoothing=True)
 
     elif method=='sliding_percentile':
         return compute_sliding_percentile(F, percentile,
-                                          int(sliding_window/data.CaImaging_dt),
+                                          int(sliding_window/dt),
                                           with_smoothing=True)
 
     elif method=='hamming':
-        return compute_hamming(F, int(sliding_window/data.CaImaging_dt), percentile)
+        return compute_hamming(F, int(sliding_window/dt), percentile)
     
     elif method=='sliding_minmax':
-        return compute_sliding_minmax(F, int(sliding_window/data.CaImaging_dt), 60)
+        return compute_sliding_minmax(F, int(sliding_window/dt), 60)
     
     else:
         print('\n --- method not recognized --- \n ')
 
 
-def compute_neuropil_facor(F, Fneu):
-
-    slopes_list = []
-    per = np.arange(5, 101, 5)
-
-    for k in range(len(F)): #loop on each neuron
-        b = 0
-        All_F, percentile_Fneu = [], []
-        for q in per:
-            current_percentile = np.percentile(Fneu[k], q)
-            previous_percentile = np.percentile(Fneu[k], b)
-            index_percentile_q = np.where((previous_percentile <= Fneu[k]) & (Fneu[k] < current_percentile))
-            F_percentile_q = F[k][index_percentile_q]
-            perc_F_q = np.percentile(F_percentile_q, 5)
-            percentile_Fneu.append(current_percentile)
-            All_F.append(perc_F_q)
-            b = q
-
-        #fitting a linear regression model
-        x = np.array(percentile_Fneu).reshape(-1, 1)
-        y = np.array(All_F)
-        model = LinearRegression()
-        model.fit(x, y)
-        slopes_list.append(model.coef_[0])
-    
-    valid_ROIs, alphas = [],[]
-    for q in range(len(slopes_list)):
-        if slopes_list[q] > 0:
-            valid_ROIs.append(True)
-            alphas.append(slopes_list[q])
-        else :
-            valid_ROIs.append(False)
-    
-    alpha = np.mean(alphas)
-
-    return alpha, np.array(valid_ROIs)
-
-def compute_dFoF(data,  
-                 roi_to_neuropil_fluo_inclusion_factor=ROI_TO_NEUROPIL_INCLUSION_FACTOR,
-                 neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
-                 method_for_F0=METHOD,
-                 percentile=PERCENTILE,
-                 sliding_window=T_SLIDING,
-                 with_correctedFluo_and_F0=False,
-                 smoothing=None,
-                 with_computed_neuropil_fact=False,
-                 roi_to_neuropil_fluo_inclusion_factor_metric=ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC,
-                 verbose=True):
+def compute_neuropil_factor(F, Fneu,
+                            neuropil_percentile_range=(10, 90),
+                            fluo_percentile_for_regression=10,
+                            nBins=16):
     """
-    -----------------
-    Compute the *Delta F over F* quantity
-    -----------------
-    1) substract a fraction of the neuropil component to get the corrected fluo: cF
-        - with the "neuropil_correction_factor" parameter
-    2) restrict to ROIs that have a mean fluorescence larger that the mean neuropil
-        - with the "roi_to_neuropil_fluo_inclusion_factor" parameter
-            the link with the original ROIs are through: data.valid_ROIs & data.unvalid_ROIs
-    3)  determine the sliding baseline component: cF0
-        - with the "method" parameter, method can be either: maximin / sliding_percentile
-        - with the "percentile" parameter (in percent)
-        - with the "sliding_windows" parameter (in s)
-    4) copmutes the ratio between (cF-cF0)/cF0
-    5) [optional] adds a Gaussian smoothing (smoothing in frame units)
+    neuropil contamination factor of each ROI: slope of the lower envelope of
+        the fluorescence F as a function of the neuropil Fneu
+
+        - the neuropil is binned by percentiles: nBins bins between the
+            percentiles "neuropil_percentile_range" of each ROI's neuropil
+        - in each bin: the "fluo_percentile_for_regression" percentile of F,
+            paired with the neuropil value at the upper edge of the bin
+        - linear regression (least squares) of these points -> slope
+
+    F, Fneu: arrays of shape (nROIs, nTimes)
+    returns the slopes, shape (nROIs,)
     """
+    F, Fneu = np.asarray(F, dtype=float), np.asarray(Fneu, dtype=float)
+    nTimes = F.shape[1]
 
-    if verbose:
-        tick = time.time()
-        print('\ncalculating dF/F with method "%s" [...]' % method_for_F0)
-    
+    # samples of each ROI sorted by neuropil value: the percentile bins of
+    #   the neuropil are then the same slices of time samples for all ROIs
+    order = np.argsort(Fneu, axis=1)
+    F_sorted = np.take_along_axis(F, order, axis=1)
 
-    # Step 0) -> compute neuropil correction factor if needed
-    if with_computed_neuropil_fact :
-        neuropil_correction_factor, valid_ROIs_neuropil = compute_neuropil_facor(data.rawFluo, data.neuropil)
-        if verbose :
-            print('neuropil correction factor computed:', neuropil_correction_factor)
-            if np.sum(~valid_ROIs_neuropil)>0:
-                print('\n  ** %i ROIs were discarded with the strictly positive neuropil correction factor criterion (%.1f%%) ** \n'\
-                    % (np.sum(~valid_ROIs_neuropil),
-                        100*np.sum(~valid_ROIs_neuropil)/data.rawFluo.shape[0]))
-            else:
-                print('\n  ** all ROIs passed the strictly positive neuropil correction factor criterion ** \n')
-                
-    if (neuropil_correction_factor>1) or (neuropil_correction_factor<0):
-        print('[!!] neuropil_correction_factor has to be in the interval [0.,1]')
-        print('neuropil_correction_factor set to 0 !')
-        neuropil_correction_factor=0.
+    # bin edges, as positions in the sorted samples (np.percentile convention)
+    q = np.linspace(*neuropil_percentile_range, nBins+1)
+    edges = np.ceil(q/100.*(nTimes-1)).astype(int)
 
-    data.neuropil_correction_factor = neuropil_correction_factor
+    # lower envelope of F in each neuropil bin
+    y = np.stack([np.percentile(F_sorted[:, i0:i1],
+                                fluo_percentile_for_regression, axis=1)
+                  for i0, i1 in zip(edges[:-1], edges[1:])], axis=1)
+    # neuropil value at the upper edge of each bin
+    x = np.percentile(Fneu, q[1:], axis=1).T
 
-    #######################################################################
-    
-    # Step 1) ->  performing neuropil correction 
-    correctedFluo = data.rawFluo-\
-        neuropil_correction_factor*data.neuropil
-        
-    
-    # Step 2) -> compute the F0 term (~ sliding minimum/percentile)
-    correctedFluo0 = compute_F0(data, correctedFluo,
-                                method=method_for_F0,
-                                percentile=percentile,
-                                sliding_window=sliding_window)
-
-    # Step 3) -> determine the valid ROIs
-    # ROIs with strictly positive baseline
-    valid_roiIndices = (np.min(correctedFluo0, axis=1)>1)
-
-    # ROIs above Inclusion Factor
-    if roi_to_neuropil_fluo_inclusion_factor_metric == 'mean':
-        valid_roiIndices = valid_roiIndices &\
-            ((np.mean(data.rawFluo, axis=1)>\
-                roi_to_neuropil_fluo_inclusion_factor*np.mean(data.neuropil, axis=1)))
-    elif roi_to_neuropil_fluo_inclusion_factor_metric == 'std' :
-        neuropil_filtered = gaussian_filter1d(data.neuropil, 10)
-        rawFluo_filtered = gaussian_filter1d(data.rawFluo, 10)
-        valid_roiIndices = valid_roiIndices &\
-            ((np.std(rawFluo_filtered, axis=1)>\
-                roi_to_neuropil_fluo_inclusion_factor*np.std(neuropil_filtered, axis=1)))
-    else:
-        raise ValueError('roi_to_neuropil_fluo_inclusion_factor must be either "mean" or "std"')
-
-    # Add strictly positive neuropil correction factor criterion
-    if with_computed_neuropil_fact :
-        valid_roiIndices = valid_roiIndices & valid_ROIs_neuropil
-
-    # Step 4) -> compute the delta F over F quantity: dFoF = (F-F0)/F0
-    data.dFoF = (correctedFluo[valid_roiIndices, :]-\
-      correctedFluo0[valid_roiIndices, :])/correctedFluo0[valid_roiIndices, :]
-
-    # Step 5) -> Gaussian smoothing if required
-    if smoothing is not None:
-        data.dFoF = gaussian_filter1d(data.dFoF, smoothing, axis=1)
-
-    #######################################################################
-    if verbose:
-        if np.sum(~valid_roiIndices)>0:
-            print('\n  ** %i ROIs were discarded with the positive-alpha, positive-F0 and Neuropil-Factor criteria (%.1f%%) ** \n'\
-                  % (np.sum(~valid_roiIndices),
-                      100*np.sum(~valid_roiIndices)/correctedFluo.shape[0]))
-        else:
-            print('\n  ** all ROIs passed the positive F0 criterion ** \n')
-            
-    # we update the previous quantities
-    data.initialize_ROIs(\
-            valid_roiIndices = np.arange(data.original_nROIs)[valid_roiIndices])
-
-    # we resrict the rawFluo and neuropil to valid ROIs
-    data.rawFluo = data.rawFluo[data.valid_roiIndices,:]
-    data.neuropil = data.neuropil[data.valid_roiIndices,:]
-
-    if with_correctedFluo_and_F0:
-        data.correctedFluo0 = correctedFluo0[data.valid_roiIndices,:]
-        data.correctedFluo = correctedFluo[data.valid_roiIndices,:]
-    
-    if verbose:
-        print('-> dFoF calculus done !  (calculation took %.1fs)' % (time.time()-tick))
+    # least-squares slope of y vs x, for all ROIs
+    dx = x-x.mean(axis=1, keepdims=True)
+    dy = y-y.mean(axis=1, keepdims=True)
+    return np.sum(dx*dy, axis=1)/np.sum(dx**2, axis=1)

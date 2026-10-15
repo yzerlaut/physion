@@ -9,7 +9,7 @@
 #
 #
 #
-# see the function `compute_dFoF` in  [Calcium.py](../src/physion/imaging/Calcium.py)
+# see the method `build_dFoF` (and its steps) in [ophys.py](../src/physion/analysis/modalities/ophys.py)
 
 # %%
 import sys, os
@@ -123,7 +123,7 @@ plt.xlabel('time (s)');
 
 # %%
 correctedFluo = data.rawFluo-data.neuropil_correction_factor*data.neuropil
-baseline = physion.imaging.Calcium.compute_F0(data, correctedFluo, 
+baseline = physion.imaging.Calcium.compute_F0(correctedFluo, data.t_dFoF[1]-data.t_dFoF[0],
                                               method=dFoF_options['method_for_F0'],
                                               percentile=dFoF_options['percentile'])
 np.random.seed(1)
