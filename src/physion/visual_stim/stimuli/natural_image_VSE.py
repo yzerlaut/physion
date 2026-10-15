@@ -15,7 +15,8 @@ from physion.visual_stim.stimuli.natural_image\
 params = {"Image-ID":0,
           "min-saccade-duration":0.1,
           "max-saccade-duration":1.0,
-          "saccade-amplitude":200.0, # in pixels, to be put in degrees
+          "saccade-amplitude-deg":30.0, # in degrees (legacy protocols:
+                                    #   "saccade-amplitude" in screen pixels)
           "bg-color":0.5,
           "contrast":0.3,
           "x-center":0,
@@ -41,17 +42,10 @@ class stim(visual_stim):
             print()
             protocol['NI_FOLDER'] = NI_BANK
 
-        # backward compatibility:
-        if 'saccade-amplitude' not in protocol:
-            protocol['saccade-amplitude'] = 200.
-
         # initializing set of NI
         self.NIarray = get_NaturalImages_as_array(protocol['NI_FOLDER'], 
                                                   self.screen)
-        self.vse = vse.generate_sequence(seed=protocol['seed'],
-                                min_saccade_duration=protocol['min-saccade-duration'],
-                                max_saccade_duration=protocol['max-saccade-duration'],
-                                saccade_amplitude=protocol['saccade-amplitude'])
+        self.vse = vse.generate_sequence_from_protocol(protocol)
 
     def get_source_image(self, image_id):
         """

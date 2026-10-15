@@ -155,3 +155,57 @@ def test_vse_in_NWB(tmp_path):
         assert VisualStimMixin.get_visual_stim_image(data, 0, 1).shape == \
             tuple(stim.screen['resolution'][::-1])
 
+
+VSE_DEG = {"seed": 3, "min-saccade-duration": 0.1, "max-saccade-duration": 1.0, "saccade-amplitude-deg": 30.}
+
+
+def test_vse_in_degrees_same_angle_on_all_screens():
+    """ saccade shifts in degrees -> the same visual angle on screens of different resolution """
+    from physion.visual_stim.geometry import deg_per_pixel
+    from physion.visual_stim.stimuli import virtual_scene_exploration as vse
+    shifts = {}
+    for screen in ['Dell-2020', 'Dell-2020-low-resolution']:
+        stim = build_stim(dict(BASE, Stimulus='natural-image-VSE', Screen=screen,
+                               **dict(VSE_DEG, **{"Image-ID-1": 0, "Image-ID-2": 0, "N-Image-ID": 1})))
+        assert stim.vse['units'] == 'deg'
+        t = stim.vse['t'][2] + 1e-3                     # after the 3rd saccade
+        ix, iy = vse.compute_shifted_pixels(stim, t)
+        dx, dz = deg_per_pixel(stim.screen, stim.units)
+        shifts[screen] = (ix * dx, iy * dz)            # in degrees
+        np.testing.assert_allclose(shifts[screen], (stim.vse['x'][2], stim.vse['y'][2]), atol=dx)
+        stim.get_image(0, time_from_episode_start=t)   # no failure, even on the small screen
+
+
+def test_vse_legacy_protocols_in_pixels():
+    stim = build_stim(dict(BASE, Stimulus='grating-VSE', **VSE))  # "saccade-amplitude": pixels
+    assert stim.vse['units'] == 'pixels' and stim.vse['x'].dtype.kind == 'i'
+    from physion.visual_stim.build import get_default_params
+    assert 'saccade-amplitude-deg' in get_default_params('natural-image-VSE')
+
+
+def test_vse_units_in_NWB(tmp_path):
+    import datetime, types
+    import pynwb
+    from dateutil.tz import tzlocal
+    from physion.assembling.nwb import add_visual_stimulation
+    from physion.analysis.modalities.visual_stim import VisualStimMixin
+
+    stim = build_stim(dict(BASE, Stimulus='grating-VSE', **VSE_DEG))
+    add_vse_to_experiment(stim)
+    np.save(tmp_path / 'visual-stim.npy', stim.experiment)
+    args = types.SimpleNamespace(datafolder=str(tmp_path), modalities=['VisualStim'],
+                                 force_to_visualStimTimestamps=True, exclude_episodes=[],
+                                 indices_forced=None, times_forced=None, durations_forced=None,
+                                 max_episode=-1, photodiode_sampling=1000.,
+                                 reverse_photodiodeSignal=False, verbose=False)
+    nwbfile = pynwb.NWBFile(session_description='test', identifier='test',
+                            session_start_time=datetime.datetime.now(tzlocal()))
+    add_visual_stimulation(nwbfile, {'VisualStim': True}, None, args)
+    with pynwb.NWBHDF5IO(str(tmp_path / 'test.nwb'), 'w') as io:
+        io.write(nwbfile)
+    with pynwb.NWBHDF5IO(str(tmp_path / 'test.nwb'), 'r') as io:
+        nwb = io.read()
+        assert nwb.stimulus_template[vse_key(0, 3)].unit == 'degrees'
+        vse = VisualStimMixin.get_visual_stim_vse(types.SimpleNamespace(nwbfile=nwb), 0, 3)
+        assert vse['units'] == 'deg' and vse['max_amplitude'] == 30.
+        np.testing.assert_allclose(vse['x'], stim.vse['x'])

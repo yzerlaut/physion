@@ -25,7 +25,8 @@ params = {
       # virtual scene exploration properties
       "min-saccade-duration":0.1,
       "max-saccade-duration":1.0,
-      "saccade-amplitude":200.0, # in pixels, to be put in degrees
+      "saccade-amplitude-deg":30.0, # in degrees (legacy protocols:
+                                    #   "saccade-amplitude" in screen pixels)
       "seed":0
 }
 
@@ -36,10 +37,7 @@ class stim(visual_stim):
     def __init__(self, protocol):
 
         super().__init__(protocol, params)
-        self.vse = vse.generate_sequence(seed=protocol['seed'],
-                                min_saccade_duration=protocol['min-saccade-duration'],
-                                max_saccade_duration=protocol['max-saccade-duration'],
-                                saccade_amplitude=protocol['saccade-amplitude'])
+        self.vse = vse.generate_sequence_from_protocol(protocol)
 
     def get_image(self, index,
                   time_from_episode_start=0,
@@ -47,7 +45,10 @@ class stim(visual_stim):
 
         img = init_bg_image(self, index)
         
-        deltaX, deltaY = vse.compute_shifted_pixels(self, time_from_episode_start)
+        deltaX, deltaY = vse.compute_shifts(self, time_from_episode_start)
+        if self.vse['units']=='pixels':
+            # legacy protocols: shifts in pixels, 200 pixels <-> 40 degrees
+            deltaX, deltaY = deltaX*40./200., deltaY*40./200.
 
         self.add_grating_patch(img,
                             #    screen_id=screen_id,
@@ -55,8 +56,8 @@ class stim(visual_stim):
                radius=5000., # we blank the surround later
                spatial_freq=self.experiment['spatial-freq'][index],
                contrast=self.experiment['contrast'][index],
-               xcenter=deltaX*40./200., # QUICK FIX, PUT TO ANGLES
-               zcenter=deltaY*40./200.,
+               xcenter=deltaX, # in degrees
+               zcenter=deltaY,
                phase_shift_Deg=self.experiment['phase'][index]\
                        if 'phase' in self.experiment else 90.,
                time_phase=self.experiment['speed'][index]*time_from_episode_start)

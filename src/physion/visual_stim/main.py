@@ -581,10 +581,10 @@ class visual_stim:
                  color=arrow['color'])
 
     def add_vse(self, ax, vse):
-        x0, x1 = ax.get_xlim()
-        y0, y1 = ax.get_ylim()
-        ax.plot([self.screen['resolution'][0]/2.]+list(vse['x']),
-                [self.screen['resolution'][1]/2.]+list(vse['y']), 'o-', color='#d62728', lw=0.5, ms=2)
+        from physion.visual_stim.stimuli.virtual_scene_exploration import vse_in_pixels
+        x, y = vse_in_pixels(self, vse) # degrees -> screen pixels if needed
+        ax.plot([self.screen['resolution'][0]/2.]+list(x),
+                [self.screen['resolution'][1]/2.]+list(y), 'o-', color='#d62728', lw=0.5, ms=2)
 
 
 #####################################################
