@@ -55,14 +55,18 @@ class stim(visual_stim):
         # initializing set of NI
         self.NIarray = get_NaturalImages_as_array(protocol['NI_FOLDER'], self.screen)
 
+    def get_source_image(self, image_id):
+        """
+        greyscale image "Image-ID" in [0,1] (screen coordinates),
+            before contrast, background and mask
+        """
+        return np.rot90(self.NIarray[int(image_id)], k=1)
+
     def get_image(self, index,
                   time_from_episode_start=0,
                   parent=None):
-        
-        im_id = int(self.experiment['Image-ID'][index])
-        
-        im0 = np.rot90(\
-                self.NIarray[im_id], k=1)
+
+        im0 = self.get_source_image(self.experiment['Image-ID'][index])
 
         if self.screen['nScreens']>1:
             im0 = np.concatenate(\

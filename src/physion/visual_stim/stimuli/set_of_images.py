@@ -45,13 +45,20 @@ class stim(visual_stim):
                                    'stim-from-drawing.png')]
 
 
+    def get_source_image(self, image_id):
+        """
+        greyscale image "Image-ID" in [0,1] (screen coordinates),
+            first channel of the PNG file "<Image-ID>.png"
+        """
+        im = np.array(Image.open(\
+                self.images[int(image_id)-1]))[:,:,0]/255*1.0
+        return im.T
+
     def get_image(self, index,
                   time_from_episode_start=0,
                   parent=None):
 
-        im = np.array(Image.open(\
-                self.images[int(self.experiment['Image-ID'][index])-1]))[:,:,0]/255*1.0
-        return im.T
+        return self.get_source_image(self.experiment['Image-ID'][index])
 
 """
     def plot_stim_picture(self, episode, parent=None, 

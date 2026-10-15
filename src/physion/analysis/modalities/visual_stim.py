@@ -4,7 +4,8 @@ visual stimulation (photodiode, stimulus parameters, protocols, episodes)
 methods of physion.analysis.read_NWB.Data (see the Data class)
 """
 import numpy as np
-from physion.visual_stim.build import build_stim
+import json
+from physion.visual_stim.build import build_stim, image_key, vse_key, VISUAL_STIM_IMAGES
 from physion.analysis import tools
 
 
@@ -93,6 +94,40 @@ class VisualStimMixin:
             print(' [!!] protocol "%s" not found in data with protocols:' % protocol_name)
             print(self.protocols)
             return None
+
+    def get_visual_stim_image(self, protocol_id, image_id):
+        """
+        image "Image-ID" displayed in protocol "protocol_id" (natural images, ...)
+            greyscale (uint8, 0-255), oriented as the movie frames,
+            before contrast, background and mask
+
+        None if the image is not stored in the NWB file
+        """
+        if (VISUAL_STIM_IMAGES in self.nwbfile.stimulus_template) and\
+                (image_key(protocol_id, image_id) in\
+                    self.nwbfile.stimulus_template[VISUAL_STIM_IMAGES].images):
+            return np.array(self.nwbfile.stimulus_template[VISUAL_STIM_IMAGES]\
+                                .images[image_key(protocol_id, image_id)].data[:])
+        return None
+
+    def get_visual_stim_vse(self, protocol_id, seed=0):
+        """
+        virtual saccadic exploration (VSE) of protocol "protocol_id" (generated with "seed")
+            dictionary as in visual_stim/stimuli/virtual_scene_exploration.py:
+            't': saccade times (s, from the episode start),
+            'x', 'y': shifts after each saccade, 'max_amplitude',
+            'units': 'deg' (visual degrees) or 'pixels' (legacy protocols)
+
+        None if the VSE is not stored in the NWB file
+        """
+        if vse_key(protocol_id, seed) in self.nwbfile.stimulus_template:
+            series = self.nwbfile.stimulus_template[vse_key(protocol_id, seed)]
+            data = np.array(series.data[:])
+            vse = {'t':np.array(series.timestamps[:]),
+                   'x':data[:,0], 'y':data[:,1], 'units':'pixels'}
+            vse.update(json.loads(series.comments))
+            return vse
+        return None
 
     def get_protocol_cond(self, protocol_id, protocol_name=None):
         """

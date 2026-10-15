@@ -9,7 +9,8 @@ from dateutil.tz import tzlocal
 from physion.behavior.locomotion import compute_speed
 from physion.analysis.tools import resample, resample_signal
 from physion.utils.paths import python_path
-from physion.visual_stim.build import build_stim as build_visualStim
+from physion.visual_stim.build import build_stim as build_visualStim, is_image_key,\
+        is_vse_key, is_protocol_data_key, VISUAL_STIM_IMAGES
 
 from physion.utils.camera import CameraData
 from physion.imaging.folders import session_imaging_folders
@@ -436,6 +437,9 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
             # stimulus parameters of the realigned episodes (some can be excluded)
             for key in VisualStim:
 
+                if is_protocol_data_key(key):
+                    continue # images and VSEs of the protocols, not episode parameters
+
                 # Dealing with None conds (replacing with 666 in nwb):
                 None_cond = np.array(\
                     [isinstance(e, type(None)) for e in VisualStim[key]]) # just checks for 'None' values
@@ -461,7 +465,7 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
                 
         else:
             print(' [!!] No VisualStim metadata found [!!] ')
-    
+
         if args.verbose:
             print('=> Storing the photodiode signal for "%s" [...]' % args.datafolder)
 
@@ -473,12 +477,34 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
                                           rate=args.photodiode_sampling)
             nwbfile.add_acquisition(photodiode)
 
-        ####################
-        ## put addition of natural images here
-        if False:
-            # checking that you have some NI in your stimulus
-            NI = pynwb.image.GrayscaleImage(name, data)
-            nwbfile.add_stimulus(NI)
+        # images displayed by the protocols (natural images, ...) -> stimulus templates
+        image_keys = [key for key in VisualStim if is_image_key(key)]
+        if len(image_keys)>0:
+            images = [pynwb.image.GrayscaleImage(name=key,
+                            data=np.asarray(VisualStim[key], dtype='uint8'),
+                            description='greyscale image of the protocol (0-255),'+\
+                                ' oriented as the movie frames, before contrast,'+\
+                                ' background and mask')
+                      for key in image_keys]
+            nwbfile.add_stimulus_template(\
+                    pynwb.base.Images(name=VISUAL_STIM_IMAGES,
+                        images=images,
+                        description='images of the visual stimulation protocols,'+\
+                            ' named "protocol_id-%i-Image-ID-%i"'))
+
+        # virtual saccadic explorations of the protocols -> stimulus templates
+        #       (x,y) shifts after each saccade, timestamps: saccade times from the episode start
+        for key in [key for key in VisualStim if is_vse_key(key)]:
+            vse = VisualStim[key]
+            nwbfile.add_stimulus_template(\
+                    pynwb.TimeSeries(name=key,
+                        data=np.stack([vse['x'], vse['y']], axis=1),
+                        timestamps=np.asarray(vse['t'], dtype=float),
+                        unit=('degrees' if vse.get('units', 'pixels')=='deg' else 'pixels'),
+                        description='virtual saccadic exploration: (x,y) shifts after each saccade,'+\
+                            ' timestamps: saccade times from the episode start (s)',
+                        comments=json.dumps({'max_amplitude':float(vse['max_amplitude']),
+                                             'units':vse.get('units', 'pixels')})))
 
     return metadata
 

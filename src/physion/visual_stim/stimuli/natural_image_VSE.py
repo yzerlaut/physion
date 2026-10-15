@@ -53,13 +53,18 @@ class stim(visual_stim):
                                 max_saccade_duration=protocol['max-saccade-duration'],
                                 saccade_amplitude=protocol['saccade-amplitude'])
 
+    def get_source_image(self, image_id):
+        """
+        greyscale image "Image-ID" in [0,1] (screen coordinates),
+            before saccadic shifts, contrast, background and mask
+        """
+        return np.rot90(self.NIarray[int(image_id)], k=1)
+
     def get_image(self, index,
                   time_from_episode_start=0,
                   parent=None):
 
-        im0 = np.rot90(\
-                self.NIarray[int(self.experiment['Image-ID'][index])], 
-                        k=1)
+        im0 = self.get_source_image(self.experiment['Image-ID'][index])
 
         if self.screen['nScreens']>1:
             im0 = np.concatenate(\

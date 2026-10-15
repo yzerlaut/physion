@@ -73,6 +73,85 @@ def get_default_params(protocol_name):
         print('\n [!!] Protocol not recognized ! [!!] \n ')
         return None
 
+#######################################################
+##  ----  images of the protocols (natural images)  --- #
+##  ----  and virtual saccadic explorations (VSE)   --- #
+#######################################################
+
+# name of the container of these images in the NWB files (stimulus templates)
+VISUAL_STIM_IMAGES = 'visual-stim-images'
+
+
+def image_key(protocol_id, image_id):
+    """ key of the image "Image-ID" of protocol "protocol_id" in visual-stim.npy """
+    return 'protocol_id-%i-Image-ID-%i' % (protocol_id, image_id)
+
+
+def is_image_key(key):
+    return key.startswith('protocol_id-') and ('-Image-ID-' in key)
+
+
+def add_images_to_experiment(Stim):
+    """
+    stores in Stim.experiment the images of the protocols displaying images
+        (stimuli with a "get_source_image" method: natural images, set of images)
+
+        key:   "protocol_id-%i-Image-ID-%i" (see `image_key`),
+                    for each "Image-ID" shown in the protocol
+        value: greyscale image (uint8, 0-255), oriented as in the movie frames
+                    (height x width of one screen), before contrast, background and mask
+    """
+    if 'Image-ID' not in Stim.experiment:
+        return
+    STIM = Stim.STIM if hasattr(Stim, 'STIM') else [Stim]
+    protocol_ids = np.array(Stim.experiment['protocol_id'])
+    image_ids = np.array(Stim.experiment['Image-ID'], dtype=object)
+    for protocol_id, stim in enumerate(STIM):
+        if not hasattr(stim, 'get_source_image'):
+            continue
+        ids = [int(i) for i in image_ids[protocol_ids==protocol_id] if i is not None]
+        for image_id in np.unique(ids):
+            img = np.rot90(stim.get_source_image(image_id), k=1) # as in the movie
+            Stim.experiment[image_key(protocol_id, image_id)] =\
+                    np.array(np.round(255*np.clip(img, 0, 1)), dtype='uint8')
+
+
+def vse_key(protocol_id, seed):
+    """ key of the VSE (generated with "seed") of protocol "protocol_id" in visual-stim.npy """
+    return 'protocol_id-%i-VSE-%i' % (protocol_id, seed)
+
+
+def is_vse_key(key):
+    return key.startswith('protocol_id-') and ('-VSE-' in key)
+
+
+def is_protocol_data_key(key):
+    """ images and VSEs of the protocols: not episode parameters """
+    return is_image_key(key) or is_vse_key(key)
+
+
+def add_vse_to_experiment(Stim):
+    """
+    stores in Stim.experiment the virtual saccadic exploration (VSE) of the protocols having one
+        (stimuli with a "vse" attribute: natural-image-VSE, grating-VSE)
+
+        key:   "protocol_id-%i-VSE-%i" (see `vse_key`), with the seed of the VSE
+                    (one VSE per protocol, generated from the "seed" of the protocol)
+        value: VSE dictionary (see stimuli/virtual_scene_exploration.py)
+                    't': saccade times (s, from the episode start),
+                    'x', 'y': shifts after each saccade, 'max_amplitude',
+                    'units': 'deg' (visual degrees) or 'pixels' (legacy protocols)
+    """
+    STIM = Stim.STIM if hasattr(Stim, 'STIM') else [Stim]
+    for protocol_id, stim in enumerate(STIM):
+        vse = getattr(stim, 'vse', None)
+        if isinstance(vse, dict) and ('t' in vse):
+            Stim.experiment[vse_key(protocol_id, int(stim.protocol['seed']))] =\
+                    {'t':np.array(vse['t']), 'x':np.array(vse['x']), 'y':np.array(vse['y']),
+                     'max_amplitude':float(vse['max_amplitude']),
+                     'units':vse.get('units', 'pixels')}
+
+
 class MonitoringSquare:
     """
     Used to draw a flickering square on a corner of the screen
@@ -259,7 +338,12 @@ if __name__=='__main__':
             for o in out:
                 o.release()
 
-            np.save(os.path.join(protocol_folder, 'visual-stim.npy'), 
+            # the images displayed (natural images) -> "protocol_id-%i-Image-ID-%i" keys
+            add_images_to_experiment(Stim)
+            # the virtual saccadic explorations -> "protocol_id-%i-VSE-%i" keys
+            add_vse_to_experiment(Stim)
+
+            np.save(os.path.join(protocol_folder, 'visual-stim.npy'),
                     Stim.experiment)
 
             print('\n [ok] video file and metadata saved in: "%s" \n ' % protocol_folder)
