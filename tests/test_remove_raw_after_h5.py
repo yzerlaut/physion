@@ -51,15 +51,28 @@ def test_kept_when_not_checked(make_TSeries, problem):
     assert os.path.isdir(TS) and len([f for f in os.listdir(TS) if f.endswith('.tif')])>=48
 
 
-@pytest.mark.parametrize('fmt, removed', [('h5', True), ('16bit-avi (lossless)', False)])
-def test_conversion_window_rm_raw(gui, make_TSeries, monkeypatch, fmt, removed):
+@pytest.mark.parametrize('rm', [True, False])
+def test_h5_window_rm_raw(gui, make_TSeries, rm):
+    """ h5 conversion window: the raw data is removed only with "rm raw ?" checked """
+    TS, _ = make_TSeries(nframes=5)
+    window = gui.imaging_to_h5_gui()
+    window.source_folder = os.path.dirname(TS)
+    window.rm.setChecked(rm)
+    window.run()
+    assert os.path.isdir(TS.replace('TSeries-', 'h5-'))
+    assert os.path.exists(TS) != rm
+    assert gui.slot_errors == []
+
+
+def test_movie_window_keeps_raw(gui, make_TSeries, monkeypatch):
+    """ movie conversion window: no removal of the raw data (h5 conversion only) """
     import physion.utils.compression.twoP as twoP
     TS, _ = make_TSeries(nframes=5)
     monkeypatch.setattr(twoP, 'convert_to_16bit_avi', lambda f: None) # (not tested here)
     window = gui.imaging_to_movie_gui()
+    assert not hasattr(window, 'rm')
     window.source_folder = os.path.dirname(TS)
-    window.typeBox.setCurrentText(fmt)
-    window.rm.setChecked(True)
-    window.run_imaging_to_movie()
-    assert os.path.exists(TS) != removed
+    window.typeBox.setCurrentText('16bit-avi (lossless)')
+    window.run()
+    assert os.path.isdir(TS)
     assert gui.slot_errors == []
