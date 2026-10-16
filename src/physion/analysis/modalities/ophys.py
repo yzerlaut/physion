@@ -99,7 +99,7 @@ class OphysMixin:
                              roi_to_neuropil_fluo_inclusion_factor=ROI_TO_NEUROPIL_INCLUSION_FACTOR,
                              roi_to_neuropil_fluo_inclusion_factor_metric=ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC,
                              discard_negative_F0=False,
-                             discard_negative_neuropil_correction_factor=False,
+                             keep_rois_with_neuropil_factor_in=None,
                              verbose=True):
         """
         restricts the ROIs to the ones passing the selection criteria,
@@ -107,7 +107,9 @@ class OphysMixin:
 
         1) [optional] strictly positive baseline: min(F0) > 1
                 (needs self.F0)
-        2) [optional] strictly positive neuropil correction factor
+        2) [optional] neuropil correction factor within the interval
+                "keep_rois_with_neuropil_factor_in" = (min, max), bounds included,
+                e.g. (-0.1, 1.5)  (None: no criterion)
                 (needs self.neuropil_correction_factors, see build_neuropil_correction_factors)
         3) fluorescence above "roi_to_neuropil_fluo_inclusion_factor" times the neuropil,
                 for the "mean" or the "std" (after 10-frame smoothing) of the signals
@@ -139,12 +141,15 @@ class OphysMixin:
                                      ' compute it first')
             apply_criterion(np.min(self.F0, axis=1)>1, 'positive F0 baseline')
 
-        # 2) ROIs with a strictly positive neuropil correction factor
-        if discard_negative_neuropil_correction_factor:
+        # 2) ROIs with a neuropil correction factor within the interval
+        if keep_rois_with_neuropil_factor_in is not None:
             if not hasattr(self, 'neuropil_correction_factors'):
-                raise AttributeError('"neuropil_correction_factors" needed to discard the ROIs with'+\
-                                     ' a negative factor, see build_neuropil_correction_factors')
-            apply_criterion(self.neuropil_correction_factors>0, 'positive neuropil correction factor')
+                raise AttributeError('"neuropil_correction_factors" needed to select the ROIs on'+\
+                                     ' their factor, see build_neuropil_correction_factors')
+            fmin, fmax = keep_rois_with_neuropil_factor_in
+            apply_criterion((self.neuropil_correction_factors>=fmin) &\
+                            (self.neuropil_correction_factors<=fmax),
+                            'neuropil correction factor in [%.2f, %.2f]' % (fmin, fmax))
 
         # 3) ROIs with a fluorescence above the neuropil (inclusion factor)
         if roi_to_neuropil_fluo_inclusion_factor:
@@ -302,6 +307,7 @@ class OphysMixin:
     def build_dFoF(self,
                    neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
                    with_computed_neuropil_fact=False,
+                   keep_rois_with_neuropil_factor_in=None,
                    method_for_F0=METHOD,
                    percentile=PERCENTILE,
                    sliding_window=T_SLIDING,
@@ -317,13 +323,16 @@ class OphysMixin:
 
         1) rawFluo and neuropil, of all ROIs (optionally resampled)
                         -> build_rawFluo, build_neuropil
-        2) [if with_computed_neuropil_fact] neuropil correction factor of each ROI,
-                the mean of the positive ones is applied
+        2) neuropil correction factor of each ROI: computed if with_computed_neuropil_fact
                         -> build_neuropil_correction_factors
+                otherwise the same "neuropil_correction_factor" for all ROIs
         3) correctedFluo = rawFluo - neuropil_correction_factor x neuropil
+                (with the factor of each ROI)
                         -> build_correctedFluo
         4) baseline F0 of correctedFluo   -> build_F0
-        5) selection of the ROIs: positive F0, [positive neuropil correction factor],
+        5) selection of the ROIs: positive F0,
+                [neuropil correction factor in "keep_rois_with_neuropil_factor_in",
+                 an interval (min, max), bounds included, e.g. (-0.1, 1.5)],
                 fluorescence above the neuropil  -> set_valid_roiIndices
         6) dFoF = (correctedFluo-F0)/F0, [optional] Gaussian smoothing (in frames)
 
@@ -351,13 +360,15 @@ class OphysMixin:
         # 2) neuropil correction factor of each ROI
         if with_computed_neuropil_fact:
             self.build_neuropil_correction_factors()
-            positive = (self.neuropil_correction_factors>0)
-            neuropil_correction_factor = np.mean(self.neuropil_correction_factors[positive])
             if verbose:
-                print('neuropil correction factor computed: %.3f' % neuropil_correction_factor)
+                print('neuropil correction factors computed: %.2f +/- %.2f (min: %.2f, max: %.2f)' %\
+                       (np.mean(self.neuropil_correction_factors), np.std(self.neuropil_correction_factors),
+                        np.min(self.neuropil_correction_factors), np.max(self.neuropil_correction_factors)))
+        else:
+            self.neuropil_correction_factors = np.ones(self.nROIs)*neuropil_correction_factor
 
         # 3) neuropil correction
-        self.build_correctedFluo(neuropil_correction_factor=neuropil_correction_factor,
+        self.build_correctedFluo(neuropil_correction_factor=self.neuropil_correction_factors,
                                  verbose=verbose)
 
         # 4) baseline
@@ -368,7 +379,7 @@ class OphysMixin:
         # 5) ROI selection
         self.set_valid_roiIndices(\
                 discard_negative_F0=True,
-                discard_negative_neuropil_correction_factor=with_computed_neuropil_fact,
+                keep_rois_with_neuropil_factor_in=keep_rois_with_neuropil_factor_in,
                 roi_to_neuropil_fluo_inclusion_factor=roi_to_neuropil_fluo_inclusion_factor,
                 roi_to_neuropil_fluo_inclusion_factor_metric=\
                         roi_to_neuropil_fluo_inclusion_factor_metric,
