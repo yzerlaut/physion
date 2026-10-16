@@ -6,7 +6,8 @@ import h5py
 from hdmf.data_utils import DataChunkIterator
 from hdmf.backends.hdf5.h5_utils import H5DataIO
 
-from physion.imaging.folders import compressed_folder, plane_file
+from physion.imaging.folders import compressed_folder, plane_file,\
+        find_TSeries_folders, is_TSeries_folder
 from physion.utils.files import get_files_with_extension
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.utils.paths import FOLDERS
@@ -304,3 +305,132 @@ def remove_TSeries_if_converted(TS_folder):
     shutil.rmtree(TS_folder, onerror=remove_readonly)
     print('     [ok] "%s" removed' % TS_folder)
     return True, []
+
+
+###########################################################################
+####                full pipeline (used by the GUI and CLI)            #####
+###########################################################################
+
+def create_h5_folder(TS_folder):
+    """ the "h5-" folder with the non-tiff content of the "TSeries-" folder
+        (same as create_compressed_folder in twoP.py, not imported to avoid
+         a circular import and the Qt dependency on the command line) """
+    shutil.copytree(TS_folder, compressed_folder(TS_folder, 'h5'),
+                    dirs_exist_ok=True,
+                    ignore=shutil.ignore_patterns('*.ome.tif', 'CYCLE*', '*.bin'))
+
+
+def convert_TSeries_folder(TS_folder, remove_raw=False):
+    """
+    checks the tiffs, converts to h5 and (optionally) removes the raw data
+
+    returns (converted, removed, message)
+        message: why it failed (or why the raw data was not removed)
+    """
+    try:
+        check_tiffs_before_h5(TS_folder)
+    except MissingTiffsError as e:
+        print(' [!!] %s --> skipped' % e)
+        return False, False, str(e)
+    except Exception as e:
+        print(' [!!] "%s" not converted, %s: %s --> skipped' %\
+                (TS_folder, type(e).__name__, e))
+        return False, False, '%s: %s' % (type(e).__name__, e)
+
+    # only a folder created here is removed if the conversion fails
+    new_h5_folder = not os.path.isdir(compressed_folder(TS_folder, 'h5'))
+    try:
+        create_h5_folder(TS_folder)
+        convert_to_h5(TS_folder)
+    except Exception as e:
+        print('\n [!!] conversion of "%s" failed, %s: %s --> skipped' %\
+                (TS_folder, type(e).__name__, e))
+        if new_h5_folder:
+            remove_failed_h5_folder(TS_folder)
+        return False, False, 'conversion failed, %s: %s' % (type(e).__name__, e)
+
+    removed, message = False, ''
+    if remove_raw:
+        try:
+            # only after checking the conversion (see above)
+            removed, problems = remove_TSeries_if_converted(TS_folder)
+            message = '; '.join(problems)
+        except Exception as e:
+            # the h5 folder is kept: the raw data might be partially removed
+            print('\n [!!] removal of "%s" failed, %s: %s' %\
+                    (TS_folder, type(e).__name__, e))
+            message = 'removal failed, %s: %s' % (type(e).__name__, e)
+    return True, removed, message
+
+
+if __name__=='__main__':
+
+    import argparse, datetime
+
+    parser=argparse.ArgumentParser(description="""
+    converts the "TSeries-" folders (Bruker tiffs) found in "folder"
+        to "h5-" folders (one lossless h5 file per channel and plane)
+
+    writes two logs (in "folder", or its parent for a "TSeries-" folder):
+        h5-compression_<date>_succeeded.txt
+        h5-compression_<date>_failed.txt
+    """, formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument("folder",
+                        help='a "TSeries-" folder or a folder containing some')
+    parser.add_argument("--remove_raw", "--rm", "--delete",
+                        dest="remove_raw",
+                        help='remove each "TSeries-" folder after checking that\n'
+                             ' - all its tiffs are in the xml file\n'
+                             ' - the h5 files match the tiffs, frame by frame (pixel-exact)\n'
+                             ' - all its other files are copied to the "h5-" folder',
+                        action="store_true")
+    parser.add_argument("--log_dir", default=None,
+                        help='folder of the log files (default: see above)')
+    args = parser.parse_args()
+
+    if is_TSeries_folder(args.folder):
+        folders = [os.path.normpath(args.folder)]
+        log_dir = os.path.dirname(folders[0])
+    else:
+        folders = find_TSeries_folders(args.folder)
+        log_dir = args.folder
+    if args.log_dir is not None:
+        log_dir = args.log_dir
+
+    if len(folders)==0:
+        print('\n no "TSeries-" folder found in "%s" \n' % args.folder)
+
+    else:
+        os.makedirs(log_dir, exist_ok=True)
+        date = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        logs = {key:os.path.join(log_dir, 'h5-compression_%s_%s.txt' % (date, key))\
+                    for key in ['succeeded', 'failed']}
+        # created now and filled during the loop (kept if interrupted)
+        for key in logs:
+            with open(logs[key], 'w') as f:
+                f.write('# h5 compression %s -- %s (remove_raw=%s)\n' %\
+                        (key, date, args.remove_raw))
+
+        summary = []
+        for folder in folders:
+            print('\n - processing', folder, ' [...]')
+            converted, removed, message = convert_TSeries_folder(folder,
+                                                    remove_raw=args.remove_raw)
+            if converted:
+                line = folder
+                if args.remove_raw:
+                    line += '\t raw removed' if removed else\
+                            '\t raw NOT removed: %s' % message
+            else:
+                line = '%s\t %s' % (folder, message)
+            with open(logs['succeeded' if converted else 'failed'], 'a') as f:
+                f.write(line+'\n')
+            summary.append((folder, converted, removed))
+
+        print('\n ---- summary ----')
+        for folder, converted, removed in summary:
+            status = 'converted' if converted else 'NOT converted'
+            if args.remove_raw and converted:
+                status += ', raw %s' % ('removed' if removed else 'NOT removed')
+            print('  %s : %s' % (folder, status))
+        print('\n logs: \n  %s\n  %s\n' % (logs['succeeded'], logs['failed']))
