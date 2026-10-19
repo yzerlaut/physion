@@ -20,7 +20,8 @@ def single_recording_summary(filename, notebook_folder,
         full view and three 1min zooms of the raw data
 
     only the modalities present in the recording are shown
-        (running, facemotion, pupil, opto, photodiode, visual stim, CaImaging)
+        (running, facemotion, pupil, opto, photodiode, visual stim, CaImaging,
+         LFP, MUA, spikes)
     CaImaging traces: Zscore of the corrected fluorescence
         correctedFluo = rawFluo - neuropil_correction_factor x neuropil
         (all ROIs, no selection, "Nmax_ROIs" random ROIs plotted)
@@ -86,9 +87,9 @@ def single_recording_summary(filename, notebook_folder,
         text += '## Field of View \n'
 
         if redo_figs:
-            fig = plt.figure(figsize=(5., 1.5))
+            fig = plt.figure(figsize=(5., 2.))
             AX = fig.subplots(1, 3)
-            fig.subplots_adjust(left=.13, right=.96, bottom=.03, top=.98,
+            fig.subplots_adjust(left=.16, right=.96, bottom=.03, top=.8,
                                 wspace=.05)
 
             #
@@ -156,6 +157,18 @@ def single_recording_summary(filename, notebook_folder,
                                 'subsampling': 10*subsampling_factor,
                                 'color': 'blue'}
 
+        if data.has_LFP():
+            settings['LFP'] = {'fig_fraction': 4,
+                               'subsampling': 10*subsampling_factor,
+                               'color': 'tab:orange'}
+        if data.has_MUA():
+            settings['MUA'] = {'fig_fraction': 4,
+                               'subsampling': 2*subsampling_factor,
+                               'color': 'tab:cyan'}
+        if data.has_spikes():
+            settings['spikes'] = {'fig_fraction': 8,
+                                  'color': 'grey'}
+
         if data.has_ophys():
             settings['CaImaging'] = {'fig_fraction': 15,
                                     'subsampling': 1*subsampling_factor,
@@ -175,8 +188,8 @@ def single_recording_summary(filename, notebook_folder,
 
     # full recording view
     if redo_figs and len(get_settings())>0:
-        fig = plt.figure(figsize=(5.4, 14.))
-        ax = fig.add_axes([.07, .014, .908, .986]) # [left, bottom, width, height]
+        fig = plt.figure(figsize=(5.4, 9.8))
+        ax = fig.add_axes([.1, .02, .77, .98]) # [left, bottom, width, height]
         plot_raw(data,
                  tlim=data.tlim,
                  settings=get_settings(subsampling_factor=20),
@@ -191,8 +204,8 @@ def single_recording_summary(filename, notebook_folder,
     for i, t0 in enumerate(\
         np.linspace(0, data.tlim[-1]-60,3)):
         if redo_figs and len(get_settings(with_visual_stim=True))>0:
-            fig = plt.figure(figsize=(5.4, 11.6))
-            ax = fig.add_axes([.07, .001, .908, .948]) # [left, bottom, width, height]
+            fig = plt.figure(figsize=(5.4, 8.1))
+            ax = fig.add_axes([.1, .001, .77, .926]) # [left, bottom, width, height]
             plot_raw(data,
                      tlim=[t0, t0+60],
                      settings=get_settings(with_visual_stim=True),

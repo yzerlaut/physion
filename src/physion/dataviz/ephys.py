@@ -64,16 +64,128 @@ def show_waveforms(data,
     return fig, ax 
 
 def add_spikes(data, tlim, ax,
-            fig_fraction_start=0., fig_fraction=1., subsampling=2, color='k',
-            scale_side='left',
+            fig_fraction_start=0., fig_fraction=1., color='k',
+            ms=0.2,
             name='spikes'):
-    pass
+    """
+    raster of the spikes of the selected units (data.selected_units),
+        units ordered by depth (top of the probe at the top)
+        if the depths are available (spike waveforms), by unit index otherwise
+
+    the raster is rasterized (for light vector graphics with many spikes)
+    """
+    units = data.selected_units
+
+    if not hasattr(data, 'depth_units'):
+        data.build_depth_units()
+    if data.depth_units is not None:
+        order = np.argsort(np.argsort(data.depth_units)) # rank of the depth
+    else:
+        order = np.arange(len(units))
+
+    T, Y = [], []
+    for i, unit in enumerate(units):
+        spikes = np.array(data.nwbfile.units['spike_times'][unit])
+        spikes = spikes[(spikes>=tlim[0]) & (spikes<=tlim[1])]
+        T.append(spikes)
+        # top unit (shallowest) at the top
+        Y.append(np.ones(len(spikes))*(len(units)-1-order[i]))
+    T, Y = np.concatenate(T), np.concatenate(Y)
+
+    ax.plot(T, fig_fraction_start+(Y+.5)*fig_fraction/len(units),
+            'o', ms=ms, mew=0, color=color, rasterized=True)
+
+    ax.annotate('%i units' % len(units),
+                (dv_tools.shifted_start(tlim), fig_fraction_start+fig_fraction/2.),
+                xycoords='data', color=color, va='center', ha='right',
+                rotation=90, fontsize=7)
+
+    dv_tools.add_name_annotation(data, ax, name, tlim,
+            fig_fraction, fig_fraction_start, color=color)
+
+
+def add_electrical_series(data, key, tlim, ax,
+                          fig_fraction_start=0., fig_fraction=1., 
+                          vicinity_factor=1.2, 
+                          smoothing=5,
+                          subsampling=2, 
+                          scale=20,
+                          color='tab:blue',
+                          nTraces=4,
+                          scale_side='left',
+                          name=None):
+    """
+    electrical series "key" ("LFP" or "MUA") of the selected channels, 
+        averaged over "nTraces" groups of neighboring channels 
+        (ordered by depth, top of the probe at the top)
+
+    smoothing: Gaussian smoothing (in samples, after subsampling)
+    scale: scale bar (in uV)
+    """
+    series = data.nwbfile.processing[key].data_interfaces[key]
+
+    i1, i2 = dv_tools.convert_times_to_indices(*tlim, series)
+
+    t = dv_tools.convert_index_to_time(range(i1,i2), series)[::subsampling]
+
+    # channels of the selection, ordered from the top to the bottom of the probe
+    indices, rows = data.selected_series_channels(key)
+    depths = data.depth_of_electrodes(rows, key)
+    if depths is not None:
+        indices, depths = indices[np.argsort(depths)], np.sort(depths)
+
+    # subsampled reading of all the channels (h5 file), then the selected ones
+    signals = series.data[i1:i2:subsampling][:,indices]
+    groups = np.array_split(np.arange(len(indices)), nTraces)
+
+    for n, group in enumerate(groups):
+
+        # first group (top) at the top
+        ypos = (nTraces-1-n)*fig_fraction/nTraces+\
+                fig_fraction_start # bottom position
+
+        y = gaussian_filter1d(signals[:,group].mean(axis=-1),
+                              smoothing+1e-6)
+
+        dv_tools.plot_scaled_signal(data, ax, t, y, tlim, scale,
+                            ax_fraction_extent=vicinity_factor*fig_fraction/nTraces,
+                            ax_fraction_start=ypos,
+                            color=color,
+                            scale_side=scale_side,
+                            scale_unit_string=('%.0f$\\mu$V' if (n==nTraces-1) else ' '))
+
+        # depth range of the group (or channel rows)
+        if depths is not None:
+            label = '%.0f-%.0f$\\mu$m' % (depths[group[0]], depths[group[-1]])
+        else:
+            label = 'ch.%i-%i' % (rows[group[0]], rows[group[-1]])
+        ax.annotate(' '+label, (tlim[1], ypos+fig_fraction/nTraces/2.),
+                    xycoords='data', color=color, va='center', fontsize=6)
+
+    dv_tools.add_name_annotation(data, ax, key if name is None else name, 
+            tlim, fig_fraction, fig_fraction_start, color=color, 
+            rotation=90, side='left')
+
 
 def add_MUA(data, tlim, ax,
-            fig_fraction_start=0., fig_fraction=1., subsampling=2, color='tab:blue',
+            fig_fraction_start=0., fig_fraction=1., 
+            vicinity_factor=1.2, 
+            smoothing=5,
+            subsampling=2, 
+            scale=20,
+            color='tab:blue',
+            nTraces=4,
             scale_side='left',
             name='MUA'):
-    pass
+    """ MUA in depth bands (see add_electrical_series) """
+    add_electrical_series(data, 'MUA', tlim, ax,
+                          fig_fraction_start=fig_fraction_start, 
+                          fig_fraction=fig_fraction, 
+                          vicinity_factor=vicinity_factor, 
+                          smoothing=smoothing, subsampling=subsampling, 
+                          scale=scale, color=color, nTraces=nTraces, 
+                          scale_side=scale_side, name=name)
+
 
 def add_LFP(data, tlim, ax,
             fig_fraction_start=0., fig_fraction=1., 
@@ -86,58 +198,11 @@ def add_LFP(data, tlim, ax,
             scale_side='left',
             annotation_side='right',
             name='LFP'):
-
-    i1, i2 = dv_tools.convert_times_to_indices(*tlim,
-            data.nwbfile.processing['LFP'].data_interfaces['LFP'])
-
-    elecs = data.nwbfile.processing['LFP'].data_interfaces['LFP'].electrodes
-    nElec = len(elecs.data[:])
-    elecRange = np.linspace(0, nElec, nTraces+1, dtype=int)
-
-    t = dv_tools.convert_index_to_time(range(i1,i2),
-        data.nwbfile.processing['LFP'].data_interfaces['LFP'])[::subsampling]
-
-    for n, (e0, e1) in enumerate(zip(elecRange[:-1], elecRange[1:])):
-
-        ypos = n*fig_fraction/nTraces/vicinity_factor+\
-                fig_fraction_start # bottom position
-
-        y = gaussian_filter1d(\
-            data.nwbfile.processing['LFP'].data_interfaces['LFP'].data[:,e0:e1].mean(axis=-1)[i1:i2][::subsampling],
-            smoothing+1e-6)
-
-        rdm = np.random.randint(0, 255) # for color
-
-        dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 500.,
-                            ax_fraction_extent=vicinity_factor*fig_fraction/nTraces,
-                            ax_fraction_start=ypos,
-                            color=color,
-                            scale_side=scale_side,
-                            scale_unit_string=('%.0f$\\mu$V' if (n==0) else ' '))
-        
-        # if annotation_side!='':
-        #     dv_tools.add_name_annotation(data, ax, 
-        #             'roi #%i'%(ir+1), tlim, fig_fraction/len(roiIndices),
-        #                                  ypos, color=color, 
-        #                                  side=annotation_side)
-        
-    #     # roi number annotation
-    #     roiAnnot = pg.TextItem('%i-' % elecs.data[e0],
-    #                             color=(rdm, 255, 255))
-    #     roiAnnot.setPos(tt[0], loc+width/nTraces/2.)
-    #     self.plot.addItem(roiAnnot)
-
-    # t = dv_tools.convert_index_to_time(range(i1,i2),
-    #         data.nwbfile.acquisition['Electrophysiological-Signal'])[::subsampling]
-
-    # y = data.nwbfile.acquisition['Electrophysiological-Signal'].data[i1:i2][::subsampling]
-
-    # dv_tools.plot_scaled_signal(data,ax, t, y, tlim, 0.2,
-    #                             ax_fraction_extent=fig_fraction,
-    #                             ax_fraction_start=fig_fraction_start,
-    #                             scale_side=scale_side,
-    #         color=color, scale_unit_string='%.1fmV')
-
-    # dv_tools.add_name_annotation(data, ax, name, tlim,
-    #         fig_fraction, fig_fraction_start, color=color)
-
+    """ LFP in depth bands (see add_electrical_series) """
+    add_electrical_series(data, 'LFP', tlim, ax,
+                          fig_fraction_start=fig_fraction_start, 
+                          fig_fraction=fig_fraction, 
+                          vicinity_factor=vicinity_factor, 
+                          smoothing=smoothing, subsampling=subsampling, 
+                          scale=scale, color=color, nTraces=nTraces, 
+                          scale_side=scale_side, name=name)

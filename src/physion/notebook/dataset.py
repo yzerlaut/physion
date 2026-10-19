@@ -14,7 +14,8 @@ def markdown_table(dataset,
     rows sorted by genotype, then virus, then age
 
     with "append_to=path", the "## Dataset" title and the table are
-    appended to that (existing) markdown or text file
+    appended to that markdown or text file
+        (created if it does not exist, in an existing folder)
     """
 
     def age_key(age):
@@ -44,10 +45,13 @@ def markdown_table(dataset,
     print(table)
 
     if append_to is not None:
-        if not os.path.isfile(append_to):
-            raise FileNotFoundError('"%s" is not an existing file' % append_to)
-        with open(append_to) as f:
-            content = f.read()
+        folder = os.path.dirname(os.path.abspath(append_to))
+        if not os.path.isdir(folder):
+            raise FileNotFoundError('"%s" is not an existing folder' % folder)
+        content = ''
+        if os.path.isfile(append_to):
+            with open(append_to) as f:
+                content = f.read()
         # start on a new line, separated by an empty line
         sep = '' if content=='' else\
                 ('\n' if content.endswith('\n') else '\n\n')
