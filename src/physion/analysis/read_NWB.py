@@ -299,8 +299,7 @@ def scan_folder_for_NWBfiles(folder,
                 print('        - %s' % f)
             print()
 
-    DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES0])
-    FILES, SUBJECTS, VIRUSES, AGES = [], [], [], []
+    FILES, DATES, SUBJECTS, VIRUSES, AGES, GENOTYPES = [], [], [], [], [], []
     PROTOCOL, PROTOCOLS, PROTOCOL_IDS= [], [], []
 
     for f in FILES0[:Nmax]:
@@ -319,29 +318,31 @@ def scan_folder_for_NWBfiles(folder,
                         iProtocols.append(iP[0])
                         Protocols.append(data.protocols[iP[0]])
 
-                if len(Protocols)>0:
-                    # if it has at least one protocol, we include it
-                    FILES.append(f)
-                    PROTOCOL.append(data.metadata['protocol'])
-                    PROTOCOLS.append(Protocols)
-                    PROTOCOL_IDS.append(iProtocols)
-                    SUBJECTS.append(data.nwbfile.subject.subject_id)
-                    AGES.append(data.age)
-                    VIRUSES.append(data.virus)
-
             elif for_protocol in data.metadata['protocol']:
                 # with default '',  it includes all protocols
+                Protocols = data.protocols
+                iProtocols = range(len(data.protocols))
 
-                FILES.append(f)
-                PROTOCOL.append(data.metadata['protocol'])
-                PROTOCOLS.append(data.protocols)
-                PROTOCOL_IDS.append(range(len(data.protocols)))
-                SUBJECTS.append(data.nwbfile.subject.subject_id)
-                AGES.append(data.age)
-                VIRUSES.append(data.virus)
+            else:
+                Protocols = []
+
+            if len(Protocols)>0:
+                # if it has at least one protocol, we include it
+                # (all quantities read before appending, so that
+                #  all lists keep the same size if reading fails)
+                entry = (f,
+                         f.split(os.path.sep)[-1].split('-')[0],
+                         data.metadata['protocol'],
+                         Protocols, iProtocols,
+                         data.nwbfile.subject.subject_id,
+                         data.age, data.virus,
+                         data.nwbfile.subject.genotype)
+                for L, x in zip([FILES, DATES, PROTOCOL, PROTOCOLS,
+                                 PROTOCOL_IDS, SUBJECTS, AGES, VIRUSES,
+                                 GENOTYPES], entry):
+                    L.append(x)
 
         except Exception as be:
-            SUBJECTS.append('N/A')
             if verbose:
                 print(be)
                 print('\n [!!] Pb with "%s" \n' % f)
@@ -375,6 +376,7 @@ def scan_folder_for_NWBfiles(folder,
             'subjects':np.array(SUBJECTS)[isorted],
             'ages':np.array(AGES)[isorted],
             'viruses':np.array(VIRUSES)[isorted],
+            'genotypes':np.array(GENOTYPES)[isorted],
             'protocol':[PROTOCOL[i] for i in isorted],
             'protocol_ids':[PROTOCOL_IDS[i] for i in isorted],
             'protocols':[PROTOCOLS[i] for i in isorted]}
