@@ -1,5 +1,7 @@
 import numpy as np
 import ast
+import inspect
+import linecache
 import os
 import pynwb
 import sys
@@ -255,6 +257,8 @@ def scan_folder_for_NWBfiles(folder,
                              sorted_by='filename',
                              Nmax=1000000,
                              exclude_intrinsic_imaging_files=True,
+                             from_filenames=None,
+                             add_filenames_on_script=True,
                              verbose=True):
     """
     scan folders for protocols and returns a list of datafiles
@@ -264,6 +268,14 @@ def scan_folder_for_NWBfiles(folder,
         - subprotocol name with "for_protocols=[..., ...]"
 
     by default: excludes the intrinsic imaging files
+
+    with "add_filenames_on_script=True", the list of found filenames is
+    written (as a comment) below the calling line in the executed script
+    (replacing a previously written list if there is one)
+
+    with "from_filenames=[...]", only the datafiles whose filenames
+    (without path, with or without the ".nwb" extension) are in the list
+    are loaded, a warning lists the filenames not found in the folder
     """
     if verbose:
         print('inspecting the folder "%s" [...]' % folder)
@@ -271,6 +283,21 @@ def scan_folder_for_NWBfiles(folder,
 
     FILES0 = get_NWBfiles(folder, recursive=True,
             exclude_intrinsic_imaging_files=exclude_intrinsic_imaging_files)
+
+    if from_filenames is not None:
+        # restrict to the files of the filename list
+        filenames = [os.path.basename(f).replace('.nwb', '')\
+                                            for f in from_filenames]
+        FILES0 = [f for f in FILES0 if\
+                    os.path.basename(f).replace('.nwb', '') in filenames]
+        found = [os.path.basename(f).replace('.nwb', '') for f in FILES0]
+        missing = [f for f in filenames if f not in found]
+        if len(missing)>0:
+            print('\n [!!] n=%i filenames not found in "%s" (not loaded):' %\
+                                                    (len(missing), folder))
+            for f in missing:
+                print('        - %s' % f)
+            print()
 
     DATES = np.array([f.split(os.path.sep)[-1].split('-')[0] for f in FILES0])
     FILES, SUBJECTS, VIRUSES, AGES = [], [], [], []
@@ -335,6 +362,14 @@ def scan_folder_for_NWBfiles(folder,
         print(' "%s" no recognized , --> sorted by filename by default ! ' % sorted_by)
         isorted = np.argsort(FILES)
 
+    if add_filenames_on_script:
+        try:
+            _add_filenames_on_script(inspect.currentframe().f_back,
+                                     np.array(FILES)[isorted])
+        except Exception as be:
+            if verbose:
+                print(' [!!] could not add filenames on script:', be)
+
     return {'files':np.array(FILES)[isorted], 
             'dates':np.array(DATES)[isorted],
             'subjects':np.array(SUBJECTS)[isorted],
@@ -343,6 +378,98 @@ def scan_folder_for_NWBfiles(folder,
             'protocol':[PROTOCOL[i] for i in isorted],
             'protocol_ids':[PROTOCOL_IDS[i] for i in isorted],
             'protocols':[PROTOCOLS[i] for i in isorted]}
+
+
+def _find_calling_script(frame):
+    """
+    returns (script_path, lineno_or_None, call_source_line)
+
+    when executed as a script, the frame directly points to the file,
+    when executed by cells (IPython / VSCode interactive), the frame points
+    to a temporary cell file, so we fall back to the script path stored
+    in the globals and we will localize the call by its source text
+    """
+    call_line = linecache.getline(frame.f_code.co_filename,
+                                  frame.f_lineno).strip()
+    if frame.f_code.co_filename.endswith('.py') and \
+            os.path.isfile(frame.f_code.co_filename):
+        return frame.f_code.co_filename, frame.f_lineno, call_line
+    for key in ['__vsc_ipynb_file__', '__file__']:
+        path = frame.f_globals.get(key, '')
+        if isinstance(path, str) and path.endswith('.py') and \
+                os.path.isfile(path):
+            return path, None, call_line
+    return None, None, call_line
+
+
+def _add_filenames_on_script(frame, files,
+                             func_name='scan_folder_for_NWBfiles'):
+    """
+    writes the commented list of filenames below the statement calling
+    "scan_folder_for_NWBfiles" in the executed script,
+    replacing an existing list if there is one
+    """
+    script, lineno, call_line = _find_calling_script(frame)
+    if script is None:
+        return # interactive session without script (e.g. python -c)
+
+    with open(script, newline='') as f:
+        content = f.read()
+    eol = '\r\n' if '\r\n' in content else '\n'
+    lines = content.split(eol)
+
+    # find the statements (possibly multi-line) calling the function
+    calls = []
+    for node in ast.walk(ast.parse('\n'.join(lines))):
+        if isinstance(node, ast.stmt) and not isinstance(node, (ast.FunctionDef,
+                                ast.AsyncFunctionDef, ast.ClassDef, ast.If, 
+                                ast.For, ast.While, ast.With, ast.Try)):
+            for sub in ast.walk(node):
+                if isinstance(sub, ast.Call) and \
+                    getattr(sub.func, 'id', getattr(sub.func, 'attr', ''))==func_name:
+                    calls.append((node.lineno, node.end_lineno, node, sub))
+                    break
+
+    if lineno is not None and \
+            len([c for c in calls if c[0]<=lineno<=c[1]])==1:
+        calls = [c for c in calls if c[0]<=lineno<=c[1]]
+    elif len(calls)>1:
+        # cell execution: match the source line of the call
+        calls = [c for c in calls if call_line in\
+                    [l.strip() for l in lines[c[0]-1:c[1]]]]
+    if len(calls)!=1:
+        raise Exception('call to "%s" not found unambiguously in "%s"' %\
+                                            (func_name, script))
+    end = calls[0][1] # 1-based index of last line --> 0-based next line
+
+    # the call with "from_filenames=filenames" (keeping the other arguments)
+    stmt, call = calls[0][2], calls[0][3]
+    call.keywords = [k for k in call.keywords if k.arg!='from_filenames']+\
+        [ast.keyword(arg='from_filenames', value=ast.Name(id='filenames'))]
+
+    indent = lines[calls[0][0]-1][:len(lines[calls[0][0]-1])-\
+                                   len(lines[calls[0][0]-1].lstrip())]
+    block = [indent+'# filenames = [\\']+\
+        [indent+"#     '%s'," % os.path.basename(f).replace('.nwb', '')\
+                for f in files]+\
+        [indent+'#     ]',
+         indent+'# '+ast.unparse(stmt)]
+
+    # remove an existing filename list
+    stop = end
+    if stop<len(lines) and lines[stop].strip().startswith('# filenames = ['):
+        while stop<len(lines) and lines[stop].strip().startswith('#'):
+            stop += 1
+            if lines[stop-1].strip()=='#     ]':
+                break
+        if stop<len(lines) and lines[stop].strip().startswith('#') and\
+                func_name in lines[stop]:
+            stop += 1 # the commented call
+
+    new_lines = lines[:end]+block+lines[stop:]
+    if new_lines!=lines:
+        with open(script, 'w', newline='') as f:
+            f.write(eol.join(new_lines))
 
 
 if __name__=='__main__':
