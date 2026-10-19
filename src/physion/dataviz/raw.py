@@ -163,10 +163,13 @@ def add_visual_stim(data, tlim, ax,
                    color='k', name='visual stim.'):
 
     if with_screen_inset and (data.visual_stim is None):
-        data.build_visual_stim()
-
-        sx, sy = data.visual_stim.screen['resolution']
-        ax_pos = ax.get_position()
+        try:
+            data.build_visual_stim()
+        except Exception as be:
+            # e.g. protocol files not found --> only the stim intervals
+            print(be)
+            print(' [!!] visual stim could not be built, no stim pictures [!!]')
+            with_screen_inset = False
 
     # cond = (data.nwbfile.stimulus['time_start_realigned'].data[:]>tlim[0]) &\
         # (data.nwbfile.stimulus['time_stop_realigned'].data[:]<tlim[1])

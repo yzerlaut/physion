@@ -136,6 +136,22 @@ def add_CaImaging(data, tlim, ax,
                               color=color, 
                               scale_side=scale_side,
                              scale_unit_string=('%.0f$\\Delta$F/F' if (n==0) else ' '))
+        elif subquantity not in ['Fluorescence', 'rawFluo'] and hasattr(data, subquantity):
+            # any other quantity of shape (nROIs, nTimes), e.g. "Zscore_correctedFluo"
+            #      (built with data.build_Zscore('correctedFluo'))
+            if sigma > 0 :
+                y = filters.gaussian_filter1d(getattr(data, subquantity)[ir,np.arange(i1,i2)][::subsampling], sigma)
+            else :
+                y = getattr(data, subquantity)[ir,np.arange(i1,i2)][::subsampling]
+            if 'Zscore' in subquantity:
+                unit = '%.0f z-score'
+            else:
+                unit = 'fluo (a.u.)'
+            dv_tools.plot_scaled_signal(data, ax, t, y, tlim, 1.,
+                   ax_fraction_extent=fig_fraction/len(roiIndices),
+                   ax_fraction_start=ypos, color=color,
+                   scale_side=scale_side,
+                   scale_unit_string=(unit if (n==0) else ''))
         else:
             if sigma > 0 :
                 y = filters.gaussian_filter1d(data.rawFluo[ir,np.arange(i1,i2)][::subsampling], sigma)
