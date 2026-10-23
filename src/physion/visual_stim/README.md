@@ -143,21 +143,78 @@ To be used in the acquisition UI the protocol folder needs to be moved (the full
 
 ## 3. Presentation: timing and logging
 
-The movie is played by a separate process ([presenter.py](./presenter.py)) that only does that: the acquisition GUI (camera previews, printing, network messages, ...) cannot delay the display anymore.
+### 3.a) Overview of the implementation
 
-- The frames are decoded ahead in background threads (a few seconds of buffer) and drawn at each refresh, the buffer swap being synchronized on the vertical blank (vsync).
-- The movie is locked on the acquisition clock: frame `k` is meant to be displayed at `t0+k/fps` (`t0`: NIdaq start). A regular cadence is used (e.g. 2 refreshes per frame for a 30 fps movie on a 60 Hz screen), and its drift with respect to the clock (refresh rates are never exactly nominal) is corrected one refresh at a time, **only between identical frames** (blank periods, static images), so the corrections are invisible. A correction during a changing stimulus is only forced if the drift exceeds one movie frame (and flagged in the log).
-- After a missed refresh (computer freeze), the presentation resumes at the frame given by the clock (the frames of the freeze are skipped and logged).
+The visual stimulation goes through three steps, from the protocol to the check of a recording:
 
-Each recording contains `visual-stim-frames.npy`, the log of every buffer swap: flip time (from the NIdaq start), frame displayed, refreshes since the previous flip (>1: missed vsync), drift, flags (missed vsync, decoder underrun, corrections). A summary is printed at the end of the recording. The log is stored in the NWB files (`Visual-Stim-Frames`, `Visual-Stim-Flags` and `Visual-Stim-Square` in the stimulus section).
+1. **Build** ([build.py](./build.py), [movie.py](./movie.py)). Each protocol is rendered once, frame by frame, at `movie_refresh_freq` (the gamma correction and the monitoring square included). The frames are written as a lossless greyscale movie (`movie.mkv`, or one `movie-N.mkv` per screen), so the frames displayed are exactly the frames computed. A frame table (`movie-frames.npy`) is saved along with it: for each frame, the episode it belongs to, whether it is identical to the previous one, and the state of the monitoring square.
 
-To check a recording, including the comparison of the recorded photodiode with the photodiode signal predicted by the log:
+2. **Presentation** ([presenter.py](./presenter.py), controlled through [show.py](./show.py)). The movie is played by a dedicated process, separate from the acquisition GUI, so that nothing in the GUI (camera previews, printing, messages to open-ephys, ...) can delay the display. Inside this process:
+    - background threads decode the movie(s) ahead of time and keep a buffer of a few seconds of frames;
+    - the main loop draws, at each screen refresh, the frame that should be on screen and swaps the buffers in synchrony with the vertical blank of the screen (**vsync**): the swap call returns when the new image starts being displayed, which gives the timing of every displayed frame;
+    - all the stimulation screens are covered by a single borderless window (spanning them on multi-screen setups), each screen's movie being drawn in its own area: one buffer swap updates all the screens at the same refresh.
+
+    The acquisition GUI starts the process (the window opens on the first frame of the movie), then sends the `play` command with the start time of the NIdaq acquisition (`t0`), and the `stop` command at the end of the recording.
+
+3. **Logging and check** ([check_presentation.py](./check_presentation.py)). Every buffer swap is logged in `visual-stim-frames.npy` in the data folder, a summary is printed at the end of the recording, and the log is compared offline with the recorded photodiode signal.
+
+### 3.b) Locking the movie on the acquisition clock
+
+Frame `k` of the movie is meant to be displayed at `t0+k/fps`, `t0` being the start of the NIdaq acquisition. The presentation follows a regular cadence: each frame is shown for a fixed number of refreshes (e.g. 2 refreshes per frame for a 30 fps movie on a 60 Hz screen), which gives regular frame durations. Choose `movie_refresh_freq` as a divisor of the refresh rate of the screen (e.g. 30 or 60 fps on a 60 Hz screen), otherwise the frame durations cannot be regular (a warning is printed at start).
+
+The cadence and the clock slowly drift apart: the refresh rate of a screen is never exactly its nominal value (e.g. 59.94 Hz instead of 60 Hz gives one refresh of drift every ~17 s), and missed refreshes delay the cadence. The drift is measured at each refresh and corrected by one refresh at a time (one refresh skipped or repeated), **only when the correction is invisible**: when the frames involved are identical, as given by the frame table (blank inter-stimulus periods, static images, ...). The timing of the episodes is therefore kept on the clock without any visible irregularity inside a changing stimulus. If the drift exceeds one movie frame and no invisible correction is possible (e.g. in a long continuous stimulus without blank periods), the correction is forced (see below).
+
+When the computer misses refreshes (e.g. a freeze of the system), the presentation resumes at the frame given by the clock: the movie frames that should have been displayed during the freeze are skipped, so that the following episodes stay on time.
+
+### 3.c) The presentation log
+
+`visual-stim-frames.npy` (a dictionary) contains one entry per buffer swap:
+
+| key | meaning |
+|---|---|
+| `flip_time` | time of the swap (s, from the NIdaq start): the frame is on screen from this time (plus the fixed latency of the screen) |
+| `frame` | index of the movie frame displayed (-1: before the start of the movie) |
+| `refreshes` | number of screen refreshes since the previous swap (1 normally, >1: missed vsync) |
+| `drift` | difference between the clock and the cadence before correction (ms, >0: the display is late) |
+| `flags` | sum of the flags below (`missed_vsync`=16, `underrun`=1, `forced`=8, `advance`=2, `delay`=4, see `flags_meaning`) |
+
+plus the measured refresh period, whether vsync was detected, the screens used, the movie files and a `summary`. It is saved every ~30 s during the recording and at the end. In the NWB files, it is stored in the stimulus section as `Visual-Stim-Frames` (frame displayed at each refresh), `Visual-Stim-Flags` and `Visual-Stim-Square` (expected state of the monitoring square, i.e. the photodiode signal predicted from the log).
+
+### 3.d) Reading the presentation counters
+
+During the recording, a status is added to the episode lines printed in the terminal as soon as something happened (cumulative counts since the start of the recording):
+```
+ - t=00h:05m:12s:40 - Running protocol of index 52/120  -- protocol #1, stim #3   [stim.: 2 missed vsync, 0 underruns, 0 forced corr.]
+```
+and a summary is printed at the end of the recording. The counters mean:
+
+- **missed vsync** (`n_missed_vsync`). The number of buffer swaps that came one (or more) refresh later than expected: the computer did not finish drawing the next image before the vertical blank, so the previous image stayed on screen for one extra refresh (or more). `n_missed_refreshes` gives the total number of refreshes missed. Consequence: the image that should have appeared is displayed late by one refresh (~17 ms at 60 Hz), and after longer freezes some movie frames are skipped (`n_skipped_frames`) to come back on the clock. Usual causes: load of the computer (other programs, antivirus or Windows updates, camera previews on a slow machine), the graphics driver, a power-saving mode. A few isolated missed vsyncs over a long recording are common; frequent ones mean that the stimulation computer is overloaded. With a 30 fps movie on a 60 Hz screen, a single missed refresh during a stimulus shortens or lengthens the duration of one frame by one refresh.
+
+- **underruns** (`n_underruns`). The number of refreshes at which the next frame was not yet decoded: the decoding threads did not keep up with the playback, so the previous frame was kept on screen for that refresh. The presentation catches up on the clock afterwards. Underruns should not happen in practice (the decoders run a few seconds ahead); if they do, the computer is too slow to decode the movies at that resolution and frame rate (several screens of high resolution), or the movie files are on a slow (network) drive.
+
+- **forced corr.** (`n_forced_corrections`). The number of drift corrections that had to be applied between two different frames, i.e. visible ones: inside a changing stimulus, a jump of about one movie frame (one frame skipped, or shown twice as long). They happen only when the drift with respect to the clock exceeds one movie frame and no identical frames are available for an invisible correction: typically long continuous stimuli without blank periods (e.g. a long natural movie) on a screen whose refresh rate is slightly off its nominal value (about one forced correction every ~30 s for a 30 fps movie on a 59.94 Hz screen). In protocols with blank inter-stimulus periods, they should not happen.
+
+The other values of the summary:
+- `n_corrections`: all the drift corrections (forced or not). The non-forced ones are invisible and expected (a few per minute is normal).
+- `n_frames_shown` and `n_skipped_frames`: number of movie frames displayed, and of frames never displayed (after missed refreshes or forced corrections).
+- `max_abs_drift_ms`: largest difference between the clock and the displayed cadence. It normally stays below one refresh; in protocols with long stimuli it can grow during a stimulus (the correction waits for the next blank period) by about the stimulus duration times the relative error of the refresh rate (e.g. 2 s at 59.94 Hz instead of 60 Hz: ~2 ms).
+
+**What the log cannot see.** The log records what the presentation process did and when the buffer swaps returned. Frames dropped after the swap (by the graphics driver or the Windows compositor) are invisible to it. These show up in the photodiode signal, hence the check below.
+
+### 3.e) Checking a recording with the photodiode
+
+The log and the frame table predict the state of the monitoring square at each refresh, i.e. the photodiode signal. To compare it with the recorded photodiode:
 ```
 python -m physion.visual_stim.check_presentation path/to/datafolder --plot
 ```
-It reports the display latency, and the monitoring square transitions that are missing or mistimed in the photodiode signal (e.g. frames dropped by the graphics driver after the swap, which the presentation process cannot see).
+It reports the display latency (delay between the buffer swap and the light measured by the photodiode, a constant of the screen), the times of the missed vsyncs, underruns and corrections, and the monitoring square transitions that are missing or mistimed in the photodiode signal (with the plot saved as `visual-stim-presentation.png` in the data folder).
 
-_**Screens**_. All the stimulation screens are covered by ONE borderless window (spanning them on multi-screen setups), each screen's movie drawn in its own area: one buffer swap updates all screens at the same refresh. The screens of the computer and the ones used are printed at start (`[visual stim.] ...`). The stimulation screens are found from the rig name ([show.py](./show.py), `window_settings`); for a new rig, add its desktop layout there, or set `"display-indices"` in the screen description ([screens.py](./screens.py)). Make sure that the vertical synchronization is not disabled in the graphics driver settings (a warning is printed if no vsync is detected).
+### 3.f) Screens and settings
+
+- All the stimulation screens are covered by one borderless window. At start, the screens of the computer and the ones used are printed in the terminal (`[visual stim.] screens of the computer: ...` and `[visual stim.] stimulation on: ...`).
+- The stimulation screens are the screens besides the main one, from left to right, or the ones given by the rig layout ([show.py](./show.py), `window_settings`). For a new rig, add its layout there, or set `"display-indices"` (index of each screen in the list of the computer) in the screen description ([screens.py](./screens.py)). If there are fewer screens than needed, the start stops with an explicit error.
+- Keep the vertical synchronisation enabled in the graphics driver settings: a warning is printed if no vsync is detected (the presentation then falls back on a software timing, less precise), or if the swaps do not follow the refresh rate reported by the system.
+- To test the display on a rig without recording: `python -m physion.visual_stim.show path/to/protocol-folder --fullscreen --rig <Rig name>` (it writes a log in the protocol folder and prints the summary).
 
 
 ## Mouse visual field and screen position
