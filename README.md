@@ -54,9 +54,9 @@ Run:
 python -m physion
 ```
 
-You will find some pre-defined shortcuts in the [utils/](./src/utils/) folder for different operating systems.
+To create launchers (e.g. Windows shortcuts for the analysis and acquisition programs), see the [installation instructions for an acquisition setup](./docs/install/acquisition.md#g-create-windows-launchers) (and [launch.sh](./launch.sh) for linux).
 
-N.B. The program is launched in either "analysis" (by default) or "acquisition" mode. This insures that you can launch several analysis instances while you record with one acquisition instance of the program. To launch the acquisition mode, run: `python -m physion acquisition`.
+N.B. The program is launched in either "analysis" (by default) or "acquisition" mode. This ensures that you can launch several analysis instances while you record with one acquisition instance of the program. To launch the acquisition mode, run: `python -m physion acquisition` (and `python -m physion intrinsic` for intrinsic imaging, see the [Intrinsic Imaging documentation](src/physion/intrinsic/README.md)).
 
 ## Modules and documentation
 

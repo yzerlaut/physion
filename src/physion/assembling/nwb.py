@@ -237,6 +237,10 @@ def add_locomotion(nwbfile, metadata, NIdaq_data, args):
                 # OLD WAY FOR BACKWARD COMPATIBILITY
                 from physion.behavior.locomotion import legacy_speed_calculation 
                 running_sampling, speed = legacy_speed_calculation(NIdaq_data, metadata, args)
+            elif args.force_legacy_speed_calculation:
+                metadata['NIdaq-acquisition-frequency'] = metadata['NIdaq']['acquisition-frequency']
+                from physion.behavior.locomotion import legacy_speed_calculation 
+                running_sampling, speed = legacy_speed_calculation(NIdaq_data, metadata, args)
             else:
 
                 # find the two digital channels of the rotary encoder for locomotion
@@ -928,6 +932,7 @@ def build_cmd(datafolder,
               modalities=['Locomotion', 'VisualStim'],
               force_to_visualStimTimestamps=False,
               reverse_photodiodeSignal=False,
+              force_recalculation_of_speed=False,
               dest_folder=''):
 
     cmd = '%s -m physion.assembling.nwb %s -M ' % (python_path,
@@ -939,6 +944,8 @@ def build_cmd(datafolder,
         cmd += '--reverse_photodiodeSignal '
     if force_to_visualStimTimestamps:
         cmd += '--force_to_visualStimTimestamps '
+    if force_recalculation_of_speed:
+        cmd += '--force_recalculation_of_speed '
     if dest_folder!='':
         cmd += '--destination_folder %s' % dest_folder
 
@@ -990,6 +997,7 @@ if __name__=='__main__':
     parser.add_argument("--force_to_visualStimTimestamps", action="store_true")
     parser.add_argument("--reverse_photodiodeSignal", action="store_true")
     parser.add_argument("--force_recalculation_of_speed", action="store_true")
+    parser.add_argument("--force_legacy_speed_calculation", action="store_true")
 
     parser.add_argument('-rs', "--running_sampling", default=50., type=float)
     parser.add_argument('-ps', "--photodiode_sampling", default=1000., type=float)
@@ -1047,6 +1055,9 @@ if __name__=='__main__':
                         'reverse_photodiodeSignal']:
                 setattr(args, key, True if dataset[key].values[i]=='Yes'\
                             else False)
+            if 'force_legacy_speed_calculation' in dataset:
+                args.force_legacy_speed_calculation = \
+                    (dataset['force_legacy_speed_calculation'].values[i]=='Yes')
             for key in ['exclude_episodes']:
                 if (key in dataset) and (dataset[key].values[i]!=''):
                     args.exclude_episodes = parse_int_list(dataset[key].values[i]) 

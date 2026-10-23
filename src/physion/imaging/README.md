@@ -54,32 +54,33 @@ The pipeline relies on [Suite2P](https://github.com/MouseLand/suite2p). Read the
 A minimal interface allow to launch the [Suite2P](https://github.com/MouseLand/suite2p) in the background with presets:
 
 <p align="center">
-  <img src="../../docs/imaging/preprocessing.png"/>
+  <img src="../../../docs/imaging/preprocessing.png"/>
 </p>
 
 Those settings are set by modifying the default options of suite2p using:
 1) the properties of the acquisition metadata (extracted from the Bruker `xml` file with [xml_parser.py file](./bruker/xml_parser.py)) 
-2) a set of presets defined in the in the [suite2p/presets.py file](./suite2p/presets.py) where we modify the suite2p options with a dictionary of the form:
+2) a set of presets defined in the [suite2p/presets.py file](./suite2p/presets.py) where we modify the suite2p options with a dictionary of the form:
     ```
     presets = {
-        'GCamp6f_1plane':{'cell_diameter':20, # in um
-                          'sparse_mode':False,
-                          'connected':True,
-                          'threshold_scaling':0.8},
-        'Interneurons':{'cell_diameter':20, # in um
-                        'anatomical_only':3,
-                        'flow_threshold':0.1},
+        "cellpose-Interneurons":{
+            "registration":{"nimg_init": 2000, "maxregshift": 0.15,
+                            "nonrigid":False, "batch_size":200},
+            "detection":{"algorithm": "cellpose", "denoise":False,
+                         "cellpose_settings":{"connected":True},
+                         "threshold_scaling":1.0}
+        },
+        ...
     }
     ```
-    Each entry will be a default settings appearing in the GUI.
+    Each entry is a preset setting appearing in the GUI (current presets: `sourcery-thy1-Taddy`, `cellpose-Interneurons`, `hsyn-pyramidal`, `hsyn-Ventricle-inj`, `SomasOnly-zoomed`, `Interneurons`, `hsyn-Cibele`, `Test Pyramidal 3`).
 
-N.B. we extract the available information form the `xml` Bruker file, see here [an example file](./bruker/TSeries-190620-250-00-002.xml).
+N.B. we extract the available information from the `xml` Bruker file (see [bruker/xml_parser.py](./bruker/xml_parser.py)).
 
 ## Testing preprocessing settings
 
 To run/test a given preprocessing setting (e.g. `Interneurons` here) in a `TSeries-folder`, run:
 ```
-python -m physion.imaging.suite2p.preprocessing -cf path-to/TSeries-folder -setting_key Interneurons # --remove_previous
+python -m physion.imaging.suite2p.preprocessing -cf path-to/TSeries-folder -sk Interneurons # --remove_previous
 ```
 
 You can view the available settings and script options with:
@@ -92,10 +93,10 @@ python -m physion.imaging.suite2p.preprocessing --help
 
 - pay attention to `batch_size` for the registration process, it can easily saturate the memory of our computers
 - doing simultaneous registration saturates the memory, delay them by some time...
-- [15/01/2023] rigid-registration as a bug, only non-rigid works
+- [15/01/2023] rigid-registration has a bug, only non-rigid works
 
 ## Preprocessing and analysis
 
-The fluorescence variations "dF/F0" were computed as followed. "dF" was the raw fluorescence corrected by the neuropil. "F0" was the sliding raw fluorescence (not corected by the neuropil), this setting impedes that the few ROIs with weak intrinsic signals and high neuropil signal would ge a F0 close to 0 and thus potentially high "dF/F0" values. This settings leads to relatively low values for the "dF/F0" variations (compared to the setting where "F0" also has the neuropil substraction).
+The fluorescence variations "dF/F0" were computed as follows. "dF" was the raw fluorescence corrected by the neuropil. "F0" was the sliding raw fluorescence (not corrected by the neuropil): this setting prevents the few ROIs with weak intrinsic signals and high neuropil signal from getting a F0 close to 0, and thus potentially high "dF/F0" values. This setting leads to relatively low values for the "dF/F0" variations (compared to the setting where "F0" also has the neuropil subtraction).
 
-The preprocessing step and some analysis are illustrated in the [demo notebooks](../../notebooks).
+The preprocessing step and some analysis are illustrated in the [demo notebooks](../../../notebooks) (e.g. [Calcium-Signal-Preprocessing.py](../../../notebooks/Calcium-Signal-Preprocessing.py)).

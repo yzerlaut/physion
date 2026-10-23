@@ -6,7 +6,7 @@ This module handles the presentation of visual stimuli on a given screen. Vision
 
 To use the visual stimulation feature, be sure to follow the installation steps and screen settings described in the [installation instructions for an acquisition setup](../../../docs/install/acquisition.md)
 
-_**Implementation**_. The custom `visual_stim` object at the basis of the visual stimulation implementation lies is defined in [main.py](./main.py). Its children objects with stimulus-specific features are found in the [stimuli/](./stimuli) folder.
+_**Implementation**_. The custom `visual_stim` object at the basis of the visual stimulation implementation is defined in [main.py](./main.py). Its children objects with stimulus-specific features are found in the [stimuli/](./stimuli) folder.
 
 _**Under the hood**_. Protocols are pre-rendered as lossless movies ([build.py](./build.py), [movie.py](./movie.py)). They are displayed by a dedicated process that draws each frame with OpenGL (`pyglet`), synchronized on the screen refresh, and logs every displayed frame ([presenter.py](./presenter.py), controlled through [show.py](./show.py)). See [Presentation](#3-presentation-timing-and-logging) below.
 
@@ -96,11 +96,11 @@ now with optotgenetic stimulation:
 
 #### 1.b) Protocols made of Multiple Stimulus Types
 
-Multiprotocols can be build as a list of single protocols with the following syntax:
+Multiprotocols can be built as a list of single protocols with the following syntax:
 
 ```
 {
-  "Presentation": "multiprotocol"
+  "Presentation": "multiprotocol",
   "shuffling" :"full",
   "shuffling-seed" :23,
   "Protocol-1": "subprotocols/NDNF/moving-dots.json",
@@ -111,13 +111,17 @@ Multiprotocols can be build as a list of single protocols with the following syn
   "presentation-poststim-period": 3,
   "presentation-interstim-period": 3,
   "Screen": "Dell-2020",
-  "movie_refresh_freq":30,
+  "movie_refresh_freq":30
 }
 ```
 
+The `"Protocol-N"` paths are relative to the location of the multiprotocol `json` file.
+
+_**Shuffling**_. The `"shuffling"` key sets the order of the episodes: `"full"` (random order, with the seed `"shuffling-seed"`), `"full-with-alternate-even-odd-repeats"` (random order, alternating even and odd repeats, e.g. for optogenetic stimulation on odd trials) or `"none"` (no key: episodes in the order of the parameter variations).
+
 ## 2. Build the Protocol Video
 
-A protocol need to be converted to a set binary movies befire being displayed.
+A protocol needs to be converted to a set of binary movies before being displayed.
 This is achieved via the following command:
 
 ```
@@ -136,10 +140,8 @@ You can check a protocol folder with:
 python -m physion.visual_stim.show ~/visualStim-protocols/Yann/drifting-gratings
 ```
 
-To be used in the acquisition UI the protocol folder needs to be moved (the full folder, i.e. video+metadata) at the location `physion/acquisition/protocols/movies`.
+To be used in the acquisition UI _**the protocol folder needs to be moved**_ (the full folder, i.e. video+metadata) at the location `~/visualStim-protocols/` (or in the sub-folder of the experimenter, e.g. `~/visualStim-protocols/Yann/`, see the [acquisition documentation](../acquisition/README.md)). The build can also write it there directly with the `-o` option (output folder).
 
-
-[ [!!] ]() don't forget to move the video after building it !
 
 ## 3. Presentation: timing and logging
 
@@ -230,7 +232,7 @@ The calculation using the spherical coordinates of angular view:
   <img src="../../../docs/visual_stim/coordinates.svg" width="60%" />
 </p>
 
-The transformation into screen positions is available on the [VisualStim-design notebook](../../../notebooks/Visual-Stim-Design.py-Stim-Design.py).
+The transformation into screen positions is available in the [Visual-Stim-Design notebook](../../../notebooks/Visual-Stim-Design.py).
 
 Note that the conventions for the different screen setups are the following:
 <p align="center">
@@ -264,7 +266,7 @@ To build a simple protocol that shows a full-screen at the three screen colors b
     "----------------------------------------2": 0,
     "screen-color-1": 0.0,
     "screen-color-2": 1.0,
-    "N-screen-color": 3,
+    "N-screen-color": 3
 }
 ```
 
@@ -272,10 +274,10 @@ To build a simple protocol that shows a full-screen at the three screen colors b
 
 We present a uniform full-screen at different levels of luminance, we use a photometer to measure the true light intensity in the center of the screen.
 
-We fit the formula `f(x) = y = k * x^g ` (constrained minimization, see [gamma-correction.py](./gamma-correction.py) and fits below).
-We inverse the above formula (`fi(y) = x = (y/k)^(1/g)`), and we scale the luminosity in `Psychopy` accordingly (inserting the measured `k' and 'g' parameters, here we took: `k=1.03` and `gamma=1.77`).
+We fit the formula `f(x) = y = k * x^g ` (constrained minimization, see the [Gamma-Correction notebook](../../../notebooks/advanced/Gamma-Correction.py) and fits below).
+We invert the above formula (`fi(y) = x = (y/k)^(1/g)`) and apply it to the luminance of each frame when building the movies (`visual_stim.gamma_correction` in [main.py](./main.py)), with the measured `k` and `g` parameters (here we took: `k=1.03` and `gamma=1.77`).
 
-The gamma correction parameters have to be inserted in the [./screens.py](screens.py) script.
+The gamma correction parameters have to be inserted in the screen description (`"gamma_correction":{"k":1.03, "gamma":1.77}`) in the [screens.py](./screens.py) script. Rebuild the protocols after changing them.
 
 We show below the measurements before and after the correction
 
@@ -289,8 +291,8 @@ A [svg file: visual-stimuli.svg](../../../docs/visual_stim/visual-stimuli.svg) p
 
 ## Tracking stimulus presentation with a photodiode
 
-The onset timing of the stimulus presentation is very hard to precisely control from the computer. So, to have the ability to realign stimulus presentation to the physiological recordings (see the [Assembling module](../assembling/README.md), we monitor the presentation of the stimuli on the screen with a photodiode.
-We add a blinking square on the left-bottom corner of the screen).
-Realign physiological recordings thanks to a photodiode signal
+To realign the stimulus presentation to the physiological recordings (see the [Assembling module](../assembling/README.md)), we monitor the presentation of the stimuli on the screen with a photodiode (recorded on the analog input of the NIdaq labelled `"photodiode-signal-from-screen"`).
+
+A monitoring square is drawn in a corner of the screen (set by `"monitoring_square":{"size":..., "location":"top-right"}` in [screens.py](./screens.py)). It is black outside of the episodes and, during an episode, white for 150 ms at the episode onset, at 500 ms, and then for 150 ms at each full second (1 s, 2 s, ...). The episode onsets are found from the photodiode signal when assembling the NWB files ([realign_from_photodiode.py](../assembling/realign_from_photodiode.py)). The expected photodiode signal can also be predicted from the presentation log, see [3.e) Checking a recording with the photodiode](#3e-checking-a-recording-with-the-photodiode).
 
 

@@ -12,7 +12,7 @@ Some specific transfer/copy functions handling specific types of files:
 python -m physion.utils.transfer SOURCE DESTINATION TYPE
 ```
 
-the `TYPE` argument will set the files to be transfered (see [transfer/tools.py](./transfer/tools.py)).
+the `TYPE` argument sets the files to be transferred (see `TYPES` in [transfer/types.py](./transfer/types.py)).
 
 It can be one of:
 
@@ -21,14 +21,17 @@ It can be one of:
 - processed-Imaging-wVids
 - processed-Imaging-wBinary
 - raw-Imaging-only
+- video-Imaging-only
 - processed-Behavior
-- stim.+behav. (processed)
+- processed-Behavior-wVids
 - nwb
 - npy
 - xml
-- Imaging (+binary)
 - all
+- to_build_nwb_bacci
 ```
+
+The transfer is also available in the GUI, with the menu `Data-Management > Transfer Data`.
 
 ### using `rsync` on UNIX systems
 
@@ -39,11 +42,11 @@ DEST="/path/to/your/destination/folder"
 
 - Transfer only green channel tiffs
     ```
-    rsync -avhP --stats --include "*.npy" --include "*.env" --include "*.xml" --include "*_Ch2_*.tif" --include="*/" --include=".wmv" --exclude "*" SRC DEST --remove-source-files # --dry-run
+    rsync -avhP --stats --include "*.npy" --include "*.env" --include "*.xml" --include "*_Ch2_*.tif" --include="*/" --include="*.wmv" --exclude "*" $SRC $DEST --remove-source-files # --dry-run
     ```
 
-    Delete only red channel tiffs (assuming a folder `to_trash`:
+- Delete only red channel tiffs (moved to a folder `to_trash`):
     ```
-    sshpass -p YamWN88At6! rsync -avhP --stats --include "*_Ch1_*.tif" --include='*/' --exclude "*" SRC ./to_trash --remove-source-files
+    rsync -avhP --stats --include "*_Ch1_*.tif" --include='*/' --exclude "*" $SRC ./to_trash --remove-source-files
     ```
 
