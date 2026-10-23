@@ -154,6 +154,71 @@ class FrameLog:
 
 
 #####################################################
+##########       SCREENS              ###############
+#####################################################
+
+def screen_dict(scr):
+    return {'x':int(scr.x), 'y':int(scr.y),
+            'width':int(scr.width), 'height':int(scr.height)}
+
+
+def pick_screens(screens, wconfs):
+    """
+    one DISTINCT OS screen for each stimulation screen:
+        1) "index" (explicit setting): index of the screen in the OS list
+        2) "position": a point (x,y) inside the target screen (desktop coordinates),
+                only used if it designates distinct non-main screens
+        3) otherwise: the non-main screens, from left to right
+
+    raises an error if there are not enough screens
+    """
+    n = len(wconfs)
+    if all(w.get('index') is not None for w in wconfs):
+        idx = [int(w['index']) for w in wconfs]
+        if all(0<=i<len(screens) for i in idx) and len(set(idx))==n:
+            return [screens[i] for i in idx]
+        raise ValueError('[!!] invalid "display-indices" %s for the %i OS screens: %s' % (\
+                        idx, len(screens), [screen_dict(s) for s in screens]))
+
+    primary = next((scr for scr in screens if (scr.x==0) and (scr.y==0)), screens[0])
+    others = sorted([scr for scr in screens if scr is not primary],
+                    key=lambda scr: (scr.x, scr.y))
+    if len(others)==0 and n==1:
+        return [primary] # (single screen computer)
+    if len(others)<n:
+        raise ValueError(('[!!] %i stimulation screen(s) needed, but only %i screen(s) found besides'+\
+                          ' the main one: %s [!!]') % (n, len(others),
+                                                       [screen_dict(s) for s in screens]))
+    # position hints
+    picked = []
+    for w in wconfs:
+        if w.get('position') is None:
+            break
+        x, y = w['position']
+        match = [scr for scr in others if (scr.x<=x<scr.x+scr.width) and (scr.y<=y<scr.y+scr.height)]
+        if len(match)==0:
+            break
+        picked.append(match[0])
+    if (len(picked)==n) and (len(set(id(p) for p in picked))==n):
+        return picked
+    # default: left to right
+    return others[:n]
+
+
+def layout(areas, n, win_w, win_h):
+    """
+    rectangles (x, y, w, h) of the screens in the window, in OpenGL coordinates
+        (origin at the bottom-left of the window)
+
+    areas: (x, y, w, h) of each screen in the window, desktop coordinates
+                (origin at the top-left, y downwards), or None -> side by side
+    """
+    if areas is None:
+        return [(i*win_w/n, 0, win_w/n, win_h) for i in range(n)]
+    return [(x, win_h-y-h, w, h) for (x, y, w, h) in areas]
+
+
+#####################################################
 ##########       PRESENTATION         ###############
 #####################################################
 
@@ -182,7 +247,15 @@ class Presenter:
     #   windows
     # ------------------------------------------------------------ #
     def init_windows(self):
-
+        """
+        ONE window for all the stimulation screens:
+            - fullscreen: a borderless window covering exactly the selected
+                    screens (spanning them if several), each screen's movie drawn
+                    in its own area -> one OpenGL context, one buffer swap: all
+                    screens updated at the same refresh, no focus fights between
+                    fullscreen windows
+            - demo: a normal window with the screens side by side
+        """
         import pyglet
         pyglet.options['vsync'] = self.config.get('vsync', True)
         from pyglet import gl
@@ -193,35 +266,47 @@ class Presenter:
         except AttributeError: # pyglet<2.1
             display = pyglet.canvas.get_display()
         screens = display.get_screens()
+        self.os_screens = [screen_dict(scr) for scr in screens]
 
-        self.windows, self.textures, self.sprites = [], [], []
+        wconfs = self.config['windows']
+        nScreens = len(wconfs)
+        self.fullscreen = wconfs[0].get('fullscreen', True)
+        vsync = self.config.get('vsync', True)
 
-        for s, wconf in enumerate(self.config['windows']):
+        if self.fullscreen:
+            selected = pick_screens(screens, wconfs)
+            x0 = min([scr.x for scr in selected])
+            y0 = min([scr.y for scr in selected])
+            x1 = max([scr.x+scr.width for scr in selected])
+            y1 = max([scr.y+scr.height for scr in selected])
+            win = pyglet.window.Window(x1-x0, y1-y0, vsync=vsync,
+                                       style=pyglet.window.Window.WINDOW_STYLE_BORDERLESS,
+                                       caption='visual stim.')
+            win.set_location(x0, y0)
+            win.set_mouse_visible(False)
+            # areas of the screens in the window (desktop coordinates: y downwards)
+            self.areas = [(scr.x-x0, scr.y-y0, scr.width, scr.height) for scr in selected]
+            self.selected_screens = [screen_dict(scr) for scr in selected]
+            self.os_screen_objects = selected
+        else:
+            w, h = wconfs[0].get('size', (600, int(9./16*600)))
+            win = pyglet.window.Window(int(w)*nScreens, int(h), vsync=vsync,
+                                       resizable=True, caption='visual stim.')
+            x, y = wconfs[0].get('position', (200, 400))
+            win.set_location(int(x), int(y))
+            self.areas = None # (side by side, see layout)
+            self.selected_screens = []
+            self.os_screen_objects = [win.screen]
 
-            screen = self.pick_screen(screens, s, wconf)
-            # only one window waits for the vsync (otherwise each flip would
-            #       wait for its own vsync -> 1 frame every nScreens refreshes)
-            vsync = self.config.get('vsync', True) and (s==0)
+        @win.event
+        def on_close():
+            self.quit = True
+            return True # (we close the window ourselves)
 
-            if wconf.get('fullscreen', True):
-                win = pyglet.window.Window(fullscreen=True, screen=screen,
-                                           vsync=vsync,
-                                           caption='visual stim. %i' % (s+1))
-                win.set_mouse_visible(False)
-            else:
-                w, h = wconf.get('size', (600, int(9./16*600)))
-                win = pyglet.window.Window(int(w), int(h), vsync=vsync,
-                                           resizable=True,
-                                           caption='visual stim. %i' % (s+1))
-                x, y = wconf.get('position', (200+100*s, 400+100*s))
-                win.set_location(int(x), int(y))
-
-            @win.event
-            def on_close():
-                self.quit = True
-                return True # (we close the windows ourselves)
-
-            win.switch_to()
+        win.switch_to()
+        self.window = win
+        self.textures, self.sprites = [], []
+        for s in range(nScreens):
             tex = pyglet.image.Texture.create(self.W, self.H,
                                               internalformat=gl.GL_R8)
             gl.glBindTexture(tex.target, tex.id)
@@ -233,71 +318,55 @@ class Presenter:
             for p in [gl.GL_TEXTURE_WRAP_S, gl.GL_TEXTURE_WRAP_T]:
                 gl.glTexParameteri(tex.target, p, gl.GL_CLAMP_TO_EDGE)
             gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
-
-            # a persistent sprite (no allocation at each refresh)
-            sprite = pyglet.sprite.Sprite(tex)
-            self.windows.append(win)
+            # persistent sprites (no allocation at each refresh)
             self.textures.append(tex)
-            self.sprites.append(sprite)
-            self.fit_sprite(win, sprite)
+            self.sprites.append(pyglet.sprite.Sprite(tex))
+        self.fitted_size = None
+        self.fit_sprites()
 
-        self.screens_info = [{'x':w.screen.x, 'y':w.screen.y,
-                              'width':w.screen.width, 'height':w.screen.height,
-                              'window_size':[w.width, w.height]} for w in self.windows]
+        self.screens_info = {'os_screens':self.os_screens,
+                             'stim_screens':self.selected_screens,
+                             'window':[win.width, win.height],
+                             'fullscreen':self.fullscreen}
 
-    @staticmethod
-    def pick_screen(screens, s, wconf):
-        """
-        1) "index": index of the screen in the OS list (explicit setting)
-        2) "position": a point (x,y) in the desktop coordinates inside the target
-                screen (only if it is not the main screen: the positions come from
-                Qt logical coordinates, they can differ with display scaling)
-        3) otherwise: the s-th screen among the non-main screens, from left to right
-        """
-        if (wconf.get('index') is not None) and (0<=wconf['index']<len(screens)):
-            return screens[wconf['index']]
-        primary = next((scr for scr in screens if (scr.x==0) and (scr.y==0)), screens[0])
-        others = sorted([scr for scr in screens if scr is not primary],
-                        key=lambda scr: (scr.x, scr.y))
-        if wconf.get('position') is not None:
-            x, y = wconf['position']
-            for scr in others:
-                if (scr.x<=x<scr.x+scr.width) and (scr.y<=y<scr.y+scr.height):
-                    return scr
-        if len(others)>0:
-            return others[min([s, len(others)-1])]
-        return primary
+    def os_refresh_rate(self):
+        """ refresh rate of the 1st stimulation screen reported by the OS (or None) """
+        try:
+            rate = float(self.os_screen_objects[0].get_mode().rate)
+            return rate if rate>1 else None
+        except BaseException:
+            return None
 
-    def fit_sprite(self, win, sprite):
-        """ centered, keeping the aspect ratio of the movie """
-        scale = min([win.width/self.W, win.height/self.H])
-        sprite.scale = scale
-        sprite.position = ((win.width-self.W*scale)/2., (win.height-self.H*scale)/2., 0)
-        sprite._fitted_size = (win.width, win.height)
+    def fit_sprites(self):
+        """ each movie centered in its area, keeping its aspect ratio """
+        win = self.window
+        for sprite, (x, y, w, h) in zip(self.sprites,
+                    layout(self.areas, len(self.sprites), win.width, win.height)):
+            scale = min([w/self.W, h/self.H])
+            sprite.scale = scale
+            sprite.position = (x+(w-self.W*scale)/2., y+(h-self.H*scale)/2., 0)
+        self.fitted_size = (win.width, win.height)
 
     def upload(self, frames):
         gl = self.gl
-        for win, tex, frame in zip(self.windows, self.textures, frames):
-            win.switch_to()
+        self.window.switch_to()
+        for tex, frame in zip(self.textures, frames):
             gl.glBindTexture(tex.target, tex.id)
             gl.glTexSubImage2D(tex.target, 0, 0, 0, self.W, self.H,
                                gl.GL_RED, gl.GL_UNSIGNED_BYTE,
                                frame.ctypes.data)
 
     def draw_and_flip(self):
-        """
-        non-vsync windows first, then the vsync one (blocks until the vertical blank)
-            -> all screens updated at the same refresh
-        """
-        for i in list(range(1, len(self.windows)))+[0]:
-            win, sprite = self.windows[i], self.sprites[i]
-            win.switch_to()
-            win.dispatch_events()
-            if sprite._fitted_size!=(win.width, win.height):
-                self.fit_sprite(win, sprite) # (window resized)
-            win.clear() # (black borders if the aspect ratios differ)
+        """ returns the time of the buffer swap (blocks until the vertical blank) """
+        win = self.window
+        win.switch_to()
+        win.dispatch_events()
+        if self.fitted_size!=(win.width, win.height):
+            self.fit_sprites() # (window resized)
+        win.clear() # (black borders if the aspect ratios differ)
+        for sprite in self.sprites:
             sprite.draw()
-            win.flip()
+        win.flip()
         return time.perf_counter()
 
     # ------------------------------------------------------------ #
@@ -359,11 +428,16 @@ class Presenter:
         t = [self.draw_and_flip() for i in range(n)]
         dt = np.diff(t)
         T = float(np.median(dt))
+        os_rate = self.os_refresh_rate()
+        if (os_rate is not None) and (T>=0.003) and (abs(T*os_rate-1)>0.1):
+            print(' [!!] flips every %.1f ms, but the screen refreshes at %.0f Hz (%.1f ms) [!!]' % (\
+                        1e3*T, os_rate, 1e3/os_rate))
+            print('      -> rendering too slow for the refresh rate (graphics driver ?)')
         if T<0.003:
             # no vsync (virtual display, vsync disabled in the driver, ...)
             #     -> software pacing at the nominal rate
             self.vsync_ok = False
-            rate = self.config.get('refresh_rate', None) or 60.
+            rate = self.config.get('refresh_rate', None) or os_rate or 60.
             T = 1./float(rate)
         else:
             self.vsync_ok = True
@@ -555,8 +629,7 @@ class Presenter:
         self.stop_readers()
         for sprite in self.sprites:
             sprite.delete()
-        for win in self.windows:
-            win.close()
+        self.window.close()
 
     def report(self, message):
         try:
@@ -598,9 +671,12 @@ def run_presenter(cmd_queue, status_queue, progress, config):
     def stage(text):
         status_queue.put(('stage', text))
     try:
-        stage('creating the window(s)')
+        stage('creating the window')
         presenter = Presenter(cmd_queue, status_queue, progress, config)
-        stage('window(s) created on: %s' % presenter.screens_info)
+        I = presenter.screens_info
+        stage('screens of the computer: %s' % I['os_screens'])
+        stage('stimulation on: %s (window: %ix%i)' % (\
+                I['stim_screens'] if I['fullscreen'] else 'demo window', *I['window']))
         if config.get('movie_files') is not None:
             stage('loading the movie(s)')
             presenter.load({'movie_files':config['movie_files'],
