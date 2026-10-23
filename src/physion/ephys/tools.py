@@ -122,12 +122,11 @@ def compute_freq_envelope(signal, sampling_freq, freqs):
     2. transform to envelope only (absolute value)
     3. take the maximum over the considered band
     """
-    return np.max(np.abs(\
-                    # my_cwt(signal,
-                    cwt(signal,
-                            freqs,
+    # (my_cwt: no dependency on PyWavelets)
+    return np.max(np.abs(my_cwt(signal,
+                                freqs,
                                 1./sampling_freq)),
-                                    axis=0)
+                  axis=0)
 
 if __name__=='__main__':
 

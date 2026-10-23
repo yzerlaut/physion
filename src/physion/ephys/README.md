@@ -8,7 +8,7 @@ __*following an experimental session recorded with OpenEphys & physion*:__
 
 1. compute and save the pupil trace (see the [pupil](../pupil/README.md) documentation)
 2. compute and save the facemotion (see the [facemotion](../facemotion/README.md) documentation)
-3. export to mp4 movie (in the "physion-analysis" software "Data-Management/Convert Camera to Movie")
+3. export to mp4 movie (in the menu `Data-Management > Convert Camera to Movies` of physion)
 4. delete the raw `FaceCamera-imgs` folder
 
 ## 1. Build the DataTable for the different protocols of the session
@@ -19,7 +19,7 @@ For an experiment recorded in `~/DATA/2026_08_04`, you build the datatable with 
 cd %USERPROFILE%/physion/src
 python -m physion.assembling.dataset build-DataTable %USERPROFILE%/DATA/2026_08_04
 ```
-this will create a file: `~\DATA\2026_08_04\DataTable0.xlsx`.
+this will create a file: `~\DATA\2026_08_04\DataTable0.xlsx` (rename it `DataTable.xlsx`).
 
 N.B. You need to fill the column `Npx-Folder` (for example 2026-08-04_16-13-00) 
 
@@ -41,13 +41,11 @@ This will:
 
 ![synch-protocols](../../../docs/ephys/synch-protocols.png)
 
-#### 2. **CHECK** that synchronizing steps match for all protocols, e.g.:
-
-![synch-steps](../../../docs/ephys/synch-steps.png)
+#### 2. **CHECK** that synchronizing steps match for all protocols.
 
 ### b) detect bad channels and write the desired electrode range
 
-### c) set the electrode subsamplig per protocol 
+### c) set the electrode subsampling per protocol 
 
 default:
 
@@ -80,12 +78,11 @@ In physion, use the menu: `Preprocessing / Spike Sorting`, select the `DataTable
 This creates within the day folder (e.g. `2026_08_04`) a folder called `kilosort4_output`. 
 
 
-You can transfer/synchronize this folder to 
+You can transfer/synchronize this folder between the acquisition/spike-sorting server and an analysis computer with, e.g. (bash):
 ```
-
-server_adress=user@10.0.0.1
+server_address=user@10.0.0.1
 server_root_path=/media/user/DATA2
-desktop_root_path=/home/pan.zhang/DATA
+desktop_root_path=$HOME/DATA
 
 get_spike_sorting ()
 {
@@ -100,11 +97,10 @@ send_spike_sorting ()
 }
 ```
 
+and then, e.g.:
+```
 get_spike_sorting 2026_08_04
-
- spits out kilosort outputs (), you can 
-
-If need
+```
 
 ### Manual curation step
 
@@ -116,19 +112,16 @@ Do it in [Phy](https://github.com/cortex-lab/phy).
 `python -m physion.assembling.nwb ~/DATA/2026_01_01/DataTable.xlsx`
 
 
-See: [../assembling/add_ephys.py](../assembling/add_ephys.py) script
+See the [../assembling/add_ephys.py](../assembling/add_ephys.py) script (`add_ephys`), based on `spikeinterface` (`pip install "physion[ephys]"`). For each protocol of the `DataTable.xlsx` file, it:
 
-```
-import spikeinterface.full as si
-```
+1. reads the Open-Ephys data of the protocol (samples aligned to the NIdaq acquisition), restricted to the electrode range, and removes the bad channels listed in the DataTable (detected by the [Ephys-Assembling.py](../../../notebooks/Ephys-Assembling.py) notebook)
+2. builds the electrode table
+3. adds the spike times of the units labelled as "good" in the manual curation (`kilosort`/`phy`)
+4. adds the spike templates of those units
+5. computes and writes the Multi-Unit Activity (MUA, see below)
+6. computes and writes the Local Field Potential (LFP, see below)
 
-1. remove bad channels (with `si.detect_bad_channels(rec, method="coherence+psd")`)
-2. build the electrode table
-3. add the spike times of units selected by `kilosort`/`phy`
-4. add the spike templates of units selected by `kilosort`/`phy`
-5. runs peak detection (locally exclusive, see `from spikeinterface.sortingcomponents import peak_detection`)
-6. write the events per channel (of the above peak detection)
-7. computes and write LFP
+The signals are processed in chunks (10 s by default) to limit the memory usage.
 
 ## Extracting Single Units Spiking
 
@@ -138,22 +131,20 @@ import spikeinterface.full as si
 
 ## Computing the Local Field Potential (LFP)
 
-- we band-pass filter in the band `[0.5, 300]`Hz
-
-- 
-
-N.B. Here we take care of not creating artefacts on boudaries of data chunks (so we increase the chunk_size to a really high value)
+In `add_ephys` (`LFP_BAND`): band-pass filter in the band `[0.5, 300]` Hz, then downsampling by a factor 24 (i.e. 1250 Hz for a 30 kHz recording, `resampling_factor`), on the channels sub-sampled per protocol.
 
 ## Computing Multi-Unit Activity (MUA)
 
-using the function `compute_freq_envelope` of `physion.ephys.tools` with a band in `[300,3000]`Hz.
+In `add_ephys` (`MUA_BAND`): band-pass filter in the band `[300, 6000]` Hz, rectification and average over groups of neighbouring channels, then downsampling as the LFP.
 
-This is using a continuous wavelet transform to extract the time-varying high-frequency activity in the recording.
+An alternative estimate of the high-frequency activity is the function `compute_freq_envelope` of `physion.ephys.tools`: it uses a continuous wavelet transform to extract the time-varying envelope of the signal in a frequency band.
 
 To visualize the effect of the continuous wavelet transform acting in different frequency bands:
 
-![envelope demo](../../docs/ephys/wavelet-envelope.png)
+![envelope demo](../../../docs/ephys/wavelet-envelope.png)
 ```
+import numpy as np
+from physion.utils import plot_tools as pt
 from physion.ephys.tools import compute_freq_envelope
 
 t = np.linspace(0, 11, int(5e4))
@@ -166,7 +157,7 @@ for freq, start, amp in zip(
     ):
     sigma = 1./freq/2.
     signal += np.sin(2*np.pi*freq*(t-start))*\
-        np.exp(-(t-start)**2/2./sigma**2)*\ amp
+        np.exp(-(t-start)**2/2./sigma**2)*amp
 
 fig, ax = pt.figure(axes=(1,4), ax_scale=(2,1.5))
 ax[0].plot(t, signal)
@@ -178,6 +169,6 @@ for i, band in enumerate([[5,20], [1,10], [0.2,1]]):
     pt.set_plot(ax[i+1], xlabel='time (s)', ylabel='envelope (a.u.)',
                     title='freq. band: [%.1f,%.1f]Hz' % tuple(band) +\
                         40*'  ')
-fig.savefig('physion/docs/ephys/wavelet-envelope.png')
+fig.savefig('docs/ephys/wavelet-envelope.png')
 ```
 

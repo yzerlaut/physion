@@ -1,3 +1,3 @@
 # Analysis
 
-Analysis is performed in the [Notebooks][../../notebooks/README.md]
+Analysis is performed in the [Notebooks](../../../notebooks/README.md).

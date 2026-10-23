@@ -8,7 +8,7 @@
 
 ## Retinotopic maps
 
-Building retinotopic maps using the strategy . From a recording `movie` that contains `Nrepeat` repetitions of the flickering bar in one irection:
+Building retinotopic maps using the strategy of Kalatsky and Stryker (2003). From a recording `movie` that contains `Nrepeat` repetitions of the flickering bar in one direction:
 
 ```
 spectrum = np.fft.fft(movie, axis=0)
@@ -37,9 +37,17 @@ The code comes from from [a script from Jun Zhuang](https://github.com/zhuangjun
 
 ## Usage
 
-- 1. Start Micromanager
-- 2. Set up stream to pycromanager in micro-manager
-- 3. Start `physion`
+1. Build the movies of the flickering bars for your screen (once), from the `src` folder of physion:
+    ```
+    python -m physion.intrinsic.build_protocols intrinsic Dell-2020
+    ```
+    (the second argument is a screen of [visual_stim/screens.py](../visual_stim/screens.py)). The movies are written in `physion/acquisition/protocols/movies/intrinsic/` (for the ocular dominance protocol, replace `intrinsic` by `ocular-dominance`).
+2. With a MicroManager camera: start MicroManager and set up the stream to `pycromanager` in MicroManager.
+3. Start physion in the intrinsic imaging mode, giving the camera interface:
+    ```
+    python -m physion intrinsic MicroManager
+    ```
+    or `python -m physion intrinsic ThorCam` for Thorlabs cameras (without camera interface, the program runs in demo mode).
 
 ## Installation steps
 

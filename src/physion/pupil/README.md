@@ -11,10 +11,10 @@
   <img src="../../../docs/pupil/screenshot.png" width="60%" />
 </p>
 
-1. You should open the data in Analysis – preprocessing – Pupil – open data [O]
-2. Select last GUI settings – will came the settings that the last person used, so you can modify the blue cicle in the pupil to ajust. 
-3. Reset (to reset the things that you modify), add blank (to add whith points if have dark things that don’t are the pupil in the image), add reflect (to add the black point, like insede of the pupil that reflect light), fit pupil or just letter F (to ajust the red cicle in the pupil).
-4. You should correct all the alterations in the fit pupil, because it be change with the time in the video, so check all the video. 
-5. With subsampling check, click in process data to show how will be. 
-6. After if you don’t have any alteration in the parameters, you discheck the Subsampling and click in process data
-7. After process (can take a time), click in Save data. 
+1. Open the tool with the menu `Preprocessing > Pupil` of physion, then open the data folder (key [O]).
+2. Click `last GUI settings`: this loads the settings that were used last, then adjust the blue circle (region of interest) on the pupil.
+3. Use `reset` (to reset your modifications), `add blanks` (to add white points on dark regions that are not the pupil), `add reflect.` (to mask the reflections of light inside the pupil) and `fit Pupil [F]` (or the key F) to adjust the red circle on the pupil.
+4. Check the fit along the whole video: the pupil changes over time, correct the settings where the fit fails.
+5. With `subsampling ?` checked, click `process data [P]` to preview the result.
+6. If the parameters are fine, uncheck `subsampling ?` and click `process data [P]`.
+7. When the processing is done (it can take some time), click `save data`.
