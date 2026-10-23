@@ -136,10 +136,8 @@ You can check a protocol folder with:
 python -m physion.visual_stim.show ~/visualStim-protocols/Yann/drifting-gratings
 ```
 
-To be used in the acquisition UI the protocol folder needs to be moved (the full folder, i.e. video+metadata) at the location `physion/acquisition/protocols/movies`.
+To be used in the acquisition UI _**the protocol folder needs to be moved**_ (the full folder, i.e. video+metadata) at the location `~/visualStim-protocols/`.
 
-
-[ [!!] ]() don't forget to move the video after building it !
 
 ## 3. Presentation: timing and logging
 
