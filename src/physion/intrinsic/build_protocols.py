@@ -76,70 +76,50 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     folder = os.path.join('physion', 'acquisition', 'protocols', 'movies', args.protocol)
+    tmp_folder = os.path.join('movies-temp') # build output (removed at the end)
 
     from physion.visual_stim.screens import SCREENS
+    nScreens = SCREENS[args.screen]['nScreens']
+
+    def build_and_move(json_string, target_folder, basename):
+        """ builds the movie and moves it as "basename.mkv" (or "basename-%i.mkv") """
+        with open('temp.json', 'w') as f:
+            f.write(json_string)
+        os.system('python -m physion.visual_stim.build temp.json -o %s' % tmp_folder)
+        os.makedirs(target_folder, exist_ok=True)
+        if nScreens==1:
+            os.replace(os.path.join(tmp_folder, 'temp', 'movie.mkv'),
+                       os.path.join(target_folder, '%s.mkv' % basename))
+        else:
+            for i in range(1, nScreens+1):
+                os.replace(os.path.join(tmp_folder, 'temp', 'movie-%i.mkv' % i),
+                           os.path.join(target_folder, '%s-%i.mkv' % (basename, i)))
 
     if args.protocol=='intrinsic':
         for period in [6, 12]:
-            if not os.path.isdir(folder):
-                os.mkdir(folder)
             for direction in ['up', 'down', 'left', 'right']:
-                # create the directory
-                if not os.path.isdir(os.path.join(folder, 'flickering-bars-period%is' % period)):
-                    os.mkdir(os.path.join(folder, 'flickering-bars-period%is' % period))
-                # write the json
-                with open('temp.json', 'w') as f:
-                    f.write(build_json(direction, 
-                                       screen=args.screen,
-                                       period=period, 
-                                       bg_color=args.bg_color))
-                # build the movie
-                os.system('python -m physion.visual_stim.build temp.json')
-                if SCREENS[args.screen]['nScreens']==1:
-                    os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
-                        os.path.join(folder,
-                                    'flickering-bars-period%is' % period,
-                                    '%s.wmv' % direction))
-                else:
-                    for i in range(1, SCREENS[args.screen]['nScreens']+1):
-                        os.rename(os.path.join('movies', 'temp', 'movie-%i.wmv' % i),
-                            os.path.join(folder,
-                                    'flickering-bars-period%is' % period,
-                                    '%s-%i.wmv' % (direction, i)))
+                build_and_move(build_json(direction,
+                                          screen=args.screen,
+                                          period=period,
+                                          bg_color=args.bg_color),
+                               os.path.join(folder, 'flickering-bars-period%is' % period),
+                               direction)
 
     elif args.protocol=='ocular-dominance':
         for period in [6, 12]:
-            if not os.path.isdir(folder):
-                os.mkdir(folder)
             for side in ['left', 'right']:
                 for direction in ['up', 'down']:
-                    # create the directory
-                    if not os.path.isdir(os.path.join(folder, 'flickering-bars-period%is' % period)):
-                        os.mkdir(os.path.join(folder, 'flickering-bars-period%is' % period))
-                    # write the json
-                    with open('temp.json', 'w') as f:
-                        f.write(build_json(direction, 
-                                           screen=args.screen,
-                                           period=period, 
-                                           center=-5 if side=='left' else 5,
-                                           length=20,
-                                           size=2,
-                                           flicker_size=2,
-                                           bg_color=args.bg_color))
-                    # build the movie
-                    os.system('python -m physion.visual_stim.build temp.json')
-                    if SCREENS[args.screen]['nScreens']==1:
-                        os.rename(os.path.join('movies', 'temp', 'movie.wmv'),
-                            os.path.join(folder,
-                                        'flickering-bars-period%is' % period,
-                                        '%s-%s.wmv' % (side, direction)))
-                    else:
-                        for i in range(1, SCREENS[args.screen]['nScreens']+1):
-                            os.rename(os.path.join('movies', 'temp', 'movie-%i.wmv' % i),
-                                os.path.join(folder,
-                                            'flickering-bars-period%is' % period,
-                                            '%s-%s-%i.wmv' % (side, direction, i)))
+                    build_and_move(build_json(direction,
+                                              screen=args.screen,
+                                              period=period,
+                                              center=-5 if side=='left' else 5,
+                                              length=20,
+                                              size=2,
+                                              flicker_size=2,
+                                              bg_color=args.bg_color),
+                                   os.path.join(folder, 'flickering-bars-period%is' % period),
+                                   '%s-%s' % (side, direction))
 
-
+    if os.path.isfile('temp.json'):
         os.remove('temp.json')
-    shutil.rmtree('movies')
+    shutil.rmtree(tmp_folder, ignore_errors=True)

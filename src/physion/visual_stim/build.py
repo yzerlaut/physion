@@ -1,5 +1,4 @@
 import sys
-import cv2 as cv
 import numpy as np
 
 import physion
@@ -162,17 +161,25 @@ class MonitoringSquare:
 
         self.find_mask(Stim)
 
+    @staticmethod
+    def state(t, tstart, tstop):
+        """
+        square state (True=white) at time 't' for an episode in [tstart, tstop)
+            white for 150ms every second, plus 150ms at 500ms
+        """
+        if (t<tstop) & (t>=tstart):
+            iT = int(round(1000*(t-tstart), 6)) # (rounding: no float errors at the frame edges)
+            if (iT%1000)<150:
+                return True
+            elif (iT>=500) & (iT<650):
+                return True
+        return False
+
     def draw(self, image, t, tstart, tstop):
         """
         't' is the time from stimulus start !
         """
-        image[self.mask] = -1. # black by default
-        if (t<tstop) & (t>=tstart):
-            iT = int(1000*(t-tstart))
-            if (iT%1000)<150:
-                image[self.mask] = 1.
-            elif (iT>=500) & (iT<650):
-                image[self.mask] = 1.
+        image[self.mask] = 1. if self.state(t, tstart, tstop) else -1. # black by default
         return image
 
     def find_mask(self, Stim):
@@ -211,7 +218,7 @@ if __name__=='__main__':
                         help="protocol as a json file", 
                         default='')
     parser.add_argument("--mp4", 
-                        help="force to mp4 instead of wmv", 
+                        help="[deprecated] movies are now lossless .mkv on all platforms", 
                         action="store_true")
     parser.add_argument('-v', "--verbose", 
                         action="store_true")
@@ -280,63 +287,73 @@ if __name__=='__main__':
             if 'monitoring_square' in Stim.screen:
                 square = MonitoringSquare(Stim)
 
-            # prepare video file
-            Format = 'mp4' if (('linux' in sys.platform) or args.mp4) else 'wmv'
+            # prepare the movie files (lossless, one per screen, see movie.py)
+            from physion.visual_stim.movie import MovieWriter, FrameTable
+            nScreens = Stim.screen['nScreens']
             out = []
-            for s in range(Stim.screen['nScreens']):
-
-                if s==0 and Stim.screen['nScreens']==1:
-                    filename = os.path.join(protocol_folder, 
-                                            'movie.%s' % Format)
+            for s in range(nScreens):
+                if nScreens==1:
+                    filename = os.path.join(protocol_folder, 'movie.mkv')
                 else:
-                    filename = os.path.join(protocol_folder, 
-                                            'movie-%i.%s' % (s+1, Format))
+                    filename = os.path.join(protocol_folder, 'movie-%i.mkv' % (s+1))
                 print("""
                     Screen %i, %s""" % (s+1, filename))
-                
-                out.append(cv.VideoWriter(filename,
-                              cv.VideoWriter_fourcc(*'mp4v'), 
-                                 Stim.movie_refresh_freq,
-                                     Stim.screen['resolution'],
-                                         False))
+                out.append(MovieWriter(filename,
+                                       Stim.screen['resolution'],
+                                       Stim.movie_refresh_freq))
+            table = FrameTable(Stim.movie_refresh_freq,
+                               Stim.screen['resolution'])
             print()
+
             # prepare the loop
-            t, tend = 0, Stim.experiment['time_stop'][-1]+\
+            tend = Stim.experiment['time_stop'][-1]+\
                     Stim.experiment['interstim'][-1]
+            nFrames = int(np.ceil(tend*Stim.movie_refresh_freq-1e-9))
             index = 0
             tstart, tstop = update(Stim, index)
 
-            # LOOP over time to build the movie
-            while t<tend:
+            # LOOP over frames to build the movie
+            #    (frame times as i/fps: no accumulation of rounding errors)
+            for iFrame in range(nFrames):
 
-                if t>=tstop:
+                t = iFrame/Stim.movie_refresh_freq
+
+                while t>=tstop:
                     index += 1
                     tstart, tstop = update(Stim, index)
-                    
+
                 # data in [0,1]
                 # GAMMA CORRECTION ONLY AT THAT POINT !
                 if (t>=tstart) and (t<tstop):
                     data = Stim.gamma_correction(\
                             Stim.get_image(index, t-tstart))
+                    episode = index
                 else:
                     data = Stim.gamma_correction(\
                                 Stim.blank_color+\
                                     Stim.get_null_image())
+                    episode = -1
 
                 # put the monitoring square
+                square_state = None
                 if 'monitoring_square' in Stim.screen:
                     data = square.draw(data, t, tstart, tstop)
+                    square_state = square.state(t, tstart, tstop)
 
+                frames = []
                 for s, o in enumerate(out):
                     dataS = Stim.restrict_to_screen(data, 
                                                     screen_id=s+1)
-                    o.write(np.array(255*np.rot90(dataS, k=1),
-                                    dtype='uint8'))
-
-                t+= 1./Stim.movie_refresh_freq
+                    # [0,1] -> [0,255] (truncation as before, but clipped: no uint8 overflow)
+                    frame = np.clip(np.nan_to_num(255*np.rot90(dataS, k=1)),
+                                    0, 255).astype(np.uint8)
+                    o.write(frame)
+                    frames.append(frame)
+                table.add(frames, episode, square_state)
 
             for o in out:
-                o.release()
+                o.close()
+            table.save(protocol_folder)
 
             # the images displayed (natural images) -> "protocol_id-%i-Image-ID-%i" keys
             add_images_to_experiment(Stim)

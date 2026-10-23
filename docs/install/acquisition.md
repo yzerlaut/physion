@@ -29,6 +29,7 @@ pip install nidaqmx
 pip install Downloads\spinnaker_python-4.2.0.83-cp310-cp310-win_amd64.whl # assumes you extracted in ~/Downloads
 pip install git+https://github.com/yzerlaut/simple_pyspin
 pip install opencv-python numpy scipy scikit-image PyQt5 pyqtgraph==0.13.3 natsort pyqtdarktheme ffmpeg==1.4 pynwb==2.5.0 hdmf==3.11.0 numba matplotlib
+pip install pyglet imageio-ffmpeg # visual stimulation (presentation and movies)
 ```
 
 ### A.3) Install other useful packages
@@ -64,6 +65,10 @@ Set the visual stimulation screen as the second monitor
 - Put a black background on the Desktop (because this is what the mouse will see when not running any experiment)
 
 - Hide the taskbar on the non-primary display
+
+- Keep the vertical synchronization enabled in the graphics driver settings (e.g. NVIDIA Control Panel: "Vertical sync" set to "Use the 3D application setting" or "On"), and set the stimulation screen at a refresh rate that is a multiple of the movie frame rate (e.g. 60 Hz for 30 fps movies)
+
+- Rebuild the visual stimulation protocols after updating physion (lossless `movie.mkv` format), and test the display with: `python -m physion.visual_stim.show path\to\protocol-folder --fullscreen --rig <Rig name>`
 
 
 ## D) FLIR Camera setup

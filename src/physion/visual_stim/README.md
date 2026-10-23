@@ -8,7 +8,7 @@ To use the visual stimulation feature, be sure to follow the installation steps 
 
 _**Implementation**_. The custom `visual_stim` object at the basis of the visual stimulation implementation lies is defined in [main.py](./main.py). Its children objects with stimulus-specific features are found in the [stimuli/](./stimuli) folder.
 
-_**Under the hood**_.  The stimulus presentation relies on `PyQt5` (`QMultimedia` module) for the display on the screen, see [show.py](./show.py)
+_**Under the hood**_. Protocols are pre-rendered as lossless movies ([build.py](./build.py), [movie.py](./movie.py)). They are displayed by a dedicated process that draws each frame with OpenGL (`pyglet`), synchronized on the screen refresh, and logs every displayed frame ([presenter.py](./presenter.py), controlled through [show.py](./show.py)). See [Presentation](#3-presentation-timing-and-logging) below.
 
 ## Usage
 
@@ -123,12 +123,41 @@ This is achieved via the following command:
 ```
 python -m physion.visual_stim.build ~/Desktop/protocol-folder/drifting-gratings.json
 ```
-The generated movie will be either `movie.mp4` or `movie.wmv` depending on the platform (unix vs MsWin).
+This generates, on all platforms:
+- `movie.mkv` (or `movie-1.mkv`, `movie-2.mkv`, ... for multi-screen setups): lossless greyscale H.264, the decoded frames are bit-exact copies of the rendered ones (repeated frames, e.g. static images or blank periods, cost almost nothing).
+- `movie-frames.npy`: the frame table (episode of each frame, identical consecutive frames, state of the monitoring square).
+
+Choose `movie_refresh_freq` as a divisor of the screen refresh rate (e.g. 30 or 60 for a 60 Hz screen), otherwise the frame durations cannot be regular.
+
+Legacy movies (`movie.mp4`/`movie.wmv`) are still played, but without the frame table; rebuild them.
+
+You can check a protocol folder with:
+```
+python -m physion.visual_stim.show ~/visualStim-protocols/Yann/drifting-gratings
+```
 
 To be used in the acquisition UI the protocol folder needs to be moved (the full folder, i.e. video+metadata) at the location `physion/acquisition/protocols/movies`.
 
 
 [ [!!] ]() don't forget to move the video after building it !
+
+## 3. Presentation: timing and logging
+
+The movie is played by a separate process ([presenter.py](./presenter.py)) that only does that: the acquisition GUI (camera previews, printing, network messages, ...) cannot delay the display anymore.
+
+- The frames are decoded ahead in background threads (a few seconds of buffer) and drawn at each refresh, the buffer swap being synchronized on the vertical blank (vsync).
+- The movie is locked on the acquisition clock: frame `k` is meant to be displayed at `t0+k/fps` (`t0`: NIdaq start). A regular cadence is used (e.g. 2 refreshes per frame for a 30 fps movie on a 60 Hz screen), and its drift with respect to the clock (refresh rates are never exactly nominal) is corrected one refresh at a time, **only between identical frames** (blank periods, static images), so the corrections are invisible. A correction during a changing stimulus is only forced if the drift exceeds one movie frame (and flagged in the log).
+- After a missed refresh (computer freeze), the presentation resumes at the frame given by the clock (the frames of the freeze are skipped and logged).
+
+Each recording contains `visual-stim-frames.npy`, the log of every buffer swap: flip time (from the NIdaq start), frame displayed, refreshes since the previous flip (>1: missed vsync), drift, flags (missed vsync, decoder underrun, corrections). A summary is printed at the end of the recording. The log is stored in the NWB files (`Visual-Stim-Frames`, `Visual-Stim-Flags` and `Visual-Stim-Square` in the stimulus section).
+
+To check a recording, including the comparison of the recorded photodiode with the photodiode signal predicted by the log:
+```
+python -m physion.visual_stim.check_presentation path/to/datafolder --plot
+```
+It reports the display latency, and the monitoring square transitions that are missing or mistimed in the photodiode signal (e.g. frames dropped by the graphics driver after the swap, which the presentation process cannot see).
+
+_**Screens**_. The stimulation screens are found from the rig name ([show.py](./show.py), `window_settings`); for a new rig, add its desktop layout there, or set `"display-indices"` in the screen description ([screens.py](./screens.py)). Make sure that the vertical synchronization is not disabled in the graphics driver settings (a warning is printed if no vsync is detected).
 
 
 ## Mouse visual field and screen position

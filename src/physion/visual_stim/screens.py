@@ -1,8 +1,9 @@
 """
 
 [!!]
-when setting up a new screen:
-    --> need to also modify visual_stim/show.py
+when setting up a new rig:
+    --> set the screen positions in visual_stim/show.py (`window_settings`)
+        or add a "display-indices" key (index of each screen in the OS list)
 [!!]
 
 """

@@ -37,7 +37,6 @@ if ('all' in sys.argv) or ('OD' in sys.argv) or ('ocular-dominance' in sys.argv)
     #################################################
     from physion.acquisition.settings import get_config_list, update_config
     from physion.visual_stim.main import visual_stim
-    from physion.visual_stim.show import init_stimWindows
     from physion.utils.files import generate_filename_path
     from physion.acquisition.tools import base_path
     from physion.intrinsic.acquisition import take_fluorescence_picture,\
@@ -322,10 +321,8 @@ def run(self):
     save_intrinsic_metadata(self)
     
     self.iEp, self.iRepeat = 0, 0
-    initialize_stimWindow(self)
-    
     self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
-    self.t0_episode = time.time()
+    initialize_stimWindow(self) # (sets self.t0_episode at the movie start)
    
     print('\n   -> acquisition running [...]')
            

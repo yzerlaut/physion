@@ -30,6 +30,9 @@ dependencies = [
     "opencv-python-headless",
     "opencv-contrib-python-headless",
     "ffmpeg-python",
+    # visual stimulation: lossless movies (ffmpeg binary) and presentation (OpenGL)
+    "imageio-ffmpeg",
+    "pyglet>=2.0",
     "pyqt5",
     "openpyxl",
     # imported directly (previously only installed through other packages)

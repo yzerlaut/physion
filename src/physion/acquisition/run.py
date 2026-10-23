@@ -1,4 +1,4 @@
-import os, json, time, sys, shutil
+import os, json, time, sys, shutil, threading
 import requests # to send https message to open ephys
 import numpy as np
 import multiprocessing
@@ -10,7 +10,9 @@ from physion.acquisition.tools import find_line_props,\
 from physion.opto import stim as opto_stim
 from physion.ephys.synch import sequence as ephysSynch
 from physion.visual_stim.main import build_stim as build_VisualStim
-from physion.visual_stim.show import init_stimWindows
+from physion.visual_stim.show import player_for_protocol
+from physion.visual_stim.movie import FRAME_TABLE
+from physion.visual_stim.presenter import LOG_FILENAME as STIM_LOG_FILENAME
 
 try:
     from physion.hardware.NIdaq.main import Acquisition
@@ -77,17 +79,15 @@ def init_VisualStim(self):
     print('[ok] visual-stimulation time course saved as "%s"' %\
             os.path.join(self.date_time_folder, 'visual-stim.npy'))
 
+    # STORE the frame table of the movie (for the analysis of the presentation log)
+    if os.path.isfile(os.path.join(movie_folder, FRAME_TABLE)):
+        shutil.copy2(os.path.join(movie_folder, FRAME_TABLE),
+                     self.date_time_folder)
+
     self.max_time = stim.experiment['time_stop'][-1]+\
             stim.experiment['time_start'][0]
 
-    Format = 'wmv' if 'win' in sys.platform else 'mp4'
-    if stim.screen['nScreens']==1:
-        stim.movie_files = [\
-            os.path.join(movie_folder, 'movie.%s' % Format)]
-    else:
-        stim.movie_files = [\
-            os.path.join(movie_folder, 'movie-%i.%s' % (s+1,Format))\
-            for s in range(stim.screen['nScreens'])]
+    stim.protocol_folder = movie_folder
 
     return stim
 
@@ -141,9 +141,14 @@ def run(self):
                     '[...] initializing acquisition & stimulation')
             # ---- init visual stim ---- #
             self.stim = init_VisualStim(self) # (this also sets "self.max_time")
-            init_stimWindows(self) # creates self.stimWins -> for stim display !
+            # stimulus presentation process: opens the windows (1st frame displayed)
+            self.stimPlayer = player_for_protocol(self.stim,
+                                                  self.stim.protocol_folder,
+                                                  rig=self.config['Rig'])
+            self.stimPlayer.start()
+            self.stim.prepare_stimProps_tables(verbose=False)
         else:
-            self.stimWins = None
+            self.stimPlayer = None
             self.statusBar.showMessage('[...] initializing acquisition')
 
         print('[ok] max_time of NIdaq recording set to: %.2dh:%.2dm:%.2ds' %\
@@ -278,9 +283,10 @@ def run(self):
         np.save(os.path.join(self.date_time_folder, 'visual-stim.start.npy'),
                 time.time() * np.ones(1))
         # --> and we start playing the video...
-        if self.stimWins is not None:
-            for mediaPlayer in self.mediaPlayers:
-                mediaPlayer.play()
+        #       locked on the acquisition clock: frame k displayed at t0+k/fps
+        if self.stimPlayer is not None:
+            self.stimPlayer.play(t0=self.t0,
+                    log_file=os.path.join(self.date_time_folder, STIM_LOG_FILENAME))
 
         print('')
         print(' -> acquisition launched !  ')
@@ -400,9 +406,8 @@ def run_update(self):
             # we update the counter
             self.current_index = self.stim.next_index_table[iT]
 
-            # at each interstim, we re-align the stimulus presentation
-            for mediaPlayer in self.mediaPlayers:
-                mediaPlayer.setPosition(int(1e3*t))
+            # (no re-alignment needed: the presentation process is locked on
+            #               the acquisition clock, see visual_stim/presenter.py)
 
             # -*- now we update the stimulation display in the terminal -*-
             protocol_id = self.stim.experiment['protocol_id'][\
@@ -412,17 +417,22 @@ def run_update(self):
 
             if self.metadata['Neuropixels'] and self.onlineBox.isChecked():
                 # we send a message to open-ephys to trigger the online PSTH stim condition
-                requests.put("http://localhost:37497/api/message", 
-                            json={"text":"Prtcl-%i-Stim-%i" % (\
-                                            protocol_id+1,
-                                            stim_index+1)})
+                #     (in a thread: never block the GUI loop on the network)
+                threading.Thread(target=send_openephys_message,
+                                 args=("Prtcl-%i-Stim-%i" % (protocol_id+1,
+                                                             stim_index+1),),
+                                 daemon=True).start()
 
             print(' - t=%.2dh:%.2dm:%.2ds:%.2d' % (\
                     t/3600, (t%3600)/60, (t%60), 100*((t%60)-int(t%60))),
                   '- Running protocol of index %i/%i' %\
                         (self.current_index+1, 
                          len(self.stim.experiment['index'])),
-                  ' -- protocol #%i, stim #%i' % (protocol_id+1, stim_index+1))
+                  ' -- protocol #%i, stim #%i' % (protocol_id+1, stim_index+1),
+                  stim_presentation_status(self))
+
+        if self.stimPlayer is not None:
+            self.stimPlayer.poll() # (end of the movie, errors)
 
     # ----- online visualization here -----
     if (self.FaceCamera_process is not None) and\
@@ -447,11 +457,31 @@ def run_update(self):
     if self.runEvent.is_set() and\
           ((time.time()-self.t0)<self.max_time):
         # it wasn't stopped & time is not over
-        QtCore.QTimer.singleShot(1, self.run_update)
+        #  (10ms: the GUI loop does not control the stimulus timing anymore)
+        QtCore.QTimer.singleShot(10, self.run_update)
 
     else:
         # we reached the end OR we clicked
         stop_acquisition(self)
+
+def send_openephys_message(text):
+    try:
+        requests.put("http://localhost:37497/api/message",
+                     json={"text":text}, timeout=1.)
+    except BaseException as be:
+        print(' [!!] open-ephys message not sent:', be)
+
+
+def stim_presentation_status(self):
+    """ short status of the stimulus presentation (printed at each episode) """
+    if getattr(self, 'stimPlayer', None) is None:
+        return ''
+    C = self.stimPlayer.counters
+    if (C['missed_vsync']+C['underruns']+C['forced_corrections'])==0:
+        return ''
+    return '  [stim.: %i missed vsync, %i underruns, %i forced corr.]' % (\
+            C['missed_vsync'], C['underruns'], C['forced_corrections'])
+
 
 def stop(self):
     # button-related function, just turning the flag off (true things will happen in run_update)
@@ -472,9 +502,10 @@ def stop_acquisition(self):
     self.statusBar.showMessage('acquisition/stimulation stopped !')
     print('\n -> acquisition stopped !  \n')
 
-    if self.stimWins is not None:
-        for stimWin in self.stimWins:
-            stimWin.close()
+    if getattr(self, 'stimPlayer', None) is not None:
+        self.stimPlayer.stop() # writes the presentation log (and prints a summary)
+        self.stimPlayer.close()
+        self.stimPlayer = None
 
     if self.animate_buttons:
         self.runButton.setEnabled(True)

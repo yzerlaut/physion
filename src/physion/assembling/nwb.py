@@ -477,6 +477,9 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
                                           rate=args.photodiode_sampling)
             nwbfile.add_acquisition(photodiode)
 
+        # log of the stimulus presentation (frame displayed at each screen refresh)
+        add_presentation_log(nwbfile, args.datafolder, verbose=args.verbose)
+
         # images displayed by the protocols (natural images, ...) -> stimulus templates
         image_keys = [key for key in VisualStim if is_image_key(key)]
         if len(image_keys)>0:
@@ -507,6 +510,51 @@ def add_visual_stimulation(nwbfile, metadata, NIdaq_data, args):
                                              'units':vse.get('units', 'pixels')})))
 
     return metadata
+
+
+def add_presentation_log(nwbfile, datafolder, verbose=False):
+    """
+    stores the log of the presentation process (see visual_stim/presenter.py):
+        - "Visual-Stim-Frames": movie frame displayed at each screen refresh
+                                (timestamps: flip times from the NIdaq start, -1: not started)
+        - "Visual-Stim-Flags": flags of each refresh (missed vsync, corrections, ...)
+        - "Visual-Stim-Square": expected state of the monitoring square (photodiode),
+                                from the frame table of the movie (if available)
+    """
+    from physion.visual_stim.presenter import LOG_FILENAME
+    from physion.visual_stim.movie import load_frame_table
+    fn = os.path.join(datafolder, LOG_FILENAME)
+    if not os.path.isfile(fn):
+        return
+    if verbose:
+        print('=> Storing the visual stim. presentation log for "%s" [...]' % datafolder)
+    log = np.load(fn, allow_pickle=True).item()
+    comments = json.dumps({'summary':log.get('summary', {}),
+                           'flags_meaning':log.get('flags_meaning', {}),
+                           'fps':log.get('fps'), 'vsync':log.get('vsync'),
+                           'refresh_period_estimate':log.get('refresh_period_estimate')})
+    frames = pynwb.TimeSeries(name='Visual-Stim-Frames',
+                              data=np.asarray(log['frame'], dtype=np.int64),
+                              timestamps=np.asarray(log['flip_time'], dtype=float),
+                              unit='frame index',
+                              description='movie frame displayed at each screen refresh'+\
+                                    ' (flip times from the acquisition start, -1: before the start)',
+                              comments=comments)
+    nwbfile.add_stimulus(frames)
+    nwbfile.add_stimulus(pynwb.TimeSeries(name='Visual-Stim-Flags',
+                              data=np.asarray(log['flags'], dtype=np.uint8),
+                              timestamps=frames, unit='bit flags',
+                              description='presentation flags, see comments of "Visual-Stim-Frames"'))
+    table = load_frame_table(datafolder)
+    if table is not None:
+        f = np.asarray(log['frame'], dtype=int)
+        square = np.full(len(f), -1, dtype=np.int8)
+        ok = f>=0
+        square[ok] = table['square'][f[ok] % int(table['n_frames'])]
+        nwbfile.add_stimulus(pynwb.TimeSeries(name='Visual-Stim-Square',
+                              data=square, timestamps=frames, unit='state',
+                              description='expected monitoring square state (1: white, 0: black,'+\
+                                    ' -1: unknown/not started) at each screen refresh'))
 
 
 #################################################

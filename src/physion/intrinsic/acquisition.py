@@ -16,7 +16,8 @@ from physion.intrinsic.load_camera import *
 from physion.utils.paths import FOLDERS
 from physion.acquisition.settings import get_config_list, update_config
 from physion.visual_stim.main import visual_stim
-from physion.visual_stim.show import init_stimWindows
+from physion.visual_stim.show import StimulusPlayer
+from physion.visual_stim.movie import movie_filenames
 from physion.intrinsic.tools import resample_img 
 from physion.utils.files import generate_filename_path
 
@@ -325,10 +326,8 @@ def run(self):
     save_intrinsic_metadata(self)
     
     self.iEp, self.iRepeat = 0, 0
-    initialize_stimWindow(self)
-    
     self.img, self.nSave = np.zeros(self.imgsize, dtype=np.float64), 0
-    self.t0_episode = time.time()
+    initialize_stimWindow(self) # (sets self.t0_episode at the movie start)
    
     print('\n   -> acquisition running [...]')
            
@@ -356,22 +355,9 @@ def update_dt_intrinsic(self):
                                                           bins=self.xbins)[0]))
     else:
 
-        tt = int(1e3*self.t) % int(1e3*self.period)
-        #print(tt/1e3, self.mediaPlayer.mediaStatus(), self.mediaPlayer.state(), )
-
-        if int(1e3*self.t)/int(1e3*self.period) > self.iRepeat:
-            #print('re-init stim')
-            for player in self.mediaPlayers:
-                player.stop()
-                player.setPosition(0)
-                player.play()
-            self.iRepeat += 1
-
-        if (self.mediaPlayers[0].mediaStatus()!=6) and (self.t<(self.period*self.Nrepeat)):
-            # print(' relaunching ! ')
-            for player in self.mediaPlayers:
-                player.setPosition(tt) 
-                player.play()
+        # (the movie loops every period in the presentation process,
+        #       locked on self.t0_episode: no re-alignment needed here)
+        self.iRepeat = int(self.t/self.period)
 
         # in demo mode, we show the image
         if self.demoBox.isChecked():
@@ -385,36 +371,39 @@ def update_dt_intrinsic(self):
 
             self.FRAMES, self.TIMES = [], [] # re init data
             self.iEp += 1
-            initialize_stimWindow(self)
-            self.t0_episode = time.time()
+            initialize_stimWindow(self) # (resets self.t0_episode)
 
     # continuing ?
     if self.running:
         QtCore.QTimer.singleShot(1, self.update_dt_intrinsic)
 
 def initialize_stimWindow(self):
-
-    if hasattr(self, 'stimWindows'):
-        # deleting the previous one
-        for win in self.stimWins:
-            win.close()
-        
-    # re-initializing
+    """
+    loads (and starts) the looping bar movie of the current episode
+            in the stimulus presentation process (created at the first call)
+    """
     protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
-    if self.stim.screen['nScreens']==1:
-        self.stim.movie_files = [os.path.join(self.movie_folder,
-                                            'flickering-bars-period%ss' % self.periodBox.currentText(),
-                                            '%s.wmv' % protocol)]
-    else:
-        self.stim.movie_files = [\
-            os.path.join(self.movie_folder,
-                        'flickering-bars-period%ss' % self.periodBox.currentText(),
-                        '%s-%i.wmv' % (protocol,i)) for i in range(1, self.stim.screen['nScreens']+1)]
+    folder = os.path.join(self.movie_folder,
+                          'flickering-bars-period%ss' % self.periodBox.currentText())
+    movie_files = movie_filenames(folder, self.stim.screen['nScreens'],
+                                  basename=protocol)
+    if movie_files is None:
+        print(' [!!] movie not found for "%s" in "%s" [!!]' % (protocol, folder))
+        print('      build them with: python -m physion.intrinsic.build_protocols')
+        self.t0_episode = time.time()
+        return
 
-    init_stimWindows(self)
+    if getattr(self, 'stimPlayer', None) is None:
+        self.stimPlayer = StimulusPlayer(self.stim.screen,
+                                         fps=self.stim.movie_refresh_freq,
+                                         rig=self.config.get('Rig', ''),
+                                         fullscreen=not self.demoBox.isChecked())
+        self.stimPlayer.start()
 
-    for player in self.mediaPlayers:
-        player.play()
+    # the bar movies are made of one period -> looped
+    self.stimPlayer.load(movie_files, loop=True)
+    self.t0_episode = time.time()
+    self.stimPlayer.play(t0=self.t0_episode)
 
 def write_data(self):
 
@@ -523,10 +512,10 @@ def live_intrinsic(self):
 def stop_intrinsic(self):
     if self.running:
         self.running = False
-        if hasattr(self, 'mediaPlayer'):
-            self.mediaPlayer.stop()
-        if hasattr(self, 'stimWin'):
-            self.stimWin.close()
+        if getattr(self, 'stimPlayer', None) is not None:
+            self.stimPlayer.stop(verbose=False)
+            self.stimPlayer.close()
+            self.stimPlayer = None
         if (self.cam is not None) and not self.demoBox.isChecked():
             self.cam.disarm()
         if len(self.TIMES)>5:
