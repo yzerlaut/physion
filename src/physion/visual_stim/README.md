@@ -157,7 +157,7 @@ python -m physion.visual_stim.check_presentation path/to/datafolder --plot
 ```
 It reports the display latency, and the monitoring square transitions that are missing or mistimed in the photodiode signal (e.g. frames dropped by the graphics driver after the swap, which the presentation process cannot see).
 
-_**Screens**_. The stimulation screens are found from the rig name ([show.py](./show.py), `window_settings`); for a new rig, add its desktop layout there, or set `"display-indices"` in the screen description ([screens.py](./screens.py)). Make sure that the vertical synchronization is not disabled in the graphics driver settings (a warning is printed if no vsync is detected).
+_**Screens**_. All the stimulation screens are covered by ONE borderless window (spanning them on multi-screen setups), each screen's movie drawn in its own area: one buffer swap updates all screens at the same refresh. The screens of the computer and the ones used are printed at start (`[visual stim.] ...`). The stimulation screens are found from the rig name ([show.py](./show.py), `window_settings`); for a new rig, add its desktop layout there, or set `"display-indices"` in the screen description ([screens.py](./screens.py)). Make sure that the vertical synchronization is not disabled in the graphics driver settings (a warning is printed if no vsync is detected).
 
 
 ## Mouse visual field and screen position

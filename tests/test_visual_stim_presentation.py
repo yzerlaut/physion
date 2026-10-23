@@ -336,23 +336,44 @@ class FakeScreen:
 def test_screen_selection():
     from physion.visual_stim.show import window_settings
     from physion.visual_stim.screens import SCREENS
-    pick = Presenter.pick_screen
+    from physion.visual_stim.presenter import pick_screens
     # main screen + one screen on the left (Bacci rigs)
     main, left = FakeScreen(0, 0, 2560, 1440), FakeScreen(-1280, 0, 1280, 720)
     W = window_settings(SCREENS['Dell-2020'], rig='Bacci-2P-setup', fullscreen=True)
-    assert pick([main, left], 0, W[0]) is left
+    assert pick_screens([main, left], W) == [left]
     # laptop with display scaling: the Qt position (2000, 400) falls on the main
     #           screen in physical pixels -> the other screen is used
     laptop, lilliput = FakeScreen(0, 0, 2880, 1800), FakeScreen(2880, 0, 768, 1280)
     W = window_settings(SCREENS['Lilliput'], rig='Laptop+Microscope', fullscreen=True)
-    assert pick([laptop, lilliput], 0, W[0]) is lilliput
-    # 3 screens, right of the main screen, listed in any order by the OS
-    main = FakeScreen(0, 0, 3440, 1440)
-    S = [FakeScreen(3440+i*1024, 0, 1024, 1280) for i in range(3)]
+    assert pick_screens([laptop, lilliput], W) == [lilliput]
     W = window_settings(SCREENS['LN-VR-3screens'], rig='Neuropix-LN-U3screens', fullscreen=True)
-    for s in range(3):
-        assert pick([S[2], main, S[0], S[1]], s, W[s]) is S[s]
+    main = FakeScreen(0, 0, 3440, 1440)
+    # 3 screens of 1024 pixels: the position hints match, OS order does not matter
+    S = [FakeScreen(3440+i*1024, 0, 1024, 1280) for i in range(3)]
+    assert pick_screens([S[2], main, S[0], S[1]], W) == S
+    # 3 screens of 1280 pixels: the hints (3440, 4464, 5488) designate twice the
+    #     same screen -> 3 distinct screens from left to right
+    S = [FakeScreen(3440+i*1280, 0, 1280, 1024) for i in range(3)]
+    assert pick_screens([main, S[1], S[2], S[0]], W) == S
+    # not enough screens: explicit error
+    with pytest.raises(ValueError):
+        pick_screens([main, S[0]], W)
     # explicit indices
-    assert pick([main]+S, 0, {'index':3}) is S[2]
+    assert pick_screens([main]+S, [{'index':3}, {'index':1}, {'index':2}]) == [S[2], S[0], S[1]]
+    with pytest.raises(ValueError):
+        pick_screens([main]+S, [{'index':1}, {'index':1}, {'index':2}])
     # a single screen (demo on a laptop)
-    assert pick([main], 0, W[0]) is main
+    assert pick_screens([main], [{'position':None}]) == [main]
+
+
+def test_layout():
+    from physion.visual_stim.presenter import layout
+    # 3 screens of 1280x1024 side by side (desktop coordinates)
+    areas = [(0, 0, 1280, 1024), (1280, 0, 1280, 1024), (2560, 0, 1280, 1024)]
+    assert layout(areas, 3, 3840, 1024) == [(0, 0, 1280, 1024), (1280, 0, 1280, 1024),
+                                           (2560, 0, 1280, 1024)]
+    # screens of different heights, aligned at the top: y flipped for OpenGL
+    areas = [(0, 0, 1280, 1024), (1280, 0, 1024, 768)]
+    assert layout(areas, 2, 2304, 1024) == [(0, 0, 1280, 1024), (1280, 256, 1024, 768)]
+    # demo window: side by side
+    assert layout(None, 2, 800, 300) == [(0, 0, 400, 300), (400, 0, 400, 300)]
