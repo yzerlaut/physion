@@ -61,6 +61,8 @@ class AssemblingWindow(Window):
             cmd = '%s -m physion.assembling.nwb %s' % (python_path,
                                                        self.DataTable_file)
             cmd += ' --destination_folder %s' % os.path.dirname(self.DataTable_file)
+            if self.recalcSpeedBox.isChecked():
+                cmd += ' --force_recalculation_of_speed'
 
             if self.datafilesBox.text()=='all':
                 pass
@@ -148,6 +150,8 @@ class AssemblingWindow(Window):
                                     self.alignFromStimCheckBox.isChecked(),
                                  reverse_photodiodeSignal=\
                                     self.reversePhotodiodeBox.isChecked(),
+                                 force_recalculation_of_speed=\
+                                    self.recalcSpeedBox.isChecked(),
                                  dest_folder=self.folder)
             print('\n launching the command \n :  %s \n ' % cmd)
             p = subprocess.Popen(cmd, cwd=cwd,
@@ -262,6 +266,8 @@ class BuildNWBfromDataTableWindow(AssemblingWindow):
         self.add_side_widget(QtWidgets.QLabel('   possibilities, either: "all", "3", "3-7", '))
 
         self.add_side_widget(QtWidgets.QLabel(' '))
+        self.recalcSpeedBox = QtWidgets.QCheckBox('force recalculation of speed ', self.main)
+        self.add_side_widget(self.recalcSpeedBox)
         self.add_side_widget(QtWidgets.QLabel(' '))
         self.add_side_widget(QtWidgets.QLabel(' '))
 
@@ -323,6 +329,8 @@ class BuildNWBWindow(AssemblingWindow):
         # an option to force based on Visual Stim infos
         self.alignFromStimCheckBox = QtWidgets.QCheckBox('align from VisStim label (!=diode) ', self.main)
         self.add_side_widget(self.alignFromStimCheckBox)
+        self.recalcSpeedBox = QtWidgets.QCheckBox('force recalculation of speed ', self.main)
+        self.add_side_widget(self.recalcSpeedBox)
         self.add_side_widget(QtWidgets.QLabel(' '))
 
         self.runBtn = QtWidgets.QPushButton('  * - LAUNCH - * ')
