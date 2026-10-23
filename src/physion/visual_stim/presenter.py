@@ -54,6 +54,8 @@ FLAG_MISSED_VSYNC = 16  # the frame appeared one (or more) refresh late
 
 LOG_FILENAME = 'visual-stim-frames.npy'
 
+movie_module = None # set by _presenter_entry.py (process started without the physion package)
+
 
 #####################################################
 ##########          UTILS          ##################
@@ -303,7 +305,10 @@ class Presenter:
     # ------------------------------------------------------------ #
     def load(self, args):
 
-        from physion.visual_stim.movie import FrameReader, count_frames
+        if movie_module is not None: # (standalone process, see _presenter_entry.py)
+            FrameReader, count_frames = movie_module.FrameReader, movie_module.count_frames
+        else:
+            from physion.visual_stim.movie import FrameReader, count_frames
 
         self.stop_readers()
         self.loop = bool(args.get('loop', False))
@@ -470,6 +475,8 @@ class Presenter:
     def run(self):
 
         self.measure_refresh()
+        if getattr(self, 'ready_callback', None) is not None:
+            self.ready_callback()
         self.status_queue.put(('ready', {'refresh_period':self.T,
                                          'vsync':self.vsync_ok,
                                          'screens':self.screens_info}))
@@ -584,12 +591,23 @@ class Presenter:
 
 def run_presenter(cmd_queue, status_queue, progress, config):
     """ entry point of the presentation process """
+    import faulthandler
+    # if the initialization hangs: tracebacks of all threads printed in the console
+    faulthandler.dump_traceback_later(config.get('hang_report_delay', 30.),
+                                      repeat=False, file=sys.stderr)
+    def stage(text):
+        status_queue.put(('stage', text))
     try:
+        stage('creating the window(s)')
         presenter = Presenter(cmd_queue, status_queue, progress, config)
+        stage('window(s) created on: %s' % presenter.screens_info)
         if config.get('movie_files') is not None:
+            stage('loading the movie(s)')
             presenter.load({'movie_files':config['movie_files'],
                             'loop':config.get('loop', False),
                             'frame_table':config.get('frame_table')})
+            stage('movie(s) loaded, measuring the screen refresh')
+        presenter.ready_callback = faulthandler.cancel_dump_traceback_later
         presenter.run()
     except BaseException as be:
         import traceback

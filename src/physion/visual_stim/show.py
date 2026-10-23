@@ -92,6 +92,7 @@ class StimulusPlayer:
         # [frame on screen, missed vsyncs, decoder underruns, forced corrections]
         self.progress = self.ctx.Array('d', [-1, 0, 0, 0])
         self.process = None
+        self.last_stage = ''
         self.info, self.summary, self.ended = {}, None, False
 
     # --------------------------------------------------------- #
@@ -114,13 +115,18 @@ class StimulusPlayer:
                 if (self.process is not None) and not self.process.is_alive():
                     raise RuntimeError('[!!] visual stim. process died [!!]')
                 continue
+            if msg=='stage':
+                self.last_stage = content
+                print('   [visual stim.] %s' % content)
+                continue
             if msg=='error':
                 raise RuntimeError('[!!] visual stim. process error:\n%s' % content)
             if msg=='ended':
                 self.ended, self.summary = True, content
             if msg in expected:
                 return msg, content
-        raise TimeoutError('[!!] no answer from the visual stim. process (%s) [!!]' % expected)
+        raise TimeoutError('[!!] no answer from the visual stim. process (%s),\n'  % expected+\
+                           '     last step: "%s" [!!]' % getattr(self, 'last_stage', '?'))
 
     def poll(self):
         """ non-blocking check of the status messages (end of movie, errors) """
@@ -136,11 +142,20 @@ class StimulusPlayer:
 
     # --------------------------------------------------------- #
     def start(self, timeout=60.):
-        from physion.visual_stim.presenter import run_presenter
-        self.process = self.ctx.Process(target=run_presenter,
-                                        args=(self.cmd_queue, self.status_queue,
-                                              self.progress, self.config),
+        import runpy
+        # the process runs _presenter_entry.py (without importing the physion package)
+        entry = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                             '_presenter_entry.py')
+        self.process = self.ctx.Process(target=runpy.run_path,
+                                        args=(entry,),
+                                        kwargs={'run_name':'__physion_presenter__',
+                                                'init_globals':{
+                                                    'cmd_queue':self.cmd_queue,
+                                                    'status_queue':self.status_queue,
+                                                    'progress':self.progress,
+                                                    'config':self.config}},
                                         daemon=True)
+        self.last_stage = 'starting the process'
         self.process.start()
         _, self.info = self._wait(['ready'], timeout)
         if not self.info.get('vsync', True):
