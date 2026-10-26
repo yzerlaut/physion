@@ -337,7 +337,9 @@ class visual_stim:
                     self.experiment[key].append(FULL_VECS[key][i])
 
                 self.experiment['index'].append(i) # shuffled
-                self.experiment['bg-color'].append(self.blank_color)
+                if 'bg-color' not in default_params:
+                    # (otherwise already appended as a stimulus parameter)
+                    self.experiment['bg-color'].append(self.blank_color)
                 self.experiment['repeat'].append(r)
 
                 if n==0:
