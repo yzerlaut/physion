@@ -437,6 +437,35 @@ class EpisodeData:
         
         return 0
     
+    def episode_filename(self, folder):
+        return os.path.join(folder, '%s-protocol_id-%i.npy' %\
+                (self.data.filename.replace('.nwb', ''), self.protocol_id))
+
+    def save(self, folder):
+        """
+        saves all episode data (everything but the full_data object)
+        as a numpy dictionary in:
+            folder/{nwb-filename}-protocol_id-{protocol_id}.npy
+        """
+        os.makedirs(folder, exist_ok=True)
+        to_save = {key:val for key, val in self.__dict__.items()\
+                                if key!='data'}
+        np.save(self.episode_filename(folder), to_save)
+        if self.verbose:
+            print('  -> episodes saved as: %s' % self.episode_filename(folder))
+
+    def load(self, folder):
+        """
+        reloads all episode data saved with self.save(folder)
+            (uses self.data.filename and self.protocol_id to find the file)
+        """
+        to_load = np.load(self.episode_filename(folder),
+                          allow_pickle=True).item()
+        for key, val in to_load.items():
+            setattr(self, key, val)
+        if self.verbose:
+            print('  -> episodes loaded from: %s' % self.episode_filename(folder))
+
     def pre_post_statistics(self, **args):
         return pre_post_statistics(self, **args)
     def stat_test_for_evoked_responses(self, **args):
