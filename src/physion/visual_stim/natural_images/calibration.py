@@ -54,11 +54,13 @@ def calibrate(make_pair, pairs, s_grid, v1, verbose=True):
     return calib, v1_norm, calibrated_s
 
 
-def save_calibration(out_dir, s_grid, pairs, v1_norm, calib, v1=None, **extra):
+def save_calibration(out_dir, s_grid, pairs, v1_norm, calib, v1=None,
+                     mean_lum=MEAN_LUM, rms_contrast=RMS_CONTRAST, **extra):
+    """ mean_lum, rms_contrast: the stimulus statistics used (kwargs of images.normalize) """
     geometry = {} if v1 is None else dict(deg_per_px=v1.deg_per_px)
     np.savez(os.path.join(out_dir, 'calibration.npz'),
              s_grid=s_grid, pairs=np.array(pairs), v1_norm=v1_norm,
-             mouse_acuity=MOUSE_ACUITY, mean_lum=MEAN_LUM, rms_contrast=RMS_CONTRAST,
+             mouse_acuity=MOUSE_ACUITY, mean_lum=mean_lum, rms_contrast=rms_contrast,
              **geometry, **calib, **extra)
 
 

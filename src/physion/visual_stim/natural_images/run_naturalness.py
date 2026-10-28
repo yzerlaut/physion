@@ -32,8 +32,9 @@ from physion.visual_stim.natural_images import images, spectrum, morphing, mouse
 _W = {}   # per-worker state
 
 
-def init_worker(img_dir, shape, ws, deg_per_px):
+def init_worker(img_dir, shape, ws, deg_per_px, norm):
     _W['img_dir'], _W['shape'], _W['ws'] = img_dir, shape, ws
+    _W['norm'] = norm             # kwargs of images.normalize: mean_lum, rms_contrast
     _W['model'] = sparseness.SparsenessModel(shape, deg_per_px=deg_per_px)
 
 
@@ -44,13 +45,13 @@ def load(name):
 def analyze_pair(args):
     i, j, nameA, nameB = args
     res = sparseness.continuum_sparseness(load(nameA), load(nameB), _W['ws'], _W['model'],
-                                          seed=1000 * i + j)
+                                          seed=1000 * i + j, **_W['norm'])
     return i, j, res['K'], res['K_orig'], res['K_scr']
 
 
 def morph_continuum(A, B, ws):
     sA, sB = spectrum.phase_spectrum(A), spectrum.phase_spectrum(B)
-    return [morphing.phase_morph(sA, sB, w) for w in ws]
+    return [morphing.phase_morph(sA, sB, w, **_W['norm']) for w in ws]
 
 
 def plot_pair(args):
@@ -87,7 +88,8 @@ def main(args):
         len(names), len(pairs), args.n_w, args.workers))
     deg_per_px = mouse_vision.resolve_deg_per_px(shape, args.screen, args.units, args.deg_per_px)
     print('%ix%i px, %.3f deg/px' % (*shape, deg_per_px))
-    init_args = (args.img_dir, shape, ws, deg_per_px)
+    init_args = (args.img_dir, shape, ws, deg_per_px,
+                 dict(mean_lum=args.mean_lum, rms_contrast=args.rms_contrast))
 
     # --- sparseness of all continuum images
     t0, results = time.time(), {}
@@ -180,6 +182,10 @@ def parser():
                    help='units of the visual stimulation protocol (pixel -> angle mapping)')
     p.add_argument('--deg-per-px', type=float, default=None,
                    help='visual degrees per image pixel, overrides --screen (setup not in screens.py)')
+    p.add_argument('--mean-lum', type=float, default=images.MEAN_LUM,
+                   help='mean luminance of the stimuli (screen units, [0,1])')
+    p.add_argument('--rms-contrast', type=float, default=images.RMS_CONTRAST,
+                   help='RMS contrast of the stimuli (screen units); it changes the clipping, hence the kurtosis')
     p.add_argument('--n-w', type=int, default=7, help='number of morph weights (incl. both ends)')
     p.add_argument('--workers', type=int, default=max(1, (os.cpu_count() or 2) - 1))
     p.add_argument('--max-pairs', type=int, default=None,
