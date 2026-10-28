@@ -2,7 +2,7 @@
 
 Each stimulus is defined in a module of this folder: a `params` dictionary (the parameters and their default values) and a `stim` class (child of the `visual_stim` class of [main.py](../main.py)) that draws the frames (`get_image`).
 
-The `"Stimulus"` key of a protocol is the name of the module, with `-` instead of `_` (e.g. `"Stimulus": "natural-image"` for [natural_image.py](./natural_image.py)).
+The `"Stimulus"` key of a protocol is the name of the module, with `-` instead of `_` (e.g. `"Stimulus": "images-VSE"` for [images_VSE.py](./images_VSE.py)).
 
 ## Parameter variations
 
@@ -31,13 +31,12 @@ python -m physion.visual_stim.stimuli.grating
 | [`grating-stripe`](./grating_stripe.py) | `x-center`, `y-center`, `width`, `angle`, `speed`, `spatial-freq`, `phase`, `contrast`, `bg-color` |
 | [`line-moving-dots`](./line_moving_dots.py) | `movie_refresh_freq`, `presentation-duration`, `speed`, `size`, `spacing`, `direction`, `ndots`, `dotcolor`, `bg-color` |
 | [`looming-stim`](./looming_stim.py) | `presentation-duration`, `looming-duration`, `end-duration`, `radius-start`, `radius-end`, `x-center`, `y-center`, `color`, `looming-nonlinearity`, `bg-color`, `contrast` |
-| [`natural-image`](./natural_image.py) | `Image-ID`, `contrast`, `x-center`, `y-center`, `radius` |
-| [`natural-image-VSE`](./natural_image_VSE.py) | `Image-ID`, `min-saccade-duration`, `max-saccade-duration`, `saccade-amplitude-deg`, `bg-color`, `contrast`, `x-center`, `y-center`, `radius`, `seed` |
+| [`images`](./images.py) | `NI_FOLDER`, `Image-ID-1`, `Image-ID-2`, ... (filenames), `degree-per-pixel-of-image`, `contrast`, `x-center`, `y-center`, `radius` |
+| [`images-VSE`](./images_VSE.py) | `NI_FOLDER`, `Image-ID-1`, `Image-ID-2`, ... (filenames), `degree-per-pixel-of-image`, `contrast`, `x-center`, `y-center`, `radius`, `min-saccade-duration`, `max-saccade-duration`, `saccade-amplitude-deg`, `bg-color`, `seed` |
 | [`oddball`](./oddball.py) | `presentation-duration`, `N_repeat`, `N_deviant`, `N_redundant`, `Nmin-successive-redundant`, `stim-duration`, `seed`, `stimulus`, `angle`, `angle-redundant`, `angle-deviant`, `spatial-freq`, `contrast`, `bg-color` |
 | [`oscillDG`](./oscillDG.py) | `frequency (Hz)`, `speed (cycle/s)`, `angle (deg)`, `spatial-freq (cycle/deg)`, `contrast (lum.)`, `bg-color (lum.)` |
 | [`random-dots`](./random_dots.py) | `presentation-duration`, `refresh`, `size`, `ndots`, `seed`, `dotcolor`, `bg-color` |
 | [`scattered-moving-dots`](./scattered_moving_dots.py) | `presentation-duration`, `speed`, `size`, `spacing`, `direction`, `ndots`, `dotcolor`, `bg-color` |
-| [`set-of-images`](./set_of_images.py) | `Image-ID` |
 | [`sparse-noise`](./sparse_noise.py) | `movie_refresh_freq`, `presentation-duration`, `presentation-interstim-period`, `screen-width`, `screen-height`, `size`, `sparseness`, `black-white-ratio`, `seed`, `bg-color` |
 | [`sweeping-circle`](./sweeping_circle.py) | `presentation-duration`, `sweeping-duration`, `sweeping-start`, `radius`, `color`, `contrast`, `trajectory`, `bg-color` |
 | [`template`](./template.py) | `presentation-duration`, `size`, `radius`, `ndots`, `dotcolor`, `bg-color` |

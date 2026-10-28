@@ -3,7 +3,7 @@ natural images: loading, morphing with a controlled similarity, mouse-relevant
 similarity metrics, calibration and naturalness (see README.md)
 
     images        loading / normalizing / saving images
-    preprocess    preprocessing of the images displayed by the "natural_image" stimuli
+    preprocess    preprocessing of the images displayed by the "images" stimuli
                   (histogram equalization, formerly visual_stim/preprocess_NI.py)
     spectrum      Fourier tools: periodic+smooth decomposition, spectrum equalization, scrambling
     morphing      Fourier phase morphing (PhaseMorpher), pair weights for a similarity s

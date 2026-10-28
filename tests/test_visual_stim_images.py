@@ -4,12 +4,15 @@ images and virtual saccadic explorations (VSE) of the protocols stored in visual
 """
 import numpy as np
 
+from physion.visual_stim.stimuli.images import NI_BANK
 from physion.visual_stim.build import build_stim, add_images_to_experiment, \
     image_key, is_image_key, add_vse_to_experiment, vse_key, is_vse_key
 
 BASE = {"Presentation": "Stimuli-Sequence", "Screen": "Dell-2020-low-resolution",
         "no-window": True, "presentation-duration": 1, "presentation-prestim-period": 1,
         "presentation-poststim-period": 1, "presentation-interstim-period": 1, "N-repeat": 2}
+
+IMAGES = {"NI_FOLDER": NI_BANK, "Image-ID-1": "1.jpg", "Image-ID-2": "2.jpg", "Image-ID-3": "3.jpg"}
 
 
 def test_image_keys():
@@ -19,11 +22,10 @@ def test_image_keys():
 
 
 def test_natural_images_in_experiment():
-    stim = build_stim(dict(BASE, Stimulus='natural-image',
-                           **{"Image-ID-1": 0, "Image-ID-2": 2, "N-Image-ID": 3, "contrast": 0.8}))
+    stim = build_stim(dict(BASE, Stimulus='images', **IMAGES, contrast=0.8))
     add_images_to_experiment(stim)
     keys = sorted(k for k in stim.experiment if is_image_key(k))
-    assert keys == [image_key(0, i) for i in range(3)]
+    assert keys == [image_key(0, i) for i in range(1, 4)]
     img = stim.experiment[image_key(0, 1)]
     assert img.dtype == np.uint8
     assert img.shape == tuple(stim.screen['resolution'][::-1])    # height x width, as the movie
@@ -40,7 +42,7 @@ def test_multiprotocol_and_protocols_without_images():
     multi = {"Presentation": "multiprotocol", "Screen": "Dell-2020-low-resolution", "no-window": True,
              "presentation-prestim-period": 1, "presentation-poststim-period": 1}
     for i, sub in [(1, dict(BASE, Stimulus='grating')),
-                   (2, dict(BASE, Stimulus='natural-image', **{"Image-ID-1": 1, "Image-ID-2": 2, "N-Image-ID": 2}))]:
+                   (2, dict(BASE, Stimulus='images', NI_FOLDER=NI_BANK, **{"Image-ID-1": "1.jpg", "Image-ID-2": "2.jpg"}))]:
         multi['Protocol-%i' % i] = sub['Stimulus']
         for k, v in sub.items():
             multi['Protocol-%i-%s' % (i, k)] = v
@@ -61,9 +63,8 @@ def test_images_in_NWB(tmp_path):
     from physion.assembling.nwb import add_visual_stimulation
     from physion.analysis.modalities.visual_stim import VisualStimMixin
 
-    # a recording folder with the visual-stim.npy of a natural-image protocol
-    stim = build_stim(dict(BASE, Stimulus='natural-image',
-                           **{"Image-ID-1": 0, "Image-ID-2": 2, "N-Image-ID": 3}))
+    # a recording folder with the visual-stim.npy of an images protocol
+    stim = build_stim(dict(BASE, Stimulus='images', **IMAGES))
     add_images_to_experiment(stim)
     np.save(tmp_path / 'visual-stim.npy', stim.experiment)
 
@@ -83,9 +84,10 @@ def test_images_in_NWB(tmp_path):
         # the episode parameters are still there, without the images
         assert 'Image-ID' in data.nwbfile.stimulus
         assert not any(is_image_key(k) for k in data.nwbfile.stimulus)
-        for image_id in range(3):
+        for image_id in range(1, 4):
             img = VisualStimMixin.get_visual_stim_image(data, 0, image_id)
             np.testing.assert_array_equal(img, stim.experiment[image_key(0, image_id)])
+        assert VisualStimMixin.get_visual_stim_image(data, 0, 0) is None
         assert VisualStimMixin.get_visual_stim_image(data, 0, 5) is None
         assert VisualStimMixin.get_visual_stim_image(data, 1, 0) is None
 
@@ -100,11 +102,11 @@ def test_vse_keys():
 
 
 def test_vse_in_experiment():
-    """ natural-image-VSE and grating-VSE in a multiprotocol, with a grating (no VSE) """
+    """ images-VSE and grating-VSE in a multiprotocol, with a grating (no VSE) """
     multi = {"Presentation": "multiprotocol", "Screen": "Dell-2020-low-resolution", "no-window": True,
              "presentation-prestim-period": 1, "presentation-poststim-period": 1}
     subs = [dict(BASE, Stimulus='grating'),
-            dict(BASE, Stimulus='natural-image-VSE', **VSE),
+            dict(BASE, Stimulus='images-VSE', **IMAGES, **VSE),
             dict(BASE, Stimulus='grating-VSE', **dict(VSE, seed=5))]
     for i, sub in enumerate(subs, start=1):
         multi['Protocol-%i' % i] = sub['Stimulus']
@@ -127,8 +129,8 @@ def test_vse_in_NWB(tmp_path):
     from physion.assembling.nwb import add_visual_stimulation
     from physion.analysis.modalities.visual_stim import VisualStimMixin
 
-    stim = build_stim(dict(BASE, Stimulus='natural-image-VSE',
-                           **dict(VSE, **{"Image-ID-1": 0, "Image-ID-2": 1, "N-Image-ID": 2})))
+    stim = build_stim(dict(BASE, Stimulus='images-VSE', NI_FOLDER=NI_BANK,
+                           **dict(VSE, **{"Image-ID-1": "1.jpg", "Image-ID-2": "2.jpg"})))
     add_images_to_experiment(stim)
     add_vse_to_experiment(stim)
     np.save(tmp_path / 'visual-stim.npy', stim.experiment)
@@ -165,8 +167,8 @@ def test_vse_in_degrees_same_angle_on_all_screens():
     from physion.visual_stim.stimuli import virtual_scene_exploration as vse
     shifts = {}
     for screen in ['Dell-2020', 'Dell-2020-low-resolution']:
-        stim = build_stim(dict(BASE, Stimulus='natural-image-VSE', Screen=screen,
-                               **dict(VSE_DEG, **{"Image-ID-1": 0, "Image-ID-2": 0, "N-Image-ID": 1})))
+        stim = build_stim(dict(BASE, Stimulus='images-VSE', Screen=screen, NI_FOLDER=NI_BANK,
+                               **dict(VSE_DEG, **{"Image-ID-1": "1.jpg"})))
         assert stim.vse['units'] == 'deg'
         t = stim.vse['t'][2] + 1e-3                     # after the 3rd saccade
         ix, iy = vse.compute_shifted_pixels(stim, t)
@@ -180,7 +182,7 @@ def test_vse_legacy_protocols_in_pixels():
     stim = build_stim(dict(BASE, Stimulus='grating-VSE', **VSE))  # "saccade-amplitude": pixels
     assert stim.vse['units'] == 'pixels' and stim.vse['x'].dtype.kind == 'i'
     from physion.visual_stim.build import get_default_params
-    assert 'saccade-amplitude-deg' in get_default_params('natural-image-VSE')
+    assert 'saccade-amplitude-deg' in get_default_params('images-VSE')
 
 
 def test_vse_units_in_NWB(tmp_path):

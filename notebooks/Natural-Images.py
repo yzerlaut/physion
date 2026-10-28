@@ -32,7 +32,7 @@ from physion.visual_stim.natural_images import images, spectrum, morphing, \
 #
 # The image folder and the display geometry: the physion screen (key of `visual_stim/screens.py`)
 # and the units of the visual stimulation protocol. Images are stretched over the full screen
-# (as in the `natural_image` stimulus): the size of one image pixel in visual degrees (`DEG_PER_PX`)
+# (as in the former `natural_image` stimulus): the size of one image pixel in visual degrees (`DEG_PER_PX`)
 # is computed from the screen geometry (`visual_stim.geometry.deg_per_pixel`).
 # All mouse-vision quantities (acuity, V1 model, naturalness) depend on it.
 

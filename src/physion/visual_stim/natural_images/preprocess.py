@@ -1,8 +1,8 @@
 """
-preprocessing of the natural images displayed by the "natural_image" stimuli
-    (visual_stim/stimuli/natural_image.py and natural_image_VSE.py)
+preprocessing of the natural images displayed by the "images" stimuli
+    (visual_stim/stimuli/images.py and images_VSE.py)
 
-    load -> adapt_to_screen_resolution -> img_after_hist_normalization
+    load -> img_after_hist_normalization
 
 [!!] the histogram equalization is not the `images.normalize` of this module:
     - img_after_hist_normalization: non-linear, the luminance histogram becomes
@@ -12,7 +12,6 @@ preprocessing of the natural images displayed by the "natural_image" stimuli
     the greyscale conversions also differ (skimage `rgb2gray` here, PIL "L" in images.py)
 """
 import numpy as np
-from scipy.interpolate import RectBivariateSpline
 from skimage import color, io, exposure
 
 
@@ -36,20 +35,3 @@ def img_after_hist_normalization(img, verbose=False):
 
     return new_img.reshape(img.shape)
 
-
-def adapt_to_screen_resolution(img, new_screen, verbose=False):
-    """ bilinear resampling of the image to the screen resolution """
-
-    if verbose:
-        print('Adapting image to chosen screen resolution [...]')
-
-    old_X = np.arange(img.shape[0])
-    old_Y = np.arange(img.shape[1])
-
-    new_X = np.linspace(0, img.shape[0], new_screen['resolution'][0])
-    new_Y = np.linspace(0, img.shape[1], new_screen['resolution'][1])
-
-    spline_approx = RectBivariateSpline(old_X, old_Y, img,
-                                        kx=1, ky=1)
-
-    return spline_approx(new_X, new_Y)

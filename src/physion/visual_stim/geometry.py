@@ -299,7 +299,7 @@ def deg_per_pixel(screen, units='cm', image_shape=None,
     screen:      key of SCREENS (screens.py) or a screen dictionary
     units:       'cm' (default of the protocols), 'deg' or 'lin-deg'
     image_shape: (height, width) of an image stretched over the full screen
-                    (as in the "natural_image" stimulus)
+                    (as in the former "natural_image" stimulus)
                     -> deg. per image pixel, otherwise deg. per screen pixel
     where:       'center': at the center of the screen (in 'cm' units, the pixel angle
                     decreases with eccentricity: largest value)

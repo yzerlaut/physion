@@ -93,7 +93,7 @@ def is_image_key(key):
 def add_images_to_experiment(Stim):
     """
     stores in Stim.experiment the images of the protocols displaying images
-        (stimuli with a "get_source_image" method: natural images, set of images)
+        (stimuli with a "get_source_image" method: images, images-VSE)
 
         key:   "protocol_id-%i-Image-ID-%i" (see `image_key`),
                     for each "Image-ID" shown in the protocol
@@ -132,7 +132,7 @@ def is_protocol_data_key(key):
 def add_vse_to_experiment(Stim):
     """
     stores in Stim.experiment the virtual saccadic exploration (VSE) of the protocols having one
-        (stimuli with a "vse" attribute: natural-image-VSE, grating-VSE)
+        (stimuli with a "vse" attribute: images-VSE, grating-VSE)
 
         key:   "protocol_id-%i-VSE-%i" (see `vse_key`), with the seed of the VSE
                     (one VSE per protocol, generated from the "seed" of the protocol)

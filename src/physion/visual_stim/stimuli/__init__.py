@@ -1,9 +1,9 @@
 from . import uniform_bg, looming_stim, grating,\
         line_moving_dots, scattered_moving_dots,\
-    	random_dots, natural_image, oscillDG,\
+    	random_dots, images, oscillDG,\
         gaussian_blob, flickering_bar, sparse_noise,\
-        oddball, template, natural_image_VSE,\
-        set_of_images, sweeping_circle, dimming_circle,\
+        oddball, template, images_VSE,\
+        sweeping_circle, dimming_circle,\
         grating_VSE, grating_stripe, flickering_grating
 
 # backward compatibility:

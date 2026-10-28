@@ -5,7 +5,8 @@ mouse-relevant image similarity:
 
 the display geometry (visual degrees per image pixel, `deg_per_px`) is computed from
 a screen of physion (key of visual_stim/screens.py) and the protocol units, for images
-stretched over the full screen as in the "natural_image" stimulus (see `image_deg_per_px`)
+stretched over the full screen (see `image_deg_per_px`), as in the former "natural_image" stimulus
+(the "images" stimulus sets it with its "degree-per-pixel-of-image" parameter)
 """
 import warnings
 import numpy as np
@@ -30,7 +31,7 @@ GRID_DEG = 4.                 # spacing of the model units in the visual field (
 def image_deg_per_px(image_shape, screen=SCREEN, units=UNITS, where='center'):
     """
     visual degrees per image pixel, for an image of shape (height, width) stretched over the
-    full screen (as in the "natural_image" stimulus), see visual_stim.geometry.deg_per_pixel
+    full screen (as in the former "natural_image" stimulus), see visual_stim.geometry.deg_per_pixel
 
     the models use a single value: the mean over both axes, with a warning if the image
     pixels are not square on the screen (aspect ratio of the image != that of the screen)
