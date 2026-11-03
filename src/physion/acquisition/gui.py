@@ -253,7 +253,7 @@ def plot_NIdaq_of_last(self):
     AX[1].set_ylabel('digital')
     AX[1].set_xlabel('time samples')
 
-    from behavior.locomotion import compute_speed
+    from physion.behavior.locomotion import compute_speed
     if 'A1-2P'in metadata['Rig']:
         speed = compute_speed(data['digital'][0],
             acq_freq=float(metadata['NIdaq']['acquisition-frequency']),
