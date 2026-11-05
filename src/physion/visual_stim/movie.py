@@ -97,7 +97,13 @@ class MovieWriter:
         if frame.shape!=(self.H, self.W):
             raise ValueError('frame of shape %s, expected (H, W)=%s' % (\
                                     frame.shape, (self.H, self.W)))
-        self.process.stdin.write(frame.tobytes())
+        try:
+            self.process.stdin.write(frame.tobytes())
+        except BrokenPipeError:
+            # ffmpeg died: report its exit code and error message
+            err = self.process.stderr.read().decode(errors='ignore')
+            raise IOError('ffmpeg died at frame %i of "%s" (exit code %s):\n%s' % (\
+                            self.n, self.filename, self.process.wait(), err))
         self.n += 1
 
     def close(self):

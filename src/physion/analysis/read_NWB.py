@@ -190,6 +190,7 @@ class Data(VisualStimMixin, LocomotionMixin, FaceCameraMixin, OptoMixin, OphysMi
                                  self.nwbfile.acquisition[key].timestamps[-1]]
                 except (AttributeError, TypeError, IndexError) as be:
                     safety_counter += 1
+            safety_counter += 1 # (no acquisition: nothing to loop over)
 
         if self.tlim is None:
             self.tlim = [0, 60*60] # 1h by default (~ upper limit) 

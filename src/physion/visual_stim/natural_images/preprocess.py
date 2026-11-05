@@ -1,6 +1,6 @@
 """
 preprocessing of the natural images displayed by the "images" stimuli
-    (visual_stim/stimuli/images.py and images_VSE.py)
+    (visual_stim/stimuli/images.py, and its "images-VSE" version)
 
     load -> img_after_hist_normalization
 
@@ -12,13 +12,26 @@ preprocessing of the natural images displayed by the "images" stimuli
     the greyscale conversions also differ (skimage `rgb2gray` here, PIL "L" in images.py)
 """
 import numpy as np
-from skimage import color, io, exposure
+from skimage import color, io, exposure, util
 
 
 def load(image_path):
-    """ greyscale image in [0,1] (skimage rgb2gray), screen coordinates (transposed) """
+    """
+    greyscale image in [0,1] (skimage rgb2gray), screen coordinates (transposed)
+        greyscale (+alpha), RGB and RGBA files
+    """
 
-    img = color.rgb2gray(io.imread(image_path))
+    img = io.imread(image_path)
+
+    if img.ndim==2:
+        img = util.img_as_float(img)
+    elif img.shape[-1]==2:
+        # greyscale + alpha
+        img = util.img_as_float(img[..., 0])
+    else:
+        if img.shape[-1]==4:
+            img = color.rgba2rgb(img)
+        img = color.rgb2gray(img)
 
     return np.rot90(np.array(img).T, k=1) # needs transpose + rotation
 

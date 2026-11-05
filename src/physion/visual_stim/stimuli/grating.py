@@ -40,8 +40,31 @@ class stim(visual_stim):
     multiprotocol holding this protocol
     """
 
-    def __init__(self, protocol):
+    # "-VSE" version, legacy protocols: shifts in pixels, 200 pixels <-> 40 degrees
+    legacy_vse_deg_per_pixel = (40./200., 40./200.)
+
+    def __init__(self, protocol, params=params):
         super().__init__(protocol, params)
+
+    def get_content_image(self, episode,
+                          time_from_episode_start=0,
+                          shift=(0, 0)):
+        """ full-screen grating moved by `shift` (degrees), see virtual_scene_exploration.py """
+
+        img = init_bg_image(self, episode)
+
+        self.add_grating_patch(img,
+               angle=self.experiment['angle'][episode],
+               radius=5000., # the surround is blanked later
+               spatial_freq=self.experiment['spatial-freq'][episode],
+               contrast=self.experiment['contrast'][episode],
+               xcenter=shift[0],
+               zcenter=shift[1],
+               phase_shift_Deg=self.experiment['phase'][episode]\
+                       if 'phase' in self.experiment else 90.,
+               time_phase=self.experiment['speed'][episode]*time_from_episode_start)
+
+        return img
 
     def get_image(self, episode, 
                   time_from_episode_start=0,

@@ -211,3 +211,236 @@ def test_vse_units_in_NWB(tmp_path):
         vse = VisualStimMixin.get_visual_stim_vse(types.SimpleNamespace(nwbfile=nwb), 0, 3)
         assert vse['units'] == 'deg' and vse['max_amplitude'] == 30.
         np.testing.assert_allclose(vse['x'], stim.vse['x'])
+
+
+def _write_NWB(stim, folder):
+    """ visual-stim.npy with images and VSE -> NWB file, returns its path """
+    import datetime, types
+    import pynwb
+    from dateutil.tz import tzlocal
+    from physion.assembling.nwb import add_visual_stimulation
+
+    add_images_to_experiment(stim)
+    add_vse_to_experiment(stim)
+    np.save(folder / 'visual-stim.npy', stim.experiment)
+    args = types.SimpleNamespace(datafolder=str(folder), modalities=['VisualStim'],
+                                 force_to_visualStimTimestamps=True, exclude_episodes=[],
+                                 indices_forced=None, times_forced=None, durations_forced=None,
+                                 max_episode=-1, photodiode_sampling=1000.,
+                                 reverse_photodiodeSignal=False, verbose=False)
+    nwbfile = pynwb.NWBFile(session_description='test', identifier='test',
+                            session_start_time=datetime.datetime.now(tzlocal()))
+    add_visual_stimulation(nwbfile, {'VisualStim': True}, None, args)
+    with pynwb.NWBHDF5IO(str(folder / 'test.nwb'), 'w') as io:
+        io.write(nwbfile)
+    return str(folder / 'test.nwb')
+
+
+def _rebuild_from_NWB(path, protocol):
+    """ build_visual_stim, as when reading a recording, called on the opened NWB file """
+    import json, types
+    import pynwb
+    from physion.analysis.modalities.visual_stim import VisualStimMixin
+
+    class Data(VisualStimMixin):
+        pass
+
+    io = pynwb.NWBHDF5IO(path, 'r')
+    data = Data()
+    data.nwbfile, data.metadata = io.read(), json.loads(json.dumps(protocol))
+    data.df_name = 'test'
+    data.build_visual_stim()
+    return data, io
+
+
+def test_stored_vse_replaces_the_regenerated_one(tmp_path, capsys, monkeypatch):
+    protocol = dict(BASE, Stimulus='grating-VSE', **VSE_DEG)
+    stim = build_stim(json_copy(protocol))
+    path = _write_NWB(stim, tmp_path)
+
+    # same generator: no warning
+    data, io = _rebuild_from_NWB(path, protocol)
+    for key in ['t', 'x', 'y']:
+        np.testing.assert_array_equal(data.visual_stim.vse[key], stim.vse[key])
+    assert 'differs' not in capsys.readouterr().out
+    io.close()
+
+    # generator changed since the recording: warning, what was shown is kept
+    from physion.visual_stim.stimuli import virtual_scene_exploration as vse
+    original = vse.generate_sequence_from_protocol
+    def changed(p):
+        return dict(original(p), x=original(p)['x']+1.)
+    monkeypatch.setattr(vse, 'generate_sequence_from_protocol', changed)
+    data, io = _rebuild_from_NWB(path, protocol)
+    for key in ['t', 'x', 'y']:
+        np.testing.assert_array_equal(data.visual_stim.vse[key], stim.vse[key])
+    assert 'differs' in capsys.readouterr().out
+    assert data.visual_stim.vse['units'] == 'deg'
+    io.close()
+
+
+def json_copy(protocol):
+    import json
+    return json.loads(json.dumps(protocol))
+
+
+def test_missing_image_files(tmp_path, capsys):
+    import pytest
+    missing = str(tmp_path / 'not-here')
+    protocol = dict(BASE, Stimulus='images', **IMAGES, contrast=0.8)
+    stim = build_stim(json_copy(protocol))
+    path = _write_NWB(stim, tmp_path)
+    protocol['NI_FOLDER'] = missing
+
+    # building a protocol: the error is kept
+    with pytest.raises(FileNotFoundError):
+        build_stim(json_copy(protocol))
+
+    # reading a recording: images of the NWB file, frames equal up to 8-bit rounding
+    data, io = _rebuild_from_NWB(path, protocol)
+    assert 'images-from-recording' not in data.metadata
+    assert 'using the 3 images stored' in capsys.readouterr().out
+    for ep in range(len(stim.experiment['index'])):
+        np.testing.assert_allclose(data.visual_stim.get_image(ep), stim.get_image(ep),
+                                   atol=0.8/255)
+    io.close()
+
+
+def test_missing_image_files_without_stored_images(tmp_path):
+    import pytest
+    missing = str(tmp_path / 'not-here')
+    protocol = dict(BASE, Stimulus='images', **IMAGES)
+    stim = build_stim(json_copy(protocol))
+    # a file without images: it can still be read, the frames can not be drawn
+    add_vse_to_experiment(stim)
+    np.save(tmp_path / 'visual-stim.npy', stim.experiment)
+    path = _write_NWB_without_images(stim, tmp_path)
+    protocol['NI_FOLDER'] = missing
+    data, io = _rebuild_from_NWB(path, protocol)
+    with pytest.raises(FileNotFoundError):
+        data.visual_stim.get_image(0)
+    io.close()
+
+
+def _write_NWB_without_images(stim, folder):
+    path = _write_NWB(stim, folder)
+    import h5py
+    with h5py.File(path, 'a') as f:
+        del f['stimulus/templates/visual-stim-images']
+    return path
+
+
+def test_missing_image_files_VSE_and_multiprotocol(tmp_path, capsys):
+    """ images-VSE in a multiprotocol: stored VSE and images, shifted screen image with a warning """
+    multi = {"Presentation": "multiprotocol", "Screen": "Dell-2020-low-resolution", "no-window": True,
+             "presentation-prestim-period": 1, "presentation-poststim-period": 1}
+    subs = [dict(BASE, Stimulus='grating'),
+            dict(BASE, Stimulus='images-VSE', **IMAGES, **VSE_DEG)]
+    for i, sub in enumerate(subs, start=1):
+        multi['Protocol-%i' % i] = sub['Stimulus']
+        for k, v in sub.items():
+            multi['Protocol-%i-%s' % (i, k)] = v
+    stim = build_stim(json_copy(multi))
+    path = _write_NWB(stim, tmp_path)
+    multi['Protocol-2-NI_FOLDER'] = str(tmp_path / 'not-here')
+
+    data, io = _rebuild_from_NWB(path, multi)
+    assert not any('images-from-recording' in k for k in data.metadata)
+    rebuilt = data.visual_stim.STIM[1]
+    assert rebuilt.NIarray is None and len(rebuilt.stored_images) == 3
+    np.testing.assert_array_equal(rebuilt.vse['x'], stim.STIM[1].vse['x'])
+
+    # before the first saccade: exact
+    ep = 0
+    np.testing.assert_allclose(rebuilt.get_image(ep, time_from_episode_start=0),
+                               stim.STIM[1].get_image(ep, time_from_episode_start=0), atol=1./255)
+    assert 'only approximated' not in capsys.readouterr().out
+    # after a saccade: approximated, with a warning, same shape
+    t = rebuilt.vse['t'][0]+1e-3
+    assert rebuilt.get_image(ep, time_from_episode_start=t).shape == rebuilt.x.shape
+    assert 'only approximated' in capsys.readouterr().out
+    io.close()
+
+
+FORMER_IDS = {"Image-ID-1": 0, "Image-ID-2": 3, "N-Image-ID": 2}
+
+
+def _former_recording(protocol, tmp_path):
+    """ NWB file of a former stimulus: images stored under the former "Image-ID" numbers """
+    from physion.visual_stim.stimuli.images import FROM_RECORDING
+    stim = build_stim(dict(json_copy(protocol), **{FROM_RECORDING: True}))
+    rng = np.random.default_rng(0)
+    shape = tuple(stim.screen['resolution'][::-1])
+    stim.set_stored_images({i: rng.integers(0, 256, shape, dtype='uint8') for i in [0, 3]})
+    return stim, _write_NWB(stim, tmp_path)
+
+
+def test_former_natural_image_recording(tmp_path):
+    protocol = dict(BASE, Stimulus='natural-image', NI_FOLDER='/not/here', contrast=0.8, radius=200,
+                    **FORMER_IDS)
+    stim, path = _former_recording(protocol, tmp_path)
+    data, io = _rebuild_from_NWB(path, protocol)
+    assert sorted(data.visual_stim.stored_images) == [0, 3]
+    assert not any('images-from-recording' in k for k in data.metadata)
+    assert sorted(set(data.visual_stim.experiment['Image-ID'])) == [0, 3]
+    for ep in range(len(stim.experiment['index'])):
+        np.testing.assert_allclose(data.visual_stim.get_image(ep), stim.get_image(ep), atol=1e-9)
+    io.close()
+
+
+def test_former_VSE_recordings_shifted_as_displayed(tmp_path):
+    from physion.visual_stim.stimuli import virtual_scene_exploration as vse
+    for i, (name, stimulus, amplitude) in enumerate([('deg', 'natural-image-VSE', VSE_DEG),
+                                                     ('pixels', 'natural-image+VSE', dict(VSE, **{'saccade-amplitude': 20.}))]):
+        folder = tmp_path / name
+        folder.mkdir()
+        protocol = dict(BASE, Stimulus=stimulus, contrast=1.0, radius=500, **FORMER_IDS, **amplitude)
+        stim, path = _former_recording(protocol, folder)
+        assert stim.vse['units'] == name[:3].replace('pix', 'pixels')
+        data, io = _rebuild_from_NWB(path, protocol)
+        for key in ['t', 'x', 'y']:
+            np.testing.assert_array_equal(data.visual_stim.vse[key], stim.vse[key])
+        t = stim.vse['t'][0]+1e-3
+        expected = 0.5+1.0*(vse.compute_shifted_image(stim, stim.get_source_image(0), t)-0.5)
+        ep = list(stim.experiment['Image-ID']).index(0)
+        np.testing.assert_allclose(data.visual_stim.get_image(ep, time_from_episode_start=t),
+                                   expected, atol=1e-9)
+        io.close()
+
+
+def test_former_set_of_images_recording(tmp_path):
+    protocol = dict(BASE, Stimulus='set-of-images', **FORMER_IDS)
+    stim, path = _former_recording(protocol, tmp_path)
+    data, io = _rebuild_from_NWB(path, protocol)
+    np.testing.assert_allclose(data.visual_stim.get_image(0), stim.get_image(0), atol=1e-9)
+    io.close()
+
+
+def test_former_recording_without_stored_images(tmp_path):
+    import pytest
+    protocol = dict(BASE, Stimulus='natural-image', **FORMER_IDS)
+    stim, path = _former_recording(protocol, tmp_path)
+    import h5py
+    with h5py.File(path, 'a') as f:
+        del f['stimulus/templates/visual-stim-images']
+    data, io = _rebuild_from_NWB(path, protocol)
+    assert len(data.visual_stim.experiment['Image-ID']) == len(stim.experiment['Image-ID'])
+    with pytest.raises(FileNotFoundError):
+        data.visual_stim.get_image(0)
+    io.close()
+
+
+def test_former_stimuli_can_not_build_protocols():
+    import pytest
+    for stimulus in ['natural-image', 'natural-image-VSE', 'natural-image+VSE', 'set-of-images']:
+        with pytest.raises(ValueError, match='former recordings'):
+            build_stim(dict(BASE, Stimulus=stimulus, **FORMER_IDS))
+
+
+def test_read_tlim_without_acquisition():
+    """ no acquisition: default time limits, no infinite loop """
+    import types
+    from physion.analysis.read_NWB import Data
+    data = types.SimpleNamespace(nwbfile=types.SimpleNamespace(acquisition={}))
+    Data.read_tlim(data)
+    assert data.tlim == [0, 60*60]

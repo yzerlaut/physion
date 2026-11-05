@@ -4,9 +4,17 @@ visual stimulation (photodiode, stimulus parameters, protocols, episodes)
 methods of physion.analysis.read_NWB.Data (see the Data class)
 """
 import numpy as np
-import json
+import json, re
 from physion.visual_stim.build import build_stim, image_key, vse_key, VISUAL_STIM_IMAGES
+from physion.visual_stim.stimuli.images import FROM_RECORDING
 from physion.analysis import tools
+
+
+def same_vse(vse1, vse2):
+    """ same saccade times, same shifts, same units """
+    return (vse1.get('units', 'pixels')==vse2.get('units', 'pixels')) and\
+        all(len(vse1[key])==len(vse2[key]) and np.allclose(vse1[key], vse2[key])\
+                for key in ['t', 'x', 'y'])
 
 
 class VisualStimMixin:
@@ -67,8 +75,19 @@ class VisualStimMixin:
                 self.metadata['units'] = 'deg'
 
             # build an initial visual_stim 
-            self.visual_stim = build_stim(protocol=self.metadata)
-            
+            #   (the image files can be missing: images stored in the file, see below)
+            flags = [FROM_RECORDING]+['Protocol-%i-%s' % (i, FROM_RECORDING)\
+                        for i in range(1, 1+len([k for k in self.metadata\
+                                                 if re.fullmatch(r'Protocol-\d+', k)]))]
+            self.metadata.update({flag:True for flag in flags})
+            try:
+                self.visual_stim = build_stim(protocol=self.metadata)
+            finally:
+                for flag in flags:
+                    self.metadata.pop(flag)
+
+            self.set_visual_stim_data_from_file()
+
             # then force to what was really shown (NWB file)
             for i in range(self.nwbfile.stimulus['time_start_realigned'].num_samples):
                 for key in self.visual_stim.experiment: 
@@ -85,6 +104,50 @@ class VisualStimMixin:
                 print(' [ok] --> "visual_stim" built successfully ')
         else:
             print(' %s --> visual stim not available ...' % self.df_name)
+
+    def set_visual_stim_data_from_file(self):
+        """
+        what was really shown (NWB file) instead of what the current code and files give:
+            - the virtual saccadic explorations (VSE), not regenerated from the protocol
+            - the images, if the image files are missing
+        """
+        STIM = self.visual_stim.STIM if hasattr(self.visual_stim, 'STIM')\
+                    else [self.visual_stim]
+
+        for protocol_id, stim in enumerate(STIM):
+
+            vse = getattr(stim, 'vse', None)
+            stored = self.get_stored_vse(protocol_id)
+            if isinstance(vse, dict) and (stored is not None):
+                if not same_vse(vse, stored):
+                    print(' [!!] protocol %i: the VSE regenerated from the protocol differs from' % protocol_id)
+                    print('      the one stored in the NWB file --> using the stored one [!!]')
+                stim.vse = stored
+
+            if hasattr(stim, 'set_stored_images') and (stim.NIarray is None):
+                images = self.get_stored_images(protocol_id)
+                stim.set_stored_images(images)
+                print(' [!!] protocol %i: image files not available' % protocol_id)
+                print('      --> using the %i images stored in the NWB file [!!]' % len(images))
+
+    def get_stored_vse(self, protocol_id):
+        """ VSE of protocol "protocol_id" stored in the NWB file (one per protocol), or None """
+        prefix = vse_key(protocol_id, 0)[:-1]
+        for key in self.nwbfile.stimulus_template:
+            if key.startswith(prefix):
+                return self.get_visual_stim_vse(protocol_id, seed=int(key[len(prefix):]))
+        return None
+
+    def get_stored_images(self, protocol_id):
+        """ {Image-ID: image} of protocol "protocol_id" stored in the NWB file """
+        if VISUAL_STIM_IMAGES not in self.nwbfile.stimulus_template:
+            return {}
+        prefix = image_key(protocol_id, 0)[:-1]
+        image_ids = [int(key[len(prefix):])\
+                        for key in self.nwbfile.stimulus_template[VISUAL_STIM_IMAGES].images\
+                            if key.startswith(prefix)]
+        return {image_id:self.get_visual_stim_image(protocol_id, image_id)\
+                    for image_id in image_ids}
 
     def get_protocol_id(self, protocol_name):
         cond = np.argwhere(self.protocols==protocol_name).flatten()
