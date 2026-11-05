@@ -231,6 +231,8 @@ class Data(VisualStimMixin, LocomotionMixin, FaceCameraMixin, OptoMixin, OphysMi
             getattr(self, 'build_%s' % quantity)()
         setattr(self, 'Zscore_%s' % quantity,
                 zscore(getattr(self, quantity), axis=-1))
+        setattr(self, 't_Zscore_%s' % quantity,
+                getattr(self, 't_%s' % quantity)) # so that it behaves nicely in Episodes
 
 
     def available_modalities(self,
