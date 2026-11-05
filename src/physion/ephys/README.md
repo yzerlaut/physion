@@ -1,5 +1,19 @@
 # Electrophysiology
 
+## Setting up Open Ephys from the command line
+
+With the Open Ephys GUI running and the acquisition stopped, to reset the Spike Detector to one single electrode per contact of the probe:
+```
+python -m physion.ephys.openephys SPIKE-DETECTOR --threshold_type std --threshold_value 4
+```
+- `--threshold_type`: `std` (multiple of the standard deviation, in the range `[1,10]`), `abs` (in uV, in the range `[-500,-20]`) or `dyn` (see below)
+- `--stream`: the name of the probe stream, default: `ProbeA`
+- `--dry_run`: only writes the new settings to a file
+
+This replaces all current electrodes and reloads the whole signal chain, because the plugin has no command to edit electrodes directly. The other plugins are therefore re-initialized with their current settings. The previous settings are saved first, and the command prints the path of that file. To restore them, load this file in the GUI.
+
+N.B. the source code of the Spike Detector never activates the `dyn` thresholder when loading settings, so prefer `std`.
+
 ## Overall pipeline 
 
 __*following an experimental session recorded with OpenEphys & physion*:__
