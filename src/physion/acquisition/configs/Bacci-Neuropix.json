@@ -21,7 +21,7 @@
             "lines":"port0/line0-3",
             "line-labels":[
                 "ephys-synch-signal-irregular-5Hz",
-                "visual-stim-episode-start",
+                "visual-stim-on",
                 "LED-optogenetics-activation"
             ]
         },
@@ -31,7 +31,7 @@
                 "locomotion-channel1",
                 "locomotion-channel2",
                 "copy-ephys-synch-signal-irregular-5Hz",
-                "copy-visual-stim-episode-start",
+                "copy-visual-stim-on",
                 "copy-LED-optogenetics-activation"
             ]
         }

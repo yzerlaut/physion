@@ -50,6 +50,12 @@ def find_line_props(line_labels,
         return props
 
 
+def visual_stim_TTL_steps(experiment, channel):
+    """ digital output steps: high during each episode, from "time_start" to "time_stop" """
+    return [{'channel':channel, 'onset':start, 'duration':stop-start}\
+                for start, stop in zip(experiment['time_start'], experiment['time_stop'])]
+
+
 def check_gui_to_init_metadata(self):
     
     ### set up all metadata based on GUI infos

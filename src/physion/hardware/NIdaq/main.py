@@ -197,8 +197,9 @@ class Acquisition:
                 for step in digital_output_steps:
                     i0 = int(step['onset']/self.dt) 
                     i1 = int( (step['onset'] + step['duration']) / self.dt )
-                    self.digital_outputs[0, i0:i1] +=\
-                             np.uint8(2**step['channel'])
+                    # (bitwise: overlapping steps do not change the other channels)
+                    self.digital_outputs[0, i0:i1] |=\
+                             np.uint32(2**step['channel'])
 
                 # force start and stop to be zeros
                 self.digital_outputs[0, 0] = 0
@@ -378,6 +379,35 @@ class Acquisition:
             self.analog_data = self.analog_data[:,:n]
             self.digital_data = self.digital_data[:,:n]
 
+    def set_outputs_to_zero(self):
+        """
+        the output lines keep their last value when their task stops: a line can stay high
+            if the acquisition is stopped during a step (TTL of the visual stim, ...)
+            -> on-demand write of zeros on all output channels, once the tasks are closed
+
+        never raises: the data still have to be saved
+        """
+        if self.write_digital_task is not None:
+            try:
+                with nidaqmx.Task() as task:
+                    task.do_channels.add_do_chan(self.digital_out_chan,
+                            line_grouping=LineGrouping.CHAN_FOR_ALL_LINES)
+                    DigitalMultiChannelWriter(task.out_stream).write_one_sample_port_uint32(\
+                                                        np.zeros(1, dtype=np.uint32))
+            except Exception as error:
+                print(' [!!] NIdaq: digital outputs NOT set to zero (%s) [!!] ' % error)
+
+        if self.write_analog_task is not None:
+            try:
+                with nidaqmx.Task() as task:
+                    task.ao_channels.add_ao_voltage_chan(\
+                            flatten_channel_string(self.output_channels),
+                            max_val=10, min_val=-10)
+                    AnalogMultiChannelWriter(task.out_stream).write_one_sample(\
+                                np.zeros(len(self.output_channels), dtype=np.float64))
+            except Exception as error:
+                print(' [!!] NIdaq: analog outputs NOT set to zero (%s) [!!] ' % error)
+
     def close(self):
 
         # stop the reading callbacks before closing the tasks:
@@ -391,6 +421,7 @@ class Acquisition:
                          self.sample_clk_task]:
                 if task is not None:
                     task.close()
+            self.set_outputs_to_zero()
 
         if not self.data_saved:
             self.gather_data()

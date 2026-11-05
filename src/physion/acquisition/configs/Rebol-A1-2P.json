@@ -18,7 +18,7 @@
             "lines":"port0/line0:2",
             "line-labels":[
                 "2P-start-stop-trigger-with-0.1s-delay",
-                "visual-stim-episode-start",
+                "visual-stim-on",
                 "LED-optogenetics-activation"
             ]
         },
@@ -27,7 +27,7 @@
             "line-labels":[
                 "locomotion-channel1",
                 "locomotion-channel2",
-                "copy-visual-stim-episode-start",
+                "copy-visual-stim-on",
                 "copy-LED-optogenetics-activation",
                 "copy-2P-start-stop-trigger"
             ]

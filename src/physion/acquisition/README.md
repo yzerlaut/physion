@@ -60,7 +60,7 @@ Each file is a JSON file that describes the rig and some key metadata of the exp
         "digital-outputs":{
             "lines":"port0/line0:2",
             "line-labels":["ephys-synch-signal-2Hz",
-                           "visual-stim-episode-start",
+                           "visual-stim-on",
                            "LED-optogenetics-activation"]
         },
         "digital-inputs":{
@@ -68,7 +68,7 @@ Each file is a JSON file that describes the rig and some key metadata of the exp
             "line-labels":["copy-ephys-synch-signal",
                            "locomotion-channel1",
                            "locomotion-channel2",
-                           "copy-visual-stim-episode-start",
+                           "copy-visual-stim-on",
                            "copy-LED-optogenetics-activation"]
         }
     },
@@ -86,7 +86,7 @@ Each file is a JSON file that describes the rig and some key metadata of the exp
 
 Some keys are used by the program:
 - `"Rig"`: the name of the rig, it also sets the position of the stimulation screen(s) (see the [visual stimulation documentation](../visual_stim/README.md#3f-screens-and-settings));
-- `"NIdaq"`: the channels of the NIdaq card. The labels are used to find the channels: `"photodiode-signal-from-screen"` (analog input), `"locomotion-channel1"` and `"locomotion-channel2"` (digital inputs of the rotary encoder), `"visual-stim-episode-start"`, `"ephys-synch-signal"` and `"2P-start-stop-trigger"` (digital outputs);
+- `"NIdaq"`: the channels of the NIdaq card. The labels are used to find the channels: `"photodiode-signal-from-screen"` (analog input), `"locomotion-channel1"` and `"locomotion-channel2"` (digital inputs of the rotary encoder), `"visual-stim-on"` (high during each visual stimulation episode: rising edge at its start, falling edge at its end), `"ephys-synch-signal"` and `"2P-start-stop-trigger"` (digital outputs);
 - `"FaceCamera"`, `"RigCamera"`, `"ImagingCamera"`: the frame rates of the cameras;
 - `"treadmill"` (or `"rotating-disk"` in older configurations): the position of the mouse on the disk, used to compute the running speed (see the [behavior documentation](../behavior/README.md));
 - `"default-modalities"`: the modalities checked when the configuration is selected.

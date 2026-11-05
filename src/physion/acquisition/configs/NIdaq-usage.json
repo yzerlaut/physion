@@ -25,7 +25,7 @@
             "lines":"port0/line0:2",
             "line-labels":[
                 "trigger-for-2P-start",
-                "visual-stim-episode-start",
+                "visual-stim-on",
                 ""
             ]
         },

@@ -166,3 +166,101 @@ def test_usb_close_waits_for_the_callback_in_progress(nidaq, tmp_path):
     np.testing.assert_array_equal(saved['analog'], analog)
     acq.reading_task_callback(0, 0, 100)
     assert len(acq.analog_buffers) == 0
+
+
+class FakeZeroHardware:
+    """ on-demand output tasks, what they write and when """
+
+    def __init__(self, main, monkeypatch, failing=False):
+        self.events, self.failing = [], failing
+        hardware = self
+
+        class Channels:
+            def __init__(self, kind):
+                self.kind = kind
+            def add_do_chan(self, chan, line_grouping=None):
+                hardware.events.append(('digital-chan', chan))
+            def add_ao_voltage_chan(self, chan, max_val=None, min_val=None):
+                hardware.events.append(('analog-chan', chan))
+
+        class Task:
+            def __init__(self):
+                self.do_channels, self.ao_channels = Channels('do'), Channels('ao')
+                self.out_stream = None
+            def __enter__(self):
+                if hardware.failing:
+                    raise RuntimeError('device busy')
+                return self
+            def __exit__(self, *args):
+                hardware.events.append('task-closed')
+
+        class DigitalWriter:
+            def __init__(self, stream): pass
+            def write_one_sample_port_uint32(self, data):
+                assert data.dtype==np.uint32 and data.ndim==1
+                hardware.events.append(('digital-write', data.tolist()))
+
+        class AnalogWriter:
+            def __init__(self, stream): pass
+            def write_one_sample(self, data):
+                assert data.dtype==np.float64 and data.ndim==1
+                hardware.events.append(('analog-write', data.tolist()))
+
+        monkeypatch.setattr(main.nidaqmx, 'Task', Task)
+        monkeypatch.setattr(main, 'DigitalMultiChannelWriter', DigitalWriter)
+        monkeypatch.setattr(main, 'AnalogMultiChannelWriter', AnalogWriter)
+        monkeypatch.setattr(main, 'flatten_channel_string', ', '.join)
+        monkeypatch.setattr(main, 'LineGrouping', types.SimpleNamespace(CHAN_FOR_ALL_LINES='all'))
+
+
+class RecordedTask:
+    def __init__(self, name, events):
+        self.name, self.events = name, events
+    def close(self):
+        self.events.append('closed-'+self.name)
+
+
+def acquisition_with_outputs(Acquisition, tmp_path, hardware):
+    acq = running_acquisition(Acquisition, tmp_path, FakeReaders())
+    acq.digital_out_chan, acq.output_channels = 'Dev1/port0/line3:7', ['Dev1/ao0', 'Dev1/ao1']
+    for key in ['write_digital_task', 'write_analog_task', 'sample_clk_task']:
+        setattr(acq, key, RecordedTask(key, hardware.events))
+    return acq
+
+
+def test_close_sets_all_outputs_to_zero(nidaq, tmp_path, monkeypatch):
+    hardware = FakeZeroHardware(nidaq.main, monkeypatch)
+    acq = acquisition_with_outputs(nidaq.main.Acquisition, tmp_path, hardware)
+    acq.reading_task_callback(0, 0, 100)
+    acq.close()
+    assert ('digital-chan', 'Dev1/port0/line3:7') in hardware.events
+    assert ('digital-write', [0]) in hardware.events
+    assert ('analog-chan', 'Dev1/ao0, Dev1/ao1') in hardware.events
+    assert ('analog-write', [0., 0.]) in hardware.events
+    # the lines can only be written once the acquisition tasks released them
+    first_write = min(hardware.events.index(('digital-chan', 'Dev1/port0/line3:7')),
+                      hardware.events.index(('analog-chan', 'Dev1/ao0, Dev1/ao1')))
+    assert hardware.events.index('closed-sample_clk_task') < first_write
+    check_saved_data(acq, 1, 100)
+    # only once
+    n = len(hardware.events)
+    acq.close()
+    assert len(hardware.events) == n
+
+
+def test_data_are_saved_if_the_outputs_can_not_be_set_to_zero(nidaq, tmp_path, monkeypatch, capsys):
+    hardware = FakeZeroHardware(nidaq.main, monkeypatch, failing=True)
+    acq = acquisition_with_outputs(nidaq.main.Acquisition, tmp_path, hardware)
+    acq.reading_task_callback(0, 0, 100)
+    acq.close()
+    out = capsys.readouterr().out
+    assert 'digital outputs NOT set to zero' in out and 'analog outputs NOT set to zero' in out
+    check_saved_data(acq, 1, 100)
+
+
+def test_no_output_task_nothing_to_set_to_zero(nidaq, tmp_path, monkeypatch):
+    hardware = FakeZeroHardware(nidaq.main, monkeypatch)
+    acq = acquisition_with_outputs(nidaq.main.Acquisition, tmp_path, hardware)
+    acq.write_digital_task = acq.write_analog_task = None
+    acq.close()
+    assert not any(isinstance(e, tuple) for e in hardware.events)

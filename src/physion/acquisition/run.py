@@ -5,7 +5,7 @@ import multiprocessing
 from PyQt5 import QtCore
 
 from physion.utils.files import get_latest_file
-from physion.acquisition.tools import find_line_props,\
+from physion.acquisition.tools import find_line_props, visual_stim_TTL_steps,\
         check_gui_to_init_metadata, set_filename_and_folder
 from physion.opto import stim as opto_stim
 from physion.ephys.synch import sequence as ephysSynch
@@ -183,11 +183,11 @@ def run(self):
             
 
         if self.stim is not None:
-            #  means WITH VisualStim -- find channel --> TTL for stim onsets
+            #  means WITH VisualStim -- find channel --> TTL high during the stim episodes
             props = find_line_props(digital_line_labels,
-                                    'visual-stim-episode-start')
-            digital_output_steps += [{'channel':props['chan'], 'onset':e, 'duration':0.05}\
-                                        for e in self.stim.experiment['time_start']]
+                                    'visual-stim-on')
+            digital_output_steps += visual_stim_TTL_steps(self.stim.experiment,
+                                                          props['chan'])
 
         ################################################################################
         ##### ---> from here: WHAT IS THIS ?

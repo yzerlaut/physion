@@ -18,7 +18,7 @@
             "lines":"port0/line0:2",
             "line-labels":[
                 "ephys-synch-signal-2Hz",
-                "visual-stim-episode-start",
+                "visual-stim-on",
                 "LED-optogenetics-activation"
             ]
         },
@@ -28,7 +28,7 @@
                 "copy-ephys-synch-signal",
                 "locomotion-channel1",
                 "locomotion-channel2",
-                "copy-visual-stim-episode-start",
+                "copy-visual-stim-on",
                 "copy-LED-optogenetics-activation"
             ]
         }
