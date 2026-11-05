@@ -275,6 +275,7 @@ class OphysMixin:
                                         or an array with one factor per ROI
             (needs self.rawFluo and self.neuropil)
         """
+        self.t_correctedFluo = self.Fluorescence.timestamps[:]
 
         # we build rawFluo and neuropil if they do not exist already
         if not hasattr(self, 'rawFluo'):
@@ -379,9 +380,9 @@ class OphysMixin:
                         np.min(self.neuropil_correction_factors), np.max(self.neuropil_correction_factors)))
         else:
             self.neuropil_correction_factors = np.ones(self.nROIs)*neuropil_correction_factor
-                print('neuropil correction factors computed: %.2f +/- %.2f (min: %.2f, max: %.2f)' %\
-                       (np.mean(self.neuropil_correction_factors), np.std(self.neuropil_correction_factors),
-                        np.min(self.neuropil_correction_factors), np.max(self.neuropil_correction_factors)))
+            print('neuropil correction factors computed: %.2f +/- %.2f (min: %.2f, max: %.2f)' %\
+                    (np.mean(self.neuropil_correction_factors), np.std(self.neuropil_correction_factors),
+                    np.min(self.neuropil_correction_factors), np.max(self.neuropil_correction_factors)))
 
         # 3) neuropil correction
         self.build_correctedFluo(neuropil_correction_factor=self.neuropil_correction_factors,
