@@ -262,6 +262,7 @@ class OphysMixin:
                                                                    **kwargs)
 
     def build_correctedFluo(self,
+                            specific_time_sampling=None, interpolation='linear',
                             neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
                             verbose=True):
         """
@@ -271,6 +272,15 @@ class OphysMixin:
                                         or an array with one factor per ROI
             (needs self.rawFluo and self.neuropil)
         """
+
+        # we build rawFluo and neuropil if they do not exist already
+        if not hasattr(self, 'rawFluo'):
+            self.build_rawFluo(verbose=verbose, 
+                    specific_time_sampling=specific_time_sampling, interpolation=interpolation)
+        if not hasattr(self, 'neuropil'):
+            self.build_neuropil(verbose=verbose,
+                    specific_time_sampling=specific_time_sampling, interpolation=interpolation)
+
         factor = np.asarray(neuropil_correction_factor, dtype=float)
         if (factor.ndim==0) and not (0<=factor<=1):
             print('[!!] neuropil_correction_factor has to be in the interval [0.,1]')
