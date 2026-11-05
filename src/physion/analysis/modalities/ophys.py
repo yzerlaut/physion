@@ -6,10 +6,9 @@ methods of physion.analysis.read_NWB.Data (see the Data class)
 import time
 import numpy as np
 from physion.imaging.Calcium import METHOD, NEUROPIL_CORRECTION_FACTOR, PERCENTILE, ROI_TO_NEUROPIL_INCLUSION_FACTOR, ROI_TO_NEUROPIL_INCLUSION_FACTOR_METRIC, T_SLIDING,\
-        compute_F0, compute_neuropil_factor
+        compute_F0, compute_neuropil_factor, compute_neuropil_factor_allen
 from physion.imaging.dcnv import oasis
 from physion.analysis import tools
-from scipy.stats import zscore
 from scipy.ndimage import gaussian_filter1d
 
 # quantities of shape (nROIs, nTimes), restricted to the valid ROIs by set_valid_roiIndices
@@ -252,14 +251,18 @@ class OphysMixin:
             # then we update the timestamps
             self.t_neuropil = specific_time_sampling
 
-    def build_neuropil_correction_factors(self, **kwargs):
+    def build_neuropil_correction_factors(self, computed_neuropil_fact_method, **kwargs):
         """
         one neuropil correction factor per ROI: self.neuropil_correction_factors
             (slope of the lower envelope of rawFluo vs neuropil,
              see physion.imaging.Calcium.compute_neuropil_factor for the kwargs)
         """
-        self.neuropil_correction_factors = compute_neuropil_factor(self.rawFluo, self.neuropil,
-                                                                   **kwargs)
+        if computed_neuropil_fact_method == 'slope':
+            self.neuropil_correction_factors = compute_neuropil_factor(self.rawFluo, self.neuropil,
+                                                                    **kwargs)
+        elif computed_neuropil_fact_method == 'allen':
+            self.neuropil_correction_factors = compute_neuropil_factor_allen(self.rawFluo, self.neuropil,
+                                                        **kwargs)
 
     def build_correctedFluo(self,
                             specific_time_sampling=None, interpolation='linear',
@@ -316,7 +319,7 @@ class OphysMixin:
 
     def build_dFoF(self,
                    neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
-                   with_computed_neuropil_fact=False,
+                   computed_neuropil_fact_method=None,
                    keep_rois_with_neuropil_factor_in=None,
                    method_for_F0=METHOD,
                    percentile=PERCENTILE,
@@ -327,7 +330,7 @@ class OphysMixin:
                    specific_time_sampling=None,
                    interpolation='linear',
                    with_correctedFluo_and_F0=False,
-                   verbose=True):
+                   verbose=False):
         """
         creates self.dFoF = (correctedFluo-F0)/F0 and self.t_dFoF, from the raw data:
 
@@ -366,16 +369,19 @@ class OphysMixin:
                             interpolation=interpolation,
                             verbose=verbose)
         self.t_dFoF = self.t_rawFluo
-
+        
         # 2) neuropil correction factor of each ROI
-        if with_computed_neuropil_fact:
-            self.build_neuropil_correction_factors()
+        if computed_neuropil_fact_method:
+            self.build_neuropil_correction_factors(computed_neuropil_fact_method)
             if verbose:
                 print('neuropil correction factors computed: %.2f +/- %.2f (min: %.2f, max: %.2f)' %\
                        (np.mean(self.neuropil_correction_factors), np.std(self.neuropil_correction_factors),
                         np.min(self.neuropil_correction_factors), np.max(self.neuropil_correction_factors)))
         else:
             self.neuropil_correction_factors = np.ones(self.nROIs)*neuropil_correction_factor
+                print('neuropil correction factors computed: %.2f +/- %.2f (min: %.2f, max: %.2f)' %\
+                       (np.mean(self.neuropil_correction_factors), np.std(self.neuropil_correction_factors),
+                        np.min(self.neuropil_correction_factors), np.max(self.neuropil_correction_factors)))
 
         # 3) neuropil correction
         self.build_correctedFluo(neuropil_correction_factor=self.neuropil_correction_factors,
