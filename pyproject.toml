@@ -49,8 +49,7 @@ ephys = [
     "open-ephys-python-tools>=1.0",
     "spikeinterface[full]",
     "probeinterface",
-    "elephant==1.0.0",
-    "neo",
+    "elephant",
 ]
 # acquisition setups (camera SDKs: see docs/install/acquisition.md)
 acquisition = [
