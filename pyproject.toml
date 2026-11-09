@@ -50,7 +50,7 @@ ephys = [
     "spikeinterface[full]",
     "probeinterface",
     "elephant==1.0.0",
-    "neo==0.14.4",
+    "neo",
 ]
 # acquisition setups (camera SDKs: see docs/install/acquisition.md)
 acquisition = [
