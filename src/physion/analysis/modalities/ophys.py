@@ -263,6 +263,9 @@ class OphysMixin:
         elif computed_neuropil_fact_method == 'allen':
             self.neuropil_correction_factors = compute_neuropil_factor_allen(self.rawFluo, self.neuropil,
                                                         **kwargs)
+        else:
+            raise ValueError('method "%s" for the neuropil correction factors not recognized (either "slope" or "allen")' %\
+                                computed_neuropil_fact_method)
 
     def build_correctedFluo(self,
                             specific_time_sampling=None, interpolation='linear',
@@ -321,6 +324,7 @@ class OphysMixin:
     def build_dFoF(self,
                    neuropil_correction_factor=NEUROPIL_CORRECTION_FACTOR,
                    computed_neuropil_fact_method=None,
+                   with_computed_neuropil_fact=False,
                    keep_rois_with_neuropil_factor_in=None,
                    method_for_F0=METHOD,
                    percentile=PERCENTILE,
@@ -337,9 +341,11 @@ class OphysMixin:
 
         1) rawFluo and neuropil, of all ROIs (optionally resampled)
                         -> build_rawFluo, build_neuropil
-        2) neuropil correction factor of each ROI: computed if with_computed_neuropil_fact
+        2) neuropil correction factor of each ROI: computed if computed_neuropil_fact_method
+                is "slope" (lower envelope of rawFluo vs neuropil) or "allen" (Allen Institute)
                         -> build_neuropil_correction_factors
                 otherwise the same "neuropil_correction_factor" for all ROIs
+                (former argument: with_computed_neuropil_fact=True <=> "slope")
         3) correctedFluo = rawFluo - neuropil_correction_factor x neuropil
                 (with the factor of each ROI)
                         -> build_correctedFluo
@@ -372,6 +378,8 @@ class OphysMixin:
         self.t_dFoF = self.t_rawFluo
         
         # 2) neuropil correction factor of each ROI
+        if with_computed_neuropil_fact and not computed_neuropil_fact_method:
+            computed_neuropil_fact_method = 'slope'
         if computed_neuropil_fact_method:
             self.build_neuropil_correction_factors(computed_neuropil_fact_method)
             if verbose:
@@ -380,9 +388,8 @@ class OphysMixin:
                         np.min(self.neuropil_correction_factors), np.max(self.neuropil_correction_factors)))
         else:
             self.neuropil_correction_factors = np.ones(self.nROIs)*neuropil_correction_factor
-            print('neuropil correction factors computed: %.2f +/- %.2f (min: %.2f, max: %.2f)' %\
-                    (np.mean(self.neuropil_correction_factors), np.std(self.neuropil_correction_factors),
-                    np.min(self.neuropil_correction_factors), np.max(self.neuropil_correction_factors)))
+            if verbose:
+                print('neuropil correction factor: %.2f (same for all ROIs)' % neuropil_correction_factor)
 
         # 3) neuropil correction
         self.build_correctedFluo(neuropil_correction_factor=self.neuropil_correction_factors,

@@ -199,3 +199,24 @@ def compute_neuropil_factor(F, Fneu,
     dx = x-x.mean(axis=1, keepdims=True)
     dy = y-y.mean(axis=1, keepdims=True)
     return np.sum(dx*dy, axis=1)/np.sum(dx**2, axis=1)
+
+
+def compute_neuropil_factor_allen(F, Fneu):
+    """
+    one neuropil correction factor per ROI: contamination ratio "r" of the Allen Institute
+        (estimate_contamination_ratios of allensdk.brain_observatory.r_neuropil)
+
+    needs either the "Allen_Institute_r_neuropil" module (copy of r_neuropil.py,
+        in the python path) or the "allensdk" package
+    """
+    try:
+        from Allen_Institute_r_neuropil import estimate_contamination_ratios
+    except ModuleNotFoundError:
+        try:
+            from allensdk.brain_observatory.r_neuropil import estimate_contamination_ratios
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError(\
+                ' [!!] the "allen" neuropil correction needs "Allen_Institute_r_neuropil" (in the python path) or "allensdk" [!!]')
+
+    return np.array([estimate_contamination_ratios(F[roi,:], Fneu[roi,:])['r']\
+                        for roi in range(F.shape[0])])
