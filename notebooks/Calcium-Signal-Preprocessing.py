@@ -122,7 +122,8 @@ for roi in np.concatenate([np.random.choice(valid, 7, replace=False),
 plt.xlabel('time (s)');
 
 # %%
-correctedFluo = data.rawFluo-data.neuropil_correction_factor*data.neuropil
+neuropil_correction_factor = 0.7
+correctedFluo = data.rawFluo-neuropil_correction_factor*data.neuropil
 baseline = physion.imaging.Calcium.compute_F0(correctedFluo, data.t_dFoF[1]-data.t_dFoF[0],
                                               method=dFoF_options['method_for_F0'],
                                               percentile=dFoF_options['percentile'])
@@ -160,10 +161,14 @@ dFoF_options = dict(\
 
 data.build_dFoF(**dFoF_options)
 
-Dcnv = oasis(data.dFoF, len(data.t_dFoF), TAU, 1./data.CaImaging_dt)
+Dcnv = oasis(data.correctedFluo, len(data.t_rawFluo), 
+             TAU, 1./data.CaImaging_dt)
 
 # %%
-tzoom = [10,50]
+tzoom = [10,500]
+
+data.t_dFoF = data.t_rawFluo
+data.dFoF = data.correctedFluo
 
 np.random.seed(1)
 for roi in np.random.choice(range(data.nROIs), 10, 
