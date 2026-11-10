@@ -430,7 +430,7 @@ class OphysMixin:
         if hasattr(self, quantity): 
 
             self.quantity_Deconvolved = quantity
-            self.t_Deconvolved = self.t_dFoF
+            self.t_Deconvolved = self.t_rawFluo
 
             # time interval of the signal (possibly resampled)
             dt = self.t_Deconvolved[1]-self.t_Deconvolved[0]
