@@ -9,7 +9,7 @@ from dateutil.tz import tzlocal
 from physion.behavior.locomotion import compute_speed
 from physion.analysis.tools import resample, resample_signal
 from physion.utils.paths import python_path
-from physion.visual_stim.build import build_stim as build_visualStim, is_image_key,\
+from physion.visual_stim.build import build_stim_from_recording, is_image_key,\
         is_vse_key, is_protocol_data_key, VISUAL_STIM_IMAGES
 
 from physion.utils.camera import CameraData
@@ -91,7 +91,15 @@ def prepare_metadata(args):
         if protocol['Presentation']=='multiprotocol':
             # for multi-protocols we rebuild subprotocol parameters for security
             protocol['no-window'] = True
-            stim = build_visualStim(protocol)
+            #   (the image files can be missing: the images of visual-stim.npy replace them)
+            fn = os.path.join(args.datafolder, 'visual-stim.npy')
+            stored_images = {}
+            if os.path.isfile(fn):
+                VisualStim = np.load(fn, allow_pickle=True).item()
+                stored_images = {key:VisualStim[key] for key in VisualStim
+                                    if is_image_key(key)}
+            stim = build_stim_from_recording(protocol, stored_images,
+                                             verbose=args.verbose)
             protocol = stim.protocol
 
         # we add all protocol parameters to the metadata:

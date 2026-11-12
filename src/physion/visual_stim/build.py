@@ -129,6 +129,47 @@ def is_protocol_data_key(key):
     return is_image_key(key) or is_vse_key(key)
 
 
+def build_stim_from_recording(protocol, stored_images={}, verbose=True):
+    """
+    builds the stimulus of a recording (protocol.json of the data folder)
+        the image files ("NI_FOLDER") can be missing: the images stored in the
+        recording replace them
+
+    stored_images: {"protocol_id-%i-Image-ID-%i": greyscale image (uint8)},
+                    e.g. the content of visual-stim.npy (other keys are ignored)
+    """
+    import re
+    from physion.visual_stim.stimuli.images import FROM_RECORDING
+
+    flags = [FROM_RECORDING]+['Protocol-%i-%s' % (i, FROM_RECORDING)\
+                for i in range(1, 1+len([k for k in protocol\
+                                         if re.fullmatch(r'Protocol-\d+', k)]))]
+    protocol.update({flag:True for flag in flags})
+    try:
+        Stim = build_stim(protocol)
+    finally:
+        for flag in flags:
+            protocol.pop(flag, None)
+    if Stim is None:
+        return None
+    if Stim.protocol is not protocol:
+        for flag in flags:
+            Stim.protocol.pop(flag, None)
+
+    STIM = Stim.STIM if hasattr(Stim, 'STIM') else [Stim]
+    for protocol_id, stim in enumerate(STIM):
+        if hasattr(stim, 'set_stored_images') and (stim.NIarray is None):
+            prefix = image_key(protocol_id, 0)[:-1]
+            images = {int(key[len(prefix):]):np.asarray(img)\
+                        for key, img in stored_images.items()\
+                            if key.startswith(prefix) and key[len(prefix):].isdigit()}
+            stim.set_stored_images(images)
+            if verbose:
+                print(' [!!] protocol %i: image files not available' % protocol_id)
+                print('      --> using the %i images stored in the recording [!!]' % len(images))
+    return Stim
+
+
 def add_vse_to_experiment(Stim):
     """
     stores in Stim.experiment the virtual saccadic exploration (VSE) of the protocols having one

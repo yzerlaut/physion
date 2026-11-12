@@ -3,6 +3,7 @@ images and virtual saccadic explorations (VSE) of the protocols stored in visual
     ("protocol_id-%i-Image-ID-%i" and "protocol_id-%i-VSE-%i" keys) and in the NWB files
 """
 import numpy as np
+import pytest
 
 from physion.visual_stim.stimuli.images import NI_BANK
 from physion.visual_stim.build import build_stim, add_images_to_experiment, \
@@ -444,3 +445,48 @@ def test_read_tlim_without_acquisition():
     data = types.SimpleNamespace(nwbfile=types.SimpleNamespace(acquisition={}))
     Data.read_tlim(data)
     assert data.tlim == [0, 60*60]
+
+
+def test_assembling_multiprotocol_without_image_files(tmp_path, capsys):
+    """ NWB assembling (prepare_metadata): the images of visual-stim.npy replace the missing files """
+    import json, types
+    from physion.assembling.nwb import prepare_metadata
+    from physion.visual_stim.build import build_stim_from_recording
+    multi = {"Presentation": "multiprotocol", "Screen": "Dell-2020-low-resolution", "no-window": True,
+             "presentation-prestim-period": 1, "presentation-poststim-period": 1}
+    for i, sub in enumerate([dict(BASE, Stimulus='grating'),
+                             dict(BASE, Stimulus='images', **IMAGES)], start=1):
+        multi['Protocol-%i' % i] = sub['Stimulus']
+        for k, v in sub.items():
+            multi['Protocol-%i-%s' % (i, k)] = v
+    stim = build_stim(json_copy(multi))
+    add_images_to_experiment(stim)
+
+    # recording folder, the image folder is gone
+    folder = tmp_path / '2026_11_12' / '10-00-00'
+    folder.mkdir(parents=True)
+    protocol = json_copy(stim.protocol)
+    protocol['Protocol-2-NI_FOLDER'] = str(tmp_path / 'not-here')
+    (folder / 'protocol.json').write_text(json.dumps(protocol))
+    (folder / 'metadata.json').write_text(json.dumps({'date': '2026_11_12', 'time': '10-00-00',
+                                                      'protocol': 'multi', 'VisualStim': True}))
+    np.save(folder / 'visual-stim.npy', stim.experiment)
+
+    args = types.SimpleNamespace(datafolder=str(folder), verbose=True)
+    metadata, protocol, *_ = prepare_metadata(args)
+    assert 'using the 3 images stored in the recording' in capsys.readouterr().out
+    assert not any('images-from-recording' in k for k in list(metadata)+list(protocol))
+    assert protocol['Protocol-2-Image-ID-1'] == '1.jpg'
+
+    # the rebuilt stimulus draws the same frames from the stored images
+    rebuilt = build_stim_from_recording(protocol,
+                    {k: v for k, v in stim.experiment.items() if is_image_key(k)}, verbose=False)
+    assert rebuilt.STIM[1].NIarray is None
+    ep = list(rebuilt.experiment['protocol_id']).index(1)
+    np.testing.assert_allclose(rebuilt.get_image(ep), stim.get_image(ep), atol=1./255)
+
+    # without stored images: the missing files still raise (no silent black frames)
+    protocol['Protocol-2-NI_FOLDER'] = str(tmp_path / 'not-here')
+    rebuilt = build_stim_from_recording(protocol, {}, verbose=False)
+    with pytest.raises(FileNotFoundError):
+        rebuilt.get_image(ep)
