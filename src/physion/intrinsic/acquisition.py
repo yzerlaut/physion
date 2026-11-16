@@ -335,6 +335,11 @@ def run(self):
 
 def update_dt_intrinsic(self):
 
+    if not self.running:
+        # a callback scheduled before "stop" was pressed: the camera
+        #   may already be disarmed -> grabbing a frame would hang
+        return
+
     self.t = time.time()-self.t0_episode
 
     # fetch camera frame
@@ -539,9 +544,15 @@ def get_frame(self, force_HQ=False):
     elif (CameraInterface=='ThorCam') and self.camBox.isChecked():
 
         frame = self.cam.get_pending_frame_or_null()
-        while frame is None:
+        tstop = time.time()+max([2., 5e-3*float(self.exposureBox.text())])
+        while (frame is None) and (time.time()<tstop):
             frame = self.cam.get_pending_frame_or_null()
-        img = frame.image_buffer
+        if frame is None:
+            print(' [!!] no frame received from the ThorCam (camera disarmed ?) [!!]')
+            img = np.zeros((self.cam.image_height_pixels,
+                            self.cam.image_width_pixels))
+        else:
+            img = frame.image_buffer
 
     elif (CameraInterface == 'Toupcam') and self.camBox.isChecked():
         # Pull a frame from Toupcam

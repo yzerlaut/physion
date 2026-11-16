@@ -207,8 +207,19 @@ class StimulusPlayer:
             return
         if self.process.is_alive():
             self.cmd_queue.put(('quit', None))
-            self.process.join(timeout)
+            # (joined in small steps, so that a Qt GUI stays responsive)
+            try:
+                from PyQt5 import QtWidgets, QtCore
+                app = QtWidgets.QApplication.instance()
+            except ImportError:
+                app = None
+            tstop = time.time()+timeout
+            while self.process.is_alive() and (time.time()<tstop):
+                self.process.join(0.02)
+                if app is not None:
+                    app.processEvents(QtCore.QEventLoop.ExcludeUserInputEvents)
             if self.process.is_alive():
+                print('[!!] visual stim. process did not quit -> terminated [!!]')
                 self.process.terminate()
         self.process = None
 
