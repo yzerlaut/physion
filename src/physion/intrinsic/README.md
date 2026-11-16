@@ -37,11 +37,11 @@ The code comes from from [a script from Jun Zhuang](https://github.com/zhuangjun
 
 ## Usage
 
-1. Build the movies of the flickering bars for your screen (once), from the `src` folder of physion:
+1. Build the movies of the flickering bars for your screen (once):
     ```
     python -m physion.intrinsic.build_protocols intrinsic Dell-2020
     ```
-    (the second argument is a screen of [visual_stim/screens.py](../visual_stim/screens.py)). The movies are written in `physion/acquisition/protocols/movies/intrinsic/` (for the ocular dominance protocol, replace `intrinsic` by `ocular-dominance`).
+    (the second argument is a screen of [visual_stim/screens.py](../visual_stim/screens.py)). The movies are written in `~/visualStim-protocols/intrinsic/` (i.e. in the `visualStim-protocols` folder of the home directory, see the [acquisition documentation](../acquisition/README.md)), which is where the intrinsic imaging acquisition reads them (for the ocular dominance protocol, replace `intrinsic` by `ocular-dominance`).
 2. With a MicroManager camera: start MicroManager and set up the stream to `pycromanager` in MicroManager.
 3. Start physion in the intrinsic imaging mode, giving the camera interface:
     ```

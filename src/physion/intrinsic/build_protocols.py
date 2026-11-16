@@ -75,7 +75,8 @@ if __name__=='__main__':
     
     args = parser.parse_args()
 
-    folder = os.path.join('physion', 'acquisition', 'protocols', 'movies', args.protocol)
+    # movies are stored in the user-independent folder: ~/visualStim-protocols/<protocol>
+    folder = os.path.join(os.path.expanduser('~'), 'visualStim-protocols', args.protocol)
     tmp_folder = os.path.join('movies-temp') # build output (removed at the end)
 
     from physion.visual_stim.screens import SCREENS

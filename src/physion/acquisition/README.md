@@ -20,6 +20,7 @@ The acquisition setup should have a folder structure like this:
       Yann/
       ...
    visualStim-protocols/
+      intrinsic/         # movies of the intrinsic imaging protocol (built with physion.intrinsic.build_protocols)
       Joana/
          full-field-gratings-3contrasts/
          ...

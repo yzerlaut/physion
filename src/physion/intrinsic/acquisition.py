@@ -27,9 +27,8 @@ def gui(self,
         tab_id=0):
 
     self.windows[tab_id] = 'ISI_acquisition'
-    self.movie_folder = os.path.join(pathlib.Path(__file__).parent.resolve(),
-         	                         '..', 'acquisition', 'protocols',
-                                     'movies', 'intrinsic')
+    self.movie_folder = os.path.join(os.path.expanduser('~'),
+                                     'visualStim-protocols', 'intrinsic')
 
     tab = self.tabs[tab_id]
 

@@ -55,9 +55,7 @@ def gui(self,
 
     self.windows[tab_id] = 'OD_acquisition'
     self.movie_folder = os.path.join(os.path.expanduser('~'),
-                                     'work', 'physion', 'src',
-         	                         'physion', 'acquisition', 'protocols',
-                                     'movies', 'ocular-dominance')
+                                     'visualStim-protocols', 'ocular-dominance')
 
     tab = self.tabs[tab_id]
 
