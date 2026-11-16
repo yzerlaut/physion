@@ -382,13 +382,28 @@ def initialize_stimWindow(self):
             in the stimulus presentation process (created at the first call)
     """
     protocol = self.STIM['label'][self.iEp%len(self.STIM['label'])]
-    folder = os.path.join(self.movie_folder,
-                          'flickering-bars-period%ss' % self.periodBox.currentText())
-    movie_files = movie_filenames(folder, self.stim.screen['nScreens'],
-                                  basename=protocol)
+    nScreens = self.stim.screen['nScreens']
+    # movies are in the period sub-folder (as written by build_protocols),
+    #   or directly in the intrinsic folder
+    folders = [os.path.join(self.movie_folder,
+                            'flickering-bars-period%ss' % self.periodBox.currentText()),
+               self.movie_folder]
+    movie_files = None
+    for folder in folders:
+        movie_files = movie_filenames(folder, nScreens, basename=protocol)
+        if movie_files is not None:
+            break
     if movie_files is None:
-        print(' [!!] movie not found for "%s" in "%s" [!!]' % (protocol, folder))
-        print('      build them with: python -m physion.intrinsic.build_protocols')
+        expected = '%s.mkv' % protocol if nScreens==1 else \
+                ', '.join(['%s-%i.mkv' % (protocol, s+1) for s in range(nScreens)])
+        print(' [!!] movie not found for "%s" [!!]' % protocol)
+        print('      expected file(s): %s  (screen "%s" has %i screen(s))' % (\
+                expected, self.config['Screen'], nScreens))
+        for folder in folders:
+            content = sorted(os.listdir(folder)) if os.path.isdir(folder) else 'folder missing'
+            print('      in "%s": %s' % (folder, content))
+        print('      build them with: python -m physion.intrinsic.build_protocols intrinsic %s' %\
+                self.config['Screen'])
         self.t0_episode = time.time()
         return
 
