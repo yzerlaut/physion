@@ -1,7 +1,11 @@
-import os
+import os, sys
 
-python_path = 'python'
+# subprocesses (NWB building, suite2p, pdf summaries, ...) are launched with the
+# python running physion, i.e. the one of the uv environment (.venv) when physion
+# is started from it. Quoted in case the path contains spaces (commands are run through a shell)
+python_path = '"%s"' % sys.executable if (' ' in sys.executable) else sys.executable
 
+# only used for phy (spike sorting), which lives in its own conda environment
 possible_conda_dir_lists = [os.path.join(os.path.expanduser('~'), 'miniforge3'),
                             os.path.join(os.path.expanduser('~'), 'miniconda3'),
                             os.path.join(os.path.expanduser('~'), 'anaconda3'),
@@ -24,14 +28,7 @@ def check_path(env='physion'):
         i+=1
     return path
 
-if (os.name=='nt') and os.path.isdir(os.path.join(os.path.expanduser('~'), '.conda', 'envs', 'acquisition')):
-    print('acq setting')
-    python_path = os.path.join(os.path.expanduser('~'), '.conda', 'envs', 'acquisition', 'python.exe')
-else:
-    python_path = check_path('physion')
-
-        
-python_path_suite2p_env = check_path('suite2p')
+python_path_suite2p_env = python_path  # suite2p is installed in the same uv environment
 
 python_path_phy_env = check_path('phy')
 
