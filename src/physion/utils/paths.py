@@ -1,11 +1,14 @@
-import os, sys
+import os, sys, importlib.util
 
-# subprocesses (NWB building, suite2p, pdf summaries, ...) are launched with the
-# python running physion, i.e. the one of the uv environment (.venv) when physion
-# is started from it. Quoted in case the path contains spaces (commands are run through a shell)
-python_path = '"%s"' % sys.executable if (' ' in sys.executable) else sys.executable
+def quote(path):
+    """ commands are run through a shell: quote paths containing spaces """
+    return '"%s"' % path if (' ' in path) else path
 
-# only used for phy (spike sorting), which lives in its own conda environment
+# subprocesses (NWB building, pdf summaries, ...) are launched with the
+# python running physion (uv / venv / conda environment it was started from)
+python_path = quote(sys.executable)
+
+# conda installs where we look for separate environments (suite2p, phy)
 possible_conda_dir_lists = [os.path.join(os.path.expanduser('~'), 'miniforge3'),
                             os.path.join(os.path.expanduser('~'), 'miniconda3'),
                             os.path.join(os.path.expanduser('~'), 'anaconda3'),
@@ -22,13 +25,18 @@ def check_path(env='physion'):
         if os.path.isdir(new_path):
             success = True
             if (os.name=='nt'):
-                path = os.path.join(new_path, 'python.exe')
+                path = quote(os.path.join(new_path, 'python.exe'))
             else:
-                path = os.path.join(new_path, 'bin', 'python')
+                path = quote(os.path.join(new_path, 'bin', 'python'))
         i+=1
     return path
 
-python_path_suite2p_env = python_path  # suite2p is installed in the same uv environment
+# suite2p: the python running physion if suite2p is installed there (e.g. uv environment),
+# otherwise a separate "suite2p" conda environment (falls back to python_path if none)
+if importlib.util.find_spec('suite2p') is not None:
+    python_path_suite2p_env = python_path
+else:
+    python_path_suite2p_env = check_path('suite2p')
 
 python_path_phy_env = check_path('phy')
 
