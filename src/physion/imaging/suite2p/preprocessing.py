@@ -1,4 +1,4 @@
-import sys, os, pathlib, shutil, glob, time, subprocess
+import sys, os, pathlib, shutil, glob, time, subprocess, copy
 import numpy as np
 import h5py
 
@@ -8,7 +8,7 @@ from physion.imaging.bruker.xml_parser import bruker_xml_parser
 from physion.imaging.folders import is_TSeries_folder, is_h5_folder,\
         find_imaging_folders, plane_file
 from physion.imaging.suite2p.default_ops import default_ops, default_settings
-from physion.imaging.suite2p.presets import presets
+from physion.imaging.suite2p.presets import presets, is_v1
 
 from physion.imaging.suite2p.default_ops import default_ops
 
@@ -243,12 +243,21 @@ def run_preprocessing(args):
         (os.path.isdir(os.path.join(args.CaImaging_folder, 'suite2p'))):
        shutil.rmtree(os.path.join(args.CaImaging_folder, 'suite2p'))
 
-    build_suite2p_options(args.CaImaging_folder, 
-                          presets[args.setting_key])
+    my_settings = copy.deepcopy(presets[args.setting_key])
+    my_settings['v1'] = is_v1(my_settings)
+    my_settings.setdefault('subsampling', False) # set by the UI, not by the presets
 
-    cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
-                                     os.path.join(args.CaImaging_folder,'db.npy'),
-                                     os.path.join(args.CaImaging_folder,'ops.npy'))
+    build_suite2p_options(args.CaImaging_folder, my_settings)
+
+    if my_settings['v1']:
+        # "ops" was changed to "settings" in suite2p>=1.0
+        cmd = '%s -m suite2p --db "%s" --settings "%s" &' % (python_path_suite2p_env,
+                                         os.path.join(args.CaImaging_folder,'db.npy'),
+                                         os.path.join(args.CaImaging_folder,'settings.npy'))
+    else:
+        cmd = '%s -m suite2p --db "%s" --ops "%s" &' % (python_path_suite2p_env,
+                                         os.path.join(args.CaImaging_folder,'db.npy'),
+                                         os.path.join(args.CaImaging_folder,'ops.npy'))
 
     print('running "%s" \n ' % cmd)
     p = subprocess.Popen(cmd,

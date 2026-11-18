@@ -8,7 +8,7 @@ from physion.utils.files import get_files_with_extension,\
 from physion.imaging.suite2p.preprocessing import build_suite2p_options,\
         default_ops, is_TSeries_folder, is_h5_folder, find_imaging_folders
 from physion.imaging.bruker.xml_parser import bruker_xml_parser
-from physion.imaging.suite2p.presets import presets
+from physion.imaging.suite2p.presets import presets, is_v1
 from physion.utils.compression.twoP import reconvert_to_tiffs_from_log8bit
 from physion.gui.window import Window
 
@@ -298,9 +298,8 @@ class Suite2pWindow(Window):
         #    of a run would persist in the next runs)
         my_settings = copy.deepcopy(presets[self.presetBox.currentText()])
 
-        my_settings['v1'] = ('sourcery' in self.presetBox.currentText()) or\
-                                ('sparsery' in self.presetBox.currentText()) or\
-                                     ('cellpose' in self.presetBox.currentText())
+        # suite2p>=1.0 preset ? (from its structure, not its name)
+        my_settings['v1'] = is_v1(my_settings)
 
         # -------------
         # Registration
