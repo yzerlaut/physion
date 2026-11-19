@@ -1,7 +1,6 @@
 """
 decoding framework on synthetic population responses
 """
-import types
 import numpy as np
 import pytest
 
@@ -59,10 +58,10 @@ def test_shuffle_is_at_chance():
 def test_tensor_and_time_resolved():
     X, y, _ = synthetic(n_neurons=30, n_times=10, snr=0.8)
     assert decoding.cross_validated_decoding(X, y, pca=20)['accuracy']>0.9
-    res = decoding.time_resolved_decoding(X, y, window=2, step=2)
+    res = decoding.time_resolved_decoding(X, y, n_bins=2, step=2)
     assert len(res['accuracy'])==5
     assert res['accuracy'][0]<0.5 and res['accuracy'][-1]>0.8
-    M = decoding.temporal_generalisation(X, y, n_splits=3)
+    M, _ = decoding.temporal_generalisation(X, y, n_splits=3)
     assert M.shape==(10, 10)
     assert M[-1, -1]>0.6 and M[0, 0]<0.5
 
@@ -85,20 +84,40 @@ def test_matched_groups():
     assert set(res['cross'])=={('rest', 'run'), ('run', 'rest')}
 
 
-def test_from_episodes():
+def test_episode_arrays_passed_directly():
+    """ episodes.dFoF-like (trials, rois, times) with episodes.t and labels """
     rng = np.random.default_rng(0)
     t = np.arange(-1, 2, 0.01)
-    ep = types.SimpleNamespace(t=t, time_duration=np.ones(8),
-                               angle=np.repeat([0., 90.], 4),
-                               contrast=np.tile([0.5, 1.], 4),
-                               dFoF=rng.normal(size=(8, 5, len(t))),
-                               running=rng.random(size=(8, len(t))))
-    X, y, tb = decoding.from_episodes(ep, label='angle', baseline=[-0.5, 0])
-    assert X.shape==(8, 5) and tb is None
-    X, y, tb = decoding.from_episodes(ep, label=['angle', 'contrast'],
-                                      window=[0, 1], dt_bin=0.1)
-    assert X.shape==(8, 5, 10) and len(tb)==10
-    assert y[0]=='angle=0.0, contrast=0.5'
-    states = decoding.state_labels(decoding.episode_average(ep, 'running'),
+    angle = np.repeat([0., 90.], 10)
+    tuning = rng.normal(size=(2, 20))
+    evoked = ((t>0) & (t<1)).astype(float)
+    dFoF = 2*tuning[(angle==90).astype(int)][:, :, None]*evoked \
+        + rng.normal(size=(20, 20, len(t))) + rng.normal(size=(20, 1, 1))
+    running = rng.random(size=(20, len(t)))
+
+    # static: response window + baseline inside the pipeline
+    res = decoding.cross_validated_decoding(dFoF, angle, t=t,
+                                            window=[0, 1], baseline=[-0.5, 0])
+    assert res['accuracy']>0.9
+    # no information before the stimulus
+    pre = decoding.cross_validated_decoding(dFoF, angle, t=t, window=[-1, 0])
+    assert pre['accuracy']<0.8
+    # tensor: binned time course inside the pipeline
+    res = decoding.cross_validated_decoding(dFoF, angle, t=t,
+                                            window=[0, 1], dt_bin=0.1)
+    assert res['accuracy']>0.9
+    # time-resolved on the full tensor
+    tr = decoding.time_resolved_decoding(dFoF, angle, t=t, dt_bin=0.25)
+    evoked_bins = (tr['t']>0) & (tr['t']<1)
+    assert tr['accuracy'][evoked_bins].min()>0.8
+    assert tr['accuracy'][~evoked_bins].max()<0.8
+    M, tb = decoding.temporal_generalisation(dFoF, angle, t=t, window=[-1, 2],
+                                             dt_bin=0.5, n_splits=3)
+    assert M.shape==(6, 6) and len(tb)==6
+
+    with pytest.raises(ValueError):
+        decoding.build_pipeline(window=[0, 1])  # t missing
+
+    states = decoding.state_labels(decoding.window_average(running, t, [0, 1]),
                                    rest_max=0.45, run_min=0.55)
     assert set(states)<= {'rest', 'run', ''}

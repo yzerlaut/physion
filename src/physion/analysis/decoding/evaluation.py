@@ -1,11 +1,15 @@
 """
 Evaluation of decoders
 
-All functions take X of shape (n_trials, n_neurons) or
-(n_trials, n_neurons, n_times) and per-trial labels y.
+All functions take X and per-trial labels y, e.g.
+
+    cross_validated_decoding(episodes.dFoF, episodes.angle,
+                             t=episodes.t, window=[0, 2])
+
+with X of shape (n_trials, n_neurons) or (n_trials, n_neurons, n_times).
 
 Extra keyword arguments are passed to preprocessing.build_pipeline,
-e.g. decoder='lda', zscore=True, pca=20, metric='euclidean'.
+e.g. t=, window=, baseline=, dt_bin=, decoder='lda', zscore=True, pca=20.
 """
 import itertools
 import numpy as np
@@ -14,7 +18,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.model_selection import (StratifiedKFold, GroupKFold,
                                      LeaveOneGroupOut)
 
-from .preprocessing import build_pipeline
+from .preprocessing import build_pipeline, prepare_tensor
 
 
 def _as_arrays(X, y, blocks=None):
@@ -108,28 +112,35 @@ def shuffle_test(X, y, n_shuffles=100, seed=0, **kwargs):
                 p_value=(1+np.sum(null>=accuracy))/(1+n_shuffles))
 
 
-def time_resolved_decoding(X, y, window=1, step=1, t=None, **kwargs):
+def time_resolved_decoding(X, y,
+                           t=None, window=None, baseline=None, dt_bin=None,
+                           n_bins=1, step=1,
+                           **kwargs):
     """
-    decoding in sliding windows of `window` time bins (step: `step` bins)
+    decoding in sliding windows of `n_bins` time bins (shift: `step` bins)
 
-    X : (n_trials, n_neurons, n_times)
+    X                  (n_trials, n_neurons, n_times), e.g. episodes.dFoF
+    t, window,
+    baseline, dt_bin   applied once to X first (see preprocessing.prepare_tensor)
     returns dict(accuracy (n_windows,), t (window centres), chance)
     kwargs: passed to cross_validated_decoding (same folds for all windows)
     """
+    X, t = prepare_tensor(X, t=t, window=window, baseline=baseline, dt_bin=dt_bin)
     X, y, _ = _as_arrays(X, y)
     if X.ndim!=3:
         raise ValueError('X should be (n_trials, n_neurons, n_times)')
-    starts = np.arange(0, X.shape[2]-window+1, step)
-    acc = np.array([cross_validated_decoding(X[:, :, i:i+window], y,
+    starts = np.arange(0, X.shape[2]-n_bins+1, step)
+    acc = np.array([cross_validated_decoding(X[:, :, i:i+n_bins], y,
                                              **kwargs)['accuracy']
                     for i in starts])
-    centres = starts+(window-1)/2.
+    centres = starts+(n_bins-1)/2.
     if t is not None:
         centres = np.interp(centres, np.arange(len(t)), t)
     return dict(accuracy=acc, t=centres, chance=1./len(np.unique(y)))
 
 
 def temporal_generalisation(X, y,
+                            t=None, window=None, baseline=None, dt_bin=None,
                             pipeline=None,
                             n_splits=5,
                             blocks=None,
@@ -138,9 +149,12 @@ def temporal_generalisation(X, y,
     """
     train at time bin i, test at time bin j (King & Dehaene, 2014)
 
-    X : (n_trials, n_neurons, n_times)
-    returns (n_times, n_times) accuracy matrix, rows: training time
+    X                  (n_trials, n_neurons, n_times), e.g. episodes.dFoF
+    t, window,
+    baseline, dt_bin   applied once to X first (see preprocessing.prepare_tensor)
+    returns (accuracy matrix (n_times, n_times), t), rows: training time
     """
+    X, t = prepare_tensor(X, t=t, window=window, baseline=baseline, dt_bin=dt_bin)
     X, y, blocks = _as_arrays(X, y, blocks)
     if X.ndim!=3:
         raise ValueError('X should be (n_trials, n_neurons, n_times)')
@@ -154,7 +168,7 @@ def temporal_generalisation(X, y,
             model = clone(pipeline).fit(X[train, :, i], y[train])
             for j in range(n_t):
                 correct[i, j] += np.sum(model.predict(X[test, :, j])==y[test])
-    return correct/len(y)
+    return correct/len(y), t
 
 
 def matched_indices(y, groups, group_names=None, rng=None):
