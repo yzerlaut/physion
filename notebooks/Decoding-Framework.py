@@ -96,3 +96,84 @@ AX[1].imshow(M, origin='lower', extent=[t[0], t[-1], t[0], t[-1]], vmin=0, vmax=
 pt.set_plot(AX[1], xlabel='test time (s)', ylabel='train time (s)')
 
 # %%
+# %% [markdown]
+# ## 4) Merging two EpisodeData objects (dummy example)
+#
+# e.g. two protocols of the same session: static gratings + natural images.
+# Episodes are stacked along the trial axis and the labels are prefixed with the
+# protocol name, so that "angle 0" and "image 0" remain distinct stimuli.
+#
+# Requirements: the same neurons in the same order (same session / same ROIs or units)
+# and the same `dt_sampling`. The time axes can differ in length (different stimulus
+# or prestim durations): they are cropped to their common range.
+
+# %%
+from types import SimpleNamespace
+
+def merge_episodes(episodes_list, label_keys, names, quantity='dFoF'):
+    """
+    stack EpisodeData objects along the trial axis
+
+    returns X (n_trials, n_neurons, n_times), y (labels 'name value'), t
+    """
+    t0 = max(ep.t[0] for ep in episodes_list)
+    t1 = min(ep.t[-1] for ep in episodes_list)
+    X, y = [], []
+    for ep, key, name in zip(episodes_list, label_keys, names):
+        cond = (ep.t>=t0-1e-9) & (ep.t<=t1+1e-9)
+        X.append(getattr(ep, quantity)[:, :, cond])
+        y.append(np.array(['%s %s' % (name, v) for v in getattr(ep, key)]))
+        t = ep.t[cond]
+    if len(set(x.shape[1:] for x in X))>1:
+        raise ValueError('different neurons or time sampling: %s' % [x.shape for x in X])
+    return np.concatenate(X), np.concatenate(y), t
+
+
+def dummy_episodes(label_key, values, duration=2., n_repeats=10,
+                   n_neurons=50, dt=0.01, signal=0.07, seed=0):
+    """ EpisodeData-like object with .t, .dFoF (trials, neurons, time) and labels """
+    rng = np.random.default_rng(seed)
+    t = np.arange(-1, duration+1, dt)
+    index = np.repeat(np.arange(len(values)), n_repeats)
+    tuning = rng.normal(size=(len(values), n_neurons))
+    evoked = ((t>0) & (t<duration)).astype(float)
+    ep = SimpleNamespace(t=t,
+                         dFoF=signal*tuning[index][:, :, None]*evoked+\
+                             rng.normal(size=(len(index), n_neurons, len(t))))
+    setattr(ep, label_key, np.array(values)[index])
+    return ep
+
+# dummy data: 4 gratings (2 s) and 5 natural images (3 s), same 50 neurons
+episodes_gratings = dummy_episodes('angle', [0., 45., 90., 135.], duration=2., seed=1)
+episodes_images = dummy_episodes('Image-ID', [0, 1, 2, 3, 4], duration=3., seed=2)
+# with real data, e.g.:
+# episodes_gratings = EpisodeData(data, protocol_name='static-gratings',
+#                                 quantities=['dFoF'], dt_sampling=10)
+# episodes_images = EpisodeData(data, protocol_name='Natural-Images-4-repeats',
+#                               quantities=['dFoF'], dt_sampling=10)
+
+X, y, t = merge_episodes([episodes_gratings, episodes_images],
+                         label_keys=['angle', 'Image-ID'],
+                         names=['grating', 'image'])
+print(X.shape, np.unique(y))
+
+# %%
+# decoding the 9 stimuli (response window within both stimulus durations)
+res = decoding.cross_validated_decoding(X, y, t=t, window=[0, 2], baseline=[-0.5, 0])
+print('accuracy: %.2f (chance %.2f)' % (res['accuracy'], res['chance']))
+
+fig, ax = pt.figure(ax_scale=(1.3, 1.3))
+ax.imshow(res['confusion'], vmin=0, vmax=1, cmap='viridis')
+pt.set_plot(ax, xlabel='decoded', ylabel='presented',
+            xticks=range(len(res['classes'])), yticks=range(len(res['classes'])),
+            xticks_labels=res['classes'], yticks_labels=res['classes'],
+            xticks_rotation=90)
+
+# %%
+# decoding the stimulus category only (grating vs image)
+category = np.array([label.split(' ')[0] for label in y])
+res = decoding.cross_validated_decoding(X, category, t=t, window=[0, 2],
+                                        baseline=[-0.5, 0])
+print('grating vs image: %.2f (chance %.2f)' % (res['accuracy'], res['chance']))
+
+# %%
