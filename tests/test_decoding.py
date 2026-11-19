@@ -66,22 +66,46 @@ def test_tensor_and_time_resolved():
     assert M[-1, -1]>0.6 and M[0, 0]<0.5
 
 
-def test_matched_groups():
+def test_matched_training_per_group():
+    """ 13 'rest' vs 7 'run' trials per stimulus on average, one stimulus
+        with only 2 'run' trials (dropped), same tuning in both states """
     rng = np.random.default_rng(1)
-    X1, y1, _ = synthetic(snr=1.0, n_repeats=20, seed=1)   # 'run'
-    X2, y2, _ = synthetic(snr=0.2, n_repeats=8, seed=1)    # 'rest', fewer trials
-    X, y = np.concatenate([X1, X2]), np.concatenate([y1, y2])
-    groups = np.array(['run']*len(y1)+['rest']*len(y2))
-    groups[rng.choice(len(y), 5, replace=False)] = ''       # excluded trials
+    X, y, _ = synthetic(n_classes=5, snr=0.15, n_repeats=20, seed=1)
+    X_run, _, _ = synthetic(n_classes=5, snr=0.4, n_repeats=20, seed=1) # same tuning
+    groups = np.array(['rest']*len(y), dtype=object)
+    for c in range(5):
+        n_run = 2 if c==4 else 6+c%3
+        groups[rng.choice(np.flatnonzero(y==c), n_run, replace=False)] = 'run'
+    groups[np.flatnonzero(groups=='rest')[:3]] = ''           # excluded trials
+    X[groups=='run'] = X_run[groups=='run'] # stronger responses during running
 
-    idx = decoding.matched_indices(y, groups)
-    assert len(idx['rest'])==len(idx['run'])
-    for c in np.unique(y):
-        assert np.sum(y[idx['rest']]==c)==np.sum(y[idx['run']]==c)
+    splits = decoding.matched_training_splits(y, groups, n_train=5,
+                                              group_names=['rest', 'run'], rng=0)
+    for g, (train, test) in splits.items():
+        assert np.all(groups[train]==g) and np.all(groups[test]==g)
+        assert len(np.intersect1d(train, test))==0
+        for c in range(5):
+            assert np.sum(y[train]==c)==min(5, np.sum((y==c) & (groups==g)))
 
-    res = decoding.decoding_per_group(X, y, groups, n_subsamples=5)
+    res = decoding.decoding_per_group(X, y, groups, n_draws=10)
+    assert list(res['dropped'])==[4] and len(res['classes'])==4
+    assert res['n_train']==5                     # smallest run count - 1
+    assert res['chance']==0.25
     assert res['within']['run'].mean()>res['within']['rest'].mean()
     assert set(res['cross'])=={('rest', 'run'), ('run', 'rest')}
+    assert res['cross'][('rest', 'run')].mean()>1.5*res['chance'] # code generalises
+
+    with pytest.raises(ValueError):
+        decoding.decoding_per_group(X, y, groups, min_trials=20)
+
+
+def test_leave_one_out_by_default():
+    X, y, blocks = synthetic(n_repeats=10)
+    assert len(decoding.make_cv(y))==10
+    assert len(decoding.make_cv(y, blocks=blocks))==10
+    res = decoding.cross_validated_decoding(X, y)
+    assert len(res['accuracy_per_fold'])==10
+    assert res['balanced_accuracy']==pytest.approx(res['accuracy'])
 
 
 def test_episode_arrays_passed_directly():

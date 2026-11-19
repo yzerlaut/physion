@@ -74,11 +74,11 @@ The correlation template is the recommended starting point: averaging the traini
 
 | parameter | default | effect |
 |---|---|---|
-| `n_splits` | `5` | number of folds (reduced to the smallest class size if needed) |
+| `n_splits` | `None` | `None`: leave-one-out, i.e. as many folds as trials in the smallest class (10 folds with 10 trials per stimulus, each template averaged over 9 trials). A number: that many folds (reduced to the smallest class size if needed) |
 | `blocks` | `None` | `None`: stratified K-fold with shuffling. Array: all trials of a block are tested together (leave-one-block-out if `n_splits=None` or `n_splits >= n_blocks`, `GroupKFold` otherwise) |
 | `seed` | `0` | fold assignment |
 
-Block cross-validation (e.g. by repeat) prevents slow drift from leaking between training and test trials.
+With ~10 trials per stimulus, leave-one-out keeps the largest possible training set, and every trial is tested once whatever the number of folds. Block cross-validation by repeat (`blocks=repeat_index`) also prevents slow drift from leaking between training and test trials.
 
 ## Analyses
 
@@ -87,6 +87,7 @@ Block cross-validation (e.g. by repeat) prevents slow drift from leaking between
 Out-of-fold prediction of every trial. Returns a dict:
 
 - `accuracy`: fraction of correctly decoded trials
+- `balanced_accuracy`: mean over stimuli of the fraction correct (equal to `accuracy` with equal trial numbers per stimulus)
 - `accuracy_per_fold`
 - `chance`: `1/n_classes`
 - `classes`, `confusion` (rows: presented, columns: decoded, normalised per row)
@@ -104,15 +105,31 @@ Accuracy with shuffled labels. Returns `accuracy`, `null` (distribution) and `p_
 
 Train at time bin i, test at time bin j (King & Dehaene, 2014). Returns `(matrix, t)`, matrix rows = training time. A diagonal pattern indicates a code changing over time, a square block a stable code.
 
-### `decoding_per_group(X, y, groups, n_subsamples=20, cross_group=True, **kwargs)`
+### `decoding_per_group(X, y, groups, n_train=None, min_trials=4, n_draws=50, cross_group=True, **kwargs)`
 
-Decoding within each behavioural state with matched trial numbers:
+Decoding within each behavioural state, designed for unbalanced states (e.g. 20 trials per stimulus ending up as ~13 rest and ~7 run).
 
-- `matched_indices` draws, for every stimulus, the same number of trials in each group (the minimum across groups); stimuli missing from a group are dropped
-- repeated `n_subsamples` times
-- `cross_group=True` also trains on one state and tests on the other (e.g. rest -> run), to test whether the code generalises across states. Cross-group decoders are trained on all matched trials, within-group ones on (k-1)/k of them.
+Accuracy is biased by the number of training trials, not by the number of test trials. So the **training set is matched** across states and **all remaining trials are used for testing**:
 
-Returns `within` `{group: accuracies}`, `cross` `{(train, test): accuracies}` and `n_trials` per group.
+1. stimuli with fewer than `min_trials` trials in one of the states are dropped (from all states), listed in `dropped`
+2. `n_train` training trials per stimulus are drawn at random in each state; default: smallest (stimulus, state) count minus one, i.e. leave-one-out in the most constrained state (e.g. 7 run trials -> train on 6, test on 1 run and on 7 rest trials)
+3. the decoder of each state is tested on the remaining trials of that state (balanced accuracy)
+4. with `cross_group=True`, the decoder trained on one state is also tested on all trials of the other state (e.g. rest -> run), with the same training-set size, to test whether the code generalises across states
+5. repeated over `n_draws` random draws
+
+| parameter | default | effect |
+|---|---|---|
+| `group_names` | all non-empty labels | states to compare |
+| `min_trials` | `4` | minimum trials per stimulus in every state |
+| `n_train` | `None` | training trials per stimulus and state |
+| `n_draws` | `50` | random train/test draws |
+| `cross_group` | `True` | cross-state generalisation |
+
+Returns `within` `{state: (n_draws,) balanced accuracies}`, `cross` `{(train, test): (n_draws,)}`, `classes`, `dropped`, `n_train`, `n_trials` `{state: {stimulus: count}}` and `chance`.
+
+Statistics: the draws reuse the same trials, so their spread underestimates the uncertainty. Average over draws to get one value per session and state, then compare states across sessions or mice with a paired test.
+
+The training sets are small (5 to 9 trials per stimulus), which favours the correlation template; LDA or logistic regression need strong regularisation or `pca=`.
 
 ## Helpers
 
@@ -122,6 +139,7 @@ Returns `within` `{group: accuracies}`, `cross` `{(train, test): accuracies}` an
 | `subtract_baseline(X, t, window)` | per-trial baseline subtraction |
 | `bin_time(X, t, dt, window=None)` | bin-average along the last axis, returns `(X_binned, bin_centres)` |
 | `prepare_tensor(X, t, window, baseline, dt_bin)` | baseline + window/binning, keeping the time axis |
+| `matched_training_splits(y, groups, n_train)` | one random split per state with `n_train` training trials per stimulus, rest for testing |
 | `state_labels(values, rest_max=0.1, run_min=None)` | `'rest'` below `rest_max`, `'run'` from `run_min`, `''` in between (excluded) |
 
 Example for rest vs run:

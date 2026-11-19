@@ -66,14 +66,15 @@ for args in [dict(decoder='template'),
     print(args, '%.2f' % decoding.cross_validated_decoding(X, y, **static, **args)['accuracy'])
 
 # %% [markdown]
-# ## 2) Rest vs run, with matched trial numbers
+# ## 2) Rest vs run, with matched training-set size
 
 # %%
 speed = decoding.window_average(episodes.running, episodes.t, [0, 2])
 states = decoding.state_labels(speed, rest_max=0.1, run_min=0.5) # cm/s, '' in between
 print({s: np.sum(states==s) for s in ['rest', 'run', '']})
 
-res_states = decoding.decoding_per_group(X, y, states, n_subsamples=50, **static)
+res_states = decoding.decoding_per_group(X, y, states, min_trials=4, n_draws=50, **static)
+print('stimuli dropped:', res_states['dropped'], ', n_train:', res_states['n_train'])
 print({g: '%.2f' % a.mean() for g, a in res_states['within'].items()})
 print({k: '%.2f' % a.mean() for k, a in res_states['cross'].items()})
 

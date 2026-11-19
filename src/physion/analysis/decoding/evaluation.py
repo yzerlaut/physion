@@ -14,7 +14,7 @@ e.g. t=, window=, baseline=, dt_bin=, decoder='lda', zscore=True, pca=20.
 import itertools
 import numpy as np
 from sklearn.base import clone
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, balanced_accuracy_score
 from sklearn.model_selection import (StratifiedKFold, GroupKFold,
                                      LeaveOneGroupOut)
 
@@ -30,12 +30,15 @@ def _as_arrays(X, y, blocks=None):
     return X, y, blocks
 
 
-def make_cv(y, n_splits=5, blocks=None, seed=0):
+def make_cv(y, n_splits=None, blocks=None, seed=0):
     """
     list of (train_index, test_index)
 
     blocks=None : stratified K-fold with shuffling
-                  (n_splits reduced to the smallest class size if needed)
+                  n_splits=None (default) -> as many folds as trials in the
+                  smallest class, i.e. leave-one-trial-per-stimulus-out
+                  with 10 trials per stimulus (n_splits also reduced to the
+                  smallest class size if larger)
     blocks      : block cross-validation, all trials of a block are tested
                   together (e.g. blocks = repeat index)
                   -> leave-one-block-out if n_splits is None or
@@ -46,7 +49,8 @@ def make_cv(y, n_splits=5, blocks=None, seed=0):
         n_min = np.min(np.unique(y, return_counts=True)[1])
         if n_min<2:
             raise ValueError('at least 2 trials per class are needed')
-        cv = StratifiedKFold(n_splits=min(n_splits, n_min),
+        n_splits = n_min if n_splits is None else min(n_splits, n_min)
+        cv = StratifiedKFold(n_splits=n_splits,
                              shuffle=True, random_state=seed)
         return list(cv.split(np.zeros(len(y)), y))
     n_blocks = len(np.unique(blocks))
@@ -59,7 +63,7 @@ def make_cv(y, n_splits=5, blocks=None, seed=0):
 
 def cross_validated_decoding(X, y,
                              pipeline=None,
-                             n_splits=5,
+                             n_splits=None,
                              blocks=None,
                              seed=0,
                              **pipeline_kwargs):
@@ -68,6 +72,8 @@ def cross_validated_decoding(X, y,
 
     returns a dict with:
         accuracy            fraction of correctly decoded trials
+        balanced_accuracy   mean over classes of the fraction correct
+                            (= accuracy when classes have equal trial numbers)
         accuracy_per_fold
         chance              1/n_classes (use shuffle_test for a proper null)
         classes
@@ -87,6 +93,7 @@ def cross_validated_decoding(X, y,
 
     classes = np.unique(y)
     return dict(accuracy=np.mean(y_pred==y),
+                balanced_accuracy=balanced_accuracy_score(y, y_pred),
                 accuracy_per_fold=np.array(acc_folds),
                 chance=1./len(classes),
                 classes=classes,
@@ -142,7 +149,7 @@ def time_resolved_decoding(X, y,
 def temporal_generalisation(X, y,
                             t=None, window=None, baseline=None, dt_bin=None,
                             pipeline=None,
-                            n_splits=5,
+                            n_splits=None,
                             blocks=None,
                             seed=0,
                             **pipeline_kwargs):
@@ -171,83 +178,112 @@ def temporal_generalisation(X, y,
     return correct/len(y), t
 
 
-def matched_indices(y, groups, group_names=None, rng=None):
+def matched_training_splits(y, groups, n_train,
+                            group_names=None, rng=None):
     """
-    random subsample with the same number of trials per class in every group
+    one random train/test split per group with `n_train` training trials
+    per class in every group, all remaining trials of the group for testing
 
-    for each class c: n_c = min over groups of the number of trials (c, g)
-    classes absent from one of the groups are dropped
-
-    returns {group: trial indices}
+    returns {group: (train_index, test_index)}
     """
     y, groups = np.asarray(y), np.asarray(groups)
     if group_names is None:
         group_names = [g for g in np.unique(groups) if g not in ['', None]]
     rng = np.random.default_rng(rng)
-
-    index = {g: [] for g in group_names}
-    for c in np.unique(y):
-        pools = [np.flatnonzero((y==c) & (groups==g)) for g in group_names]
-        n = min(len(p) for p in pools)
-        if n==0:
-            continue
-        for g, p in zip(group_names, pools):
-            index[g].append(rng.choice(p, n, replace=False))
-    return {g: np.sort(np.concatenate(i)) if len(i) else np.array([], dtype=int)
-            for g, i in index.items()}
+    splits = {}
+    for g in group_names:
+        train, test = [], []
+        for c in np.unique(y):
+            pool = rng.permutation(np.flatnonzero((y==c) & (groups==g)))
+            train.append(pool[:n_train])
+            test.append(pool[n_train:])
+        splits[g] = (np.sort(np.concatenate(train)), np.sort(np.concatenate(test)))
+    return splits
 
 
 def decoding_per_group(X, y, groups,
                        group_names=None,
-                       n_subsamples=20,
-                       blocks=None,
+                       n_train=None,
+                       min_trials=4,
+                       n_draws=50,
                        cross_group=True,
-                       n_splits=5,
                        pipeline=None,
                        seed=0,
                        **pipeline_kwargs):
     """
-    decoding within each behavioural state, with matched trial numbers
+    decoding within each behavioural state, with the SAME NUMBER OF TRAINING
+    TRIALS per stimulus in every state
 
-    groups        per-trial state labels (e.g. from data.state_labels),
+    accuracy is biased by the training-set size, not by the test-set size:
+    the training set is matched across states and all the remaining trials
+    of each state are used for testing.
+
+    groups        per-trial state labels (e.g. from state_labels),
                   trials labelled '' are excluded
-    n_subsamples  number of random matched subsamples
-    cross_group   also train on all matched trials of one group and test on
-                  all matched trials of another (code generalisation across
-                  states). NB: cross-group decoders are trained on all the
-                  matched trials, within-group ones on (k-1)/k of them.
+    min_trials    stimuli with fewer trials than this in one of the states
+                  are dropped (from all states)
+    n_train       training trials per stimulus and state; default: smallest
+                  (stimulus, state) count minus one, i.e. leave-one-out in
+                  the most constrained state
+    n_draws       number of random train/test splits
+    cross_group   also test the decoder trained on one state on all trials
+                  of the other state(s), with the same training set
 
     returns dict with:
-        within      {group: (n_subsamples,) accuracies}
-        cross       {(train_group, test_group): (n_subsamples,) accuracies}
-        n_trials    {group: number of trials per subsample}
+        within      {group: (n_draws,) balanced accuracies}
+        cross       {(train_group, test_group): (n_draws,) balanced accuracies}
+        classes     stimuli kept
+        dropped     stimuli dropped (fewer than min_trials in one state)
+        n_train     training trials per stimulus
+        n_trials    {group: {stimulus: number of trials}}
+        chance      1/number of stimuli kept
+
+    NB: the draws reuse the same trials, so their spread underestimates the
+    uncertainty: average over draws and compare states across sessions/mice.
+
     pipeline_kwargs: passed to build_pipeline
     """
-    X, y, blocks = _as_arrays(X, y, blocks)
+    X, y, _ = _as_arrays(X, y)
     groups = np.asarray(groups)
     if group_names is None:
         group_names = [g for g in np.unique(groups) if g not in ['', None]]
     if pipeline is None:
         pipeline = build_pipeline(**pipeline_kwargs)
-    rng = np.random.default_rng(seed)
 
+    # stimuli with enough trials in every state
+    counts = {g: {c: int(np.sum((y==c) & (groups==g))) for c in np.unique(y)}
+              for g in group_names}
+    min_trials = max(min_trials, 2 if n_train is None else n_train+1)
+    classes = np.array([c for c in np.unique(y)
+                        if all(counts[g][c]>=min_trials for g in group_names)])
+    dropped = np.array([c for c in np.unique(y) if c not in classes])
+    if len(classes)<2:
+        raise ValueError('fewer than 2 stimuli with at least %i trials in every state'
+                         % min_trials)
+    if n_train is None:
+        n_train = min(counts[g][c] for g in group_names for c in classes)-1
+
+    keep = np.isin(y, classes) & np.isin(groups, group_names)
+    X, y, groups = X[keep], y[keep], groups[keep]
+
+    rng = np.random.default_rng(seed)
     within = {g: [] for g in group_names}
-    cross = {pair: [] for pair in itertools.permutations(group_names, 2)}
-    n_trials = {}
-    for r in range(n_subsamples):
-        idx = matched_indices(y, groups, group_names, rng=rng)
-        for g in group_names:
-            n_trials[g] = len(idx[g])
-            res = cross_validated_decoding(
-                    X[idx[g]], y[idx[g]], pipeline=pipeline,
-                    blocks=None if blocks is None else blocks[idx[g]],
-                    n_splits=n_splits, seed=seed+r)
-            within[g].append(res['accuracy'])
-        if cross_group:
-            for a, b in cross:
-                model = clone(pipeline).fit(X[idx[a]], y[idx[a]])
-                cross[(a, b)].append(np.mean(model.predict(X[idx[b]])==y[idx[b]]))
+    cross = {pair: [] for pair in itertools.permutations(group_names, 2)} \
+        if cross_group else {}
+    for _ in range(n_draws):
+        splits = matched_training_splits(y, groups, n_train, group_names, rng=rng)
+        models = {}
+        for g, (train, test) in splits.items():
+            models[g] = clone(pipeline).fit(X[train], y[train])
+            within[g].append(balanced_accuracy_score(y[test],
+                                                     models[g].predict(X[test])))
+        for a, b in cross:
+            in_b = (groups==b)
+            cross[(a, b)].append(balanced_accuracy_score(
+                y[in_b], models[a].predict(X[in_b])))
 
     return dict(within={g: np.array(v) for g, v in within.items()},
                 cross={k: np.array(v) for k, v in cross.items()},
-                n_trials=n_trials)
+                classes=classes, dropped=dropped, n_train=n_train,
+                n_trials={g: {c: counts[g][c] for c in classes} for g in group_names},
+                chance=1./len(classes))

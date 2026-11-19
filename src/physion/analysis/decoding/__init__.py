@@ -55,5 +55,5 @@ from .evaluation import (make_cv,
                          shuffle_test,
                          time_resolved_decoding,
                          temporal_generalisation,
-                         matched_indices,
+                         matched_training_splits,
                          decoding_per_group)
