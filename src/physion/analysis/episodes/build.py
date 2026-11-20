@@ -394,12 +394,20 @@ class EpisodeData:
                          iEp=0,
                          ax=None,
                          force_degree=False,
+                         stim_keys=None,
                          **args):
         """
+        stim_keys: parameters defining the stimulus for the "Stim.k"
+                   placeholder numbering (see stim_index)
         ###########################################################
         we rebuild an artificial **single stimulus** protocol 
             for the stimulus parameters of that episode
 
+
+        legacy files (protocol given as a json path, stimulus parameters not
+        stored in the NWB file), or legacy stimuli whose images are not
+        available: the picture can not be rebuilt
+            -> grey placeholder labelled "Stim.k" (see stim_index)
         """
         stim_data = {'no-window':True,
                      'Screen' : self.data.metadata['Screen']}
@@ -407,9 +415,11 @@ class EpisodeData:
         if 'Stimulus' in self.data.metadata:
             # single protocol
             stim_data['Stimulus'] = self.data.metadata['Stimulus']
-        else:
+        elif 'Protocol-%i-Stimulus' % (self.protocol_id+1) in self.data.metadata:
             # means multi-protocol
             stim_data['Stimulus'] = self.data.metadata['Protocol-%i-Stimulus' % (self.protocol_id+1)]
+        else:
+            return self.plot_stim_placeholder(iEp, ax=ax, stim_keys=stim_keys)
 
         default_params = get_default_params(stim_data['Stimulus'])
         # replacing the default params with those of this episode
@@ -426,16 +436,70 @@ class EpisodeData:
         stim_data['Presentation'] = 'Single-Stimulus'
 
         # we generate a new visual_stim object from this single episode info
-        visual_stim = getattr(\
-                         getattr(\
-                                stimuli,\
-                                    stim_data['Stimulus'].replace('-','_')),
-                                              'stim')(stim_data)
+        try:
+            visual_stim = getattr(\
+                             getattr(\
+                                    stimuli,\
+                                        stim_data['Stimulus'].replace('-','_')),
+                                                  'stim')(stim_data)
+        except (ValueError, FileNotFoundError) as e:
+            # e.g. legacy natural images ("natural-image", read-only) whose
+            # image files are not available: no picture, placeholder
+            print(' [!!] stimulus picture not available (%s) -> "Stim.%i" placeholder'
+                  % (str(e).strip()[:80], self.stim_index(iEp, stim_keys)))
+            return self.plot_stim_placeholder(iEp, ax=ax, stim_keys=stim_keys)
 
         # we use the plot_stim_picture method from visual stim
         visual_stim.plot_stim_picture(0, ax=ax, **args)
-        
+
         return 0
+
+    def stim_index(self, iEp, keys=None):
+        """
+        1-based index of the stimulus of episode iEp among the distinct
+        stimuli of the protocol (combinations of the varied parameters,
+        "repeat" excluded), in increasing order of the parameter values
+        """
+        if keys is None:
+            keys = [k for k in self.varied_parameters if k!='repeat']
+        if len(keys)==0:
+            return 1
+        params = np.array([getattr(self, k) for k in keys]).T
+        unique = np.unique(params, axis=0)
+        return 1+int(np.flatnonzero((unique==params[iEp]).all(axis=1))[0])
+
+    def plot_stim_placeholder(self, iEp=0, ax=None, fontsize=None, stim_keys=None):
+        """
+        grey screen labelled "Stim.k" (k = stim_index),
+        when the stimulus picture can not be rebuilt
+
+        fontsize: None -> fitted to the axis width (e.g. small insets)
+        """
+        if ax is None:
+            import matplotlib.pylab as plt
+            fig, ax = plt.subplots(1, figsize=(4, 4*9/16.))
+        ax.imshow(np.full((9, 16), 0.5), cmap='gray', vmin=0, vmax=1,
+                  origin='lower', extent=(0, 16, 0, 9))
+        label = 'Stim.%i' % self.stim_index(iEp, stim_keys)
+        if fontsize is not None:
+            ax.annotate(label, (8, 4.5), ha='center', va='center',
+                        color='k', fontsize=fontsize)
+        else:
+            # label drawn as a path in data coordinates: 80% of the screen
+            # width whatever the axis size (e.g. small insets)
+            from matplotlib.textpath import TextPath
+            from matplotlib.patches import PathPatch
+            from matplotlib.transforms import Affine2D
+            path = TextPath((0, 0), label, size=1)
+            ext = path.get_extents()
+            scale = 0.8*16/ext.width
+            transform = Affine2D().translate(-ext.x0-ext.width/2.,
+                                             -ext.y0-ext.height/2.)\
+                                  .scale(scale).translate(8, 4.5)
+            ax.add_patch(PathPatch(transform.transform_path(path),
+                                   color='k', lw=0))
+        ax.axis('off')
+        return ax
     
     def episode_filename(self, folder):
         return os.path.join(folder, '%s-protocol_id-%i.npy' %\

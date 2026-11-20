@@ -253,3 +253,34 @@ def test_merge_several_episode_data():
     with pytest.raises(ValueError):
         ep3 = fake_episodes(d1[:, :5, :], t1, angle)
         decoding.merge_episodes([ep1, ep3], 'angle')
+
+
+def test_correlation_per_bin_templates():
+    # one time bin: same similarity as the plain correlation
+    X, y, _ = synthetic(snr=0.5)
+    A = decoding.NearestTemplate('correlation').fit(X, y).similarity(X)
+    B = decoding.NearestTemplate('correlation-per-bin').fit(X, y).similarity(X)
+    np.testing.assert_allclose(A, B)
+    # neuro-temporal tensor, through the pipeline (not flattened), all analyses
+    X, y, _ = synthetic(n_times=10, snr=1.0)
+    res = decoding.cross_validated_decoding(X, y, metric='correlation-per-bin')
+    assert res['accuracy']>0.9
+    t = np.arange(10)
+    tr = decoding.time_resolved_decoding(X, y, t=t, n_bins=2,
+                                         metric='correlation-per-bin')
+    assert tr['accuracy'][-1]>tr['accuracy'][0]  # information in the 2nd half
+    with pytest.raises(ValueError):
+        decoding.cross_validated_decoding(X, y, pca=5, metric='correlation-per-bin')
+
+
+def test_correlation_per_bin_ignores_time_varying_gain():
+    # gain and offset shared by all neurons but changing from bin to bin
+    rng = np.random.default_rng(0)
+    X, y, _ = synthetic(n_times=10, snr=0.5)
+    X = X[:, :, 5:]  # bins with stimulus information
+    gain = 1+5*rng.random((len(y), 1, X.shape[2]))
+    X = gain*X+10*gain
+    kw = dict(zscore=False)
+    per_bin = decoding.cross_validated_decoding(X, y, metric='correlation-per-bin', **kw)
+    whole = decoding.cross_validated_decoding(X, y, metric='correlation', **kw)
+    assert per_bin['accuracy']>whole['accuracy']

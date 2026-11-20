@@ -4,6 +4,9 @@ Decoders (scikit-learn compatible classifiers)
     'template'   NearestTemplate: class-averaged templates + correlation
                  (default; one template per stimulus, so less noisy than
                   nearest-neighbour matching on single training trials)
+                 with a time course (dt_bin): neuro-temporal templates
+                 (neurons x time bins), metric='correlation' on the whole
+                 pattern or metric='correlation-per-bin'
     'knn'        k-nearest neighbours on single training trials
     'lda'        shrinkage linear discriminant analysis
     'logistic'   L2-regularised multinomial logistic regression
@@ -19,11 +22,21 @@ class NearestTemplate(BaseEstimator, ClassifierMixin):
     """
     nearest-template decoder
 
-    fit      : template = mean training response for each class
+    fit      : template = mean training response for each class,
+               (n_neurons,) or neuro-temporal (n_neurons, n_times)
     predict  : class of the most similar template
 
-    metric   'correlation' (Pearson correlation across neurons, insensitive
-                            to a global gain or offset of the trial response)
+    metric   'correlation' (Pearson correlation across all features, i.e.
+                            neurons, or neurons x time bins for a time
+                            course; insensitive to a global gain or offset
+                            of the trial response)
+             'correlation-per-bin'  neuro-temporal templates: Pearson
+                            correlation across neurons within each time bin,
+                            averaged over the bins (each moment weighs the
+                            same, insensitive to a gain or offset changing
+                            over the response). Needs X as
+                            (n_trials, n_neurons, n_times): build_pipeline
+                            does not flatten X for this metric
              'cosine'
              'euclidean'
     """
@@ -31,8 +44,16 @@ class NearestTemplate(BaseEstimator, ClassifierMixin):
     def __init__(self, metric='correlation'):
         self.metric = metric
 
+    def _shape(self, X):
+        """ (n_trials, n_neurons, n_times) for 'correlation-per-bin',
+            (n_trials, n_features) otherwise """
+        X = np.asarray(X, dtype=float)
+        if self.metric=='correlation-per-bin':
+            return X[:, :, None] if X.ndim==2 else X
+        return X.reshape(len(X), -1)
+
     def fit(self, X, y):
-        X, y = np.asarray(X, dtype=float), np.asarray(y)
+        X, y = self._shape(X), np.asarray(y)
         self.classes_ = np.unique(y)
         self.templates_ = np.array([X[y==c].mean(axis=0) for c in self.classes_])
         return self
@@ -44,9 +65,20 @@ class NearestTemplate(BaseEstimator, ClassifierMixin):
         norm = np.linalg.norm(A, axis=1, keepdims=True)
         return A/np.where(norm>0, norm, 1)
 
+    @staticmethod
+    def _normalise_neurons(A):
+        """ per time bin: centred and normalised across neurons (axis 1) """
+        A = A - A.mean(axis=1, keepdims=True)
+        norm = np.linalg.norm(A, axis=1, keepdims=True)
+        return A/np.where(norm>0, norm, 1)
+
     def similarity(self, X):
         """ (n_trials, n_classes) similarity to each template """
-        X = np.asarray(X, dtype=float)
+        X = self._shape(X)
+        if self.metric=='correlation-per-bin':
+            # correlation in each bin, averaged over bins
+            return np.einsum('nkt,ckt->nc', self._normalise_neurons(X),
+                             self._normalise_neurons(self.templates_))/X.shape[2]
         if self.metric in ['correlation', 'cosine']:
             center = (self.metric=='correlation')
             return self._normalise(X, center) @ self._normalise(self.templates_, center).T

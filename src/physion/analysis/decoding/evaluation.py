@@ -122,6 +122,7 @@ def shuffle_test(X, y, n_shuffles=100, seed=0, **kwargs):
 def time_resolved_decoding(X, y,
                            t=None, window=None, baseline=None, dt_bin=None,
                            n_bins=1, step=1,
+                           n_shuffles=0, shuffle_seed=0,
                            **kwargs):
     """
     decoding in sliding windows of `n_bins` time bins (shift: `step` bins)
@@ -129,7 +130,12 @@ def time_resolved_decoding(X, y,
     X                  (n_trials, n_neurons, n_times), e.g. episodes.dFoF
     t, window,
     baseline, dt_bin   applied once to X first (see preprocessing.prepare_tensor)
+    n_shuffles         shuffle control: accuracy with shuffled labels, one
+                       permutation of the labels per shuffle, the same for
+                       all windows
     returns dict(accuracy (n_windows,), t (window centres), chance)
+        + with n_shuffles>0:  null     (n_shuffles, n_windows)
+                              p_value  (n_windows,), per window
     kwargs: passed to cross_validated_decoding (same folds for all windows)
     """
     X, t = prepare_tensor(X, t=t, window=window, baseline=baseline, dt_bin=dt_bin)
@@ -137,13 +143,22 @@ def time_resolved_decoding(X, y,
     if X.ndim!=3:
         raise ValueError('X should be (n_trials, n_neurons, n_times)')
     starts = np.arange(0, X.shape[2]-n_bins+1, step)
-    acc = np.array([cross_validated_decoding(X[:, :, i:i+n_bins], y,
-                                             **kwargs)['accuracy']
-                    for i in starts])
+
+    def accuracy(labels):
+        return np.array([cross_validated_decoding(X[:, :, i:i+n_bins], labels,
+                                                  **kwargs)['accuracy']
+                         for i in starts])
+
     centres = starts+(n_bins-1)/2.
     if t is not None:
         centres = np.interp(centres, np.arange(len(t)), t)
-    return dict(accuracy=acc, t=centres, chance=1./len(np.unique(y)))
+    res = dict(accuracy=accuracy(y), t=centres, chance=1./len(np.unique(y)))
+    if n_shuffles>0:
+        rng = np.random.default_rng(shuffle_seed)
+        res['null'] = np.array([accuracy(rng.permutation(y))
+                                for _ in range(n_shuffles)])
+        res['p_value'] = (1+np.sum(res['null']>=res['accuracy'], axis=0))/(1+n_shuffles)
+    return res
 
 
 def temporal_generalisation(X, y,

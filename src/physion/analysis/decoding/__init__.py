@@ -30,6 +30,7 @@ Structure
     preprocessing.py  windowing, baseline, time binning, z-scoring, state labels
     evaluation.py     cross-validation, shuffle control, time-resolved
                       decoding, temporal generalisation, state comparison
+    plots.py          plots of the results, e.g. decoding.plots.confusion(res)
 
 Minimal usage
 -------------
@@ -61,3 +62,4 @@ from .evaluation import (make_cv,
                          temporal_generalisation,
                          matched_training_splits,
                          decoding_per_group)
+from . import plots

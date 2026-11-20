@@ -97,20 +97,20 @@ With none of these, `X` is used as given (a tensor is then decoded on its full f
 
 ### 2. Flatten
 
-`(n_trials, n_neurons, n_times)` -> `(n_trials, n_neurons*n_times)`. No effect on matrices.
+`(n_trials, n_neurons, n_times)` -> `(n_trials, n_neurons*n_times)`. No effect on matrices. Skipped for `decoder='template', metric='correlation-per-bin'`, which needs the time axis (see [Neuro-temporal templates](#neuro-temporal-templates)).
 
 ### 3. Feature scaling and reduction (fitted on training trials)
 
 | parameter | default | effect |
 |---|---|---|
-| `zscore` | `False` | z-score each feature (neuron, or neuron x time bin) with the training mean and std |
+| `zscore` | `True` | z-score each feature (neuron, or neuron x time bin) with the training mean and std, so that a few neurons with large responses do not dominate (`zscore=False`: raw responses) |
 | `pca` | `None` | number of PCA components |
 
 ### 4. Decoder
 
 | `decoder` | description | main parameters |
 |---|---|---|
-| `'template'` (default) | nearest template: one template per class (mean of its training trials), test trial assigned to the most similar template | `metric='correlation'` (default), `'cosine'`, `'euclidean'` |
+| `'template'` (default) | nearest template: one template per class (mean of its training trials), test trial assigned to the most similar template | `metric='correlation'` (default), `'correlation-per-bin'` (time courses only), `'cosine'`, `'euclidean'` |
 | `'knn'` | k-nearest neighbours on single training trials | `n_neighbors=1` |
 | `'lda'` | linear discriminant analysis with automatic shrinkage | `shrinkage='auto'` |
 | `'logistic'` | L2-regularised multinomial logistic regression | `C=1.0` (smaller = stronger regularisation) |
@@ -118,6 +118,32 @@ With none of these, `X` is used as given (a tensor is then decoded on its full f
 Decoder parameters are passed as extra keywords, e.g. `decoder='logistic', C=0.1`. Any scikit-learn classifier can also be given as `decoder=`, or a full `Pipeline` as `pipeline=`.
 
 The correlation template is the recommended starting point: averaging the training trials removes most of the single-trial noise, and the correlation ignores a global gain or offset of a trial response (e.g. from locomotion).
+
+#### Neuro-temporal templates
+
+With `dt_bin`, each trial is a `(n_neurons, n_bins)` time course and the template of a stimulus is its mean time course over the training trials: a neuro-temporal pattern. A test trial is assigned to the stimulus whose pattern it matches best, so both which neurons respond and when they respond count.
+
+```python
+neurotemporal = dict(t=episodes.t, window=[0, 2], baseline=[-0.5, 0], dt_bin=0.2)
+decoding.cross_validated_decoding(X, y, **neurotemporal)                       # whole pattern
+decoding.cross_validated_decoding(X, y, metric='correlation-per-bin', **neurotemporal)
+decoding.plots.representations(X, y, **neurotemporal)                          # trials and templates
+```
+
+| `metric` | similarity between a trial and a template | sensitive to |
+|---|---|---|
+| `'correlation'` (default) | one Pearson correlation over all neurons x time bins | the whole pattern; bins with large responses (e.g. the response peak) dominate, and a response building up over time in all neurons counts as a pattern |
+| `'correlation-per-bin'` | Pearson correlation across neurons within each time bin, averaged over bins | which neurons are active at each moment, every bin weighing the same; ignores a gain or offset changing over the response (e.g. a slow rise or adaptation shared by all neurons) |
+
+Both reduce to the plain correlation for a single bin (`dt_bin=None`). Practical points:
+
+- the window sets which moments are compared: bins with no response (e.g. before the stimulus) add noise, and with `'correlation-per-bin'` they weigh as much as the response bins
+- the bin size sets the temporal precision: ~0.2-0.5 s for dF/F (the calcium dynamics blur faster timing), down to a few ms for spikes
+- `zscore` (default) is computed per neuron and time bin
+- `'correlation-per-bin'` is not compatible with `pca` (which mixes neurons and time bins)
+- in `time_resolved_decoding`, `n_bins>1` gives neuro-temporal templates over sliding windows of `n_bins` bins
+
+On calcium imaging of natural images (demo session, 5 images x 20 trials), templates over [0, 2] s gave the same accuracy as the response averaged over the window (0.82 for both, 0.81 per bin): there, the time course adds little to the averaged response. The time axis is expected to matter more for spikes at fine time scales.
 
 ### 5. Cross-validation (`make_cv`)
 
@@ -179,6 +205,34 @@ Returns `within` `{state: (n_draws,) balanced accuracies}`, `cross` `{(train, te
 Statistics: the draws reuse the same trials, so their spread underestimates the uncertainty. Average over draws to get one value per session and state, then compare states across sessions or mice with a paired test.
 
 The training sets are small (5 to 9 trials per stimulus), which favours the correlation template; LDA or logistic regression need strong regularisation or `pca=`.
+
+## Plots
+
+`decoding.plots` takes the analysis outputs as they are and returns `(fig, ax)`; pass `ax=` to draw into an existing axis (multi-panel figures, overlays).
+
+| function | input | shows |
+|---|---|---|
+| `real_vs_shuffled(res, chance=)` | `shuffle_test` | bar plot: real accuracy vs shuffled (mean ± s.d.), significance stars |
+| `confusion(res, episodes=, label_key=)` | `cross_validated_decoding` | confusion matrix, accuracy and chance in the title; with `episodes` and `label_key` (e.g. `'Image-ID'`), stimulus pictures on top of the columns (`episodes.plot_stim_picture`) |
+| `accuracy_per_stimulus(res, sort=False)` | `cross_validated_decoding` | fraction correct per stimulus (diagonal of the confusion) |
+| `shuffle_null(res)` | `shuffle_test` | null distribution vs data accuracy, p-value |
+| `time_resolved(res, stim_interval=[0, 2], label=...)` | `time_resolved_decoding` | accuracy over time; call again on the same `ax` to overlay conditions |
+| `temporal_generalisation(M, t, chance=...)` | `temporal_generalisation` | train x test time matrix; with `chance`, diverging colormap centred on chance |
+| `per_group(res, show_cross=True)` | `decoding_per_group` | mean accuracy per state (bars), draws (dots), cross-state generalisation (hatched) |
+
+To look at the decoder input, `representations(X, y, **kwargs)` takes the same `t`, `window`, `baseline`, `dt_bin`, `zscore` as the decoding functions (other decoder arguments are ignored) and shows one cell per trial, stimuli in rows, trials in columns, neurons vertically in each cell: narrow cells for response vectors (`dt_bin=None`), neurons x time cells for tensors (`dt_bin` given). `order='preferred'` groups the neurons by preferred stimulus, `n_trials` limits the columns. The last column (`show_mean=True`) is the average over all trials of each stimulus, i.e. the template of the template decoder; it has its own colour scale, magnified by the factor given in its title (`mean_gain`). Z-scoring and averages are computed on all trials here (on the training trials of each fold when decoding).
+
+```python
+decoding.plots.representations(X, y, order='preferred', **static)       # vectors
+decoding.plots.representations(X, y, n_trials=6, **timecourse)          # tensors
+```
+
+```python
+fig, AX = pt.figure(axes=(3, 1))
+decoding.plots.confusion(res, ax=AX[0])
+decoding.plots.time_resolved(tr, ax=AX[1], stim_interval=[0, 2])
+decoding.plots.per_group(res_states, ax=AX[2])
+```
 
 ## Helpers
 

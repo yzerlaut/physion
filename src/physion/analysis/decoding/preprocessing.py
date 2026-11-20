@@ -168,18 +168,22 @@ def build_pipeline(decoder='template',
                    window=None,
                    baseline=None,
                    dt_bin=None,
-                   zscore=False,
+                   zscore=True,
                    pca=None,
                    **decoder_kwargs):
     """
     [Baseline] -> [TimeWindow] -> Flatten -> [ZScore] -> [PCA] -> decoder
+
+    (no Flatten for decoder='template', metric='correlation-per-bin': the
+     template decoder gets (n_trials, n_neurons, n_times))
 
     decoder         name in decoders.DECODERS or a scikit-learn estimator
     t               time axis of X (e.g. episodes.t), needed for the 3 next
     window          [t0, t1] (s): response window, averaged if dt_bin is None
     baseline        [t0, t1] (s): per-trial baseline subtracted
     dt_bin          (s) keep the time course in bins of dt_bin
-    zscore          z-score each feature (neuron, or neuron x time bin)
+    zscore          z-score each feature (neuron, or neuron x time bin), default
+                    True: neurons with large dF/F (or rates) do not dominate
     pca             None or number of components
     decoder_kwargs  passed to the decoder (e.g. metric='euclidean', C=0.1)
 
@@ -189,12 +193,19 @@ def build_pipeline(decoder='template',
     if (window is not None or baseline is not None or dt_bin is not None) \
             and t is None:
         raise ValueError('`t` (e.g. episodes.t) is needed for window/baseline/dt_bin')
+    # neuro-temporal templates compared bin by bin: keep the time axis
+    per_bin = (isinstance(decoder, str) and decoder=='template' and
+               decoder_kwargs.get('metric')=='correlation-per-bin')
+    if per_bin and pca:
+        raise ValueError("pca mixes neurons and time bins: not compatible "
+                         "with metric='correlation-per-bin'")
     steps = []
     if baseline is not None:
         steps.append(('baseline', Baseline(t=t, window=baseline)))
     if window is not None or dt_bin is not None:
         steps.append(('time_window', TimeWindow(t=t, window=window, dt_bin=dt_bin)))
-    steps.append(('flatten', Flatten()))
+    if not per_bin:
+        steps.append(('flatten', Flatten()))
     if zscore:
         steps.append(('zscore', ZScore()))
     if pca:
