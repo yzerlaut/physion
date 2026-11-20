@@ -247,6 +247,8 @@ def decoding_per_group(X, y, groups,
     groups = np.asarray(groups)
     if group_names is None:
         group_names = [g for g in np.unique(groups) if g not in ['', None]]
+    if len(group_names)<1:
+        raise ValueError('no state label in `groups` (all trials excluded?)')
     if pipeline is None:
         pipeline = build_pipeline(**pipeline_kwargs)
 

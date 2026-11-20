@@ -24,6 +24,7 @@ Optional per-trial arrays:
 Structure
 ---------
 
+    merge.py          merging episodes from several EpisodeData objects
     selection.py      label-blind selection of responsive neurons
     decoders.py       NearestTemplate (default) and other decoders
     preprocessing.py  windowing, baseline, time binning, z-scoring, state labels
@@ -46,7 +47,8 @@ Roadmap (not implemented yet)
     - signal / noise decomposition (trial-shuffled vs unshuffled)
     - spike-jitter and bin-width sweeps for spike-timing precision
 """
-from .selection import responsive_neurons
+from .merge import merge_episodes
+from .selection import responsive_neurons, responsive_mask
 from .decoders import NearestTemplate, build_decoder, DECODERS
 from .preprocessing import (window_average, subtract_baseline, bin_time,
                             state_labels, prepare_tensor,

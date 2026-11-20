@@ -25,30 +25,50 @@ Demo: [notebooks/Decoding-Framework.py](../../../../notebooks/Decoding-Framework
 
 The same calls work for both modalities. Only the windows, the bin size and the regularisation are expected to differ (e.g. `window=[0, 0.2]`, `dt_bin=0.005` for spikes; `window=[0, 2]`, `dt_bin=0.2` for dF/F).
 
+## Merging several EpisodeData objects
+
+```python
+EPISODES = [episodes_gratings, episodes_images]   # same session, same neurons
+X, y, t, source = decoding.merge_episodes(EPISODES, ['angle', 'Image-ID'],
+                                          names=['grating', 'image'])
+speed, _, t_speed, _ = decoding.merge_episodes(EPISODES, quantity='running')
+```
+
+Stacks a quantity along the trial axis. Everything downstream (selection, decoding, rest vs run) then works on the merged arrays.
+
+| parameter | default | effect |
+|---|---|---|
+| `label_keys` | `None` | stimulus parameter per EpisodeData (e.g. `['angle', 'Image-ID']`), or one key for all; `None`: no labels |
+| `quantity` | `'dFoF'` | `(trials, neurons, time)` quantities, or `(trials, time)` ones such as `'running'`, `'pupil'` |
+| `names` | `None` | `None`: labels kept as they are, identical labels pooled (e.g. one protocol split across two EpisodeData). List: labels prefixed (`'grating 90.0'`, `'image 3'`), stimuli of different protocols kept distinct |
+
+Time axes are cropped to their common range; if the time samples do not coincide, responses are linearly interpolated onto the time axis of the first EpisodeData. An error is raised if the number of neurons differs. Returns `X`, `y`, `t` and `source` (index of the EpisodeData of each trial).
+
 ## Selecting responsive neurons
 
 ```python
-responsive, summary = decoding.responsive_neurons(episodes, quantity='dFoF',
+responsive, summary = decoding.responsive_neurons(EPISODES,   # or a single EpisodeData
+                                                  quantity='dFoF',
                                                   interval_pre=[-1, 0],
                                                   interval_post=[0, 2])
-res = decoding.cross_validated_decoding(episodes.dFoF[:, responsive, :],
-                                        episodes.angle, t=episodes.t,
-                                        window=[0, 2])
+res = decoding.cross_validated_decoding(X[:, responsive, :], y, t=t, window=[0, 2])
 ```
 
-One evoked-vs-baseline test per neuron with **all stimuli merged** (every varied stimulus parameter is passed to `pre_post_statistics` as a `repetition_keys`) and, by default, all behavioural states pooled. The stimulus labels play no part in the selection, so it cannot create stimulus information (with shuffled labels, decoding stays at chance) and it can be done once on all trials, before decoding. For rest vs run, the same neurons are then used in both states.
+One evoked-vs-baseline test per neuron with **all stimuli merged**, pooling the episodes of every EpisodeData given and, by default, all behavioural states. The stimulus labels play no part in the selection, so it cannot create stimulus information (with shuffled labels, decoding stays at chance) and it can be done once on all trials, before decoding. For rest vs run, the same neurons are then used in both states.
+
+It is the test of `EpisodeData.pre_post_statistics` with every stimulus parameter passed as `repetition_keys` (`stat_tools.StatTest` between per-episode means over `interval_pre` and `interval_post`, bounds included; checked to give identical p-values in the tests), computed on the merged arrays so that several EpisodeData can be pooled. `responsive_mask(X, t, ...)` runs the same test directly on an array.
 
 | parameter | default | effect |
 |---|---|---|
 | `quantity` | `'dFoF'` | e.g. `'spikes'` |
 | `interval_pre` | `[-1, 0]` | baseline window (s) |
-| `interval_post` | `[0, 1]` | response window (s) |
+| `interval_post` | `[0, 1]` | response window (s), within the stimulus duration of every EpisodeData |
 | `test` | `'wilcoxon'` | `'ttest'`, `'anova'` |
 | `sign` | `'positive'` | `'negative'`, `'both'` |
 | `threshold` | `0.05` | p-value threshold |
-| `episode_cond` | all episodes | episodes used for the test |
+| `episode_cond` | all episodes | boolean array (single EpisodeData) or list of boolean arrays (one per EpisodeData) |
 
-Returns the boolean mask `(n_neurons,)` and the per-neuron summary (`value`, `pval`, `significant`, ...).
+Returns the boolean mask `(n_neurons,)` and the per-neuron summary (`value`, `std-value`, `pval`, `significant`, `ntrials`).
 
 Do not replace it with a per-stimulus test ("responsive to at least one stimulus") run on all trials: that uses the labels and biases decoding.
 

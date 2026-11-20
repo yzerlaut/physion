@@ -147,14 +147,15 @@ def test_episode_arrays_passed_directly():
     assert set(states)<= {'rest', 'run', ''}
 
 
-def fake_episodes(dFoF, t, angle):
+def fake_episodes(dFoF, t, angle, key='angle'):
     """ EpisodeData with arrays set directly (no NWB file) """
     from physion.analysis.episodes.build import EpisodeData
     ep = object.__new__(EpisodeData)
-    ep.t, ep.dFoF, ep.angle = t, dFoF, angle
+    ep.t, ep.dFoF = t, dFoF
+    setattr(ep, key, angle)
     ep.repeat = np.zeros(len(angle))
     ep.time_start = np.arange(len(angle))
-    ep.varied_parameters = {'angle': np.unique(angle)}
+    ep.varied_parameters = {key: np.unique(angle)}
     ep.quantities, ep.verbose = ['dFoF'], False
     return ep
 
@@ -184,3 +185,71 @@ def test_responsive_neurons_label_blind():
         accs.append(decoding.cross_validated_decoding(
             noise[:, sel, :], angle, t=t, window=[0, 1])['accuracy'])
     assert abs(np.mean(accs)-0.25)<0.1
+
+
+def test_same_test_as_pre_post_statistics():
+    """ array implementation == EpisodeData.pre_post_statistics with all
+        stimulus parameters merged through repetition_keys """
+    rng = np.random.default_rng(3)
+    t = np.arange(-1, 2, 0.05)
+    angle = np.repeat([0., 90.], 10)
+    dFoF = rng.normal(size=(20, 8, len(t)))
+    dFoF[:, :4, :] += 0.6*((t>0) & (t<1))
+    ep = fake_episodes(dFoF, t, angle)
+    props = dict(interval_pre=[-1, 0], interval_post=[0, 1], test='wilcoxon',
+                 sign='positive')
+    ref = ep.pre_post_statistics(response_args=dict(quantity='dFoF'),
+                                 response_significance_threshold=0.05,
+                                 stat_test_props=props,
+                                 repetition_keys=['repeat', 'angle'],
+                                 loop_over_cells=True, verbose=False)
+    responsive, summary = decoding.responsive_neurons(ep, **{k: props[k] for k in
+                                                     ['interval_pre', 'interval_post']})
+    np.testing.assert_allclose(summary['pval'], np.array(ref['pval']).flatten())
+    np.testing.assert_array_equal(responsive, np.array(ref['significant']).flatten())
+
+
+def test_merge_several_episode_data():
+    rng = np.random.default_rng(4)
+    # gratings: 2 s stimuli, t from -1 s ; images: 3 s, t from -1.5 s, offset grid
+    t1 = np.arange(-1, 3, 0.05)
+    t2 = np.arange(-1.5, 4.5, 0.05)+0.02
+    angle = np.repeat([0., 90.], 10)
+    image = np.repeat([0, 1, 2], 10)
+    n = 12
+    d1, d2 = rng.normal(size=(20, n, len(t1))), rng.normal(size=(30, n, len(t2)))
+    tun1, tun2 = rng.random(size=(2, n)), rng.random(size=(3, n))  # positive tuning
+    d1 += 2*tun1[(angle==90).astype(int)][:, :, None]*((t1>0) & (t1<2))
+    d2 += 2*tun2[image][:, :, None]*((t2>0) & (t2<3))
+    d1[:, :6, :] += (t1>0) & (t1<2)          # neurons 0-5 respond in both
+    d2[:, :6, :] += (t2>0) & (t2<3)
+    ep1, ep2 = fake_episodes(d1, t1, angle), fake_episodes(d2, t2, image, key='Image-ID')
+    ep1.running = rng.random(size=(20, len(t1)))
+    ep2.running = rng.random(size=(30, len(t2)))
+
+    X, y, t, source = decoding.merge_episodes([ep1, ep2], ['angle', 'Image-ID'],
+                                             names=['grating', 'image'])
+    assert X.shape==(50, n, len(t)) and t[0]>=-1 and t[-1]<=3
+    assert list(np.unique(source, return_counts=True)[1])==[20, 30]
+    assert len(np.unique(y))==5 and y[0]=='grating 0.0' and y[-1]=='image 2'
+    # same labels in both, no prefix -> pooled
+    _, y_pooled, _, _ = decoding.merge_episodes([ep1, ep1], 'angle')
+    assert len(np.unique(y_pooled))==2
+    # behaviour (trials, time) merged the same way
+    speed, _, ts, _ = decoding.merge_episodes([ep1, ep2], quantity='running')
+    assert speed.shape==(50, len(ts))
+
+    # responsiveness pooled over both EpisodeData
+    responsive, summary = decoding.responsive_neurons([ep1, ep2], interval_post=[0, 2])
+    assert responsive[:6].all() and summary['ntrials']==50
+    cond = [np.ones(20, bool), np.zeros(30, bool)]
+    _, summary = decoding.responsive_neurons([ep1, ep2], episode_cond=cond)
+    assert summary['ntrials']==20
+
+    res = decoding.cross_validated_decoding(X[:, responsive, :], y, t=t,
+                                            window=[0, 2], baseline=[-1, 0])
+    assert res['accuracy']>0.8
+
+    with pytest.raises(ValueError):
+        ep3 = fake_episodes(d1[:, :5, :], t1, angle)
+        decoding.merge_episodes([ep1, ep3], 'angle')
