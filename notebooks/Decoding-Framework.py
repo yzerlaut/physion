@@ -40,6 +40,15 @@ res = decoding.cross_validated_decoding(X, y, **static)
 print('accuracy: %.2f (chance %.2f)' % (res['accuracy'], res['chance']))
 
 # %%
+# restricting to responsive neurons (label-blind test, all stimuli merged)
+responsive, _ = decoding.responsive_neurons(episodes, quantity='dFoF',
+                                            interval_pre=[-1, 0],
+                                            interval_post=[0, 2])
+print('%i/%i responsive neurons' % (responsive.sum(), len(responsive)))
+res_resp = decoding.cross_validated_decoding(X[:, responsive, :], y, **static)
+print('accuracy, responsive only: %.2f' % res_resp['accuracy'])
+
+# %%
 # shuffle control
 null = decoding.shuffle_test(X, y, n_shuffles=100, **static)
 fig, ax = pt.figure(ax_scale=(1.2, 1.))

@@ -24,6 +24,7 @@ Optional per-trial arrays:
 Structure
 ---------
 
+    selection.py      label-blind selection of responsive neurons
     decoders.py       NearestTemplate (default) and other decoders
     preprocessing.py  windowing, baseline, time binning, z-scoring, state labels
     evaluation.py     cross-validation, shuffle control, time-resolved
@@ -45,6 +46,7 @@ Roadmap (not implemented yet)
     - signal / noise decomposition (trial-shuffled vs unshuffled)
     - spike-jitter and bin-width sweeps for spike-timing precision
 """
+from .selection import responsive_neurons
 from .decoders import NearestTemplate, build_decoder, DECODERS
 from .preprocessing import (window_average, subtract_baseline, bin_time,
                             state_labels, prepare_tensor,

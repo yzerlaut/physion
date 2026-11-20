@@ -25,6 +25,35 @@ Demo: [notebooks/Decoding-Framework.py](../../../../notebooks/Decoding-Framework
 
 The same calls work for both modalities. Only the windows, the bin size and the regularisation are expected to differ (e.g. `window=[0, 0.2]`, `dt_bin=0.005` for spikes; `window=[0, 2]`, `dt_bin=0.2` for dF/F).
 
+## Selecting responsive neurons
+
+```python
+responsive, summary = decoding.responsive_neurons(episodes, quantity='dFoF',
+                                                  interval_pre=[-1, 0],
+                                                  interval_post=[0, 2])
+res = decoding.cross_validated_decoding(episodes.dFoF[:, responsive, :],
+                                        episodes.angle, t=episodes.t,
+                                        window=[0, 2])
+```
+
+One evoked-vs-baseline test per neuron with **all stimuli merged** (every varied stimulus parameter is passed to `pre_post_statistics` as a `repetition_keys`) and, by default, all behavioural states pooled. The stimulus labels play no part in the selection, so it cannot create stimulus information (with shuffled labels, decoding stays at chance) and it can be done once on all trials, before decoding. For rest vs run, the same neurons are then used in both states.
+
+| parameter | default | effect |
+|---|---|---|
+| `quantity` | `'dFoF'` | e.g. `'spikes'` |
+| `interval_pre` | `[-1, 0]` | baseline window (s) |
+| `interval_post` | `[0, 1]` | response window (s) |
+| `test` | `'wilcoxon'` | `'ttest'`, `'anova'` |
+| `sign` | `'positive'` | `'negative'`, `'both'` |
+| `threshold` | `0.05` | p-value threshold |
+| `episode_cond` | all episodes | episodes used for the test |
+
+Returns the boolean mask `(n_neurons,)` and the per-neuron summary (`value`, `pval`, `significant`, ...).
+
+Do not replace it with a per-stimulus test ("responsive to at least one stimulus") run on all trials: that uses the labels and biases decoding.
+
+Caveat: pooling dilutes sparse responses. A neuron responding strongly to one stimulus out of many (typical with natural images) can be missed: in simulations, a neuron responding to 1 of 4 stimuli was detected 90% of the time, but 1 of 20 only 10% of the time. With many stimuli, use a longer response window, `sign='both'`, a looser threshold, or check how many neurons are excluded.
+
 ## Steps
 
 Each call runs the following pipeline, re-fitted on the training trials of every cross-validation fold:

@@ -145,3 +145,42 @@ def test_episode_arrays_passed_directly():
     states = decoding.state_labels(decoding.window_average(running, t, [0, 1]),
                                    rest_max=0.45, run_min=0.55)
     assert set(states)<= {'rest', 'run', ''}
+
+
+def fake_episodes(dFoF, t, angle):
+    """ EpisodeData with arrays set directly (no NWB file) """
+    from physion.analysis.episodes.build import EpisodeData
+    ep = object.__new__(EpisodeData)
+    ep.t, ep.dFoF, ep.angle = t, dFoF, angle
+    ep.repeat = np.zeros(len(angle))
+    ep.time_start = np.arange(len(angle))
+    ep.varied_parameters = {'angle': np.unique(angle)}
+    ep.quantities, ep.verbose = ['dFoF'], False
+    return ep
+
+
+def test_responsive_neurons_label_blind():
+    rng = np.random.default_rng(0)
+    t = np.arange(-1, 2, 0.05)
+    angle = np.repeat([0., 45., 90., 135.], 10)
+    evoked = ((t>0) & (t<1)).astype(float)
+    dFoF = rng.normal(size=(40, 30, len(t)))
+    dFoF[:, :10, :] += evoked                       # neurons 0-9: respond to all
+    dFoF[angle==90., 10:20, :] += 2*evoked          # neurons 10-19: only to 90 deg
+    ep = fake_episodes(dFoF, t, angle)              # neurons 20-29: noise
+
+    responsive, summary = decoding.responsive_neurons(ep, interval_pre=[-1, 0],
+                                                      interval_post=[0, 1])
+    assert responsive.shape==(30,) and len(summary['pval'])==30
+    assert responsive[:10].all()
+    assert responsive[20:].sum()<=3                 # ~5% false positives
+
+    # no stimulus information: selection does not create any
+    accs = []
+    for seed in range(5):
+        noise = np.random.default_rng(seed).normal(size=(40, 30, len(t)))
+        sel, _ = decoding.responsive_neurons(fake_episodes(noise, t, angle),
+                                             sign='both', threshold=0.5)
+        accs.append(decoding.cross_validated_decoding(
+            noise[:, sel, :], angle, t=t, window=[0, 1])['accuracy'])
+    assert abs(np.mean(accs)-0.25)<0.1
